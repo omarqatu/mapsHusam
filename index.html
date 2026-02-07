@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>منصة العقارات والخدمات</title>
+    <link rel="stylesheet" href="./css/style.css">
+    <link rel="stylesheet" href="ol/ol.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+</head>
+<body>
+
+<div id="map-header">
+    <h2>خريطة العقارات والخدمات</h2>
+    <div id="basemap-switcher">
+        <select id="basemap-select">
+            <option value="aerial">صورة جوية</option>
+            <option value="osm">خريطة أساس</option>
+            <option value="esri">صورة فضائية</option>
+            <option value="none">بدون خريطة أساس</option>
+        </select>
+    </div>
+    <button id="toggle-top-buttons-btn" class="top-button"><i class="fas fa-bars"></i></button>
+</div>
+
+<div id="map-controls">
+    <div id="top-buttons-container" class="hidden-buttons-container">
+        <button id="search-btn" class="top-button" title="بحث متقدم"><i class="fas fa-search"></i></button>
+        <button id="togglePopupBtn" class="top-button" title="استعلام"><i class="fas fa-info-circle"></i></button>
+        <button id="activate-location-btn" class="top-button" title="البحث القريب"><i class="fas fa-map-marker-alt"></i></button>
+        <button id="toggleLayerPanel" class="top-button" title="الطبقات"><i class="fas fa-layer-group"></i></button>
+        <button id="measure-tools-toggle-btn" class="top-button" title="قياسات"><i class="fas fa-ruler"></i></button>
+        <button id="share-location-btn" class="top-button" title="مشاركة"><i class="fas fa-share-alt"></i></button>
+        <button id="editBtn" class="top-button" title="تحرير النقاط"><i class="fas fa-edit"></i></button>
+        <button id="polygonEditBtn" class="top-button" title="تحرير مساحات"><i class="fas fa-draw-polygon"></i></button>
+        <button id="lineEditBtn" class="top-button" title="تحرير خطوط"><i class="fas fa-route"></i></button>
+    </div>
+</div>
+
+<div id="map" class="map"></div>
+
+<div id="shareLocationPanel" class="hidden panel-right">
+    <button id="close-share-panel" class="close-btn" onclick="document.getElementById('shareLocationPanel').classList.add('hidden')">❌</button>
+    <h3>🔗 مشاركة الموقع</h3>
+    <p id="shared-location-display" style="font-size: 13px; color: #555; margin-bottom: 10px;">انقر على الخريطة لتحديد موقع ومشاركته.</p>
+    
+    <div class="share-input-group" style="display: flex; gap: 5px; margin-bottom: 15px;">
+        <input type="text" id="share-link-input" readonly placeholder="سيتولد الرابط هنا..." 
+               style="flex: 1; padding: 8px; border: 1px solid #ccc; border-radius: 4px; font-size: 12px;">
+        <button id="copy-share-link-btn" class="action-btn" style="padding: 8px 15px; white-space: nowrap;">
+            <i class="fas fa-copy"></i> نسخ الرابط
+        </button>
+    </div>
+
+    <div id="coords-display-area" style="background: #fdfdfd; border: 1px dashed #bbb; padding: 10px; border-radius: 5px; margin-bottom: 15px; font-size: 12px; line-height: 1.6;">
+        <div style="margin-bottom: 8px;">
+            <strong>📍 إحداثيات فلسطينية (Palestine Grid):</strong>
+            <div id="pal-coords-text" style="color: #2c3e50; font-family: monospace;">E: --- , N: ---</div>
+        </div>
+        <div>
+            <strong>🌍 إحداثيات عالمية (WGS84 - Google):</strong>
+            <div id="wgs-coords-text" style="color: #e67e22; font-family: monospace;">Lat: --- , Lon: ---</div>
+        </div>
+    </div>
+    
+    <button id="clear-share-location-btn" class="run-btn" style="background-color: #666; width: 100%;">🧹 إلغاء التحديد</button>
+</div>
+
+<div id="layerPanel" class="hidden panel-right">
+    <button id="close-layer-panel" class="close-btn">❌</button>
+    <h3>📚 طبقات الخريطة</h3>
+    <div id="layer-list-container"></div>
+</div>
+
+<div id="measurePanel" class="hidden panel-right">
+    <button id="close-measure-panel" class="close-btn">❌</button>
+    <h3>📏 أدوات القياس والرسم</h3>
+    <div class="measure-tools">
+        <button id="measure-length-btn" class="action-btn" style="width: 100%; margin-bottom: 5px;">📏 قياس مسافة (متر)</button>
+        <button id="measure-area-btn" class="action-btn" style="width: 100%; margin-bottom: 5px;">📐 قياس مساحة (متر²)</button>
+        <button id="draw-point-btn" class="action-btn" style="width: 100%; margin-bottom: 5px;">📍 رسم نقطة</button>
+        <hr>
+        <button id="clear-measure-btn" class="run-btn" style="background-color: #d9534f; width: 100%;">🧹 مسح القياسات</button>
+    </div>
+    <div id="measure-result" style="margin-top: 15px; padding: 10px; background: #f9f9f9; border-radius: 5px; font-weight: bold; color: #2c3e50; min-height: 40px; text-align: center;">
+        النتائج تظهر هنا
+    </div>
+</div>
+
+<div id="nearby-apartments-panel" class="hidden panel-right">
+    <button id="close-nearby-panel" class="close-btn">❌</button>
+    <h3>📍 بحث حسب الموقع</h3>
+    <div class="search-group">
+        <label>1. حدد مركز البحث:</label>
+        <button id="get-my-location-btn" class="action-btn"><i class="fas fa-gps"></i> موقعي الحالي</button>
+        <button id="select-from-map-btn" class="action-btn"><i class="fas fa-mouse-pointer"></i> اختيار من الخريطة</button>
+        <p id="selected-location-display" style="font-size:11px; color:gray;">لم يتم تحديد موقع بعد</p>
+    </div>
+    <div class="search-group">
+        <label for="search-layer-select">2. اختر نوع الخدمة/العقار:</label>
+        <select id="search-layer-select"></select>
+    </div>
+    <div class="search-group">
+        <label for="search-radius-input">3. مسافة البحث (متر):</label>
+        <input type="number" id="search-radius-input" placeholder="مثلاً: 500" value="500">
+        <small style="display:block; color:#666; margin-top:2px;">اتركه 0 لجلب الأقرب فقط</small>
+    </div>
+    <button id="execute-location-search-btn" class="run-btn">🔍 ابحث الآن</button>
+</div>
+
+<div id="popup" class="ol-popup">
+    <a href="#" id="popup-closer" class="ol-popup-closer"></a>
+    <div id="popup-title"></div>
+    <div id="popup-content"></div>
+</div>
+
+<div id="search-panel" class="hidden panel-right">
+    <button id="close-search-panel" class="close-btn">❌</button>
+    <h3>🔎 بحث بالسمات</h3>
+    <label for="layer-select">اختر الطبقة:</label>
+    <select id="layer-select"></select>
+    <label for="field-select">اختر الحقل:</label>
+    <select id="field-select"></select>
+    <label for="operator-select">نوع الشرط:</label>
+    <select id="operator-select">
+        <option value="=">=</option>
+        <option value="contains">يحتوي على</option>
+        <option value=">">></option>
+        <option value="<"><</option>
+    </select>
+    <label for="value-input">القيمة:</label>
+    <div id="value-input-container">
+        <input type="text" id="value-input" autocomplete="off" placeholder="أدخل القيمة...">
+    </div>
+    <button id="add-condition">➕ إضافة شرط</button>
+    <button id="run-search">🔎 تنفيذ البحث</button>
+    <button id="clear-search">🧹 مسح</button>
+    <div id="search-conditions"></div>
+</div>
+
+<div id="results-panel" class="hidden panel-right">
+    <button id="close-results-panel" class="close-btn">❌</button>
+    <h3>النتائج: <span id="results-count-span">0</span></h3>
+    <div class="results-table-container">
+        <table id="results-table">
+            <thead><tr><th>#</th><th>التفاصيل</th></tr></thead>
+            <tbody></tbody>
+        </table>
+    </div>
+</div>
+
+<div id="editPanel" class="hidden panel-right">
+    <button id="close-edit-panel" class="close-btn">❌</button>
+    <h4>📝 تحرير النقاط</h4>
+    <div style="margin-bottom: 15px;">
+        <label>اختر الطبقة:</label>
+        <select id="edit-layer-select" style="width:100%;"></select>
+    </div>
+    <div class="edit-tools-container" style="display: flex; flex-direction: column; gap: 8px;">
+        <button id="add-feature-btn" class="action-btn">إضافة معلم جديد</button>
+        <button id="modify-feature-btn" class="action-btn">تعديل بيانات / موقع</button>
+        <button id="delete-feature-btn" class="action-btn" style="background-color:#d9534f; color:white;">حذف معلم</button>
+    </div>
+</div>
+
+<div id="attributeModal" class="modal" style="display:none; position:fixed; z-index:9999; left:0; top:0; width:100%; height:100%; background-color:rgba(0,0,0,0.5);">
+    <div class="modal-content" style="background-color:white; margin:10% auto; padding:20px; border-radius:8px; width:80%; max-width:400px; position:relative;">
+        <h4 id="modalTitle" style="margin-top:0;">إدخال البيانات</h4>
+        <form id="attributeForm"></form>
+        <div style="margin-top:20px; display:flex; gap:10px;">
+            <button id="submitAttributes" class="run-btn" style="flex:1;">حفظ</button>
+            <button id="cancelAttributes" class="action-btn" style="flex:1; background-color:#666;">إلغاء</button>
+        </div>
+    </div>
+</div>
+
+<div id="coordinates">
+    <p id="palestineCoords">E: 0, N: 0</p>
+</div>
+
+<script src="ol/ol.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/ol-ext@4.0.0/dist/ol-ext.min.js"></script>
+<script src="proj4/proj4.js"></script>
+
+<script src="js/style-utils.js"></script>
+<script src="js/layers.js"></script>
+<script src="js/layer-manager.js"></script>
+<script src="js/popup.js"></script>
+<script src="js/search.js"></script>
+<script src="js/location-search.js"></script>
+<script src="js/measure.js"></script>
+<script src="js/share-location.js"></script>
+<script src="js/editPoints.js"></script>
+<script src="js/editPolygons.js"></script>
+<script src="js/editLines.js"></script>
+<script src="js/main.js"></script>
+</body>
+</html>
