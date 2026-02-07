@@ -22,8 +22,7 @@ REM ===== Backup services_db (overwrite each time) =====
 
 echo Backup Finished
 
-REM ================================
-REM Backup GeoServer Data Directory
+REM Backup GeoServer Data Directory (incremental)
 REM ================================
 
 REM ===== Source and Destination =====
@@ -33,10 +32,10 @@ set DEST=C:\xampp\htdocs\realestate-map\WEB\PSM\GeoServerData
 REM ===== Create destination folder if not exists =====
 if not exist "%DEST%" mkdir "%DEST%"
 
-echo Starting GeoServer Data backup...
+echo Starting GeoServer Data backup (incremental)...
 
-REM ===== Copy all files and folders, overwrite existing =====
-xcopy "%SOURCE%\*" "%DEST%\" /E /H /C /I /Y
+REM ===== Robocopy: copy new and updated files only =====
+robocopy "%SOURCE%" "%DEST%" /MIR /Z /FFT /XO /R:3 /W:5
 
 echo Backup finished!
 pause
