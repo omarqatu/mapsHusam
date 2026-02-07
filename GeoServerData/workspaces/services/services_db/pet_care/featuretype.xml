@@ -1,0 +1,66 @@
+<featureType>
+  <id>FeatureTypeInfoImpl--306e13d0:19c13acd63d:-7f9c</id>
+  <name>pet_care</name>
+  <nativeName>pet_care</nativeName>
+  <namespace>
+    <id>NamespaceInfoImpl--306e13d0:19c13acd63d:-7fd7</id>
+  </namespace>
+  <title>pet_care</title>
+  <keywords>
+    <string>features</string>
+    <string>pet_care</string>
+  </keywords>
+  <nativeCRS class="projected">PROJCS[&quot;Palestine 1923 / Palestine Grid&quot;, &#xd;
+  GEOGCS[&quot;Palestine 1923&quot;, &#xd;
+    DATUM[&quot;Palestine 1923&quot;, &#xd;
+      SPHEROID[&quot;Clarke 1880 (Benoit)&quot;, 6378300.789, 293.4663155389811, AUTHORITY[&quot;EPSG&quot;,&quot;7010&quot;]], &#xd;
+      TOWGS84[-275.7224, 94.7824, 340.8944, -8.001, -4.42, -11.821, 1.0], &#xd;
+      AUTHORITY[&quot;EPSG&quot;,&quot;6281&quot;]], &#xd;
+    PRIMEM[&quot;Greenwich&quot;, 0.0, AUTHORITY[&quot;EPSG&quot;,&quot;8901&quot;]], &#xd;
+    UNIT[&quot;degree&quot;, 0.017453292519943295], &#xd;
+    AXIS[&quot;Geodetic longitude&quot;, EAST], &#xd;
+    AXIS[&quot;Geodetic latitude&quot;, NORTH], &#xd;
+    AUTHORITY[&quot;EPSG&quot;,&quot;4281&quot;]], &#xd;
+  PROJECTION[&quot;Cassini_Soldner&quot;, AUTHORITY[&quot;EPSG&quot;,&quot;9806&quot;]], &#xd;
+  PARAMETER[&quot;central_meridian&quot;, 35.212080555555566], &#xd;
+  PARAMETER[&quot;latitude_of_origin&quot;, 31.734096944444453], &#xd;
+  PARAMETER[&quot;scale_factor&quot;, 1.0], &#xd;
+  PARAMETER[&quot;false_easting&quot;, 170251.555], &#xd;
+  PARAMETER[&quot;false_northing&quot;, 126867.909], &#xd;
+  UNIT[&quot;m&quot;, 1.0], &#xd;
+  AXIS[&quot;Easting&quot;, EAST], &#xd;
+  AXIS[&quot;Northing&quot;, NORTH], &#xd;
+  AUTHORITY[&quot;EPSG&quot;,&quot;28191&quot;]]</nativeCRS>
+  <srs>EPSG:28191</srs>
+  <nativeBoundingBox>
+    <minx>165830.89364823542</minx>
+    <maxx>169794.32221966403</maxx>
+    <miny>144753.93699732336</miny>
+    <maxy>148676.22271160907</maxy>
+    <crs class="projected">EPSG:28191</crs>
+  </nativeBoundingBox>
+  <latLonBoundingBox>
+    <minx>35.16615018656402</minx>
+    <maxx>35.20806438058855</maxx>
+    <miny>31.89577102402229</miny>
+    <maxy>31.93115159519713</maxy>
+    <crs>EPSG:4326</crs>
+  </latLonBoundingBox>
+  <projectionPolicy>FORCE_DECLARED</projectionPolicy>
+  <enabled>true</enabled>
+  <store class="dataStore">
+    <id>DataStoreInfoImpl--306e13d0:19c13acd63d:-7fd6</id>
+  </store>
+  <serviceConfiguration>false</serviceConfiguration>
+  <simpleConversionEnabled>false</simpleConversionEnabled>
+  <internationalTitle/>
+  <internationalAbstract/>
+  <cqlFilter>status = 0</cqlFilter>
+  <maxFeatures>0</maxFeatures>
+  <numDecimals>0</numDecimals>
+  <padWithZeros>false</padWithZeros>
+  <forcedDecimal>false</forcedDecimal>
+  <overridingServiceSRS>false</overridingServiceSRS>
+  <skipNumberMatched>false</skipNumberMatched>
+  <circularArcPresent>false</circularArcPresent>
+</featureType>

@@ -1,0 +1,17 @@
+<layer>
+  <name>location_layer</name>
+  <id>LayerInfoImpl--306e13d0:19c13acd63d:-d75</id>
+  <type>VECTOR</type>
+  <defaultStyle>
+    <id>StyleInfoImpl--570ae188:124761b8d78:-7fe0</id>
+  </defaultStyle>
+  <resource class="featureType">
+    <id>FeatureTypeInfoImpl--306e13d0:19c13acd63d:-d76</id>
+  </resource>
+  <attribution>
+    <logoWidth>0</logoWidth>
+    <logoHeight>0</logoHeight>
+  </attribution>
+  <dateCreated>2026-02-02 19:09:55.126 UTC</dateCreated>
+  <dateModified>2026-02-02 20:01:41.940 UTC</dateModified>
+</layer>

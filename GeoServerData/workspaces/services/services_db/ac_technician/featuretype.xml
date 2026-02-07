@@ -1,0 +1,79 @@
+<featureType>
+  <id>FeatureTypeInfoImpl--306e13d0:19c13acd63d:-7fd5</id>
+  <name>ac_technician</name>
+  <nativeName>ac_technician</nativeName>
+  <namespace>
+    <id>NamespaceInfoImpl--306e13d0:19c13acd63d:-7fd7</id>
+  </namespace>
+  <title>ac_technician</title>
+  <keywords>
+    <string>features</string>
+    <string>ac_technician</string>
+  </keywords>
+  <nativeCRS class="projected">PROJCS[&quot;Palestine 1923 / Palestine Grid&quot;, &#xd;
+  GEOGCS[&quot;Palestine 1923&quot;, &#xd;
+    DATUM[&quot;Palestine 1923&quot;, &#xd;
+      SPHEROID[&quot;Clarke 1880 (Benoit)&quot;, 6378300.789, 293.4663155389811, AUTHORITY[&quot;EPSG&quot;,&quot;7010&quot;]], &#xd;
+      TOWGS84[-275.7224, 94.7824, 340.8944, -8.001, -4.42, -11.821, 1.0], &#xd;
+      AUTHORITY[&quot;EPSG&quot;,&quot;6281&quot;]], &#xd;
+    PRIMEM[&quot;Greenwich&quot;, 0.0, AUTHORITY[&quot;EPSG&quot;,&quot;8901&quot;]], &#xd;
+    UNIT[&quot;degree&quot;, 0.017453292519943295], &#xd;
+    AXIS[&quot;Geodetic longitude&quot;, EAST], &#xd;
+    AXIS[&quot;Geodetic latitude&quot;, NORTH], &#xd;
+    AUTHORITY[&quot;EPSG&quot;,&quot;4281&quot;]], &#xd;
+  PROJECTION[&quot;Cassini_Soldner&quot;, AUTHORITY[&quot;EPSG&quot;,&quot;9806&quot;]], &#xd;
+  PARAMETER[&quot;central_meridian&quot;, 35.212080555555566], &#xd;
+  PARAMETER[&quot;latitude_of_origin&quot;, 31.734096944444453], &#xd;
+  PARAMETER[&quot;scale_factor&quot;, 1.0], &#xd;
+  PARAMETER[&quot;false_easting&quot;, 170251.555], &#xd;
+  PARAMETER[&quot;false_northing&quot;, 126867.909], &#xd;
+  UNIT[&quot;m&quot;, 1.0], &#xd;
+  AXIS[&quot;Easting&quot;, EAST], &#xd;
+  AXIS[&quot;Northing&quot;, NORTH], &#xd;
+  AUTHORITY[&quot;EPSG&quot;,&quot;28191&quot;]]</nativeCRS>
+  <srs>EPSG:28191</srs>
+  <nativeBoundingBox>
+    <minx>165090.322219664</minx>
+    <maxx>171083.46507680684</maxx>
+    <miny>144051.07985446622</miny>
+    <maxy>145422.5084258948</maxy>
+    <crs class="projected">EPSG:28191</crs>
+  </nativeBoundingBox>
+  <latLonBoundingBox>
+    <minx>35.15833582000708</minx>
+    <maxx>35.221692283420175</maxx>
+    <miny>31.889429361773626</miny>
+    <maxy>31.901808703220837</maxy>
+    <crs>EPSG:4326</crs>
+  </latLonBoundingBox>
+  <projectionPolicy>FORCE_DECLARED</projectionPolicy>
+  <enabled>true</enabled>
+  <metadata>
+    <entry key="elevation">
+      <dimensionInfo>
+        <enabled>false</enabled>
+      </dimensionInfo>
+    </entry>
+    <entry key="time">
+      <dimensionInfo>
+        <enabled>false</enabled>
+      </dimensionInfo>
+    </entry>
+    <entry key="cachingEnabled">false</entry>
+  </metadata>
+  <store class="dataStore">
+    <id>DataStoreInfoImpl--306e13d0:19c13acd63d:-7fd6</id>
+  </store>
+  <serviceConfiguration>false</serviceConfiguration>
+  <simpleConversionEnabled>false</simpleConversionEnabled>
+  <internationalTitle/>
+  <internationalAbstract/>
+  <cqlFilter>status = 0</cqlFilter>
+  <maxFeatures>0</maxFeatures>
+  <numDecimals>0</numDecimals>
+  <padWithZeros>false</padWithZeros>
+  <forcedDecimal>false</forcedDecimal>
+  <overridingServiceSRS>false</overridingServiceSRS>
+  <skipNumberMatched>false</skipNumberMatched>
+  <circularArcPresent>false</circularArcPresent>
+</featureType>

@@ -1,0 +1,16 @@
+<layer>
+  <name>facilities</name>
+  <id>LayerInfoImpl-19e8603b:1922f6d3d89:-7f28</id>
+  <type>VECTOR</type>
+  <defaultStyle>
+    <id>StyleInfoImpl--7a3e4111:1905b397b0f:-7a13</id>
+  </defaultStyle>
+  <resource class="featureType">
+    <id>FeatureTypeInfoImpl-19e8603b:1922f6d3d89:-7f29</id>
+  </resource>
+  <attribution>
+    <logoWidth>0</logoWidth>
+    <logoHeight>0</logoHeight>
+  </attribution>
+  <dateCreated>2024-09-26 18:00:43.675 UTC</dateCreated>
+</layer>

@@ -1,0 +1,17 @@
+<layer>
+  <name>LandSale</name>
+  <id>LayerInfoImpl-19869616:19800fea580:1e25</id>
+  <type>VECTOR</type>
+  <defaultStyle>
+    <id>StyleInfoImpl--570ae188:124761b8d78:-7fe0</id>
+  </defaultStyle>
+  <resource class="featureType">
+    <id>FeatureTypeInfoImpl-19869616:19800fea580:1e24</id>
+  </resource>
+  <attribution>
+    <logoWidth>0</logoWidth>
+    <logoHeight>0</logoHeight>
+  </attribution>
+  <dateCreated>2025-07-17 17:13:44.78 UTC</dateCreated>
+  <dateModified>2025-09-19 21:38:39.92 UTC</dateModified>
+</layer>

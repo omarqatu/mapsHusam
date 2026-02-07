@@ -1,0 +1,167 @@
+<coverage>
+  <id>CoverageInfoImpl--7a3e4111:1905b397b0f:-7fff</id>
+  <name>AerialPhoto_Ramallah</name>
+  <nativeName>AerialPhoto_Ramallah.ERS_1</nativeName>
+  <namespace>
+    <id>NamespaceInfoImpl--7d77be0e:18fca97b9ad:-7fff</id>
+  </namespace>
+  <title>AerialPhoto_Ramallah</title>
+  <description>Generated from GeoTIFF</description>
+  <keywords>
+    <string>AerialPhoto_Ramallah.ERS_1</string>
+    <string>WCS</string>
+    <string>GeoTIFF</string>
+  </keywords>
+  <nativeCRS class="projected">PROJCS[&quot;Palestine 1923 / Palestine Grid&quot;, &#xd;
+  GEOGCS[&quot;Palestine 1923&quot;, &#xd;
+    DATUM[&quot;Palestine 1923&quot;, &#xd;
+      SPHEROID[&quot;Clarke 1880 (Benoit)&quot;, 6378300.789, 293.4663155389811, AUTHORITY[&quot;EPSG&quot;,&quot;7010&quot;]], &#xd;
+      TOWGS84[-275.7224, 94.7824, 340.8944, -8.001, -4.42, -11.821, 1.0], &#xd;
+      AUTHORITY[&quot;EPSG&quot;,&quot;6281&quot;]], &#xd;
+    PRIMEM[&quot;Greenwich&quot;, 0.0, AUTHORITY[&quot;EPSG&quot;,&quot;8901&quot;]], &#xd;
+    UNIT[&quot;degree&quot;, 0.017453292519943295], &#xd;
+    AXIS[&quot;Geodetic longitude&quot;, EAST], &#xd;
+    AXIS[&quot;Geodetic latitude&quot;, NORTH], &#xd;
+    AUTHORITY[&quot;EPSG&quot;,&quot;4281&quot;]], &#xd;
+  PROJECTION[&quot;Cassini_Soldner&quot;, AUTHORITY[&quot;EPSG&quot;,&quot;9806&quot;]], &#xd;
+  PARAMETER[&quot;central_meridian&quot;, 35.212080555555566], &#xd;
+  PARAMETER[&quot;latitude_of_origin&quot;, 31.734096944444453], &#xd;
+  PARAMETER[&quot;scale_factor&quot;, 1.0], &#xd;
+  PARAMETER[&quot;false_easting&quot;, 170251.555], &#xd;
+  PARAMETER[&quot;false_northing&quot;, 126867.909], &#xd;
+  UNIT[&quot;m&quot;, 1.0], &#xd;
+  AXIS[&quot;Easting&quot;, EAST], &#xd;
+  AXIS[&quot;Northing&quot;, NORTH], &#xd;
+  AUTHORITY[&quot;EPSG&quot;,&quot;28191&quot;]]</nativeCRS>
+  <srs>EPSG:28191</srs>
+  <nativeBoundingBox>
+    <minx>163624.5323999999</minx>
+    <maxx>173921.23239999992</maxx>
+    <miny>140984.8497999992</miny>
+    <maxy>151574.54979999922</maxy>
+    <crs class="projected">EPSG:28191</crs>
+  </nativeBoundingBox>
+  <latLonBoundingBox>
+    <minx>35.14279864683942</minx>
+    <maxx>35.2517155124868</maxx>
+    <miny>31.86176954595735</miny>
+    <maxy>31.95728946646472</maxy>
+    <crs>EPSG:4326</crs>
+  </latLonBoundingBox>
+  <projectionPolicy>REPROJECT_TO_DECLARED</projectionPolicy>
+  <enabled>true</enabled>
+  <metadata>
+    <entry key="dirName">AerialPhoto_Ramallah_AerialPhoto_Ramallah.ERS_1</entry>
+  </metadata>
+  <store class="coverageStore">
+    <id>CoverageStoreInfoImpl--7a3e4111:1905b397b0f:-8000</id>
+  </store>
+  <serviceConfiguration>false</serviceConfiguration>
+  <simpleConversionEnabled>false</simpleConversionEnabled>
+  <internationalTitle/>
+  <internationalAbstract/>
+  <nativeFormat>GeoTIFF</nativeFormat>
+  <grid dimension="2">
+    <range>
+      <low>0 0</low>
+      <high>102967 105897</high>
+    </range>
+    <transform>
+      <scaleX>0.10000000000000012</scaleX>
+      <scaleY>-0.10000000000000012</scaleY>
+      <shearX>0.0</shearX>
+      <shearY>0.0</shearY>
+      <translateX>163624.5823999999</translateX>
+      <translateY>151574.49979999923</translateY>
+    </transform>
+    <crs>EPSG:28191</crs>
+  </grid>
+  <supportedFormats>
+    <string>GeoPackage (mosaic)</string>
+    <string>GEOTIFF</string>
+    <string>GIF</string>
+    <string>PNG</string>
+    <string>JPEG</string>
+    <string>TIFF</string>
+    <string>ArcGrid</string>
+    <string>ImageMosaic</string>
+  </supportedFormats>
+  <interpolationMethods>
+    <string>nearest neighbor</string>
+    <string>bilinear</string>
+    <string>bicubic</string>
+  </interpolationMethods>
+  <defaultInterpolationMethod>nearest neighbor</defaultInterpolationMethod>
+  <dimensions>
+    <coverageDimension>
+      <name>RED_BAND</name>
+      <description>GridSampleDimension[-Infinity,Infinity]</description>
+      <range>
+        <min>-inf</min>
+        <max>inf</max>
+      </range>
+      <nullValues>
+        <double>256.0</double>
+      </nullValues>
+      <unit>W.m-2.Sr-1</unit>
+      <dimensionType>
+        <name>UNSIGNED_8BITS</name>
+      </dimensionType>
+    </coverageDimension>
+    <coverageDimension>
+      <name>GREEN_BAND</name>
+      <description>GridSampleDimension[-Infinity,Infinity]</description>
+      <range>
+        <min>-inf</min>
+        <max>inf</max>
+      </range>
+      <nullValues>
+        <double>256.0</double>
+      </nullValues>
+      <unit>W.m-2.Sr-1</unit>
+      <dimensionType>
+        <name>UNSIGNED_8BITS</name>
+      </dimensionType>
+    </coverageDimension>
+    <coverageDimension>
+      <name>BLUE_BAND</name>
+      <description>GridSampleDimension[-Infinity,Infinity]</description>
+      <range>
+        <min>-inf</min>
+        <max>inf</max>
+      </range>
+      <nullValues>
+        <double>256.0</double>
+      </nullValues>
+      <unit>W.m-2.Sr-1</unit>
+      <dimensionType>
+        <name>UNSIGNED_8BITS</name>
+      </dimensionType>
+    </coverageDimension>
+  </dimensions>
+  <requestSRS>
+    <string>EPSG:28191</string>
+  </requestSRS>
+  <responseSRS>
+    <string>EPSG:28191</string>
+  </responseSRS>
+  <parameters>
+    <entry>
+      <string>InputTransparentColor</string>
+      <null/>
+    </entry>
+    <entry>
+      <string>SUGGESTED_TILE_SIZE</string>
+      <string>512,512</string>
+    </entry>
+    <entry>
+      <string>Bands</string>
+      <null/>
+    </entry>
+    <entry>
+      <string>RescalePixels</string>
+      <boolean>true</boolean>
+    </entry>
+  </parameters>
+  <nativeCoverageName>AerialPhoto_Ramallah.ERS_1</nativeCoverageName>
+</coverage>

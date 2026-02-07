@@ -1,0 +1,22 @@
+<layer>
+  <name>Governorate</name>
+  <id>LayerInfoImpl-19869616:198417eae03:-6cf9</id>
+  <type>VECTOR</type>
+  <defaultStyle>
+    <id>StyleInfoImpl-19869616:198417eae03:-60d4</id>
+  </defaultStyle>
+  <styles class="linked-hash-set">
+    <style>
+      <id>StyleInfoImpl-19869616:198417eae03:-60d4</id>
+    </style>
+  </styles>
+  <resource class="featureType">
+    <id>FeatureTypeInfoImpl-19869616:198417eae03:-6cfa</id>
+  </resource>
+  <attribution>
+    <logoWidth>0</logoWidth>
+    <logoHeight>0</logoHeight>
+  </attribution>
+  <dateCreated>2025-07-25 21:10:58.340 UTC</dateCreated>
+  <dateModified>2025-08-04 19:56:29.501 UTC</dateModified>
+</layer>

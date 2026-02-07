@@ -1,0 +1,17 @@
+<layer>
+  <name>ApartSale</name>
+  <id>LayerInfoImpl-19869616:19800fea580:1e23</id>
+  <type>VECTOR</type>
+  <defaultStyle>
+    <id>StyleInfoImpl--570ae188:124761b8d78:-7fdf</id>
+  </defaultStyle>
+  <resource class="featureType">
+    <id>FeatureTypeInfoImpl-19869616:19800fea580:1e22</id>
+  </resource>
+  <attribution>
+    <logoWidth>0</logoWidth>
+    <logoHeight>0</logoHeight>
+  </attribution>
+  <dateCreated>2025-07-17 17:13:28.881 UTC</dateCreated>
+  <dateModified>2025-09-25 19:55:42.921 UTC</dateModified>
+</layer>

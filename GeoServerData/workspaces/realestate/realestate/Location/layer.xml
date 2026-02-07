@@ -1,0 +1,16 @@
+<layer>
+  <name>Location</name>
+  <id>LayerInfoImpl-19869616:19800fea580:292a</id>
+  <type>VECTOR</type>
+  <defaultStyle>
+    <id>StyleInfoImpl--570ae188:124761b8d78:-7fe0</id>
+  </defaultStyle>
+  <resource class="featureType">
+    <id>FeatureTypeInfoImpl-19869616:19800fea580:2929</id>
+  </resource>
+  <attribution>
+    <logoWidth>0</logoWidth>
+    <logoHeight>0</logoHeight>
+  </attribution>
+  <dateCreated>2025-07-19 18:14:56.506 UTC</dateCreated>
+</layer>

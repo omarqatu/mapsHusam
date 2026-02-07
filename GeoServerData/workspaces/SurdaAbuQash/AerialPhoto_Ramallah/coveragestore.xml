@@ -1,0 +1,14 @@
+<coverageStore>
+  <id>CoverageStoreInfoImpl--7a3e4111:1905b397b0f:-8000</id>
+  <name>AerialPhoto_Ramallah</name>
+  <description>AerialPhotoRamallah</description>
+  <type>GeoTIFF</type>
+  <enabled>true</enabled>
+  <workspace>
+    <id>WorkspaceInfoImpl--7d77be0e:18fca97b9ad:-8000</id>
+  </workspace>
+  <__default>false</__default>
+  <dateCreated>2024-06-27 19:43:32.105 UTC</dateCreated>
+  <disableOnConnFailure>false</disableOnConnFailure>
+  <url>file://E:\New folder\RamallahImage\GEO Tiff\AerialPhoto_Ramallah.ERS_1.tif</url>
+</coverageStore>

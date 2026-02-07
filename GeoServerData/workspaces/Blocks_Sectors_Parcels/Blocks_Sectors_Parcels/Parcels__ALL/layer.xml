@@ -1,0 +1,16 @@
+<layer>
+  <name>Parcels__ALL</name>
+  <id>LayerInfoImpl--517ced6e:1987650912c:-7a04</id>
+  <type>VECTOR</type>
+  <defaultStyle>
+    <id>StyleInfoImpl--570ae188:124761b8d78:-7fe0</id>
+  </defaultStyle>
+  <resource class="featureType">
+    <id>FeatureTypeInfoImpl--517ced6e:1987650912c:-7a05</id>
+  </resource>
+  <attribution>
+    <logoWidth>0</logoWidth>
+    <logoHeight>0</logoHeight>
+  </attribution>
+  <dateCreated>2025-08-04 18:51:22.903 UTC</dateCreated>
+</layer>

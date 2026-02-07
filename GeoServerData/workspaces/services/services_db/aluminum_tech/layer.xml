@@ -1,0 +1,17 @@
+<layer>
+  <name>aluminum_tech</name>
+  <id>LayerInfoImpl--306e13d0:19c13acd63d:-7fcd</id>
+  <type>VECTOR</type>
+  <defaultStyle>
+    <id>StyleInfoImpl--570ae188:124761b8d78:-7fdf</id>
+  </defaultStyle>
+  <resource class="featureType">
+    <id>FeatureTypeInfoImpl--306e13d0:19c13acd63d:-7fce</id>
+  </resource>
+  <attribution>
+    <logoWidth>0</logoWidth>
+    <logoHeight>0</logoHeight>
+  </attribution>
+  <dateCreated>2026-01-31 12:45:54.782 UTC</dateCreated>
+  <dateModified>2026-02-02 19:58:30.141 UTC</dateModified>
+</layer>

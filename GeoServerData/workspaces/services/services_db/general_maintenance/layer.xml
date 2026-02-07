@@ -1,0 +1,17 @@
+<layer>
+  <name>general_maintenance</name>
+  <id>LayerInfoImpl--306e13d0:19c13acd63d:-7fb1</id>
+  <type>VECTOR</type>
+  <defaultStyle>
+    <id>StyleInfoImpl--570ae188:124761b8d78:-7fdf</id>
+  </defaultStyle>
+  <resource class="featureType">
+    <id>FeatureTypeInfoImpl--306e13d0:19c13acd63d:-7fb2</id>
+  </resource>
+  <attribution>
+    <logoWidth>0</logoWidth>
+    <logoHeight>0</logoHeight>
+  </attribution>
+  <dateCreated>2026-01-31 12:48:27.338 UTC</dateCreated>
+  <dateModified>2026-02-02 20:01:29.68 UTC</dateModified>
+</layer>

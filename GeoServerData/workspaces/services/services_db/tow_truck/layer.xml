@@ -1,0 +1,17 @@
+<layer>
+  <name>tow_truck</name>
+  <id>LayerInfoImpl--306e13d0:19c13acd63d:-7f8f</id>
+  <type>VECTOR</type>
+  <defaultStyle>
+    <id>StyleInfoImpl--570ae188:124761b8d78:-7fdf</id>
+  </defaultStyle>
+  <resource class="featureType">
+    <id>FeatureTypeInfoImpl--306e13d0:19c13acd63d:-7f90</id>
+  </resource>
+  <attribution>
+    <logoWidth>0</logoWidth>
+    <logoHeight>0</logoHeight>
+  </attribution>
+  <dateCreated>2026-01-31 12:52:01.274 UTC</dateCreated>
+  <dateModified>2026-02-02 20:03:01.816 UTC</dateModified>
+</layer>

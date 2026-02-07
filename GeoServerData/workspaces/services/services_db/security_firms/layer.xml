@@ -1,0 +1,17 @@
+<layer>
+  <name>security_firms</name>
+  <id>LayerInfoImpl--306e13d0:19c13acd63d:-7f97</id>
+  <type>VECTOR</type>
+  <defaultStyle>
+    <id>StyleInfoImpl--570ae188:124761b8d78:-7fdf</id>
+  </defaultStyle>
+  <resource class="featureType">
+    <id>FeatureTypeInfoImpl--306e13d0:19c13acd63d:-7f98</id>
+  </resource>
+  <attribution>
+    <logoWidth>0</logoWidth>
+    <logoHeight>0</logoHeight>
+  </attribution>
+  <dateCreated>2026-01-31 12:51:14.768 UTC</dateCreated>
+  <dateModified>2026-02-02 20:02:49.203 UTC</dateModified>
+</layer>
