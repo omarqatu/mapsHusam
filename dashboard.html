@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>إدارة السجلات - نظام الفلترة المتقدم</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f7f6; margin: 0; padding: 20px; }
+        .container { width: 95%; max-width: 1400px; margin: auto; background: white; padding: 30px; border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); }
+        h1 { color: #1a73e8; text-align: center; margin-bottom: 25px; }
+        
+        /* تنسيق الجدول */
+        .table-container { overflow-x: auto; border-radius: 10px; border: 1px solid #e0e0e0; margin-top: 20px; }
+        table { width: 100%; border-collapse: collapse; min-width: 1000px; }
+        th { background-color: #1a73e8; color: white; padding: 15px; font-size: 14px; position: sticky; top: 0; z-index: 10; }
+        td { padding: 12px; border-bottom: 1px solid #eee; text-align: center; font-size: 13px; }
+        tr:hover { background-color: #f8f9fa; }
+        
+        /* صف الفلاتر المتقدم */
+        .filter-row { background-color: #f8f9fb; }
+        .filter-row th { padding: 10px 5px; background-color: #f8f9fb; border-bottom: 2px solid #1a73e8; }
+        
+        .filter-group { display: flex; flex-direction: column; gap: 5px; align-items: center; }
+        .filter-input, .filter-select { 
+            width: 90%; 
+            padding: 6px; 
+            border: 1px solid #ccc; 
+            border-radius: 4px; 
+            font-size: 11px; 
+            outline: none;
+            transition: all 0.3s;
+            background: white;
+        }
+        .filter-input:focus, .filter-select:focus { border-color: #1a73e8; box-shadow: 0 0 5px rgba(26,115,232,0.2); }
+
+        /* أزرار التحكم */
+        .header-actions { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
+        .pagination { display: flex; justify-content: center; align-items: center; gap: 15px; margin-top: 20px; }
+        .page-btn { background: #1a73e8; color: white; border: none; padding: 8px 16px; border-radius: 5px; cursor: pointer; font-weight: bold; }
+        .page-btn:disabled { background: #ccc; cursor: not-allowed; }
+        .delete-btn { background: #d93025; color: white; border: none; padding: 6px 10px; border-radius: 4px; cursor: pointer; transition: 0.2s; }
+        .delete-btn:hover { background: #a51d14; }
+        .refresh-btn { background: #34a853; color: white; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; display: flex; align-items: center; gap: 8px; font-weight: bold; }
+        
+        small { color: #666; font-family: monospace; font-size: 10px; }
+        .no-data { padding: 40px; text-align: center; color: #999; font-style: italic; }
+        .badge-count { font-weight: bold; color: #1a73e8; background: #e8f0fe; padding: 5px 15px; border-radius: 20px; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1><i class="fas fa-chart-line"></i> لوحة إدارة السجلات الذكية</h1>
+    
+    <div class="header-actions">
+        <button class="refresh-btn" onclick="resetFiltersAndLoad()"><i class="fas fa-sync-alt"></i> إعادة تعيين الفلاتر والتحميل</button>
+        <div id="statsInfo">
+            <span id="totalInfo" class="badge-count"></span>
+        </div>
+    </div>
+
+    <div class="table-container">
+        <table id="logsTable">
+            <thead>
+                <tr>
+                    <th style="width: 80px;">ID</th>
+                    <th>معرف المستخدم</th>
+                    <th>اسم المزود</th>
+                    <th>نوع الخدمة</th>
+                    <th>الوقت والتاريخ</th>
+                    <th style="width: 80px;">إجراءات</th>
+                </tr>
+                <tr class="filter-row">
+                    <th>
+                        <div class="filter-group">
+                            <input type="text" class="filter-input" data-col="id" placeholder="ID">
+                        </div>
+                    </th>
+                    <th>
+                        <div class="filter-group">
+                            <input type="text" class="filter-input" data-col="user_identifier" placeholder="بحث...">
+                            <select class="filter-select" data-col="user_identifier"><option value="">الكل</option></select>
+                        </div>
+                    </th>
+                    <th>
+                        <div class="filter-group">
+                            <input type="text" class="filter-input" data-col="provider_name" placeholder="بحث...">
+                            <select class="filter-select" data-col="provider_name"><option value="">الكل</option></select>
+                        </div>
+                    </th>
+                    <th>
+                        <div class="filter-group">
+                            <input type="text" class="filter-input" data-col="service_type" placeholder="بحث...">
+                            <select class="filter-select" data-col="service_type"><option value="">الكل</option></select>
+                        </div>
+                    </th>
+                    <th>
+                        <div class="filter-group">
+                            <input type="text" class="filter-input" data-col="formatted_date" placeholder="بحث بالتاريخ...">
+                            <select class="filter-select" data-col="formatted_date" data-type="date-only"><option value="">الكل</option></select>
+                        </div>
+                    </th>
+                    <th><i class="fas fa-filter" style="color: #1a73e8;"></i></th>
+                </tr>
+            </thead>
+            <tbody id="logsBody"></tbody>
+        </table>
+    </div>
+
+    <div class="pagination">
+        <button id="prevBtn" class="page-btn" onclick="changePage(-1)"><i class="fas fa-chevron-right"></i> السابق</button>
+        <span id="pageIndicator" style="font-weight: bold;">صفحة 1 من 1</span>
+        <button id="nextBtn" class="page-btn" onclick="changePage(1)">التالي <i class="fas fa-chevron-left"></i></button>
+    </div>
+</div>
+
+<script>
+    let currentPage = 1;
+    let totalPages = 1;
+    let allData = []; 
+
+    async function loadLogs(page) {
+        const tbody = document.getElementById('logsBody');
+        try {
+            const response = await fetch(`/api/stats-detailed?page=${page}&limit=100&t=${Date.now()}`);
+            const result = await response.json();
+            
+            allData = result.data; 
+            currentPage = result.currentPage;
+            totalPages = result.totalPages;
+
+            updateFilterOptions(allData);
+            renderTable(allData);
+            
+            document.getElementById('pageIndicator').innerText = `صفحة ${currentPage} من ${totalPages}`;
+            document.getElementById('prevBtn').disabled = (currentPage === 1);
+            document.getElementById('nextBtn').disabled = (currentPage === totalPages || totalPages === 0);
+            document.getElementById('totalInfo').innerText = `إجمالي السجلات: ${result.totalRecords}`;
+
+        } catch (err) {
+            tbody.innerHTML = '<tr><td colspan="6" class="no-data">خطأ في الاتصال بالسيرفر</td></tr>';
+        }
+    }
+
+    // استخراج القيم الفريدة وتعبئة القوائم المنسدلة
+    function updateFilterOptions(data) {
+        const columns = ['user_identifier', 'provider_name', 'service_type', 'formatted_date'];
+        
+        columns.forEach(col => {
+            const select = document.querySelector(`.filter-select[data-col="${col}"]`);
+            const currentValue = select.value;
+            
+            let uniqueValues;
+            
+            // معالجة خاصة للتاريخ لفلترة اليوم فقط
+            if (select.getAttribute('data-type') === 'date-only') {
+                uniqueValues = [...new Set(data.map(item => item[col].split(' ')[0]))].sort().reverse();
+            } else {
+                uniqueValues = [...new Set(data.map(item => item[col]))].sort();
+            }
+            
+            select.innerHTML = '<option value="">الكل</option>';
+            uniqueValues.forEach(val => {
+                const opt = document.createElement('option');
+                opt.value = val;
+                opt.textContent = val;
+                select.appendChild(opt);
+            });
+            select.value = currentValue;
+        });
+    }
+
+    function renderTable(data) {
+        const tbody = document.getElementById('logsBody');
+        tbody.innerHTML = '';
+
+        if (data.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="6" class="no-data">لا توجد نتائج تطابق الفلاتر المختارة</td></tr>';
+            return;
+        }
+
+        data.forEach(row => {
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td>${row.id}</td>
+                <td><small>${row.user_identifier}</small></td>
+                <td><b>${row.provider_name}</b></td>
+                <td><span style="color:#1a73e8; font-weight:bold;">${row.service_type}</span></td>
+                <td>${row.formatted_date}</td>
+                <td>
+                    <button class="delete-btn" onclick="deleteRecord(${row.id})">
+                        <i class="fas fa-trash-alt"></i>
+                    </button>
+                </td>
+            `;
+            tbody.appendChild(tr);
+        });
+    }
+
+    // منطق الفلترة المزدوج (كتابة + قوائم)
+    function applyFilters() {
+        const inputs = document.querySelectorAll('.filter-input');
+        const selects = document.querySelectorAll('.filter-select');
+        
+        const filteredData = allData.filter(row => {
+            let isMatch = true;
+
+            // فحص المدخلات النصية
+            inputs.forEach(input => {
+                const col = input.getAttribute('data-col');
+                const val = input.value.toLowerCase();
+                if (val && !row[col].toString().toLowerCase().includes(val)) {
+                    isMatch = false;
+                }
+            });
+
+            // فحص القوائم المنسدلة
+            selects.forEach(select => {
+                const col = select.getAttribute('data-col');
+                const val = select.value;
+                const isDateType = select.getAttribute('data-type') === 'date-only';
+
+                if (val) {
+                    if (isDateType) {
+                        // المقارنة بالجزء الخاص بالتاريخ فقط من السجل (YYYY-MM-DD)
+                        if (!row[col].startsWith(val)) isMatch = false;
+                    } else {
+                        if (row[col] !== val) isMatch = false;
+                    }
+                }
+            });
+
+            return isMatch;
+        });
+
+        renderTable(filteredData);
+    }
+
+    document.querySelectorAll('.filter-input').forEach(el => el.addEventListener('keyup', applyFilters));
+    document.querySelectorAll('.filter-select').forEach(el => el.addEventListener('change', applyFilters));
+
+    function resetFiltersAndLoad() {
+        document.querySelectorAll('.filter-input').forEach(el => el.value = '');
+        document.querySelectorAll('.filter-select').forEach(el => el.value = '');
+        loadLogs(1);
+    }
+
+    function changePage(step) {
+        const newPage = currentPage + step;
+        if (newPage >= 1 && newPage <= totalPages) {
+            loadLogs(newPage);
+        }
+    }
+
+    async function deleteRecord(id) {
+        if (!confirm('هل أنت متأكد من الحذف؟')) return;
+        const res = await fetch(`/api/delete-stat/${id}`, { method: 'DELETE' });
+        if (res.ok) {
+            allData = allData.filter(i => i.id !== id);
+            applyFilters();
+            loadLogs(currentPage);
+        }
+    }
+
+    window.onload = () => loadLogs(1);
+</script>
+</body>
+</html>

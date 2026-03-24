@@ -1,20 +1,45 @@
 /**
- * نسخة محدثة: أيقونات خدمات مصغرة + ظهور متأخر + خط تسمية كبير وواضح
+ * layers.js - النسخة النهائية المحدثة
+ * تشمل: الأيقونات المخصصة للعقارات، الإيموجي للخدمات، والأسماء العربية
  */
 
-const serviceIcons = {
-    'electrician': '⚡', 'ac_technician': '❄️', 'plumber': '🔧', 'general_maintenance': '🛠️',
-    'painter': '🎨', 'carpenter': '🪵', 'blacksmith': '🔨', 'builder': '🧱',
-    'house_cleaner': '🧹', 'aluminum_tech': '🪟', 'car_mechanic': '🚗', 'car_electrician': '🔌',
-    'tire_tech': '🛞', 'car_wash': '🧼', 'motorcycle_repair': '🏍️', 'taxi_driver': '🚕',
-    'delivery_services': '📦', 'tow_truck': '🛻', 'cctv_installer': '📹', 'party_planner': '🎈',
-    'zaffa_bands': '🥁', 'music_bands': '🎸', 'photographer': '📸', 'party_rental': '🎪',
-    'home_nurse': '🩺', 'masseur': '💆', 'cupping_specialist': '🍵', 'nutritionist': '🥗',
-    'truck_driver': '🚛', 'security_firms': '🛡️', 'furniture_buyer': '🛋️', 'gardener': '🌿',
-    'pet_care': '🐾', 'clown_entertainer': '🤡'
+const serviceTranslations = {
+    'electrician': { name: 'فني كهرباء', icon: '⚡' },
+    'ac_technician': { name: 'فني تكييف وتبريد', icon: '❄️' },
+    'plumber': { name: 'سباك (مواسيرجي)', icon: '🔧' },
+    'general_maintenance': { name: 'صيانة عامة', icon: '🛠️' },
+    'painter': { name: 'دهان وديكور', icon: '🎨' },
+    'carpenter': { name: 'نجار', icon: '🪵' },
+    'blacksmith': { name: 'حداد', icon: '🔨' },
+    'builder': { name: 'بناء ومعمار', icon: '🧱' },
+    'house_cleaner': { name: 'خدمات تنظيف', icon: '🧹' },
+    'aluminum_tech': { name: 'فني ألمنيوم', icon: '🪟' },
+    'car_mechanic': { name: 'ميكانيكي سيارات', icon: '🚗' },
+    'car_electrician': { name: 'كهربائي سيارات', icon: '🔌' },
+    'tire_tech': { name: 'بنشري / إطارات', icon: '🛞' },
+    'car_wash': { name: 'غسيل سيارات', icon: '🧼' },
+    'motorcycle_repair': { name: 'صيانة دراجات نارية', icon: '🏍️' },
+    'taxi_driver': { name: 'مكتب تاكسي', icon: '🚕' },
+    'delivery_services': { name: 'خدمات توصيل', icon: '📦' },
+    'tow_truck': { name: 'ونش إنقاذ / سطحة', icon: '🛻' },
+    'cctv_installer': { name: 'فني كاميرات مراقبة', icon: '📹' },
+    'party_planner': { name: 'منظم حفلات', icon: '🎈' },
+    'zaffa_bands': { name: 'فرق زفة', icon: '🥁' },
+    'music_bands': { name: 'فرق موسيقية', icon: '🎸' },
+    'photographer': { name: 'مصور فوتوغرافي', icon: '📸' },
+    'party_rental': { name: 'تأجير مستلزمات حفلات', icon: '🎪' },
+    'home_nurse': { name: 'تمريض منزلي', icon: '🩺' },
+    'masseur': { name: 'أخصائي مساج', icon: '💆' },
+    'cupping_specialist': { name: 'أخصائي حجامة', icon: '🍵' },
+    'nutritionist': { name: 'أخصائي تغذية', icon: '🥗' },
+    'truck_driver': { name: 'سائق شاحنة', icon: '🚛' },
+    'security_firms': { name: 'شركات أمن وحراسة', icon: '🛡️' },
+    'furniture_buyer': { name: 'شراء أثاث مستعمل', icon: '🛋️' },
+    'gardener': { name: 'تنسيق حدائق', icon: '🌿' },
+    'pet_care': { name: 'رعاية حيوانات أليفة', icon: '🐾' },
+    'clown_entertainer': { name: 'مهرج وعروض أطفال', icon: '🤡' }
 };
 
-// دالة الستايل العامة المطورة
 window.createStyle = function (feature, resolution, options = {}) {
     const opts = { 
         fillColor: null, strokeColor: '#000', strokeWidth: 2, 
@@ -28,7 +53,6 @@ window.createStyle = function (feature, resolution, options = {}) {
         if (val) text = val.toString();
     }
 
-    // تم تثبيت الخط هنا ( bold) ليكون متساوياً للجميع
     let styleOptions = {
         text: new ol.style.Text({
             text: text, 
@@ -36,15 +60,23 @@ window.createStyle = function (feature, resolution, options = {}) {
             fill: new ol.style.Fill({ color: '#333' }),
             stroke: new ol.style.Stroke({ color: '#fff', width: 3 }), 
             overflow: true, 
-            offsetY: opts.emoji ? -22 : -25 // ضبط الإزاحة حسب نوع الرمز
+            offsetY: (opts.emoji || opts.iconUrl) ? -25 : -10 
         })
     };
 
     const geomType = feature.getGeometry().getType();
 
     if (geomType.includes('Point')) {
-        if (opts.emoji) {
-            // أيقونات خدمات مصغرة (30x30) لتقليل الازدحام
+        // الأولوية 1: أيقونة خارجية (للعقارات)
+        if (opts.iconUrl) {
+            styleOptions.image = new ol.style.Icon({
+                anchor: [0.5, 0.5],
+                src: opts.iconUrl,
+                scale: opts.iconScale
+            });
+        } 
+        // الأولوية 2: إيموجي (للخدمات)
+        else if (opts.emoji) {
             styleOptions.image = new ol.style.Icon({
                 anchor: [0.5, 0.5],
                 src: 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(
@@ -53,11 +85,11 @@ window.createStyle = function (feature, resolution, options = {}) {
                         <text x="50%" y="50%" font-size="16" text-anchor="middle" dy=".35em">${opts.emoji}</text>
                     </svg>`
                 ),
-                scale: 0.75 // حجم الرمز
+                scale: 0.75
             });
-        } else if (opts.iconUrl) {
-            styleOptions.image = new ol.style.Icon({ anchor: [0, 0], src: opts.iconUrl, scale: opts.iconScale });
-        } else {
+        } 
+        // افتراضي: نقطة ملونة
+        else {
             styleOptions.image = new ol.style.Circle({ 
                 radius: 7, 
                 fill: new ol.style.Fill({ color: opts.fillColor || 'rgba(0,0,0,0.7)' }), 
@@ -72,26 +104,28 @@ window.createStyle = function (feature, resolution, options = {}) {
     return new ol.style.Style(styleOptions);
 };
 
-// ستايلات الطبقات العقارية (كما هي بطلبك)
+// ستايلات الطبقات المخصصة
 window.roadsStyle = (f, r) => new ol.style.Style({ stroke: new ol.style.Stroke({ color: '#444', width: 2.5 }), text: r < 2 ? new ol.style.Text({ text: f.get('name') || '', font: '12px Arial', fill: new ol.style.Fill({ color: '#000' }), stroke: new ol.style.Stroke({ color: '#fff', width: 8 }), placement: 'line' }) : null });
-window.styleRent = (f, r) => window.createStyle(f, r, { fillColor: 'rgba(255, 102, 0, 1)', iconUrl: 'icons/rent_icon.png', iconScale: 0.05, labelField: 'area' });
+
+// تعديل ستايلات العقارات لاستخدام الأيقونات
+window.styleRent = (f, r) => window.createStyle(f, r, { fillColor: 'rgba(255, 102, 0, 1)', iconUrl: 'icons/rent_icon.png', iconScale: 0.07, labelField: 'area' });
 window.styleSale = (f, r) => window.createStyle(f, r, { fillColor: 'rgba(0, 128, 0, 1)', iconUrl: 'icons/sale_icon.png', iconScale: 0.1, labelField: 'area' });
 window.styleLand = (f, r) => window.createStyle(f, r, { fillColor: 'rgba(255, 0, 0, 1)', strokeColor: 'red', labelField: 'area' });
 window.styleLocation = (f, r) => window.createStyle(f, r, { strokeColor: 'red', labelField: 'location', zoomThresholdForLabel: 10 });
 window.styleCity = (f, r) => window.createStyle(f, r, { strokeColor: 'blue', labelField: 'village_a', zoomThresholdForLabel: 20 });
 window.styleGovernorate = (f, r) => window.createStyle(f, r, { strokeColor: '#000', labelField: 'gov_a', zoomThresholdForLabel: 200 });
 
-// تعريف الطبقات الأساسية
+// الطبقات الأساسية
 const osmBaseLayer = new ol.layer.Tile({ title: 'OSM', visible: false, type: 'base', source: new ol.source.OSM() });
 const esriImageryLayer = new ol.layer.Tile({ title: 'Esri', visible: false, type: 'base', source: new ol.source.XYZ({ url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}' }) });
-const aerialLayer = new ol.layer.Tile({ title: 'Aerial', visible: true, type: 'base', source: new ol.source.TileWMS({ url: 'http://localhost:8080/geoserver/SurdaAbuQash/wms', params: { 'LAYERS': 'SurdaAbuQash:AerialPhoto_Ramallah', 'CRS': 'EPSG:28191' } }) });
+const aerialLayer = new ol.layer.Tile({ title: 'Aerial', visible: true, type: 'base', source: new ol.source.TileWMS({ url: '/proxy/geoserver/SurdaAbuQash/wms', params: { 'LAYERS': 'SurdaAbuQash:AerialPhoto_Ramallah', 'CRS': 'EPSG:28191' } }) });
 const noBasemapLayer = new ol.layer.Vector({ title: 'None', visible: false, type: 'base', source: new ol.source.Vector() });
 
 const createWFSLayer = (workspace, name, title, style, maxRes = 10, visible = true) => new ol.layer.Vector({
     title, visible, maxResolution: maxRes, style,
     source: new ol.source.Vector({
         format: new ol.format.GeoJSON(),
-        url: `http://localhost:8080/geoserver/${workspace}/ows?service=WFS&version=1.0.0&request=GetFeature&typeName=${workspace}:${name}&outputFormat=application%2Fjson&srsName=EPSG:28191`,
+        url: `/proxy/geoserver/${workspace}/ows?service=WFS&version=1.0.0&request=GetFeature&typeName=${workspace}:${name}&outputFormat=application%2Fjson&srsName=EPSG:28191`,
         strategy: ol.loadingstrategy.all
     })
 });
@@ -104,86 +138,45 @@ const cityLayer = createWFSLayer('realestate', 'City', 'المدن', window.styl
 const governorateLayer = createWFSLayer('realestate', 'Governorate', 'المحافظات', window.styleGovernorate, 1000);
 const roadsLayer = createWFSLayer('realestate', 'RoadsTest', 'الطرق', window.roadsStyle, 0.7, false);
 
-// معالجة طبقات الخدمات
-const servicesList = Object.keys(serviceIcons); 
+// إنشاء طبقات الخدمات
 const serviceLayers = {};
-
-servicesList.forEach(s => {
+Object.keys(serviceTranslations).forEach(key => {
+    const serviceInfo = serviceTranslations[key];
     const sStyle = (f, r) => window.createStyle(f, r, { 
-        emoji: serviceIcons[s], 
+        emoji: serviceInfo.icon, 
         labelField: 'name', 
-        zoomThresholdForLabel: 0.7 // الاسم يظهر بوضوح عند مستوى زووم متقدم
+        zoomThresholdForLabel: 0.7 
     });
-
-    // تم تقليل maxResolution لـ 4 لضمان ظهور الخدمات بعد الشقق عند التقريب
-    serviceLayers[s + 'Layer'] = createWFSLayer('services', s, s, sStyle, 4, true); 
+    serviceLayers[key + 'Layer'] = createWFSLayer('services', key, serviceInfo.name, sStyle, 4, true); 
 });
 
-const searchMarkerLayer = new ol.layer.Vector({ source: new ol.source.Vector(), zIndex: 1000, style: new ol.style.Style({ image: new ol.style.Circle({ radius: 8, fill: new ol.style.Fill({ color: '#007bff' }), stroke: new ol.style.Stroke({ color: '#fff', width: 2 }) }) }) });
-const searchResultsHighlightLayer = new ol.layer.Vector({ source: new ol.source.Vector(), zIndex: 1001 });
+// طبقات البحث والتمييز
+const searchMarkerLayer = new ol.layer.Vector({ 
+    source: new ol.source.Vector(), 
+    style: new ol.style.Style({
+        image: new ol.style.Circle({
+            radius: 12, fill: new ol.style.Fill({ color: '#ff0000' }),
+            stroke: new ol.style.Stroke({ color: '#ffffff', width: 4 })
+        })
+    }), 
+    zIndex: 1000 
+});
+
+const searchResultsHighlightLayer = new ol.layer.Vector({ 
+    source: new ol.source.Vector(), 
+    style: new ol.style.Style({
+        image: new ol.style.Circle({
+            radius: 10, fill: new ol.style.Fill({ color: '#ffff00' }),
+            stroke: new ol.style.Stroke({ color: '#333333', width: 2 })
+        }),
+        stroke: new ol.style.Stroke({ color: '#ffff00', width: 4 }),
+        fill: new ol.style.Fill({ color: 'rgba(255, 255, 0, 0.3)' })
+    }), 
+    zIndex: 1001 
+});
 
 window.appLayers = { 
     osmBaseLayer, esriImageryLayer, aerialLayer, noBasemapLayer, 
     rentLayer, saleLayer, landLayer, locationLayer, cityLayer, governorateLayer, roadsLayer,
     searchMarkerLayer, searchResultsHighlightLayer, ...serviceLayers 
-};
-
-window.layerMap = {};
-Object.keys(window.appLayers).forEach(key => {
-    if (window.appLayers[key].getSource) {
-        window.layerMap[key] = window.appLayers[key].getSource();
-        window.appLayers[key.replace('Layer', 'Source')] = window.appLayers[key].getSource();
-    }
-});
-
-// تابع لملف js/layers.js
-
-// دالة لتشغيل لوحة التحكم بالطبقات (Layer Switcher)
-window.initializeLayerControl = function(map) {
-    const layerPanel = document.getElementById('map-controls'); // أو أي حاوية تريدها
-    const toggleBtn = document.getElementById('toggleLayerPanel');
-    
-    // إنشاء عنصر القائمة إذا لم يكن موجوداً
-    let listContainer = document.createElement('div');
-    listContainer.id = 'layer-list-container';
-    listContainer.className = 'hidden panel-right';
-    listContainer.innerHTML = '<h3><i class="fas fa-layer-group"></i> التحكم بالطبقات</h3><hr>';
-    document.body.appendChild(listContainer);
-
-    // إضافة زر إغلاق
-    let closeBtn = document.createElement('button');
-    closeBtn.innerHTML = '❌';
-    closeBtn.className = 'close-btn';
-    closeBtn.onclick = () => listContainer.classList.add('hidden');
-    listContainer.appendChild(closeBtn);
-
-    // تعبئة الطبقات في القائمة
-    Object.keys(window.appLayers).forEach(key => {
-        const layer = window.appLayers[key];
-        const title = layer.get('title');
-
-        if (title && title !== 'None' && !key.includes('search')) {
-            const item = document.createElement('div');
-            item.className = 'layer-item';
-            
-            const checkbox = document.createElement('input');
-            checkbox.type = 'checkbox';
-            checkbox.checked = layer.getVisible();
-            checkbox.onchange = (e) => layer.setVisible(e.target.checked);
-
-            const label = document.createElement('label');
-            label.textContent = title;
-
-            item.appendChild(checkbox);
-            item.appendChild(label);
-            listContainer.appendChild(item);
-        }
-    });
-
-    // ربط الزر بفتح القائمة
-    if (toggleBtn) {
-        toggleBtn.onclick = () => {
-            listContainer.classList.toggle('hidden');
-        };
-    }
 };

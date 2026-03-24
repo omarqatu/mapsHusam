@@ -7,7 +7,11 @@ function initializeLocationSearch(map, overlayLayersObj) {
     const searchLayerSelect = document.getElementById('search-layer-select');
     const searchRadiusInput = document.getElementById('search-radius-input');
     const executeLocationSearchBtn = document.getElementById('execute-location-search-btn');
+    const clearLocationSearchBtn = document.getElementById('clear-location-search-btn');
     const resultsPanel = document.getElementById('results-panel');
+    
+    // أزرار الطباعة الجديدة
+    const printResultsBtn = document.getElementById('print-location-results');
 
     let searchCenterLocation = null;
     let mapClickListenerKey = null;
@@ -21,17 +25,14 @@ function initializeLocationSearch(map, overlayLayersObj) {
         return Math.sqrt(dx * dx + dy * dy);
     }
 
-    // جعل هذه الدالة متاحة عالمياً ليتم استدعاؤها عند فتح اللوحة من main.js
     window.populateSearchLayerSelect = function() {
         if (!searchLayerSelect) return;
         searchLayerSelect.innerHTML = '<option value="">-- اختر الخدمة أو العقار --</option>';
-        
         const excluded = ['المدن', 'المحافظات', 'الطرق', 'city', 'gov', 'road'];
         Object.keys(overlayLayersObj).forEach(key => {
             const lyr = overlayLayersObj[key];
             const title = lyr.get('title') || '';
             const isExcluded = excluded.some(word => title.includes(word));
-            
             if (title && !key.toLowerCase().includes('search') && !isExcluded) {
                 const option = document.createElement('option');
                 option.value = key;
@@ -70,45 +71,70 @@ function initializeLocationSearch(map, overlayLayersObj) {
         });
     });
 
+    clearLocationSearchBtn?.addEventListener('click', () => {
+        searchCenterLocation = null;
+        searchMarkerSource?.clear();
+        searchResultsHighlightSource?.clear();
+        selectedLocationDisplay.textContent = 'لم يتم تحديد موقع بعد';
+        selectedLocationDisplay.style.color = "gray";
+        searchRadiusInput.value = "500";
+        searchLayerSelect.value = "";
+        resultsPanel?.classList.add('hidden');
+        if (mapClickListenerKey) ol.Observable.unByKey(mapClickListenerKey);
+    });
+
     executeLocationSearchBtn?.addEventListener('click', () => {
         if (!searchCenterLocation) return alert("الرجاء تحديد موقع البحث أولاً.");
         const selectedLayerKey = searchLayerSelect.value;
         if (!selectedLayerKey) return alert("الرجاء اختيار نوع العقار أو الخدمة.");
 
-        const radius = parseFloat(searchRadiusInput.value);
-        const source = overlayLayersObj[selectedLayerKey].getSource();
+        const radiusStr = searchRadiusInput.value.trim();
+        const layer = overlayLayersObj[selectedLayerKey];
+        const source = layer.getSource();
         const features = source.getFeatures();
         let nearby = [];
 
-        if (isNaN(radius) || radius <= 0) {
+        searchResultsHighlightSource?.clear();
+
+        const radius = parseFloat(radiusStr) || 0;
+        if (radius > 0) {
+            const circleFeature = new ol.Feature(new ol.geom.Circle(searchCenterLocation, radius));
+            circleFeature.setStyle(new ol.style.Style({
+                stroke: new ol.style.Stroke({ color: 'rgba(0, 123, 255, 0.5)', width: 2, lineDash: [5, 5] }),
+                fill: new ol.style.Fill({ color: 'rgba(0, 123, 255, 0.1)' })
+            }));
+            searchResultsHighlightSource?.addFeature(circleFeature);
+        }
+
+        if (radiusStr === "") {
             let minDistance = Infinity;
             let closestFeature = null;
             features.forEach(f => {
                 const dist = getDistanceInMeters(searchCenterLocation, f.getGeometry().getClosestPoint(searchCenterLocation));
-                if (dist < minDistance) {
-                    minDistance = dist;
-                    closestFeature = f;
-                }
+                if (dist < minDistance) { minDistance = dist; closestFeature = f; }
             });
             if (closestFeature) nearby = [closestFeature];
         } else {
-            nearby = features.filter(f => {
-                const dist = getDistanceInMeters(searchCenterLocation, f.getGeometry().getClosestPoint(searchCenterLocation));
-                return dist <= radius;
-            });
+            if (radius === 0) {
+                nearby = features.filter(f => f.getGeometry().intersectsCoordinate(searchCenterLocation));
+            } else {
+                nearby = features.filter(f => {
+                    const dist = getDistanceInMeters(searchCenterLocation, f.getGeometry().getClosestPoint(searchCenterLocation));
+                    return dist <= radius;
+                });
+            }
         }
 
-        searchResultsHighlightSource?.clear();
         if (nearby.length > 0) {
             searchResultsHighlightSource?.addFeatures(nearby);
-            displayResults(nearby, selectedLayerKey);
+            displayResults(nearby, layer);
         } else {
-            alert("لا توجد نتائج ضمن هذه المسافة.");
+            alert("لا توجد نتائج تطابق معايير البحث.");
             resultsPanel?.classList.add('hidden');
         }
     });
 
-    function displayResults(features, layerKey) {
+    function displayResults(features, layer) {
         const tbody = document.querySelector('#results-table tbody');
         const countSpan = document.getElementById('results-count-span');
         if (!tbody) return;
@@ -116,27 +142,55 @@ function initializeLocationSearch(map, overlayLayersObj) {
         resultsPanel?.classList.remove('hidden');
         if (countSpan) countSpan.textContent = features.length;
 
-        const isRealEstate = ['rentLayer', 'saleLayer', 'landLayer'].includes(layerKey);
-
         features.forEach((f, i) => {
-            const props = f.getProperties();
             const row = document.createElement('tr');
+            const detailsHtml = window.generateFeatureHtml ? window.generateFeatureHtml(f, layer) : 'تفاصيل المعلم';
+
             row.innerHTML = `
                 <td style="width:30px; vertical-align:top; text-align:center; padding-top:10px; font-weight:bold; color:#666;">${i + 1}</td>
-                <td>${window.formatFeatureInfo ? window.formatFeatureInfo(props, isRealEstate) : 'تفاصيل المعلم'}</td>
+                <td class="result-cell-content">${detailsHtml}</td>
             `;
+            
+            row.style.cursor = "pointer";
             row.onclick = (e) => {
                 if (e.target.tagName !== 'A' && e.target.tagName !== 'BUTTON') {
-                    map.getView().fit(f.getGeometry().getExtent(), { duration: 800, maxZoom: 19 });
+                    const extent = f.getGeometry().getExtent();
+                    map.getView().fit(extent, { duration: 800, maxZoom: 19 });
                 }
             };
             tbody.appendChild(row);
         });
 
-        if (features.length > 0) {
-            const extent = ol.extent.createEmpty();
-            features.forEach(f => ol.extent.extend(extent, f.getGeometry().getExtent()));
-            map.getView().fit(extent, { duration: 1000, padding: [50, 50, 50, 50], maxZoom: 17 });
-        }
+        const combinedExtent = searchResultsHighlightSource.getExtent();
+        if (searchCenterLocation) ol.extent.extend(combinedExtent, ol.extent.boundingExtent([searchCenterLocation]));
+        map.getView().fit(combinedExtent, { duration: 1200, padding: [80, 80, 80, 80], maxZoom: 18 });
     }
+
+    // وظيفة الطباعة
+    printResultsBtn?.addEventListener('click', () => {
+        const content = document.getElementById('results-table').outerHTML;
+        const newWin = window.open('', '_blank');
+        newWin.document.write(`
+            <html>
+                <head>
+                    <title>طباعة نتائج البحث المكاني</title>
+                    <style>
+                        body { font-family: Arial, sans-serif; direction: rtl; padding: 20px; }
+                        table { width: 100%; border-collapse: collapse; }
+                        th, td { border: 1px solid #ddd; padding: 10px; text-align: right; }
+                        .popup-img-container, .popup-link, button { display: none; } /* إخفاء الصور والروابط عند الطباعة لتوفير الحبر */
+                        .popup-body { max-height: none !important; overflow: visible !important; }
+                    </style>
+                </head>
+                <body>
+                    <h2>نتائج البحث المكاني - ${new Date().toLocaleDateString('ar-EG')}</h2>
+                    ${content}
+                </body>
+            </html>
+        `);
+        newWin.document.close();
+        newWin.print();
+    });
+    
+    window.populateSearchLayerSelect();
 }
