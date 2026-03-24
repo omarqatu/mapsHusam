@@ -1,4 +1,4 @@
-// js/main.js
+// js/main.js - [ملف كامل ومعدل]
 
 if (typeof proj4 !== 'undefined') {
     proj4.defs('EPSG:28191', '+proj=tmerc +lat_0=31.73409694444444 +lon_0=35.21208055555556 +k=1.00000 +x_0=170211.555 +y_0=126790.909 +ellps=GRS80 +towgs84=-108.973,-34.502,-119.85,-0.00511,-0.00021,0.00026,-0.57398 +units=m +no_defs +type=crs');
@@ -39,11 +39,11 @@ document.addEventListener('DOMContentLoaded', () => {
         })
     });
 
-    // دالة لتعبئة قائمة الطبقات بناءً على نوع التحرير (نقطة، مضلع، خط)
+    // دالة لتعبئة قائمة الطبقات بناءً على نوع التحرير
     const populateEditLayerSelect = (editType) => {
         const editSelect = document.getElementById('edit-layer-select');
-        const titleEl = document.getElementById('edit-panel-title');
-        if (!editSelect) return;
+        const titleEl = document.querySelector('#editPanel h4'); // تحديد العنوان بدقة
+        if (!editSelect || !titleEl) return;
         
         editSelect.innerHTML = '<option value="">--- اختر طبقة للتحرير ---</option>';
         
@@ -55,14 +55,22 @@ document.addEventListener('DOMContentLoaded', () => {
             const lyr = window.overlayLayersObj[key];
             const lyrTitle = lyr.get('title') || key;
             
-            // فلترة الطبقات حسب النوع (هذا يعتمد على تسميتك للطبقات في layers.js)
+            // للحصول على نوع الهندسة بشكل صحيح (يجب أن تكون الطبقة Vector Layer)
+            let geometryType = '';
+            if (lyr instanceof ol.layer.Vector) {
+                // محاولة استنتاج نوع الهندسة من أول معلم أو من التسمية
+                if (key.toLowerCase().includes('land') || key.toLowerCase().includes('polygon')) geometryType = 'Polygon';
+                else if (key.toLowerCase().includes('road') || key.toLowerCase().includes('line')) geometryType = 'LineString';
+                else geometryType = 'Point';
+            }
+
             let shouldAdd = false;
             if (editType === 'point') {
-                if (key.includes('Layer') && !key.includes('landLayer')) shouldAdd = true; 
+                if (geometryType === 'Point') shouldAdd = true; 
             } else if (editType === 'polygon') {
-                if (key === 'landLayer') shouldAdd = true; // طبقة الأراضي
+                if (geometryType === 'Polygon') shouldAdd = true;
             } else if (editType === 'line') {
-                if (key.includes('road') || key.includes('street')) shouldAdd = true;
+                if (geometryType === 'LineString') shouldAdd = true;
             }
 
             if (shouldAdd) {
@@ -94,8 +102,8 @@ document.addEventListener('DOMContentLoaded', () => {
             if (panelId === 'editPanel' && editType) {
                 populateEditLayerSelect(editType);
                 // تفعيل الأدوات بناءً على النوع
-                if (editType === 'point' && typeof initializeEditTools === 'function') {
-                    initializeEditTools(map, window.overlayLayersObj);
+                if (editType === 'point' && typeof initializePointEditTools === 'function') {
+                    initializePointEditTools(map, window.overlayLayersObj);
                 } else if (editType === 'polygon' && typeof initializePolygonEditTools === 'function') {
                     initializePolygonEditTools(map, window.overlayLayersObj);
                 } else if (editType === 'line' && typeof initializeLineEditTools === 'function') {
@@ -106,6 +114,7 @@ document.addEventListener('DOMContentLoaded', () => {
             // تعطيل كافة الأدوات عند إغلاق اللوحة
             if (typeof deactivateEditTools === 'function') deactivateEditTools();
             if (typeof deactivatePolygonEditTools === 'function') deactivatePolygonEditTools();
+            if (typeof deactivateLineEditTools === 'function') deactivateLineEditTools();
         }
     };
 
@@ -162,6 +171,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (cfg.panelId === 'editPanel') {
                     if (typeof deactivateEditTools === 'function') deactivateEditTools();
                     if (typeof deactivatePolygonEditTools === 'function') deactivatePolygonEditTools();
+                    if (typeof deactivateLineEditTools === 'function') deactivateLineEditTools();
                 }
             };
         }
