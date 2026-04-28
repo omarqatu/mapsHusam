@@ -4,15 +4,31 @@
   <inMemoryCached>true</inMemoryCached>
   <name>services:electrician</name>
   <mimeFormats>
-    <string>image/jpeg</string>
     <string>image/png</string>
+    <string>image/jpeg</string>
   </mimeFormats>
   <gridSubsets>
     <gridSubset>
       <gridSetName>EPSG:4326</gridSetName>
+      <extent>
+        <coords>
+          <double>35.16786704275285</double>
+          <double>31.896822906352252</double>
+          <double>35.20415007279237</double>
+          <double>31.904405733421292</double>
+        </coords>
+      </extent>
     </gridSubset>
     <gridSubset>
       <gridSetName>EPSG:900913</gridSetName>
+      <extent>
+        <coords>
+          <double>3914869.0514847953</double>
+          <double>3749774.637251758</double>
+          <double>3918908.0599132315</double>
+          <double>3750768.9249235885</double>
+        </coords>
+      </extent>
     </gridSubset>
   </gridSubsets>
   <metaWidthHeight>

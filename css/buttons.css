@@ -50,6 +50,16 @@
 .edit-tools-container .action-btn { flex-grow: 1; min-width: 100px; display: flex; align-items: center; justify-content: center; gap: 5px; font-size: 14px; }
 .edit-tools-container .action-btn.active { background-color: #218838; border: 2px solid #1a5e2f; }
 
+.form-group input {
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    padding: 8px;
+}
+
+#polygonAttributeModal {
+    direction: rtl; /* لضمان المحاذاة من اليمين لليسار */
+}
+
 /* Geolocation Control */
 .geolocation-control { top: 6.7em; left: 0.5em; z-index: 999; position: absolute; }
 .geolocation-control button {

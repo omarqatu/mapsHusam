@@ -1,8 +1,9 @@
 /**
- * layers.js - النسخة النهائية المحدثة
- * تشمل: الأيقونات المخصصة للعقارات، الإيموجي للخدمات، والأسماء العربية
+ * layers.js - النسخة الديناميكية الشاملة
+ * تشمل: الأيقونات المخصصة، الإيموجي، والمحرك الذي يقرأ من MAP_CONFIG
  */
 
+// 1. تعريف ترجمات وأيقونات الخدمات
 const serviceTranslations = {
     'electrician': { name: 'فني كهرباء', icon: '⚡' },
     'ac_technician': { name: 'فني تكييف وتبريد', icon: '❄️' },
@@ -21,10 +22,10 @@ const serviceTranslations = {
     'motorcycle_repair': { name: 'صيانة دراجات نارية', icon: '🏍️' },
     'taxi_driver': { name: 'مكتب تاكسي', icon: '🚕' },
     'delivery_services': { name: 'خدمات توصيل', icon: '📦' },
-    'tow_truck': { name: 'ونش إنقاذ / سطحة', icon: '🛻' },
+    'tow_truck': { name: 'ونش إنقاذ', icon: '🛻' },
     'cctv_installer': { name: 'فني كاميرات مراقبة', icon: '📹' },
     'party_planner': { name: 'منظم حفلات', icon: '🎈' },
-    'zaffa_bands': { name: 'فرق زفة', icon: '🥁' },
+    'zaffa_bands': { name: 'فرقة زفة', icon: '🥁' },
     'music_bands': { name: 'فرق موسيقية', icon: '🎸' },
     'photographer': { name: 'مصور فوتوغرافي', icon: '📸' },
     'party_rental': { name: 'تأجير مستلزمات حفلات', icon: '🎪' },
@@ -40,6 +41,7 @@ const serviceTranslations = {
     'clown_entertainer': { name: 'مهرج وعروض أطفال', icon: '🤡' }
 };
 
+// 2. دالة إنشاء الستايلات (بدون تغيير)
 window.createStyle = function (feature, resolution, options = {}) {
     const opts = { 
         fillColor: null, strokeColor: '#000', strokeWidth: 2, 
@@ -67,7 +69,6 @@ window.createStyle = function (feature, resolution, options = {}) {
     const geomType = feature.getGeometry().getType();
 
     if (geomType.includes('Point')) {
-        // الأولوية 1: أيقونة خارجية (للعقارات)
         if (opts.iconUrl) {
             styleOptions.image = new ol.style.Icon({
                 anchor: [0.5, 0.5],
@@ -75,7 +76,6 @@ window.createStyle = function (feature, resolution, options = {}) {
                 scale: opts.iconScale
             });
         } 
-        // الأولوية 2: إيموجي (للخدمات)
         else if (opts.emoji) {
             styleOptions.image = new ol.style.Icon({
                 anchor: [0.5, 0.5],
@@ -88,7 +88,6 @@ window.createStyle = function (feature, resolution, options = {}) {
                 scale: 0.75
             });
         } 
-        // افتراضي: نقطة ملونة
         else {
             styleOptions.image = new ol.style.Circle({ 
                 radius: 7, 
@@ -104,10 +103,8 @@ window.createStyle = function (feature, resolution, options = {}) {
     return new ol.style.Style(styleOptions);
 };
 
-// ستايلات الطبقات المخصصة
+// 3. ستايلات الطبقات المخصصة
 window.roadsStyle = (f, r) => new ol.style.Style({ stroke: new ol.style.Stroke({ color: '#444', width: 2.5 }), text: r < 2 ? new ol.style.Text({ text: f.get('name') || '', font: '12px Arial', fill: new ol.style.Fill({ color: '#000' }), stroke: new ol.style.Stroke({ color: '#fff', width: 8 }), placement: 'line' }) : null });
-
-// تعديل ستايلات العقارات لاستخدام الأيقونات
 window.styleRent = (f, r) => window.createStyle(f, r, { fillColor: 'rgba(255, 102, 0, 1)', iconUrl: 'icons/rent_icon.png', iconScale: 0.07, labelField: 'area' });
 window.styleSale = (f, r) => window.createStyle(f, r, { fillColor: 'rgba(0, 128, 0, 1)', iconUrl: 'icons/sale_icon.png', iconScale: 0.1, labelField: 'area' });
 window.styleLand = (f, r) => window.createStyle(f, r, { fillColor: 'rgba(255, 0, 0, 1)', strokeColor: 'red', labelField: 'area' });
@@ -115,43 +112,55 @@ window.styleLocation = (f, r) => window.createStyle(f, r, { strokeColor: 'red', 
 window.styleCity = (f, r) => window.createStyle(f, r, { strokeColor: 'blue', labelField: 'village_a', zoomThresholdForLabel: 20 });
 window.styleGovernorate = (f, r) => window.createStyle(f, r, { strokeColor: '#000', labelField: 'gov_a', zoomThresholdForLabel: 200 });
 
-// الطبقات الأساسية
+// 4. الطبقات الأساسية الثابتة
 const osmBaseLayer = new ol.layer.Tile({ title: 'OSM', visible: false, type: 'base', source: new ol.source.OSM() });
 const esriImageryLayer = new ol.layer.Tile({ title: 'Esri', visible: false, type: 'base', source: new ol.source.XYZ({ url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}' }) });
-const aerialLayer = new ol.layer.Tile({ title: 'Aerial', visible: true, type: 'base', source: new ol.source.TileWMS({ url: '/proxy/geoserver/SurdaAbuQash/wms', params: { 'LAYERS': 'SurdaAbuQash:AerialPhoto_Ramallah', 'CRS': 'EPSG:28191' } }) });
+const aerialLayer = new ol.layer.Tile({ title: 'Aerial', visible: true, type: 'base', source: new ol.source.TileWMS({ url: `${MAP_CONFIG.server.proxyUrl}SurdaAbuQash/wms`, params: { 'LAYERS': 'SurdaAbuQash:AerialPhoto_Ramallah', 'CRS': MAP_CONFIG.server.srsName } }) });
 const noBasemapLayer = new ol.layer.Vector({ title: 'None', visible: false, type: 'base', source: new ol.source.Vector() });
 
-const createWFSLayer = (workspace, name, title, style, maxRes = 10, visible = true) => new ol.layer.Vector({
-    title, visible, maxResolution: maxRes, style,
-    source: new ol.source.Vector({
-        format: new ol.format.GeoJSON(),
-        url: `/proxy/geoserver/${workspace}/ows?service=WFS&version=1.0.0&request=GetFeature&typeName=${workspace}:${name}&outputFormat=application%2Fjson&srsName=EPSG:28191`,
-        strategy: ol.loadingstrategy.all
-    })
+// 5. المحرك الديناميكي لإنشاء طبقات WFS
+const createWFSLayer = (workspace, name, title, styleFunc, maxRes = 10, visible = true) => {
+    return new ol.layer.Vector({
+        title: title,
+        visible: visible,
+        maxResolution: maxRes,
+        style: styleFunc,
+        source: new ol.source.Vector({
+            format: new ol.format.GeoJSON(),
+            url: `${MAP_CONFIG.server.proxyUrl}${workspace}/ows?service=WFS&version=1.0.0&request=GetFeature&typeName=${workspace}:${name}&outputFormat=application%2Fjson&srsName=${MAP_CONFIG.server.srsName}`,
+            strategy: ol.loadingstrategy.all
+        })
+    });
+};
+
+// 6. تجميع كافة الطبقات في Object واحد كما في النسخة الأصلية
+window.appLayers = { 
+    osmBaseLayer, esriImageryLayer, aerialLayer, noBasemapLayer
+};
+
+// توليد طبقات المساعدة آلياً من MAP_CONFIG
+MAP_CONFIG.layers.helper.forEach(l => {
+    window.appLayers[l.id] = createWFSLayer(l.workspace, l.name, l.title, eval(l.style), l.maxRes, l.visible !== false);
 });
 
-const rentLayer = createWFSLayer('realestate', 'ApartRent', 'شقق الإيجار', window.styleRent, 10);
-const saleLayer = createWFSLayer('realestate', 'ApartSale', 'شقق البيع', window.styleSale, 10);
-const landLayer = createWFSLayer('realestate', 'LandSale', 'الأراضي للبيع', window.styleLand, 10);
-const locationLayer = createWFSLayer('realestate', 'Location', 'المناطق', window.styleLocation, 20);
-const cityLayer = createWFSLayer('realestate', 'City', 'المدن', window.styleCity, 30);
-const governorateLayer = createWFSLayer('realestate', 'Governorate', 'المحافظات', window.styleGovernorate, 1000);
-const roadsLayer = createWFSLayer('realestate', 'RoadsTest', 'الطرق', window.roadsStyle, 0.7, false);
+// توليد طبقات العقارات آلياً من MAP_CONFIG
+MAP_CONFIG.layers.realestate.forEach(l => {
+    window.appLayers[l.id] = createWFSLayer(l.workspace, l.name, l.title, eval(l.style), l.maxRes || 10);
+});
 
-// إنشاء طبقات الخدمات
-const serviceLayers = {};
+// توليد طبقات الخدمات (34 خدمة) آلياً
 Object.keys(serviceTranslations).forEach(key => {
-    const serviceInfo = serviceTranslations[key];
+    const info = serviceTranslations[key];
     const sStyle = (f, r) => window.createStyle(f, r, { 
-        emoji: serviceInfo.icon, 
+        emoji: info.icon, 
         labelField: 'name', 
         zoomThresholdForLabel: 0.7 
     });
-    serviceLayers[key + 'Layer'] = createWFSLayer('services', key, serviceInfo.name, sStyle, 4, true); 
+    window.appLayers[key + 'Layer'] = createWFSLayer('services', key, info.name, sStyle, 4, true); 
 });
 
-// طبقات البحث والتمييز
-const searchMarkerLayer = new ol.layer.Vector({ 
+// 7. طبقات البحث والتمييز (تبقى ثابتة)
+window.appLayers.searchMarkerLayer = new ol.layer.Vector({ 
     source: new ol.source.Vector(), 
     style: new ol.style.Style({
         image: new ol.style.Circle({
@@ -162,7 +171,7 @@ const searchMarkerLayer = new ol.layer.Vector({
     zIndex: 1000 
 });
 
-const searchResultsHighlightLayer = new ol.layer.Vector({ 
+window.appLayers.searchResultsHighlightLayer = new ol.layer.Vector({ 
     source: new ol.source.Vector(), 
     style: new ol.style.Style({
         image: new ol.style.Circle({
@@ -174,9 +183,3 @@ const searchResultsHighlightLayer = new ol.layer.Vector({
     }), 
     zIndex: 1001 
 });
-
-window.appLayers = { 
-    osmBaseLayer, esriImageryLayer, aerialLayer, noBasemapLayer, 
-    rentLayer, saleLayer, landLayer, locationLayer, cityLayer, governorateLayer, roadsLayer,
-    searchMarkerLayer, searchResultsHighlightLayer, ...serviceLayers 
-};

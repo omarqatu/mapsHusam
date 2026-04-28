@@ -9,17 +9,24 @@
     <link rel="stylesheet" href="./css/features.css">
     <link rel="stylesheet" href="ol/ol.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
-    
 </head>
 <body>
 
 <div id="map-header">
     <div class="quick-search-wrapper">
-    <button class="scroll-btn left" id="scrollLeft"><i class="fas fa-chevron-right"></i></button>
-    <div id="quick-search-container" class="quick-search-bar"></div>
-    <button class="scroll-btn right" id="scrollRight"><i class="fas fa-chevron-left"></i></button>
-</div>
+        <button class="scroll-btn left" id="scrollLeft"><i class="fas fa-chevron-right"></i></button>
+        <div id="quick-search-container" class="quick-search-bar"></div>
+        <button class="scroll-btn right" id="scrollRight"><i class="fas fa-chevron-left"></i></button>
+    </div>
+
+    <div class="global-search-wrapper">
+        <i class="fas fa-search"></i>
+        <input type="text" id="global-search-input" placeholder="ابحث عن عقار، مطعم، فني...">
+        <div id="search-suggestions"></div>
+    </div>
+
     <h2>خريطة العقارات والخدمات</h2>
+    
     <div id="basemap-switcher">
         <select id="basemap-select">
             <option value="aerial">صورة جوية</option>
@@ -163,29 +170,53 @@
 
 <div id="polygonEditPanel" class="hidden panel-right">
     <button id="close-polygon-edit-panel" class="close-btn">❌</button>
-    <h4>🗺️ تحرير المضلعات</h4>
-    <select id="polygon-layer-select" style="width:100%; margin-bottom:10px;"></select>
-    <div class="edit-tools-container" style="display: flex; flex-direction: column; gap: 8px;">
-        <button id="polygon-add-feature-btn" class="action-btn">➕ إضافة مضلع</button>
-        <button id="polygon-modify-feature-btn" class="action-btn">✏️ تعديل مضلع</button>
-        <button id="polygon-delete-feature-btn" class="action-btn" style="background-color:#d9534f; color:white;">🗑️ حذف مضلع</button>
+    <h4>🗺️ تحرير المضلعات (أراضي ومناطق)</h4>
+    <label for="polygon-layer-select">اختر الطبقة المستهدفة:</label>
+    <select id="polygon-layer-select" style="width:100%; margin-bottom:15px; padding: 8px;"></select>
+    <div class="edit-tools-container" style="display: flex; flex-direction: column; gap: 10px;">
+        <button id="polygon-add-feature-btn" class="action-btn"><i class="fas fa-plus-circle"></i> ➕ إضافة مضلع جديد</button>
+        <button id="polygon-modify-feature-btn" class="action-btn"><i class="fas fa-vector-square"></i> ✏️ تعديل (بيانات + شكل)</button>
+        <button id="polygon-delete-feature-btn" class="action-btn" style="background-color:#d9534f; color:white;"><i class="fas fa-trash-alt"></i> 🗑️ حذف المضلع المختار</button>
     </div>
+    <p style="font-size: 11px; color: #666; margin-top: 15px; border-top: 1px solid #eee; padding-top: 5px;">* ملاحظة: للتعديل أو الحذف، انقر داخل المضلع بعد تفعيل الأداة.</p>
 </div>
 
 <div id="lineEditPanel" class="hidden panel-right">
     <button id="close-line-edit-panel" class="close-btn">❌</button>
-    <h4>🛣️ تحرير الخطوط</h4>
-    <select id="line-layer-select" style="width:100%; margin-bottom:10px;"></select>
-    <div class="edit-tools-container" style="display: flex; flex-direction: column; gap: 8px;">
-        <button id="line-add-feature-btn" class="action-btn">➕ إضافة خط</button>
-        <button id="line-modify-feature-btn" class="action-btn">✏️ تعديل خط</button>
-        <button id="line-delete-feature-btn" class="action-btn" style="background-color:#d9534f; color:white;">🗑️ حذف خط</button>
+    <h4>🛣️ تحرير الخطوط (طرق وشوارع)</h4>
+    <div class="edit-tools-container" style="display: flex; flex-direction: column; gap: 10px;">
+        <button id="line-add-feature-btn" class="action-btn"><i class="fas fa-plus-square"></i> ➕ إضافة طريق جديد</button>
+        <button id="line-modify-feature-btn" class="action-btn"><i class="fas fa-edit"></i> ✏️ تعديل مسار أو بيانات</button>
+        <button id="line-delete-feature-btn" class="action-btn" style="background-color:#d9534f; color:white;"><i class="fas fa-trash"></i> 🗑️ حذف الطريق المختار</button>
+    </div>
+    <p style="font-size: 11px; color: #666; margin-top: 15px; border-top: 1px solid #eee; padding-top: 5px;">* ملاحظة: يتم الحفظ التلقائي في قاعدة البيانات بعد تعبئة النموذج.</p>
+</div>
+
+<div id="lineAttributeModal" class="modal" style="display:none; position:fixed; z-index:9999; left:0; top:0; width:100%; height:100%; background-color:rgba(0,0,0,0.5);">
+    <div class="modal-content" style="background-color:white; margin:10% auto; padding:20px; border-radius:8px; width:80%; max-width:400px;">
+        <h4>📋 بيانات الطريق</h4>
+        <form id="lineAttributeForm"></form>
+        <div style="margin-top:20px; display:flex; gap:10px;">
+            <button id="lineSubmitAttributes" class="run-btn" style="flex:1;">حفظ</button>
+            <button id="lineCancelAttributes" class="action-btn" style="flex:1; background-color:#666;">إلغاء</button>
+        </div>
+    </div>
+</div>
+
+<div id="polygonAttributeModal" class="modal" style="display:none; position:fixed; z-index:9999; left:0; top:0; width:100%; height:100%; background-color:rgba(0,0,0,0.5);">
+    <div class="modal-content" style="background-color:white; margin:10% auto; padding:20px; border-radius:8px; width:80%; max-width:400px;">
+        <h4 id="polygonModalTitle">بيانات المضلع</h4>
+        <form id="polygonAttributeForm"></form>
+        <div style="margin-top:20px; display:flex; gap:10px;">
+            <button id="polygonSubmitAttributes" class="run-btn" style="flex:1;">حفظ</button>
+            <button id="polygonCancelAttributes" class="action-btn" style="flex:1; background-color:#666;">إلغاء</button>
+        </div>
     </div>
 </div>
 
 <div id="attributeModal" class="modal" style="display:none; position:fixed; z-index:9999; left:0; top:0; width:100%; height:100%; background-color:rgba(0,0,0,0.5);">
-    <div class="modal-content" style="background-color:white; margin:10% auto; padding:20px; border-radius:8px; width:80%; max-width:400px; position:relative;">
-        <h4 id="modalTitle" style="margin-top:0;">إدخال البيانات</h4>
+    <div class="modal-content" style="background-color:white; margin:10% auto; padding:20px; border-radius:8px; width:80%; max-width:400px;">
+        <h4 id="modalTitle">بيانات النقطة</h4>
         <form id="attributeForm"></form>
         <div style="margin-top:20px; display:flex; gap:10px;">
             <button id="submitAttributes" class="run-btn" style="flex:1;">حفظ</button>
@@ -204,6 +235,7 @@
 
 <script src="js/quick-search.js"></script>
 <script src="js/style-utils.js"></script>
+<script src="js/config.js"></script>
 <script src="js/layers.js"></script>
 <script src="js/layer-manager.js"></script>
 <script src="js/popup.js"></script>
@@ -214,6 +246,7 @@
 <script src="js/editPoints.js"></script>
 <script src="js/editPolygons.js"></script>
 <script src="js/editLines.js"></script>
+<script src="js/global-search.js"></script>
 <script src="js/main.js"></script>
 </body>
 </html>

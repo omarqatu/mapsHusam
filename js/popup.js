@@ -29,7 +29,7 @@ function initializePopup(map) {
         'نجار', 'حداد', 'بناء ومعمار', 'خدمات تنظيف', 'فني ألمنيوم', 'ميكانيكي سيارات',
         'كهربائي سيارات', 'بنشري / إطارات', 'غسيل سيارات', 'صيانة دراجات نارية', 
         'مكتب تاكسي', 'خدمات توصيل', 'ونش إنقاذ / سطحة', 'فني كاميرات مراقبة', 
-        'منظم حفلات', 'فرق زفة', 'فرق موسيقية', 'مصور فوتوغرافي', 'تأجير مستلزمات حفلات',
+        'منظم حفلات', 'فرقة زفة', 'فرق موسيقية', 'مصور فوتوغرافي', 'تأجير مستلزمات حفلات',
         'تمريض منزلي', 'أخصائي مساج', 'أخصائي حجامة', 'أخصائي تغذية', 'سائق شاحنة',
         'شركات أمن وحراسة', 'شراء أثاث مستعمل', 'تنسيق حدائق', 'رعاية حيوانات أليفة', 'مهرج وعروض أطفال'
     ];
@@ -54,11 +54,11 @@ function initializePopup(map) {
         return url;
     }
 
-    // الدالة المركزية لمعالجة الطلب (تسجيل الإحصائية + فتح الواتساب)
+    // الدالة المركزية لمعالجة الطلب - تم تعديلها لحل مشكلة مقدمة 972
     window.handleServiceRequest = function(providerName, whatsappNumber, serviceType) {
         const serverUrl = 'http://localhost:3000/save-stat';
 
-        // أولاً: تسجيل الإحصائية
+        // تسجيل الإحصائية
         fetch(serverUrl, { 
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -73,11 +73,38 @@ function initializePopup(map) {
         })
         .catch(err => console.error("⚠️ خطأ في الاتصال بالسيرفر:", err));
 
-        // ثانياً: فتح الواتساب
+        // فتح الواتساب
         const message = `مرحباً ${providerName}، أرغب بالاستفسار عن (${serviceType}) من خلال الخريطة.`;
-        let cleanNumber = whatsappNumber.replace(/\D/g, '');
-        if (cleanNumber.startsWith('05')) {
-            cleanNumber = '970' + cleanNumber.substring(1); 
+        
+        // 1. تنظيف الرقم من أي رموز أو مسافات
+        let cleanNumber = whatsappNumber.toString().replace(/\D/g, '');
+
+        // 2. حذف الأصفار الدولية في البداية (00)
+        if (cleanNumber.startsWith('00')) {
+            cleanNumber = cleanNumber.substring(2);
+        }
+
+        /**
+         * 3. المنطق المطور لمعالجة الأرقام:
+         * - إذا بدأ بـ 970 أو 972 (مقدمة جاهزة): لا تلمس الرقم.
+         * - إذا بدأ بـ 059 أو 056: حوله إلى 970.
+         * - إذا بدأ بـ 05 (وليس 56/59): حوله إلى 972 (لأنه رقم إسرائيلي مثل 050, 052, 054).
+         * - إذا بدأ بـ 5 (بدون 0): أضف المقدمة المناسبة.
+         */
+        if (cleanNumber.startsWith('970') || cleanNumber.startsWith('972')) {
+            // الرقم جاهز دولياً، لا نفعل شيئاً
+        } else if (cleanNumber.startsWith('05')) {
+            if (cleanNumber.startsWith('059') || cleanNumber.startsWith('056')) {
+                cleanNumber = '970' + cleanNumber.substring(1); // فلسطيني
+            } else {
+                cleanNumber = '972' + cleanNumber.substring(1); // إسرائيلي (داخل محتل)
+            }
+        } else if (cleanNumber.startsWith('5')) {
+            if (cleanNumber.startsWith('59') || cleanNumber.startsWith('56')) {
+                cleanNumber = '970' + cleanNumber;
+            } else {
+                cleanNumber = '972' + cleanNumber;
+            }
         }
 
         const whatsappUrl = `https://api.whatsapp.com/send?phone=${cleanNumber}&text=${encodeURIComponent(message)}`;
@@ -187,9 +214,7 @@ function initializePopup(map) {
         
         if (!isAreaLayer) bodyHtml += getStatusHtml(props.auto_status, props.work_hours);
 
-        // عرض بيانات العقارات والخدمات
         if (isRealEstate || isService) {
-            // بيانات مشتركة أو خاصة
             if (props.name) bodyHtml += `<b>👤 الاسم:</b> ${props.name}<br>`;
             if (props.location_name || props.location) bodyHtml += `<b>📍 الموقع:</b> ${props.location_name || props.location}<br>`;
             
@@ -204,7 +229,8 @@ function initializePopup(map) {
                 if (props.rating) bodyHtml += `<b>⭐ التقييم:</b> ${props.rating} / 5<br>`;
             }
 
-            // منطق زر الواتساب الموحد (للعقارات والخدمات)
+            if (props.des && !isRealEstate) bodyHtml += `<div style="margin-top:5px; background:#f9f9f9; padding:5px; border-radius:4px;"><b>📝 الوصف:</b> ${props.des}</div>`;
+            
             if (props.whatsapp) {
                 const whatsappNumber = props.whatsapp.toString();
                 const providerName = props.name || (isRealEstate ? "المعلن" : "مزود الخدمة");
@@ -222,10 +248,16 @@ function initializePopup(map) {
                 if (props.pic) bodyHtml += `<hr>${createImageElement(props.pic)}`;
             }
         } else if (isAreaLayer) {
-            // بيانات طبقة المناطق فقط
+            const areaFieldLabels = {
+                'gov_a': '🌍 اسم المحافظة',
+                'village_a': '🏘️ المدينة / القرية',
+                'location': '📍 المنطقة'
+            };
+
             Object.keys(props).forEach(key => {
-                if (['geometry', 'auto_status', 'work_hours', 'whatsapp'].includes(key)) return;
-                bodyHtml += `<b>${key}:</b> ${props[key]}<br>`;
+                if (['geometry', 'auto_status', 'work_hours', 'whatsapp', 'objectid', 'OBJECTID'].includes(key)) return;
+                const label = areaFieldLabels[key] || key;
+                bodyHtml += `<b>${label}:</b> ${props[key]}<br>`;
             });
         }
 
