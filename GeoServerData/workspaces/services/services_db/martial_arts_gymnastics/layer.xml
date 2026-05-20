@@ -1,0 +1,16 @@
+<layer>
+  <name>martial_arts_gymnastics</name>
+  <id>LayerInfoImpl-32a48682:19dfd97155e:-5db9</id>
+  <type>VECTOR</type>
+  <defaultStyle>
+    <id>StyleInfoImpl--570ae188:124761b8d78:-7fdf</id>
+  </defaultStyle>
+  <resource class="featureType">
+    <id>FeatureTypeInfoImpl-32a48682:19dfd97155e:-5dba</id>
+  </resource>
+  <attribution>
+    <logoWidth>0</logoWidth>
+    <logoHeight>0</logoHeight>
+  </attribution>
+  <dateCreated>2026-05-16 14:12:27.597 UTC</dateCreated>
+</layer>

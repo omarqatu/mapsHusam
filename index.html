@@ -171,13 +171,26 @@
 <div id="polygonEditPanel" class="hidden panel-right">
     <button id="close-polygon-edit-panel" class="close-btn">❌</button>
     <h4>🗺️ تحرير المضلعات (أراضي ومناطق)</h4>
+    
     <label for="polygon-layer-select">اختر الطبقة المستهدفة:</label>
     <select id="polygon-layer-select" style="width:100%; margin-bottom:15px; padding: 8px;"></select>
+    
     <div class="edit-tools-container" style="display: flex; flex-direction: column; gap: 10px;">
         <button id="polygon-add-feature-btn" class="action-btn"><i class="fas fa-plus-circle"></i> ➕ إضافة مضلع جديد</button>
         <button id="polygon-modify-feature-btn" class="action-btn"><i class="fas fa-vector-square"></i> ✏️ تعديل (بيانات + شكل)</button>
         <button id="polygon-delete-feature-btn" class="action-btn" style="background-color:#d9534f; color:white;"><i class="fas fa-trash-alt"></i> 🗑️ حذف المضلع المختار</button>
     </div>
+
+    <div id="geometry-tools-sub" style="display:none; margin-top:15px; padding:10px; background:#f9f9f9; border:1px solid #ddd; border-radius:5px;">
+        <p style="font-weight:bold; font-size:12px; margin-bottom:10px;">🛠️ خيارات تعديل الشكل:</p>
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:5px;">
+            <button id="tool-modify-points" class="action-btn" style="font-size:11px;">📍 تحريك نقاط</button>
+            <button id="tool-reshape" class="action-btn" style="font-size:11px;">✂️ إعادة تشكيل</button>
+            <button id="tool-replace" class="action-btn" style="font-size:11px;">🔄 رسم جديد</button>
+            <button id="polygonFinalSave" class="run-btn" style="background-color:#28a745; color:white; grid-column: span 2;">✅ حفظ نهائي للسيرفر</button>
+        </div>
+    </div>
+
     <p style="font-size: 11px; color: #666; margin-top: 15px; border-top: 1px solid #eee; padding-top: 5px;">* ملاحظة: للتعديل أو الحذف، انقر داخل المضلع بعد تفعيل الأداة.</p>
 </div>
 
@@ -208,7 +221,7 @@
         <h4 id="polygonModalTitle">بيانات المضلع</h4>
         <form id="polygonAttributeForm"></form>
         <div style="margin-top:20px; display:flex; gap:10px;">
-            <button id="polygonSubmitAttributes" class="run-btn" style="flex:1;">حفظ</button>
+            <button id="polygonSubmitAttributes" class="run-btn" style="flex:1;">متابعة لتعديل الشكل</button>
             <button id="polygonCancelAttributes" class="action-btn" style="flex:1; background-color:#666;">إلغاء</button>
         </div>
     </div>

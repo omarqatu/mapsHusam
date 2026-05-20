@@ -1,6 +1,8 @@
 /**
  * js/quick-search.js
- * نظام البحث السريع المطور: تمرير بالأسهم + عرض نتائج بتنسيق البطاقات + تمييز أصفر + تفعيل زر الإغلاق + زووم تلقائي
+ * نظام البحث السريع المطور: تشمل 59 طبقة (34 قديمة + 25 جديدة)
+ * تمرير بالأسهم + عرض نتائج بتنسيق البطاقات + تمييز أصفر + تفعيل زر الإغلاق + زووم تلقائي
+ * تم التعديل: ترتيب النتائج بناءً على حقل rating تنازلياً
  */
 
 function initializeQuickSearch(map, overlayLayersObj) {
@@ -15,7 +17,6 @@ function initializeQuickSearch(map, overlayLayersObj) {
     const closeQuickResults = () => {
         if (resultsPanel) {
             resultsPanel.classList.add('hidden');
-            // مسح التمييز الأصفر من الخريطة عند الإغلاق
             if (window.searchResultsHighlightLayer) {
                 window.searchResultsHighlightLayer.getSource().clear();
             }
@@ -23,10 +24,8 @@ function initializeQuickSearch(map, overlayLayersObj) {
     };
 
     if (resultsPanel) {
-        // البحث عن الزر بكافة الاحتمالات (كلاس close-btn أو أيقونة fa-times)
         const closeBtn = resultsPanel.querySelector('.close-btn, .fa-times, #close-results-panel');
         if (closeBtn) {
-            // نربط الحدث بالعنصر نفسه أو بالأب إذا كانت مجرد أيقونة
             const targetBtn = closeBtn.tagName === 'I' ? closeBtn.parentElement : closeBtn;
             targetBtn.onclick = (e) => {
                 e.preventDefault();
@@ -35,7 +34,6 @@ function initializeQuickSearch(map, overlayLayersObj) {
             targetBtn.style.cursor = 'pointer';
         }
 
-        // إضافة دعم لإغلاق اللوحة عند الضغط على زر Escape
         document.addEventListener('keydown', (e) => {
             if (e.key === 'Escape' && !resultsPanel.classList.contains('hidden')) {
                 closeQuickResults();
@@ -49,10 +47,13 @@ function initializeQuickSearch(map, overlayLayersObj) {
         btnRight.onclick = () => container.scrollBy({ left: 250, behavior: 'smooth' });
     }
 
-    // --- 3. مصفوفة الطبقات الـ 38 ---
+    // --- 3. مصفوفة الطبقات الـ 59 (34 قديمة + 3 عقارات + 1 مناطق + 25 جديدة) ---
     const quickLayers = [
+        // العقارات والمناطق
         { title: 'شقق الإيجار', icon: 'fa-home' }, { title: 'شقق البيع', icon: 'fa-key' },
         { title: 'الأراضي للبيع', icon: 'fa-map' }, { title: 'المناطق', icon: 'fa-city' },
+        
+        // الخدمات القديمة (34)
         { title: 'فني كهرباء', icon: 'fa-bolt' }, { title: 'فني تكييف وتبريد', icon: 'fa-snowflake' },
         { title: 'سباك (مواسيرجي)', icon: 'fa-faucet' }, { title: 'صيانة عامة', icon: 'fa-tools' },
         { title: 'دهان وديكور', icon: 'fa-paint-roller' }, { title: 'نجار', icon: 'fa-hammer' },
@@ -69,7 +70,22 @@ function initializeQuickSearch(map, overlayLayersObj) {
         { title: 'أخصائي حجامة', icon: 'fa-kit-medical' }, { title: 'أخصائي تغذية', icon: 'fa-apple-whole' },
         { title: 'سائق شاحنة', icon: 'fa-truck' }, { title: 'شركات أمن وحراسة', icon: 'fa-shield-halved' },
         { title: 'شراء أثاث مستعمل', icon: 'fa-couch' }, { title: 'تنسيق حدائق', icon: 'fa-leaf' },
-        { title: 'رعاية حيوانات أليفة', icon: 'fa-dog' }, { title: 'مهرج وعروض أطفال', icon: 'fa-face-smile-beam' }
+        { title: 'رعاية حيوانات أليفة', icon: 'fa-dog' }, { title: 'مهرج وعروض أطفال', icon: 'fa-face-smile-beam' },
+
+        // الخدمات الجديدة (25)
+        { title: 'متاجر أون لاين', icon: 'fa-shopping-basket' }, { title: 'فلل أجار', icon: 'fa-vihara' },
+        { title: 'فنون قتالية وجمباز', icon: 'fa-user-ninja' }, { title: 'حدائق ومناطق ترفيهية', icon: 'fa-tree' },
+        { title: 'فنادق', icon: 'fa-hotel' }, { title: 'توزيع أغراض مجاناً', icon: 'fa-gift' },
+        { title: 'حلاقة شباب', icon: 'fa-cut' }, { title: 'تصميم فيديو إعلاني', icon: 'fa-film' },
+        { title: 'صيدليات مناوبة', icon: 'fa-pills' }, { title: 'تكاسي نظام مناوبة', icon: 'fa-hand-holding-usd' },
+        { title: 'طوارئ ومستشفيات', icon: 'fa-hospital' }, { title: 'عيادات', icon: 'fa-stethoscope' },
+        { title: 'دكاترة مناوبة', icon: 'fa-user-md' }, { title: 'إسعاف مناوبة', icon: 'fa-ambulance' },
+        { title: 'تدريب موسيقى ومعاهد', icon: 'fa-music' }, { title: 'محاميين', icon: 'fa-gavel' },
+        { title: 'مساحين أراضي', icon: 'fa-ruler-combined' }, { title: 'مخمنين عقاريين', icon: 'fa-calculator' },
+        { title: 'أساتذة خصوصي', icon: 'fa-chalkboard-teacher' }, { title: 'مبرمجين', icon: 'fa-code' },
+        { title: 'دليفري سيارات (مناوبة)', icon: 'fa-car' }, { title: 'دليفري دراجات (مناوبة)', icon: 'fa-motorcycle' },
+        { title: 'دليفري هوائية (مناوبة)', icon: 'fa-bicycle' }, { title: 'مصور فوتوغرافي', icon: 'fa-camera-retro' },
+        { title: 'مساعد أبحاث طلاب', icon: 'fa-book' }
     ];
 
     quickLayers.forEach(item => {
@@ -123,6 +139,13 @@ function initializeQuickSearch(map, overlayLayersObj) {
         const countSpan = document.getElementById('results-count-span');
 
         if (!resultsPanel || !resultsTableBody) return;
+
+        // الترتيب حسب الـ rating تنازلياً
+        features.sort((a, b) => {
+            const ratingA = parseFloat(a.get('rating')) || 0;
+            const ratingB = parseFloat(b.get('rating')) || 0;
+            return ratingB - ratingA;
+        });
 
         resultsTableBody.innerHTML = '';
         countSpan.textContent = features.length;

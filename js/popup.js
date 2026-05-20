@@ -24,6 +24,7 @@ function initializePopup(map) {
     togglePopupBtn.classList.add('active-tool');
     togglePopupBtn.style.backgroundColor = "#e1f5fe";
 
+    // مصفوفة الخدمات الشاملة
     const serviceLayerNames = [
         'فني كهرباء', 'فني تكييف وتبريد', 'سباك (مواسيرجي)', 'صيانة عامة', 'دهان وديكور',
         'نجار', 'حداد', 'بناء ومعمار', 'خدمات تنظيف', 'فني ألمنيوم', 'ميكانيكي سيارات',
@@ -31,7 +32,14 @@ function initializePopup(map) {
         'مكتب تاكسي', 'خدمات توصيل', 'ونش إنقاذ / سطحة', 'فني كاميرات مراقبة', 
         'منظم حفلات', 'فرقة زفة', 'فرق موسيقية', 'مصور فوتوغرافي', 'تأجير مستلزمات حفلات',
         'تمريض منزلي', 'أخصائي مساج', 'أخصائي حجامة', 'أخصائي تغذية', 'سائق شاحنة',
-        'شركات أمن وحراسة', 'شراء أثاث مستعمل', 'تنسيق حدائق', 'رعاية حيوانات أليفة', 'مهرج وعروض أطفال'
+        'شركات أمن وحراسة', 'شراء أثاث مستعمل', 'تنسيق حدائق', 'رعاية حيوانات أليفة', 'مهرج وعروض أطفال',
+        'متاجر أون لاين', 'فلل أجار', 'فنون قتالية وجمباز', 'حدائق ومناطق ترفيهية',
+        'فنادق', 'توزيع أغراض مجاناً', 'حلاقة شباب', 'تصميم فيديو إعلاني', 
+        'صيدليات مناوبة', 'تكاسي نظام مناوبة', 'طوارئ ومستشفيات', 'عيادات', 
+        'دكاترة مناوبة', 'إسعاف مناوبة', 'تدريب موسيقى ومعاهد', 'محاميين', 
+        'مساحين أراضي', 'مخمنين عقاريين', 'أساتذة خصوصي', 'مبرمجين', 
+        'دليفري سيارات (مناوبة)', 'دليفري دراجات (مناوبة)', 'دليفري هوائية (مناوبة)', 
+        'مصور فوتوغرافي', 'مساعد أبحاث طلاب'
     ];
 
     const realEstateLayerNames = ['شقق الإيجار', 'شقق البيع', 'الأراضي للبيع'];
@@ -54,7 +62,7 @@ function initializePopup(map) {
         return url;
     }
 
-    // الدالة المركزية لمعالجة الطلب - تم تعديلها لحل مشكلة مقدمة 972
+    // --- تعديل منطق الواتساب (يأخذ القيمة كما هي من الحقل) ---
     window.handleServiceRequest = function(providerName, whatsappNumber, serviceType) {
         const serverUrl = 'http://localhost:3000/save-stat';
 
@@ -73,40 +81,17 @@ function initializePopup(map) {
         })
         .catch(err => console.error("⚠️ خطأ في الاتصال بالسيرفر:", err));
 
-        // فتح الواتساب
         const message = `مرحباً ${providerName}، أرغب بالاستفسار عن (${serviceType}) من خلال الخريطة.`;
         
-        // 1. تنظيف الرقم من أي رموز أو مسافات
+        // تنظيف الرقم من أي رموز أو مسافات (فقط أرقام)
         let cleanNumber = whatsappNumber.toString().replace(/\D/g, '');
 
-        // 2. حذف الأصفار الدولية في البداية (00)
+        // إذا كان الشخص أدخل الرقم بـ 00 في البداية، نحذفها لأن رابط wa.me لا يقبلها
         if (cleanNumber.startsWith('00')) {
             cleanNumber = cleanNumber.substring(2);
         }
 
-        /**
-         * 3. المنطق المطور لمعالجة الأرقام:
-         * - إذا بدأ بـ 970 أو 972 (مقدمة جاهزة): لا تلمس الرقم.
-         * - إذا بدأ بـ 059 أو 056: حوله إلى 970.
-         * - إذا بدأ بـ 05 (وليس 56/59): حوله إلى 972 (لأنه رقم إسرائيلي مثل 050, 052, 054).
-         * - إذا بدأ بـ 5 (بدون 0): أضف المقدمة المناسبة.
-         */
-        if (cleanNumber.startsWith('970') || cleanNumber.startsWith('972')) {
-            // الرقم جاهز دولياً، لا نفعل شيئاً
-        } else if (cleanNumber.startsWith('05')) {
-            if (cleanNumber.startsWith('059') || cleanNumber.startsWith('056')) {
-                cleanNumber = '970' + cleanNumber.substring(1); // فلسطيني
-            } else {
-                cleanNumber = '972' + cleanNumber.substring(1); // إسرائيلي (داخل محتل)
-            }
-        } else if (cleanNumber.startsWith('5')) {
-            if (cleanNumber.startsWith('59') || cleanNumber.startsWith('56')) {
-                cleanNumber = '970' + cleanNumber;
-            } else {
-                cleanNumber = '972' + cleanNumber;
-            }
-        }
-
+        // ملاحظة: الرابط سيعمل إذا كان الرقم يبدأ بـ 970 أو 972 مباشرة
         const whatsappUrl = `https://api.whatsapp.com/send?phone=${cleanNumber}&text=${encodeURIComponent(message)}`;
         window.open(whatsappUrl, '_blank');
     };
@@ -219,15 +204,13 @@ function initializePopup(map) {
             if (props.location_name || props.location) bodyHtml += `<b>📍 الموقع:</b> ${props.location_name || props.location}<br>`;
             
             if (isRealEstate) {
-                if (props.price) bodyHtml += `<b>💰 السعر:</b> ${props.price}<br>`;
+                if (props.price) bodyHtml += `<b>💰 السعر:</b> ${props.price} $<br>`;
                 if (props.area) bodyHtml += `<b>📐 المساحة:</b> ${props.area} م²<br>`;
                 if (props.village_a) bodyHtml += `<b>🏘️ البلدة:</b> ${props.village_a}<br>`;
                 if (props.gov_a) bodyHtml += `<b>🌍 المحافظة:</b> ${props.gov_a}<br>`;
                 if (props.des) bodyHtml += `<div style="margin-top:5px; background:#f9f9f9; padding:5px; border-radius:4px;"><b>📝 الوصف:</b> ${props.des}</div>`;
                 if (props.video) bodyHtml += `<div style="margin-top:8px;">🎥 ${createLink(props.video, "عرض الفيديو")}</div>`;
-            } else {
-                if (props.rating) bodyHtml += `<b>⭐ التقييم:</b> ${props.rating} / 5<br>`;
-            }
+            } 
 
             if (props.des && !isRealEstate) bodyHtml += `<div style="margin-top:5px; background:#f9f9f9; padding:5px; border-radius:4px;"><b>📝 الوصف:</b> ${props.des}</div>`;
             
@@ -255,7 +238,7 @@ function initializePopup(map) {
             };
 
             Object.keys(props).forEach(key => {
-                if (['geometry', 'auto_status', 'work_hours', 'whatsapp', 'objectid', 'OBJECTID'].includes(key)) return;
+                if (['geometry', 'auto_status', 'work_hours', 'whatsapp', 'objectid', 'OBJECTID', 'rating'].includes(key)) return;
                 const label = areaFieldLabels[key] || key;
                 bodyHtml += `<b>${label}:</b> ${props[key]}<br>`;
             });

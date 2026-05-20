@@ -95,6 +95,13 @@
             return;
         }
 
+        // --- التعديل الجوهري: ترتيب النتائج بناءً على التقييم rating تنازلياً ---
+        features.sort((a, b) => {
+            const rA = parseFloat(a.get('rating')) || 0;
+            const rB = parseFloat(b.get('rating')) || 0;
+            return rB - rA;
+        });
+
         const layer = currentOverlayLayers[layerKey];
         const extent = ol.extent.createEmpty();
 

@@ -1,0 +1,16 @@
+<layer>
+  <name>motorcycle_delivery_on_call</name>
+  <id>LayerInfoImpl-32a48682:19dfd97155e:-5db7</id>
+  <type>VECTOR</type>
+  <defaultStyle>
+    <id>StyleInfoImpl--570ae188:124761b8d78:-7fdf</id>
+  </defaultStyle>
+  <resource class="featureType">
+    <id>FeatureTypeInfoImpl-32a48682:19dfd97155e:-5db8</id>
+  </resource>
+  <attribution>
+    <logoWidth>0</logoWidth>
+    <logoHeight>0</logoHeight>
+  </attribution>
+  <dateCreated>2026-05-16 14:13:11.984 UTC</dateCreated>
+</layer>

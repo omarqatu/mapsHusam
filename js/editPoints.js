@@ -1,6 +1,7 @@
 /**
- * editPoints.js - النسخة المعدلة بالكامل 2026
- * معالجة الواتساب بناءً على المدخل المباشر بالمقدمة الدولية
+ * editPoints.js - النسخة النهائية المصححة 2026
+ * تم تعديل منطق الواتساب ليرسل القيمة كما هي مدخلة
+ * (حسام جعبه - PLA)
  */
 function initializeEditTools(map, overlayLayersObj) {
     let draw, modify, snap, select;
@@ -22,28 +23,26 @@ function initializeEditTools(map, overlayLayersObj) {
     const submitAttributesBtn = document.getElementById('submitAttributes');
     const cancelAttributesBtn = document.getElementById('cancelAttributes');
 
-    // الطبقات التي تتبع تصنيف العقارات (نقاط)
     const realEstateLayers = ['rentLayer', 'saleLayer']; 
 
-    // تعريف الحقول (العقارات) - تم تحديث الملاحظة للمستخدم
     const fieldsRealEstate = [
         { name: 'price', label: 'السعر ($)', type: 'number' },
         { name: 'des', label: 'وصف العقار', type: 'text' },
         { name: 'pic', label: 'رابط الصورة', type: 'url' },
         { name: 'video', label: 'رابط الفيديو', type: 'url' },
         { name: 'area', label: 'المساحة (م٢)', type: 'number' },
-        { name: 'whatsapp', label: 'رقم الواتساب (بالمقدمة مثلا 00970)', type: 'text' },
+        { name: 'whatsapp', label: 'رقم الواتساب مع المقدمة (مثلاً 00970...)', type: 'text' },
         { name: 'end_date', label: 'تاريخ انتهاء الاشتراك', type: 'date' },
-        { name: 'work_hours', label: 'ساعات العمل', type: 'hours' }
+        { name: 'work_hours', label: 'ساعات العمل', type: 'hours' },
+        { name: 'rating', label: 'الرتبة (0-10)', type: 'number' }
     ];
 
-    // تعريف الحقول (الخدمات)
     const fieldsServices = [
         { name: 'name', label: 'اسم مزود الخدمة', type: 'text' },
-        { name: 'whatsapp', label: 'رقم الواتساب (بالمقدمة مثلا 00970)', type: 'text' },
+        { name: 'whatsapp', label: 'رقم الواتساب مع المقدمة (مثلاً 00970...)', type: 'text' },
         { name: 'des', label: 'وصف الخدمة والخبرة', type: 'text' },
         { name: 'pic', label: 'رابط الصورة', type: 'url' },
-        { name: 'rating', label: 'التقييم (1-10)', type: 'number', min: 1, max: 10 },
+        { name: 'rating', label: 'التقييم (1-10)', type: 'number' },
         { name: 'details_link_1', label: 'رابط تفاصيل 1', type: 'url' },
         { name: 'details_link_2', label: 'رابط تفاصيل 2', type: 'url' },
         { name: 'end_date', label: 'تاريخ انتهاء الاشتراك', type: 'date' },
@@ -65,15 +64,8 @@ function initializeEditTools(map, overlayLayersObj) {
         Object.keys(overlayLayersObj).forEach(key => {
             const layer = overlayLayersObj[key];
             if (!layer || !(layer.getSource() instanceof ol.source.Vector)) return;
-
-            const excluded = [
-                'locationLayer', 'cityLayer', 'landLayer', 'governorateLayer',
-                'roadsLayer', 'searchMarkerLayer', 'searchResultsHighlightLayer',
-                'landSaleLayer', 'villagesLayer', 'governoratesLayer', 'areasLayer'
-            ];
-            
+            const excluded = ['locationLayer', 'cityLayer', 'landLayer', 'governorateLayer', 'roadsLayer', 'searchMarkerLayer', 'searchResultsHighlightLayer', 'landSaleLayer', 'villagesLayer', 'governoratesLayer', 'areasLayer'];
             if (excluded.includes(key)) return;
-
             const opt = document.createElement('option');
             opt.value = key;
             opt.textContent = layer.get('title') || key;
@@ -91,7 +83,6 @@ function initializeEditTools(map, overlayLayersObj) {
         if (attributeModal) attributeModal.style.display = 'none';
         map.getTargetElement().style.cursor = '';
         currentFeature = null;
-        featureProperties = {};
     }
 
     map.on('singleclick', (evt) => {
@@ -108,10 +99,8 @@ function initializeEditTools(map, overlayLayersObj) {
         deactivatePointEditTools();
         selectedLayerName = editLayerSelect.value;
         if (!selectedLayerName) return alert('يرجى اختيار طبقة أولاً');
-        
         const layer = overlayLayersObj[selectedLayerName];
         if (!layer) return alert('خطأ: الطبقة غير موجودة');
-
         selectedLayerSource = layer.getSource();
 
         if (mode === 'add') {
@@ -126,7 +115,6 @@ function initializeEditTools(map, overlayLayersObj) {
         } else {
             const btn = (mode === 'modify') ? modifyFeatureBtn : deleteFeatureBtn;
             if (btn) btn.classList.add('active');
-            
             select = new ol.interaction.Select({ layers: [layer] });
             map.addInteraction(select);
             select.on('select', (e) => {
@@ -150,7 +138,6 @@ function initializeEditTools(map, overlayLayersObj) {
         modalTitle.textContent = currentTransactionType === 'insert' ? 'إضافة معلم جديد' : 'تعديل البيانات';
         attributeForm.innerHTML = '';
         attributeModal.style.display = 'block';
-
         const isRealEstate = realEstateLayers.includes(selectedLayerName);
         const activeFields = isRealEstate ? fieldsRealEstate : fieldsServices;
 
@@ -162,7 +149,6 @@ function initializeEditTools(map, overlayLayersObj) {
 
             let val = feature.get(f.name);
             if (val === undefined || val === null) val = '';
-
             if (f.type === 'date' && val) {
                 try { val = new Date(val).toISOString().split('T')[0]; } catch(e) { val = ''; }
             }
@@ -170,15 +156,16 @@ function initializeEditTools(map, overlayLayersObj) {
             let inputHTML = '';
             if (f.type === 'hours') {
                 inputHTML = `<div style="display:flex; gap:5px;">
-                                <input type="text" id="inp_${f.name}" name="${f.name}" value="${val || ''}" style="flex:1; padding:8px;">
-                                <button type="button" onclick="document.getElementById('inp_${f.name}').value='00:00-23:59'" style="cursor:pointer;">24 ساعة</button>
+                                <input type="text" id="inp_${f.name}" name="${f.name}" value="${val || ''}" placeholder="مثال: 08:00-16:00" style="flex:1; padding:8px;">
+                                <button type="button" onclick="document.getElementById('inp_${f.name}').value='متوفر 24 ساعة'" style="cursor:pointer;">24 ساعة</button>
                              </div>`;
             } else if (f.type === 'date') {
                 inputHTML = `<input type="date" name="${f.name}" value="${val}" style="width:100%; padding:8px;">`;
             } else if (f.type === 'number') {
                 inputHTML = `<input type="number" name="${f.name}" value="${val}" step="any" style="width:100%; padding:8px;">`;
             } else {
-                inputHTML = `<input type="text" name="${f.name}" value="${val}" style="width:100%; padding:8px;">`;
+                let align = (f.name === 'whatsapp') ? 'ltr' : 'rtl';
+                inputHTML = `<input type="text" name="${f.name}" value="${val}" style="width:100%; padding:8px; direction:${align};">`;
             }
 
             div.innerHTML = `<label style="display:block; font-weight:bold; margin-bottom:4px;">${f.label}:</label>${inputHTML}`;
@@ -190,14 +177,16 @@ function initializeEditTools(map, overlayLayersObj) {
         const formData = new FormData(attributeForm);
         const isRealEstate = realEstateLayers.includes(selectedLayerName);
         const activeFields = isRealEstate ? fieldsRealEstate : fieldsServices;
+        featureProperties = {};
 
         activeFields.forEach(f => {
             let val = formData.get(f.name);
             
-            // معالجة الواتساب: تنظيف المسافات فقط وحفظ الرقم كما هو مدخل
+            // تعديل الواتساب: نأخذ القيمة كما هي مدخلة وننظف الفراغات المحيطة فقط
             if (f.name === 'whatsapp' && val) {
-                val = val.replace(/\s/g, '');
+                val = val.toString().trim(); 
             }
+            
             featureProperties[f.name] = (f.type === 'number') ? (val === "" ? null : Number(val)) : val;
         });
 
@@ -217,26 +206,25 @@ function initializeEditTools(map, overlayLayersObj) {
 
         if (currentTransactionType === 'insert') {
             featureProperties['start_date'] = new Date().toISOString().split('T')[0];
+            featureProperties['status'] = 0;
+            featureProperties['auto_status'] = 0;
         }
-        featureProperties['status'] = 0;
-        featureProperties['auto_status'] = 0;
 
         currentFeature.setProperties(featureProperties);
         attributeModal.style.display = 'none';
 
         if (currentTransactionType === 'update') {
-            alert('تم حفظ البيانات. إذا كنت تريد تغيير الموقع، انقر على المكان الجديد على الخريطة، أو سيتم الحفظ في الموقع الحالي.');
+            alert('تم حفظ البيانات. انقر على الخريطة لتغيير الموقع أو انتظر قليلاً للحفظ في الموقع الحالي.');
             isWaitingForNewLocation = true;
             map.getTargetElement().style.cursor = 'crosshair';
-            
             setTimeout(() => {
                 if (isWaitingForNewLocation) {
-                    if (confirm("هل تريد حفظ التعديلات في الموقع الحالي دون تغيير مكان النقطة؟")) {
+                    if (confirm("هل تريد حفظ التعديلات في الموقع الحالي؟")) {
                         isWaitingForNewLocation = false;
                         sendWFS_T(currentFeature, 'update');
                     }
                 }
-            }, 5000);
+            }, 4000);
         } else {
             sendWFS_T(currentFeature, currentTransactionType);
         }
@@ -246,80 +234,66 @@ function initializeEditTools(map, overlayLayersObj) {
         const isRealEstate = realEstateLayers.includes(selectedLayerName);
         const workspace = isRealEstate ? 'realestate' : 'services';
         const layer = overlayLayersObj[selectedLayerName];
-        
         let featureNS = isRealEstate ? "http://localhost:8080/geoserver/realestate" : "http://localhost/services";
         
         let typeName = "";
         try {
-            const source = layer.getSource();
-            const url = (typeof source.getUrl === 'function') ? source.getUrl() : "";
-            if (url && url.includes('?')) {
-                const urlParams = new URLSearchParams(url.split('?')[1]);
-                const fullTypeName = urlParams.get('typeName') || urlParams.get('typename') || urlParams.get('layers');
-                if (fullTypeName) {
-                    typeName = fullTypeName.includes(':') ? fullTypeName.split(':')[1] : fullTypeName;
-                }
-            }
-            if (!typeName) typeName = selectedLayerName.replace('Layer', '').toLowerCase();
+            const url = layer.getSource().getUrl();
+            const urlParams = new URLSearchParams(url.split('?')[1]);
+            const fullTypeName = urlParams.get('typeName') || urlParams.get('layers');
+            typeName = fullTypeName.includes(':') ? fullTypeName.split(':')[1] : fullTypeName;
         } catch (e) {
             typeName = selectedLayerName.replace('Layer', '').toLowerCase();
         }
 
         const coords = feature.getGeometry().getCoordinates();
         const fullQualifiedName = `${workspace}:${typeName}`;
-        
-        let rawId = "";
         const olId = feature.getId();
-        if (olId) {
-            rawId = olId.includes('.') ? olId.split('.').pop() : olId;
-        } else {
-            rawId = feature.get('fid') || feature.get('id');
-        }
-        
-        const fidValue = (rawId) ? `${typeName}.${rawId}` : "";
-        let payload = '';
+        const rawId = olId ? (olId.includes('.') ? olId.split('.').pop() : olId) : (feature.get('fid') || feature.get('id'));
+        const fidValue = rawId ? `${typeName}.${rawId}` : "";
 
+        const allowedPropsAdd = isRealEstate ? 
+            ['price', 'des', 'pic', 'video', 'area', 'whatsapp', 'end_date', 'work_hours', 'x_coord', 'y_coord', 'X', 'Y', 'start_date', 'status', 'auto_status', 'rating'] : 
+            ['name', 'whatsapp', 'des', 'pic', 'rating', 'details_link_1', 'details_link_2', 'end_date', 'work_hours', 'x_coord', 'y_coord', 'x_global', 'y_global', 'start_date', 'status', 'auto_status'];
+
+        const allowedPropsUpdate = isRealEstate ? 
+            ['price', 'des', 'pic', 'video', 'area', 'whatsapp', 'end_date', 'work_hours', 'x_coord', 'y_coord', 'X', 'Y', 'rating'] : 
+            ['name', 'whatsapp', 'des', 'pic', 'rating', 'details_link_1', 'details_link_2', 'end_date', 'work_hours', 'x_coord', 'y_coord', 'x_global', 'y_global'];
+
+        let payload = '';
         if (type === 'insert') {
             let fieldsXML = `<${fullQualifiedName} xmlns:${workspace}="${featureNS}">`;
             fieldsXML += `<${workspace}:geom><gml:Point srsName="EPSG:28191"><gml:coordinates>${coords[0]},${coords[1]}</gml:coordinates></gml:Point></${workspace}:geom>`;
-            const allProps = feature.getProperties();
-            for (let k in allProps) {
-                if (['geom', 'geometry', 'boundedBy', 'id', 'fid'].includes(k) || allProps[k] === null || allProps[k] === undefined || allProps[k] === "") continue;
-                fieldsXML += `<${workspace}:${k}>${escapeXml(allProps[k])}</${workspace}:${k}>`;
+            
+            const props = feature.getProperties();
+            for (let k in props) {
+                if (allowedPropsAdd.includes(k) && props[k] !== null && props[k] !== undefined && props[k] !== "") {
+                    fieldsXML += `<${workspace}:${k}>${escapeXml(props[k])}</${workspace}:${k}>`;
+                }
             }
             fieldsXML += `</${fullQualifiedName}>`;
             payload = `<wfs:Insert>${fieldsXML}</wfs:Insert>`;
         } 
         else if (type === 'update') {
-            if (!fidValue) return alert("خطأ: لم يتم العثور على معرف المعلم (ID).");
-            let props = '';
-            const allProps = feature.getProperties();
-            for (let k in allProps) {
-                if (['geom', 'geometry', 'boundedBy', 'id', 'fid'].includes(k) || allProps[k] === null) continue;
-                props += `<wfs:Property><wfs:Name>${workspace}:${k}</wfs:Name><wfs:Value>${escapeXml(allProps[k])}</wfs:Value></wfs:Property>`;
-            }
-            props += `<wfs:Property><wfs:Name>${workspace}:geom</wfs:Name><wfs:Value><gml:Point srsName="EPSG:28191"><gml:coordinates>${coords[0]},${coords[1]}</gml:coordinates></gml:Point></wfs:Value></wfs:Property>`;
+            if (!fidValue) return alert("خطأ: المعرف غير موجود.");
+            let propsXML = '';
+            const props = feature.getProperties();
             
-            payload = `<wfs:Update typeName="${fullQualifiedName}" xmlns:${workspace}="${featureNS}">
-                        ${props}
-                        <ogc:Filter><ogc:FeatureId fid="${fidValue}"/></ogc:Filter>
-                      </wfs:Update>`;
+            for (let k in props) {
+                if (allowedPropsUpdate.includes(k) && props[k] !== null && props[k] !== undefined) {
+                    propsXML += `<wfs:Property><wfs:Name>${workspace}:${k}</wfs:Name><wfs:Value>${escapeXml(props[k])}</wfs:Value></wfs:Property>`;
+                }
+            }
+            propsXML += `<wfs:Property><wfs:Name>${workspace}:geom</wfs:Name><wfs:Value><gml:Point srsName="EPSG:28191"><gml:coordinates>${coords[0]},${coords[1]}</gml:coordinates></gml:Point></wfs:Value></wfs:Property>`;
+            
+            payload = `<wfs:Update typeName="${fullQualifiedName}" xmlns:${workspace}="${featureNS}">${propsXML}<ogc:Filter><ogc:FeatureId fid="${fidValue}"/></ogc:Filter></wfs:Update>`;
         } 
         else if (type === 'delete') {
-            if (!fidValue) return alert("خطأ: المعرف غير موجود.");
-            payload = `<wfs:Delete typeName="${fullQualifiedName}" xmlns:${workspace}="${featureNS}">
-                        <ogc:Filter><ogc:FeatureId fid="${fidValue}"/></ogc:Filter>
-                      </wfs:Delete>`;
+            payload = `<wfs:Delete typeName="${fullQualifiedName}" xmlns:${workspace}="${featureNS}"><ogc:Filter><ogc:FeatureId fid="${fidValue}"/></ogc:Filter></wfs:Delete>`;
         }
 
         const requestXML = `<?xml version="1.0" encoding="UTF-8"?>
-            <wfs:Transaction service="WFS" version="1.1.0"
-                xmlns:wfs="http://www.opengis.net/wfs"
-                xmlns:gml="http://www.opengis.net/gml"
-                xmlns:ogc="http://www.opengis.net/ogc"
-                xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-                xmlns:${workspace}="${featureNS}"
-                xsi:schemaLocation="http://www.opengis.net/wfs http://schemas.opengis.net/wfs/1.1.0/wfs.xsd">
+            <wfs:Transaction service="WFS" version="1.1.0" xmlns:wfs="http://www.opengis.net/wfs" xmlns:gml="http://www.opengis.net/gml" xmlns:ogc="http://www.opengis.net/ogc" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:${workspace}="${featureNS}" xsi:schemaLocation="http://www.opengis.net/wfs http://schemas.opengis.net/wfs/1.1.0/wfs.xsd">
                 ${payload}
             </wfs:Transaction>`;
 
@@ -336,17 +310,15 @@ function initializeEditTools(map, overlayLayersObj) {
                 layer.getSource().refresh(); 
                 deactivatePointEditTools();
             } else {
-                console.error("GeoServer Response Error:", text);
-                alert(`فشلت العملية: راجع الـ Workspace.`);
+                console.error("GeoServer Response:", text);
+                alert('فشلت العملية: تحقق من الكونسول لمعرفة السبب بالتفصيل.');
             }
         }).catch(err => {
-            console.error("Fetch Error:", err);
-            alert('حدث خطأ في الاتصال بالسيرفر.');
+            alert('خطأ في الاتصال بالسيرفر.');
         });
     }
 
     populatePointLayers();
-
     if(addFeatureBtn) addFeatureBtn.onclick = () => setupInteractions('add');
     if(modifyFeatureBtn) modifyFeatureBtn.onclick = () => setupInteractions('modify');
     if(deleteFeatureBtn) deleteFeatureBtn.onclick = () => setupInteractions('delete');

@@ -1,10 +1,16 @@
 /**
- * global-search.js - النسخة المفلترة بدقة (Strict filtering)
- * حل مشكلة ظهور الخدمات عند البحث عن "للبيع" أو "شقة"
+ * global-search.js - النسخة الاحترافية الشاملة 2026
+ * تشمل كافة الطبقات الـ 59 (عقارات + خدمات قديمة + خدمات جديدة)
+ * البحث في حقل search_tags + الترتيب حسب حقل rating (0-10)
  */
 
 const layerAliases = {
-    'ApartRent': 'شقة للإيجار', 'ApartSale': 'شقة للبيع', 'LandSale': 'أرض للبيع',
+    // --- العقارات ---
+    'ApartRent': 'شقة للإيجار', 
+    'ApartSale': 'شقة للبيع', 
+    'LandSale': 'أرض للبيع',
+    
+    // --- الخدمات القديمة (34) ---
     'electrician': 'فني كهرباء', 'ac_technician': 'فني تكييف وتبريد', 'plumber': 'سباك (مواسيرجي)',
     'general_maintenance': 'صيانة عامة', 'painter': 'دهان وديكور', 'carpenter': 'نجار',
     'blacksmith': 'حداد', 'builder': 'بناء ومعمار', 'aluminum_tech': 'فني ألمنيوم',
@@ -16,37 +22,33 @@ const layerAliases = {
     'party_rental': 'تأجير مستلزمات حفلات', 'clown_entertainer': 'مهرج وعروض أطفال',
     'home_nurse': 'تمريض منزلي', 'masseur': 'أخصائي مساج', 'cupping_specialist': 'أخصائي حجامة',
     'nutritionist': 'أخصائي تغذية', 'pet_care': 'رعاية حيوانات أليفة', 'cctv_installer': 'فني كاميرات مراقبة',
-    'security_firms': 'شركات أمن وحراسة', 'furniture_buyer': 'شراء أثاث مستعمل'
-};
+    'security_firms': 'شركات أمن وحراسة', 'furniture_buyer': 'شراء أثاث مستعمل',
 
-const smartSynonyms = {
-    'عامل': ['electrician', 'plumber', 'painter', 'builder', 'carpenter', 'blacksmith', 'general_maintenance', 'aluminum_tech'],
-    'فني': ['electrician', 'ac_technician', 'plumber', 'aluminum_tech', 'cctv_installer'],
-    'سيارة': ['car_mechanic', 'car_electrician', 'tire_tech', 'car_wash', 'tow_truck'],
-    'حفلة': ['party_planner', 'zaffa_bands', 'music_bands', 'photographer', 'party_rental', 'clown_entertainer'],
-    'صحة': ['home_nurse', 'masseur', 'cupping_specialist', 'nutritionist'],
-    'توصيل': ['taxi_driver', 'delivery_services', 'truck_driver', 'tow_truck'],
-    'كهرباء': 'electrician', 'كهربجي': 'electrician',
-    'سباك': 'plumber', 'مواسرجي': 'plumber', 'صحية': 'plumber',
-    'ايجار': 'ApartRent', 'اجار': 'ApartRent', 'للايجار': 'ApartRent',
-    'بيع': 'ApartSale', 'للبيع': 'ApartSale', 'تمليك': 'ApartSale', 
-    'شقه': 'ApartSale', 'شقة': 'ApartSale', 'شقق': 'ApartSale',
-    'اراضي': 'LandSale', 'ارض': 'LandSale', 'نمرة': 'LandSale',
-    'مكيف': 'ac_technician', 'تكييف': 'ac_technician',
-    'دهان': 'painter', 'دهين': 'painter',
-    'بناء': 'builder', 'عمار': 'builder',
-    'زفة': 'zaffa_bands', 'زفه': 'zaffa_bands'
+    // --- الخدمات الجديدة (25) ---
+    'online_stores': 'متاجر أون لاين', 'villas_rent': 'فلل أجار', 
+    'martial_arts_gymnastics': 'فنون قتالية وجمباز', 'public_parks_recreation': 'حدائق ومناطق ترفيهية',
+    'hotels': 'فنادق', 'free_distribution': 'توزيع أغراض مجاناً', 
+    'barber_shop': 'حلاقة شباب', 'video_design_ads': 'تصميم فيديو إعلاني', 
+    'pharmacies_on_call': 'صيدليات مناوبة', 'taxis_on_call': 'تكاسي نظام مناوبة', 
+    'emergency_hospitals': 'طوارئ ومستشفيات', 'clinics': 'عيادات', 
+    'doctors_on_call': 'دكاترة مناوبة', 'ambulances_on_call': 'إسعاف مناوبة', 
+    'music_training': 'تدريب موسيقى ومعاهد', 'lawyers': 'محاميين', 
+    'land_surveyors': 'مساحين أراضي', 'real_estate_valuers': 'مخمنين عقاريين', 
+    'private_tutors': 'أساتذة خصوصي', 'programmers': 'مبرمجين', 
+    'car_delivery_on_call': 'دليفري سيارات (مناوبة)', 'motorcycle_delivery_on_call': 'دليفري دراجات (مناوبة)', 
+    'bicycle_delivery_on_call': 'دليفري هوائية (مناوبة)', 'photographers': 'مصور فوتوغرافي', 
+    'student_research_assist': 'مساعد أبحاث طلاب'
 };
 
 const searchConfig = {
     'realestate': {
         workspace: 'realestate',
-        layers: ['ApartRent', 'ApartSale', 'LandSale'], 
-        fields: ['location', 'price', 'des', 'area', 'gov_a', 'village_a']
+        layers: ['ApartRent', 'ApartSale', 'LandSale']
     },
     'services': {
         workspace: 'services',
         layers: [
+            // كافة خدمات الـ WFS في GeoServer
             'electrician', 'ac_technician', 'plumber', 'general_maintenance', 
             'painter', 'carpenter', 'blacksmith', 'builder', 'aluminum_tech',
             'house_cleaner', 'gardener', 'car_mechanic', 'car_electrician', 
@@ -55,72 +57,69 @@ const searchConfig = {
             'zaffa_bands', 'music_bands', 'photographer', 'party_rental', 
             'clown_entertainer', 'home_nurse', 'masseur', 'cupping_specialist', 
             'nutritionist', 'pet_care', 'cctv_installer', 'security_firms', 
-            'furniture_buyer'
-        ],
-        fields: ['name', 'location_name', 'gov_a', 'village_a', 'des']
+            'furniture_buyer', 'online_stores', 'villas_rent', 'martial_arts_gymnastics',
+            'public_parks_recreation', 'hotels', 'free_distribution', 'barber_shop',
+            'video_design_ads', 'pharmacies_on_call', 'taxis_on_call', 'emergency_hospitals',
+            'clinics', 'doctors_on_call', 'ambulances_on_call', 'music_training',
+            'lawyers', 'land_surveyors', 'real_estate_valuers', 'private_tutors',
+            'programmers', 'car_delivery_on_call', 'motorcycle_delivery_on_call',
+            'bicycle_delivery_on_call', 'photographers', 'student_research_assist'
+        ]
     }
 };
 
 function normalizeArabic(text) {
     if (!text) return "";
-    return text.toString().replace(/[أإآ]/g, 'ا').replace(/ة/g, 'ه').replace(/ى/g, 'ي').replace(/ؤ/g, 'و').replace(/ئ/g, 'ي').trim();
+    return text.toString()
+        .replace(/[أإآ]/g, 'ا')
+        .replace(/ة/g, 'ه')
+        .replace(/ى/g, 'ي')
+        .replace(/ؤ/g, 'و')
+        .replace(/ئ/g, 'ي')
+        .trim();
 }
 
-/**
- * دالة البحث المطورة - المنطق الجديد
- */
+function buildEnhancedLayerCQL(term, layerName) {
+    const normalizedTerm = normalizeArabic(term);
+    const words = normalizedTerm.split(/\s+/).filter(word => word.length > 0);
+    const arabicAlias = layerAliases[layerName] || "";
+    const normalizedAlias = normalizeArabic(arabicAlias);
+
+    const isAliasMatch = normalizedAlias.includes(normalizedTerm);
+    const tagFilters = words.map(word => `search_tags ILIKE '%${word}%'`).join(' AND ');
+
+    if (isAliasMatch) {
+        return `(${tagFilters}) OR (1=1)`; 
+    } else {
+        return tagFilters;
+    }
+}
+
 async function fetchGroupWFS(groupKey, term) {
     const config = searchConfig[groupKey];
-    const normalizedTerm = normalizeArabic(term);
     const workspace = config.workspace;
+    const layers = config.layers;
+    const typeNames = layers.map(l => `${workspace}:${l}`).join(',');
     
-    let targetLayers = [];
-    let isSmartMatchActive = false;
-
-    // 1. فحص القاموس الذكي (تطابق دقيق أو الكلمة تبدأ بالمصطلح)
-    // الحل هنا: إذا كان المصطلح هو "بيع" أو "للبيع"، لا نسمح له بتفعيل "فني"
-    for (let syn in smartSynonyms) {
-        const normalizedSyn = normalizeArabic(syn);
-        
-        // شرط التطابق الدقيق أو أن تكون الكلمة جزءاً حقيقياً منها (وليس مجرد حروف)
-        if (normalizedSyn === normalizedTerm || (normalizedTerm.length >= 3 && normalizedSyn.includes(normalizedTerm))) {
-            let val = smartSynonyms[syn];
-            let matchedLayers = Array.isArray(val) ? val : [val];
-            
-            // فلترة الطبقات: نأخذ فقط الطبقات التي تنتمي فعلياً للمجموعة الحالية (realestate أو services)
-            let layersForThisGroup = matchedLayers.filter(l => config.layers.includes(l));
-            
-            if (layersForThisGroup.length > 0) {
-                targetLayers = targetLayers.concat(layersForThisGroup);
-                isSmartMatchActive = true;
-            }
-        }
-    }
-
-    // 2. إذا لم يكن هناك Match ذكي، نستخدم كل طبقات المجموعة للبحث النصي العادي
-    const finalLayers = isSmartMatchActive ? [...new Set(targetLayers)] : config.layers;
-    const typeNames = finalLayers.map(l => `${workspace}:${l}`).join(',');
-
-    const fieldFilters = config.fields
-        .map(f => (f === 'area' || f === 'price') ? `(strCast(${f}) ILIKE '%${term}%')` : `(${f} ILIKE '%${term}%')`)
-        .join(' OR ');
-
-    // التصحيح القاتل: إذا كان Match ذكي، نبحث في الحقول OR (1=1). 
-    // ولكن لضمان عدم تداخل المجموعات، fetchGroupWFS تُستدعى مرتين (مرة لكل مجموعة)
-    // فإذا كنت تبحث عن "للبيع"، مجموعة الخدمات لن تجد Match ذكي في قاموسها، فستبحث نصياً فقط.
-    let cqlFilter = isSmartMatchActive ? `(${fieldFilters}) OR (1=1)` : fieldFilters;
+    const layeredCql = layers.map(layer => {
+        const filter = buildEnhancedLayerCQL(term, layer);
+        return `(${filter})`;
+    }).join(';');
 
     const params = new URLSearchParams({
-        service: 'WFS', version: '1.1.0', request: 'GetFeature',
+        service: 'WFS',
+        version: '1.1.0',
+        request: 'GetFeature',
         typeName: typeNames,
         outputFormat: 'application/json',
         srsname: 'EPSG:28191',
-        CQL_FILTER: cqlFilter,
-        maxFeatures: isSmartMatchActive ? '50' : '20'
+        CQL_FILTER: layeredCql,
+        sortBy: 'rating D', 
+        maxFeatures: '100'
     });
 
     try {
-        const response = await fetch(`http://localhost:8080/geoserver/ows?${params.toString()}`);
+        const response = await fetch(`${MAP_CONFIG.server.proxyUrl}${workspace}/ows?${params.toString()}`);
         if (!response.ok) return [];
         const data = await response.json();
         if (!data || !data.features) return [];
@@ -158,17 +157,23 @@ window.initializeGlobalSearch = function() {
             suggestionsPanel.innerHTML = '<div class="suggestion-item"><i class="fas fa-spinner fa-spin"></i> جاري البحث...</div>';
             suggestionsPanel.style.display = 'block';
 
-            // استدعاء المجموعتين بالتوازي
             const promises = Object.keys(searchConfig).map(group => fetchGroupWFS(group, term));
             const resultsArray = await Promise.all(promises);
             const allResults = resultsArray.flat();
 
-            // الترتيب: الأولوية للتطابق مع اسم الطبقة (مثل شقة للبيع)
             allResults.sort((a, b) => {
-                const aM = normalizeArabic(a.customTitle).includes(normalizeArabic(term));
-                const bM = normalizeArabic(b.customTitle).includes(normalizeArabic(term));
-                if (aM && !bM) return -1;
-                if (!aM && bM) return 1;
+                const normTerm = normalizeArabic(term);
+                const aAliasMatch = normalizeArabic(a.customTitle).includes(normTerm);
+                const bAliasMatch = normalizeArabic(b.customTitle).includes(normTerm);
+
+                if (aAliasMatch && !bAliasMatch) return -1;
+                if (!aAliasMatch && bAliasMatch) return 1;
+
+                const aRating = parseFloat(a.properties.rating) || 0;
+                const bRating = parseFloat(b.properties.rating) || 0;
+                if (aRating !== bRating) {
+                    return bRating - aRating;
+                }
                 return 0;
             });
 
@@ -179,34 +184,39 @@ window.initializeGlobalSearch = function() {
 
 function renderGlobalSuggestions(features, term) {
     const panel = document.getElementById('search-suggestions');
+    
     if (!features || features.length === 0) {
-        panel.innerHTML = '<div class="suggestion-item">لا توجد نتائج</div>';
+        panel.innerHTML = '<div class="suggestion-item">لا توجد نتائج مطابقة</div>';
         return;
     }
 
     panel.innerHTML = '';
-    features.slice(0, 30).forEach(f => {
+    features.slice(0, 50).forEach(f => {
         const item = document.createElement('div');
         item.className = 'suggestion-item';
+        item.style.padding = '8px 12px';
+        item.style.borderBottom = '1px solid #eee';
+        item.style.cursor = 'pointer';
         
         const props = f.properties;
-        const rawMainName = props.name || props.location || props.location_name || "بدون اسم";
+        const rawMainName = props.name || props.location || props.location_name || "معلم غير مسمى";
+        
         const subDetails = [
             f.customTitle,
-            props.location || props.location_name,
             props.village_a,
             props.gov_a
-        ].filter(t => t && t !== "").join('، ');
+        ].filter(t => t && t !== "").join(' | ');
 
         item.innerHTML = `
-            <div class="name" style="font-size: 14px; color: #222; font-weight:bold;">
-                <i class="fas fa-map-marker-alt" style="margin-left:8px; color:#e74c3c;"></i>${highlightMatch(rawMainName, term)}
+            <div>
+                <div class="name" style="font-size: 14px; color: #222; font-weight:bold;">
+                    <i class="fas fa-map-marker-alt" style="margin-left:8px; color:#e74c3c;"></i>${highlightMatch(rawMainName, term)}
+                </div>
+                <div class="sub" style="font-size:11px; color:#666; margin-right:24px;">${highlightMatch(subDetails, term)}</div>
             </div>
-            <div class="sub" style="font-size:11px; color:#666; margin-right:24px;">${highlightMatch(subDetails, term)}</div>
         `;
 
         item.onclick = () => {
-            document.getElementById('global-search-input').value = rawMainName;
             panel.style.display = 'none';
             zoomToGlobalFeature(f);
         };
@@ -216,12 +226,19 @@ function renderGlobalSuggestions(features, term) {
 
 function highlightMatch(text, term) {
     if (!text || !term) return text || "";
-    const regex = new RegExp(`(${term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
-    return text.toString().replace(regex, '<strong>$1</strong>');
+    const words = term.split(/\s+/).filter(w => w.length > 0);
+    let highlightedText = text.toString();
+    
+    words.forEach(word => {
+        const regex = new RegExp(`(${word.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
+        highlightedText = highlightedText.replace(regex, '<strong>$1</strong>');
+    });
+    return highlightedText;
 }
 
 function zoomToGlobalFeature(f) {
     if (!window.map) return;
+    
     const feature = new ol.format.GeoJSON().readFeature(f);
     const geometry = feature.getGeometry();
     if (!geometry) return;
@@ -233,14 +250,25 @@ function zoomToGlobalFeature(f) {
     }
 
     const extent = geometry.getExtent();
-    window.map.getView().fit(extent, { duration: 1000, padding: [100, 100, 100, 100], maxZoom: 19 });
+    window.map.getView().fit(extent, { 
+        duration: 1000, 
+        padding: [100, 100, 100, 100], 
+        maxZoom: 21 
+    });
 
-    const overlay = window.map.getOverlays().getArray().find(o => o.getElement() && (o.getElement().id === 'popup' || o.getElement().classList.contains('ol-popup')));
+    const overlay = window.map.getOverlays().getArray().find(o => 
+        o.getElement() && (o.getElement().id === 'popup' || o.getElement().classList.contains('ol-popup'))
+    );
+    
     if (overlay) {
         const content = document.getElementById('popup-content');
         const title = document.getElementById('popup-title');
         if (title) title.innerText = f.customTitle;
-        content.innerHTML = window.generateFeatureHtml ? window.generateFeatureHtml(feature) : `<div style="padding:5px;">${JSON.stringify(f.properties)}</div>`;
+        
+        content.innerHTML = window.generateFeatureHtml ? 
+            window.generateFeatureHtml(feature) : 
+            `<div style="padding:10px;"><strong>الاسم:</strong> ${f.properties.name || f.properties.location || 'غير متوفر'}</div>`;
+            
         overlay.setPosition(ol.extent.getCenter(extent));
     }
 }

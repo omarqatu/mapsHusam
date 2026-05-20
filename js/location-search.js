@@ -10,7 +10,6 @@ function initializeLocationSearch(map, overlayLayersObj) {
     const clearLocationSearchBtn = document.getElementById('clear-location-search-btn');
     const resultsPanel = document.getElementById('results-panel');
     
-    // أزرار الطباعة الجديدة
     const printResultsBtn = document.getElementById('print-location-results');
 
     let searchCenterLocation = null;
@@ -81,6 +80,13 @@ function initializeLocationSearch(map, overlayLayersObj) {
         searchLayerSelect.value = "";
         resultsPanel?.classList.add('hidden');
         if (mapClickListenerKey) ol.Observable.unByKey(mapClickListenerKey);
+        
+        // إغلاق البوب أب عند المسح
+        map.getOverlays().forEach(ov => {
+            if (ov.getElement() && (ov.getElement().id === 'popup' || ov.getElement().classList.contains('ol-popup'))) {
+                ov.setPosition(undefined);
+            }
+        });
     });
 
     executeLocationSearchBtn?.addEventListener('click', () => {
@@ -138,6 +144,13 @@ function initializeLocationSearch(map, overlayLayersObj) {
         const tbody = document.querySelector('#results-table tbody');
         const countSpan = document.getElementById('results-count-span');
         if (!tbody) return;
+
+        features.sort((a, b) => {
+            const rA = parseFloat(a.get('rating')) || 0;
+            const rB = parseFloat(b.get('rating')) || 0;
+            return rB - rA;
+        });
+
         tbody.innerHTML = '';
         resultsPanel?.classList.remove('hidden');
         if (countSpan) countSpan.textContent = features.length;
@@ -154,8 +167,28 @@ function initializeLocationSearch(map, overlayLayersObj) {
             row.style.cursor = "pointer";
             row.onclick = (e) => {
                 if (e.target.tagName !== 'A' && e.target.tagName !== 'BUTTON') {
-                    const extent = f.getGeometry().getExtent();
-                    map.getView().fit(extent, { duration: 800, maxZoom: 19 });
+                    const geometry = f.getGeometry();
+                    const extent = geometry.getExtent();
+                    const coord = geometry.getType() === 'Point' ? geometry.getCoordinates() : ol.extent.getCenter(extent);
+
+                    // 1. عمل الزووم (التكبير)
+                    map.getView().animate({ center: coord, zoom: 19, duration: 800 });
+
+                    // 2. إظهار البوب أب (نفس منطق البحث السريع)
+                    if (window.generateFeatureHtml) {
+                        const contentElement = document.getElementById('popup-content');
+                        if (contentElement) {
+                            contentElement.innerHTML = detailsHtml;
+                        }
+                        
+                        // البحث عن الـ Overlay الخاص بالبوب أب وتحريكه للموقع
+                        map.getOverlays().forEach(ov => {
+                            const el = ov.getElement();
+                            if (el && (el.id === 'popup' || el.classList.contains('ol-popup'))) {
+                                ov.setPosition(coord);
+                            }
+                        });
+                    }
                 }
             };
             tbody.appendChild(row);
@@ -166,7 +199,6 @@ function initializeLocationSearch(map, overlayLayersObj) {
         map.getView().fit(combinedExtent, { duration: 1200, padding: [80, 80, 80, 80], maxZoom: 18 });
     }
 
-    // وظيفة الطباعة
     printResultsBtn?.addEventListener('click', () => {
         const content = document.getElementById('results-table').outerHTML;
         const newWin = window.open('', '_blank');
@@ -178,7 +210,7 @@ function initializeLocationSearch(map, overlayLayersObj) {
                         body { font-family: Arial, sans-serif; direction: rtl; padding: 20px; }
                         table { width: 100%; border-collapse: collapse; }
                         th, td { border: 1px solid #ddd; padding: 10px; text-align: right; }
-                        .popup-img-container, .popup-link, button { display: none; } /* إخفاء الصور والروابط عند الطباعة لتوفير الحبر */
+                        .popup-img-container, .popup-link, button { display: none; }
                         .popup-body { max-height: none !important; overflow: visible !important; }
                     </style>
                 </head>
