@@ -42,7 +42,6 @@ const serviceTranslations = {
     'pet_care': { name: 'رعاية حيوانات أليفة', icon: '🐾' },
     'clown_entertainer': { name: 'مهرج وعروض أطفال', icon: '🤡' },
 
-    // --- الخدمات الجديدة (25) ---
     'online_stores': { name: 'متاجر أون لاين', icon: '🛒' },
     'villas_rent': { name: 'فلل أجار', icon: '🏡' },
     'martial_arts_gymnastics': { name: 'فنون قتالية وجمباز', icon: '🥋' },

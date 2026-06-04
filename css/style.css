@@ -1,4 +1,4 @@
-/* style.css - الإعدادات العامة، الخريطة، واللوحات */
+/* style.css - الإعدادات العامة، الخريطة، واللوحات المحدثة بالكامل */
 
 body {
     margin: 0;
@@ -14,29 +14,30 @@ body {
 
 #map-header {
     position: absolute;
-    top: 0.5px;
+    top: 5px;
     left: 50%;
     transform: translateX(-50%);
     z-index: 1000;
-    background-color: rgba(255, 255, 255, 0.8);
-    padding: 5px 5px;
-    border-radius: 6px;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    background-color: rgba(255, 255, 255, 0.95);
+    padding: 8px 15px;
+    border-radius: 30px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.15);
     display: flex;
     align-items: center;
-    gap: 20px;
+    gap: 15px;
     direction: rtl;
-    flex-wrap: wrap;
-    justify-content: center;
-    width: auto;
-    max-width: 95%;
+    flex-wrap: nowrap;
+    justify-content: space-between;
+    width: 90%;
+    max-width: 550px;
 }
 
 #map-header h2 {
     margin: 0;
-    font-size: 20px;
+    font-size: 16px;
     color: #333;
     white-space: nowrap;
+    display: none;
 }
 
 #basemap-switcher {
@@ -48,7 +49,8 @@ body {
 #basemap-switcher label {
     font-weight: bold;
     margin-bottom: 0;
-    font-size: 15px;
+    font-size: 13px;
+    white-space: nowrap;
 }
 
 #basemap-switcher select {
@@ -57,7 +59,7 @@ body {
     border: 1px solid #ccc;
     background-color: white;
     cursor: pointer;
-    font-size: 14px;
+    font-size: 13px;
     text-align: right;
     direction: rtl;
 }
@@ -69,7 +71,7 @@ body {
     z-index: 1;
 }
 
-/* ستايل عام للوحات الجانبية */
+/* ستايل اللوحات الجانبية */
 .panel-right {
     position: absolute;
     right: 10px;
@@ -108,7 +110,7 @@ body {
 
 .panel-right label { display: block; margin-bottom: 5px; font-weight: bold; text-align: right; direction: rtl; }
 .panel-right select, .panel-right input[type="text"], .panel-right input[type="number"] {
-    width: calc(100% - 10px); padding: 8px; margin-bottom: 10px;
+    width: 100%; padding: 8px; margin-bottom: 10px;
     border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box;
     text-align: right; direction: rtl;
 }
@@ -122,12 +124,28 @@ body {
 }
 #results-table thead th, #nearby-apartments-table thead th { background-color: #f2f2f2; }
 
+/* ضبط شريط الإحداثيات للكمبيوتر بشكل افتراضي */
 #coordinates {
-    display: block; position: absolute; bottom: 10px; left: 50%; transform: translateX(-50%);
-    border: 2px solid #007bff; background-color: rgba(230, 245, 255, 0.7);
-    padding: 8px 12px; border-radius: 8px; box-shadow: 0 0 10px rgba(0, 0, 0, 0.748);
-    text-align: center; font-size: 14px; z-index: 2; direction: rtl;
-    color: #333; white-space: nowrap; max-width: 90%; overflow: hidden; text-overflow: ellipsis;
+    display: block; 
+    position: absolute; 
+    bottom: 15px; /* رفعناه قليلاً ليتناسق مع أطراف الشاشة */
+    left: 50%; 
+    transform: translateX(-50%);
+    border: 1px solid #1a73e8; 
+    background-color: rgba(255, 255, 255, 0.9);
+    padding: 6px 16px; 
+    border-radius: 20px; 
+    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+    text-align: center; 
+    font-size: 13px; 
+    font-weight: bold;
+    z-index: 2000; /* رفع الـ z-index لضمان ظهوره فوق طبقات الخريطة الافتراضية */
+    direction: ltr; /* لعرض الأرقام والإحداثيات بشكل هندسي سليم */
+    color: #333; 
+    white-space: nowrap; 
+    max-width: 90%; 
+    overflow: hidden; 
+    text-overflow: ellipsis;
 }
 #coordinates p { margin: 0; }
 
@@ -146,56 +164,135 @@ body {
 .ol-tooltip-measure { opacity: 0.9; font-weight: bold; }
 .ol-tooltip-static { background-color: #ffcc33; color: #333; border: 1px solid #ffcc33; box-shadow: 0 2px 4px rgba(0,0,0,0.2); font-size: 13px; }
 
-/* Media Queries */
-@media (max-width: 767px) {
-    #map-header { flex-direction: column; top: 0; width: 100%; border-radius: 0; }
-    .panel-right { right: 0; width: 100%; top: 0; transform: none; height: 100vh; border-radius: 0; }
-    #search-panel, #nearby-apartments-panel, #results-panel, #layerPanel, #measurePanel, #shareLocationPanel, #editPanel, #polygonEditPanel, #lineEditPanel { top: 0; }
-    #coordinates { width: 95%; bottom: 5px; }
+/* المربع العام للبحث */
+.global-search-wrapper {
+    display: flex;
+    align-items: center;
+    background: white;
+    border-radius: 24px;
+    padding: 2px 10px;
+    margin-right: 5px;
+    flex: 1;
+    position: relative;
 }
-/* ستايل سريع للمربع لضمان ظهوره بجانب القائمة */
-        .global-search-wrapper {
-            display: flex;
-            align-items: center;
-            background: white;
-            border-radius: 24px;
-            padding: 2px 15px;
-            box-shadow: 0 2px 6px rgba(0,0,0,0.2);
-            margin-right: 10px;
-            flex: 1;
-            max-width: 400px;
-            position: relative;
-        }
-        .global-search-wrapper input {
-            border: none;
-            outline: none;
-            padding: 8px;
-            width: 100%;
-            font-size: 14px;
-        }
-        .global-search-wrapper i {
-            color: #1a73e8;
-        }
-        #search-suggestions {
-            position: absolute;
-            top: 100%;
-            left: 0;
-            right: 0;
-            background: white;
-            border-radius: 0 0 8px 8px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-            max-height: 300px;
-            overflow-y: auto;
-            z-index: 10000;
-            display: none;
-        }
-        .suggestion-item {
-            padding: 10px 15px;
-            cursor: pointer;
-            border-bottom: 1px solid #eee;
-            display: flex;
-            flex-direction: column;
-        }
-        .suggestion-item:hover { background: #f1f3f4; }
-        .suggestion-item .name { font-weight: bold; font-size: 13px; }
-        .suggestion-item .sub { font-size: 11px; color: #70757a; }
+.global-search-wrapper input {
+    border: none;
+    outline: none;
+    padding: 6px;
+    width: 100%;
+    font-size: 13px;
+}
+.global-search-wrapper i {
+    color: #1a73e8;
+}
+#search-suggestions {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background: white;
+    border-radius: 0 0 8px 8px;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    max-height: 240px;
+    overflow-y: auto;
+    z-index: 10000;
+    display: none;
+}
+.suggestion-item {
+    padding: 10px 15px;
+    cursor: pointer;
+    border-bottom: 1px solid #eee;
+    display: flex;
+    flex-direction: column;
+}
+.suggestion-item:hover { background: #f1f3f4; }
+.suggestion-item .name { font-weight: bold; font-size: 13px; }
+.suggestion-item .sub { font-size: 11px; color: #70757a; }
+
+/* الحل الجذري والذكي لشاشات الموبايل والتابلت */
+@media (max-width: 767px) {
+    #map-header { 
+        top: 5px; 
+        width: 95%; 
+        border-radius: 24px; 
+        padding: 4px 10px;
+    }
+    #map-header h2 { display: none; }
+    
+    .panel-right { 
+        right: 0; 
+        width: 100%; 
+        top: auto;
+        bottom: 0;
+        transform: none; 
+        height: 50vh;
+        border-radius: 16px 16px 0 0; 
+        box-shadow: 0 -4px 15px rgba(0,0,0,0.2);
+    }
+    #search-panel, #nearby-apartments-panel, #results-panel, #layerPanel, #measurePanel, #shareLocationPanel, #editPanel, #polygonEditPanel, #lineEditPanel { 
+        top: auto; 
+        bottom: 0;
+    }
+    #layerPanel, #measurePanel, #editPanel, #polygonEditPanel { width: 100%; }
+    
+    /* هنا الحل: تثبيت الشريط أسفل الشاشة تماماً وإلغاء تأثير الـ transform العشوائي على الموبايل */
+    #coordinates { 
+        position: fixed !important;
+        bottom: 5px !important; 
+        top: auto !important;
+        left: 50% !important;
+        transform: translateX(-50%) !important;
+        width: auto;
+        max-width: 85%;
+        font-size: 11px;
+        padding: 4px 12px;
+        background-color: rgba(255, 255, 255, 0.95);
+        border: 1px solid #3f51b5;
+        box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+    }
+    .ol-zoom {
+        top: 130px !important; /* إنزالها تحت شريط البحث والـ Quick Items */
+        left: 10px !important;
+    }
+
+    /* تحسين مظهر الأزرار لتصبح أسهل في اللمس على الشاشات الصغيرة */
+    .ol-zoom .ol-zoom-in, .ol-zoom .ol-zoom-out {
+        width: 35px !important;
+        height: 35px !important;
+        font-size: 18px !important;
+        background-color: rgba(0, 60, 136, 0.8) !important; /* زيادة الوضوح */
+    }
+}
+/* تنسيق زر تحديد الموقع الجديد المدمج */
+.ol-zoom .ol-custom-location-btn {
+    margin-top: 2px !important;
+    display: block;
+    padding: 0;
+    color: white;
+    font-size: 14px;
+    font-weight: bold;
+    text-decoration: none;
+    text-align: center;
+    height: 1.375em;
+    width: 1.375em;
+    line-height: .4em;
+    background-color: rgba(0,60,136,.5);
+    border: none;
+    border-radius: 2px;
+    cursor: pointer;
+}
+
+.ol-zoom .ol-custom-location-btn:hover {
+    background-color: rgba(0,60,136,.7);
+}
+
+/* لضمان تناسق الحجم الكلي مع الموبايل عند ترحيل كتل الأزرار لأسفل */
+@media (max-width: 767px) {
+    .ol-zoom .ol-custom-location-btn {
+        width: 35px !important;
+        height: 35px !important;
+        font-size: 16px !important;
+        line-height: 35px !important;
+        margin-top: 4px !important;
+    }
+}

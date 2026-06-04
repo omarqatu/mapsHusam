@@ -127,7 +127,7 @@ function initializeQuickSearch(map, overlayLayersObj) {
             map.getView().fit(combinedExtent, { 
                 padding: [80, 80, 80, 80], 
                 duration: 1000, 
-                maxZoom: 18 
+                maxZoom: 19 
             });
         }
 

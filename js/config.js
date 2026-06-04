@@ -8,7 +8,6 @@ const MAP_CONFIG = {
         srsName: "EPSG:28191",
     },
 
-    // 1. حقول العقارات (تم إضافة rating و search_tags)
     propertyFields: [
         { name: 'location', label: 'المنطقة', type: 'text', autoFill: true },
         { name: 'price', label: 'السعر ($)', type: 'number' },
@@ -25,7 +24,6 @@ const MAP_CONFIG = {
         { name: 'search_tags', label: 'كلمات البحث', type: 'text' }
     ],
 
-    // 2. حقول الخدمات (موجود فيها search_tags مسبقاً)
     serviceFields: [
         { name: 'name', label: 'اسم مزود الخدمة', type: 'text' },
         { name: 'location_name', label: 'المنطقة', type: 'text', autoFill: true },

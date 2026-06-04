@@ -45,23 +45,54 @@
         const fieldId = fieldSelect.value;
         if (!layerKey || !fieldId || !valueInputContainer) return;
         valueInputContainer.innerHTML = '';
+        
         const uniqueValues = getUniqueValues(layerKey, fieldId);
-        const input = document.createElement('input');
-        input.id = 'value-input';
-        input.className = 'search-input-field';
-        input.placeholder = 'اختر أو اكتب...';
-        input.setAttribute('list', 'datalist-options');
-        input.autocomplete = "off";
-        Object.assign(input.style, { width: "100%", padding: "8px", border: "1px solid #ccc", borderRadius: "4px" });
-        const dl = document.createElement('datalist');
-        dl.id = 'datalist-options';
-        uniqueValues.forEach(v => {
-            const opt = document.createElement('option');
-            opt.value = v;
-            dl.appendChild(opt);
-        });
-        valueInputContainer.appendChild(input);
-        valueInputContainer.appendChild(dl);
+        
+        // فحص بيئة التشغيل: هل المستخدم يتصفح من هاتف محمول أو جهاز لوحي؟
+        const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+
+        if (isMobile) {
+            // حل جذري للموبايل: إنشاء عنصر select لضمان استجابة نظام التشغيل الفورية وإظهار الداتا
+            const select = document.createElement('select');
+            select.id = 'value-input';
+            select.className = 'search-input-field';
+            Object.assign(select.style, { width: "100%", padding: "8px", border: "1px solid #ccc", borderRadius: "4px", backgroundColor: "#fff" });
+            
+            // خيار افتراضي مبدئي لتهيئة المستخدم
+            const defaultOpt = document.createElement('option');
+            defaultOpt.value = '';
+            defaultOpt.textContent = '--- اختر قيمة من القائمة ---';
+            select.appendChild(defaultOpt);
+
+            uniqueValues.forEach(v => {
+                const opt = document.createElement('option');
+                opt.value = v;
+                opt.textContent = v;
+                select.appendChild(opt);
+            });
+
+            valueInputContainer.appendChild(select);
+        } else {
+            // أجهزة الكمبيوتر: الحفاظ على واجهة الـ input المدعومة بالـ datalist لمرونة البحث والكتابة
+            const input = document.createElement('input');
+            input.id = 'value-input';
+            input.className = 'search-input-field';
+            input.placeholder = 'اختر أو اكتب...';
+            input.setAttribute('list', 'datalist-options');
+            input.autocomplete = "off";
+            Object.assign(input.style, { width: "100%", padding: "8px", border: "1px solid #ccc", borderRadius: "4px" });
+            
+            const dl = document.createElement('datalist');
+            dl.id = 'datalist-options';
+            uniqueValues.forEach(v => {
+                const opt = document.createElement('option');
+                opt.value = v;
+                dl.appendChild(opt);
+            });
+            
+            valueInputContainer.appendChild(input);
+            valueInputContainer.appendChild(dl);
+        }
     }
 
     function renderConditions() {
@@ -95,7 +126,7 @@
             return;
         }
 
-        // --- التعديل الجوهري: ترتيب النتائج بناءً على التقييم rating تنازلياً ---
+        // ترتيب النتائج بناءً على التقييم rating تنازلياً
         features.sort((a, b) => {
             const rA = parseFloat(a.get('rating')) || 0;
             const rB = parseFloat(b.get('rating')) || 0;
@@ -134,7 +165,7 @@
         });
 
         if (resultsPanel) resultsPanel.classList.remove('hidden');
-        mapInstance.getView().fit(extent, { duration: 1000, padding: [50, 50, 50, 50], maxZoom: 18 });
+        mapInstance.getView().fit(extent, { duration: 1000, padding: [50, 50, 50, 50], maxZoom: 19 });
     }
 
     window.initializeSearch = function(mapObject, overlayLayersObj) {
@@ -202,7 +233,12 @@
             if (!val) return;
             conditions.push({ field: fieldSelect.value, fieldName: fieldSelect.options[fieldSelect.selectedIndex].text, operator: operatorSelect.value, value: val });
             renderConditions();
-            document.getElementById('value-input').value = ''; 
+            
+            // تهيئة الحقل بعد الإضافة حسب نوعه (تفادياً لمشاكل الخيار الفارغ في الـ select)
+            const inputElem = document.getElementById('value-input');
+            if (inputElem) {
+                inputElem.value = '';
+            }
         };
 
         document.getElementById('clear-search').onclick = () => {
@@ -213,7 +249,7 @@
             document.getElementById('results-panel').classList.add('hidden');
         };
 
-        // زر الطباعة لبحث السمات
+        // زر طباعة التقرير
         document.getElementById('print-attribute-results')?.addEventListener('click', () => {
             const table = document.getElementById('results-table').cloneNode(true);
             const newWin = window.open('', '_blank');
@@ -232,8 +268,8 @@
                     </head>
                     <body>
                         <h2 style="text-align: center;">تقرير نتائج البحث - منصة الخدمات والعقارات</h2>
-                        <p>تاريخ الاستخراج: ${new Date().toLocaleString('ar-EG')}</p>
-                        ${table.outerHTML}
+                        <p>تاريخ الاستخراج: \${new Date().toLocaleString('ar-EG')}</p>
+                        \${table.outerHTML}
                     </body>
                 </html>
             `);

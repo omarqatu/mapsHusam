@@ -1,8 +1,6 @@
 /**
  * editPolygons.js - نسخة التحرير الهندسي المتقدم المحدثة 2026
- * تشمل: تعديل نقاط، إعادة تشكيل (Reshape) حقيقي، واستبدال (Replace)
- * تم معالجة مشكلة الزووم عند النقر المزدوج وتفعيل إنهاء الرسم تلقائياً
- * (حسام جعبه - PLA)
+ * مطابقة تماماً لهيكل واجهة تحرير النقاط وقواعد معالجة الكلمات الدلالية والأتمتة
  */
 function initializePolygonEditTools(map, overlayLayersObj) {
     let draw, modify, snap, select, reshapeDraw;
@@ -10,7 +8,7 @@ function initializePolygonEditTools(map, overlayLayersObj) {
     let currentFeature;
     let currentTransactionType;
     let selectedLayerKey;
-    let doubleClickInteraction; // لتخزين وحذف تفاعل الزووم
+    let featureProperties = {};
 
     const layerSelect = document.getElementById('polygon-layer-select');
     const addFeatureBtn = document.getElementById('polygon-add-feature-btn');
@@ -28,16 +26,22 @@ function initializePolygonEditTools(map, overlayLayersObj) {
     const toolReshape = document.getElementById('tool-reshape');
     const toolReplace = document.getElementById('tool-replace');
 
+    // قاموس الكلمات الدلالية المخصصة الثابتة للطبقات (مطابق للنقاط والعقارات الشاملة)
+    const polygonSpecificTags = {
+        'landLayer': 'أرض للبيع، أراضي، كوشان، طابو، سكن، زراعي، تجاري، نمرة أرض، استثمار عقاري، مساحات، عقارات للبيع',
+        'locationLayer': 'منطقة، حدود بلدية، أحياء، مخطط توجيهي، قسيمة، حوض، تقسيم إداري'
+    };
+
+    // مصفوفة الحقول لطبقة الأراضي (مصممة على نمط حقول شقق البيع والإيجار في موديول النقاط تماماً)
     const fieldsLand = [
         { name: 'price', label: 'السعر ($)', type: 'number' },
         { name: 'des', label: 'وصف العقار', type: 'text' },
-        { name: 'area', label: 'المساحة (م²)', type: 'number' },
-        { name: 'rating', label: 'التقييم (0-10)', type: 'number' },
-        { name: 'search_tags', label: 'كلمات دلالية إضافية', type: 'text' },
-        { name: 'whatsapp', label: 'رقم الواتساب', type: 'text' },
         { name: 'pic', label: 'رابط الصورة', type: 'url' },
+        { name: 'area', label: 'المساحة (م٢)', type: 'number' },
+        { name: 'whatsapp', label: 'رقم الواتساب مع المقدمة (مثلاً 00970...)', type: 'text' },
         { name: 'end_date', label: 'تاريخ انتهاء الاشتراك', type: 'date' },
-        { name: 'work_hours', label: 'ساعات العمل', type: 'special_hours' }
+        { name: 'work_hours', label: 'ساعات العمل', type: 'hours' },
+        { name: 'rating', label: 'الرتبة (0-10)', type: 'number' }
     ];
 
     const fieldsLocation = [
@@ -53,7 +57,6 @@ function initializePolygonEditTools(map, overlayLayersObj) {
         }[ch]));
     }
 
-    // دالة لتعطيل/تفعيل الزووم عند النقر المزدوج
     function toggleDoubleClickZoom(active) {
         map.getInteractions().forEach(interaction => {
             if (interaction instanceof ol.interaction.DoubleClickZoom) {
@@ -64,7 +67,7 @@ function initializePolygonEditTools(map, overlayLayersObj) {
 
     function populatePolygonLayers() {
         if (!layerSelect) return;
-        layerSelect.innerHTML = '<option value="">--- اختر الطبقة ---</option>';
+        layerSelect.innerHTML = '<option value="">--- اختر طبقة للتحرير ---</option>';
         const allowed = { 'landLayer': 'طبقة الأراضي للبيع', 'locationLayer': 'طبقة المناطق' };
         Object.keys(allowed).forEach(key => {
             if (overlayLayersObj[key]) {
@@ -80,8 +83,10 @@ function initializePolygonEditTools(map, overlayLayersObj) {
         [draw, modify, snap, select, reshapeDraw].forEach(i => i && map.removeInteraction(i));
         draw = modify = snap = select = reshapeDraw = null;
         geomToolsSub.style.display = 'none';
-        toggleDoubleClickZoom(true); // إعادة تفعيل الزووم عند الخروج
-        [addFeatureBtn, modifyFeatureBtn, deleteFeatureBtn].forEach(btn => btn?.classList.remove('active-tool'));
+        toggleDoubleClickZoom(true); 
+        if (addFeatureBtn) addFeatureBtn.classList.remove('active');
+        if (modifyFeatureBtn) modifyFeatureBtn.classList.remove('active');
+        if (deleteFeatureBtn) deleteFeatureBtn.classList.remove('active');
         if (attributeModal) attributeModal.style.display = 'none';
         map.getTargetElement().style.cursor = '';
         currentFeature = null;
@@ -94,52 +99,129 @@ function initializePolygonEditTools(map, overlayLayersObj) {
         
         const layer = overlayLayersObj[selectedLayerKey];
         selectedLayerSource = layer.getSource();
-        toggleDoubleClickZoom(false); // تعطيل الزووم أثناء العمل
+        toggleDoubleClickZoom(false); 
 
         if (mode === 'add') {
-            addFeatureBtn.classList.add('active-tool');
+            addFeatureBtn.classList.add('active');
             draw = new ol.interaction.Draw({ source: selectedLayerSource, type: 'Polygon' });
             draw.on('drawend', (e) => {
                 currentFeature = e.feature;
                 currentTransactionType = 'insert';
-                setTimeout(() => showAttributeModal(currentFeature), 300);
-            });
-            map.addInteraction(draw);
-        } else if (mode === 'modify') {
-            modifyFeatureBtn.classList.add('active-tool');
-            select = new ol.interaction.Select({ layers: [layer], hitTolerance: 10 });
-            map.addInteraction(select);
-            select.on('select', (e) => {
-                if (e.selected.length === 0) return;
-                currentFeature = e.selected[0];
-                currentTransactionType = 'update';
                 showAttributeModal(currentFeature);
             });
-        } else if (mode === 'delete') {
-            deleteFeatureBtn.classList.add('active-tool');
+            map.addInteraction(draw);
+        } else {
+            const btn = (mode === 'modify') ? modifyFeatureBtn : deleteFeatureBtn;
+            if (btn) btn.classList.add('active');
             select = new ol.interaction.Select({ layers: [layer] });
             map.addInteraction(select);
             select.on('select', (e) => {
                 if (e.selected.length === 0) return;
-                if (confirm('هل أنت متأكد من حذف هذا المضلع نهائياً؟')) sendWFS_T(e.selected[0], 'delete');
+                currentFeature = e.selected[0];
+                if (mode === 'delete') {
+                    if (confirm('هل أنت متأكد من حذف هذا المضلع؟')) sendWFS_T(currentFeature, 'delete');
+                    select.getFeatures().clear();
+                    window.deactivatePolygonEditTools();
+                } else {
+                    currentTransactionType = 'update';
+                    showAttributeModal(currentFeature);
+                }
             });
         }
+        snap = new ol.interaction.Snap({ source: selectedLayerSource });
+        map.addInteraction(snap);
     }
 
+    // بناء وعرض واجهة الخصائص (نفس نمط واجهة النقاط تماماً مع دعم ميزات حقل الساعات المطور والاتجاهات)
     function showAttributeModal(feature) {
-        modalTitle.textContent = currentTransactionType === 'insert' ? 'إدخال بيانات مضلع جديد' : 'تحديث البيانات الوصفية';
+        modalTitle.textContent = currentTransactionType === 'insert' ? 'إضافة معلم جديد' : 'تعديل البيانات';
         attributeForm.innerHTML = '';
         attributeModal.style.display = 'block';
+        // تعديل الاستايل برمجياً لمنع خروج الواجهة عن نطاق الشاشة عند الزووم
+        attributeModal.style.position = 'fixed';
+        attributeModal.style.top = '50%';
+        attributeModal.style.left = '50%';
+        attributeModal.style.transform = 'translate(-50%, -50%)';
+        attributeModal.style.maxHeight = '85vh';      // حد أقصى لارتفاع النافذة (85% من طول الشاشة)
+        attributeModal.style.overflowY = 'auto';       // تفعيل التمرير العمودي (العجل) تلقائياً عند الحاجة
+        attributeModal.style.width = '450px';          // عرض ثابت ومناسب للحقول
+        attributeModal.style.maxWidth = '95%';         // حماية إضافية متجاوبة للشاشات الصغيرة
+        attributeModal.style.zIndex = '10001';         // ضمان ظهورها فوق خريطة OpenLayers والأشرطة الجانبية
+        attributeModal.style.backgroundColor = '#fff';
+        attributeModal.style.padding = '15px';
+        attributeModal.style.borderRadius = '8px';
+        attributeModal.style.boxShadow = '0 4px 15px rgba(0,0,0,0.3)';
         const activeFields = (selectedLayerKey === 'landLayer') ? fieldsLand : fieldsLocation;
 
         activeFields.forEach(f => {
             const div = document.createElement('div');
+            div.className = 'form-group';
             div.style.marginBottom = '12px';
-            let val = feature.get(f.name) || '';
-            div.innerHTML = `<label style="display:block; font-weight:bold;">${f.label}:</label>
-                             <input type="${f.type}" name="${f.name}" value="${val}" style="width:100%; padding:8px; border:1px solid #ccc;">`;
+            div.style.textAlign = 'right';
+
+            let val = feature.get(f.name);
+            if (val === undefined || val === null) val = '';
+            if (f.type === 'date' && val) {
+                try { val = new Date(val).toISOString().split('T')[0]; } catch(e) { val = ''; }
+            }
+
+            let inputHTML = '';
+            if (f.type === 'hours') {
+                inputHTML = `<div style="display:flex; gap:5px;">
+                                <input type="text" id="poly_inp_${f.name}" name="${f.name}" value="${val || ''}" placeholder="مثال: 08:00-16:00" style="flex:1; padding:8px;">
+                                <button type="button" onclick="document.getElementById('poly_inp_${f.name}').value='متوفر 24 ساعة'" style="cursor:pointer;">24 ساعة</button>
+                             </div>`;
+            } else if (f.type === 'date') {
+                inputHTML = `<input type="date" name="${f.name}" value="${val}" style="width:100%; padding:8px;">`;
+            } else if (f.type === 'number') {
+                inputHTML = `<input type="number" name="${f.name}" value="${val}" step="any" style="width:100%; padding:8px;">`;
+            } else {
+                let align = (f.name === 'whatsapp') ? 'ltr' : 'rtl';
+                inputHTML = `<input type="text" name="${f.name}" value="${val}" style="width:100%; padding:8px; direction:${align};">`;
+            }
+
+            div.innerHTML = `<label style="display:block; font-weight:bold; margin-bottom:4px;">${f.label}:</label>${inputHTML}`;
             attributeForm.appendChild(div);
         });
+    }
+
+    function submitAttributes() {
+        const formData = new FormData(attributeForm);
+        const activeFields = (selectedLayerKey === 'landLayer') ? fieldsLand : fieldsLocation;
+        featureProperties = {};
+
+        activeFields.forEach(f => {
+            let val = formData.get(f.name);
+            if (f.name === 'whatsapp' && val) {
+                val = val.toString().trim(); 
+            }
+            featureProperties[f.name] = (f.type === 'number') ? (val === "" ? null : Number(val)) : val;
+        });
+
+        // --- منطقة توليد وحقن الكلمات الدلالية الافتراضية المطور للمضلعات ---
+        const serviceArabicName = (selectedLayerKey === 'landLayer') ? 'أرض للبيع' : 'منطقة جغرافية';
+        const staticTags = polygonSpecificTags[selectedLayerKey] || '';
+        const providerName = ''; // لا يوجد حقل اسم مزود في مضلعات الأراضي
+        const description = featureProperties['des'] || '';
+
+        // تفكيك وتجميع الكلمات الدلالية لتفادي الفواصل المزدوجة والفراغات الزائدة
+        let tagsResult = [serviceArabicName, providerName, (description || "").trim().substring(0, 40)].map(s => s.trim()).filter(s => s.length > 0).join('، ');
+        
+        if (staticTags) {
+            tagsResult += `، ${staticTags}`;
+        }
+        featureProperties['search_tags'] = tagsResult;
+
+        // وضع قيم الحالة التلقائية (مطابقة تماماً لقواعد النقاط الاستراتيجية)
+        if (currentTransactionType === 'insert') {
+            featureProperties['start_date'] = new Date().toISOString().split('T')[0];
+            featureProperties['status'] = 0;
+            featureProperties['auto_status'] = 0;
+        }
+
+        // إسناد الخصائص المؤتمتة للمضلع الحالي قبل تحويله لمرحلة الرسم الهندسي
+        currentFeature.setProperties(featureProperties);
+        activateGeometryEditPhase();
     }
 
     function activateGeometryEditPhase() {
@@ -163,17 +245,13 @@ function initializePolygonEditTools(map, overlayLayersObj) {
         if (reshapeDraw) map.removeInteraction(reshapeDraw);
         if (draw) map.removeInteraction(draw);
 
-        // أداة رسم خط لتعديل المضلع
         reshapeDraw = new ol.interaction.Draw({ type: 'LineString' });
         map.addInteraction(reshapeDraw);
         
         reshapeDraw.on('drawend', (e) => {
             const lineGeom = e.feature.getGeometry();
             const polyGeom = currentFeature.getGeometry();
-            
-            // محاكاة Reshape: نستخدم JSTS إذا كان متاحاً، وإلا نقوم بتنبيه المستخدم لتعديل النقاط يدوياً
-            // هنا سنقوم بإيقاف أداة الخط وتفعيل النقاط فوراً لإنهاء التشكيل
-            alert('تم رسم خط التشكيل. يمكنك الآن تحريك النقاط الناتجة بدقة.');
+            alert('تم رسم خط التشكيل بنجاح. يمكنك تحريك العقد الناتجة الآن بدقة.');
             startModifyPoints();
         });
     }
@@ -183,7 +261,6 @@ function initializePolygonEditTools(map, overlayLayersObj) {
         if (reshapeDraw) map.removeInteraction(reshapeDraw);
         if (draw) map.removeInteraction(draw);
         
-        // حذف الشكل القديم مؤقتاً للبدء برسم جديد
         const oldProps = currentFeature.getProperties();
         selectedLayerSource.removeFeature(currentFeature);
         
@@ -195,7 +272,7 @@ function initializePolygonEditTools(map, overlayLayersObj) {
             currentFeature.setProperties(oldProps);
             selectedLayerSource.addFeature(currentFeature);
             map.removeInteraction(draw);
-            alert('تم استبدال الشكل. راجع النقاط قبل الحفظ النهائي.');
+            alert('تم استبدال الشكل القديم. راجع النقاط الخارجية جيدا قبل إنهاء الحفظ.');
             startModifyPoints();
         });
     }
@@ -207,16 +284,7 @@ function initializePolygonEditTools(map, overlayLayersObj) {
     }
 
     function submitFinalData() {
-        const formData = new FormData(attributeForm);
-        const featureProps = {}; 
-        const activeFields = (selectedLayerKey === 'landLayer') ? fieldsLand : fieldsLocation;
-
-        activeFields.forEach(f => {
-            let val = formData.get(f.name);
-            featureProps[f.name] = (f.type === 'number') ? (val === "" ? null : Number(val)) : val;
-        });
-
-        currentFeature.setProperties(featureProps);
+        // حزم كافة البيانات والرفع النهائي الآمن عبر بروتوكول WFS-T للخادم
         sendWFS_T(currentFeature, currentTransactionType);
     }
 
@@ -247,14 +315,26 @@ function initializePolygonEditTools(map, overlayLayersObj) {
         const props = Object.assign({}, feature.getProperties());
         delete props['geometry']; delete props['boundedBy'];
 
+        // قائمة الحقول المسموح برفعها وتحديثها لطبقة المضلعات العقارية (بدون x, y النقاط الجغرافية)
+        const allowedPropsAdd = ['price', 'des', 'pic', 'area', 'whatsapp', 'end_date', 'work_hours', 'start_date', 'status', 'auto_status', 'rating', 'search_tags', 'gov_a', 'village_a', 'location'];
+        const allowedPropsUpdate = ['price', 'des', 'pic', 'area', 'whatsapp', 'end_date', 'work_hours', 'rating', 'search_tags', 'gov_a', 'village_a', 'location'];
+
         if (type === 'insert') {
             let fieldsXML = `<${fullQualifiedName} xmlns:${workspace}="${featureNS}"><${workspace}:geom>${gmlGeometry}</${workspace}:geom>`;
-            for (let k in props) if (props[k] && k !== 'id') fieldsXML += `<${workspace}:${k}>${escapeXml(props[k])}</${workspace}:${k}>`;
+            for (let k in props) {
+                if (allowedPropsAdd.includes(k) && props[k] !== null && props[k] !== undefined && props[k] !== "") {
+                    fieldsXML += `<${workspace}:${k}>${escapeXml(props[k])}</${workspace}:${k}>`;
+                }
+            }
             fieldsXML += `</${fullQualifiedName}>`;
             payload = `<wfs:Insert>${fieldsXML}</wfs:Insert>`;
         } else if (type === 'update') {
             let propsXML = '';
-            for (let k in props) if (props[k] !== undefined && k !== 'id') propsXML += `<wfs:Property><wfs:Name>${workspace}:${k}</wfs:Name><wfs:Value>${escapeXml(props[k])}</wfs:Value></wfs:Property>`;
+            for (let k in props) {
+                if (allowedPropsUpdate.includes(k) && props[k] !== null && props[k] !== undefined) {
+                    propsXML += `<wfs:Property><wfs:Name>${workspace}:${k}</wfs:Name><wfs:Value>${escapeXml(props[k])}</wfs:Value></wfs:Property>`;
+                }
+            }
             propsXML += `<wfs:Property><wfs:Name>${workspace}:geom</wfs:Name><wfs:Value>${gmlGeometry}</wfs:Value></wfs:Property>`;
             payload = `<wfs:Update typeName="${fullQualifiedName}" xmlns:${workspace}="${featureNS}">${propsXML}<ogc:Filter><ogc:FeatureId fid="${fidValue}"/></ogc:Filter></wfs:Update>`;
         } else if (type === 'delete') {
@@ -267,21 +347,23 @@ function initializePolygonEditTools(map, overlayLayersObj) {
         .then(res => res.text()).then(text => {
             if (text.includes('Exception')) {
                 console.error(text);
-                alert('حدث خطأ في السيرفر!');
+                alert('حدث خطأ في السيرفر أثناء معالجة مضلعات WFS-T!');
             } else {
-                alert('تمت العملية وحفظ الشكل الهندسي بنجاح!');
+                alert('تمت العملية وحفظ الشكل الهندسي مع الكلمات الدلالية والحالة بنجاح!');
                 selectedLayerSource.refresh();
                 window.deactivatePolygonEditTools();
             }
-        }).catch(err => alert('خطأ في الاتصال بالسيرفر'));
+        }).catch(err => alert('خطأ في الاتصال بالسيرفر للمضلعات'));
     }
 
-    // ربط العناصر
+    // ربط العناصر ومستمعي الأحداث البرمجية (UI Event Listeners)
     populatePolygonLayers();
     if(addFeatureBtn) addFeatureBtn.onclick = () => setupInteractions('add');
     if(modifyFeatureBtn) modifyFeatureBtn.onclick = () => setupInteractions('modify');
     if(deleteFeatureBtn) deleteFeatureBtn.onclick = () => setupInteractions('delete');
-    if(submitAttributesBtn) submitAttributesBtn.onclick = activateGeometryEditPhase;
+    
+    // عند الضغط على زر استمرار داخل واجهة الخصائص، يتم تحويل المستخدم فوراً للمرحلة الهندسية
+    if(submitAttributesBtn) submitAttributesBtn.onclick = submitAttributes;
     
     if(toolModifyPoints) toolModifyPoints.onclick = startModifyPoints;
     if(toolReshape) toolReshape.onclick = startReshape;

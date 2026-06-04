@@ -1,7 +1,8 @@
 /**
- * global-search.js - النسخة الاحترافية الشاملة 2026
+ * global-search.js - النسخة الاحترافية الشاملة والمعدلة بالكامل 2026
  * تشمل كافة الطبقات الـ 59 (عقارات + خدمات قديمة + خدمات جديدة)
- * البحث في حقل search_tags + الترتيب حسب حقل rating (0-10)
+ * معالجة مرنة ومستقرة للبحث المتعدد الكلمات والفراغات عبر فلاتر CQL موحدة
+ * تدعم التطبيع الكامل والشامل لعيوب الإملاء باللغة العربية (الهمزات، الياء، التاء المربوطة)
  */
 
 const layerAliases = {
@@ -48,7 +49,6 @@ const searchConfig = {
     'services': {
         workspace: 'services',
         layers: [
-            // كافة خدمات الـ WFS في GeoServer
             'electrician', 'ac_technician', 'plumber', 'general_maintenance', 
             'painter', 'carpenter', 'blacksmith', 'builder', 'aluminum_tech',
             'house_cleaner', 'gardener', 'car_mechanic', 'car_electrician', 
@@ -68,43 +68,55 @@ const searchConfig = {
     }
 };
 
+// دالة توحيد وتطبيع النصوص لواجهة المستخدم والترتيب اللحظي الفعال
 function normalizeArabic(text) {
     if (!text) return "";
     return text.toString()
-        .replace(/[أإآ]/g, 'ا')
-        .replace(/ة/g, 'ه')
-        .replace(/ى/g, 'ي')
-        .replace(/ؤ/g, 'و')
-        .replace(/ئ/g, 'ي')
+        .replace(/[أإآا]/g, 'ا')
+        .replace(/[ةه]/g, 'ه')
+        .replace(/[ىي]/g, 'ي')
+        .replace(/[ؤئء]/g, 'ء')
         .trim();
 }
 
-function buildEnhancedLayerCQL(term, layerName) {
-    const normalizedTerm = normalizeArabic(term);
-    const words = normalizedTerm.split(/\s+/).filter(word => word.length > 0);
-    const arabicAlias = layerAliases[layerName] || "";
-    const normalizedAlias = normalizeArabic(arabicAlias);
+// دالة تحويل الكلمة إلى نمط SQL مرن يتجاوز عيوب الحروف المتشابهة إملائياً في GeoServer
+function buildFlexibleArabicCQL(word) {
+    let cleanWord = word.trim();
+    if (cleanWord.length === 0) return "";
 
-    const isAliasMatch = normalizedAlias.includes(normalizedTerm);
-    const tagFilters = words.map(word => `search_tags ILIKE '%${word}%'`).join(' AND ');
+    // استبدال الحروف الحساسة إملائياً برمز الحرف العشوائي الموحد (_) لقاعدة البيانات
+    let wildcardWord = cleanWord
+        .replace(/[أإآا]/g, '_')
+        .replace(/[ةه]/g, '_')
+        .replace(/[ىي]/g, '_')
+        .replace(/[ؤئء]/g, '_');
 
-    if (isAliasMatch) {
-        return `(${tagFilters}) OR (1=1)`; 
-    } else {
-        return tagFilters;
-    }
+    return `search_tags ILIKE '%${wildcardWord}%'`;
+}
+
+// دالة تفكيك النص وبناء فلتر موحد ونظيف تماماً يتوافق مع الكلمات المتعددة والتطبيع
+function buildUnifiedCQLFilter(term) {
+    if (!term || term.trim() === "") return "1=1";
+
+    const words = term.split(/\s+/).filter(word => word.trim().length > 0);
+    if (words.length === 0) return "1=1";
+
+    // توليد شروط مرنة لكل كلمة على حدة لتجاهل الفروقات الإملائية تماماً
+    const conditions = words.map(word => buildFlexibleArabicCQL(word)).filter(q => q !== "");
+    
+    if (conditions.length === 0) return "1=1";
+    return `(${conditions.join(' AND ')})`;
 }
 
 async function fetchGroupWFS(groupKey, term) {
     const config = searchConfig[groupKey];
+    if (!config) return [];
+    
     const workspace = config.workspace;
     const layers = config.layers;
     const typeNames = layers.map(l => `${workspace}:${l}`).join(',');
     
-    const layeredCql = layers.map(layer => {
-        const filter = buildEnhancedLayerCQL(term, layer);
-        return `(${filter})`;
-    }).join(';');
+    const unifiedFilter = buildUnifiedCQLFilter(term);
 
     const params = new URLSearchParams({
         service: 'WFS',
@@ -113,7 +125,7 @@ async function fetchGroupWFS(groupKey, term) {
         typeName: typeNames,
         outputFormat: 'application/json',
         srsname: 'EPSG:28191',
-        CQL_FILTER: layeredCql,
+        CQL_FILTER: unifiedFilter, 
         sortBy: 'rating D', 
         maxFeatures: '100'
     });
@@ -146,8 +158,8 @@ window.initializeGlobalSearch = function() {
 
     let timeout;
     searchInput.addEventListener('input', (e) => {
-        const term = e.target.value.trim();
-        if (term.length < 2) {
+        const term = e.target.value; 
+        if (term.trim().length < 2) {
             suggestionsPanel.style.display = 'none';
             return;
         }
@@ -161,10 +173,14 @@ window.initializeGlobalSearch = function() {
             const resultsArray = await Promise.all(promises);
             const allResults = resultsArray.flat();
 
+            // الفرز الذكي اللحظي للمقترحات بناءً على مطابقة التسميات المطبعة أولاً
             allResults.sort((a, b) => {
-                const normTerm = normalizeArabic(term);
-                const aAliasMatch = normalizeArabic(a.customTitle).includes(normTerm);
-                const bAliasMatch = normalizeArabic(b.customTitle).includes(normTerm);
+                const normTerm = normalizeArabic(term.trim());
+                const normATitle = normalizeArabic(a.customTitle);
+                const normBTitle = normalizeArabic(b.customTitle);
+                
+                const aAliasMatch = normATitle.includes(normTerm);
+                const bAliasMatch = normBTitle.includes(normTerm);
 
                 if (aAliasMatch && !bAliasMatch) return -1;
                 if (!aAliasMatch && bAliasMatch) return 1;
@@ -226,11 +242,17 @@ function renderGlobalSuggestions(features, term) {
 
 function highlightMatch(text, term) {
     if (!text || !term) return text || "";
-    const words = term.split(/\s+/).filter(w => w.length > 0);
+    const words = term.split(/\s+/).filter(w => w.trim().length > 0);
     let highlightedText = text.toString();
     
     words.forEach(word => {
-        const regex = new RegExp(`(${word.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
+        // تم تكييف إبراز الكلمات ليتماشى بمرونة مع الحروف العربية المتشابهة في العرض
+        let regexPattern = word.replace(/[أإآا]/g, '[أإآا]')
+                              .replace(/[ةه]/g, '[ةه]')
+                              .replace(/[ىي]/g, '[ىي]')
+                              .replace(/[ؤئء]/g, '[ؤئء]');
+                              
+        const regex = new RegExp(`(${regexPattern})`, 'gi');
         highlightedText = highlightedText.replace(regex, '<strong>$1</strong>');
     });
     return highlightedText;
@@ -253,7 +275,7 @@ function zoomToGlobalFeature(f) {
     window.map.getView().fit(extent, { 
         duration: 1000, 
         padding: [100, 100, 100, 100], 
-        maxZoom: 21 
+        maxZoom: 19 
     });
 
     const overlay = window.map.getOverlays().getArray().find(o => 
