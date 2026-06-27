@@ -9,26 +9,33 @@ const { Pool } = require('pg');
 const cors = require('cors');
 
 const app = express();
-const PORT = 3000;
+const PORT = process.env.PORT || 3000;
+const PG_HOST = process.env.POSTGRES_HOST || 'localhost';
+const PG_PORT = Number(process.env.POSTGRES_PORT || 5432);
+const PG_USER = process.env.POSTGRES_USER || 'Husam';
+const PG_PASSWORD = process.env.POSTGRES_PASSWORD || 'Jubeh@123';
+const SERVICES_DB_NAME = process.env.SERVICES_DB_NAME || 'services_db';
+const REAL_ESTATE_DB_NAME = process.env.REAL_ESTATE_DB_NAME || 'realestate';
+const GEOSERVER_TARGET = process.env.GEOSERVER_TARGET || 'http://194.163.174.162:8080/geoserver';
 
 // 1. إعدادات الاتصال بقواعد البيانات المتعددة 
 
 // 🟢 الاتصال الأول: قاعدة بيانات الخدمات (services_db)
 const servicesPool = new Pool({
-    user: 'Husam', 
-    host: 'localhost',
-    database: 'services_db', 
-    password: '1234',
-    port: 5432,
+    user: PG_USER,
+    host: PG_HOST,
+    database: SERVICES_DB_NAME,
+    password: PG_PASSWORD,
+    port: PG_PORT,
 });
 
 // 🔵 الاتصال الثاني: قاعدة بيانات العقارات (realestate)
 const realestatePool = new Pool({
-    user: 'Husam', 
-    host: 'localhost',
-    database: 'realestate', 
-    password: '1234',
-    port: 5432,
+    user: PG_USER,
+    host: PG_HOST,
+    database: REAL_ESTATE_DB_NAME,
+    password: PG_PASSWORD,
+    port: PG_PORT,
 });
 
 // فحص الاتصال بقاعدة الخدمات عند بدء التشغيل
@@ -299,7 +306,7 @@ app.post('/api/update-service-status', async (req, res) => {
 app.use('/proxy/geoserver', (req, res, next) => {
     next();
 }, createProxyMiddleware({
-    target: 'http://194.163.174.162:8080/geoserver', // رابط الجيوسيرفر الخاص بك
+    target: GEOSERVER_TARGET,
     changeOrigin: true,
     pathRewrite: { '^/proxy/geoserver': '' },
     onProxyReq: (proxyReq, req, res) => {
@@ -561,9 +568,10 @@ app.use((err, req, res, next) => {
 // 11. تشغيل السيرفر
 app.listen(PORT, () => {
     console.log('==============================================');
-    console.log(`🚀 السيرفر يعمل الآن على: http://localhost:${PORT}`);
-    console.log(`📊 لوحة التحكم: http://localhost:${PORT}/dashboard.html`);
+    console.log(`🚀 السيرفر يعمل الآن على: http://0.0.0.0:${PORT}`);
+    console.log(`📊 لوحة التحكم: http://0.0.0.0:${PORT}/dashboard.html`);
     console.log(`📊 نظام تحديث الـ PostGIS والـ WFS-T متكامل ومؤمن بالكامل بالقيم الجغرافية الحقيقية`);
-    console.log(`📡 قواعد البيانات المتصلة: [services_db] و [realestate] تعملان معاً بكفاءة.`);
+    console.log(`📡 قاعدة البيانات: host=${PG_HOST}, services=${SERVICES_DB_NAME}, realestate=${REAL_ESTATE_DB_NAME}`);
+    console.log(`📡 GeoServer target: ${GEOSERVER_TARGET}`);
     console.log('==============================================');
 });
