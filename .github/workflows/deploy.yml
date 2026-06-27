@@ -1,0 +1,28 @@
+name: Deploy to IIS Server
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  deploy:
+    runs-on: [self-hosted, Windows]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Copy files to web folder
+        shell: cmd
+        run: |
+          robocopy "%GITHUB_WORKSPACE%" "C:\inetpub\wwwroot\psm\mapsHusam" /MIR /XD .git .github node_modules DB_Backups GeoServerData /XF .gitignore
+          if %ERRORLEVEL% LEQ 7 (exit 0) else (exit 1)
+
+      - name: Install dependencies
+        shell: cmd
+        working-directory: C:\inetpub\wwwroot\psm\mapsHusam
+        run: npm ci
+
+      - name: Restart app
+        shell: cmd
+        working-directory: C:\inetpub\wwwroot\psm\mapsHusam
+        run: pm2 restart mapsHusam
