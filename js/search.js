@@ -179,17 +179,28 @@
         highlightLayer = overlayLayersObj.searchResultsHighlightLayer;
 
         if (layerSelect) {
-            layerSelect.innerHTML = '';
-            const excluded = ['المدن', 'المحافظات', 'الطرق', 'city', 'gov', 'road'];
+            layerSelect.innerHTML = '<option value="">-- اختر الطبقة للبحث --</option>';
+            const excluded = ['المدن', 'المحافظات', 'الطرق', 'المناطق', 'city', 'gov', 'road', 'locationLayer'];
+            const globalExcludedKeys = MAP_CONFIG.globalExclusions || [];
+
             Object.keys(overlayLayersObj).forEach(key => {
                 const lyr = overlayLayersObj[key];
                 const title = lyr?.get('title') || '';
-                if (title && !key.toLowerCase().includes('search') && !excluded.some(word => title.includes(word))) {
+
+                // التحقق من الاستثناءات باستخدام المفتاح الأساسي للطبقة (مثل 'rentLayer' أو 'electrician')
+                if (title && !key.toLowerCase().includes('search') && !excluded.some(word => title.includes(word)) && !globalExcludedKeys.includes(key.replace('Layer', ''))) {
                     layerSelect.innerHTML += `<option value="${key}">${title}</option>`;
                 }
             });
             layerSelect.onchange = () => {
                 const layerKey = layerSelect.value;
+                if (!layerKey) {
+                    fieldSelect.innerHTML = '<option value="">-- اختر الحقل --</option>';
+                    if (valueInputContainer) valueInputContainer.innerHTML = '';
+                    conditions = [];
+                    renderConditions();
+                    return;
+                }
                 let fields = ['rentLayer', 'saleLayer', 'landLayer'].includes(layerKey) ? fieldsConfig.realEstate : 
                              (layerKey === 'locationLayer' ? fieldsConfig.locationLayer : fieldsConfig.services);
                 fieldSelect.innerHTML = fields.map(f => `<option value="${f.id}">${f.name}</option>`).join('');

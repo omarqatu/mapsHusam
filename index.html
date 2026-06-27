@@ -3,35 +3,48 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>منصة العقارات والخدمات</title>
+    <title>خريطة الخدمات الفلسطينية</title>
+    
     <link rel="stylesheet" href="./css/style.css">
     <link rel="stylesheet" href="./css/buttons.css">
     <link rel="stylesheet" href="./css/features.css">
+    <link rel="stylesheet" href="./css/auth-app-events.css">
+    <link rel="stylesheet" href="./css/auth-core-functions.css">
     <link rel="stylesheet" href="ol/ol.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+    <link rel="stylesheet" href="./css/social-links.css">
+    <link rel="stylesheet" href="./css/provider-panel.css">
 </head>
 <body>
+    
+<div id="user-top-badge-container" class="hidden" style="display: none;">
+    <span class="user-badge-name" id="top-username-display">---</span>
+    <span class="user-badge-role" id="top-userrole-display">---</span>
+    <button class="btn-logout-top" onclick="window.logoutPlatform()">
+        <i class="fas fa-sign-out-alt"></i> تسجيل الخروج
+    </button>
+</div>
 
 <div id="map-header">
-    <div class="quick-search-wrapper">
-        <button class="scroll-btn left" id="scrollLeft"><i class="fas fa-chevron-right"></i></button>
-        <div id="quick-search-container" class="quick-search-bar"></div>
-        <button class="scroll-btn right" id="scrollRight"><i class="fas fa-chevron-left"></i></button>
-    </div>
-
     <div class="global-search-wrapper">
         <i class="fas fa-search"></i>
         <input type="text" id="global-search-input" placeholder="ابحث عن عقار، مطعم، فني...">
         <div id="search-suggestions"></div>
     </div>
 
-    <h2>خريطة العقارات والخدمات</h2>
+    <div class="quick-search-wrapper">
+        <button class="scroll-btn left" id="scrollLeft"><i class="fas fa-chevron-right"></i></button>
+        <div id="quick-search-container" class="quick-search-bar"></div>
+        <button class="scroll-btn right" id="scrollRight"><i class="fas fa-chevron-left"></i></button>
+    </div>
+
+    <h2>خريطة الخدمات الفلسطينية</h2>
     
     <div id="basemap-switcher">
         <select id="basemap-select">
+            <option value="esri" selected>صورة فضائية</option>
             <option value="aerial">صورة جوية</option>
             <option value="osm">خريطة أساس</option>
-            <option value="esri">صورة فضائية</option>
             <option value="none">بدون خريطة أساس</option>
         </select>
     </div>
@@ -130,8 +143,8 @@
     <select id="operator-select">
         <option value="=">=</option>
         <option value="contains">يحتوي على</option>
-        <option value=">">></option>
-        <option value="<"><</option>
+        <option value=">">&gt;</option>
+        <option value="<">&lt;</option>
     </select>
     <label for="value-input">القيمة:</label>
     <div id="value-input-container"></div>
@@ -190,8 +203,7 @@
             <button id="polygonFinalSave" class="run-btn" style="background-color:#28a745; color:white; grid-column: span 2;">✅ حفظ نهائي للسيرفر</button>
         </div>
     </div>
-
-    <p style="font-size: 11px; color: #666; margin-top: 15px; border-top: 1px solid #eee; padding-top: 5px;">* ملاحظة: للتعديل أو الحذف، انقر داخل المضلع بعد تفعيل الأداة.</p>
+    <p style="font-size: 11px; color: #666; margin-top: 15px; border-top: 1px solid #eee; padding-top: 5px;">* ملاحظة: للتعديل أو الحظر، انقر داخل المضلع بعد تفعيل الأداة.</p>
 </div>
 
 <div id="lineEditPanel" class="hidden panel-right">
@@ -242,24 +254,229 @@
     <p id="palestineCoords">E: 0, N: 0</p>
 </div>
 
+<div id="auth-splash-overlay" class="auth-overlay">
+    <div id="auth-welcome-section" class="auth-dialog-box">
+        <h2 class="auth-title">منصة خريطة الخدمات الفلسطينية</h2>
+        <h2 class="auth-title">نسخة تجريبية</h2>
+        <p class="auth-welcome-text">
+            المنصة التفاعلية الأولى لربط المستخدمين بمزودي الخدمات وأصحاب العقارات في فلسطين. 
+            سواء كنت تبحث عن خدمة، أو لديك عقار للبيع أو الإيجار، نحن نمنحك تسويقاً جغرافياً ذكياً يربطك مباشرة بالجمهور.
+        </p>
+        
+        <hr class="auth-divider">
+
+        <h4 class="auth-section-title">سياسة وشروط الاستخدام:</h4>
+        <div class="auth-terms-container">
+            <ul>
+                <li>المنصة عبارة عن وسيط جيو-رقمي يربط المستخدم بمزود الخدمة عبر الواتساب فقط.</li>
+                <li>الاتفاق على الأسعار، المواعيد، أو تفاصيل الخدمة يتم بين الطرفين مباشرة دون أي تدخل منا.</li>
+                <li>المنصة تخلي مسؤوليتها بالكامل عن أي خلاف، سوء معاملة، أو إخلال بالاتفاق بين الأطراف.</li>
+                <li>في حال وجود شكاوى، يتم مراسلتنا عبر صفحة الفيسبوك لاتخاذ الإجراءات الإدارية (كالحظر).</li>
+            </ul>
+        </div>
+
+        <div class="auth-requirements-container">
+            <label class="auth-checkbox-label">
+                <input type="checkbox" id="agree-to-terms">
+                <span>أوافق على سياسة الاستخدام وإخلاء المسؤولية المذكورة أعلاه.</span>
+            </label>
+            
+            <div class="facebook-like-section">
+                <p>يدعمنا استمراركم، يرجى تسجيل الإعجاب بصفحتنا على فيسبوك للمتابعة:</p>
+                <a href="https://www.facebook.com/MapServesPalestine/" target="_blank" id="fb-page-link" class="fb-button">
+                    👍 زيارة صفحة الفيس بوك والاعجاب بها
+                </a>
+                <label class="auth-checkbox-label" style="margin-top: 8px;">
+                    <input type="checkbox" id="liked-fb-page">
+                    <span>قمت بالدخول والضغط على زر الإعجاب بالصفحة.</span>
+                </label>
+            </div>
+        </div>
+
+        <div id="auth-buttons-group" class="auth-buttons-disabled">
+            <p class="auth-action-hint">الرجاء الموافقة على الشروط والإعجاب بالصفحة لتفعيل التسجيل:</p>
+            <button class="btn-auth" id="btn-go-to-register-email" style="background-color: #2980b9; width: 100%; color: white; padding: 12px; border: none; border-radius: 5px; cursor: pointer; font-size: 16px;">
+                📧 التسجيل عبر البريد الإلكتروني
+            </button>
+        </div>
+        
+        <button type="button" class="btn-auth" id="btn-welcome-back-to-login" style="background-color: #27ae60; width: 100%; margin-top: 15px; color: white; padding: 12px; border: none; border-radius: 5px; cursor: pointer; font-size: 16px;">
+            ⬅️ إذا كنت مسجلاً مسبقاً، انقر هنا لتسجيل الدخول
+        </button>
+    </div>
+
+    <div id="auth-login-form-section" class="auth-dialog-box hidden">
+        <h3 class="auth-title">تسجيل الدخول للخريطة</h3>
+        <p class="auth-welcome-text" style="text-align: center;">أدخل بيانات حسابك المسجل للدخول إلى الخريطة التفاعلية</p>
+        
+        <form id="login-form">
+            <div class="auth-form-group">
+                <label>البريد الإلكتروني:</label>
+                <input type="email" id="login-email" placeholder="example@mail.com" required>
+            </div>
+            
+            <div class="auth-form-group">
+                <label>رقم الجوال:</label>
+                <input type="text" id="login-phone" placeholder="05xxxxxxxx" required>
+            </div>
+
+            <div class="auth-form-group">
+                <label>كلمة المرور:</label>
+                <input type="password" id="login-password" placeholder="••••••••" required>
+            </div>
+
+            <button type="submit" class="btn-auth btn-submit-reg" style="background-color: #27ae60;" id="btn-submit-login">دخول إلى المنصة</button>
+            
+            <hr class="auth-divider">
+            <p style="text-align:center; margin-bottom:5px; font-size:16px; color:#777;">أو يمكنك مراجعة الاتفاقية والشروط ثم إنشاء حساب جديد:</p>
+            <button type="button" class="btn-auth-back" id="btn-login-back-to-welcome" style="background-color: #3c384d; margin-top:0;">📋 من هنا للموافقة على الاتفاقية والشروط</button>
+        </form>
+    </div>
+
+    <div id="auth-email-form-section" class="auth-dialog-box hidden">
+        <button type="button" class="btn-auth-back" id="btn-back-to-login-direct" style="margin-top: 0; margin-bottom: 15px; background-color: #2980b9; color: white; width: 100%;">
+            ⬅️ إذا كنت مسجلاً مسبقاً (مستخدم / مزود خدمة)، انقر هنا لإدخال بياناتك السابقة والدخول
+        </button>
+
+        <h3 class="auth-title">إنشاء حساب جديد بالبريد</h3>
+        <p class="auth-welcome-text" style="text-align: center;">يرجى ملء البيانات التالية للانضمام إلى الخريطة</p>
+        
+        <form id="register-form">
+            <div class="auth-form-group">
+                <label>الاسم الكامل:</label>
+                <input type="text" id="reg-name" placeholder="أدخل اسمك الشخصي أو التجاري" required>
+            </div>
+            
+            <div class="auth-form-group">
+                <label>البريد الإلكتروني:</label>
+                <input type="email" id="reg-email" placeholder="example@mail.com" required>
+            </div>
+            
+            <div class="auth-form-group">
+                <label>كلمة المرور:</label>
+                <input type="password" id="reg-password" placeholder="••••••••" required>
+            </div>
+
+            <div class="auth-form-group">
+               <label for="reg-phone">رقم الجوال أو الموبايل (0599123456):</label>
+               <input type="text" id="reg-phone" required pattern="^05\d{8}$" maxlength="10" placeholder="0598512667">
+               <small style="color: #7f8c8d; display: block; margin-top: 4px;">يجب إدخال 10 أرقام تبدأ بـ 05</small>
+            </div>
+
+            <div class="auth-form-group">
+                <label>نوع الحساب المستهدف:</label>
+                <select id="reg-role" required>
+                    <option value="user">مستخدم عادي (البحث وتصفح وطلب الخدمات)</option>
+                </select>
+            </div>
+
+            <button type="submit" class="btn-auth btn-submit-reg" id="btn-submit-register">إتمام التسجيل والدخول الخريطة</button>
+            
+            <p style="text-align:center; margin-top:12px; font-size:13px; color:#444;">
+                لديك حساب بالفعل؟ <a href="#" id="go-to-login" style="color:#2980b9; font-weight:bold; text-decoration:underline;">تسجيل الدخول من هنا</a>
+            </p>
+        </form>
+    </div>
+</div>
+
+<div class="feedback-banner-wrapper" style="pointer-events: none !important;">
+    <button type="button" id="toggleBannerBtn" class="banner-toggle-btn" title="تصغير" style="pointer-events: auto !important;"
+            onclick="handleBannerToggle(event, this)">—</button>
+
+    <a href="https://www.facebook.com/MapServesPalestine" target="_blank" class="feedback-banner" id="feedbackBanner" style="pointer-events: auto !important;"
+       onclick="handleBannerLinkClick(event, this)">
+        <div class="banner-full-content">
+            <p>هل لديك استفسار أو تود تقديم شكوى ؟؟</p>
+            <p>أو إذا كنت مزود خدمة، تواصل معنا عبر رسائل الصفحة
+                <br><strong>انقر داخل المربع للتواصل</strong>
+            </p>
+        </div>
+        
+        <div class="banner-minimized-content">
+            تواصل معنا عبر فيسبوك
+        </div>
+    </a>
+</div>
+
+<div id="provider-mini-panel" class="provider-panel-bottom-left hidden" style="display: none; position: fixed; bottom: 25px; left: 25px; z-index: 99999; background: #ffffff; box-shadow: 0 4px 20px rgba(0,0,0,0.25); border-radius: 10px; width: 310px; padding: 16px; direction: rtl; font-family: system-ui, -apple-system, sans-serif;">
+    
+    <input type="hidden" id="provider-layer-name" value="">
+    <input type="hidden" id="provider-feature-id" value="">
+
+    <div class="provider-panel-header" style="border-bottom: 2px solid #f5f5f5; padding-bottom: 10px; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center;">
+        <h4 style="margin: 0; color: #2c3e50; font-size: 14px; font-weight: 700;">🛠️ لوحة إدارة الخدمة الحية</h4>
+        <span class="provider-name-badge" id="provider-welcome-name" style="background: #e1f5fe; color: #0288d1; padding: 4px 10px; border-radius: 6px; font-size: 11px; font-weight: bold;">مرحباً، مزود الخدمة</span>
+    </div>
+    
+    <div class="provider-panel-body">
+        <p class="provider-status-text" style="font-size: 12px; margin: 0 0 12px 0; color: #666; font-weight: 500;">حالة تواجدك الحالي المباشر على الخريطة:</p>
+        
+        <div class="provider-action-buttons" style="display: flex; flex-direction: column; gap: 8px; margin-bottom: 12px;">
+            <div style="display: flex; gap: 8px; width: 100%;">
+                <button type="button" class="btn-prov btn-status-available" id="btn-prov-available-current" style="flex: 1; padding: 10px 5px; border: 2px solid #27ae60; background: #fff; color: #27ae60; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 11px; transition: all 0.2s ease;">🟢 متوفر (موقعي)</button>
+                <button type="button" class="btn-prov btn-status-available" id="btn-prov-available-prev" style="flex: 1; padding: 10px 5px; border: 2px solid #27ae60; background: #fff; color: #27ae60; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 11px; transition: all 0.2s ease;">🟢 متوفر (السابق)</button>
+            </div>
+            <button type="button" class="btn-prov btn-status-busy" id="btn-prov-busy" style="flex: 1; padding: 10px; border: 2px solid #c0392b; background: #fff; color: #c0392b; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 13px; transition: all 0.2s ease;">🔴 غير متوفر</button>
+        </div>
+        
+        <button type="button" class="btn-prov btn-go-to-location" id="btn-prov-fly" style="width: 100%; padding: 10px; border: none; background: #2980b9; color: #ffffff; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 13px; transition: background 0.2s ease;">📍 الانتقال إلى موقعي على الخريطة</button>
+        
+        <p id="provider-status-indicator" class="status-indicator-msg" style="font-size: 12px; margin: 0; text-align: center; color: #7f8c8d; font-weight: 600; padding-top: 10px; margin-top: 10px; border-top: 1px solid #eee;">جاري جلب الحالة من السيرفر... 🔄</p>
+    </div>
+</div>
+
 <script src="ol/ol.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/ol-ext@4.0.0/dist/ol-ext.min.js"></script>
 <script src="proj4/proj4.js"></script>
 
+<script src="js/auth-core-functions.js"></script>
+<script src="js/auth-app-events.js"></script>
+
 <script src="js/quick-search.js"></script>
-<script src="js/style-utils.js"></script>
 <script src="js/config.js"></script>
 <script src="js/layers.js"></script>
-<script src="js/layer-manager.js"></script>
 <script src="js/popup.js"></script>
 <script src="js/search.js"></script>
 <script src="js/location-search.js"></script>
 <script src="js/measure.js"></script>
 <script src="js/share-location.js"></script>
-<script src="js/editPoints.js"></script>
+<script src="js/edit-core.js"></script>
+<script src="js/edit-wfs.js"></script>
 <script src="js/editPolygons.js"></script>
 <script src="js/editLines.js"></script>
 <script src="js/global-search.js"></script>
 <script src="js/main.js"></script>
+
+<script>
+function handleBannerToggle(event, button) {
+    event.preventDefault(); 
+    event.stopPropagation(); 
+    var banner = document.getElementById('feedbackBanner');
+    banner.classList.toggle('minimized');
+    
+    if(banner.classList.contains('minimized')){
+        button.innerText = '+'; 
+        button.setAttribute('title', 'تكبير البنر');
+    } else {
+        button.innerText = '—'; 
+        button.setAttribute('title', 'تصغير');
+    }
+}
+
+function handleBannerLinkClick(event, banner) {
+    if(banner.classList.contains('minimized')){
+        event.preventDefault();
+        event.stopPropagation();
+        banner.classList.remove('minimized');
+        
+        var toggleBtn = document.getElementById('toggleBannerBtn');
+        toggleBtn.innerText = '—';
+        toggleBtn.setAttribute('title', 'تصغير');
+    }
+}
+</script>
+
+<script src="js/provider-panel.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 </body>
 </html>

@@ -1,11 +1,71 @@
 /**
- * config.js - النسخة الشاملة المحدثة
+ * config.js - النسخة الاحترافية المطورة (عقل المنصة)
  */
 
 const MAP_CONFIG = {
     server: {
         proxyUrl: "/proxy/geoserver/",
         srsName: "EPSG:28191",
+        apiUrl: window.location.origin + "/"
+    },
+
+    // إعدادات افتراضية للستايلات (أحجام الأيقونات والخطوط)
+    uiStyle: {
+        defaultIconScale: 0.15,
+        labelFont: "bold 14px Arial, sans-serif",
+        labelColor: "#333",
+        labelOutline: "#ffffff"
+    },
+
+    // 5. طبقات مستثناة عالمياً من العرض والبحث
+    // ملاحظة: يجب استخدام "المفتاح البرمجي" (Key) المستخدم في ملف layers.js
+    globalExclusions: [ 
+       
+        
+    ],
+
+    // مصفوفة الصلاحيات (التحكم في ظهور العناصر)
+    rolePermissions: {
+        admin: {
+            canEdit: true,
+            canSearch: true,
+            canMeasure: true,
+            canShare: true,
+            canViewResults: true,
+            canManageLayers: true
+        },
+        provider: {
+            canEdit: false,
+            canSearch: true,
+            canMeasure: true,
+            canShare: true,
+            canViewResults: true,
+            canManageLayers: true
+        },
+        user: {
+            canEdit: false,
+            canSearch: true,
+            canMeasure: true,
+            canShare: true,
+            canViewResults: true,
+            canManageLayers: true
+        }
+    },
+
+    // حصر جميع العناصر (IDs) لسهولة التحكم البرمجي لاحقاً
+    uiElements: {
+        // أزرار التحرير
+        editButtons: ['editBtn', 'polygonEditBtn', 'lineEditBtn', 'editPanel', 'polygonEditPanel', 'lineEditPanel'],
+        // أدوات البحث
+        searchTools: ['search-btn', 'global-search-wrapper', 'quick-search-wrapper', 'search-panel'],
+        // أدوات القياس
+        measureTools: ['measure-tools-toggle-btn', 'measurePanel'],
+        // أدوات الخريطة الإضافية
+        mapTools: ['togglePopupBtn', 'activate-location-btn', 'nearby-apartments-panel', 'share-location-btn', 'shareLocationPanel'],
+        // التحكم بالطبقات
+        layerTools: ['toggleLayerPanel', 'layerPanel'],
+        // النتائج
+        resultsPanel: ['results-panel']
     },
 
     propertyFields: [
@@ -40,22 +100,26 @@ const MAP_CONFIG = {
         { name: 'search_tags', label: 'كلمات البحث', type: 'text' }
     ],
 
-    // 3. تعريف الطبقات (نظام الحاويات)
     layers: {
-        helper: [ 
-            { id: "governorateLayer", workspace: "realestate", name: "Governorate", title: "المحافظات", style: "window.styleGovernorate", maxRes: 1000 },
-            { id: "cityLayer", workspace: "realestate", name: "City", title: "المدن", style: "window.styleCity", maxRes: 30 },
-            { id: "locationLayer", workspace: "realestate", name: "Location", title: "المناطق", style: "window.styleLocation", maxRes: 20 },
-            { id: "roadsLayer", workspace: "realestate", name: "RoadsTest", title: "الطرق", style: "window.roadsStyle", maxRes: 0.7, visible: false }
+        // طبقات المساعدة: تظهر بمقاييس كبيرة (من بعيد)
+        helper: [
+            { id: "governorateLayer", workspace: "realestate", name: "Governorate", title: "المحافظات", style: "window.styleGovernorate", maxRes: 2000, labelThreshold: 200 },
+            { id: "cityLayer", workspace: "realestate", name: "City", title: "المدن", style: "window.styleCity", maxRes: 100, labelThreshold: 30 },
+            { id: "locationLayer", workspace: "realestate", name: "Location", title: "المناطق", style: "window.styleLocation", maxRes: 15, labelThreshold: 5 },
+            { id: "roadsLayer", workspace: "realestate", name: "RoadsTest", title: "الطرق", style: "window.roadsStyle", maxRes: 3, visible: false, labelThreshold: 1.5 }
         ],
+        // طبقات العقارات: تظهر عند الاقتراب لضمان الدقة
         realestate: [
-            { id: "rentLayer", workspace: "realestate", name: "ApartRent", title: "شقق الإيجار", style: "window.styleRent" },
-            { id: "saleLayer", workspace: "realestate", name: "ApartSale", title: "شقق البيع", style: "window.styleSale" },
-            { id: "landLayer", workspace: "realestate", name: "LandSale", title: "الأراضي للبيع", style: "window.styleLand" }
+            { id: "rentLayer", workspace: "realestate", name: "ApartRent", title: "شقق الإيجار", style: "window.styleRent", maxRes: 10, labelThreshold: 0.8 },
+            { id: "saleLayer", workspace: "realestate", name: "ApartSale", title: "شقق للبيع", style: "window.styleSale", maxRes: 10, labelThreshold: 0.8 },
+            { id: "landLayer", workspace: "realestate", name: "LandSale", title: "الأراضي للبيع", style: "window.styleLand", maxRes: 15, labelThreshold: 1.2 }
         ],
+        // طبقات الخدمات: 59 طبقة، تظهر فقط عند زووم عالي لتفادي ازدحام الخريطة
         services: [
-            // سيتم توليد الـ 34 القديمة + الـ 25 الجديدة آلياً من ملف الترجمة
-            { workspace: "services", stylePrefix: "service" }
+            { workspace: "services", stylePrefix: "service", maxRes: 8, labelThreshold: 0.6 }
         ]
     }
 };
+
+// تجميد الكائن لضمان عدم التلاعب بالإعدادات برمجياً أثناء التشغيل
+Object.freeze(MAP_CONFIG);

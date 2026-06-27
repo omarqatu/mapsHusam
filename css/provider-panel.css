@@ -1,0 +1,166 @@
+/* تنسيق لوحة إدارة الخدمة أسفل اليسار */
+.provider-panel-bottom-left {
+    position: fixed;
+    bottom: 20px;
+    left: 20px;
+    width: 320px;
+    background-color: #ffffff;
+    border-radius: 8px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+    z-index: 1000;
+    overflow: hidden;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    transition: all 0.3s ease;
+}
+
+.provider-panel-header {
+    background-color: #2c3e50;
+    color: #fff;
+    padding: 12px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.provider-panel-header h4 {
+    margin: 0;
+    font-size: 14px;
+}
+
+.provider-name-badge {
+    background-color: #34495e;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 11px;
+}
+
+.provider-panel-body {
+    padding: 15px;
+}
+
+.provider-status-text {
+    font-size: 13px;
+    margin-top: 0;
+    margin-bottom: 10px;
+    color: #333;
+}
+
+.provider-action-buttons {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.btn-prov {
+    border: none;
+    padding: 10px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-weight: bold;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    transition: background 0.2s;
+}
+
+.btn-status-available { background-color: #2ecc71; color: white; }
+.btn-status-available:hover { background-color: #27ae60; }
+
+.btn-status-busy { background-color: #e74c3c; color: white; }
+.btn-status-busy:hover { background-color: #c0392b; }
+
+.btn-go-to-location { background-color: #3498db; color: white; }
+.btn-go-to-location:hover { background-color: #2980b9; }
+
+.status-indicator-msg {
+    margin-top: 10px;
+    margin-bottom: 0;
+    font-size: 12px;
+    text-align: center;
+    font-weight: bold;
+    color: #7f8c8d;
+}
+
+.hidden {
+    display: none !important;
+}
+
+/* ==========================================================================
+   استجابة لوحة مزود الخدمة للموبايل (Portrait)
+   ========================================================================== */
+@media (max-width: 767px) and (orientation: portrait) {
+    .provider-panel-bottom-left {
+        left: 0;
+        right: 0;
+        bottom: 0;
+        width: 100%;
+        max-height: 40vh; /* ارتفاع معقول على الموبايل */
+        border-radius: 16px 16px 0 0;
+        box-shadow: 0 -4px 15px rgba(0,0,0,0.2);
+        z-index: 10005; /* لضمان ظهور اللوحة فوق عناصر الخريطة والزووم الثابتة */
+        transform: translateY(0); /* إلغاء أي تحويلات سابقة */
+        transition: all 0.3s ease-in-out;
+    }
+
+    .provider-panel-body {
+        padding: 10px;
+    }
+
+    .btn-prov {
+        font-size: 13px;
+        padding: 8px;
+    }
+}
+
+/* ==========================================================================
+   استجابة لوحة مزود الخدمة للموبايل (Landscape)
+   ========================================================================== */
+@media (max-width: 900px) and (orientation: landscape) {
+    .provider-panel-bottom-left {
+        width: 240px; /* تقليص العرض */
+        max-height: 80vh; 
+        bottom: 5px;
+        left: 5px;
+    }
+
+    .provider-panel-header {
+        padding: 6px 10px;
+    }
+
+    .provider-panel-header h4 {
+        font-size: 12px;
+    }
+
+    .provider-panel-body {
+        padding: 8px;
+    }
+
+    .provider-status-text {
+        font-size: 11px;
+        margin-bottom: 5px;
+    }
+
+    .provider-action-buttons {
+        flex-direction: row; /* جعل الأزرار بجانب بعضها لتوفير مساحة رأسية */
+        flex-wrap: wrap;
+        gap: 4px;
+    }
+
+    .btn-prov {
+        padding: 6px 4px;
+        font-size: 11px;
+        flex: 1 1 45%; /* تمدد الأزرار لتأخذ نصف المساحة تقريباً */
+        gap: 4px;
+    }
+
+    .btn-go-to-location {
+        flex: 1 1 100%; /* زر الانتقال للموقع يأخذ سطر كامل أسفلهم لسهولة الضغط */
+    }
+
+    .status-indicator-msg {
+        font-size: 10px;
+        margin-top: 5px;
+    }
+}

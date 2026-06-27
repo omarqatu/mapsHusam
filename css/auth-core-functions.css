@@ -1,0 +1,120 @@
+/* ==========================================================================
+   auth-core-functions.css - تصميم الهوية العلوية للمستخدم (كمبيوتر وموبايل)
+   ========================================================================== */
+
+/* --- تنسيق الهوية العلوية للمستخدم (كمبيوتر) --- */
+#user-top-badge-container {
+    position: fixed;
+    top: 15px; 
+    right: 20px;
+    z-index: 100010 !important; 
+    background: rgba(255, 255, 255, 0.95);
+    padding: 8px 15px;
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.15);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-family: system-ui, -apple-system, sans-serif;
+    border: 1px solid #ddd;
+    direction: rtl;
+}
+
+.user-badge-name {
+    font-weight: bold;
+    color: #2c3e50;
+    font-size: 13px;
+}
+
+.user-badge-role {
+    font-size: 11px;
+    padding: 2px 8px;
+    border-radius: 20px;
+    color: white;
+    font-weight: bold;
+}
+
+.role-admin { background-color: #e74c3c; }
+.role-provider { background-color: #2980b9; }
+.role-user { background-color: #27ae60; }
+
+.btn-logout-top {
+    background-color: #7f8c8d;
+    color: white;
+    border: none;
+    padding: 4px 10px;
+    border-radius: 4px;
+    font-size: 12px;
+    cursor: pointer;
+    transition: background 0.3s;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+.btn-logout-top:hover { background-color: #c0392b; }
+
+#btn-open-login-nav {
+    position: fixed;
+    top: 15px;
+    left: 20px;
+    z-index: 9998;
+    padding: 10px 20px;
+    background-color: #2c3e50;
+    color: #ffffff;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-weight: bold;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+}
+#btn-open-login-nav:hover { background-color: #34495e; }
+
+/* --- استجابة الموبايل للعناصر العلوية --- */
+@media (max-width: 767px) {
+    #user-top-badge-container {
+        top: 5px; 
+        right: 5px;
+        left: auto; 
+        width: auto;
+        max-width: 60%;
+        justify-content: flex-start;
+        padding: 6px 10px;
+        font-size: 11px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+        z-index: 100015 !important; 
+    }
+    
+    .user-badge-name { font-size: 11px; }
+    .btn-logout-top { padding: 4px 8px; font-size: 10px; }
+
+    #btn-open-login-nav {
+        top: 5px;
+        left: 5px;
+        padding: 6px 12px;
+        font-size: 11px;
+        z-index: 100015 !important;
+    }
+}
+
+/* --- تعديل مخصص وحصري للموبايل الأفقي (Landscape) --- */
+@media (max-width: 900px) and (orientation: landscape) {
+    #user-top-badge-container {
+        top: 4px !important;
+        right: 4px !important;
+        padding: 4px 8px !important;
+        font-size: 10px !important;
+        max-width: 45% !important;
+    }
+
+    .user-badge-name { font-size: 10px !important; }
+    .user-badge-role { font-size: 9px !important; padding: 1px 5px !important; }
+    .btn-logout-top { padding: 3px 6px !important; font-size: 9px !important; }
+
+    #btn-open-login-nav {
+        top: 4px !important;
+        left: 4px !important;
+        padding: 4px 10px !important;
+        font-size: 10px !important;
+    }
+}
+

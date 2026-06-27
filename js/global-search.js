@@ -49,7 +49,9 @@ const searchConfig = {
     'services': {
         workspace: 'services',
         layers: [
-            'electrician', 'ac_technician', 'plumber', 'general_maintenance', 
+            // تصفية الطبقات بناءً على الإعدادات العامة
+            ...[
+            'electrician', 'ac_technician', 'plumber', 'general_maintenance',
             'painter', 'carpenter', 'blacksmith', 'builder', 'aluminum_tech',
             'house_cleaner', 'gardener', 'car_mechanic', 'car_electrician', 
             'tire_tech', 'car_wash', 'motorcycle_repair', 'taxi_driver', 
@@ -63,7 +65,7 @@ const searchConfig = {
             'clinics', 'doctors_on_call', 'ambulances_on_call', 'music_training',
             'lawyers', 'land_surveyors', 'real_estate_valuers', 'private_tutors',
             'programmers', 'car_delivery_on_call', 'motorcycle_delivery_on_call',
-            'bicycle_delivery_on_call', 'photographers', 'student_research_assist'
+            'bicycle_delivery_on_call', 'photographers', 'student_research_assist'].filter(layerName => !MAP_CONFIG.globalExclusions.includes(layerName))
         ]
     }
 };

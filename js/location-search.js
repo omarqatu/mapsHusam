@@ -27,12 +27,15 @@ function initializeLocationSearch(map, overlayLayersObj) {
     window.populateSearchLayerSelect = function() {
         if (!searchLayerSelect) return;
         searchLayerSelect.innerHTML = '<option value="">-- اختر الخدمة أو العقار --</option>';
-        const excluded = ['المدن', 'المحافظات', 'الطرق', 'city', 'gov', 'road'];
+        const excluded = ['المدن', 'المحافظات', 'الطرق', 'المناطق', 'city', 'gov', 'road', 'locationLayer'];
+        const globalExcludedKeys = MAP_CONFIG.globalExclusions || [];
+
         Object.keys(overlayLayersObj).forEach(key => {
             const lyr = overlayLayersObj[key];
             const title = lyr.get('title') || '';
-            const isExcluded = excluded.some(word => title.includes(word));
-            if (title && !key.toLowerCase().includes('search') && !isExcluded) {
+            const isExcluded = excluded.some(word => title.includes(word)) || globalExcludedKeys.includes(key.replace('Layer', ''));
+
+            if (title && !key.toLowerCase().includes('search') && !isExcluded) { // تم دمج شرط الاستثناءات
                 const option = document.createElement('option');
                 option.value = key;
                 option.textContent = title;

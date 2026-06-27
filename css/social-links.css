@@ -1,0 +1,187 @@
+/* ==========================================================================
+   1. شاشة الكمبيوتر (الشاشات الكبيرة) - متموضع في الوسط تماماً أفقياً
+   ========================================================================== */
+.feedback-banner-wrapper {
+    position: fixed !important;
+    top: 150px !important;       /* التحكم بالارتفاع (نزول/طلوع) في الكمبيوتر */
+    left: 15% !important;        /* عملية السنترة المطلوبة فوق الخريطة */
+    right: auto !important;
+    transform: translateX(-50%) !important; 
+    z-index: 999999999 !important; 
+    pointer-events: none !important; /* يجعل الحاوية الكبيرة شفافة أمام النقرات لتفادي تضارب الخريطة */
+}
+
+/* إعادة تفعيل النقرات للعناصر الداخلية فقط */
+.banner-toggle-btn, .feedback-banner {
+    pointer-events: auto !important; /* يعيد تفعيل النقرات للزر والبنر حصراً */
+}
+
+/* المربع الأساسي - الرابط */
+.feedback-banner {
+    display: block !important;
+    background: #ffffff !important;
+    border: 2px solid #0084ff !important;
+    padding: 18px 15px !important; 
+    border-radius: 12px !important;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.3) !important;
+    width: 250px !important; 
+    text-align: center !important;
+    cursor: pointer !important;
+    text-decoration: none !important;
+    transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1) !important;
+    overflow: hidden !important;
+    box-sizing: border-box !important;
+    z-index: 1 !important; 
+}
+
+/* زر التصغير والتكبير الدائري - الموضع الافتراضي عند فتح البنر */
+.banner-toggle-btn {
+    position: absolute !important;
+    top: 8px !important;
+    right: 8px !important;
+    background: #e0f0ff !important;
+    border: none !important;
+    color: #0084ff !important;
+    width: 24px !important;
+    height: 24px !important;
+    border-radius: 50% !important;
+    font-size: 14px !important;
+    font-weight: bold !important;
+    cursor: pointer !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    z-index: 9999999999 !important; /* يضمن ظهور الزر فوق البنر دائماً وقابلية النقر عليه */
+    transition: all 0.2s ease !important;
+    padding: 0 !important;
+    line-height: 1 !important;
+}
+
+.banner-toggle-btn:hover {
+    background: #0084ff !important;
+    color: #ffffff !important;
+    transform: scale(1.1) !important;
+}
+
+/* إخفاء نص التصغير افتراضياً في الحالة الكبيرة للمربع */
+.banner-minimized-content {
+    display: none !important;
+}
+
+/* 🔥 حالة التصغير (عندما ينكمش البنر ويتحول لمستطيل تواصل معنا عبر فيسبوك) */
+.feedback-banner.minimized {
+    width: 220px !important;            /* عرض مثالي ومستقر يمنع كسر السطر */
+    height: 42px !important;            /* ارتفاع مستطيل متناسق ورشيق */
+    padding: 0 !important;         
+    border-radius: 6px !important;      /* شكل مستطيل زواياه ناعمة وأنيقة */
+    background: #0084ff !important;
+    border-color: #0084ff !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    box-shadow: 0 4px 12px rgba(0, 132, 255, 0.4) !important;
+}
+
+/* عند التصغير: إخفاء نصوص البنر الكبيرة بالكامل */
+.feedback-banner.minimized .banner-full-content {
+    display: none !important;
+}
+
+/* عند التصغير: إظهار نص المستطيل الأزرق وتنسيقه باللون الأبيض */
+.feedback-banner.minimized .banner-minimized-content {
+    display: block !important;
+    color: #ffffff !important;
+    font-size: 18px !important;
+    font-weight: bold !important;
+    font-family: inherit !important;
+    text-align: center !important;
+    width: 100% !important;
+    line-height: 42px !important;      /* سنترة النص عمودياً تماماً داخل المستطيل */
+}
+
+/* 🔥 إخفاء الدائرة الصغيرة تماماً عند التصغير لمنع تشوه المظهر أو التداخل */
+.feedback-banner.minimized ~ .banner-toggle-btn {
+    display: none !important;
+}
+
+.banner-full-content { 
+    display: block !important; 
+    width: 100% !important; 
+}
+
+.feedback-banner p { 
+    font-weight: bold !important; 
+    margin: 5px 0 8px 0 !important; 
+    color: #0084ff !important; 
+    font-size: 18px !important; 
+}
+
+.feedback-banner span { 
+    font-size: 12px !important; 
+    line-height: 1.4 !important; 
+    display: block !important; 
+    color: #666 !important; 
+}
+
+.feedback-banner:hover { 
+    background: #f0f7ff !important; 
+    transform: translateY(-3px) !important; 
+}
+
+/* ==========================================================================
+   2. الموبايل العمودي (Portrait)
+   ========================================================================== */
+@media (max-width: 767px) {
+    .feedback-banner-wrapper {
+        top: 650px !important;   
+        left: 50% !important;
+        transform: translateX(-50%) !important;
+        width: auto !important;
+    }
+    
+    .feedback-banner {
+        width: 210px !important; 
+        padding: 15px 10px !important; 
+    }
+    
+    /* الحفاظ على أبعاد المستطيل متناسقة تماماً في الموبايل */
+    .feedback-banner.minimized {
+        width: 190px !important;
+        height: 38px !important;
+    }
+    
+    .feedback-banner.minimized .banner-minimized-content {
+        font-size: 12px !important;
+        line-height: 38px !important;
+    }
+    
+    .feedback-banner p { font-size: 11px !important; }
+    .feedback-banner span { font-size: 9px !important; }
+}
+
+/* ==========================================================================
+   3. الموبايل الأفقي (Landscape)
+   ========================================================================== */
+@media (max-width: 900px) and (orientation: landscape) {
+    .feedback-banner-wrapper {
+        top: 210px !important;   
+        left: 50% !important;
+        transform: translateX(-50%) !important;
+    }
+    
+    .feedback-banner {
+        width: 220px !important; 
+        padding: 15px 10px !important;
+    }
+    
+    /* الحفاظ على أبعاد المستطيل متناسقة في الموبايل الأفقي */
+    .feedback-banner.minimized {
+        width: 190px !important;
+        height: 38px !important;
+    }
+    
+    .feedback-banner.minimized .banner-minimized-content {
+        font-size: 12px !important;
+        line-height: 38px !important;
+    }
+}

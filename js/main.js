@@ -1,11 +1,20 @@
 /**
- * main.js - النسخة النهائية المطورة مع نظام الإقلاع الديناميكي الموحد (ستاندرد)
+ * main.js - النسخة النهائية المطورة مع نظام الإقلاع الديناميكي الموحد (ستاندرد) وإدارة صلاحيات المشرف ومزود الخدمة
+ * تم حل مشكلة تباين الزووم عند النقر على زر الانتقال إلى موقع الخدمة ليصبح زووم 19 فورياً من النقرة الأولى.
  */
 
 if (typeof proj4 !== 'undefined') {
     proj4.defs('EPSG:28191', '+proj=tmerc +lat_0=31.73409694444444 +lon_0=35.21208055555556 +k=1.00000 +x_0=170211.555 +y_0=126790.909 +ellps=GRS80 +towgs84=-108.973,-34.502,-119.85,-0.00511,-0.00021,0.00026,-0.57398 +units=m +no_defs +type=crs');
     ol.proj.proj4.register(proj4);
 }
+
+// [إجراء أمني 3]: دالة تطهير النصوص لمنع هجمات XSS
+window.sanitizeHTML = function(str) {
+    if (!str) return "";
+    const temp = document.createElement('div');
+    temp.textContent = str;
+    return temp.innerHTML;
+};
 
 // تعريف كائنات الطبقات في النطاق العالمي لضمان الوصول إليها من أي ملف
 window.overlayLayersObj = {}; 
@@ -16,13 +25,41 @@ window.searchResultsHighlightLayer = new ol.layer.Vector({
     style: new ol.style.Style({
         image: new ol.style.Circle({
             radius: 10,
-            fill: new ol.style.Fill({ color: '#ffff00' }),
-            stroke: new ol.style.Stroke({ color: '#333333', width: 2 })
+            fill: new ol.style.Fill({ color: '#ffff00' }), // اللون الأصفر لنتائج البحث
+            stroke: new ol.style.Stroke({ color: '#000000', width: 2 })
         }),
         stroke: new ol.style.Stroke({ color: '#ffff00', width: 4 }),
         fill: new ol.style.Fill({ color: 'rgba(255, 255, 0, 0.3)' })
     }),
     zIndex: 2000 // جعلها فوق كل الطبقات
+});
+
+// طبقة مخصصة للانتقال إلى موقع الخدمة (اللون الأحمر المميز)
+window.providerFlyToLayer = new ol.layer.Vector({
+    source: new ol.source.Vector(),
+    style: new ol.style.Style({
+        image: new ol.style.Circle({
+            radius: 12,
+            fill: new ol.style.Fill({ color: '#ff0000' }), // اللون الأحمر للانتقال للموقع
+            stroke: new ol.style.Stroke({ color: '#ffffff', width: 3 })
+        }),
+        zIndex: 2005
+    }),
+    zIndex: 2005
+});
+
+// طبقة مخصصة لعرض موقع المستخدم الحالي بشكل حي (نقطة زرقاء احترافية لتتبع الحركة)
+window.userLiveLocationLayer = new ol.layer.Vector({
+    source: new ol.source.Vector(),
+    style: new ol.style.Style({
+        image: new ol.style.Circle({
+            radius: 9,
+            fill: new ol.style.Fill({ color: '#3399CC' }), // لون أزرق ملاحة احترافي
+            stroke: new ol.style.Stroke({ color: '#ffffff', width: 3 }) // إطار أبيض لتبرز فوق الصورة الجوية
+        }),
+        zIndex: 2001
+    }),
+    zIndex: 2001
 });
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -35,7 +72,8 @@ document.addEventListener('DOMContentLoaded', () => {
         const lyr = layers[key];
         if (lyr && lyr instanceof ol.layer.Layer) {
             if (baseKeys.includes(key)) {
-                lyr.setVisible(key === 'aerialLayer');
+                // استخدام الإعدادات من layers.js بدلاً من فرض aerialLayer
+                lyr.setVisible(lyr.getVisible());
             } else {
                 const title = (lyr.get('title') || '').toLowerCase();
                 const isRoad = key.toLowerCase().includes('road') || title.includes('طرق') || title.includes('شوارع');
@@ -54,6 +92,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // إضافة طبقة التمييز لمصفوفة الطبقات قبل إنشاء الخريطة
     mapLayersArray.push(window.searchResultsHighlightLayer);
+    mapLayersArray.push(window.providerFlyToLayer);
+    mapLayersArray.push(window.userLiveLocationLayer);
 
     // الإحداثيات الافتراضية للموقع الرئيسي للمنصة (المركز والزووم الافتراضي)
     let defaultCenter = [169463.41, 145767.99];
@@ -64,7 +104,6 @@ document.addEventListener('DOMContentLoaded', () => {
         'ramallah': { name: '3. الانتقال مباشرة إلى بلدية رام الله', coords: [168986.922, 145468.480] },
         'albiereh': { name: '4. الانتقال مباشرة إلى بلدية البيرة', coords: [170185.605, 145713.553] },
         'beitunia': { name: '5. الانتقال مباشرة إلى بلدية بيتونيا', coords: [165995.512, 144049.217] }
-        // لمستقبل التوسعة، أضف السطر هنا فقط بنفس التنسيق تماماً دون تعديل الـ HTML
     };
 
     // --- 2. إنشاء الخريطة ---
@@ -79,53 +118,72 @@ document.addEventListener('DOMContentLoaded', () => {
     });
     window.map = map;
 
-    // دالة موحدة لجلب الموقع الجغرافي الحالي وتحريك الخريطة
+    // متغيرات تتبع الموقع الحي والمستمر
+    window.userLocationWatchId = null;
+    let lastUpdateTime = 0;
+
+    // دالة موحدة لتتبع الموقع الجغرافي بشكل حي ومستمر (مثالية لمن هو في سيارة لتتبع المسار)
     const getUserCurrentLocation = (targetButton) => {
         if (!navigator.geolocation) {
             alert('ميزة تحديد الموقع غير مدعومة في متصفحك الحالي.');
             return;
         }
 
-        if (targetButton) targetButton.innerHTML = '⏳'; // تغيير الأيقونة مؤقتاً أثناء التحميل
-        
-        navigator.geolocation.getCurrentPosition(
+        // إذا كان نظام التتبع يعمل مسبقاً، نقوم بإيقافه فوراً (Toggle)
+        if (window.userLocationWatchId !== null) {
+            navigator.geolocation.clearWatch(window.userLocationWatchId);
+            window.userLocationWatchId = null;
+            window.userLiveLocationLayer.getSource().clear();
+            if (targetButton) {
+                targetButton.innerHTML = '🎯';
+                targetButton.style.setProperty("background-color", "rgba(0, 60, 136, 0.85)", "important");
+            }
+            return;
+        }
+
+        if (targetButton) {
+            targetButton.innerHTML = '⏳';
+            targetButton.style.setProperty("background-color", "#2ecc71", "important"); // تغيير اللون للأخضر للإشارة للنشاط
+        }
+
+        window.userLocationWatchId = navigator.geolocation.watchPosition(
             (position) => {
-                const lat = position.coords.latitude;
-                const lon = position.coords.longitude;
+                const currentTime = Date.now();
+                console.log("📍 تم استلام إحداثيات GPS جديدة بدقة:", position.coords.accuracy);
 
-                // تحويل الإحداثيات الجغرافية العالمية WGS84 إلى النظام الفلسطيني المعتمد EPSG:28191
-                const transformedCoords = proj4('EPSG:4326', 'EPSG:28191', [lon, lat]);
+                // تحديث الموقع كل 10 ثوانٍ لضمان السلاسة وعدم إرهاق الخريطة (بناءً على طلب المستخدم)
+                if (currentTime - lastUpdateTime < 10000) return;
+                
+                lastUpdateTime = currentTime;
+                const transformedCoords = proj4('EPSG:4326', 'EPSG:28191', [position.coords.longitude, position.coords.latitude]);
 
-                // تحريك الخريطة بسلاسة للموقع الجديد وزيادة الزووم
+                // تحديث الرمز المكاني الحي على الخريطة
+                const source = window.userLiveLocationLayer.getSource();
+                source.clear();
+                const feature = new ol.Feature({
+                    geometry: new ol.geom.Point(transformedCoords)
+                });
+                source.addFeature(feature);
+
+                // تحريك الخريطة لتتبع المستخدم مع الحفاظ على مستوى الزووم المفضل
                 map.getView().animate({
                     center: transformedCoords,
-                    zoom: 19,
-                    duration: 1200
+                    zoom: map.getView().getZoom() < 17 ? 18 : map.getView().getZoom(),
+                    duration: 1500
                 });
 
-                if (targetButton) targetButton.innerHTML = '🎯'; // إعادة الأيقونة الأصلية
+                if (targetButton) targetButton.innerHTML = '📡'; // تغيير الأيقونة للدلالة على البث الحي
             },
             (error) => {
-                if (targetButton) targetButton.innerHTML = '🎯';
-                switch(error.code) {
-                    case error.PERMISSION_DENIED:
-                        alert('تم رفض طلب الوصول إلى الموقع الجغرافي. يرجى تفعيل الصلاحية من إعدادات المتصفح.');
-                        break;
-                    case error.POSITION_UNAVAILABLE:
-                        alert('معلومات الموقع الجغرافي غير متوفرة حالياً.');
-                        break;
-                    case error.TIMEOUT:
-                        alert('انتهت مهلة طلب جلب الموقع الحالي.');
-                        break;
-                    default:
-                        alert('حدث خطأ غير معروف أثناء تحديد الموقع.');
+                console.error("Geolocation Tracking Error:", error);
+                if (targetButton) {
+                    targetButton.innerHTML = '🎯';
+                    targetButton.style.setProperty("background-color", "rgba(0, 60, 136, 0.85)", "important");
                 }
+                navigator.geolocation.clearWatch(window.userLocationWatchId);
+                window.userLocationWatchId = null;
             },
-            {
-                enableHighAccuracy: true, // طلب دقة عالية عبر الـ GPS للموبايل
-                timeout: 10000,
-                maximumAge: 0
-            }
+            { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
         );
     };
 
@@ -133,7 +191,6 @@ document.addEventListener('DOMContentLoaded', () => {
     setTimeout(() => {
         const zoomContainer = document.querySelector('.ol-zoom');
         if (zoomContainer) {
-            // إنشاء زر تحديد الموقع اليدوي الافتراضي وحقنه في الخريطة
             const locationBtn = document.createElement('button');
             locationBtn.className = 'ol-custom-location-btn';
             locationBtn.setAttribute('type', 'button');
@@ -142,12 +199,10 @@ document.addEventListener('DOMContentLoaded', () => {
             
             zoomContainer.appendChild(locationBtn);
 
-            // تفعيل وظيفة جلب الموقع عند الضغط اليدوي على الزر
             locationBtn.onclick = () => {
                 getUserCurrentLocation(locationBtn);
             };
 
-            // إنشاء شاشة الترحيب القياسية وخيارات الإقلاع بنمط ستاندرد موحد
             const splashOverlay = document.createElement('div');
             splashOverlay.id = 'custom-splash-overlay';
             Object.assign(splashOverlay.style, {
@@ -165,7 +220,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 textAlign: 'center', fontFamily: 'system-ui, sans-serif'
             });
 
-            // ترويسة النافذة المنبثقة الاستاتيكية
             dialogBox.innerHTML = `
                 <h3 style="margin-top:0; color:#2c3e50; font-size:18px; margin-bottom:6px; font-weight:700;">منصة الخرائط الجغرافية</h3>
                 <p style="color:#7f8c8d; font-size:13px; margin-bottom:20px;">الرجاء اختيار نطاق التركيز الأولي لبدء استكشاف الخريطة:</p>
@@ -175,7 +229,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 </div>
             `;
 
-            // حقن الأزرار ديناميكياً داخل حاوية النافذة من كائن المدن لضمان مظهر موحد وسهولة التعديل
             const optionsContainer = dialogBox.querySelector('#splash-options-container');
             Object.keys(citiesCoordinates).forEach(key => {
                 const cityBtn = document.createElement('button');
@@ -194,22 +247,18 @@ document.addEventListener('DOMContentLoaded', () => {
             splashOverlay.appendChild(dialogBox);
             document.body.appendChild(splashOverlay);
 
-            // تفعيل أحداث النقر الموحدة داخل أزرار شاشة الاختيار القياسية
             dialogBox.querySelectorAll('.splash-opt-btn').forEach(btn => {
                 btn.addEventListener('click', function() {
                     const type = this.getAttribute('data-type');
                     
                     if (type === 'default') {
-                        // الخيار الأول: الإبقاء على المركز والزووم الافتراضي دون تعديل
                         document.body.removeChild(splashOverlay);
                     } 
                     else if (type === 'gps') {
-                        // الخيار الثاني: تشغيل محرك الجيولكيشن والاتصال بالموقع
                         document.body.removeChild(splashOverlay);
                         getUserCurrentLocation(locationBtn);
                     } 
                     else if (type === 'city') {
-                        // الخيارات المتبقية: سحب الإحداثيات من الكائن وعمل الأنيميشن للمدينة المختارة
                         const cityName = this.getAttribute('data-city');
                         const cityData = citiesCoordinates[cityName];
                         if (cityData && cityData.coords) {
@@ -223,7 +272,6 @@ document.addEventListener('DOMContentLoaded', () => {
                     }
                 });
 
-                // تأثيرات التمرير القياسية (Hover Effect) لتغيير درجة لون الزر الأزرق
                 btn.addEventListener('mouseover', function() { this.style.background = '#34495e'; });
                 btn.addEventListener('mouseout', function() { this.style.background = '#2c3e50'; });
             });
@@ -252,20 +300,24 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     };
 
-    // --- 5. محرك اللوحات الموحد ---
+    // --- 5. محرك اللوحات الموحد والمعدل للصلاحيات ---
     window.closeAllPanels = () => {
-        document.querySelectorAll('.panel-right').forEach(p => p.classList.add('hidden'));
+        document.querySelectorAll('.panel-right').forEach(p => {
+            p.classList.add('hidden');
+            // تأمين الإغلاق وإلغاء القفل الخاص بـ display الحماية للمشرف
+            p.style.removeProperty("display");
+        });
         
         if (window.searchResultsHighlightLayer) window.searchResultsHighlightLayer.getSource().clear();
 
-        // تعطيل كافة الأدوات
+        // تعطيل كافة الأدوات الوظيفية لتجنب التعارض
         if (typeof window.toggleShareLocationTool === 'function') window.toggleShareLocationTool(false);
         if (typeof window.deactivatePointEditTools === 'function') window.deactivatePointEditTools();
         if (typeof window.deactivatePolygonEditTools === 'function') window.deactivatePolygonEditTools();
         if (typeof window.deactivateLineEditTools === 'function') window.deactivateLineEditTools();
     };
 
-    // الربط الذكي للأزرار
+    // الربط الذكي الموحد للأزرار (تم التخلص من التكرار القديم وحل مشكلة العرض للمشرف)
     document.querySelectorAll('[data-panel]').forEach(btn => {
         btn.onclick = function() {
             const panelId = this.getAttribute('data-panel');
@@ -279,41 +331,16 @@ document.addEventListener('DOMContentLoaded', () => {
             window.closeAllPanels();
 
             if (isCurrentlyHidden) {
-                panel.classList.remove('hidden');
-                populateEditSelects();
-
-                if (window.map && window.overlayLayersObj) {
-                    if (editType === 'point' && typeof initializeEditTools === 'function') {
-                        initializeEditTools(window.map, window.overlayLayersObj);
-                    } 
-                    else if (editType === 'polygon' && typeof initializePolygonEditTools === 'function') {
-                        initializePolygonEditTools(window.map, window.overlayLayersObj);
-                    } 
-                    else if (editType === 'line' && typeof window.initializeLineEditTools === 'function') {
-                        window.initializeLineEditTools(window.map, window.overlayLayersObj);
-                    }
+                // الفحص الآمن لدور المستخدم لتفادي انقطاع الكود إذا لم يكن معرّفاً
+                const currentRole = window.currentUserRole || (typeof currentUserRole !== 'undefined' ? currentUserRole : null);
+                if (currentRole === 'admin') {
+                    panel.style.setProperty("display", "block", "important");
                 }
-            }
-        };
-    });
 
-    // الربط التكراري الموثق للأزرار
-    document.querySelectorAll('[data-panel]').forEach(btn => {
-        btn.onclick = function() {
-            const panelId = this.getAttribute('data-panel');
-            const editType = this.getAttribute('data-edit-type');
-            const panel = document.getElementById(panelId);
-            
-            if (!panel) return;
-
-            const isCurrentlyHidden = panel.classList.contains('hidden');
-            
-            window.closeAllPanels();
-
-            if (isCurrentlyHidden) {
                 panel.classList.remove('hidden');
                 populateEditSelects();
 
+                // تفعيل أدوات التحرير الجغرافية حسب نوع الزر المنقور
                 if (window.map && window.overlayLayersObj) {
                     if (editType === 'point' && typeof initializeEditTools === 'function') {
                         initializeEditTools(window.map, window.overlayLayersObj);
@@ -326,6 +353,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     }
                 }
 
+                // معالجة لوحات مخصصة عند الفتح
                 if (panelId === 'shareLocationPanel' && typeof window.toggleShareLocationTool === 'function') {
                     window.toggleShareLocationTool(true);
                 }
@@ -341,7 +369,7 @@ document.addEventListener('DOMContentLoaded', () => {
         btn.onclick = () => window.closeAllPanels();
     });
 
-    // زر القائمة العلوية
+    // زر القائمة العلوية للهواتف المحمولة
     const topToggle = document.getElementById('toggle-top-buttons-btn');
     if (topToggle) {
         topToggle.onclick = () => {
@@ -350,7 +378,7 @@ document.addEventListener('DOMContentLoaded', () => {
         };
     }
 
-    // --- 6. تهيئة الأدوات العامة ---
+    // --- 7. تهيئة الأدوات العامة عند تحميل الصفحة ---
     setTimeout(() => {
         if (typeof initializePopup === 'function') initializePopup(map, window.overlayLayersObj);
         if (typeof initializeSearch === 'function') initializeSearch(map, window.overlayLayersObj);
@@ -363,7 +391,40 @@ document.addEventListener('DOMContentLoaded', () => {
         if (typeof window.initializeGlobalSearch === 'function') {
             window.initializeGlobalSearch(); 
         }
-    }, 800);
+        
+        // [محرك المزامنة التلقائية]: تحديث ذكي كل 15 ثانية لضمان رؤية التغييرات دون إرهاق السيرفر
+        startSmartMapSync(15000); 
+    }, 1000);
+
+    /**
+     * دالة المزامنة الذكية: تقوم بتحديث الطبقات الظاهرة فقط لتوفير موارد السيرفر
+     */
+    function startSmartMapSync(interval) {
+        setInterval(() => {
+            if (!window.overlayLayersObj) return;
+
+            Object.keys(window.overlayLayersObj).forEach(key => {
+                const layer = window.overlayLayersObj[key];
+                
+                // استثناء طبقات التمييز والتتبع والتحليق من التحديث التلقائي لكي لا تختفي نتائج البحث
+                const lowerKey = key.toLowerCase();
+                const isInternalLayer = lowerKey.includes('highlight') || 
+                                        lowerKey.includes('marker') || 
+                                        lowerKey.includes('live') || 
+                                        lowerKey.includes('fly') ||
+                                        lowerKey.includes('share');
+
+                // تحديث طبقات البيانات فقط (العقارات والخدمات) مع استثناء الطبقات الداخلية
+                if (layer && layer.getVisible() && !isInternalLayer && (lowerKey.includes('layer') || lowerKey.includes('rent') || lowerKey.includes('sale'))) {
+                    const source = layer.getSource();
+                    if (source && typeof source.refresh === 'function') {
+                        // التحديث هنا يتم داخلياً في OpenLayers ويجلب البيانات الجديدة من GeoServer
+                        source.refresh();
+                    }
+                }
+            });
+        }, interval);
+    }
 
     // متابعة الإحداثيات وطباعتها في شريط المعلومات السفلي
     map.on('pointermove', (e) => {
@@ -373,7 +434,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // تبديل خرائط الأساس
+    // تبديل خرائط الأساس الديناميكي
     const basemapSelect = document.getElementById('basemap-select');
     if (basemapSelect) {
         basemapSelect.onchange = (e) => {

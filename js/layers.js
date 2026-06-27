@@ -1,10 +1,10 @@
 /**
- * layers.js - النسخة الديناميكية الشاملة (59 خدمة)
+ * layers.js - النسخة الديناميكية الشاملة والمطورة (59 خدمة) - مع دعم الاستثناءات العالمية
  * تشمل: الأيقونات المخصصة، الإيموجي، والمحرك الذي يقرأ من MAP_CONFIG
- * التعديلات: إضافة Z-Index للطبقات وتنسيق وحدة المساحة م²
+ * التعديلات: إصلاح استدعاء الستايلات الديناميكية لضمان عودة السيمبولوجي الأصلي (أيقونات الإيجار والبيع والأراضي) بالكامل.
  */
 
-// 1. تعريف ترجمات وأيقونات الخدمات (الـ 34 القديمة + الـ 25 الجديدة)
+// 1. تعريف ترجمات وأيقونات الخدمات (الـ 59 خدمة كاملة)
 const serviceTranslations = {
     // --- الخدمات القديمة (34) ---
     'electrician': { name: 'فني كهرباء', icon: '⚡' },
@@ -69,20 +69,27 @@ const serviceTranslations = {
     'student_research_assist': { name: 'مساعد أبحاث طلاب', icon: '📚' }
 };
 
-// 2. دالة إنشاء الستايلات مع إضافة "م²" للمساحات
+// جعل serviceTranslations متاحة عالمياً للاستخدام في ملفات أخرى (مثل quick-search.js)
+window.serviceTranslations = serviceTranslations;
+
+// 2. دالة إنشاء الستايلات العامة والمطورة مع إضافة "م²" للمساحات وحماية النصوص الجغرافية
 window.createStyle = function (feature, resolution, options = {}) {
     const opts = { 
         fillColor: null, strokeColor: '#000', strokeWidth: 2, 
-        labelField: null, iconUrl: null, iconScale: 0.8, 
+        labelField: null, iconUrl: null, iconScale: MAP_CONFIG.uiStyle.defaultIconScale, 
         zoomThresholdForLabel: 0.9, emoji: null, ...options 
     };
 
+    // إذا كانت الطبقة تمتلك إعداد خاص في الكومفيج، نستخدمه
+    const currentRes = resolution;
+    const threshold = opts.zoomThresholdForLabel;
+
     let text = '';
-    if (opts.labelField && resolution < opts.zoomThresholdForLabel) {
+    if (opts.labelField && currentRes < threshold) {
         const val = feature.get(opts.labelField);
-        if (val) {
-            // إضافة م² إذا كان الحقل هو المساحة
-            if (opts.labelField === 'area') {
+        if (val !== undefined && val !== null) {
+            // التحقق الذكي لإضافة وحدة م² إذا كان الحقل يعبر عن المساحة
+            if (opts.labelField === 'area' || opts.labelField.toLowerCase().includes('area')) {
                 text = val.toString() + ' م²';
             } else {
                 text = val.toString();
@@ -93,15 +100,17 @@ window.createStyle = function (feature, resolution, options = {}) {
     let styleOptions = {
         text: new ol.style.Text({
             text: text, 
-            font: 'bold 15px Arial, sans-serif', 
-            fill: new ol.style.Fill({ color: '#333' }),
-            stroke: new ol.style.Stroke({ color: '#fff', width: 3 }), 
+            font: MAP_CONFIG.uiStyle.labelFont, 
+            fill: new ol.style.Fill({ color: MAP_CONFIG.uiStyle.labelColor }),
+            stroke: new ol.style.Stroke({ color: MAP_CONFIG.uiStyle.labelOutline, width: 3 }), 
             overflow: true, 
             offsetY: (opts.emoji || opts.iconUrl) ? -25 : -10 
         })
     };
 
-    const geomType = feature.getGeometry().getType();
+    // التحقق الآمن من نوع الهندسة الجغرافية منعاً لانهيار التنسيق
+    const geom = feature.getGeometry();
+    const geomType = geom ? geom.getType() : 'Point';
 
     if (geomType.includes('Point')) {
         if (opts.iconUrl) {
@@ -115,12 +124,12 @@ window.createStyle = function (feature, resolution, options = {}) {
             styleOptions.image = new ol.style.Icon({
                 anchor: [0.5, 0.5],
                 src: 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(
-                    `<svg xmlns="http://www.w3.org/2000/svg" width="30" height="30">
-                        <circle cx="15" cy="15" r="13" fill="white" stroke="%233f51b5" stroke-width="1.5"/>
-                        <text x="50%" y="50%" font-size="25" text-anchor="middle" dy=".35em">${opts.emoji}</text>
+                    `<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 32 32">
+                        <circle cx="16" cy="16" r="14" fill="white" stroke="%233f51b5" stroke-width="2"/>
+                        <text x="16" y="23" font-size="20" font-family="Arial, sans-serif" text-anchor="middle">${opts.emoji}</text>
                     </svg>`
                 ),
-                scale: 0.75
+                scale: 1.0
             });
         } 
         else {
@@ -131,29 +140,35 @@ window.createStyle = function (feature, resolution, options = {}) {
             });
         }
     } else {
-        if (opts.fillColor) styleOptions.fill = new ol.style.Fill({ color: opts.fillColor.replace('1)', '0.1)') });
+        if (opts.fillColor) {
+            let fColor = opts.fillColor;
+            if (fColor.startsWith('rgba')) {
+                fColor = fColor.replace(/[^,]+(?=\))/, '0.15');
+            }
+            styleOptions.fill = new ol.style.Fill({ color: fColor });
+        }
         styleOptions.stroke = new ol.style.Stroke({ color: opts.strokeColor, width: opts.strokeWidth });
         if (geomType.includes('Line')) styleOptions.text.setPlacement('line');
     }
     return new ol.style.Style(styleOptions);
 };
 
-// 3. ستايلات الطبقات المخصصة
+// 3. ستايلات الطبقات المخصصة والمعرفة في النطاق العالمي
 window.roadsStyle = (f, r) => new ol.style.Style({ stroke: new ol.style.Stroke({ color: '#444', width: 2.5 }), text: r < 2 ? new ol.style.Text({ text: f.get('name') || '', font: '12px Arial', fill: new ol.style.Fill({ color: '#000' }), stroke: new ol.style.Stroke({ color: '#fff', width: 8 }), placement: 'line' }) : null });
-window.styleRent = (f, r) => window.createStyle(f, r, { fillColor: 'rgba(255, 102, 0, 1)', iconUrl: 'icons/rent_icon.png', iconScale: 0.10, labelField: 'area' });
-window.styleSale = (f, r) => window.createStyle(f, r, { fillColor: 'rgba(0, 128, 0, 1)', iconUrl: 'icons/sale_icon.png', iconScale: 0.15, labelField: 'area' });
-window.styleLand = (f, r) => window.createStyle(f, r, { fillColor: 'rgba(255, 0, 0, 1)', strokeColor: 'red', labelField: 'area' });
-window.styleLocation = (f, r) => window.createStyle(f, r, { strokeColor: 'red', labelField: 'location', zoomThresholdForLabel: 10 });
-window.styleCity = (f, r) => window.createStyle(f, r, { strokeColor: 'blue', labelField: 'village_a', zoomThresholdForLabel: 20 });
+window.styleRent = (f, r) => window.createStyle(f, r, { fillColor: 'rgba(255, 102, 0, 1)', iconUrl: 'icons/rent_icon.png', iconScale: 0.12, labelField: 'area', zoomThresholdForLabel: 0.8 });
+window.styleSale = (f, r) => window.createStyle(f, r, { fillColor: 'rgba(0, 128, 0, 1)', iconUrl: 'icons/sale_icon.png', iconScale: 0.18, labelField: 'area', zoomThresholdForLabel: 0.8 });
+window.styleLand = (f, r) => window.createStyle(f, r, { fillColor: 'rgba(255, 0, 0, 1)', strokeColor: 'red', labelField: 'area', zoomThresholdForLabel: 1.2 });
+window.styleLocation = (f, r) => window.createStyle(f, r, { strokeColor: 'red', labelField: 'location', zoomThresholdForLabel: 5 });
+window.styleCity = (f, r) => window.createStyle(f, r, { strokeColor: 'blue', labelField: 'village_a', zoomThresholdForLabel: 30 });
 window.styleGovernorate = (f, r) => window.createStyle(f, r, { strokeColor: '#000', labelField: 'gov_a', zoomThresholdForLabel: 200 });
 
 // 4. الطبقات الأساسية الثابتة
 const osmBaseLayer = new ol.layer.Tile({ title: 'OSM', visible: false, type: 'base', source: new ol.source.OSM(), zIndex: 0 });
-const esriImageryLayer = new ol.layer.Tile({ title: 'Esri', visible: false, type: 'base', source: new ol.source.XYZ({ url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}' }), zIndex: 0 });
-const aerialLayer = new ol.layer.Tile({ title: 'Aerial', visible: true, type: 'base', source: new ol.source.TileWMS({ url: `${MAP_CONFIG.server.proxyUrl}SurdaAbuQash/wms`, params: { 'LAYERS': 'SurdaAbuQash:AerialPhoto_Ramallah', 'CRS': MAP_CONFIG.server.srsName } }), zIndex: 0 });
+const esriImageryLayer = new ol.layer.Tile({ title: 'Esri', visible: true, type: 'base', source: new ol.source.XYZ({ url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}' }), zIndex: 0 });
+const aerialLayer = new ol.layer.Tile({ title: 'Aerial', visible: false, type: 'base', source: new ol.source.TileWMS({ url: `${MAP_CONFIG.server.proxyUrl}madeenati/wms`, params: { 'LAYERS': 'madeenati:WB_2023_10_18mbt', 'CRS': MAP_CONFIG.server.srsName, 'FORMAT': 'image/jpeg', 'TILED': true }, serverType: 'geoserver', crossOrigin: 'anonymous' }), zIndex: 0 });
 const noBasemapLayer = new ol.layer.Vector({ title: 'None', visible: false, type: 'base', source: new ol.source.Vector(), zIndex: 0 });
 
-// 5. المحرك الديناميكي لإنشاء طبقات WFS مع إضافة باراميتر zIndex
+// 5. المحرك الديناميكي الآمن لإنشاء طبقات WFS وتغذيتها بالبيانات
 const createWFSLayer = (workspace, name, title, styleFunc, maxRes = 10, visible = true, zIndex = 10) => {
     return new ol.layer.Vector({
         title: title,
@@ -169,40 +184,80 @@ const createWFSLayer = (workspace, name, title, styleFunc, maxRes = 10, visible 
     });
 };
 
-// 6. تجميع كافة الطبقات في Object واحد
+// دالة وسيطة ذكية لاستخراج الستايل الصحيح لمنع اختفاء السيمبولوجي المخصص
+const getLayerStyle = (styleParam, fallbackColor) => {
+    // دالة افتراضية تضمن ظهور المعلم حتى لو فشل الستايل (لون واضح مع تعبئة خفيفة)
+    const defaultFallback = (f, r) => window.createStyle(f, r, { strokeColor: fallbackColor, fillColor: fallbackColor + '33' });
+
+    if (!styleParam) return defaultFallback;
+    
+    // إذا كان ممرراً كـ دالة مباشرة
+    if (typeof styleParam === 'function') return styleParam;
+    
+    // إذا كان ممرراً كنص باسم الدالة (مثال: "styleRent")
+    if (typeof styleParam === 'string') {
+        // تنظيف النص من "window." لضمان المطابقة البرمجية
+        const trimmed = styleParam.trim().replace('window.', '');
+        // استخدام الوصول الآمن للكائن window بدلاً من eval
+        if (typeof window[trimmed] === 'function') return window[trimmed];
+        console.warn(`⚠️ الستايل المسمى [${trimmed}] غير موجود في النطاق العالمي، تم استخدام الافتراضي.`);
+    }
+    return defaultFallback;
+};
+
+// 6. تجميع كافة الطبقات في كائن موحد
 window.appLayers = { 
     osmBaseLayer, esriImageryLayer, aerialLayer, noBasemapLayer
 };
 
-// توليد طبقات المساعدة آلياً (المناطق تكون في الأسفل Z-Index: 5)
-MAP_CONFIG.layers.helper.forEach(l => {
-    window.appLayers[l.id] = createWFSLayer(l.workspace, l.name, l.title, eval(l.style), l.maxRes, l.visible !== false, 5);
-});
+// أ) توليد طبقات المساعدة آلياً (المناطق والأحواض Z-Index: 5)
+if (MAP_CONFIG && MAP_CONFIG.layers && MAP_CONFIG.layers.helper) {
+    MAP_CONFIG.layers.helper.forEach(l => {
+        // [إضافة]: التحقق من الاستثناءات العالمية لطبقات المساعدة
+        if (MAP_CONFIG.globalExclusions && MAP_CONFIG.globalExclusions.includes(l.id)) return;
 
-// توليد طبقات العقارات آلياً (الأراضي Z-Index: 10، الشقق Z-Index: 20)
-MAP_CONFIG.layers.realestate.forEach(l => {
-    let zIndex = 20; 
-    if (l.id.includes('land') || l.name.includes('land')) zIndex = 10; 
-    window.appLayers[l.id] = createWFSLayer(l.workspace, l.name, l.title, eval(l.style), l.maxRes || 10, true, zIndex);
-});
-
-// توليد كافة طبقات الخدمات (59 خدمة) آلياً (تكون في الأعلى Z-Index: 30)
-Object.keys(serviceTranslations).forEach(key => {
-    const info = serviceTranslations[key];
-    const sStyle = (f, r) => window.createStyle(f, r, { 
-        emoji: info.icon, 
-        labelField: 'name', 
-        zoomThresholdForLabel: 0.7 
+        const targetStyle = getLayerStyle(l.style, '#ccc');
+        window.appLayers[l.id] = createWFSLayer(l.workspace, l.name, l.title, targetStyle, l.maxRes, l.visible !== false, 5);
     });
-    window.appLayers[key + 'Layer'] = createWFSLayer('services', key, info.name, sStyle, 4, true, 30); 
-});
+}
 
-// 7. طبقات البحث والتمييز (أعلى شيء Z-Index: 1000)
+// ب) توليد طبقات العقارات والأراضي آلياً (الأراضي Z-Index: 10، الشقق والعروض Z-Index: 20)
+if (MAP_CONFIG && MAP_CONFIG.layers && MAP_CONFIG.layers.realestate) {
+    MAP_CONFIG.layers.realestate.forEach(l => {
+        // [إضافة]: التحقق من الاستثناءات العالمية لطبقات العقارات (مثل rentLayer)
+        if (MAP_CONFIG.globalExclusions && MAP_CONFIG.globalExclusions.includes(l.id)) return;
+
+        let zIndex = 20; 
+        if (l.id.includes('land') || l.name.includes('land')) zIndex = 10;
+        
+        const targetStyle = getLayerStyle(l.style, '#ff5722');
+        window.appLayers[l.id] = createWFSLayer(l.workspace, l.name, l.title, targetStyle, l.maxRes || 10, true, zIndex);
+    });
+}
+
+// ج) توليد كافة طبقات الخدمات الـ 59 آلياً وحقنها في أعلى الخريطة (Z-Index: 30)
+if (MAP_CONFIG && MAP_CONFIG.globalExclusions) {
+    Object.keys(serviceTranslations).forEach(key => {
+        // استثناء الطبقات المحددة في MAP_CONFIG.globalExclusions
+        if (MAP_CONFIG.globalExclusions.includes(key)) return;
+
+        const info = serviceTranslations[key];
+        const sStyle = (f, r) => window.createStyle(f, r, { 
+            emoji: info.icon, 
+            labelField: 'name', 
+            zoomThresholdForLabel: 0.7 
+        });
+        window.appLayers[key + 'Layer'] = createWFSLayer('services', key, info.name, sStyle, 4, true, 30); 
+    });
+}
+
+// 7. طبقات وأدوات البحث والتمييز الفوري (Z-Index: 1000+)
 window.appLayers.searchMarkerLayer = new ol.layer.Vector({ 
     source: new ol.source.Vector(), 
     style: new ol.style.Style({
         image: new ol.style.Circle({
-            radius: 12, fill: new ol.style.Fill({ color: '#ff0000' }),
+            radius: 12, 
+            fill: new ol.style.Fill({ color: '#007bff' }), // تحويل لون ماركر تحديد الموقع للأزرق
             stroke: new ol.style.Stroke({ color: '#ffffff', width: 4 })
         })
     }), 
@@ -213,8 +268,9 @@ window.appLayers.searchResultsHighlightLayer = new ol.layer.Vector({
     source: new ol.source.Vector(), 
     style: new ol.style.Style({
         image: new ol.style.Circle({
-            radius: 10, fill: new ol.style.Fill({ color: '#ffff00' }),
-            stroke: new ol.style.Stroke({ color: '#333333', width: 2 })
+            radius: 10, 
+            fill: new ol.style.Fill({ color: '#ffff00' }), // اللون الأصفر للبحث
+            stroke: new ol.style.Stroke({ color: '#000000', width: 2 })
         }),
         stroke: new ol.style.Stroke({ color: '#ffff00', width: 4 }),
         fill: new ol.style.Fill({ color: 'rgba(255, 255, 0, 0.3)' })

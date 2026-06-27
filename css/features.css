@@ -3,19 +3,35 @@
 /* البحث السريع */
 .quick-search-wrapper {
     position: fixed !important; 
-    top: 68px !important; 
+    top: 80px !important; /* زيادة المسافة الرأسية لتجنب التداخل مع مربع الهوية والبحث الرئيسي */
     width: 85vw !important;
     max-width: 1400px !important; 
     left: 50% !important; 
     transform: translateX(-50%) !important;
     display: flex !important; 
     align-items: center !important; 
-    z-index: 9999 !important;
+    z-index: 9999 !important; /* يبقى تحت الهوية العلوية لمنع الحجب عند الانتقال الفجائي للموبايل */
     background: transparent !important; 
     border: none !important; 
     box-shadow: none !important; 
     padding: 5px !important;
 }
+
+/* حل مشكلة عدم استجابة الـ top باستخدام المارجن السالب وإعادة التموضع */
+@media (max-width: 768px) {
+    .quick-search-wrapper {
+        /* إجبار العنصر على الارتفاع للأعلى عبر المارجن السالب والـ transform */
+        margin-top: -25px !important; /* تحكم في الارتفاع من هنا: كلما زاد الرقم بالسالب (مثلا -45px) ارتفع الشريط للأعلى أكثر */
+        transform: translateX(-50%) !important; 
+        padding-top: 0px !important;
+        padding-bottom: 0px !important;
+    }
+    .quick-search-bar {
+        padding-top: 2px !important; /* تقليص الحشوة العلوية للشريط لمنع الفراغ */
+        padding-bottom: 2px !important;
+    }
+}
+
 .quick-search-bar { 
     display: flex !important; 
     flex: 1 !important; 
@@ -42,6 +58,7 @@
     gap: 10px !important;
     transition: all 0.3s ease !important; 
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15) !important;
+    cursor: pointer;
 }
 .quick-item i { color: #3b5bdb !important; font-size: 16px !important; }
 .quick-item:hover { background: #3b5bdb !important; color: white !important; transform: translateY(-4px) !important; }
@@ -57,8 +74,8 @@
     align-items: center !important; 
     color: #3b5bdb !important; 
     box-shadow: 0 4px 10px rgba(0,0,0,0.2) !important;
+    border: none;
 }
-
 /* الطباعة والنتائج */
 .results-header-container { 
     display: flex; 
@@ -122,12 +139,12 @@
 @media (max-width: 768px) {
     .quick-search-wrapper { 
         width: 95vw !important; 
-        top: 65px !important; /* تثبيت ذكي بجانب العناصر العلوية المحدثة */
+        top: 98px !important; /* النزول بمقدار متناسق على الموبايل لكي يتبع الـ map-header ولا يحدث تداخل هجين */
     }
     .modal-content {
         width: 95%;
         padding: 15px;
         margin: 5% auto;
-        max-height: 80vh;
+        max-height: 75vh; /* تقليص الارتفاع قليلاً لملائمة الكيبورد الافتراضي */
     }
 }

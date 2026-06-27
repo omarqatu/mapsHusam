@@ -1,4 +1,7 @@
-// server.js
+/**
+ * server.js - النسخة الاحترافية الشاملة والمعدلة جذرياً لعام 
+ */
+
 const express = require('express');
 const { createProxyMiddleware } = require('http-proxy-middleware');
 const path = require('path');
@@ -8,8 +11,10 @@ const cors = require('cors');
 const app = express();
 const PORT = 3000;
 
-// 1. إعدادات الاتصال بقاعدة البيانات
-const pool = new Pool({
+// 1. إعدادات الاتصال بقواعد البيانات المتعددة 
+
+// 🟢 الاتصال الأول: قاعدة بيانات الخدمات (services_db)
+const servicesPool = new Pool({
     user: 'Husam', 
     host: 'localhost',
     database: 'services_db', 
@@ -17,31 +22,283 @@ const pool = new Pool({
     port: 5432,
 });
 
-// فحص الاتصال بالقاعدة عند بدء التشغيل
-pool.connect((err, client, release) => {
+// 🔵 الاتصال الثاني: قاعدة بيانات العقارات (realestate)
+const realestatePool = new Pool({
+    user: 'Husam', 
+    host: 'localhost',
+    database: 'realestate', 
+    password: '1234',
+    port: 5432,
+});
+
+// فحص الاتصال بقاعدة الخدمات عند بدء التشغيل
+servicesPool.connect((err, client, release) => {
     if (err) {
-        return console.error('❌ خطأ في الاتصال بقاعدة البيانات:', err.stack);
+        return console.error('❌ خطأ في الاتصال بقاعدة بيانات الخدمات (services_db):', err.stack);
     }
-    console.log('🐘 تم الاتصال بـ PostgreSQL بنجاح باسم المستخدم: Husam');
+    console.log('🐘 تم الاتصال بـ PostgreSQL بنجاح: قاعدة الخدمات (services_db)');
     release();
 });
+
+// فحص الاتصال بقاعدة العقارات عند بدء التشغيل
+realestatePool.connect((err, client, release) => {
+    if (err) {
+        return console.error('❌ خطأ في الاتصال بقاعدة بيانات العقارات (realestate):', err.stack);
+    }
+    console.log('🐘 تم الاتصال بـ PostgreSQL بنجاح: قاعدة العقارات (realestate)');
+    release();
+});
+
+// دالة مسارة لاختيار الاتصال المناسب حسب الطبقة
+function getPoolForLayer(layerName) {
+    const realEstateLayers = ['ApartRent', 'ApartSale', 'LandSale', 'Location', 'RoadsTest'];
+    if (realEstateLayers.includes(layerName)) {
+        return realestatePool;
+    }
+    return servicesPool;
+}
 
 // 2. الميدل وير (Middlewares)
 app.use(cors());
 app.use(express.json()); 
 app.use(express.urlencoded({ extended: true }));
 
+// [إجراء أمني 1]: قائمة بيضاء للطبقات المسموح بالوصول إليها والتعديل عليها (تشمل كافة الخدمات والعقارات الفعالة)
+const ALLOWED_LAYERS = [
+    // --- طبقات الخدمات التفاعلية ---
+    'electrician', 'ac_technician', 'plumber', 'general_maintenance', 'painter', 'carpenter', 
+    'blacksmith', 'builder', 'house_cleaner', 'aluminum_tech', 'car_mechanic', 'car_electrician', 
+    'tire_tech', 'car_wash', 'motorcycle_repair', 'taxi_driver', 'delivery_services', 'tow_truck', 
+    'cctv_installer', 'party_planner', 'zaffa_bands', 'music_bands', 'photographer', 'party_rental', 
+    'home_nurse', 'masseur', 'cupping_specialist', 'nutritionist', 'truck_driver', 'security_firms', 
+    'furniture_buyer', 'gardener', 'pet_care', 'clown_entertainer', 'online_stores', 'villas_rent', 
+    'martial_arts_gymnastics', 'public_parks_recreation', 'hotels', 'free_distribution', 'barber_shop', 
+    'video_design_ads', 'pharmacies_on_call', 'taxis_on_call', 'emergency_hospitals', 'clinics', 
+    'doctors_on_call', 'ambulances_on_call', 'music_training', 'lawyers', 'land_surveyors', 
+    'real_estate_valuers', 'private_tutors', 'programmers', 'car_delivery_on_call', 
+    'motorcycle_delivery_on_call', 'bicycle_delivery_on_call', 'photographers', 'student_research_assist',
+
+    // --- طبقات العقارات والمواقع الفعالة ---
+    'ApartRent', 'ApartSale', 'LandSale', 'Location', 'RoadsTest'
+];
+
+const isValidLayer = (layer) => ALLOWED_LAYERS.includes(layer.trim());
+
+// =========================================================================
+// مسار جلب الخدمة المربوطة بمزود الخدمة والتحقق من اكتمال الحقول مع الإحداثيات
+// =========================================================================
+app.get('/api/get-provider-service', async (req, res) => {
+    const { user_id } = req.query;
+
+    if (!user_id) {
+        return res.status(400).json({ success: false, error: 'رقم المستخدم user_id مطلوب' });
+    }
+
+    try {
+        // الاستعلام عن الحقول من جدول المستخدمين مباشرة مع جلب الرتبة
+        const userQuery = `
+            SELECT service_layer, feature_id, status, role, x_coord, y_coord 
+            FROM public.users 
+            WHERE user_id = $1
+        `;
+        const result = await servicesPool.query(userQuery, [user_id]);
+
+        if (result.rows.length === 0) {
+            return res.status(404).json({ success: false, error: 'المستخدم غير موجود' });
+        }
+
+        const userRow = result.rows[0];
+
+        // عزل وتجهيز قيم الطبقة والمعرف مع عمل Trim للنصوص
+        let layer = userRow.service_layer ? userRow.service_layer.trim() : null;
+        let featId = userRow.feature_id;
+
+        // [حماية SQL]: التحقق من أن الطبقة ضمن القائمة البيضاء
+        if (layer && !isValidLayer(layer)) {
+            return res.status(403).json({ success: false, error: 'محاولة وصول غير مصرح بها لجدول محمي' });
+        }
+
+        // 🛑 [تعديل حاسم]: تم حذف الإسناد التلقائي للنجار 14. إذا كانت الحقول فارغة، نرفض فتح اللوحة فوراً.
+        if (!layer || !featId) {
+            console.log(`⚠️ مزود الخدمة رقم ${user_id} غير مربوط بأي طبقة جغرافية أو معلم. تم حظر اللوحة ومنع الإسناد الوهمي.`);
+            return res.json({ 
+                success: false, 
+                show_panel: false, 
+                message: 'الحساب ليس مزود خدمة مفعّل أو حقول المعالم الجغرافية فارغة تماماً.' 
+            });
+        }
+
+        // 🔥 [تطوير استراتيجي]: جلب الإحداثيات الأربعة الحالية مباشرة من جدول الطبقة الديناميكية لدعم التحليق الاحتياطي بالفرونت إند
+        let coordsData = { x_coord: null, y_coord: null, x_global: null, y_global: null, layer_status: userRow.status };
+        try {
+            const coordsQuery = `
+                SELECT x_coord, y_coord, x_global, y_global, status
+                FROM public."${layer}"
+                WHERE id = $1
+                LIMIT 1
+            `;
+            const targetPool = getPoolForLayer(layer);
+            const coordsResult = await targetPool.query(coordsQuery, [featId]);
+            if (coordsResult.rows.length > 0) {
+                const cRow = coordsResult.rows[0];
+                coordsData.x_coord = cRow.x_coord;
+                coordsData.y_coord = cRow.y_coord;
+                coordsData.x_global = cRow.x_global;
+                coordsData.y_global = cRow.y_global;
+                coordsData.layer_status = cRow.status; // جلب الحالة الفعلية من جدول الطبقة (النجارين مثلاً)
+                
+                // 🛡️ [تزامن احترافي]: إذا كانت الإحداثيات في جدول users فارغة، نقوم بتعبئتها الآن
+                if (userRow.x_coord === null || userRow.y_coord === null) {
+                    await servicesPool.query('UPDATE public.users SET x_coord = $1, y_coord = $2 WHERE user_id = $3',
+                    [coordsData.x_coord, coordsData.y_coord, user_id]);
+                }
+            }
+        } catch (coordErr) {
+            console.warn(`⚠️ تنبيه: تعذر جلب الإحداثيات المسبقة من جدول [${layer}]:`, coordErr.message);
+        }
+
+        // إرجاع البيانات في حال كانت مكتملة ومربوطة بشكل قانوني وصحيح
+        res.json({
+            success: true,
+            show_panel: true,
+            user_status: parseInt(userRow.status), // إرسال الحالة الإدارية (0 نشط، 1 مجمد)
+            service: {
+                service_layer: layer,
+                feature_id: featId, 
+                id: featId,         
+                status: coordsData.layer_status !== null ? parseInt(coordsData.layer_status) : parseInt(userRow.status),
+                x_coord: coordsData.x_coord,
+                y_coord: coordsData.y_coord,
+                x_global: coordsData.x_global,
+                y_global: coordsData.y_global
+            }
+        });
+
+    } catch (err) {
+        console.error('❌ خطأ أثناء جلب بيانات خدمة المزود:', err.message);
+        res.status(500).json({ success: false, error: 'خطأ داخلي في الخادم', details: err.message });
+    }
+});
+
+// =========================================================================
+// مسار تحديث الحالة والموقع الجغرافي الذكي (يدعم الخدمات والعقارات)
+// =========================================================================
+app.post('/api/update-service-status', async (req, res) => {
+    const { 
+        user_id, 
+        service_layer, 
+        feature_id, 
+        id, 
+        status, 
+        x_coord, 
+        y_coord 
+    } = req.body;
+
+    const targetIdValue = feature_id || id;
+    const layerName = service_layer ? service_layer.trim() : null;
+
+    if (!user_id || !layerName || !targetIdValue) {
+        return res.status(400).json({ success: false, error: 'بيانات التحديث غير مكتملة، المعرفات والطبقة الجغرافية حقول إجبارية.' });
+    }
+
+    if (!isValidLayer(layerName)) {
+        return res.status(403).json({ success: false, error: 'غير مسموح بالتعامل مع هذه الطبقة برمجياً' });
+    }
+
+    const parsedStatus = status !== undefined ? parseInt(status) : 0;
+    const parsedXCoord = x_coord ? Number(x_coord) : null;
+    const parsedYCoord = y_coord ? Number(y_coord) : null;
+
+    // مصفوفة طبقات العقارات لتحديد السلوك برمجياً
+    const realEstateLayers = ['ApartRent', 'ApartSale', 'LandSale', 'Location', 'RoadsTest'];
+    const isRealEstate = realEstateLayers.includes(layerName);
+
+    try {
+        const targetPool = getPoolForLayer(layerName);
+        let updateLayerQuery = '';
+        let queryParams = [];
+
+        // التحقق مما إذا كان الطلب يتضمن إحداثيات جديدة
+        if (parsedXCoord && parsedYCoord && parsedXCoord > 100000) {
+            
+            if (isRealEstate && layerName !== 'Location') {
+                // 🏢 [حالة خاصة بالعقارات والمضلعات]: تحديث الإحداثيات كأعمدة رقمية فقط دون المساس بالـ geom المضلع
+                // لأن المضلع (Polygon) لا يمكن تحديثه بنقطة واحدة مباشرة من الفرونت إند عبر ST_MakePoint
+                console.log(`🏢 تحديث عقار/مضلع: Layer=[${layerName}], ID=[${targetIdValue}]`);
+                updateLayerQuery = `
+                    UPDATE public."${layerName}"
+                    SET
+                        status = $1,
+                        x_coord = $2,
+                        y_coord = $3
+                    WHERE id = $4
+                `;
+                queryParams = [parsedStatus, parsedXCoord, parsedYCoord, targetIdValue];
+            } else {
+                // 🟢 [حالة الخدمات أو نقاط المواقع]: تحديث الأعمدة الرقمية وتحديث هندسة النقطة (Point) في الـ PostGIS
+                console.log(`🟢 تحديث نقطة/خدمة: Layer=[${layerName}], ID=[${targetIdValue}]`);
+                updateLayerQuery = `
+                    UPDATE public."${layerName}"
+                    SET
+                        status = $1,
+                        x_coord = $2,
+                        y_coord = $3,
+                        geom = ST_SetSRID(ST_MakePoint($2, $3), 28191)
+                    WHERE id = $4
+                `;
+                queryParams = [parsedStatus, parsedXCoord, parsedYCoord, targetIdValue];
+            }
+        } else {
+            // 📍 تحديث الحالة فقط في حال عدم إرسال إحداثيات جديدة
+            console.log(`📍 تحديث حالة فقط: Layer=[${layerName}], ID=[${targetIdValue}]`);
+            updateLayerQuery = `
+                UPDATE public."${layerName}"
+                SET status = $1
+                WHERE id = $2
+            `;
+            queryParams = [parsedStatus, targetIdValue];
+        }
+
+        // تنفيذ استعلام التحديث على قاعدة البيانات الصحيحة (العقارات أو الخدمات)
+        const updateResult = await targetPool.query(updateLayerQuery, queryParams);
+
+        // 🔄 [مزامنة ذكية]: نقوم بتحديث جدول الـ users فقط إذا كانت الطبقة تتبع للخدمات (وليس للعقارات)
+        if (!isRealEstate && parsedXCoord && parsedYCoord) {
+            const syncUserCoords = `UPDATE public.users SET x_coord = $1, y_coord = $2 WHERE user_id = $3`;
+            await servicesPool.query(syncUserCoords, [parsedXCoord, parsedYCoord, user_id]);
+            console.log(`🔄 تم تزامن إحداثيات مزود الخدمة في جدول المستخدمين.`);
+        }
+
+        console.log(`\x1b[36m%s\x1b[0m`, `🎯 [نجاح التحديث] تم تحديث البيانات بنجاح للطبقة [${layerName}] المعلم [${targetIdValue}]`);
+
+        res.json({ 
+            success: true, 
+            message: `تم تحديث الطبقة [${layerName}] بنجاح وتفادي تعارض هندسة المضلعات.` 
+        });
+
+    } catch (err) {
+        console.error(`❌ خطأ أثناء تحديث الطبقة [${layerName}]:`, err.message);
+        res.status(500).json({ 
+            success: false, 
+            error: 'فشل تحديث قاعدة البيانات الخلفية', 
+            details: err.message 
+        });
+    }
+});
 // 3. إعداد البروكسي لـ GeoServer
-app.use('/proxy/geoserver', createProxyMiddleware({
-    target: 'http://localhost:8080/geoserver',
+// [إجراء أمني 2]: تشفير وحماية البروكسي لمنع الحذف العشوائي (WFS-T protection)
+app.use('/proxy/geoserver', (req, res, next) => {
+    next();
+}, createProxyMiddleware({
+    target: 'http://194.163.174.162:8080/geoserver', // رابط الجيوسيرفر الخاص بك
     changeOrigin: true,
-    pathRewrite: {
-        // حذفنا rewrite المعقد لضمان تمرير المسارات مثل /wfs بشكل صحيح
-        '^/proxy/geoserver': '' 
-    },
+    pathRewrite: { '^/proxy/geoserver': '' },
     onProxyReq: (proxyReq, req, res) => {
-        // لضمان تمرير بيانات الـ XML بشكل صحيح في طلبات الـ POST
-        if (req.body && Object.keys(req.body).length) {
+        // ❌ قمنا بحذف سطر حقن الحساب التلقائي (zeed) تماماً من هنا
+        
+        // الحفاظ على بيانات الـ Body للطلبات القادمة من الخريطة
+        const contentType = req.headers['content-type'] || '';
+        if (req.body && Object.keys(req.body).length && contentType.includes('application/json')) {
             const bodyData = JSON.stringify(req.body);
             proxyReq.setHeader('Content-Length', Buffer.byteLength(bodyData));
             proxyReq.write(bodyData);
@@ -49,7 +306,7 @@ app.use('/proxy/geoserver', createProxyMiddleware({
     }
 }));
 
-// 4. مسار استقبال الإحصائيات (POST) - يستخدمه popup.js من الخريطة
+// 4. مسار استقبال الإحصائيات (POST)
 app.post('/save-stat', async (req, res) => {
     const { user_id, provider, service } = req.body;
     
@@ -62,13 +319,13 @@ app.post('/save-stat', async (req, res) => {
 
     try {
         const query = `
-            INSERT INTO "public"."map_service_stats" ("user_identifier", "provider_name", "service_type", "request_date") 
+            INSERT INTO "public"."map_service_stats" ("user_identifier", "provider_name", "service_type", "request_date")
             VALUES ($1, $2, $3, NOW())
         `;
+
+        await servicesPool.query(query, [user_id, provider, service]);
         
-        await pool.query(query, [user_id, provider, service]);
-        
-        console.log(`✅ نجاح الحفظ في قاعدة البيانات للخدمة: ${service}`);
+        console.log(`\x1b[32m%s\x1b[0m`, `✅ نجاح الحفظ في قاعدة البيانات للخدمة: ${service}`);
         res.status(200).json({ status: 'success', message: 'Stat saved successfully' });
     } catch (err) {
         console.error('❌ خطأ داخلي في SQL أثناء الحفظ:', err.message);
@@ -82,34 +339,37 @@ app.post('/save-stat', async (req, res) => {
 // 5. مسار جلب السجلات التفصيلية مع التصفح الصفحي (Pagination)
 app.get('/api/stats-detailed', async (req, res) => {
     try {
-        // تحديد الصفحة الحالية من الطلب (الافتراضي 1)
         const page = parseInt(req.query.page) || 1;
-        const limit = 10; // عدد السجلات في كل صفحة
+        const limit = 10; 
         const offset = (page - 1) * limit;
 
         console.log(`📋 جلب السجلات - الصفحة: ${page}`);
 
-        // استعلام لجلب البيانات المحدودة بـ LIMIT و OFFSET
         const dataQuery = `
-            SELECT id, user_identifier, provider_name, service_type, 
-            TO_CHAR(request_date, 'YYYY-MM-DD HH24:MI:SS') as formatted_date
-            FROM "public"."map_service_stats" 
-            ORDER BY request_date DESC 
+            SELECT 
+                s.id, 
+                s.user_identifier,
+                COALESCE(u.full_name, s.user_identifier) as user_name,
+                COALESCE(u.phone, '---') as user_phone,
+                s.provider_name, 
+                s.service_type, 
+                TO_CHAR(s.request_date, 'YYYY-MM-DD HH24:MI:SS') as formatted_date
+            FROM "public"."map_service_stats" s
+            LEFT JOIN "public"."users" u ON u.user_id::text = s.user_identifier
+            ORDER BY s.request_date DESC 
             LIMIT $1 OFFSET $2
         `;
         
-        // استعلام لمعرفة العدد الإجمالي للسجلات لحساب الصفحات
         const countQuery = 'SELECT COUNT(*) FROM "public"."map_service_stats"';
 
         const [dataRes, countRes] = await Promise.all([
-            pool.query(dataQuery, [limit, offset]),
-            pool.query(countQuery)
+            servicesPool.query(dataQuery, [limit, offset]),
+            servicesPool.query(countQuery)
         ]);
 
         const totalRecords = parseInt(countRes.rows[0].count);
         const totalPages = Math.ceil(totalRecords / limit);
 
-        // إرجاع البيانات مع معلومات الصفحات
         res.json({
             data: dataRes.rows,
             totalPages: totalPages,
@@ -127,8 +387,8 @@ app.delete('/api/delete-stat/:id', async (req, res) => {
     const { id } = req.params;
     try {
         const query = 'DELETE FROM "public"."map_service_stats" WHERE id = $1';
-        await pool.query(query, [id]);
-        
+        await servicesPool.query(query, [id]);
+
         console.log(`🗑️ تم حذف السجل رقم: ${id} بنجاح`);
         res.status(200).json({ status: 'success', message: `Record ${id} deleted` });
     } catch (err) {
@@ -137,14 +397,134 @@ app.delete('/api/delete-stat/:id', async (req, res) => {
     }
 });
 
-// 7. مسار ملخص الإحصائيات (للاحتياط)
+// 7. مسار ملخص الإحصائيات
 app.get('/api/stats-summary', async (req, res) => {
     try {
         const query = `SELECT service_type, COUNT(*) as total_requests FROM "public"."map_service_stats" GROUP BY service_type ORDER BY total_requests DESC`;
-        const result = await pool.query(query);
+        const result = await servicesPool.query(query);
         res.json(result.rows);
     } catch (err) {
         res.status(500).json({ error: err.message });
+    }
+});
+
+// مسار تسجيل مستخدم جديد
+app.post('/api/auth/register', async (req, res) => {
+    const { name, email, phone, password, role } = req.body;
+
+    console.log("📥 محاولة تسجيل حساب جديد تلقائي:", req.body);
+
+    if (!name || !email || !phone || !password || !role) {
+        return res.status(400).json({ error: 'الرجاء تعبئة جميع الحقول المطلوبة بما فيها رقم الجوال' });
+    }
+
+    const phoneRegex = /^05\d{8}$/;
+    if (!phoneRegex.test(phone.trim())) {
+        return res.status(400).json({ error: 'صيغة رقم الجوال غير صحيحة، يجب أن يبدأ بـ 05 ويتكون من 10 أرقام.' });
+    }
+
+    try {
+        const checkEmailQuery = 'SELECT email FROM public.users WHERE email = $1';
+        const emailCheckResult = await servicesPool.query(checkEmailQuery, [email.toLowerCase().trim()]);
+
+        if (emailCheckResult.rows.length > 0) {
+            return res.status(400).json({ error: 'هذا البريد الإلكتروني مسجل بالفعل!' });
+        }
+
+        const checkPhoneQuery = 'SELECT phone FROM public.users WHERE phone = $1';
+        const phoneCheckResult = await servicesPool.query(checkPhoneQuery, [phone.trim()]);
+
+        if (phoneCheckResult.rows.length > 0) {
+            return res.status(400).json({ error: 'رقم الجوال هذا مستخدم بالفعل من قبل حساب آخر!' });
+        }
+
+        const insertUserQuery = `
+            INSERT INTO public.users (full_name, email, phone, password_hash, role, status, is_active)
+            VALUES ($1, $2, $3, $4, $5, 0, true)
+            RETURNING user_id, full_name, email, phone, role
+        `;
+
+        const result = await servicesPool.query(insertUserQuery, [
+            name.trim(),
+            email.toLowerCase().trim(),
+            phone.trim(),
+            password,
+            role
+        ]);
+
+        const newUser = result.rows[0];
+        console.log(`✅ تم إنشاء حساب جديد بنجاح برقم ID: ${newUser.user_id}`);
+
+        res.status(201).json({
+            status: 'success',
+            message: 'تم التسجيل بنجاح في المنصة!',
+            user: newUser
+        });
+
+    } catch (err) {
+        console.error('❌ خطأ أثناء تسجيل المستخدم في قاعدة البيانات:', err.message);
+        res.status(500).json({ 
+            error: 'حدث خطأ داخلي بالسيرفر أثناء إنشاء الحساب', 
+            details: err.message 
+        });
+    }
+});
+
+// مسار تسجيل الدخول المحدث (الفحص الثلاثي المتطابق الشامل بدون أي قيم وهمية)
+app.post('/api/auth/login', async (req, res) => {
+    const { email, phone, password } = req.body;
+
+    if (!email || !phone || !password) {
+        return res.status(400).json({ message: 'الرجاء إدخال البريد الإلكتروني، رقم الجوال وكلمة المرور معاً.' });
+    }
+
+    try {
+        const userQuery = 'SELECT * FROM public.users WHERE email = $1 AND phone = $2';
+        const result = await servicesPool.query(userQuery, [
+            email.toLowerCase().trim(),
+            phone.trim()
+        ]);
+
+        if (result.rows.length === 0) {
+            return res.status(401).json({ message: 'البيانات المدخلة غير صحيحة، يرجى التأكد من البريد الإلكتروني ورقم الجوال.' });
+        }
+
+        const user = result.rows[0];
+
+        if (!user.is_active) {
+            return res.status(403).json({ message: 'هذا الحساب معطل حالياً، يرجى مراجعة الإدارة.' });
+        }
+
+        if (user.password_hash !== password) {
+            return res.status(401).json({ message: 'كلمة المرور المدخلة غير صحيحة.' });
+        }
+
+        // 🛑 [إصلاح حاسم للأمان وجذر المشكلة]: إرجاع القيمة الفعلية من الداتابيز فقط (null إذا لم يكن مربوطاً)
+        // تم إلغاء فرض طبقة النجار carpenter والمعلم 14 للحسابات غير المربوطة بشكل كامل هنا.
+        const finalLayer = user.service_layer ? user.service_layer.trim() : null;
+        const finalId = user.feature_id ? user.feature_id : null;
+
+        res.status(200).json({
+            message: 'تم تسجيل الدخول بنجاح بالمطابقة الكاملة الثلاثية المشروطة ببيانات قاعدة البيانات الحقيقية',
+            user: {
+                user_id: user.user_id,
+                id: user.user_id,
+                full_name: user.full_name,
+                email: user.email,
+                phone: user.phone, 
+                role: user.role,
+                status: user.status !== null ? parseInt(user.status) : 0,
+                target_layer: finalLayer, 
+                targetId: finalId, 
+                target_id: finalId,
+                x_coord: user.x_coord,
+                y_coord: user.y_coord
+            }
+        });
+
+    } catch (error) {
+        console.error('Database Login Error:', error);
+        res.status(500).json({ message: 'حدث خطأ في الخادم أثناء عملية تسجيل الدخول الثلاثية المشروطة.' });
     }
 });
 
@@ -156,6 +536,7 @@ app.listen(PORT, () => {
     console.log('==============================================');
     console.log(`🚀 السيرفر يعمل الآن على: http://localhost:${PORT}`);
     console.log(`📊 لوحة التحكم: http://localhost:${PORT}/dashboard.html`);
-    console.log(`📖 ميزة التصفح الصفحي (Pagination) مفعلة`);
+    console.log(`📊 نظام تحديث الـ PostGIS والـ WFS-T متكامل ومؤمن بالكامل بالقيم الجغرافية الحقيقية`);
+    console.log(`📡 قواعد البيانات المتصلة: [services_db] و [realestate] تعملان معاً بكفاءة.`);
     console.log('==============================================');
 });

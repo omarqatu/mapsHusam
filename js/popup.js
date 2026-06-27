@@ -1,10 +1,22 @@
 // js/popup.js
 
-// 1. توليد معرف فريد للمستخدم لمرة واحدة وتخزينه في متصفحه
-if (!localStorage.getItem('map_user_guid')) {
-    localStorage.setItem('map_user_guid', 'user_' + Math.random().toString(36).substr(2, 9));
+// 1. دالة تُستدعى لحظة الإرسال للحصول على user_id الحقيقي دائماً
+function getRealUserId() {
+    try {
+        const saved = localStorage.getItem('map_user');
+        if (saved) {
+            const parsed = JSON.parse(saved);
+            if (parsed && (parsed.user_id || parsed.id)) {
+                return String(parsed.user_id || parsed.id);
+            }
+        }
+    } catch(e) {}
+    // fallback للـ GUID العشوائي إذا لم يكن المستخدم مسجلاً
+    if (!localStorage.getItem('map_user_guid')) {
+        localStorage.setItem('map_user_guid', 'guest_' + Math.random().toString(36).substr(2, 9));
+    }
+    return localStorage.getItem('map_user_guid');
 }
-const userGuid = localStorage.getItem('map_user_guid');
 
 function initializePopup(map) {
     const container = document.getElementById('popup');
@@ -42,13 +54,16 @@ function initializePopup(map) {
         'مصور فوتوغرافي', 'مساعد أبحاث طلاب'
     ];
 
-    const realEstateLayerNames = ['شقق الإيجار', 'شقق البيع', 'الأراضي للبيع'];
+    const realEstateLayerNames = ['شقق الإيجار', 'شقق للبيع', 'الأراضي للبيع']; // تم تصحيح المسمى ليطابق config.js
     const areaLayerName = 'المناطق';
 
     function isLayerAllowed(layer) {
         if (!layer) return false;
         const layerTitle = layer.get('title');
-        return serviceLayerNames.includes(layerTitle) || realEstateLayerNames.includes(layerTitle) || layerTitle === areaLayerName;
+        const layerKey = Object.keys(window.appLayers).find(key => window.appLayers[key] === layer);
+        const layerBaseName = layerKey ? layerKey.replace('Layer', '') : null;
+
+        return (serviceLayerNames.includes(layerTitle) || realEstateLayerNames.includes(layerTitle) || layerTitle === areaLayerName) && (!MAP_CONFIG.globalExclusions || !MAP_CONFIG.globalExclusions.includes(layerBaseName));
     }
 
     function cleanUrl(rawUrl) {
@@ -63,17 +78,38 @@ function initializePopup(map) {
     }
 
     // --- تعديل منطق الواتساب (يأخذ القيمة كما هي من الحقل) ---
+    window.handlePhoneCall = function(providerName, localPhone, whatsappNumber, serviceType) {
+        const serverUrl = window.location.origin + '/save-stat';
+        const currentUserId = getRealUserId();
+
+        // تسجيل الإحصائية عند الاتصال بالموبايل
+        fetch(serverUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                user_id: currentUserId,
+                provider: providerName,
+                service: '(' + serviceType + ') اتصال مباشر'
+            })
+        }).catch(err => console.error('خطأ في تسجيل الإحصائية:', err));
+
+        // فتح رابط الاتصال المباشر
+        window.location.href = 'tel:' + localPhone;
+    };
+
     window.handleServiceRequest = function(providerName, whatsappNumber, serviceType) {
-        const serverUrl = 'http://localhost:3000/save-stat';
+        const serverUrl = window.location.origin + '/save-stat';
+        // استدعاء لحظي لضمان الحصول على user_id الحقيقي حتى لو سجل دخوله بعد تحميل الصفحة
+        const currentUserId = getRealUserId();
 
         // تسجيل الإحصائية
         fetch(serverUrl, { 
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-                user_id: userGuid,
+                user_id: currentUserId,
                 provider: providerName,
-                service: serviceType
+                service: '(' + serviceType + ') واتساب'
             })
         })
         .then(response => {
@@ -188,7 +224,7 @@ function initializePopup(map) {
                 popupTitle.innerHTML = ""; 
                 popupTitle.style.display = "none"; 
             } else {
-                const headerName = props.name || props.location_name || "تفاصيل المنطقة";
+                const headerName = window.sanitizeHTML(props.name || props.location_name || "تفاصيل المنطقة");
                 popupTitle.innerHTML = `<span class="popup-header-title">${headerName}</span>`;
                 popupTitle.style.display = "block";
             }
@@ -200,15 +236,15 @@ function initializePopup(map) {
         if (!isAreaLayer) bodyHtml += getStatusHtml(props.auto_status, props.work_hours);
 
         if (isRealEstate || isService) {
-            if (props.name) bodyHtml += `<b>👤 الاسم:</b> ${props.name}<br>`;
-            if (props.location_name || props.location) bodyHtml += `<b>📍 الموقع:</b> ${props.location_name || props.location}<br>`;
+            if (props.name) bodyHtml += `<b>👤 الاسم:</b> ${window.sanitizeHTML(props.name)}<br>`;
+            if (props.location_name || props.location) bodyHtml += `<b>📍 الموقع:</b> ${window.sanitizeHTML(props.location_name || props.location)}<br>`;
             
             if (isRealEstate) {
-                if (props.price) bodyHtml += `<b>💰 السعر:</b> ${props.price} $<br>`;
+                if (props.price) bodyHtml += `<b>💰 السعر:</b> ${Number(props.price).toLocaleString()} $<br>`;
                 if (props.area) bodyHtml += `<b>📐 المساحة:</b> ${props.area} م²<br>`;
-                if (props.village_a) bodyHtml += `<b>🏘️ البلدة:</b> ${props.village_a}<br>`;
-                if (props.gov_a) bodyHtml += `<b>🌍 المحافظة:</b> ${props.gov_a}<br>`;
-                if (props.des) bodyHtml += `<div style="margin-top:5px; background:#f9f9f9; padding:5px; border-radius:4px;"><b>📝 الوصف:</b> ${props.des}</div>`;
+                if (props.village_a) bodyHtml += `<b>🏘️ البلدة:</b> ${window.sanitizeHTML(props.village_a)}<br>`;
+                if (props.gov_a) bodyHtml += `<b>🌍 المحافظة:</b> ${window.sanitizeHTML(props.gov_a)}<br>`;
+                if (props.des) bodyHtml += `<div style="margin-top:5px; background:#f9f9f9; padding:5px; border-radius:4px;"><b>📝 الوصف:</b> ${window.sanitizeHTML(props.des)}</div>`;
                 if (props.video) bodyHtml += `<div style="margin-top:8px;">🎥 ${createLink(props.video, "عرض الفيديو")}</div>`;
             } 
 
@@ -217,12 +253,24 @@ function initializePopup(map) {
             if (props.whatsapp) {
                 const whatsappNumber = props.whatsapp.toString();
                 const providerName = props.name || (isRealEstate ? "المعلن" : "مزود الخدمة");
+
+                // استخراج رقم الجوال المحلي: حذف أول 5 أرقام واستبدالها بـ 0
+                const cleanDigits = whatsappNumber.replace(/\D/g, '');
+                const localPhone = '0' + cleanDigits.slice(5);
+
                 bodyHtml += `
-                <div style="margin-top: 15px; border-top: 2px solid #eee; padding-top: 10px;">
-                    <button onclick="handleServiceRequest('${providerName}', '${whatsappNumber}', '${layerTitle}')" 
-                            style="width: 100%; background: #25d366; color: white; border: none; padding: 12px; border-radius: 10px; cursor: pointer; font-weight: bold; display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 14px; box-shadow: 0 4px 12px rgba(37,211,102,0.3);">
-                        <i class="fab fa-whatsapp" style="font-size: 18px;"></i> طلب الخدمة الآن
-                    </button>
+                <div style="margin-top: 15px; border-top: 2px solid #eee; padding-top: 12px;">
+                    <div style="display: flex; gap: 8px; margin-bottom: 0;">
+                        <button onclick="handlePhoneCall('${providerName}', '${localPhone}', '${whatsappNumber}', '${layerTitle}')"
+                                style="flex: 1; background: #1a73e8; color: white; border: none; padding: 12px 8px; border-radius: 10px; cursor: pointer; font-weight: bold; display: flex; align-items: center; justify-content: center; gap: 6px; font-size: 13px; box-shadow: 0 4px 12px rgba(26,115,232,0.3); direction: ltr;">
+                            <i class="fas fa-phone" style="font-size: 16px;"></i>
+                            <span style="direction: ltr;">${localPhone}</span>
+                        </button>
+                        <button onclick="handleServiceRequest('${providerName}', '${whatsappNumber}', '${layerTitle}')"
+                                style="flex: 1; background: #25d366; color: white; border: none; padding: 12px 8px; border-radius: 10px; cursor: pointer; font-weight: bold; display: flex; align-items: center; justify-content: center; gap: 6px; font-size: 13px; box-shadow: 0 4px 12px rgba(37,211,102,0.3);">
+                            <i class="fab fa-whatsapp" style="font-size: 16px;"></i> واتساب
+                        </button>
+                    </div>
                 </div>`;
             }
 

@@ -1,8 +1,5 @@
 /**
  * js/quick-search.js
- * نظام البحث السريع المطور: تشمل 59 طبقة (34 قديمة + 25 جديدة)
- * تمرير بالأسهم + عرض نتائج بتنسيق البطاقات + تمييز أصفر + تفعيل زر الإغلاق + زووم تلقائي
- * تم التعديل: ترتيب النتائج بناءً على حقل rating تنازلياً
  */
 
 function initializeQuickSearch(map, overlayLayersObj) {
@@ -47,74 +44,95 @@ function initializeQuickSearch(map, overlayLayersObj) {
         btnRight.onclick = () => container.scrollBy({ left: 250, behavior: 'smooth' });
     }
 
-    // --- 3. مصفوفة الطبقات الـ 59 (34 قديمة + 3 عقارات + 1 مناطق + 25 جديدة) ---
-    const quickLayers = [
-        // العقارات والمناطق
-        { title: 'شقق الإيجار', icon: 'fa-home' }, { title: 'شقق البيع', icon: 'fa-key' },
-        { title: 'الأراضي للبيع', icon: 'fa-map' }, { title: 'المناطق', icon: 'fa-city' },
-        
-        // الخدمات القديمة (34)
-        { title: 'فني كهرباء', icon: 'fa-bolt' }, { title: 'فني تكييف وتبريد', icon: 'fa-snowflake' },
-        { title: 'سباك (مواسيرجي)', icon: 'fa-faucet' }, { title: 'صيانة عامة', icon: 'fa-tools' },
-        { title: 'دهان وديكور', icon: 'fa-paint-roller' }, { title: 'نجار', icon: 'fa-hammer' },
-        { title: 'حداد', icon: 'fa-industry' }, { title: 'بناء ومعمار', icon: 'fa-hard-hat' },
-        { title: 'خدمات تنظيف', icon: 'fa-broom' }, { title: 'فني ألمنيوم', icon: 'fa-window-maximize' },
-        { title: 'ميكانيكي سيارات', icon: 'fa-car-wrench' }, { title: 'كهربائي سيارات', icon: 'fa-car-battery' },
-        { title: 'بنشري / إطارات', icon: 'fa-circle-notch' }, { title: 'غسيل سيارات', icon: 'fa-shuttle-van' },
-        { title: 'صيانة دراجات نارية', icon: 'fa-motorcycle' }, { title: 'مكتب تاكسي', icon: 'fa-taxi' },
-        { title: 'خدمات توصيل', icon: 'fa-truck-delivery' }, { title: 'ونش إنقاذ', icon: 'fa-truck-pickup' },
-        { title: 'فني كاميرات مراقبة', icon: 'fa-video' }, { title: 'منظم حفلات', icon: 'fa-calendar-star' },
-        { title: 'فرقة زفة', icon: 'fa-music' }, { title: 'فرق موسيقية', icon: 'fa-guitar' },
-        { title: 'مصور فوتوغرافي', icon: 'fa-camera' }, { title: 'تأجير مستلزمات حفلات', icon: 'fa-chair' },
-        { title: 'تمريض منزلي', icon: 'fa-user-nurse' }, { title: 'أخصائي مساج', icon: 'fa-hands-holding' },
-        { title: 'أخصائي حجامة', icon: 'fa-kit-medical' }, { title: 'أخصائي تغذية', icon: 'fa-apple-whole' },
-        { title: 'سائق شاحنة', icon: 'fa-truck' }, { title: 'شركات أمن وحراسة', icon: 'fa-shield-halved' },
-        { title: 'شراء أثاث مستعمل', icon: 'fa-couch' }, { title: 'تنسيق حدائق', icon: 'fa-leaf' },
-        { title: 'رعاية حيوانات أليفة', icon: 'fa-dog' }, { title: 'مهرج وعروض أطفال', icon: 'fa-face-smile-beam' },
+    // --- 3. بناء مصفوفة الطبقات ديناميكياً ---
+    const dynamicQuickLayers = [];
+    const globalExcludedKeys = MAP_CONFIG.globalExclusions || [];
 
-        // الخدمات الجديدة (25)
-        { title: 'متاجر أون لاين', icon: 'fa-shopping-basket' }, { title: 'فلل أجار', icon: 'fa-vihara' },
-        { title: 'فنون قتالية وجمباز', icon: 'fa-user-ninja' }, { title: 'حدائق ومناطق ترفيهية', icon: 'fa-tree' },
-        { title: 'فنادق', icon: 'fa-hotel' }, { title: 'توزيع أغراض مجاناً', icon: 'fa-gift' },
-        { title: 'حلاقة شباب', icon: 'fa-cut' }, { title: 'تصميم فيديو إعلاني', icon: 'fa-film' },
-        { title: 'صيدليات مناوبة', icon: 'fa-pills' }, { title: 'تكاسي نظام مناوبة', icon: 'fa-hand-holding-usd' },
-        { title: 'طوارئ ومستشفيات', icon: 'fa-hospital' }, { title: 'عيادات', icon: 'fa-stethoscope' },
-        { title: 'دكاترة مناوبة', icon: 'fa-user-md' }, { title: 'إسعاف مناوبة', icon: 'fa-ambulance' },
-        { title: 'تدريب موسيقى ومعاهد', icon: 'fa-music' }, { title: 'محاميين', icon: 'fa-gavel' },
-        { title: 'مساحين أراضي', icon: 'fa-ruler-combined' }, { title: 'مخمنين عقاريين', icon: 'fa-calculator' },
-        { title: 'أساتذة خصوصي', icon: 'fa-chalkboard-teacher' }, { title: 'مبرمجين', icon: 'fa-code' },
-        { title: 'دليفري سيارات (مناوبة)', icon: 'fa-car' }, { title: 'دليفري دراجات (مناوبة)', icon: 'fa-motorcycle' },
-        { title: 'دليفري هوائية (مناوبة)', icon: 'fa-bicycle' }, { title: 'مصور فوتوغرافي', icon: 'fa-camera-retro' },
-        { title: 'مساعد أبحاث طلاب', icon: 'fa-book' }
-    ];
+    const iconMap = {
+        'rentLayer': 'fa-home', 'saleLayer': 'fa-key', 'landLayer': 'fa-map',
+        'electrician': 'fa-bolt', 'ac_technician': 'fa-snowflake', 'plumber': 'fa-faucet',
+        'general_maintenance': 'fa-tools', 'painter': 'fa-paint-roller', 'carpenter': 'fa-hammer',
+        'blacksmith': 'fa-industry', 'builder': 'fa-hard-hat', 'house_cleaner': 'fa-broom',
+        'aluminum_tech': 'fa-window-maximize', 'car_mechanic': 'fa-car-wrench', 'car_electrician': 'fa-car-battery',
+        'tire_tech': 'fa-circle-notch', 'car_wash': 'fa-shuttle-van', 'motorcycle_repair': 'fa-motorcycle',
+        'taxi_driver': 'fa-taxi', 'delivery_services': 'fa-truck-delivery', 'tow_truck': 'fa-truck-pickup',
+        'cctv_installer': 'fa-video', 'party_planner': 'fa-calendar-star', 'zaffa_bands': 'fa-music',
+        'music_bands': 'fa-guitar', 'photographer': 'fa-camera', 'party_rental': 'fa-chair',
+        'home_nurse': 'fa-user-nurse', 'masseur': 'fa-hands-holding', 'cupping_specialist': 'fa-kit-medical',
+        'nutritionist': 'fa-apple-whole', 'truck_driver': 'fa-truck', 'security_firms': 'fa-shield-halved',
+        'furniture_buyer': 'fa-couch', 'gardener': 'fa-leaf', 'pet_care': 'fa-dog',
+        'clown_entertainer': 'fa-face-smile-beam', 'online_stores': 'fa-shopping-basket', 'villas_rent': 'fa-vihara',
+        'martial_arts_gymnastics': 'fa-user-ninja', 'public_parks_recreation': 'fa-tree', 'hotels': 'fa-hotel',
+        'free_distribution': 'fa-gift', 'barber_shop': 'fa-cut', 'video_design_ads': 'fa-film',
+        'pharmacies_on_call': 'fa-pills', 'taxis_on_call': 'fa-hand-holding-usd', 'emergency_hospitals': 'fa-hospital',
+        'clinics': 'fa-stethoscope', 'doctors_on_call': 'fa-user-md', 'ambulances_on_call': 'fa-ambulance',
+        'music_training': 'fa-music', 'lawyers': 'fa-gavel', 'land_surveyors': 'fa-ruler-combined',
+        'real_estate_valuers': 'fa-calculator', 'private_tutors': 'fa-chalkboard-teacher', 'programmers': 'fa-code',
+        'car_delivery_on_call': 'fa-car', 'motorcycle_delivery_on_call': 'fa-motorcycle',
+        'bicycle_delivery_on_call': 'fa-bicycle', 'photographers': 'fa-camera-retro',
+        'student_research_assist': 'fa-book'
+    };
 
-    quickLayers.forEach(item => {
+    if (MAP_CONFIG.layers.realestate) {
+        MAP_CONFIG.layers.realestate.forEach(l => {
+            if (!globalExcludedKeys.includes(l.id)) {
+                dynamicQuickLayers.push({
+                    key: l.id,
+                    title: l.title,
+                    icon: iconMap[l.id] || 'fa-building'
+                });
+            }
+        });
+    }
+
+    if (window.serviceTranslations) {
+        Object.keys(window.serviceTranslations).forEach(serviceKey => {
+            if (!globalExcludedKeys.includes(serviceKey)) {
+                const info = window.serviceTranslations[serviceKey];
+                dynamicQuickLayers.push({
+                    key: serviceKey + 'Layer',
+                    title: info.name,
+                    icon: iconMap[serviceKey] || 'fa-question-circle'
+                });
+            }
+        });
+    }
+    
+    // --- تعديل: تمرير item.key و item.title هنا لحل المشكلة ---
+    dynamicQuickLayers.forEach(item => {
         const btn = document.createElement('button');
         btn.className = 'quick-item';
         btn.innerHTML = `<i class="fas ${item.icon}"></i> ${item.title}`;
-        btn.onclick = () => executeQuickSearch(item.title);
+        btn.onclick = () => executeQuickSearch(item.key, item.title); 
         container.appendChild(btn);
     });
 
-    function executeQuickSearch(layerTitle) {
-        const layerKey = Object.keys(overlayLayersObj).find(key => 
-            overlayLayersObj[key].get('title') === layerTitle
-        );
+    // --- دالة البحث المحدثة لاستقبال العنوان والتعامل مع الخطأ ---
+    function executeQuickSearch(layerKey, layerTitle) {
+        const layer = overlayLayersObj[layerKey];
 
-        if (!layerKey) {
-            alert(`الطبقة "${layerTitle}" غير محملة.`);
+        if (!layer) {
+            console.warn(`الطبقة "${layerKey}" غير محملة.`);
             return;
         }
 
-        const layer = overlayLayersObj[layerKey];
         const source = layer.getSource();
-        layer.setVisible(true);
 
         const extent = map.getView().calculateExtent(map.getSize());
-        const features = source.getFeaturesInExtent(extent);
+        // البحث في جميع المعالم المحملة ثم فلترة المدى الحالي
+        const allFeatures = source.getFeatures();
+        const features = allFeatures.filter(f => {
+            const geom = f.getGeometry();
+            if (!geom) return false;
+            const featureExtent = geom.getExtent();
+            return ol.extent.intersects(extent, featureExtent);
+        });
 
+        // --- معالجة الحالة التي لا توجد فيها نتائج ---
         if (features.length === 0) {
-            alert(`لا توجد نتائج لـ (${layerTitle}) في النطاق الحالي.`);
+            alert(`عذراً، لا تتوفر نتائج لـ "${layerTitle}" في المنطقة التي تشاهدها حالياً. يرجى تحريك الخريطة أو التكبير لمنطقة أخرى.`);
+            // إخفاء اللوحة إذا كانت مفتوحة
+            if (resultsPanel) resultsPanel.classList.add('hidden');
             return;
         }
 
@@ -148,7 +166,7 @@ function initializeQuickSearch(map, overlayLayersObj) {
         });
 
         resultsTableBody.innerHTML = '';
-        countSpan.textContent = features.length;
+        if (countSpan) countSpan.textContent = features.length;
 
         features.forEach((feat, index) => {
             const tr = document.createElement('tr');
