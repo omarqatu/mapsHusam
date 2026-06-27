@@ -77,7 +77,7 @@ document.addEventListener("DOMContentLoaded", function () {
     // إرسال نموذج إنشاء حساب جديد مع التحقق من رقم الجوال
     // ==========================================
     if (registerForm) {
-        registerForm.addEventListener("submit", function (e) {
+        registerForm.addEventListener("submit", async function (e) {
             e.preventDefault(); 
             
             const nameValue = document.getElementById("reg-name").value;
@@ -97,48 +97,54 @@ document.addEventListener("DOMContentLoaded", function () {
             const submitButton = document.getElementById("btn-submit-register");
             if (submitButton) submitButton.disabled = true; 
 
-            fetch('/api/auth/register', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    name: nameValue,
-                    email: emailValue,
-                    phone: phoneValue,
-                    password: passwordValue,
-                    role: roleValue
-                })
-            })
-            .then(response => {
-                if (!response.ok) {
-                    return response.json().then(err => { throw new Error(err.error || 'فشلت عملية التسجيل'); });
+            try {
+                const response = await fetch('/api/auth/register', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+                    body: JSON.stringify({
+                        name: nameValue,
+                        email: emailValue,
+                        phone: phoneValue,
+                        password: passwordValue,
+                        role: roleValue
+                    })
+                });
+
+                const registerText = await response.text();
+                let registerData;
+                try {
+                    registerData = JSON.parse(registerText);
+                } catch (parseErr) {
+                    throw new Error('استجابة غير صالحة من السيرفر أثناء التسجيل: ' + registerText);
                 }
-                return response.json();
-            })
-            .then(data => {
-                if (data.status === 'success') {
-                    // بناء كائن المستخدم الموحد عند التسجيل الجديد
+
+                if (!response.ok) {
+                    throw new Error(registerData.error || registerData.message || 'فشلت عملية التسجيل');
+                }
+
+                if (registerData.status === 'success') {
+                    const newUser = registerData.user || {};
                     let finalUserData = {
-                        id: parseInt(data.user.user_id),
-                        user_id: parseInt(data.user.user_id),
-                        name: data.user.full_name,
-                        full_name: data.user.full_name,
-                        email: data.user.email,
-                        phone: data.user.phone,
-                        role: data.user.role,
+                        id: parseInt(newUser.user_id),
+                        user_id: parseInt(newUser.user_id),
+                        name: newUser.full_name,
+                        full_name: newUser.full_name,
+                        email: newUser.email,
+                        phone: newUser.phone,
+                        role: newUser.role,
                         service_layer: null,
                         feature_id: null,
-                        targetLayer: null, 
-                        targetId: null 
+                        targetLayer: null,
+                        targetId: null
                     };
 
                     enterPlatform(finalUserData, false);
                 }
-            })
-            .catch(error => {
+            } catch (error) {
                 console.error('❌ خطأ في عملية التسجيل:', error);
-                alert(error.message);
+                alert(error.message || 'حدث خطأ أثناء التسجيل، يرجى المحاولة لاحقاً.');
                 if (submitButton) submitButton.disabled = false;
-            });
+            }
         });
     }
 
@@ -225,16 +231,21 @@ document.addEventListener("DOMContentLoaded", function () {
             try {
                 const response = await fetch('/api/auth/login', {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
                     body: JSON.stringify({ email, phone, password })
                 });
 
-                const data = await response.json();
+                const loginText = await response.text();
+                let data;
+                try {
+                    data = JSON.parse(loginText);
+                } catch (parseErr) {
+                    throw new Error('استجابة غير متوقعة من السيرفر أثناء تسجيل الدخول: ' + loginText);
+                }
 
                 if (response.ok && data.user) {
                     alert(`مرحباً بك مجدداً: ${data.user.full_name}`);
                     
-                    // بناء كائن بيانات موحد وشامل لتفادي الاختلافات البنيوية بين الملفات
                     let finalUserData = {
                         id: parseInt(data.user.user_id),
                         user_id: parseInt(data.user.user_id),
@@ -245,26 +256,24 @@ document.addEventListener("DOMContentLoaded", function () {
                         role: data.user.role,
                         service_layer: data.user.target_layer || null,
                         feature_id: data.user.target_id ? parseInt(data.user.target_id) : null,
-                        targetLayer: data.user.target_layer || null, 
+                        targetLayer: data.user.target_layer || null,
                         targetId: data.user.target_id ? parseInt(data.user.target_id) : null
                     };
 
-                    // إضفاء طابع الرتب في التسمية والربط الافتراضي الآمن
                     if (finalUserData.role === "admin") {
                         finalUserData.name = data.user.full_name + " (مشرف المنصة)";
                     } else if (finalUserData.role === "provider") {
                         finalUserData.name = data.user.full_name + " (مزود)";
                     }
 
-                    // تمرير الكائن للدالة الشاملة لإتمام الدخول والبث الخالي من الأخطاء
                     enterPlatform(finalUserData, false);
 
                 } else {
-                    alert(`خطأ في الدخول: ${data.message || 'بيانات الاعتماد غير صحيحة'}`);
+                    alert(`خطأ في الدخول: ${data.message || data.error || 'بيانات الاعتماد غير صحيحة'}`);
                 }
             } catch (error) {
                 console.error('❌ خطأ في الاتصال بسيرفر التحقق:', error);
-                alert('حدث خطأ أثناء الاتصال بالسيرفر، يرجى المحاولة لاحقاً.');
+                alert(error.message || 'حدث خطأ أثناء الاتصال بالسيرفر، يرجى المحاولة لاحقاً.');
             } finally {
                 if (submitBtn) {
                     submitBtn.disabled = false;

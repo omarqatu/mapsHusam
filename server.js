@@ -15,20 +15,19 @@ const PORT = 3000;
 
 // 🟢 الاتصال الأول: قاعدة بيانات الخدمات (services_db)
 const servicesPool = new Pool({
-
     user: 'Husam', 
-    host: '144.91.84.168',
+    host: 'localhost',
     database: 'services_db', 
-    password: 'Jubeh@123',
+    password: '1234',
     port: 5432,
 });
 
 // 🔵 الاتصال الثاني: قاعدة بيانات العقارات (realestate)
 const realestatePool = new Pool({
     user: 'Husam', 
-    host: '144.91.84.168',
+    host: 'localhost',
     database: 'realestate', 
-    password: 'Jubeh@123',
+    password: '1234',
     port: 5432,
 });
 
@@ -63,6 +62,15 @@ function getPoolForLayer(layerName) {
 app.use(cors());
 app.use(express.json()); 
 app.use(express.urlencoded({ extended: true }));
+
+// ميدل وير لمصادفة أخطاء JSON: يرجع استجابة JSON بدلاً من صفحة HTML إذا كان جسم الطلب غير صالح
+app.use((err, req, res, next) => {
+    if (err instanceof SyntaxError && err.status === 400 && 'body' in err) {
+        console.error('❌ خطأ في تحليل JSON:', err.message);
+        return res.status(400).json({ error: 'تنسيق JSON غير صالح في جسم الطلب.' });
+    }
+    next(err);
+});
 
 // [إجراء أمني 1]: قائمة بيضاء للطبقات المسموح بالوصول إليها والتعديل عليها (تشمل كافة الخدمات والعقارات الفعالة)
 const ALLOWED_LAYERS = [
@@ -473,14 +481,17 @@ app.post('/api/auth/register', async (req, res) => {
 
 // مسار تسجيل الدخول المحدث (الفحص الثلاثي المتطابق الشامل بدون أي قيم وهمية)
 app.post('/api/auth/login', async (req, res) => {
-    const { email, phone, password } = req.body;
+    const requestBody = req.body || {};
+    const { email, phone, password } = requestBody;
 
     if (!email || !phone || !password) {
+        console.warn('[LOGIN] missing fields', { email, phone, password, body: requestBody });
         return res.status(400).json({ message: 'الرجاء إدخال البريد الإلكتروني، رقم الجوال وكلمة المرور معاً.' });
     }
 
     try {
         const userQuery = 'SELECT * FROM public.users WHERE email = $1 AND phone = $2';
+        console.log('[LOGIN] query params', { email: email.toLowerCase().trim(), phone: phone.trim() });
         const result = await servicesPool.query(userQuery, [
             email.toLowerCase().trim(),
             phone.trim()
@@ -525,14 +536,29 @@ app.post('/api/auth/login', async (req, res) => {
 
     } catch (error) {
         console.error('Database Login Error:', error);
+        console.error('[LOGIN] request body:', requestBody);
         res.status(500).json({ message: 'حدث خطأ في الخادم أثناء عملية تسجيل الدخول الثلاثية المشروطة.' });
     }
 });
 
-// 8. تقديم الملفات الثابتة
+// 8. إذا لم يُطابق أي مسار API، نرجع JSON بدل HTML لتجنب مشاكل parse في الفرونت إند
+app.use('/api', (req, res) => {
+    res.status(404).json({ error: 'API endpoint not found', path: req.path });
+});
+
+// 9. تقديم الملفات الثابتة
 app.use(express.static(path.join(__dirname)));
 
-// 9. تشغيل السيرفر
+// 10. خطأ عام للميدل وير
+app.use((err, req, res, next) => {
+    console.error('Unhandled error:', err);
+    if (res.headersSent) {
+        return next(err);
+    }
+    res.status(err.status || 500).json({ error: err.message || 'Unhandled server error' });
+});
+
+// 11. تشغيل السيرفر
 app.listen(PORT, () => {
     console.log('==============================================');
     console.log(`🚀 السيرفر يعمل الآن على: http://localhost:${PORT}`);
