@@ -24,8 +24,6 @@ jobs:
 
       - name: Restart app
         shell: cmd
-        working-directory: C:\inetpub\wwwroot\psm\mapsHusam
         run: |
-          call "C:\Users\Administrator\AppData\Roaming\npm\pm2.cmd" delete mapsHusam
-          call "C:\Users\Administrator\AppData\Roaming\npm\pm2.cmd" start server.js --name mapsHusam
-          exit 0
+          net stop mapsHusam
+          net start mapsHusam
