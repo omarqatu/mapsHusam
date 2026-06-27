@@ -19,7 +19,7 @@ const servicesPool = new Pool({
     user: 'Husam', 
     host: '144.91.84.168',
     database: 'services_db', 
-    password: '1234',
+    password: 'Jubeh@123',
     port: 5432,
 });
 
@@ -28,7 +28,7 @@ const realestatePool = new Pool({
     user: 'Husam', 
     host: '144.91.84.168',
     database: 'realestate', 
-    password: '1234',
+    password: 'Jubeh@123',
     port: 5432,
 });
 
