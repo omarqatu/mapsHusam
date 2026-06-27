@@ -25,5 +25,7 @@ jobs:
       - name: Restart app
         shell: cmd
         working-directory: C:\inetpub\wwwroot\psm\mapsHusam
+        env:
+          PM2_HOME: C:\pm2home
         run: |
           call "C:\Users\Administrator\AppData\Roaming\npm\pm2.cmd" restart mapsHusam || call "C:\Users\Administrator\AppData\Roaming\npm\pm2.cmd" start server.js --name mapsHusam
