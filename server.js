@@ -15,8 +15,9 @@ const PORT = 3000;
 
 // 🟢 الاتصال الأول: قاعدة بيانات الخدمات (services_db)
 const servicesPool = new Pool({
+
     user: 'Husam', 
-    host: 'localhost',
+    host: '144.91.84.168',
     database: 'services_db', 
     password: '1234',
     port: 5432,
@@ -25,7 +26,7 @@ const servicesPool = new Pool({
 // 🔵 الاتصال الثاني: قاعدة بيانات العقارات (realestate)
 const realestatePool = new Pool({
     user: 'Husam', 
-    host: 'localhost',
+    host: '144.91.84.168',
     database: 'realestate', 
     password: '1234',
     port: 5432,
