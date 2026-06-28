@@ -45,19 +45,22 @@ function initializeLocationSearch(map, overlayLayersObj) {
     };
 
     getMyLocationBtn?.addEventListener('click', () => {
-        if (!navigator.geolocation) return alert("المتصفح لا يدعم تحديد الموقع.");
         selectedLocationDisplay.textContent = 'جاري تحديد موقعك...';
-        navigator.geolocation.getCurrentPosition((pos) => {
+        selectedLocationDisplay.style.color = '#007bff';
+
+        window.requestGeolocationPosition((pos) => {
             const coords = ol.proj.fromLonLat([pos.coords.longitude, pos.coords.latitude], 'EPSG:28191');
             searchCenterLocation = coords;
             searchMarkerSource?.clear();
             searchMarkerSource?.addFeature(new ol.Feature(new ol.geom.Point(coords)));
             map.getView().animate({ center: coords, zoom: 18, duration: 1000 });
-            selectedLocationDisplay.textContent = `تم تحديد موقعك بنجاح`;
-            selectedLocationDisplay.style.color = "#28a745";
-        }, () => {
-            alert("فشل الوصول للموقع. تأكد من تفعيل GPS.");
+            selectedLocationDisplay.textContent = 'تم تحديد موقعك بنجاح';
+            selectedLocationDisplay.style.color = '#28a745';
+        }, (error) => {
+            console.error('GPS search failed:', error);
+            alert(error.message || 'فشل الوصول للموقع. تأكد من تفعيل GPS.');
             selectedLocationDisplay.textContent = 'فشل تحديد الموقع.';
+            selectedLocationDisplay.style.color = '#dc3545';
         });
     });
 

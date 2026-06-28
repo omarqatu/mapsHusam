@@ -286,22 +286,20 @@ function handleStatusChangeRequest(statusValue, updateGPS = false) {
 
     const parsedStatus = parseInt(statusValue);
 
-    // تفعيل الـ Cooldown فوراً عند الضغط لمنع الـ Double-Click
     window.isCoolingDown = true;
     lockProviderButtons();
 
-    // تحديث تفاؤلي للواجهة (Optimistic UI) وثم بدء تشغيل العداد الشكلي بانتظار استجابة الـ Fetch
     window.currentProviderService.status = parsedStatus;
-    
+
     let xPal = window.currentProviderService.x_coord;
     let yPal = window.currentProviderService.y_coord;
 
-    if (parsedStatus === 0 && updateGPS && navigator.geolocation) {
-        navigator.geolocation.getCurrentPosition(
+    if (parsedStatus === 0 && updateGPS) {
+        window.requestGeolocationPosition(
             (position) => {
                 const latGlobal = position.coords.latitude;
                 const lonGlobal = position.coords.longitude;
-                
+
                 const palCoords = proj4('EPSG:4326', 'EPSG:28191', [lonGlobal, latGlobal]);
                 const newX = Number(parseFloat(palCoords[0]).toFixed(2));
                 const newY = Number(parseFloat(palCoords[1]).toFixed(2));
@@ -310,10 +308,11 @@ function handleStatusChangeRequest(statusValue, updateGPS = false) {
                 sendDataToServer(parsedStatus, latGlobal, lonGlobal, newX, newY);
             },
             (error) => {
-                console.warn("⚠️ الـ GPS غير متاح، سيتم استخدام الموقع السابق.");
+                console.warn("⚠️ الـ GPS غير متاح، سيتم استخدام الموقع السابق.", error);
+                alert(error.message || 'فشل الوصول للموقع. تأكد من تفعيل GPS.');
                 sendDataToServer(parsedStatus, null, null, xPal, yPal);
             },
-            { enableHighAccuracy: true, timeout: 8000, maximumAge: 0 }
+            { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
         );
     } else {
         sendDataToServer(parsedStatus, null, null, xPal, yPal);

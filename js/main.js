@@ -19,6 +19,110 @@ window.sanitizeHTML = function(str) {
 // تعريف كائنات الطبقات في النطاق العالمي لضمان الوصول إليها من أي ملف
 window.overlayLayersObj = {}; 
 
+window.ensureSecureGeolocationContext = function() {
+    const isLocalhost = ['localhost', '127.0.0.1', '0.0.0.0'].includes(window.location.hostname);
+    const isSecure = window.isSecureContext || window.location.protocol === 'https:' || isLocalhost;
+
+    if (isSecure) {
+        return { allowed: true };
+    }
+
+    return {
+        allowed: false,
+        message: 'لا يمكن استخدام GPS من هذا الرابط لأن الموقع يعمل عبر HTTP. يرجى فتحه عبر HTTPS أو من localhost ثم منح الإذن للموقع.'
+    };
+};
+
+window.getGeolocationErrorMessage = function(error) {
+    const secureCheck = window.ensureSecureGeolocationContext();
+    if (!secureCheck.allowed) {
+        return secureCheck.message;
+    }
+
+    switch (error && error.code) {
+        case 1:
+            return 'تم رفض صلاحية الوصول إلى الموقع. يرجى منح إذن الموقع للمتصفح والمحاولة مرة أخرى.';
+        case 2:
+            return 'تعذر تحديد موقعك الحالي. تأكد من تشغيل GPS وإعطاء الصلاحية.';
+        case 3:
+            return 'انتهت مهلة محاولة تحديد موقعك. حاول مرة أخرى.';
+        default:
+            return 'فشل الوصول للموقع. تأكد من تفعيل GPS ومنح الإذن للموقع.';
+    }
+};
+
+window.requestGeolocationPosition = function(onSuccess, onError, options = {}) {
+    const opts = {
+        enableHighAccuracy: true,
+        timeout: 15000,
+        maximumAge: 0,
+        ...options
+    };
+
+    if (!navigator.geolocation) {
+        const error = { code: 2, message: 'المتصفح لا يدعم GPS.' };
+        if (typeof onError === 'function') onError(error);
+        return;
+    }
+
+    const secureCheck = window.ensureSecureGeolocationContext();
+    if (!secureCheck.allowed) {
+        const error = { code: 1, message: secureCheck.message };
+        if (typeof onError === 'function') onError(error);
+        return;
+    }
+
+    navigator.geolocation.getCurrentPosition(
+        (position) => {
+            if (typeof onSuccess === 'function') onSuccess(position);
+        },
+        (error) => {
+            const wrappedError = {
+                ...error,
+                message: window.getGeolocationErrorMessage(error)
+            };
+            if (typeof onError === 'function') onError(wrappedError);
+        },
+        opts
+    );
+};
+
+window.watchGeolocationPosition = function(onSuccess, onError, options = {}) {
+    const opts = {
+        enableHighAccuracy: true,
+        timeout: 15000,
+        maximumAge: 0,
+        ...options
+    };
+
+    if (!navigator.geolocation) {
+        const error = { code: 2, message: 'المتصفح لا يدعم GPS.' };
+        if (typeof onError === 'function') onError(error);
+        return null;
+    }
+
+    const secureCheck = window.ensureSecureGeolocationContext();
+    if (!secureCheck.allowed) {
+        const error = { code: 1, message: secureCheck.message };
+        if (typeof onError === 'function') onError(error);
+        return null;
+    }
+
+    return navigator.geolocation.watchPosition(
+        (position) => {
+            if (typeof onSuccess === 'function') onSuccess(position);
+        },
+        (error) => {
+            const wrappedError = {
+                ...error,
+                message: window.getGeolocationErrorMessage(error)
+            };
+            if (typeof onError === 'function') onError(wrappedError);
+        },
+        opts
+    );
+};
+
 // إنشاء طبقة التمييز الصفراء لتكون جاهزة دائماً
 window.searchResultsHighlightLayer = new ol.layer.Vector({
     source: new ol.source.Vector(),
@@ -124,11 +228,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // دالة موحدة لتتبع الموقع الجغرافي بشكل حي ومستمر (مثالية لمن هو في سيارة لتتبع المسار)
     const getUserCurrentLocation = (targetButton) => {
-        if (!navigator.geolocation) {
-            alert('ميزة تحديد الموقع غير مدعومة في متصفحك الحالي.');
-            return;
-        }
-
         // إذا كان نظام التتبع يعمل مسبقاً، نقوم بإيقافه فوراً (Toggle)
         if (window.userLocationWatchId !== null) {
             navigator.geolocation.clearWatch(window.userLocationWatchId);
@@ -143,21 +242,19 @@ document.addEventListener('DOMContentLoaded', () => {
 
         if (targetButton) {
             targetButton.innerHTML = '⏳';
-            targetButton.style.setProperty("background-color", "#2ecc71", "important"); // تغيير اللون للأخضر للإشارة للنشاط
+            targetButton.style.setProperty("background-color", "#2ecc71", "important");
         }
 
-        window.userLocationWatchId = navigator.geolocation.watchPosition(
+        window.userLocationWatchId = window.watchGeolocationPosition(
             (position) => {
                 const currentTime = Date.now();
                 console.log("📍 تم استلام إحداثيات GPS جديدة بدقة:", position.coords.accuracy);
 
-                // تحديث الموقع كل 10 ثوانٍ لضمان السلاسة وعدم إرهاق الخريطة (بناءً على طلب المستخدم)
                 if (currentTime - lastUpdateTime < 10000) return;
                 
                 lastUpdateTime = currentTime;
                 const transformedCoords = proj4('EPSG:4326', 'EPSG:28191', [position.coords.longitude, position.coords.latitude]);
 
-                // تحديث الرمز المكاني الحي على الخريطة
                 const source = window.userLiveLocationLayer.getSource();
                 source.clear();
                 const feature = new ol.Feature({
@@ -165,14 +262,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 });
                 source.addFeature(feature);
 
-                // تحريك الخريطة لتتبع المستخدم مع الحفاظ على مستوى الزووم المفضل
                 map.getView().animate({
                     center: transformedCoords,
                     zoom: map.getView().getZoom() < 17 ? 18 : map.getView().getZoom(),
                     duration: 1500
                 });
 
-                if (targetButton) targetButton.innerHTML = '📡'; // تغيير الأيقونة للدلالة على البث الحي
+                if (targetButton) targetButton.innerHTML = '📡';
             },
             (error) => {
                 console.error("Geolocation Tracking Error:", error);
@@ -180,8 +276,11 @@ document.addEventListener('DOMContentLoaded', () => {
                     targetButton.innerHTML = '🎯';
                     targetButton.style.setProperty("background-color", "rgba(0, 60, 136, 0.85)", "important");
                 }
-                navigator.geolocation.clearWatch(window.userLocationWatchId);
+                if (window.userLocationWatchId !== null) {
+                    navigator.geolocation.clearWatch(window.userLocationWatchId);
+                }
                 window.userLocationWatchId = null;
+                alert(window.getGeolocationErrorMessage(error));
             },
             { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
         );
