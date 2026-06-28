@@ -492,7 +492,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         
         // [محرك المزامنة التلقائية]: تحديث ذكي كل 15 ثانية لضمان رؤية التغييرات دون إرهاق السيرفر
-        startSmartMapSync(15000); 
+        startSmartMapSync(60000); 
     }, 1000);
 
     /**
