@@ -9,6 +9,7 @@ const { Pool } = require('pg');
 const cors = require('cors');
 
 const app = express();
+app.set('trust proxy', true);
 const PORT = process.env.PORT || 3000;
 const PG_HOST = process.env.POSTGRES_HOST || '144.91.84.168';
 const PG_PORT = Number(process.env.POSTGRES_PORT || 5432);
@@ -66,7 +67,10 @@ function getPoolForLayer(layerName) {
 }
 
 // 2. الميدل وير (Middlewares)
-app.use(cors());
+app.use(cors({
+    origin: true,
+    credentials: true
+}));
 app.use(express.json()); 
 app.use(express.urlencoded({ extended: true }));
 
@@ -570,6 +574,14 @@ app.use('/api', (req, res) => {
 
 // 9. تقديم الملفات الثابتة
 app.use(express.static(path.join(__dirname)));
+
+app.get('/', (req, res) => {
+    res.sendFile(path.join(__dirname, 'index.html'));
+});
+
+app.get('/index.html', (req, res) => {
+    res.sendFile(path.join(__dirname, 'index.html'));
+});
 
 // 10. خطأ عام للميدل وير
 app.use((err, req, res, next) => {
