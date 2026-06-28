@@ -1,5 +1,5 @@
 /**
- * server.js - النسخة الاحترافية الشاملة والمعدلة جذرياً لعام 
+ * server.js 
  */
 
 const express = require('express');
@@ -10,10 +10,10 @@ const cors = require('cors');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
-const PG_HOST = process.env.POSTGRES_HOST || 'localhost';
+const PG_HOST = process.env.POSTGRES_HOST || '144.91.84.168';
 const PG_PORT = Number(process.env.POSTGRES_PORT || 5432);
-const PG_USER = process.env.POSTGRES_USER || 'Husam';
-const PG_PASSWORD = process.env.POSTGRES_PASSWORD || 'Jubeh@123';
+const PG_USER = process.env.POSTGRES_USER || 'zeed';
+const PG_PASSWORD = process.env.POSTGRES_PASSWORD || 'Zeed@123';
 const SERVICES_DB_NAME = process.env.SERVICES_DB_NAME || 'services_db';
 const REAL_ESTATE_DB_NAME = process.env.REAL_ESTATE_DB_NAME || 'realestate';
 const GEOSERVER_TARGET = process.env.GEOSERVER_TARGET || 'http://194.163.174.162:8080/geoserver';
@@ -479,8 +479,23 @@ app.post('/api/auth/register', async (req, res) => {
 
     } catch (err) {
         console.error('❌ خطأ أثناء تسجيل المستخدم في قاعدة البيانات:', err.message);
+
+        if (err.code === '28P01') {
+            return res.status(401).json({
+                error: 'فشل مصادقة قاعدة البيانات. تحقق من اسم المستخدم وكلمة المرور الخاصة بقاعدة PostgreSQL.',
+                details: err.message
+            });
+        }
+
+        if (err.code === '3D000' || err.code === 'ECONNREFUSED' || err.code === 'ENOTFOUND') {
+            return res.status(502).json({
+                error: 'تعذر الوصول إلى خادم PostgreSQL أو قاعدة البيانات غير موجودة.',
+                details: err.message
+            });
+        }
+
         res.status(500).json({ 
-            error: 'حدث خطأ داخلي بالسيرفر أثناء إنشاء الحساب', 
+            error: 'حدث خطأ داخلي بالسيرفر أثناء إنشاء الحساب',
             details: err.message 
         });
     }
