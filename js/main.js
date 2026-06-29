@@ -490,16 +490,7 @@ document.addEventListener('DOMContentLoaded', () => {
             window.initializeGlobalSearch(); 
         }
         
-        // [محرك المزامنة التلقائية]: تحديث ذكي كل 15 ثانية لضمان رؤية التغييرات دون إرهاق السيرفر
-<<<<<<< HEAD
-       // startSmartMapSync(15000);  // 15 ثانية حالياً
-       // startSmartMapSync(30000);  // 30 ثانية
-      //  startSmartMapSync(60000);  // دقيقة كاملة
-      //  startSmartMapSync(300000); // 5 دقائق
-       // startSmartMapSync(300000); 
-       }, 1000); 
-=======
-        startSmartMapSync(300000); 
+
     }, 1000);
 >>>>>>> 5d76d4c8b271857d1fe8a4226770ad5d71f77386
 
