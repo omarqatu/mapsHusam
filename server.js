@@ -151,13 +151,17 @@ app.get('/api/get-provider-service', async (req, res) => {
         // 🔥 [تطوير استراتيجي]: جلب الإحداثيات الأربعة الحالية مباشرة من جدول الطبقة الديناميكية لدعم التحليق الاحتياطي بالفرونت إند
         let coordsData = { x_coord: null, y_coord: null, x_global: null, y_global: null, layer_status: userRow.status };
         try {
+            const targetPool = getPoolForLayer(layer);
+            const isRealEstate = ['ApartRent', 'ApartSale', 'LandSale', 'Location', 'RoadsTest'].includes(layer);
+
+            // العقارات تستخدم fid، الخدمات تستخدم id
+            const idField = isRealEstate ? 'fid' : 'id';
             const coordsQuery = `
                 SELECT x_coord, y_coord, x_global, y_global, status
                 FROM public."${layer}"
-                WHERE id = $1
+                WHERE ${idField} = $1
                 LIMIT 1
             `;
-            const targetPool = getPoolForLayer(layer);
             const coordsResult = await targetPool.query(coordsQuery, [featId]);
             if (coordsResult.rows.length > 0) {
                 const cRow = coordsResult.rows[0];
@@ -238,9 +242,12 @@ app.post('/api/update-service-status', async (req, res) => {
         let updateLayerQuery = '';
         let queryParams = [];
 
+        // العقارات تستخدم fid، الخدمات تستخدم id
+        const idField = isRealEstate ? 'fid' : 'id';
+
         // التحقق مما إذا كان الطلب يتضمن إحداثيات جديدة
         if (parsedXCoord && parsedYCoord && parsedXCoord > 100000) {
-            
+
             if (isRealEstate && layerName !== 'Location') {
                 // 🏢 [حالة خاصة بالعقارات والمضلعات]: تحديث الإحداثيات كأعمدة رقمية فقط دون المساس بالـ geom المضلع
                 // لأن المضلع (Polygon) لا يمكن تحديثه بنقطة واحدة مباشرة من الفرونت إند عبر ST_MakePoint
@@ -251,7 +258,7 @@ app.post('/api/update-service-status', async (req, res) => {
                         status = $1,
                         x_coord = $2,
                         y_coord = $3
-                    WHERE id = $4
+                    WHERE ${idField} = $4
                 `;
                 queryParams = [parsedStatus, parsedXCoord, parsedYCoord, targetIdValue];
             } else {
@@ -264,7 +271,7 @@ app.post('/api/update-service-status', async (req, res) => {
                         x_coord = $2,
                         y_coord = $3,
                         geom = ST_SetSRID(ST_MakePoint($2, $3), 28191)
-                    WHERE id = $4
+                    WHERE ${idField} = $4
                 `;
                 queryParams = [parsedStatus, parsedXCoord, parsedYCoord, targetIdValue];
             }
@@ -274,7 +281,7 @@ app.post('/api/update-service-status', async (req, res) => {
             updateLayerQuery = `
                 UPDATE public."${layerName}"
                 SET status = $1
-                WHERE id = $2
+                WHERE ${idField} = $2
             `;
             queryParams = [parsedStatus, targetIdValue];
         }
