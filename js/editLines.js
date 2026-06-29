@@ -1,5 +1,7 @@
 /**
- * editLines.js
+ * editLines.js - نسخة محدثة 2026
+ * مبنية على نفس منهجية editPolygons.js و edit-wfs.js
+ * الهندسة: MultiLineString - الجدول: RoadsTest - الـ workspace: realestate
  */
 window.initializeLineEditTools = function (map, overlayLayersObj) {
     let draw, modify, snap, select;
