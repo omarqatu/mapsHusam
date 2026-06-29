@@ -492,7 +492,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         
         // [محرك المزامنة التلقائية]: تحديث ذكي كل 15 ثانية لضمان رؤية التغييرات دون إرهاق السيرفر
-        startSmartMapSync(60000); 
+        startSmartMapSync(300000); 
     }, 1000);
 
     /**
@@ -502,26 +502,36 @@ document.addEventListener('DOMContentLoaded', () => {
         setInterval(() => {
             if (!window.overlayLayersObj) return;
 
+            const layersToUpdate = [];
+
             Object.keys(window.overlayLayersObj).forEach(key => {
                 const layer = window.overlayLayersObj[key];
-                
-                // استثناء طبقات التمييز والتتبع والتحليق من التحديث التلقائي لكي لا تختفي نتائج البحث
                 const lowerKey = key.toLowerCase();
+
+                // استثناء الطبقات الداخلية من التحديث
                 const isInternalLayer = lowerKey.includes('highlight') || 
                                         lowerKey.includes('marker') || 
                                         lowerKey.includes('live') || 
                                         lowerKey.includes('fly') ||
                                         lowerKey.includes('share');
 
-                // تحديث طبقات البيانات فقط (العقارات والخدمات) مع استثناء الطبقات الداخلية
-                if (layer && layer.getVisible() && !isInternalLayer && (lowerKey.includes('layer') || lowerKey.includes('rent') || lowerKey.includes('sale'))) {
-                    const source = layer.getSource();
-                    if (source && typeof source.refresh === 'function') {
-                        // التحديث هنا يتم داخلياً في OpenLayers ويجلب البيانات الجديدة من GeoServer
-                        source.refresh();
-                    }
+                // جمع الطبقات المرشحة للتحديث فقط
+                if (layer && layer.getVisible() && !isInternalLayer && 
+                    (lowerKey.includes('layer') || lowerKey.includes('rent') || lowerKey.includes('sale'))) {
+                    layersToUpdate.push(layer);
                 }
             });
+
+            // تحديث كل طبقة بتأخير ثانيتين عن السابقة لمنع الاختفاء الجماعي
+            layersToUpdate.forEach((layer, index) => {
+                setTimeout(() => {
+                    const source = layer.getSource();
+                    if (source && typeof source.refresh === 'function') {
+                        source.refresh();
+                    }
+                }, index * 2000);
+            });
+
         }, interval);
     }
 
