@@ -1,8 +1,5 @@
 /**
- * js/provider-panel.js - نسخة الحسم النهائي الشامل والكامل 2026
- * التحديث: إلغاء الاعتماد على الكاش في عرض الحالة (API-First Strategy)
- * المعالجة: حل مشكلة عدم تطابق الحالة (Status Mismatch) وتأمين ثغرة الـ Cooldown
- * ملاحظة: لا يتم تغيير أسماء الحقول في قاعدة البيانات منعاً لتعطل المصادقة
+ * js/provider-panel.js
  */
 
 window.providerPanelInitialized = false;
