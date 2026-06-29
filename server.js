@@ -148,28 +148,33 @@ app.get('/api/get-provider-service', async (req, res) => {
             });
         }
 
-        // 🔥 [تطوير استراتيجي]: جلب الإحداثيات الأربعة الحالية مباشرة من جدول الطبقة الديناميكية لدعم التحليق الاحتياطي بالفرونت إند
-        let coordsData = { x_coord: null, y_coord: null, x_global: null, y_global: null, layer_status: userRow.status };
+        // 🔥 [تطوير استراتيجي]: جلب الإحداثيات الحالية مباشرة من جدول الطبقة الديناميكية
+        let coordsData = { x_coord: null, y_coord: null, layer_status: userRow.status };
         try {
             const targetPool = getPoolForLayer(layer);
             const isRealEstate = ['ApartRent', 'ApartSale', 'LandSale', 'Location', 'RoadsTest'].includes(layer);
 
             // العقارات تستخدم fid، الخدمات تستخدم id
             const idField = isRealEstate ? 'fid' : 'id';
+
+            console.log(`🔍 جلب الإحداثيات: layer=${layer}, idField=${idField}, featId=${featId}, isRealEstate=${isRealEstate}`);
+
             const coordsQuery = `
-                SELECT x_coord, y_coord, x_global, y_global, status
+                SELECT x_coord, y_coord, status
                 FROM public."${layer}"
                 WHERE ${idField} = $1
                 LIMIT 1
             `;
             const coordsResult = await targetPool.query(coordsQuery, [featId]);
+            console.log(`🔍 نتيجة الاستعلام: ${coordsResult.rows.length} صفوف`);
+            if (coordsResult.rows.length > 0) {
+                console.log(`🔍 البيانات المسترجعة:`, coordsResult.rows[0]);
+            }
             if (coordsResult.rows.length > 0) {
                 const cRow = coordsResult.rows[0];
                 coordsData.x_coord = cRow.x_coord;
                 coordsData.y_coord = cRow.y_coord;
-                coordsData.x_global = cRow.x_global;
-                coordsData.y_global = cRow.y_global;
-                coordsData.layer_status = cRow.status; // جلب الحالة الفعلية من جدول الطبقة (النجارين مثلاً)
+                coordsData.layer_status = cRow.status; // جلب الحالة الفعلية من جدول الطبقة
                 
                 // 🛡️ [تزامن احترافي]: إذا كانت الإحداثيات في جدول users فارغة، نقوم بتعبئتها الآن
                 if (userRow.x_coord === null || userRow.y_coord === null) {
@@ -289,8 +294,8 @@ app.post('/api/update-service-status', async (req, res) => {
         // تنفيذ استعلام التحديث على قاعدة البيانات الصحيحة (العقارات أو الخدمات)
         const updateResult = await targetPool.query(updateLayerQuery, queryParams);
 
-        // 🔄 [مزامنة ذكية]: نقوم بتحديث جدول الـ users فقط إذا كانت الطبقة تتبع للخدمات (وليس للعقارات)
-        if (!isRealEstate && parsedXCoord && parsedYCoord) {
+        // 🔄 [مزامنة ذكية]: نقوم بتحديث جدول الـ users للخدمات والعقارات
+        if (parsedXCoord && parsedYCoord) {
             const syncUserCoords = `UPDATE public.users SET x_coord = $1, y_coord = $2 WHERE user_id = $3`;
             await servicesPool.query(syncUserCoords, [parsedXCoord, parsedYCoord, user_id]);
             console.log(`🔄 تم تزامن إحداثيات مزود الخدمة في جدول المستخدمين.`);
