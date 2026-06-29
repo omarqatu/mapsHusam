@@ -492,8 +492,12 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         
         // [محرك المزامنة التلقائية]: تحديث ذكي كل 15 ثانية لضمان رؤية التغييرات دون إرهاق السيرفر
-        startSmartMapSync(300000); 
-    }, 1000);
+       // startSmartMapSync(15000);  // 15 ثانية حالياً
+       // startSmartMapSync(30000);  // 30 ثانية
+      //  startSmartMapSync(60000);  // دقيقة كاملة
+      //  startSmartMapSync(300000); // 5 دقائق
+       // startSmartMapSync(300000); 
+       }, 1000); 
 
     /**
      * دالة المزامنة الذكية: تقوم بتحديث الطبقات الظاهرة فقط لتوفير موارد السيرفر
