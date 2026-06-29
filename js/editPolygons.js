@@ -228,21 +228,23 @@ function initializePolygonEditTools(map, overlayLayersObj) {
             featureProperties[f.name] = (f.type === 'number') ? (val === "" ? null : Number(val)) : val;
         });
 
-        // هندسة وأتمتة الكلمات الدلالية الذكية للمضلع
-        const serviceArabicName = (selectedLayerKey === 'landLayer') ? 'أرض للبيع' : 'منطقة جغرافية';
-        const staticTags = polygonSpecificTags[selectedLayerKey] || '';
-        const description = featureProperties['des'] || '';
-
-        let tagsResult = [serviceArabicName, (description || "").trim().substring(0, 40)].map(s => s.trim()).filter(s => s.length > 0).join('، ');
-        if (staticTags) {
-            tagsResult += `، ${staticTags}`;
+        // search_tags فقط لطبقة الأراضي - جدول Location لا يحتوي هذا الحقل
+        if (selectedLayerKey === 'landLayer') {
+            const serviceArabicName = 'أرض للبيع';
+            const staticTags = polygonSpecificTags['landLayer'] || '';
+            const description = featureProperties['des'] || '';
+            let tagsResult = [serviceArabicName, (description || "").trim().substring(0, 40)].map(s => s.trim()).filter(s => s.length > 0).join('، ');
+            if (staticTags) tagsResult += `، ${staticTags}`;
+            featureProperties['search_tags'] = tagsResult;
         }
-        featureProperties['search_tags'] = tagsResult;
 
         if (currentTransactionType === 'insert') {
-            featureProperties['start_date'] = new Date().toISOString().split('T')[0];
-            featureProperties['status'] = 0;
-            featureProperties['auto_status'] = 0;
+            // هذه الحقول فقط لطبقة الأراضي وليس المناطق
+            if (selectedLayerKey === 'landLayer') {
+                featureProperties['start_date'] = new Date().toISOString().split('T')[0];
+                featureProperties['status'] = 0;
+                featureProperties['auto_status'] = 0;
+            }
         }
 
         currentFeature.setProperties(featureProperties);
@@ -312,14 +314,11 @@ function initializePolygonEditTools(map, overlayLayersObj) {
 
     async function sendWFS_T(feature, type) {
         // فحص بيئة العمل وتحديد Workspace بناءً على الطبقة المختارة
-        const isRealEstate = (selectedLayerKey === 'landLayer');
-        const workspace = isRealEstate ? 'realestate' : 'services';
+        // كلا الطبقتين (LandSale و Location) في قاعدة realestate
+        const isRealEstate = (selectedLayerKey === 'landLayer'); // للتمييز بين حقول الطبقتين
+        const workspace = 'realestate'; // كلاهما في نفس الـ workspace
         const typeName = isRealEstate ? 'LandSale' : 'Location';
-        const namespaceUris = {
-            realestate: 'http://localhost:8080/geoserver/realestate',
-            services: 'http://localhost/services'
-        };
-        const featureNS = namespaceUris[workspace] || `http://localhost/${workspace}`;
+        const featureNS = 'http://localhost/realestate';
         const fullQualifiedName = `${workspace}:${typeName}`;
         
         let rawId = feature.getId() || feature.get('fid') || feature.get('id');
@@ -329,21 +328,25 @@ function initializePolygonEditTools(map, overlayLayersObj) {
         const geom = feature.getGeometry();
         
         // 🛠️ الحل الحاسم: استخراج نقطة داخلية (Centroid/Interior Point) للمضلع لحساب الإحداثيات الإقليمية بدون انهيار برمي
+        // استخراج نقطة مركزية - نأخذ [x,y] فقط لأن getInteriorPoint ترجع [x,y,z]
         let centroidCoords;
         if (geom.getType() === 'Polygon') {
-            centroidCoords = geom.getInteriorPoint().getCoordinates();
+            const pt = geom.getInteriorPoint().getCoordinates();
+            centroidCoords = [pt[0], pt[1]];
         } else if (geom.getType() === 'MultiPolygon') {
-            centroidCoords = geom.getPolygon(0).getInteriorPoint().getCoordinates();
+            const pt = geom.getPolygon(0).getInteriorPoint().getCoordinates();
+            centroidCoords = [pt[0], pt[1]];
         } else {
             centroidCoords = ol.extent.getCenter(geom.getExtent());
         }
 
         // بناء الـ GML الهيكلي للمضلعات والتحقق من إغلاق الحلقة الهندسية
-        const buildPolygonGML = (polygon) => {
+        // دالة بناء Polygon GML واحد
+        const buildSinglePolygonGML = (polygon) => {
             let rings = polygon.getCoordinates();
             let gmlRings = rings.map((ring, index) => {
                 if (ring[0][0] !== ring[ring.length-1][0] || ring[0][1] !== ring[ring.length-1][1]) {
-                    ring.push(ring[0]); // إغلاق الحلقة تلقائياً لحماية معايير الـ OGC
+                    ring.push(ring[0]);
                 }
                 let coords = ring.map(c => `${c[0]},${c[1]}`).join(' ');
                 let ringTag = (index === 0) ? 'gml:exterior' : 'gml:interior';
@@ -352,7 +355,23 @@ function initializePolygonEditTools(map, overlayLayersObj) {
             return `<gml:Polygon srsName="EPSG:28191">${gmlRings}</gml:Polygon>`;
         };
 
-        let gmlGeometry = buildPolygonGML(geom);
+        // locationLayer نوع الهندسة MultiPolygon - landLayer نوع الهندسة Polygon
+        let gmlGeometry;
+        if (!isRealEstate) {
+            // locationLayer: يجب إرسال MultiPolygon
+            let polygonGML;
+            if (geom.getType() === 'MultiPolygon') {
+                // المضلع بالفعل MultiPolygon - نبنيه مباشرة
+                polygonGML = geom.getPolygons().map(p => buildSinglePolygonGML(p)).join('');
+            } else {
+                // المضلع Polygon عادي - نلفه في MultiPolygon
+                polygonGML = buildSinglePolygonGML(geom);
+            }
+            gmlGeometry = `<gml:MultiPolygon srsName="EPSG:28191"><gml:polygonMember>${polygonGML}</gml:polygonMember></gml:MultiPolygon>`;
+        } else {
+            // landLayer: Polygon عادي
+            gmlGeometry = buildSinglePolygonGML(geom);
+        }
         let payload = '';
         
         // تجميع الحقول والبيانات والتحقق من الترتيب المتسلسل للـ Schema لجيوسيرفر
@@ -379,29 +398,31 @@ function initializePolygonEditTools(map, overlayLayersObj) {
         const coordsGlobal = ol.proj.toLonLat(centroidCoords, 'EPSG:28191');
 
         if (type === 'insert') {
-            // توليد قيمة فريدة لـ fid
-            allValuesMap['fid'] = Date.now() + Math.floor(Math.random() * 1000);
+            // لا نرسل fid - قاعدة البيانات تولده تلقائياً عبر الـ Sequence
+            delete allValuesMap['fid'];
 
             if (isRealEstate) {
-                allValuesMap['location'] = regionalData.location;
-                allValuesMap['gov_a'] = regionalData.gov_a;
-                allValuesMap['village_a'] = regionalData.village_a;
+                // للأراضي: خذ من regionalData كـ auto-fill
+                allValuesMap['location'] = allValuesMap['location'] || regionalData.location;
+                allValuesMap['gov_a'] = allValuesMap['gov_a'] || regionalData.gov_a;
+                allValuesMap['village_a'] = allValuesMap['village_a'] || regionalData.village_a;
             } else {
-                allValuesMap['gov_a'] = regionalData.gov_a;
-                allValuesMap['village_a'] = regionalData.village_a;
-                allValuesMap['location'] = regionalData.location;
+                // للمناطق: خذ من النموذج أولاً ثم regionalData كـ fallback
+                allValuesMap['gov_a'] = allValuesMap['gov_a'] || regionalData.gov_a;
+                allValuesMap['village_a'] = allValuesMap['village_a'] || regionalData.village_a;
+                allValuesMap['location'] = allValuesMap['location'] || regionalData.location;
             }
 
             // الالتزام التام بالترتيب الهيكلي الصارم لطبقات المضلعات بداخل الجيوسيرفر (بدون حقول الإحداثيات)
             const landSchemaOrder = [
-                'fid', 'geom', 'location', 'price', 'des', 'pic', 'area',
+                'geom', 'location', 'price', 'des', 'pic', 'area',
                 'status', 'gov_a', 'village_a',
                 'start_date', 'end_date', 'work_hours',
                 'auto_status', 'whatsapp', 'search_tags', 'rating'
             ];
 
             const locationSchemaOrder = [
-                'fid', 'geom', 'gov_a', 'village_a', 'location', 'search_tags'
+                'geom', 'gov_a', 'village_a', 'location'
             ];
 
             const finalOrder = isRealEstate ? landSchemaOrder : locationSchemaOrder;
@@ -433,7 +454,7 @@ function initializePolygonEditTools(map, overlayLayersObj) {
             let propsXML = '';
             const allowedPropsUpdate = isRealEstate ? 
                 ['price', 'des', 'pic', 'area', 'end_date', 'work_hours', 'whatsapp', 'rating', 'search_tags'] :
-                ['gov_a', 'village_a', 'location', 'search_tags'];
+                ['gov_a', 'village_a', 'location'];
 
             allowedPropsUpdate.forEach(k => {
                 if (allValuesMap[k] !== undefined && allValuesMap[k] !== null && String(allValuesMap[k]).trim() !== "") {
@@ -461,9 +482,8 @@ function initializePolygonEditTools(map, overlayLayersObj) {
                 ${payload}
             </wfs:Transaction>`;
 
-        const baseUrl = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') 
-            ? '/proxy/geoserver/wfs' 
-            : `${window.location.protocol}//${window.location.host}/proxy/geoserver/wfs`;
+        // دائماً نستخدم البروكسي المحلي بغض النظر عن البيئة (لوكل أو دومين خارجي)
+        const baseUrl = '/proxy/geoserver/wfs';
 
         console.log("📤 Sending Polygon WFS-T Request:", requestXML);
 
