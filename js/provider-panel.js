@@ -20,8 +20,8 @@ document.addEventListener("DOMContentLoaded", function() {
 });
 
 function forceUnlockButtons() {
-    // لا نسمح بفك القفل إطلاقاً إذا كان الـ Cooldown نشطاً أو الحساب مجمداً
-    if (window.isCoolingDown || window.isAccountFrozen) return;
+    // السماح بفك الأزرار دائماً لتحديث الواجهة
+    if (window.isAccountFrozen) return;
 
     const btns = ['btn-prov-available-current', 'btn-prov-available-prev', 'btn-prov-busy', 'btn-prov-fly'];
     btns.forEach(id => {
@@ -166,17 +166,22 @@ function checkProviderStatusAndShowPanel(directUserObj = null) {
 
             if (data.service) {
                 const fetchedStatus = parseInt(data.service.status);
-                
+
                 // تحديث الكائن بالخلفية بكافة الأحوال
                 window.currentProviderService.status = fetchedStatus;
                 window.currentProviderService.x_coord = data.service.x_coord ? Number(data.service.x_coord) : null;
                 window.currentProviderService.y_coord = data.service.y_coord ? Number(data.service.y_coord) : null;
-                
+
+                // تحديث بيانات المستخدم المحلية أيضاً
                 currentUser.status = fetchedStatus;
+                currentUser.x_coord = data.service.x_coord ? Number(data.service.x_coord) : null;
+                currentUser.y_coord = data.service.y_coord ? Number(data.service.y_coord) : null;
                 currentUser.service_layer = data.service.service_layer;
                 currentUser.feature_id = data.service.feature_id;
                 localStorage.setItem('map_user', JSON.stringify(currentUser));
-                
+
+                console.log(`✅ تم تحديث بيانات مزود الخدمة: status=${fetchedStatus}, x=${window.currentProviderService.x_coord}, y=${window.currentProviderService.y_coord}`);
+
                 // [إصلاح الحسم]: لا نحدث الـ UI أو نفك الأزرار إن كان هناك عد تنازلي نشط
                 if (!window.isCoolingDown) {
                     forceUnlockButtons();
@@ -224,10 +229,13 @@ function startCoolDownTimer() {
         if (secondsLeft <= 0) {
             clearInterval(intervalId);
             window.isCoolingDown = false; // فك حالة الـ Cooldown أولاً
-            
-            // تحديث الواجهة وفك الأزرار رسمياً بناءً على آخر حالة مؤكدة مخزنة
-            if (window.currentProviderService) {
-                updateProviderPanelUI(window.currentProviderService.status);
+
+            // فك الأزرار وتحديث الواجهة النصية
+            forceUnlockButtons();
+            if (statusIndicator) {
+                if (window.currentProviderService) {
+                    updateProviderPanelUI(window.currentProviderService.status);
+                }
             }
         }
     }, 1000);
@@ -239,32 +247,59 @@ function updateProviderPanelUI(status) {
         return;
     }
 
-    if (window.isCoolingDown) return; 
-    
-    // فك القفل أصبح آمناً الآن
+    // السماح بتحديث الواجهة حتى أثناء Cooldown لعرض الحالة الصحيحة
+
     const btnAvailCurrent = document.getElementById('btn-prov-available-current');
     const btnAvailPrev = document.getElementById('btn-prov-available-prev');
     const btnBusy = document.getElementById('btn-prov-busy');
     const statusIndicator = document.getElementById('provider-status-indicator');
 
-    forceUnlockButtons();
+    console.log(`🔄 تحديث الواجهة: status=${status}, btnAvailCurrent=${!!btnAvailCurrent}, btnAvailPrev=${!!btnAvailPrev}, btnBusy=${!!btnBusy}, statusIndicator=${!!statusIndicator}`);
 
-    if (!statusIndicator) return;
+    if (!statusIndicator) {
+        console.warn("⚠️ statusIndicator غير موجود");
+        return;
+    }
 
     const currentStatus = parseInt(status);
 
     if (currentStatus === 0) {
         statusIndicator.innerText = "حالتك الحالية: متوفر الآن على الخريطة للجمهور 🟢";
         statusIndicator.style.setProperty("color", "#27ae60", "important");
-        if (btnAvailCurrent) btnAvailCurrent.classList.add('active');
-        if (btnAvailPrev) btnAvailPrev.classList.add('active');
-        if (btnBusy) btnBusy.classList.remove('active');
+        console.log("✅ تعيين الحالة: متوفر");
+        if (btnAvailCurrent) {
+            btnAvailCurrent.classList.add('active');
+            console.log("✅ btnAvailCurrent تم تفعيله");
+        }
+        if (btnAvailPrev) {
+            btnAvailPrev.classList.add('active');
+            console.log("✅ btnAvailPrev تم تفعيله");
+        }
+        if (btnBusy) {
+            btnBusy.classList.remove('active');
+            console.log("✅ btnBusy تم إلغاء تفعيله");
+        }
     } else {
         statusIndicator.innerText = "حالتك الحالية: غير متوفر (مخفي حالياً) 🔴";
         statusIndicator.style.setProperty("color", "#c0392b", "important");
-        if (btnBusy) btnBusy.classList.add('active');
-        if (btnAvailCurrent) btnAvailCurrent.classList.remove('active');
-        if (btnAvailPrev) btnAvailPrev.classList.remove('active');
+        console.log("✅ تعيين الحالة: غير متوفر");
+        if (btnBusy) {
+            btnBusy.classList.add('active');
+            console.log("✅ btnBusy تم تفعيله");
+        }
+        if (btnAvailCurrent) {
+            btnAvailCurrent.classList.remove('active');
+            console.log("✅ btnAvailCurrent تم إلغاء تفعيله");
+        }
+        if (btnAvailPrev) {
+            btnAvailPrev.classList.remove('active');
+            console.log("✅ btnAvailPrev تم إلغاء تفعيله");
+        }
+    }
+
+    // فك الأزرار فقط إذا لم نكن في Cooldown
+    if (!window.isCoolingDown) {
+        forceUnlockButtons();
     }
 }
 
@@ -286,12 +321,13 @@ function handleStatusChangeRequest(statusValue, updateGPS = false) {
     window.isCoolingDown = true;
     lockProviderButtons();
 
-    window.currentProviderService.status = parsedStatus;
+    // لا نقوم بتحديث window.currentProviderService.status هنا، بل ننتظر تأكيد السيرفر
 
     let xPal = window.currentProviderService.x_coord;
     let yPal = window.currentProviderService.y_coord;
 
     if (parsedStatus === 0 && updateGPS) {
+        console.log("📍 طلب إحداثيات GPS...");
         window.requestGeolocationPosition(
             (position) => {
                 const latGlobal = position.coords.latitude;
@@ -306,7 +342,11 @@ function handleStatusChangeRequest(statusValue, updateGPS = false) {
             },
             (error) => {
                 console.warn("⚠️ الـ GPS غير متاح، سيتم استخدام الموقع السابق.", error);
-                alert(error.message || 'فشل الوصول للموقع. تأكد من تفعيل GPS.');
+                let errorMsg = 'فشل الوصول للموقع. سيتم استخدام الموقع السابق.';
+                if (error.code === 1) errorMsg = 'تم رفض إذن الموقع. سيتم استخدام الموقع السابق.';
+                else if (error.code === 2) errorMsg = 'إشارة GPS ضعيفة أو غير متوفرة. سيتم استخدام الموقع السابق.';
+                else if (error.code === 3) errorMsg = 'انتهت مهلة طلب الموقع. سيتم استخدام الموقع السابق.';
+                alert(errorMsg);
                 sendDataToServer(parsedStatus, null, null, xPal, yPal);
             },
             { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
@@ -357,12 +397,23 @@ function sendDataToServer(status, lat, lon, xPal, yPal) {
     })
     .then(response => response.json())
     .then(data => {
+        console.log("✅ استجابة السيرفر:", data);
+
         if(currentUser) {
             currentUser.status = parsedStatus;
             if (finalXPal) currentUser.x_coord = finalXPal;
             if (finalYPal) currentUser.y_coord = finalYPal;
             localStorage.setItem('map_user', JSON.stringify(currentUser));
         }
+
+        // تحديث حالة مزود الخدمة في الذاكرة
+        if (window.currentProviderService) {
+            window.currentProviderService.status = parsedStatus;
+            console.log("✅ تم تحديث الحالة في الذاكرة:", parsedStatus);
+        }
+
+        // تحديث الواجهة فوراً قبل تشغيل Cooldown
+        updateProviderPanelUI(parsedStatus);
 
         // تحديث الطبقة على خريطة OpenLayers حياً بدون الحاجة لعمل WFS-T معقد
         if (window.map && payload.service_layer) {
@@ -380,9 +431,6 @@ function sendDataToServer(status, lat, lon, xPal, yPal) {
 
         // تشغيل مؤقت الـ Cooldown الفعلي الآن للتأمين الإجباري لـ 10 ثوانٍ
         startCoolDownTimer();
-
-        // فحص تحديثي صامت بعد ثانية للتأكد من المزامنة المطلقة مع السيرفر دون تخريب عداد الـ Cooldown
-        setTimeout(() => { checkProviderStatusAndShowPanel(); }, 1000);
     })
     .catch(error => {
         console.error("❌ خطأ أثناء التحديث عبر الـ API:", error.message);
@@ -394,13 +442,21 @@ function sendDataToServer(status, lat, lon, xPal, yPal) {
 }
 
 function flyToServiceLocation() {
-    if (!window.map || !window.currentProviderService || !window.currentProviderService.feature_id) return;
+    console.log("📍 تم النقر على زر الانتقال إلى موقعي");
+    console.log("📍 بيانات مزود الخدمة الحالية:", window.currentProviderService);
+    console.log("📍 الخريطة موجودة:", !!window.map);
+
+    if (!window.map || !window.currentProviderService || !window.currentProviderService.feature_id) {
+        console.warn("⚠️ لا يمكن الانتقال: بيانات غير مكتملة", window.currentProviderService);
+        return;
+    }
     const x = window.currentProviderService.x_coord;
     const y = window.currentProviderService.y_coord;
     const view = window.map.getView();
+    console.log(`📍 محاولة الانتقال إلى: x=${x}, y=${y}`);
     if (x && y && x > 100000) {
         const coords = [Number(x), Number(y)];
-        
+
         if (window.providerFlyToLayer) {
             const source = window.providerFlyToLayer.getSource();
             source.clear();
@@ -409,6 +465,8 @@ function flyToServiceLocation() {
         }
 
         view.animate({ center: coords, zoom: 19, duration: 1200 });
+    } else {
+        console.warn("⚠️ الإحداثيات غير صالحة:", x, y);
     }
 }
 
