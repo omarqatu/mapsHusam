@@ -4,7 +4,7 @@
 
 const MAP_CONFIG = {
     server: {
-        proxyUrl: "/api/proxy/geoserver/",
+        proxyUrl: "/geoserver-proxy/",
         srsName: "EPSG:28191",
         apiUrl: window.location.origin + "/"
     },
