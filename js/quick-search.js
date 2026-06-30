@@ -76,6 +76,7 @@ function initializeQuickSearch(map, overlayLayersObj) {
     if (MAP_CONFIG.layers.realestate) {
         MAP_CONFIG.layers.realestate.forEach(l => {
             if (!globalExcludedKeys.includes(l.id)) {
+                console.log(`Adding realestate layer to quick search: ${l.id} (${l.title})`);
                 dynamicQuickLayers.push({
                     key: l.id,
                     title: l.title,
@@ -108,48 +109,97 @@ function initializeQuickSearch(map, overlayLayersObj) {
     });
 
     // --- دالة البحث المحدثة لاستقبال العنوان والتعامل مع الخطأ ---
-    function executeQuickSearch(layerKey, layerTitle) {
+    async function executeQuickSearch(layerKey, layerTitle) {
         const layer = overlayLayersObj[layerKey];
 
         if (!layer) {
             console.warn(`الطبقة "${layerKey}" غير محملة.`);
+            alert(`الطبقة "${layerTitle}" غير محملة حالياً.`);
             return;
         }
 
-        const source = layer.getSource();
+        // تحديد workspace و layer name
+        const isRealEstate = ['rentLayer', 'saleLayer', 'landLayer'].includes(layerKey);
+        const workspace = isRealEstate ? 'realestate' : 'services';
+        const layerNameMap = { 'rentLayer': 'ApartRent', 'saleLayer': 'ApartSale', 'landLayer': 'LandSale' };
+        const layerName = layerNameMap[layerKey] || layerKey.replace('Layer', '');
 
+        console.log(`Quick Search: layerKey=${layerKey}, layerName=${layerName}, workspace=${workspace}`);
+
+        // الحصول على المدى المرئي الحالي (BBOX)
         const extent = map.getView().calculateExtent(map.getSize());
-        // البحث في جميع المعالم المحملة ثم فلترة المدى الحالي
-        const allFeatures = source.getFeatures();
-        const features = allFeatures.filter(f => {
-            const geom = f.getGeometry();
-            if (!geom) return false;
-            const featureExtent = geom.getExtent();
-            return ol.extent.intersects(extent, featureExtent);
-        });
+        const bbox = extent.join(',');
 
-        // --- معالجة الحالة التي لا توجد فيها نتائج ---
-        if (features.length === 0) {
-            alert(`عذراً، لا تتوفر نتائج لـ "${layerTitle}" في المنطقة التي تشاهدها حالياً. يرجى تحريك الخريطة أو التكبير لمنطقة أخرى.`);
-            // إخفاء اللوحة إذا كانت مفتوحة
-            if (resultsPanel) resultsPanel.classList.add('hidden');
-            return;
-        }
-
-        // --- 4. التمييز والزووم الاحترافي ---
-        if (window.searchResultsHighlightLayer) {
-            window.searchResultsHighlightLayer.getSource().clear();
-            window.searchResultsHighlightLayer.getSource().addFeatures(features);
-            
-            const combinedExtent = window.searchResultsHighlightLayer.getSource().getExtent();
-            map.getView().fit(combinedExtent, { 
-                padding: [80, 80, 80, 80], 
-                duration: 1000, 
-                maxZoom: 19 
+        // استخدام البحث من السيرفر مع فلترة مكانية BBOX
+        try {
+            const baseUrl = window.MAP_CONFIG?.server?.proxyUrl || (window.location.origin + "/");
+            const params = new URLSearchParams({
+                layer: layerName,
+                workspace: workspace,
+                bbox: bbox
             });
-        }
 
-        displayQuickResults(features, layer);
+            const response = await fetch(`${baseUrl}api/search-features?${params.toString()}`);
+            const data = await response.json();
+
+            if (!data.features || data.features.length === 0) {
+                alert(`عذراً، لا تتوفر نتائج لـ "${layerTitle}" في المنطقة الحالية.`);
+                if (resultsPanel) resultsPanel.classList.add('hidden');
+                return;
+            }
+
+            // تحويل GeoJSON إلى OpenLayers Features
+            const format = new ol.format.GeoJSON();
+            const features = data.features.map(f => format.readFeature(f));
+
+            // --- 4. التمييز والزووم الاحترافي ---
+            if (window.searchResultsHighlightLayer) {
+                window.searchResultsHighlightLayer.getSource().clear();
+                window.searchResultsHighlightLayer.getSource().addFeatures(features);
+
+                const combinedExtent = window.searchResultsHighlightLayer.getSource().getExtent();
+                map.getView().fit(combinedExtent, {
+                    padding: [80, 80, 80, 80],
+                    duration: 1000,
+                    maxZoom: 19
+                });
+            }
+
+            displayQuickResults(features, layer);
+        } catch (error) {
+            console.error("خطأ في البحث السريع:", error);
+            alert("حدث خطأ أثناء البحث. سيتم استخدام البحث المحلي.");
+
+            // Fallback للبحث المحلي
+            const source = layer.getSource();
+            const allFeatures = source.getFeatures();
+            const features = allFeatures.filter(f => {
+                const geom = f.getGeometry();
+                if (!geom) return false;
+                const featureExtent = geom.getExtent();
+                return ol.extent.intersects(extent, featureExtent);
+            });
+
+            if (features.length === 0) {
+                alert(`عذراً، لا تتوفر نتائج لـ "${layerTitle}" في المنطقة التي تشاهدها حالياً.`);
+                if (resultsPanel) resultsPanel.classList.add('hidden');
+                return;
+            }
+
+            if (window.searchResultsHighlightLayer) {
+                window.searchResultsHighlightLayer.getSource().clear();
+                window.searchResultsHighlightLayer.getSource().addFeatures(features);
+
+                const combinedExtent = window.searchResultsHighlightLayer.getSource().getExtent();
+                map.getView().fit(combinedExtent, {
+                    padding: [80, 80, 80, 80],
+                    duration: 1000,
+                    maxZoom: 19
+                });
+            }
+
+            displayQuickResults(features, layer);
+        }
     }
 
     function displayQuickResults(features, layer) {
