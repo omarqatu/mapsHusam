@@ -320,13 +320,13 @@ app.post('/api/update-service-status', async (req, res) => {
 });
 // 3. إعداد البروكسي لـ GeoServer
 // [إجراء أمني 2]: تشفير وحماية البروكسي لمنع الحذف العشوائي (WFS-T protection)
-app.use('/proxy/geoserver', (req, res, next) => {
+app.use('/api/proxy/geoserver', (req, res, next) => {
     console.log(`[Proxy] Request to: ${req.url}`);
     next();
 }, createProxyMiddleware({
     target: GEOSERVER_TARGET,
     changeOrigin: true,
-    pathRewrite: { '^/proxy/geoserver': '' },
+    pathRewrite: { '^/api/proxy/geoserver': '' },
     secure: false, // للتعامل مع شهادات SSL غير الموثوقة
     logLevel: 'debug',
     onProxyReq: (proxyReq, req, res) => {
