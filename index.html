@@ -4,7 +4,25 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>خريطة الخدمات الفلسطينية</title>
-    
+
+    <!-- Open Graph Tags لتحسين ظهور الرابط في مواقع التواصل الاجتماعي -->
+    <meta property="og:title" content="خريطة الخدمات والعقارات الفلسطينية">
+    <meta property="og:description" content="منصة شاملة للبحث عن الخدمات والعقارات في فلسطين - شقق للإيجار والبيع، أراضي، ومختلف الخدمات المهنية">
+    <meta property="og:image" content="https://cdn-icons-png.flaticon.com/512/684/684908.png">
+    <meta property="og:url" content="https://palestine-services-map.com">
+    <meta property="og:type" content="website">
+    <meta property="og:locale" content="ar_AR">
+
+    <!-- Twitter Card Tags -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="خريطة الخدمات والعقارات الفلسطينية">
+    <meta name="twitter:description" content="منصة شاملة للبحث عن الخدمات والعقارات في فلسطين">
+    <meta name="twitter:image" content="https://cdn-icons-png.flaticon.com/512/684/684908.png">
+
+    <!-- Additional Meta Tags -->
+    <meta name="description" content="منصة شاملة للبحث عن الخدمات والعقارات في فلسطين - شقق للإيجار والبيع، أراضي، ومختلف الخدمات المهنية">
+    <meta name="keywords" content="فلسطين, خدمات, عقارات, شقق, أراضي, خريطة, بحث">
+
     <link rel="stylesheet" href="./css/style.css">
     <link rel="stylesheet" href="./css/buttons.css">
     <link rel="stylesheet" href="./css/features.css">
@@ -29,6 +47,9 @@
     <div class="global-search-wrapper">
         <i class="fas fa-search"></i>
         <input type="text" id="global-search-input" placeholder="ابحث عن عقار، مطعم، فني...">
+        <button id="global-refresh-btn" class="global-refresh-btn" title="تحديث الخريطة">
+            <i class="fas fa-sync-alt"></i>
+        </button>
         <div id="search-suggestions"></div>
     </div>
 
@@ -76,8 +97,21 @@
         <button id="copy-share-link-btn" class="action-btn" style="padding: 8px 15px; white-space: nowrap;"><i class="fas fa-copy"></i> نسخ الرابط</button>
     </div>
     <div id="coords-display-area" style="background: #fdfdfd; border: 1px dashed #bbb; padding: 10px; border-radius: 5px; margin-bottom: 15px; font-size: 12px; line-height: 1.6;">
-        <div style="margin-bottom: 8px;"><strong>📍 إحداثيات فلسطينية:</strong><div id="pal-coords-text">E: --- , N: ---</div></div>
-        <div><strong>🌍 إحداثيات عالمية:</strong><div id="wgs-coords-text">Lat: --- , Lon: ---</div></div>
+        <div style="margin-bottom: 8px;">
+            <strong>📍 إحداثيات فلسطينية (ArcGIS Pro):</strong>
+            <div style="display: flex; gap: 5px; align-items: center; margin-top: 5px;">
+                <div id="pal-coords-text" style="flex: 1;">E: --- , N: ---</div>
+                <button id="copy-pal-coords-btn" class="action-btn" style="padding: 5px 10px; font-size: 11px;"><i class="fas fa-copy"></i> نسخ</button>
+            </div>
+        </div>
+        <div>
+            <strong>🌍 إحداثيات عالمية (Google Maps):</strong>
+            <div style="display: flex; gap: 5px; align-items: center; margin-top: 5px;">
+                <div id="wgs-coords-text" style="flex: 1;">Lat: --- , Lon: ---</div>
+                <button id="copy-wgs-coords-btn" class="action-btn" style="padding: 5px 10px; font-size: 11px;"><i class="fas fa-copy"></i> نسخ</button>
+                <button id="open-google-maps-btn" class="action-btn" style="padding: 5px 10px; font-size: 11px; background-color: #4285f4;"><i class="fas fa-map"></i> Google Maps</button>
+            </div>
+        </div>
     </div>
     <button id="clear-share-location-btn" class="run-btn" style="background-color: #666; width: 100%;">🧹 إلغاء التحديد</button>
 </div>
@@ -404,9 +438,13 @@
     <input type="hidden" id="provider-feature-id" value="">
 
     <div class="provider-panel-header" style="border-bottom: 2px solid #f5f5f5; padding-bottom: 10px; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center;">
-        <h4 style="margin: 0; color: #2c3e50; font-size: 14px; font-weight: 700;">🛠️ لوحة إدارة الخدمة الحية</h4>
+    <h4 style="margin: 0; color: #2c3e50; font-size: 14px; font-weight: 700;">🛠️ لوحة إدارة الخدمة الحية</h4>
+    <div style="display:flex; align-items:center; gap:8px;">
         <span class="provider-name-badge" id="provider-welcome-name" style="background: #e1f5fe; color: #0288d1; padding: 4px 10px; border-radius: 6px; font-size: 11px; font-weight: bold;">مرحباً، مزود الخدمة</span>
+        <button id="provider-panel-toggle" title="تصغير/تكبير اللوحة" 
+            style="background:none; border:1px solid #ccc; border-radius:50%; width:24px; height:24px; cursor:pointer; font-size:14px; font-weight:bold; color:#555; display:flex; align-items:center; justify-content:center; flex-shrink:0; line-height:1;">−</button>
     </div>
+</div>
     
     <div class="provider-panel-body">
         <p class="provider-status-text" style="font-size: 12px; margin: 0 0 12px 0; color: #666; font-weight: 500;">حالة تواجدك الحالي المباشر على الخريطة:</p>
