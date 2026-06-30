@@ -17,6 +17,7 @@ const PG_USER = process.env.POSTGRES_USER || 'Husam';
 const PG_PASSWORD = process.env.POSTGRES_PASSWORD || 'Husam';
 const SERVICES_DB_NAME = process.env.SERVICES_DB_NAME || 'services_db';
 const REAL_ESTATE_DB_NAME = process.env.REAL_ESTATE_DB_NAME || 'realestate';
+// GeoServer يعمل على HTTP، البروكسي سيتولى الاتصال
 const GEOSERVER_TARGET = process.env.GEOSERVER_TARGET || 'http://194.163.174.162:8080/geoserver';
 
 // 1. إعدادات الاتصال بقواعد البيانات المتعددة 
@@ -320,14 +321,18 @@ app.post('/api/update-service-status', async (req, res) => {
 // 3. إعداد البروكسي لـ GeoServer
 // [إجراء أمني 2]: تشفير وحماية البروكسي لمنع الحذف العشوائي (WFS-T protection)
 app.use('/proxy/geoserver', (req, res, next) => {
+    console.log(`[Proxy] Request to: ${req.url}`);
     next();
 }, createProxyMiddleware({
     target: GEOSERVER_TARGET,
     changeOrigin: true,
     pathRewrite: { '^/proxy/geoserver': '' },
+    secure: false, // للتعامل مع شهادات SSL غير الموثوقة
+    logLevel: 'debug',
     onProxyReq: (proxyReq, req, res) => {
+        console.log(`[Proxy] Forwarding to: ${GEOSERVER_TARGET}${req.url}`);
         // ❌ قمنا بحذف سطر حقن الحساب التلقائي (zeed) تماماً من هنا
-        
+
         // الحفاظ على بيانات الـ Body للطلبات القادمة من الخريطة
         const contentType = req.headers['content-type'] || '';
         if (req.body && Object.keys(req.body).length && contentType.includes('application/json')) {
@@ -335,6 +340,10 @@ app.use('/proxy/geoserver', (req, res, next) => {
             proxyReq.setHeader('Content-Length', Buffer.byteLength(bodyData));
             proxyReq.write(bodyData);
         }
+    },
+    onError: (err, req, res) => {
+        console.error('[Proxy] Error:', err);
+        res.status(500).json({ error: 'Proxy error', details: err.message });
     }
 }));
 
