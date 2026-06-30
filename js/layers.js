@@ -1,7 +1,5 @@
 /**
- * layers.js - النسخة الديناميكية الشاملة والمطورة (59 خدمة) - مع دعم الاستثناءات العالمية
- * تشمل: الأيقونات المخصصة، الإيموجي، والمحرك الذي يقرأ من MAP_CONFIG
- * التعديلات: إصلاح استدعاء الستايلات الديناميكية لضمان عودة السيمبولوجي الأصلي (أيقونات الإيجار والبيع والأراضي) بالكامل.
+ * layers.js 
  */
 
 // 1. تعريف ترجمات وأيقونات الخدمات (الـ 59 خدمة كاملة)
@@ -178,8 +176,11 @@ const createWFSLayer = (workspace, name, title, styleFunc, maxRes = 10, visible 
         zIndex: zIndex,
         source: new ol.source.Vector({
             format: new ol.format.GeoJSON(),
-            url: `${MAP_CONFIG.server.proxyUrl}${workspace}/ows?service=WFS&version=1.0.0&request=GetFeature&typeName=${workspace}:${name}&outputFormat=application%2Fjson&srsName=${MAP_CONFIG.server.srsName}`,
-            strategy: ol.loadingstrategy.all
+            url: function(extent) {
+                // جلب البيانات حسب المدى المرئي (BBOX) لتحسين الأداء
+                return `${MAP_CONFIG.server.proxyUrl}${workspace}/ows?service=WFS&version=1.0.0&request=GetFeature&typeName=${workspace}:${name}&outputFormat=application%2Fjson&srsName=${MAP_CONFIG.server.srsName}&bbox=${extent.join(',')},${MAP_CONFIG.server.srsName}`;
+            },
+            strategy: ol.loadingstrategy.bbox
         })
     });
 };
