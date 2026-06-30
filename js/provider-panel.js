@@ -493,3 +493,45 @@ function initProviderPanelEvents() {
         btnFly.dataset.hasListener = "true";
     }
 }
+
+// ==========================================
+// تصغير وتكبير لوحة مزود الخدمة
+// ==========================================
+(function initProviderPanelToggle() {
+    function setup() {
+        const toggleBtn = document.getElementById('provider-panel-toggle');
+        const panelBody = document.querySelector('#provider-mini-panel .provider-panel-body');
+        const header = document.querySelector('#provider-mini-panel .provider-panel-header');
+        
+        if (!toggleBtn || !panelBody) return;
+
+        let isMinimized = false;
+
+        toggleBtn.addEventListener('click', function () {
+            isMinimized = !isMinimized;
+
+            if (isMinimized) {
+                panelBody.style.display = 'none';
+                header.style.borderBottom = 'none';
+                header.style.marginBottom = '0';
+                header.style.paddingBottom = '0';
+                toggleBtn.textContent = '+';
+                toggleBtn.title = 'تكبير اللوحة';
+            } else {
+                panelBody.style.display = 'block';
+                header.style.borderBottom = '2px solid #f5f5f5';
+                header.style.marginBottom = '12px';
+                header.style.paddingBottom = '10px';
+                toggleBtn.textContent = '−';
+                toggleBtn.title = 'تصغير اللوحة';
+            }
+        });
+    }
+
+    // ننتظر حتى يتم إنشاء اللوحة من provider-panel.js
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', setup);
+    } else {
+        setTimeout(setup, 1500);
+    }
+})();
