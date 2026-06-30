@@ -95,54 +95,128 @@ function initializeLocationSearch(map, overlayLayersObj) {
         });
     });
 
-    executeLocationSearchBtn?.addEventListener('click', () => {
+    executeLocationSearchBtn?.addEventListener('click', async () => {
         if (!searchCenterLocation) return alert("الرجاء تحديد موقع البحث أولاً.");
         const selectedLayerKey = searchLayerSelect.value;
         if (!selectedLayerKey) return alert("الرجاء اختيار نوع العقار أو الخدمة.");
 
         const radiusStr = searchRadiusInput.value.trim();
-        const layer = overlayLayersObj[selectedLayerKey];
-        const source = layer.getSource();
-        const features = source.getFeatures();
-        let nearby = [];
 
-        searchResultsHighlightSource?.clear();
+        // تحديد workspace و layer name
+        const isRealEstate = ['rentLayer', 'saleLayer', 'landLayer'].includes(selectedLayerKey);
+        const workspace = isRealEstate ? 'realestate' : 'services';
+        const layerNameMap = { 'rentLayer': 'ApartRent', 'saleLayer': 'ApartSale', 'landLayer': 'LandSale' };
+        const layerName = layerNameMap[selectedLayerKey] || selectedLayerKey.replace('Layer', '');
 
-        const radius = parseFloat(radiusStr) || 0;
-        if (radius > 0) {
-            const circleFeature = new ol.Feature(new ol.geom.Circle(searchCenterLocation, radius));
-            circleFeature.setStyle(new ol.style.Style({
-                stroke: new ol.style.Stroke({ color: 'rgba(0, 123, 255, 0.5)', width: 2, lineDash: [5, 5] }),
-                fill: new ol.style.Fill({ color: 'rgba(0, 123, 255, 0.1)' })
-            }));
-            searchResultsHighlightSource?.addFeature(circleFeature);
-        }
-
-        if (radiusStr === "") {
-            let minDistance = Infinity;
-            let closestFeature = null;
-            features.forEach(f => {
-                const dist = getDistanceInMeters(searchCenterLocation, f.getGeometry().getClosestPoint(searchCenterLocation));
-                if (dist < minDistance) { minDistance = dist; closestFeature = f; }
+        // استخدام البحث من السيرفر بدون BBOX للحصول على جميع النتائج
+        try {
+            const baseUrl = window.MAP_CONFIG?.server?.proxyUrl || (window.location.origin + "/");
+            const params = new URLSearchParams({
+                layer: layerName,
+                workspace: workspace
             });
-            if (closestFeature) nearby = [closestFeature];
-        } else {
-            if (radius === 0) {
-                nearby = features.filter(f => f.getGeometry().intersectsCoordinate(searchCenterLocation));
-            } else {
-                nearby = features.filter(f => {
-                    const dist = getDistanceInMeters(searchCenterLocation, f.getGeometry().getClosestPoint(searchCenterLocation));
-                    return dist <= radius;
-                });
-            }
-        }
 
-        if (nearby.length > 0) {
-            searchResultsHighlightSource?.addFeatures(nearby);
-            displayResults(nearby, layer);
-        } else {
-            alert("لا توجد نتائج تطابق معايير البحث.");
-            resultsPanel?.classList.add('hidden');
+            const response = await fetch(`${baseUrl}api/search-features?${params.toString()}`);
+            const data = await response.json();
+
+            if (!data.features || data.features.length === 0) {
+                alert("لا توجد نتائج.");
+                resultsPanel?.classList.add('hidden');
+                return;
+            }
+
+            // تحويل GeoJSON إلى OpenLayers Features
+            const format = new ol.format.GeoJSON();
+            const features = data.features.map(f => format.readFeature(f));
+
+            // فلترة حسب المسافة
+            let nearby = [];
+            searchResultsHighlightSource?.clear();
+
+            const radius = parseFloat(radiusStr) || 0;
+            if (radius > 0) {
+                const circleFeature = new ol.Feature(new ol.geom.Circle(searchCenterLocation, radius));
+                circleFeature.setStyle(new ol.style.Style({
+                    stroke: new ol.style.Stroke({ color: 'rgba(0, 123, 255, 0.5)', width: 2, lineDash: [5, 5] }),
+                    fill: new ol.style.Fill({ color: 'rgba(0, 123, 255, 0.1)' })
+                }));
+                searchResultsHighlightSource?.addFeature(circleFeature);
+            }
+
+            if (radiusStr === "") {
+                let minDistance = Infinity;
+                let closestFeature = null;
+                features.forEach(f => {
+                    const dist = getDistanceInMeters(searchCenterLocation, f.getGeometry().getClosestPoint(searchCenterLocation));
+                    if (dist < minDistance) { minDistance = dist; closestFeature = f; }
+                });
+                if (closestFeature) nearby = [closestFeature];
+            } else {
+                if (radius === 0) {
+                    nearby = features.filter(f => f.getGeometry().intersectsCoordinate(searchCenterLocation));
+                } else {
+                    nearby = features.filter(f => {
+                        const dist = getDistanceInMeters(searchCenterLocation, f.getGeometry().getClosestPoint(searchCenterLocation));
+                        return dist <= radius;
+                    });
+                }
+            }
+
+            if (nearby.length > 0) {
+                searchResultsHighlightSource?.addFeatures(nearby);
+                displayResults(nearby, overlayLayersObj[selectedLayerKey]);
+            } else {
+                alert("لا توجد نتائج تطابق معايير البحث.");
+                resultsPanel?.classList.add('hidden');
+            }
+        } catch (error) {
+            console.error("خطأ في البحث المكاني:", error);
+            alert("حدث خطأ أثناء البحث. سيتم استخدام البحث المحلي.");
+
+            // Fallback للبحث المحلي
+            const layer = overlayLayersObj[selectedLayerKey];
+            const source = layer.getSource();
+            const features = source.getFeatures();
+            let nearby = [];
+
+            searchResultsHighlightSource?.clear();
+
+            const radius = parseFloat(radiusStr) || 0;
+            if (radius > 0) {
+                const circleFeature = new ol.Feature(new ol.geom.Circle(searchCenterLocation, radius));
+                circleFeature.setStyle(new ol.style.Style({
+                    stroke: new ol.style.Stroke({ color: 'rgba(0, 123, 255, 0.5)', width: 2, lineDash: [5, 5] }),
+                    fill: new ol.style.Fill({ color: 'rgba(0, 123, 255, 0.1)' })
+                }));
+                searchResultsHighlightSource?.addFeature(circleFeature);
+            }
+
+            if (radiusStr === "") {
+                let minDistance = Infinity;
+                let closestFeature = null;
+                features.forEach(f => {
+                    const dist = getDistanceInMeters(searchCenterLocation, f.getGeometry().getClosestPoint(searchCenterLocation));
+                    if (dist < minDistance) { minDistance = dist; closestFeature = f; }
+                });
+                if (closestFeature) nearby = [closestFeature];
+            } else {
+                if (radius === 0) {
+                    nearby = features.filter(f => f.getGeometry().intersectsCoordinate(searchCenterLocation));
+                } else {
+                    nearby = features.filter(f => {
+                        const dist = getDistanceInMeters(searchCenterLocation, f.getGeometry().getClosestPoint(searchCenterLocation));
+                        return dist <= radius;
+                    });
+                }
+            }
+
+            if (nearby.length > 0) {
+                searchResultsHighlightSource?.addFeatures(nearby);
+                displayResults(nearby, layer);
+            } else {
+                alert("لا توجد نتائج تطابق معايير البحث.");
+                resultsPanel?.classList.add('hidden');
+            }
         }
     });
 
