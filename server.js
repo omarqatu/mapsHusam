@@ -579,7 +579,140 @@ app.post('/api/auth/login', async (req, res) => {
     }
 });
 
-// 8. إذا لم يُطابق أي مسار API، نرجع JSON بدل HTML لتجنب مشاكل parse في الفرونت إند
+// 8. API للبحث مع فلترة مكانية BBOX (لعمليات البحث الأربعة)
+app.get('/api/search-features', async (req, res) => {
+    try {
+        const { layer, workspace, field, operator, value, bbox, layerNameAr, conditions_count } = req.query;
+
+        if (!layer || !workspace) {
+            return res.status(400).json({ error: 'layer and workspace are required' });
+        }
+
+        const targetPool = workspace === 'realestate' ? realestatePool : servicesPool;
+        const isRealEstate = ['ApartRent', 'ApartSale', 'LandSale', 'Location', 'RoadsTest'].includes(layer);
+        const isPolygonLayer = layer === 'LandSale'; // الأراضي هي مضلعات
+
+        // بناء استعلام البحث مع فلترة status = 0 AND auto_status = 0
+        let query = `SELECT *, ST_AsGeoJSON(geom) as geom_json FROM public."${layer}" WHERE status = 0 AND auto_status = 0`;
+        const params = [];
+
+        // إضافة فلترة مكانية BBOX إذا تم توفيرها
+        if (bbox) {
+            const [minX, minY, maxX, maxY] = bbox.split(',').map(Number);
+            if (isPolygonLayer) {
+                // للمضلعات: استخدام ST_Intersects مع المربع المكاني
+                query += ` AND ST_Intersects(ST_MakeEnvelope($${params.length + 1}, $${params.length + 2}, $${params.length + 3}, $${params.length + 4}, 28191), geom)`;
+                params.push(minX, minY, maxX, maxY);
+            } else {
+                // للنقاط: استخدام x_coord و y_coord
+                query += ` AND x_coord >= $${params.length + 1} AND x_coord <= $${params.length + 2}`;
+                params.push(minX, maxX);
+                query += ` AND y_coord >= $${params.length + 1} AND y_coord <= $${params.length + 2}`;
+                params.push(minY, maxY);
+            }
+        }
+
+        // معالجة الشروط المتعددة
+        const count = parseInt(conditions_count) || 0;
+        if (count > 0) {
+            for (let i = 0; i < count; i++) {
+                const condField = req.query[`field_${i}`];
+                const condOperator = req.query[`operator_${i}`];
+                const condValue = req.query[`value_${i}`];
+
+                if (condField && condValue) {
+                    const valStr = String(condValue).trim();
+                    if (condOperator === '=') {
+                        query += ` AND ${condField} = $${params.length + 1}`;
+                        params.push(valStr);
+                    } else if (condOperator === 'contains') {
+                        // البحث في حقلين: search_tags واسم الطبقة بالعربي
+                        if (layerNameAr && condField === 'search_tags') {
+                            query += ` AND (${condField} ILIKE $${params.length + 1} OR $${params.length + 2} ILIKE $${params.length + 3})`;
+                            params.push(`%${valStr}%`, layerNameAr, `%${valStr}%`);
+                        } else {
+                            query += ` AND ${condField} ILIKE $${params.length + 1}`;
+                            params.push(`%${valStr}%`);
+                        }
+                    } else if (condOperator === '>') {
+                        query += ` AND CAST(${condField} AS NUMERIC) >= $${params.length + 1}`;
+                        params.push(parseFloat(valStr));
+                    } else if (condOperator === '<') {
+                        query += ` AND CAST(${condField} AS NUMERIC) <= $${params.length + 1}`;
+                        params.push(parseFloat(valStr));
+                    }
+                }
+            }
+        } else if (field && value) {
+            // للتوافق مع الكود القديم (شرط واحد)
+            const valStr = String(value).trim();
+            if (operator === '=') {
+                query += ` AND ${field} = $${params.length + 1}`;
+                params.push(valStr);
+            } else if (operator === 'contains') {
+                // البحث في حقلين: search_tags واسم الطبقة بالعربي
+                if (layerNameAr) {
+                    query += ` AND (${field} ILIKE $${params.length + 1} OR $${params.length + 2} ILIKE $${params.length + 3})`;
+                    params.push(`%${valStr}%`, layerNameAr, `%${valStr}%`);
+                } else {
+                    query += ` AND ${field} ILIKE $${params.length + 1}`;
+                    params.push(`%${valStr}%`);
+                }
+            } else if (operator === '>') {
+                query += ` AND CAST(${field} AS NUMERIC) >= $${params.length + 1}`;
+                params.push(parseFloat(valStr));
+            } else if (operator === '<') {
+                query += ` AND CAST(${field} AS NUMERIC) <= $${params.length + 1}`;
+                params.push(parseFloat(valStr));
+            }
+        }
+
+        query += ` ORDER BY rating DESC LIMIT 100`;
+
+        console.log(`Search Query for ${layer}:`, query);
+        console.log(`Search Params:`, params);
+
+        const result = await targetPool.query(query, params);
+
+        // تحويل النتائج إلى GeoJSON
+        const features = result.rows.map(row => {
+            let geometry;
+
+            if (isPolygonLayer && row.geom_json) {
+                // للمضلعات: استخدام geom_json (GeoJSON من PostGIS)
+                geometry = JSON.parse(row.geom_json);
+            } else {
+                // للنقاط: استخدام x_coord و y_coord
+                geometry = {
+                    type: 'Point',
+                    coordinates: [row.x_coord, row.y_coord]
+                };
+            }
+
+            // إزالة الحقول الهندسية من الخصائص
+            const { x_coord, y_coord, geom, geom_json, ...properties } = row;
+
+            return {
+                type: 'Feature',
+                geometry: geometry,
+                properties: properties
+            };
+        });
+
+        res.json({
+            type: 'FeatureCollection',
+            features: features
+        });
+
+    } catch (error) {
+        console.error('Search API Error:', error);
+        console.error('Error details:', error.message);
+        console.error('Error stack:', error.stack);
+        res.status(500).json({ error: 'Database query failed', details: error.message });
+    }
+});
+
+// 9. إذا لم يُطابق أي مسار API، نرجع JSON بدل HTML لتجنب مشاكل parse في الفرونت إند
 app.use('/api', (req, res) => {
     res.status(404).json({ error: 'API endpoint not found', path: req.path });
 });
