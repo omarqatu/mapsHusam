@@ -212,31 +212,77 @@
 
         if (fieldSelect) fieldSelect.onchange = updateValueUI;
 
-        document.getElementById('run-search').onclick = () => {
+        document.getElementById('run-search').onclick = async () => {
             const layerKey = layerSelect.value;
-            const source = currentOverlayLayers[layerKey]?.getSource();
-            if (!source) return;
-            let matched = source.getFeatures();
+            if (!layerKey) return alert("اختر الطبقة للبحث أولاً.");
+
             let finalConditions = [...conditions];
             const currentVal = document.getElementById('value-input')?.value.trim();
             if (finalConditions.length === 0 && currentVal) {
                 finalConditions.push({ field: fieldSelect.value, fieldName: fieldSelect.options[fieldSelect.selectedIndex].text, operator: operatorSelect.value, value: currentVal });
             }
             if (finalConditions.length === 0) return alert("حدد معايير البحث.");
-            matched = matched.filter(f => {
-                return finalConditions.every(c => {
-                    const raw = f.get(c.field);
-                    if (raw == null) return false;
-                    const fVal = String(raw).trim().toLowerCase();
-                    const sVal = String(c.value).trim().toLowerCase();
-                    if (c.operator === '>') return parseFloat(fVal) >= parseFloat(sVal);
-                    if (c.operator === '<') return parseFloat(fVal) <= parseFloat(sVal);
-                    if (c.operator === '=') return fVal === sVal;
-                    if (c.operator === 'contains') return fVal.includes(sVal);
-                    return false;
+
+            // تحديد workspace و layer name
+            const isRealEstate = ['rentLayer', 'saleLayer', 'landLayer'].includes(layerKey);
+            const workspace = isRealEstate ? 'realestate' : 'services';
+            const layerNameMap = { 'rentLayer': 'ApartRent', 'saleLayer': 'ApartSale', 'landLayer': 'LandSale' };
+            const layerName = layerNameMap[layerKey] || layerKey.replace('Layer', '');
+
+            // استخدام البحث من السيرفر بدون BBOX للحصول على جميع النتائج
+            try {
+                const baseUrl = window.MAP_CONFIG?.server?.proxyUrl || (window.location.origin + "/");
+                const params = new URLSearchParams({
+                    layer: layerName,
+                    workspace: workspace
                 });
-            });
-            displaySearchResults(matched, layerKey);
+
+                // إضافة شروط البحث المتعددة
+                if (finalConditions.length > 0) {
+                    finalConditions.forEach((c, index) => {
+                        params.append(`field_${index}`, c.field);
+                        params.append(`operator_${index}`, c.operator);
+                        params.append(`value_${index}`, c.value);
+                    });
+                    params.append('conditions_count', finalConditions.length);
+                }
+
+                const response = await fetch(`${baseUrl}api/search-features?${params.toString()}`);
+                const data = await response.json();
+
+                if (!data.features || data.features.length === 0) {
+                    alert("لا توجد نتائج.");
+                    return;
+                }
+
+                // تحويل GeoJSON إلى OpenLayers Features
+                const format = new ol.format.GeoJSON();
+                const features = data.features.map(f => format.readFeature(f));
+
+                displaySearchResults(features, layerKey);
+            } catch (error) {
+                console.error("خطأ في البحث:", error);
+                alert("حدث خطأ أثناء البحث. سيتم استخدام البحث المحلي.");
+
+                // الفallback للبحث المحلي
+                const source = currentOverlayLayers[layerKey]?.getSource();
+                if (!source) return;
+                let matched = source.getFeatures();
+                matched = matched.filter(f => {
+                    return finalConditions.every(c => {
+                        const raw = f.get(c.field);
+                        if (raw == null) return false;
+                        const fVal = String(raw).trim().toLowerCase();
+                        const sVal = String(c.value).trim().toLowerCase();
+                        if (c.operator === '>') return parseFloat(fVal) >= parseFloat(sVal);
+                        if (c.operator === '<') return parseFloat(fVal) <= parseFloat(sVal);
+                        if (c.operator === '=') return fVal === sVal;
+                        if (c.operator === 'contains') return fVal.includes(sVal);
+                        return false;
+                    });
+                });
+                displaySearchResults(matched, layerKey);
+            }
         };
 
         document.getElementById('add-condition').onclick = () => {
