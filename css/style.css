@@ -185,6 +185,31 @@ body {
 .global-search-wrapper i {
     color: #1a73e8;
 }
+.global-refresh-btn {
+    background: none;
+    border: none;
+    color: #1a73e8;
+    cursor: pointer;
+    padding: 6px 8px;
+    font-size: 14px;
+    transition: transform 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.global-refresh-btn:hover {
+    transform: rotate(180deg);
+    color: #0d5ec7;
+}
+.global-refresh-btn:active {
+    transform: rotate(360deg);
+}
+@media (max-width: 768px) {
+    .global-refresh-btn {
+        padding: 4px 6px;
+        font-size: 12px;
+    }
+}
 #search-suggestions {
     position: absolute;
     top: 100%;
