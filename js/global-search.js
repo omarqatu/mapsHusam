@@ -1,8 +1,5 @@
 /**
- * global-search.js - النسخة الاحترافية الشاملة والمعدلة بالكامل 2026
- * تشمل كافة الطبقات الـ 59 (عقارات + خدمات قديمة + خدمات جديدة)
- * معالجة مرنة ومستقرة للبحث المتعدد الكلمات والفراغات عبر فلاتر CQL موحدة
- * تدعم التطبيع الكامل والشامل لعيوب الإملاء باللغة العربية (الهمزات، الياء، التاء المربوطة)
+ * global-search.js 
  */
 
 const layerAliases = {
@@ -113,50 +110,135 @@ function buildUnifiedCQLFilter(term) {
 async function fetchGroupWFS(groupKey, term) {
     const config = searchConfig[groupKey];
     if (!config) return [];
-    
+
     const workspace = config.workspace;
     const layers = config.layers;
-    const typeNames = layers.map(l => `${workspace}:${l}`).join(',');
-    
     const unifiedFilter = buildUnifiedCQLFilter(term);
 
-    const params = new URLSearchParams({
-        service: 'WFS',
-        version: '1.1.0',
-        request: 'GetFeature',
-        typeName: typeNames,
-        outputFormat: 'application/json',
-        srsname: 'EPSG:28191',
-        CQL_FILTER: unifiedFilter, 
-        sortBy: 'rating D', 
-        maxFeatures: '100'
+    console.log(`Global Search group: ${groupKey}, layers: ${layers.join(', ')}, term: ${term}`);
+
+    // البحث في جميع الطبقات في المجموعة
+    const allFeatures = [];
+
+    for (const layer of layers) {
+        // الحصول على الاسم العربي للطبقة من serviceTranslations
+        const layerKey = layer.replace('Layer', '').toLowerCase();
+        const layerNameAr = window.serviceTranslations && window.serviceTranslations[layerKey] ? window.serviceTranslations[layerKey].name : null;
+
+        console.log(`Searching in layer: ${layer}, layerNameAr: ${layerNameAr}`);
+
+        // استخدام endpoint السيرفر للبحث
+        try {
+            const baseUrl = window.MAP_CONFIG?.server?.proxyUrl || (window.location.origin + "/");
+            const params = new URLSearchParams({
+                layer: layer,
+                workspace: workspace,
+                field: 'search_tags',
+                operator: 'contains',
+                value: term
+            });
+
+            // إضافة الاسم العربي إذا وجد
+            if (layerNameAr) {
+                params.append('layerNameAr', layerNameAr);
+            }
+
+            console.log(`Search params for ${layer}:`, params.toString());
+
+            const response = await fetch(`${baseUrl}api/search-features?${params.toString()}`);
+            const data = await response.json();
+
+            if (data && data.features) {
+                const features = data.features.map(f => {
+                    const layerName = f.properties.layerId || layer;
+                    return {
+                        ...f,
+                        customTitle: layerAliases[layerName] || layerName,
+                        layerId: layerName,
+                        workspace: workspace
+                    };
+                });
+                allFeatures.push(...features);
+                console.log(`Found ${features.length} features in ${layer}`);
+            }
+        } catch (err) {
+            console.error(`Error searching in layer ${layer}:`, err);
+        }
+    }
+
+    // Fallback للبحث المباشر من GeoServer إذا لم توجد نتائج
+    if (allFeatures.length === 0) {
+        console.log('No results from server, trying GeoServer fallback');
+        const typeNames = layers.map(l => `${workspace}:${l}`).join(',');
+
+        const params = new URLSearchParams({
+            service: 'WFS',
+            version: '1.1.0',
+            request: 'GetFeature',
+            typeName: typeNames,
+            outputFormat: 'application/json',
+            srsname: 'EPSG:28191',
+            CQL_FILTER: unifiedFilter,
+            sortBy: 'rating D',
+            maxFeatures: '100'
+        });
+
+        try {
+            const response = await fetch(`${MAP_CONFIG.server.proxyUrl}${workspace}/ows?${params.toString()}`);
+            if (response.ok) {
+                const data = await response.json();
+                if (data && data.features) {
+                    const features = data.features.map(f => {
+                        const layerName = f.id.split('.')[0];
+                        return {
+                            ...f,
+                            customTitle: layerAliases[layerName] || layerName,
+                            layerId: layerName,
+                            workspace: workspace
+                        };
+                    });
+                    allFeatures.push(...features);
+                }
+            }
+        } catch (fallbackErr) {
+            console.error(`Fallback error in group ${groupKey}:`, fallbackErr);
+        }
+    }
+
+    console.log(`Total features found: ${allFeatures.length}`);
+
+    // ترتيب النتائج حسب rating تنازلياً
+    allFeatures.sort((a, b) => {
+        const ratingA = parseFloat(a.properties?.rating) || 0;
+        const ratingB = parseFloat(b.properties?.rating) || 0;
+        return ratingB - ratingA;
     });
 
-    try {
-        const response = await fetch(`${MAP_CONFIG.server.proxyUrl}${workspace}/ows?${params.toString()}`);
-        if (!response.ok) return [];
-        const data = await response.json();
-        if (!data || !data.features) return [];
-
-        return data.features.map(f => {
-            const layerName = f.id.split('.')[0];
-            return {
-                ...f,
-                customTitle: layerAliases[layerName] || layerName,
-                layerId: layerName,
-                workspace: workspace
-            };
-        });
-    } catch (err) {
-        console.error(`Error in group ${groupKey}:`, err);
-        return [];
-    }
+    return allFeatures;
 }
 
 window.initializeGlobalSearch = function() {
     const searchInput = document.getElementById('global-search-input');
     const suggestionsPanel = document.getElementById('search-suggestions');
+    const refreshBtn = document.getElementById('global-refresh-btn');
     if (!searchInput || !suggestionsPanel) return;
+
+    // زر تحديث الخريطة
+    if (refreshBtn) {
+        refreshBtn.onclick = () => {
+            // تحديث جميع الطبقات
+            if (window.overlayLayersObj) {
+                Object.values(window.overlayLayersObj).forEach(layer => {
+                    if (layer && layer.getSource && typeof layer.getSource().refresh === 'function') {
+                        layer.getSource().refresh();
+                    }
+                });
+                alert('تم تحديث بيانات الخريطة بنجاح.');
+            } else {
+                alert('لم يتم العثور على الطبقات للتحديث.');
+            }
+        };
+    }
 
     let timeout;
     searchInput.addEventListener('input', (e) => {
