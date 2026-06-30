@@ -105,23 +105,136 @@ function initializeShareLocationTools(map) {
     }
 
     // برمجة زر النسخ
-    copyBtn?.addEventListener('click', () => {
+    copyBtn?.addEventListener('click', async () => {
         if (!shareLinkInput || !shareLinkInput.value) {
             alert("يرجى تحديد موقع على الخريطة أولاً.");
             return;
         }
-        
-        shareLinkInput.select();
-        navigator.clipboard.writeText(shareLinkInput.value).then(() => {
+
+        const urlToCopy = shareLinkInput.value;
+
+        // طريقة متوافقة مع الموبايل والكمبيوتر
+        try {
+            // المحاولة الأولى: استخدام Clipboard API الحديث
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                await navigator.clipboard.writeText(urlToCopy);
+                showCopySuccess();
+            } else {
+                // الفallback: استخدام الطريقة القديمة
+                shareLinkInput.select();
+                shareLinkInput.setSelectionRange(0, 99999); // للموبايل
+                const successful = document.execCommand('copy');
+                if (successful) {
+                    showCopySuccess();
+                } else {
+                    throw new Error('فشل النسخ');
+                }
+            }
+        } catch (err) {
+            console.error('خطأ في النسخ:', err);
+            alert('فشل نسخ الرابط. يرجى نسخه يدوياً.');
+        }
+
+        function showCopySuccess() {
             const originalText = copyBtn.innerHTML;
             copyBtn.innerHTML = '<i class="fas fa-check"></i> تم النسخ!';
             copyBtn.classList.replace('btn-primary', 'btn-success');
-            
-            setTimeout(() => { 
-                copyBtn.innerHTML = originalText; 
+
+            setTimeout(() => {
+                copyBtn.innerHTML = originalText;
                 copyBtn.classList.replace('btn-success', 'btn-primary');
             }, 2000);
-        });
+        }
+    });
+
+    // برمجة زر نسخ الإحداثيات الفلسطينية
+    const copyPalBtn = document.getElementById('copy-pal-coords-btn');
+    copyPalBtn?.addEventListener('click', async () => {
+        const coordsText = palDisplay?.innerText;
+        if (!coordsText || coordsText.includes('---')) {
+            alert('يرجى تحديد موقع على الخريطة أولاً.');
+            return;
+        }
+
+        // تنسيق الإحداثيات الفلسطينية لـ ArcGIS Pro: E,N
+        const coords = coordsText.replace('E: ', '').replace('N: ', '').replace(' , ', ',');
+        const formattedCoords = coords; // Format: 169000,145000
+
+        try {
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                await navigator.clipboard.writeText(formattedCoords);
+                const originalText = copyPalBtn.innerHTML;
+                copyPalBtn.innerHTML = '<i class="fas fa-check"></i> تم النسخ!';
+                setTimeout(() => { copyPalBtn.innerHTML = originalText; }, 2000);
+            } else {
+                const textarea = document.createElement('textarea');
+                textarea.value = formattedCoords;
+                document.body.appendChild(textarea);
+                textarea.select();
+                document.execCommand('copy');
+                document.body.removeChild(textarea);
+                const originalText = copyPalBtn.innerHTML;
+                copyPalBtn.innerHTML = '<i class="fas fa-check"></i> تم النسخ!';
+                setTimeout(() => { copyPalBtn.innerHTML = originalText; }, 2000);
+            }
+        } catch (err) {
+            console.error('خطأ في النسخ:', err);
+            alert('فشل نسخ الإحداثيات.');
+        }
+    });
+
+    // برمجة زر نسخ الإحداثيات العالمية
+    const copyWgsBtn = document.getElementById('copy-wgs-coords-btn');
+    copyWgsBtn?.addEventListener('click', async () => {
+        const coordsText = wgsDisplay?.innerText;
+        if (!coordsText || coordsText.includes('---')) {
+            alert('يرجى تحديد موقع على الخريطة أولاً.');
+            return;
+        }
+
+        // تنسيق الإحداثيات العالمية لـ Google Maps: lat,lon
+        const coords = coordsText.replace('Lat: ', '').replace('Lon: ', '').replace(' , ', ',');
+        const formattedCoords = coords; // Format: 31.952,35.233
+
+        try {
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                await navigator.clipboard.writeText(formattedCoords);
+                const originalText = copyWgsBtn.innerHTML;
+                copyWgsBtn.innerHTML = '<i class="fas fa-check"></i> تم النسخ!';
+                setTimeout(() => { copyWgsBtn.innerHTML = originalText; }, 2000);
+            } else {
+                const textarea = document.createElement('textarea');
+                textarea.value = formattedCoords;
+                document.body.appendChild(textarea);
+                textarea.select();
+                document.execCommand('copy');
+                document.body.removeChild(textarea);
+                const originalText = copyWgsBtn.innerHTML;
+                copyWgsBtn.innerHTML = '<i class="fas fa-check"></i> تم النسخ!';
+                setTimeout(() => { copyWgsBtn.innerHTML = originalText; }, 2000);
+            }
+        } catch (err) {
+            console.error('خطأ في النسخ:', err);
+            alert('فشل نسخ الإحداثيات.');
+        }
+    });
+
+    // برمجة زر الانتقال إلى Google Maps
+    const openGoogleMapsBtn = document.getElementById('open-google-maps-btn');
+    openGoogleMapsBtn?.addEventListener('click', () => {
+        const coordsText = wgsDisplay?.innerText;
+        if (!coordsText || coordsText.includes('---')) {
+            alert('يرجى تحديد موقع على الخريطة أولاً.');
+            return;
+        }
+
+        // استخراج الإحداثيات من النص
+        const coords = coordsText.replace('Lat: ', '').replace('Lon: ', '').replace(' , ', ',');
+        const [lat, lon] = coords.split(',');
+
+        // فتح Google Maps في نافذة جديدة
+        const googleMapsUrl = `https://www.google.com/maps?q=${lat},${lon}`;
+        window.open(googleMapsUrl, '_blank');
     });
 
     // برمجة زر المسح (إلغاء التحديد)
