@@ -18,6 +18,13 @@ function getRealUserId() {
     return localStorage.getItem('map_user_guid');
 }
 
+function getAppBaseUrl() {
+    if (window.MAP_CONFIG?.server?.apiUrl) return window.MAP_CONFIG.server.apiUrl;
+    const pathname = window.location.pathname || '/';
+    const basePath = pathname.endsWith('/') ? pathname : pathname.substring(0, pathname.lastIndexOf('/') + 1);
+    return `${window.location.origin}${basePath}`;
+}
+
 function initializePopup(map) {
     const container = document.getElementById('popup');
     const content = document.getElementById('popup-content');
@@ -79,7 +86,7 @@ function initializePopup(map) {
 
     // --- تعديل منطق الواتساب (يأخذ القيمة كما هي من الحقل) ---
     window.handlePhoneCall = function(providerName, localPhone, whatsappNumber, serviceType) {
-        const serverUrl = window.location.origin + '/save-stat';
+        const serverUrl = `${getAppBaseUrl()}save-stat`;
         const currentUserId = getRealUserId();
 
         // تسجيل الإحصائية عند الاتصال بالموبايل
@@ -98,7 +105,7 @@ function initializePopup(map) {
     };
 
     window.handleServiceRequest = function(providerName, whatsappNumber, serviceType) {
-        const serverUrl = window.location.origin + '/save-stat';
+        const serverUrl = `${getAppBaseUrl()}save-stat`;
         // استدعاء لحظي لضمان الحصول على user_id الحقيقي حتى لو سجل دخوله بعد تحميل الصفحة
         const currentUserId = getRealUserId();
 
