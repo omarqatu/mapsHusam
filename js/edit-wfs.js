@@ -1,7 +1,5 @@
 /**
- * edit-wfs.js - كود WFS-T لإرسال عمليات الإضافة والتعديل والحذف إلى GeoServer
- * تم التحديث لحل مشاكل مطابقة حقول العقارات على السيرفر الخارجي ومنع التعبئة التلقائية.
- * تم تنظيف الكود من أي تفاصيل تخص أراضي البيع وحذف حقل الـ fid من عمليات الـ Insert.
+ * edit-wfs.js - 
  */
 async function sendWFS_T(feature, type) {
     
@@ -249,9 +247,9 @@ async function sendWFS_T(feature, type) {
             ${payload}
         </wfs:Transaction>`;
 
-    const baseUrl = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') 
-        ? '/proxy/geoserver/wfs' 
-        : `${window.location.protocol}//${window.location.host}/proxy/geoserver/wfs`;
+    const baseUrl = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
+        ? '/geoserver-proxy/wfs'
+        : 'http://194.163.174.162:8080/geoserver/wfs';
 
     console.log("📤 Sending WFS-T Request:", requestXML);
 
@@ -260,7 +258,7 @@ async function sendWFS_T(feature, type) {
         title: '🔑 اسم المستخدم',
         text: 'يرجى إدخال اسم مستخدم جيوسيرفر الموثق للتعديل:',
         input: 'text',
-        inputValue: 'Husam', 
+        inputValue: '', 
         showCancelButton: true,
         confirmButtonText: 'التالي ➔',
         cancelButtonText: 'إلغاء',
