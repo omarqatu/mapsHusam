@@ -119,6 +119,29 @@ body {
     align-items: center;
 }
 
+.panel-drag-btn {
+    background: #f0f0f0;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    width: 24px;
+    height: 24px;
+    cursor: move;
+    font-size: 12px;
+    font-weight: bold;
+    color: #555;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    margin-left: 8px;
+}
+
+.panel-drag-btn:hover {
+    background: #0084ff;
+    color: #fff;
+    border-color: #0084ff;
+}
+
 .panel-minimize-btn, .panel-close-btn {
     background: none;
     border: 1px solid #ddd;
@@ -163,6 +186,14 @@ body {
 #layerPanel { width: 200px; }
 #measurePanel { width: 220px; }
 #editPanel, #polygonEditPanel, #lineEditPanel { width: 280px; }
+
+/* تحسين عرض نتائج القياس */
+#measure-result {
+    white-space: pre-line !important;
+    word-wrap: break-word !important;
+    font-size: 13px !important;
+    line-height: 1.5 !important;
+}
 
 /* تحكم في ارتفاع لوحة النتائج */
 #results-panel {
@@ -210,6 +241,14 @@ body {
 
     #results-panel .results-table-container {
         max-height: 20vh;
+    }
+
+    /* تحسين عرض نتائج القياس على الموبايل */
+    #measure-result {
+        font-size: 11px !important;
+        line-height: 1.4 !important;
+        padding: 8px !important;
+        min-height: 50px !important;
     }
 
     .panel-body {
