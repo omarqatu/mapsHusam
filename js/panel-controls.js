@@ -22,10 +22,10 @@ function initializePanelControls() {
             });
         }
 
-        // إضافة وظيفة السحب
-        const header = panel.querySelector('.panel-header');
-        if (header) {
-            makeDraggable(panel, header);
+        // إضافة وظيفة السحب باستخدام زر التحريك المخصص
+        const dragBtn = panel.querySelector('.panel-drag-btn');
+        if (dragBtn) {
+            makeDraggable(panel, dragBtn);
         }
 
         // إضافة وظيفة الإغلاق
@@ -54,11 +54,11 @@ function initializePanelControls() {
 function initializeBannerDraggable() {
     const bannerWrapper = document.querySelector('.feedback-banner-wrapper');
     const banner = document.querySelector('.feedback-banner');
-    const toggleBtn = document.querySelector('.banner-toggle-btn');
-    if (bannerWrapper && banner && toggleBtn) {
-        // استخدام زر التصغير كـ handle للسحب
+    const dragBtn = document.querySelector('.banner-drag-btn');
+    if (bannerWrapper && banner && dragBtn) {
+        // استخدام زر التحريك الجديد كـ handle للسحب
         bannerWrapper.classList.add('draggable');
-        makeDraggable(bannerWrapper, toggleBtn);
+        makeDraggable(bannerWrapper, dragBtn);
     }
 }
 
