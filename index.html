@@ -92,6 +92,7 @@
     <div class="panel-header">
         <h3>🔗 مشاركة الموقع</h3>
         <div class="panel-controls">
+            <button class="panel-drag-btn" title="تحريك">⋮⋮</button>
             <button class="panel-minimize-btn" title="تصغير/تكبير">−</button>
             <button class="panel-close-btn" id="close-share-panel" title="إغلاق">✕</button>
         </div>
@@ -127,6 +128,7 @@
     <div class="panel-header">
         <h3>📚 طبقات الخريطة</h3>
         <div class="panel-controls">
+            <button class="panel-drag-btn" title="تحريك">⋮⋮</button>
             <button class="panel-minimize-btn" title="تصغير/تكبير">−</button>
             <button class="panel-close-btn" id="close-layer-panel" title="إغلاق">✕</button>
         </div>
@@ -140,6 +142,7 @@
     <div class="panel-header">
         <h3>📏 أدوات القياس والرسم</h3>
         <div class="panel-controls">
+            <button class="panel-drag-btn" title="تحريك">⋮⋮</button>
             <button class="panel-minimize-btn" title="تصغير/تكبير">−</button>
             <button class="panel-close-btn" id="close-measure-panel" title="إغلاق">✕</button>
         </div>
@@ -160,6 +163,7 @@
     <div class="panel-header">
         <h3>📍 بحث حسب الموقع</h3>
         <div class="panel-controls">
+            <button class="panel-drag-btn" title="تحريك">⋮⋮</button>
             <button class="panel-minimize-btn" title="تصغير/تكبير">−</button>
             <button class="panel-close-btn" id="close-nearby-panel" title="إغلاق">✕</button>
         </div>
@@ -198,6 +202,7 @@
     <div class="panel-header">
         <h3>🔎 بحث بالسمات</h3>
         <div class="panel-controls">
+            <button class="panel-drag-btn" title="تحريك">⋮⋮</button>
             <button class="panel-minimize-btn" title="تصغير/تكبير">−</button>
             <button class="panel-close-btn" id="close-search-panel" title="إغلاق">✕</button>
         </div>
@@ -227,6 +232,7 @@
     <div class="panel-header">
         <h3>النتائج: <span id="results-count-span">0</span></h3>
         <div class="panel-controls">
+            <button class="panel-drag-btn" title="تحريك">⋮⋮</button>
             <button class="panel-minimize-btn" title="تصغير/تكبير">−</button>
             <button class="panel-close-btn" id="close-results-panel" title="إغلاق">✕</button>
         </div>
@@ -245,6 +251,7 @@
     <div class="panel-header">
         <h4>📝 تحرير النقاط</h4>
         <div class="panel-controls">
+            <button class="panel-drag-btn" title="تحريك">⋮⋮</button>
             <button class="panel-minimize-btn" title="تصغير/تكبير">−</button>
             <button class="panel-close-btn" id="close-edit-panel" title="إغلاق">✕</button>
         </div>
@@ -263,6 +270,7 @@
     <div class="panel-header">
         <h4>🗺️ تحرير المضلعات (أراضي ومناطق)</h4>
         <div class="panel-controls">
+            <button class="panel-drag-btn" title="تحريك">⋮⋮</button>
             <button class="panel-minimize-btn" title="تصغير/تكبير">−</button>
             <button class="panel-close-btn" id="close-polygon-edit-panel" title="إغلاق">✕</button>
         </div>
@@ -294,6 +302,7 @@
     <div class="panel-header">
         <h4>🛣️ تحرير الخطوط (طرق وشوارع)</h4>
         <div class="panel-controls">
+            <button class="panel-drag-btn" title="تحريك">⋮⋮</button>
             <button class="panel-minimize-btn" title="تصغير/تكبير">−</button>
             <button class="panel-close-btn" id="close-line-edit-panel" title="إغلاق">✕</button>
         </div>
@@ -473,6 +482,7 @@
 <div class="feedback-banner-wrapper" style="pointer-events: none !important;">
     <button type="button" id="toggleBannerBtn" class="banner-toggle-btn" title="تصغير" style="pointer-events: auto !important;"
             onclick="handleBannerToggle(event, this)">—</button>
+    <button type="button" id="dragBannerBtn" class="banner-drag-btn" title="تحريك" style="pointer-events: auto !important;">⋮⋮</button>
 
     <a href="https://www.facebook.com/MapServesPalestine" target="_blank" class="feedback-banner" id="feedbackBanner" style="pointer-events: auto !important;"
        onclick="handleBannerLinkClick(event, this)">
@@ -482,7 +492,7 @@
                 <br><strong>انقر داخل المربع للتواصل</strong>
             </p>
         </div>
-        
+
         <div class="banner-minimized-content">
             تواصل معنا عبر فيسبوك
         </div>
@@ -494,10 +504,11 @@
     <input type="hidden" id="provider-layer-name" value="">
     <input type="hidden" id="provider-feature-id" value="">
 
-    <div class="panel-header" style="border-bottom: 2px solid #f5f5f5; padding-bottom: 10px; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; cursor: move;">
+    <div class="panel-header" style="border-bottom: 2px solid #f5f5f5; padding-bottom: 10px; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center;">
         <h4 style="margin: 0; color: #2c3e50; font-size: 14px; font-weight: 700;">🛠️ لوحة إدارة الخدمة الحية</h4>
         <div class="panel-controls" style="display:flex; align-items:center; gap:8px;">
             <span class="provider-name-badge" id="provider-welcome-name" style="background: #e1f5fe; color: #0288d1; padding: 4px 10px; border-radius: 6px; font-size: 11px; font-weight: bold;">مرحباً، مزود الخدمة</span>
+            <button class="panel-drag-btn" title="تحريك">⋮⋮</button>
             <button class="panel-minimize-btn" title="تصغير/تكبير">−</button>
         </div>
     </div>
