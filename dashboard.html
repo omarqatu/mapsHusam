@@ -160,6 +160,7 @@
     async function loadLogs(page) {
         const tbody = document.getElementById('logsBody');
         try {
+            const apiBaseUrl = window.MAP_CONFIG?.server?.apiUrl || `${window.location.origin}${window.location.pathname.endsWith('/') ? window.location.pathname : window.location.pathname.substring(0, window.location.pathname.lastIndexOf('/') + 1)}`;
             // السيرفر مبرمج خارجياً لإرجاع 10 سجلات كحد أقصى في كل طلب صفحة
             const backendPageSize = 10; 
             
@@ -174,7 +175,7 @@
             // تجهيز الطلبات المتوازية لجمع السجلات المطلوبة دفعة واحدة
             for (let bp = startBackendPage; bp <= endBackendPage; bp++) {
                 fetchPromises.push(
-                    fetch(`/api/stats-detailed?page=${bp}&limit=${backendPageSize}&t=${Date.now()}`).then(res => res.json())
+                    fetch(`${apiBaseUrl}api/stats-detailed?page=${bp}&limit=${backendPageSize}&t=${Date.now()}`).then(res => res.json())
                 );
             }
 
@@ -377,7 +378,8 @@
 
     async function deleteRecord(id) {
         if (!confirm('هل أنت متأكد من الحذف؟')) return;
-        const res = await fetch(`/api/delete-stat/${id}`, { method: 'DELETE' });
+        const apiBaseUrl = window.MAP_CONFIG?.server?.apiUrl || `${window.location.origin}${window.location.pathname.endsWith('/') ? window.location.pathname : window.location.pathname.substring(0, window.location.pathname.lastIndexOf('/') + 1)}`;
+        const res = await fetch(`${apiBaseUrl}api/delete-stat/${id}`, { method: 'DELETE' });
         if (res.ok) {
             allData = allData.filter(i => i.id !== id);
             applyFilters();
