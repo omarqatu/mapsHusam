@@ -98,7 +98,8 @@ document.addEventListener("DOMContentLoaded", function () {
             if (submitButton) submitButton.disabled = true; 
 
             try {
-                const response = await fetch('/api/auth/register', {
+                const apiBaseUrl = window.MAP_CONFIG?.server?.apiUrl || `${window.location.origin}${window.location.pathname.endsWith('/') ? window.location.pathname : window.location.pathname.substring(0, window.location.pathname.lastIndexOf('/') + 1)}`;
+                const response = await fetch(`${apiBaseUrl}api/auth/register`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
                     body: JSON.stringify({
@@ -229,7 +230,8 @@ document.addEventListener("DOMContentLoaded", function () {
             }
 
             try {
-                const response = await fetch('/api/auth/login', {
+                const apiBaseUrl = window.MAP_CONFIG?.server?.apiUrl || `${window.location.origin}${window.location.pathname.endsWith('/') ? window.location.pathname : window.location.pathname.substring(0, window.location.pathname.lastIndexOf('/') + 1)}`;
+                const response = await fetch(`${apiBaseUrl}api/auth/login`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
                     body: JSON.stringify({ email, phone, password })
