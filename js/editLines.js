@@ -1,7 +1,5 @@
 /**
- * editLines.js - نسخة محدثة 2026
- * مبنية على نفس منهجية editPolygons.js و edit-wfs.js
- * الهندسة: MultiLineString - الجدول: RoadsTest - الـ workspace: realestate
+ * editLines.js - 
  */
 window.initializeLineEditTools = function (map, overlayLayersObj) {
     let draw, modify, snap, select;
@@ -229,6 +227,15 @@ window.initializeLineEditTools = function (map, overlayLayersObj) {
             let fieldsXML = `<${fullQualifiedName} xmlns:${workspace}="${featureNS}">`;
             fieldsXML += `<${workspace}:geom>${gmlGeometry}</${workspace}:geom>`;
 
+            // تعبئة القيم الافتراضية للحقول الإلزامية
+            if (!props['gov_a']) props['gov_a'] = 'غير محدد';
+            if (!props['village_a']) props['village_a'] = 'غير محدد';
+            if (!props['source']) props['source'] = 0;
+            if (!props['target']) props['target'] = 0;
+            if (!props['cost']) props['cost'] = 0.0;
+            if (!props['road_type']) props['road_type'] = 0;
+            if (!props['one_way']) props['one_way'] = 0;
+
             insertSchemaOrder.forEach(k => {
                 if (k === 'geom') return; // تم إضافته أعلاه
                 const val = props[k];
@@ -238,6 +245,8 @@ window.initializeLineEditTools = function (map, overlayLayersObj) {
 
             fieldsXML += `</${fullQualifiedName}>`;
             payload = `<wfs:Insert>${fieldsXML}</wfs:Insert>`;
+
+            console.log('[Line Insert] Payload:', payload);
 
         } else if (type === 'update') {
             if (!fidValue) {
@@ -279,7 +288,7 @@ window.initializeLineEditTools = function (map, overlayLayersObj) {
             title: '🔑 حساب المسؤول',
             text: 'أدخل اسم مستخدم جيوسيرفر:',
             input: 'text',
-            inputValue: 'Husam',
+            inputValue: '',
             showCancelButton: true,
             confirmButtonText: 'التالي ➔',
             cancelButtonText: 'إلغاء',
@@ -310,7 +319,11 @@ window.initializeLineEditTools = function (map, overlayLayersObj) {
             didOpen: () => Swal.showLoading()
         });
 
-        fetch('/proxy/geoserver/wfs', {
+        const baseUrl = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
+            ? '/geoserver-proxy/wfs'
+            : 'http://194.163.174.162:8080/geoserver/wfs';
+
+        fetch(baseUrl, {
             method: 'POST',
             body: requestXML,
             headers: {
