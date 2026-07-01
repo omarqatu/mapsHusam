@@ -76,7 +76,7 @@ body {
     position: absolute;
     right: 10px;
     background: #fff;
-    padding: 15px;
+    padding: 0;
     border: 1px solid #ccc;
     border-radius: 8px;
     z-index: 502;
@@ -91,7 +91,67 @@ body {
     transition: all 0.3s ease-in-out;
 }
 
-#search-panel, #nearby-apartments-panel, #results-panel, #layerPanel, 
+/* إضافة رأس قابل للسحب والتصغير لجميع اللوحات */
+.panel-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 15px;
+    border-bottom: 1px solid #eee;
+    cursor: move;
+    user-select: none;
+    background: #f9f9f9;
+    border-radius: 8px 8px 0 0;
+}
+
+.panel-header h3, .panel-header h4 {
+    margin: 0;
+    font-size: 14px;
+    color: #333;
+}
+
+.panel-controls {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.panel-minimize-btn, .panel-close-btn {
+    background: none;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    width: 24px;
+    height: 24px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: bold;
+    color: #555;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.panel-minimize-btn:hover, .panel-close-btn:hover {
+    background: #e0e0e0;
+    color: #000;
+}
+
+.panel-body {
+    padding: 15px;
+    transition: all 0.3s ease;
+}
+
+.panel-right.minimized .panel-body {
+    display: none;
+}
+
+.panel-right.minimized {
+    width: auto !important;
+    min-width: 150px;
+}
+
+#search-panel, #nearby-apartments-panel, #results-panel, #layerPanel,
 #measurePanel, #shareLocationPanel, #editPanel, #polygonEditPanel, #lineEditPanel {
     top: 150px;
     transform: none;
@@ -107,6 +167,37 @@ body {
     top: 5px; left: 5px; z-index: 10;
 }
 .close-btn:hover { color: #000; }
+
+/* تحسين أحجام اللوحات للموبايل */
+@media (max-width: 768px) {
+    .panel-right {
+        width: 90vw !important;
+        max-width: 90vw;
+        right: 5vw;
+        max-height: 25vh;
+        top: auto;
+        bottom: 10vh;
+        transform: none;
+    }
+
+    .panel-right.minimized {
+        width: auto !important;
+        min-width: 120px;
+        max-height: auto;
+    }
+
+    #layerPanel { width: 90vw !important; }
+    #measurePanel { width: 90vw !important; }
+    #editPanel, #polygonEditPanel, #lineEditPanel { width: 90vw !important; }
+
+    .panel-body {
+        padding: 10px;
+    }
+
+    .panel-header h3, .panel-header h4 {
+        font-size: 12px;
+    }
+}
 
 .panel-right label { display: block; margin-bottom: 5px; font-weight: bold; text-align: right; direction: rtl; }
 .panel-right select, .panel-right input[type="text"], .panel-right input[type="number"] {
