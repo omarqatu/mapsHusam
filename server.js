@@ -746,6 +746,14 @@ app.get('/index.html', (req, res) => {
     res.sendFile(path.join(__dirname, 'index.html'));
 });
 
+app.get('/dashboard', (req, res) => {
+    res.sendFile(path.join(__dirname, 'dashboard.html'));
+});
+
+app.get('/dashboard.html', (req, res) => {
+    res.sendFile(path.join(__dirname, 'dashboard.html'));
+});
+
 // 10. خطأ عام للميدل وير
 app.use((err, req, res, next) => {
     console.error('Unhandled error:', err);
