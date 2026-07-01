@@ -321,7 +321,7 @@ window.initializeLineEditTools = function (map, overlayLayersObj) {
 
         const baseUrl = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
             ? '/geoserver-proxy/wfs'
-            : 'http://194.163.174.162:8080/geoserver/wfs';
+            : '/geoserver-proxy/wfs';
 
         fetch(baseUrl, {
             method: 'POST',
