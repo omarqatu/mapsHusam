@@ -1,5 +1,7 @@
 /**
- * layers.js 
+ * layers.js - النسخة الديناميكية الشاملة والمطورة (59 خدمة) - مع دعم الاستثناءات العالمية
+ * تشمل: الأيقونات المخصصة، الإيموجي، والمحرك الذي يقرأ من MAP_CONFIG
+ * التعديلات: إصلاح استدعاء الستايلات الديناميكية لضمان عودة السيمبولوجي الأصلي (أيقونات الإيجار والبيع والأراضي) بالكامل.
  */
 
 // 1. تعريف ترجمات وأيقونات الخدمات (الـ 59 خدمة كاملة)
@@ -163,7 +165,23 @@ window.styleGovernorate = (f, r) => window.createStyle(f, r, { strokeColor: '#00
 // 4. الطبقات الأساسية الثابتة
 const osmBaseLayer = new ol.layer.Tile({ title: 'OSM', visible: false, type: 'base', source: new ol.source.OSM(), zIndex: 0 });
 const esriImageryLayer = new ol.layer.Tile({ title: 'Esri', visible: true, type: 'base', source: new ol.source.XYZ({ url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}' }), zIndex: 0 });
-const aerialLayer = new ol.layer.Tile({ title: 'Aerial', visible: false, type: 'base', source: new ol.source.TileWMS({ url: `${MAP_CONFIG.server.proxyUrl}madeenati/wms`, params: { 'LAYERS': 'madeenati:WB_2023_10_18mbt', 'CRS': MAP_CONFIG.server.srsName, 'FORMAT': 'image/jpeg', 'TILED': true }, serverType: 'geoserver', crossOrigin: 'anonymous' }), zIndex: 0 });
+
+// طبقة الصورة الجوية المحلية - تحسين الأداء باستخدام XYZ مع cache
+const aerialLayer = new ol.layer.Tile({
+    title: 'Aerial',
+    visible: false,
+    type: 'base',
+    source: new ol.source.XYZ({
+        url: `${MAP_CONFIG.server.proxyUrl}madeenati/gwc/service/wmts?layer=madeenati:WB_2023_10_18mbt&tilematrixset=EPSG:900913&Service=WMTS&Request=GetTile&Version=1.0.0&Format=image/jpeg&TileMatrix={z}&TileCol={x}&TileRow={y}`,
+        crossOrigin: 'anonymous',
+        maxZoom: 19,
+        attributions: '© GeoServer WMTS'
+    }),
+    zIndex: 0,
+    preload: 4, // تحميل مسبق لـ 4 مستويات زووم
+    useInterimTilesOnError: true // استخدام tiles مؤقتة عند الخطأ لعدم اختفاء الصورة
+});
+
 const noBasemapLayer = new ol.layer.Vector({ title: 'None', visible: false, type: 'base', source: new ol.source.Vector(), zIndex: 0 });
 
 // 5. المحرك الديناميكي الآمن لإنشاء طبقات WFS وتغذيتها بالبيانات
