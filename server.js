@@ -331,14 +331,23 @@ app.use('/geoserver-proxy', (req, res, next) => {
     logLevel: 'debug',
     onProxyReq: (proxyReq, req, res) => {
         console.log(`[Proxy] Forwarding to: ${GEOSERVER_TARGET}${req.url}`);
+        console.log(`[Proxy] Content-Type: ${req.headers['content-type']}`);
+        console.log(`[Proxy] Body length: ${req.body ? Buffer.byteLength(req.body) : 0}`);
+
         // ❌ قمنا بحذف سطر حقن الحساب التلقائي (zeed) تماماً من هنا
 
         // الحفاظ على بيانات الـ Body للطلبات القادمة من الخريطة
         const contentType = req.headers['content-type'] || '';
-        if (req.body && Object.keys(req.body).length && contentType.includes('application/json')) {
-            const bodyData = JSON.stringify(req.body);
-            proxyReq.setHeader('Content-Length', Buffer.byteLength(bodyData));
-            proxyReq.write(bodyData);
+        if (req.body) {
+            if (contentType.includes('application/json')) {
+                const bodyData = JSON.stringify(req.body);
+                proxyReq.setHeader('Content-Length', Buffer.byteLength(bodyData));
+                proxyReq.write(bodyData);
+            } else if (contentType.includes('text/xml') || contentType.includes('application/xml')) {
+                // للطلبات XML (WFS-T)
+                proxyReq.setHeader('Content-Length', Buffer.byteLength(req.body));
+                proxyReq.write(req.body);
+            }
         }
     },
     onError: (err, req, res) => {
