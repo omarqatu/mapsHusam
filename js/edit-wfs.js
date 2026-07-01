@@ -30,8 +30,8 @@ async function sendWFS_T(feature, type) {
     
     // ⚠️ روابط الـ Namespace URI المتطابقة مع إعدادات GeoServer حيث تعمل الطبقات الفعلية
     const namespaceUris = {
-        services: 'https://localhost/services',
-        realestate: 'https://localhost/realestate'
+        services: 'http://localhost/services',
+        realestate: 'http://localhost/realestate'
     };
     const featureNS = namespaceUris[workspace] || `http://localhost/${workspace}`;
     
