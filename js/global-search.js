@@ -1,5 +1,8 @@
 /**
- * global-search.js 
+ * global-search.js - النسخة الاحترافية الشاملة والمعدلة بالكامل 2026
+ * تشمل كافة الطبقات الـ 59 (عقارات + خدمات قديمة + خدمات جديدة)
+ * معالجة مرنة ومستقرة للبحث المتعدد الكلمات والفراغات عبر فلاتر CQL موحدة
+ * تدعم التطبيع الكامل والشامل لعيوب الإملاء باللغة العربية (الهمزات، الياء، التاء المربوطة)
  */
 
 const layerAliases = {
@@ -129,7 +132,8 @@ async function fetchGroupWFS(groupKey, term) {
 
         // استخدام endpoint السيرفر للبحث
         try {
-            const baseUrl = window.MAP_CONFIG?.server?.proxyUrl || (window.location.origin + "/");
+            let baseUrl = window.MAP_CONFIG?.server?.apiUrl || (window.location.origin + "/");
+            if (!baseUrl.endsWith('/')) baseUrl += '/';
             const params = new URLSearchParams({
                 layer: layer,
                 workspace: workspace,
