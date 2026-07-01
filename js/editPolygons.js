@@ -555,7 +555,9 @@ function initializePolygonEditTools(map, overlayLayersObj) {
             headers: {
                 'Content-Type': 'text/xml',
                 'Authorization': `Basic ${token}`
-            }
+            },
+            credentials: 'include',
+            mode: 'cors'
         }).then(async res => {
             const text = await res.text();
             if (res.ok && !text.includes('Exception') && !text.includes('XpathException')) {
