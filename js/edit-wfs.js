@@ -251,7 +251,7 @@ async function sendWFS_T(feature, type) {
 
     const baseUrl = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
         ? '/geoserver-proxy/wfs'
-        : 'http://194.163.174.162:8080/geoserver/wfs';
+        : '/geoserver-proxy/wfs';
 
     console.log("📤 Sending WFS-T Request:", requestXML);
 
