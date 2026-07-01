@@ -141,7 +141,7 @@ function checkProviderStatusAndShowPanel(directUserObj = null) {
         feature_id: currentUser.feature_id
     };
 
-    let baseUrl = window.MAP_CONFIG?.server?.proxyUrl || (window.location.origin + "/");
+    let baseUrl = window.MAP_CONFIG?.server?.apiUrl || (window.location.origin + "/");
     if (!baseUrl.endsWith('/')) baseUrl += '/';
     
     const userIdForQuery = currentUser.user_id || currentUser.id;
@@ -367,7 +367,7 @@ function sendDataToServer(status, lat, lon, xPal, yPal) {
     const activeUserId = currentUser ? currentUser.user_id : null;
     if (!activeUserId) { window.isCoolingDown = false; forceUnlockButtons(); return; }
 
-    let baseUrl = window.MAP_CONFIG?.server?.proxyUrl || window.location.origin + "/";
+    let baseUrl = window.MAP_CONFIG?.server?.apiUrl || window.location.origin + "/";
     if (!baseUrl.endsWith('/')) baseUrl += '/';
 
     const finalXPal = xPal ? Number(Number(xPal).toFixed(2)) : null;
