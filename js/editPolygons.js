@@ -1,6 +1,5 @@
 /**
- * editPolygons.js - النسخة الهندسية المتقدمة والمحدثة 2026 لترابط واجهات المضلعات
- * مطابقة تماماً لمنهجية حماية حقول الجيوسيرفر، التوثيق الآمن، وحل مشكلة انهيار إحداثيات المضلع.
+ * editPolygons.js - 
  */
 function initializePolygonEditTools(map, overlayLayersObj) {
     let draw, modify, snap, select, reshapeDraw;
@@ -285,16 +284,18 @@ function initializePolygonEditTools(map, overlayLayersObj) {
         if (modify) map.removeInteraction(modify);
         if (reshapeDraw) map.removeInteraction(reshapeDraw);
         if (draw) map.removeInteraction(draw);
-        
+
         const oldProps = currentFeature.getProperties();
+        const oldFid = currentFeature.getId(); // حفظ FID القديم
         selectedLayerSource.removeFeature(currentFeature);
-        
+
         draw = new ol.interaction.Draw({ type: 'Polygon' });
         map.addInteraction(draw);
-        
+
         draw.on('drawend', (e) => {
             currentFeature = e.feature;
             currentFeature.setProperties(oldProps);
+            currentFeature.setId(oldFid); // استعادة FID للمعلم الجديد
             selectedLayerSource.addFeature(currentFeature);
             map.removeInteraction(draw);
             Swal.fire('تم استبدال المضلع', 'تم إسقاط الشكل الجديد بنجاح، يرجى مراجعة العقد قبل الضغط على حفظ نهائي.', 'info');
@@ -320,10 +321,12 @@ function initializePolygonEditTools(map, overlayLayersObj) {
         const typeName = isRealEstate ? 'LandSale' : 'Location';
         const featureNS = 'http://localhost/realestate';
         const fullQualifiedName = `${workspace}:${typeName}`;
-        
+
         let rawId = feature.getId() || feature.get('fid') || feature.get('id');
         let cleanId = (rawId && String(rawId).includes('.')) ? rawId.split('.').pop() : rawId;
         const fidValue = cleanId ? `${typeName}.${cleanId}` : "";
+
+        console.log(`[Polygon Edit] Feature ID extraction: rawId=${rawId}, cleanId=${cleanId}, fidValue=${fidValue}, typeName=${typeName}`);
 
         const geom = feature.getGeometry();
         
@@ -482,8 +485,10 @@ function initializePolygonEditTools(map, overlayLayersObj) {
                 ${payload}
             </wfs:Transaction>`;
 
-        // دائماً نستخدم البروكسي المحلي بغض النظر عن البيئة (لوكل أو دومين خارجي)
-        const baseUrl = '/proxy/geoserver/wfs';
+        // استخدام البروكسي المحلي على localhost، و GeoServer مباشر على الدومين
+        const baseUrl = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
+            ? '/geoserver-proxy/wfs'
+            : 'http://194.163.174.162:8080/geoserver/wfs';
 
         console.log("📤 Sending Polygon WFS-T Request:", requestXML);
 
@@ -492,7 +497,7 @@ function initializePolygonEditTools(map, overlayLayersObj) {
             title: '🔑 حساب المسؤول',
             text: 'يرجى تأكيد اسم مستخدم جيوسيرفر المعتمد للتعديل الصارم للمضلعات:',
             input: 'text',
-            inputValue: 'Husam', 
+            inputValue: '', 
             showCancelButton: true,
             confirmButtonText: 'التالي ➔',
             cancelButtonText: 'إلغاء',
