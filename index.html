@@ -89,63 +89,90 @@
 <div id="map" class="map"></div>
 
 <div id="shareLocationPanel" class="hidden panel-right">
-    <button id="close-share-panel" class="close-btn">❌</button>
-    <h3>🔗 مشاركة الموقع</h3>
-    <p id="shared-location-display" style="font-size: 13px; color: #555; margin-bottom: 10px;">انقر على الخريطة لتحديد موقع ومشاركته.</p>
-    <div class="share-input-group" style="display: flex; gap: 5px; margin-bottom: 15px;">
-        <input type="text" id="share-link-input" readonly placeholder="سيتولد الرابط هنا..." style="flex: 1; padding: 8px; border: 1px solid #ccc; border-radius: 4px; font-size: 12px;">
-        <button id="copy-share-link-btn" class="action-btn" style="padding: 8px 15px; white-space: nowrap;"><i class="fas fa-copy"></i> نسخ الرابط</button>
-    </div>
-    <div id="coords-display-area" style="background: #fdfdfd; border: 1px dashed #bbb; padding: 10px; border-radius: 5px; margin-bottom: 15px; font-size: 12px; line-height: 1.6;">
-        <div style="margin-bottom: 8px;">
-            <strong>📍 إحداثيات فلسطينية (ArcGIS Pro):</strong>
-            <div style="display: flex; gap: 5px; align-items: center; margin-top: 5px;">
-                <div id="pal-coords-text" style="flex: 1;">E: --- , N: ---</div>
-                <button id="copy-pal-coords-btn" class="action-btn" style="padding: 5px 10px; font-size: 11px;"><i class="fas fa-copy"></i> نسخ</button>
-            </div>
-        </div>
-        <div>
-            <strong>🌍 إحداثيات عالمية (Google Maps):</strong>
-            <div style="display: flex; gap: 5px; align-items: center; margin-top: 5px;">
-                <div id="wgs-coords-text" style="flex: 1;">Lat: --- , Lon: ---</div>
-                <button id="copy-wgs-coords-btn" class="action-btn" style="padding: 5px 10px; font-size: 11px;"><i class="fas fa-copy"></i> نسخ</button>
-                <button id="open-google-maps-btn" class="action-btn" style="padding: 5px 10px; font-size: 11px; background-color: #4285f4;"><i class="fas fa-map"></i> Google Maps</button>
-            </div>
+    <div class="panel-header">
+        <h3>🔗 مشاركة الموقع</h3>
+        <div class="panel-controls">
+            <button class="panel-minimize-btn" title="تصغير/تكبير">−</button>
+            <button class="panel-close-btn" id="close-share-panel" title="إغلاق">✕</button>
         </div>
     </div>
-    <button id="clear-share-location-btn" class="run-btn" style="background-color: #666; width: 100%;">🧹 إلغاء التحديد</button>
+    <div class="panel-body">
+        <p id="shared-location-display" style="font-size: 13px; color: #555; margin-bottom: 10px;">انقر على الخريطة لتحديد موقع ومشاركته.</p>
+        <div class="share-input-group" style="display: flex; gap: 5px; margin-bottom: 15px;">
+            <input type="text" id="share-link-input" readonly placeholder="سيتولد الرابط هنا..." style="flex: 1; padding: 8px; border: 1px solid #ccc; border-radius: 4px; font-size: 12px;">
+            <button id="copy-share-link-btn" class="action-btn" style="padding: 8px 15px; white-space: nowrap;"><i class="fas fa-copy"></i> نسخ الرابط</button>
+        </div>
+        <div id="coords-display-area" style="background: #fdfdfd; border: 1px dashed #bbb; padding: 10px; border-radius: 5px; margin-bottom: 15px; font-size: 12px; line-height: 1.6;">
+            <div style="margin-bottom: 8px;">
+                <strong>📍 إحداثيات فلسطينية (ArcGIS Pro):</strong>
+                <div style="display: flex; gap: 5px; align-items: center; margin-top: 5px;">
+                    <div id="pal-coords-text" style="flex: 1;">E: --- , N: ---</div>
+                    <button id="copy-pal-coords-btn" class="action-btn" style="padding: 5px 10px; font-size: 11px;"><i class="fas fa-copy"></i> نسخ</button>
+                </div>
+            </div>
+            <div>
+                <strong>🌍 إحداثيات عالمية (Google Maps):</strong>
+                <div style="display: flex; gap: 5px; align-items: center; margin-top: 5px;">
+                    <div id="wgs-coords-text" style="flex: 1;">Lat: --- , Lon: ---</div>
+                    <button id="copy-wgs-coords-btn" class="action-btn" style="padding: 5px 10px; font-size: 11px;"><i class="fas fa-copy"></i> نسخ</button>
+                    <button id="open-google-maps-btn" class="action-btn" style="padding: 5px 10px; font-size: 11px; background-color: #4285f4;"><i class="fas fa-map"></i> Google Maps</button>
+                </div>
+            </div>
+        </div>
+        <button id="clear-share-location-btn" class="run-btn" style="background-color: #666; width: 100%;">🧹 إلغاء التحديد</button>
+    </div>
 </div>
 
 <div id="layerPanel" class="hidden panel-right">
-    <button id="close-layer-panel" class="close-btn">❌</button>
-    <h3>📚 طبقات الخريطة</h3>
-    <div id="layer-list-container"></div>
+    <div class="panel-header">
+        <h3>📚 طبقات الخريطة</h3>
+        <div class="panel-controls">
+            <button class="panel-minimize-btn" title="تصغير/تكبير">−</button>
+            <button class="panel-close-btn" id="close-layer-panel" title="إغلاق">✕</button>
+        </div>
+    </div>
+    <div class="panel-body">
+        <div id="layer-list-container"></div>
+    </div>
 </div>
 
 <div id="measurePanel" class="hidden panel-right">
-    <button id="close-measure-panel" class="close-btn">❌</button>
-    <h3>📏 أدوات القياس والرسم</h3>
-    <div class="measure-tools">
-        <button id="measure-length-btn" class="action-btn" style="width: 100%; margin-bottom: 5px;">📏 قياس مسافة (متر)</button>
-        <button id="measure-area-btn" class="action-btn" style="width: 100%; margin-bottom: 5px;">📐 قياس مساحة (متر²)</button>
-        <button id="draw-point-btn" class="action-btn" style="width: 100%; margin-bottom: 5px;">📍 رسم نقطة</button>
-        <hr>
-        <button id="clear-measure-btn" class="run-btn" style="background-color: #d9534f; width: 100%;">🧹 مسح القياسات</button>
+    <div class="panel-header">
+        <h3>📏 أدوات القياس والرسم</h3>
+        <div class="panel-controls">
+            <button class="panel-minimize-btn" title="تصغير/تكبير">−</button>
+            <button class="panel-close-btn" id="close-measure-panel" title="إغلاق">✕</button>
+        </div>
     </div>
-    <div id="measure-result" style="margin-top: 15px; padding: 10px; background: #f9f9f9; border-radius: 5px; font-weight: bold; color: #2c3e50; min-height: 40px; text-align: center;">النتائج تظهر هنا</div>
+    <div class="panel-body">
+        <div class="measure-tools">
+            <button id="measure-length-btn" class="action-btn" style="width: 100%; margin-bottom: 5px;">📏 قياس مسافة (متر)</button>
+            <button id="measure-area-btn" class="action-btn" style="width: 100%; margin-bottom: 5px;">📐 قياس مساحة (متر²)</button>
+            <button id="draw-point-btn" class="action-btn" style="width: 100%; margin-bottom: 5px;">📍 رسم نقطة</button>
+            <hr>
+            <button id="clear-measure-btn" class="run-btn" style="background-color: #d9534f; width: 100%;">🧹 مسح القياسات</button>
+        </div>
+        <div id="measure-result" style="margin-top: 15px; padding: 10px; background: #f9f9f9; border-radius: 5px; font-weight: bold; color: #2c3e50; min-height: 40px; text-align: center;">النتائج تظهر هنا</div>
+    </div>
 </div>
 
 <div id="nearby-apartments-panel" class="hidden panel-right">
-    <button id="close-nearby-panel" class="close-btn">❌</button>
-    <h3>📍 بحث حسب الموقع</h3>
-    <div class="search-group">
-        <label>1. حدد مركز البحث:</label>
-        <div style="display: flex; gap: 5px; margin-bottom: 8px;">
-            <button id="get-my-location-btn" class="action-btn" style="flex: 1;"><i class="fas fa-crosshairs"></i> موقعي</button>
-            <button id="select-from-map-btn" class="action-btn" style="flex: 1;"><i class="fas fa-mouse-pointer"></i> الخريطة</button>
+    <div class="panel-header">
+        <h3>📍 بحث حسب الموقع</h3>
+        <div class="panel-controls">
+            <button class="panel-minimize-btn" title="تصغير/تكبير">−</button>
+            <button class="panel-close-btn" id="close-nearby-panel" title="إغلاق">✕</button>
         </div>
-        <div id="selected-location-display" style="text-align: center; font-size: 11px; color: gray; background: #f9f9f9; padding: 5px; border: 1px solid #eee; border-radius: 4px; margin-bottom: 10px;">لم يتم تحديد موقع بعد</div>
     </div>
+    <div class="panel-body">
+        <div class="search-group">
+            <label>1. حدد مركز البحث:</label>
+            <div style="display: flex; gap: 5px; margin-bottom: 8px;">
+                <button id="get-my-location-btn" class="action-btn" style="flex: 1;"><i class="fas fa-crosshairs"></i> موقعي</button>
+                <button id="select-from-map-btn" class="action-btn" style="flex: 1;"><i class="fas fa-mouse-pointer"></i> الخريطة</button>
+            </div>
+            <div id="selected-location-display" style="text-align: center; font-size: 11px; color: gray; background: #f9f9f9; padding: 5px; border: 1px solid #eee; border-radius: 4px; margin-bottom: 10px;">لم يتم تحديد موقع بعد</div>
+        </div>
     <div class="search-group">
         <label for="search-layer-select">2. اختر نوع الخدمة/العقار:</label>
         <select id="search-layer-select"></select>
@@ -158,6 +185,7 @@
         <button id="execute-location-search-btn" class="run-btn" style="flex: 2;">🔍 ابحث الآن</button>
         <button id="clear-location-search-btn" class="run-btn" style="flex: 1; background-color: #666;">🧹 مسح</button>
     </div>
+    </div>
 </div>
 
 <div id="popup" class="ol-popup">
@@ -167,14 +195,20 @@
 </div>
 
 <div id="search-panel" class="hidden panel-right">
-    <button id="close-search-panel" class="close-btn">❌</button>
-    <h3>🔎 بحث بالسمات</h3>
-    <label for="layer-select">اختر الطبقة:</label>
-    <select id="layer-select"></select>
-    <label for="field-select">اختر الحقل:</label>
-    <select id="field-select"></select>
-    <label for="operator-select">نوع الشرط:</label>
-    <select id="operator-select">
+    <div class="panel-header">
+        <h3>🔎 بحث بالسمات</h3>
+        <div class="panel-controls">
+            <button class="panel-minimize-btn" title="تصغير/تكبير">−</button>
+            <button class="panel-close-btn" id="close-search-panel" title="إغلاق">✕</button>
+        </div>
+    </div>
+    <div class="panel-body">
+        <label for="layer-select">اختر الطبقة:</label>
+        <select id="layer-select"></select>
+        <label for="field-select">اختر الحقل:</label>
+        <select id="field-select"></select>
+        <label for="operator-select">نوع الشرط:</label>
+        <select id="operator-select">
         <option value="=">=</option>
         <option value="contains">يحتوي على</option>
         <option value=">">&gt;</option>
@@ -186,42 +220,57 @@
     <button id="run-search">🔎 تنفيذ البحث</button>
     <button id="clear-search">🧹 مسح</button>
     <div id="search-conditions"></div>
+    </div>
 </div>
 
 <div id="results-panel" class="hidden panel-right">
-    <div class="results-header-container">
-        <h3 style="margin: 0;">النتائج: <span id="results-count-span">0</span></h3>
-        <div class="header-actions-left">
-            <button id="print-attribute-results" class="print-results-btn"><i class="fas fa-print"></i> طباعة</button>
-            <button id="close-results-panel" class="close-results-btn">❌</button>
+    <div class="panel-header">
+        <h3>النتائج: <span id="results-count-span">0</span></h3>
+        <div class="panel-controls">
+            <button class="panel-minimize-btn" title="تصغير/تكبير">−</button>
+            <button class="panel-close-btn" id="close-results-panel" title="إغلاق">✕</button>
         </div>
     </div>
-    <div class="results-table-container">
-        <table id="results-table">
-            <thead><tr><th>#</th><th>التفاصيل</th></tr></thead>
-            <tbody></tbody>
-        </table>
+    <div class="panel-body">
+        <div class="results-table-container">
+            <table id="results-table">
+                <thead><tr><th>#</th><th>التفاصيل</th></tr></thead>
+                <tbody></tbody>
+            </table>
+        </div>
     </div>
 </div>
 
 <div id="editPanel" class="hidden panel-right">
-    <button id="close-edit-panel" class="close-btn">❌</button>
-    <h4>📝 تحرير النقاط</h4>
-    <select id="edit-layer-select" style="width:100%; margin-bottom:10px;"></select>
-    <div class="edit-tools-container" style="display: flex; flex-direction: column; gap: 8px;">
-        <button id="add-feature-btn" class="action-btn">إضافة معلم جديد</button>
-        <button id="modify-feature-btn" class="action-btn">تعديل بيانات / موقع</button>
-        <button id="delete-feature-btn" class="action-btn" style="background-color:#d9534f; color:white;">حذف معلم</button>
+    <div class="panel-header">
+        <h4>📝 تحرير النقاط</h4>
+        <div class="panel-controls">
+            <button class="panel-minimize-btn" title="تصغير/تكبير">−</button>
+            <button class="panel-close-btn" id="close-edit-panel" title="إغلاق">✕</button>
+        </div>
+    </div>
+    <div class="panel-body">
+        <select id="edit-layer-select" style="width:100%; margin-bottom:10px;"></select>
+        <div class="edit-tools-container" style="display: flex; flex-direction: column; gap: 8px;">
+            <button id="add-feature-btn" class="action-btn">إضافة معلم جديد</button>
+            <button id="modify-feature-btn" class="action-btn">تعديل بيانات / موقع</button>
+            <button id="delete-feature-btn" class="action-btn" style="background-color:#d9534f; color:white;">حذف معلم</button>
+        </div>
     </div>
 </div>
 
 <div id="polygonEditPanel" class="hidden panel-right">
-    <button id="close-polygon-edit-panel" class="close-btn">❌</button>
-    <h4>🗺️ تحرير المضلعات (أراضي ومناطق)</h4>
-    
-    <label for="polygon-layer-select">اختر الطبقة المستهدفة:</label>
-    <select id="polygon-layer-select" style="width:100%; margin-bottom:15px; padding: 8px;"></select>
-    
+    <div class="panel-header">
+        <h4>🗺️ تحرير المضلعات (أراضي ومناطق)</h4>
+        <div class="panel-controls">
+            <button class="panel-minimize-btn" title="تصغير/تكبير">−</button>
+            <button class="panel-close-btn" id="close-polygon-edit-panel" title="إغلاق">✕</button>
+        </div>
+    </div>
+    <div class="panel-body">
+        <label for="polygon-layer-select">اختر الطبقة المستهدفة:</label>
+        <select id="polygon-layer-select" style="width:100%; margin-bottom:15px; padding: 8px;"></select>
+
     <div class="edit-tools-container" style="display: flex; flex-direction: column; gap: 10px;">
         <button id="polygon-add-feature-btn" class="action-btn"><i class="fas fa-plus-circle"></i> ➕ إضافة مضلع جديد</button>
         <button id="polygon-modify-feature-btn" class="action-btn"><i class="fas fa-vector-square"></i> ✏️ تعديل (بيانات + شكل)</button>
@@ -238,17 +287,25 @@
         </div>
     </div>
     <p style="font-size: 11px; color: #666; margin-top: 15px; border-top: 1px solid #eee; padding-top: 5px;">* ملاحظة: للتعديل أو الحظر، انقر داخل المضلع بعد تفعيل الأداة.</p>
+    </div>
 </div>
 
 <div id="lineEditPanel" class="hidden panel-right">
-    <button id="close-line-edit-panel" class="close-btn">❌</button>
-    <h4>🛣️ تحرير الخطوط (طرق وشوارع)</h4>
-    <div class="edit-tools-container" style="display: flex; flex-direction: column; gap: 10px;">
-        <button id="line-add-feature-btn" class="action-btn"><i class="fas fa-plus-square"></i> ➕ إضافة طريق جديد</button>
-        <button id="line-modify-feature-btn" class="action-btn"><i class="fas fa-edit"></i> ✏️ تعديل مسار أو بيانات</button>
-        <button id="line-delete-feature-btn" class="action-btn" style="background-color:#d9534f; color:white;"><i class="fas fa-trash"></i> 🗑️ حذف الطريق المختار</button>
+    <div class="panel-header">
+        <h4>🛣️ تحرير الخطوط (طرق وشوارع)</h4>
+        <div class="panel-controls">
+            <button class="panel-minimize-btn" title="تصغير/تكبير">−</button>
+            <button class="panel-close-btn" id="close-line-edit-panel" title="إغلاق">✕</button>
+        </div>
     </div>
-    <p style="font-size: 11px; color: #666; margin-top: 15px; border-top: 1px solid #eee; padding-top: 5px;">* ملاحظة: يتم الحفظ التلقائي في قاعدة البيانات بعد تعبئة النموذج.</p>
+    <div class="panel-body">
+        <div class="edit-tools-container" style="display: flex; flex-direction: column; gap: 10px;">
+            <button id="line-add-feature-btn" class="action-btn"><i class="fas fa-plus-square"></i> ➕ إضافة طريق جديد</button>
+            <button id="line-modify-feature-btn" class="action-btn"><i class="fas fa-edit"></i> ✏️ تعديل مسار أو بيانات</button>
+            <button id="line-delete-feature-btn" class="action-btn" style="background-color:#d9534f; color:white;"><i class="fas fa-trash"></i> 🗑️ حذف الطريق المختار</button>
+        </div>
+        <p style="font-size: 11px; color: #666; margin-top: 15px; border-top: 1px solid #eee; padding-top: 5px;">* ملاحظة: يتم الحفظ التلقائي في قاعدة البيانات بعد تعبئة النموذج.</p>
+    </div>
 </div>
 
 <div id="lineAttributeModal" class="modal" style="display:none; position:fixed; z-index:9999; left:0; top:0; width:100%; height:100%; background-color:rgba(0,0,0,0.5);">
@@ -432,23 +489,22 @@
     </a>
 </div>
 
-<div id="provider-mini-panel" class="provider-panel-bottom-left hidden" style="display: none; position: fixed; bottom: 25px; left: 25px; z-index: 99999; background: #ffffff; box-shadow: 0 4px 20px rgba(0,0,0,0.25); border-radius: 10px; width: 310px; padding: 16px; direction: rtl; font-family: system-ui, -apple-system, sans-serif;">
-    
+<div id="provider-mini-panel" class="provider-panel-bottom-left hidden panel-right" style="display: none; position: fixed; bottom: 25px; left: 25px; z-index: 99999; background: #ffffff; box-shadow: 0 4px 20px rgba(0,0,0,0.25); border-radius: 10px; width: 310px; direction: rtl; font-family: system-ui, -apple-system, sans-serif;">
+
     <input type="hidden" id="provider-layer-name" value="">
     <input type="hidden" id="provider-feature-id" value="">
 
-    <div class="provider-panel-header" style="border-bottom: 2px solid #f5f5f5; padding-bottom: 10px; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center;">
-    <h4 style="margin: 0; color: #2c3e50; font-size: 14px; font-weight: 700;">🛠️ لوحة إدارة الخدمة الحية</h4>
-    <div style="display:flex; align-items:center; gap:8px;">
-        <span class="provider-name-badge" id="provider-welcome-name" style="background: #e1f5fe; color: #0288d1; padding: 4px 10px; border-radius: 6px; font-size: 11px; font-weight: bold;">مرحباً، مزود الخدمة</span>
-        <button id="provider-panel-toggle" title="تصغير/تكبير اللوحة" 
-            style="background:none; border:1px solid #ccc; border-radius:50%; width:24px; height:24px; cursor:pointer; font-size:14px; font-weight:bold; color:#555; display:flex; align-items:center; justify-content:center; flex-shrink:0; line-height:1;">−</button>
+    <div class="panel-header" style="border-bottom: 2px solid #f5f5f5; padding-bottom: 10px; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; cursor: move;">
+        <h4 style="margin: 0; color: #2c3e50; font-size: 14px; font-weight: 700;">🛠️ لوحة إدارة الخدمة الحية</h4>
+        <div class="panel-controls" style="display:flex; align-items:center; gap:8px;">
+            <span class="provider-name-badge" id="provider-welcome-name" style="background: #e1f5fe; color: #0288d1; padding: 4px 10px; border-radius: 6px; font-size: 11px; font-weight: bold;">مرحباً، مزود الخدمة</span>
+            <button class="panel-minimize-btn" title="تصغير/تكبير">−</button>
+        </div>
     </div>
-</div>
-    
-    <div class="provider-panel-body">
+
+    <div class="panel-body">
         <p class="provider-status-text" style="font-size: 12px; margin: 0 0 12px 0; color: #666; font-weight: 500;">حالة تواجدك الحالي المباشر على الخريطة:</p>
-        
+
         <div class="provider-action-buttons" style="display: flex; flex-direction: column; gap: 8px; margin-bottom: 12px;">
             <div style="display: flex; gap: 8px; width: 100%;">
                 <button type="button" class="btn-prov btn-status-available" id="btn-prov-available-current" style="flex: 1; padding: 10px 5px; border: 2px solid #27ae60; background: #fff; color: #27ae60; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 11px; transition: all 0.2s ease;">🟢 متوفر (موقعي)</button>
@@ -456,9 +512,9 @@
             </div>
             <button type="button" class="btn-prov btn-status-busy" id="btn-prov-busy" style="flex: 1; padding: 10px; border: 2px solid #c0392b; background: #fff; color: #c0392b; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 13px; transition: all 0.2s ease;">🔴 غير متوفر</button>
         </div>
-        
+
         <button type="button" class="btn-prov btn-go-to-location" id="btn-prov-fly" style="width: 100%; padding: 10px; border: none; background: #2980b9; color: #ffffff; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 13px; transition: background 0.2s ease;">📍 الانتقال إلى موقعي على الخريطة</button>
-        
+
         <p id="provider-status-indicator" class="status-indicator-msg" style="font-size: 12px; margin: 0; text-align: center; color: #7f8c8d; font-weight: 600; padding-top: 10px; margin-top: 10px; border-top: 1px solid #eee;">جاري جلب الحالة من السيرفر... 🔄</p>
     </div>
 </div>
@@ -484,6 +540,7 @@
 <script src="js/editPolygons.js"></script>
 <script src="js/editLines.js"></script>
 <script src="js/global-search.js"></script>
+<script src="js/panel-controls.js"></script>
 <script src="js/main.js"></script>
 
 <script>
