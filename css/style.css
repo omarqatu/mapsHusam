@@ -88,7 +88,10 @@ body {
     overflow-y: auto;
     top: 50%;
     transform: translateY(-50%);
-    transition: all 0.3s ease-in-out;
+}
+
+.panel-right.dragging {
+    transition: none !important;
 }
 
 /* إضافة رأس قابل للسحب والتصغير لجميع اللوحات */
@@ -161,6 +164,17 @@ body {
 #measurePanel { width: 220px; }
 #editPanel, #polygonEditPanel, #lineEditPanel { width: 280px; }
 
+/* تحكم في ارتفاع لوحة النتائج */
+#results-panel {
+    max-height: 60vh;
+}
+
+#results-panel .results-table-container {
+    max-height: 45vh;
+    overflow-y: auto;
+    overflow-x: hidden;
+}
+
 .close-btn {
     background: none; border: none; color: #555; cursor: pointer;
     font-weight: bold; font-size: 18px; position: absolute;
@@ -189,6 +203,14 @@ body {
     #layerPanel { width: 90vw !important; }
     #measurePanel { width: 90vw !important; }
     #editPanel, #polygonEditPanel, #lineEditPanel { width: 90vw !important; }
+
+    #results-panel {
+        max-height: 30vh;
+    }
+
+    #results-panel .results-table-container {
+        max-height: 20vh;
+    }
 
     .panel-body {
         padding: 10px;
