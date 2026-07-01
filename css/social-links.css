@@ -71,6 +71,35 @@
     line-height: 1 !important;
 }
 
+/* زر التحريك الجديد */
+.banner-drag-btn {
+    position: absolute !important;
+    top: 8px !important;
+    left: 8px !important;
+    background: #f0f0f0 !important;
+    border: 1px solid #ccc !important;
+    color: #555 !important;
+    width: 24px !important;
+    height: 24px !important;
+    border-radius: 4px !important;
+    font-size: 12px !important;
+    font-weight: bold !important;
+    cursor: move !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    z-index: 9999999999 !important;
+    transition: all 0.2s ease !important;
+    padding: 0 !important;
+    line-height: 1 !important;
+}
+
+.banner-drag-btn:hover {
+    background: #0084ff !important;
+    color: #ffffff !important;
+    border-color: #0084ff !important;
+}
+
 .banner-toggle-btn:hover {
     background: #0084ff !important;
     color: #ffffff !important;
