@@ -64,8 +64,10 @@ function initializeBannerDraggable() {
 
 // دالة جعل العنصر قابلاً للسحب
 function makeDraggable(element, handle) {
-    let pos1 = 0, pos2 = 0, pos3 = 0, pos4 = 0;
     let isDragging = false;
+    let startX = 0, startY = 0;
+    let currentX = 0, currentY = 0;
+    let initialLeft = 0, initialTop = 0;
 
     handle.onmousedown = dragMouseDown;
 
@@ -75,19 +77,26 @@ function makeDraggable(element, handle) {
     function dragMouseDown(e) {
         e.preventDefault();
         isDragging = true;
-        pos3 = e.clientX;
-        pos4 = e.clientY;
+        startX = e.clientX;
+        startY = e.clientY;
+
+        // الحصول على الموقع الحالي
+        const rect = element.getBoundingClientRect();
+        initialLeft = rect.left;
+        initialTop = rect.top;
+
+        // استخدام position: fixed و transform للسرعة
+        element.style.position = 'fixed';
+        element.style.left = initialLeft + 'px';
+        element.style.top = initialTop + 'px';
+        element.style.right = 'auto';
+        element.style.bottom = 'auto';
+        element.style.transform = 'translate3d(0, 0, 0)';
+        element.style.willChange = 'transform';
+
         document.onmouseup = closeDragElement;
         document.onmousemove = elementDrag;
 
-        // إزالة التموضع الثابت عند بدء السحب
-        element.style.top = element.offsetTop + 'px';
-        element.style.left = element.offsetLeft + 'px';
-        element.style.right = 'auto';
-        element.style.bottom = 'auto';
-        element.style.transform = 'none';
-
-        // إضافة class لمنع transition أثناء السحب
         element.classList.add('dragging');
     }
 
@@ -95,13 +104,14 @@ function makeDraggable(element, handle) {
         if (!isDragging) return;
         e.preventDefault();
 
-        pos1 = pos3 - e.clientX;
-        pos2 = pos4 - e.clientY;
-        pos3 = e.clientX;
-        pos4 = e.clientY;
+        const deltaX = e.clientX - startX;
+        const deltaY = e.clientY - startY;
 
-        let newTop = element.offsetTop - pos2;
-        let newLeft = element.offsetLeft - pos1;
+        currentX = deltaX;
+        currentY = deltaY;
+
+        let newLeft = initialLeft + deltaX;
+        let newTop = initialTop + deltaY;
 
         // حدود الشاشة
         const maxTop = window.innerHeight - element.offsetHeight;
@@ -110,12 +120,23 @@ function makeDraggable(element, handle) {
         newTop = Math.max(0, Math.min(newTop, maxTop));
         newLeft = Math.max(0, Math.min(newLeft, maxLeft));
 
-        element.style.top = newTop + 'px';
-        element.style.left = newLeft + 'px';
+        // استخدام transform translate3d للـ hardware acceleration
+        element.style.transform = `translate3d(${newLeft - initialLeft}px, ${newTop - initialTop}px, 0)`;
+        element.style.left = initialLeft + 'px';
+        element.style.top = initialTop + 'px';
     }
 
     function closeDragElement() {
+        if (!isDragging) return;
         isDragging = false;
+
+        // حفظ الموقع النهائي
+        const rect = element.getBoundingClientRect();
+        element.style.transform = 'none';
+        element.style.left = rect.left + 'px';
+        element.style.top = rect.top + 'px';
+        element.style.willChange = 'auto';
+
         element.classList.remove('dragging');
         document.onmouseup = null;
         document.onmousemove = null;
@@ -125,18 +146,24 @@ function makeDraggable(element, handle) {
     function dragTouchStart(e) {
         isDragging = true;
         const touch = e.touches[0];
-        pos3 = touch.clientX;
-        pos4 = touch.clientY;
+        startX = touch.clientX;
+        startY = touch.clientY;
+
+        const rect = element.getBoundingClientRect();
+        initialLeft = rect.left;
+        initialTop = rect.top;
+
+        element.style.position = 'fixed';
+        element.style.left = initialLeft + 'px';
+        element.style.top = initialTop + 'px';
+        element.style.right = 'auto';
+        element.style.bottom = 'auto';
+        element.style.transform = 'translate3d(0, 0, 0)';
+        element.style.willChange = 'transform';
+
         document.ontouchend = closeDragElement;
         document.ontouchmove = elementTouchDrag;
 
-        element.style.top = element.offsetTop + 'px';
-        element.style.left = element.offsetLeft + 'px';
-        element.style.right = 'auto';
-        element.style.bottom = 'auto';
-        element.style.transform = 'none';
-
-        // إضافة class لمنع transition أثناء السحب
         element.classList.add('dragging');
     }
 
@@ -145,13 +172,11 @@ function makeDraggable(element, handle) {
         e.preventDefault();
 
         const touch = e.touches[0];
-        pos1 = pos3 - touch.clientX;
-        pos2 = pos4 - touch.clientY;
-        pos3 = touch.clientX;
-        pos4 = touch.clientY;
+        const deltaX = touch.clientX - startX;
+        const deltaY = touch.clientY - startY;
 
-        let newTop = element.offsetTop - pos2;
-        let newLeft = element.offsetLeft - pos1;
+        let newLeft = initialLeft + deltaX;
+        let newTop = initialTop + deltaY;
 
         const maxTop = window.innerHeight - element.offsetHeight;
         const maxLeft = window.innerWidth - element.offsetWidth;
@@ -159,8 +184,9 @@ function makeDraggable(element, handle) {
         newTop = Math.max(0, Math.min(newTop, maxTop));
         newLeft = Math.max(0, Math.min(newLeft, maxLeft));
 
-        element.style.top = newTop + 'px';
-        element.style.left = newLeft + 'px';
+        element.style.transform = `translate3d(${newLeft - initialLeft}px, ${newTop - initialTop}px, 0)`;
+        element.style.left = initialLeft + 'px';
+        element.style.top = initialTop + 'px';
     }
 }
 
