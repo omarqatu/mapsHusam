@@ -88,10 +88,11 @@ body {
     overflow-y: auto;
     top: 50%;
     transform: translateY(-50%);
+    transition: none !important;
 }
 
 .panel-right.dragging {
-    transition: none !important;
+    will-change: transform !important;
 }
 
 /* إضافة رأس قابل للسحب والتصغير لجميع اللوحات */
