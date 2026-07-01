@@ -66,7 +66,6 @@ function initializeBannerDraggable() {
 function makeDraggable(element, handle) {
     let pos1 = 0, pos2 = 0, pos3 = 0, pos4 = 0;
     let isDragging = false;
-    let animationFrameId = null;
 
     handle.onmousedown = dragMouseDown;
 
@@ -87,43 +86,37 @@ function makeDraggable(element, handle) {
         element.style.right = 'auto';
         element.style.bottom = 'auto';
         element.style.transform = 'none';
+
+        // إضافة class لمنع transition أثناء السحب
+        element.classList.add('dragging');
     }
 
     function elementDrag(e) {
         if (!isDragging) return;
         e.preventDefault();
 
-        if (animationFrameId) {
-            cancelAnimationFrame(animationFrameId);
-        }
+        pos1 = pos3 - e.clientX;
+        pos2 = pos4 - e.clientY;
+        pos3 = e.clientX;
+        pos4 = e.clientY;
 
-        animationFrameId = requestAnimationFrame(() => {
-            pos1 = pos3 - e.clientX;
-            pos2 = pos4 - e.clientY;
-            pos3 = e.clientX;
-            pos4 = e.clientY;
+        let newTop = element.offsetTop - pos2;
+        let newLeft = element.offsetLeft - pos1;
 
-            let newTop = element.offsetTop - pos2;
-            let newLeft = element.offsetLeft - pos1;
+        // حدود الشاشة
+        const maxTop = window.innerHeight - element.offsetHeight;
+        const maxLeft = window.innerWidth - element.offsetWidth;
 
-            // حدود الشاشة
-            const maxTop = window.innerHeight - element.offsetHeight;
-            const maxLeft = window.innerWidth - element.offsetWidth;
+        newTop = Math.max(0, Math.min(newTop, maxTop));
+        newLeft = Math.max(0, Math.min(newLeft, maxLeft));
 
-            newTop = Math.max(0, Math.min(newTop, maxTop));
-            newLeft = Math.max(0, Math.min(newLeft, maxLeft));
-
-            element.style.top = newTop + 'px';
-            element.style.left = newLeft + 'px';
-        });
+        element.style.top = newTop + 'px';
+        element.style.left = newLeft + 'px';
     }
 
     function closeDragElement() {
         isDragging = false;
-        if (animationFrameId) {
-            cancelAnimationFrame(animationFrameId);
-            animationFrameId = null;
-        }
+        element.classList.remove('dragging');
         document.onmouseup = null;
         document.onmousemove = null;
     }
@@ -142,35 +135,32 @@ function makeDraggable(element, handle) {
         element.style.right = 'auto';
         element.style.bottom = 'auto';
         element.style.transform = 'none';
+
+        // إضافة class لمنع transition أثناء السحب
+        element.classList.add('dragging');
     }
 
     function elementTouchDrag(e) {
         if (!isDragging) return;
         e.preventDefault();
 
-        if (animationFrameId) {
-            cancelAnimationFrame(animationFrameId);
-        }
+        const touch = e.touches[0];
+        pos1 = pos3 - touch.clientX;
+        pos2 = pos4 - touch.clientY;
+        pos3 = touch.clientX;
+        pos4 = touch.clientY;
 
-        animationFrameId = requestAnimationFrame(() => {
-            const touch = e.touches[0];
-            pos1 = pos3 - touch.clientX;
-            pos2 = pos4 - touch.clientY;
-            pos3 = touch.clientX;
-            pos4 = touch.clientY;
+        let newTop = element.offsetTop - pos2;
+        let newLeft = element.offsetLeft - pos1;
 
-            let newTop = element.offsetTop - pos2;
-            let newLeft = element.offsetLeft - pos1;
+        const maxTop = window.innerHeight - element.offsetHeight;
+        const maxLeft = window.innerWidth - element.offsetWidth;
 
-            const maxTop = window.innerHeight - element.offsetHeight;
-            const maxLeft = window.innerWidth - element.offsetWidth;
+        newTop = Math.max(0, Math.min(newTop, maxTop));
+        newLeft = Math.max(0, Math.min(newLeft, maxLeft));
 
-            newTop = Math.max(0, Math.min(newTop, maxTop));
-            newLeft = Math.max(0, Math.min(newLeft, maxLeft));
-
-            element.style.top = newTop + 'px';
-            element.style.left = newLeft + 'px';
-        });
+        element.style.top = newTop + 'px';
+        element.style.left = newLeft + 'px';
     }
 }
 
