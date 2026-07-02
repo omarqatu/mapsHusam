@@ -30,24 +30,32 @@ function showTopUserBadge(user) {
     const badgeContainer = document.getElementById('user-top-badge-container');
     const nameDisplay = document.getElementById('top-username-display');
     const roleDisplay = document.getElementById('top-userrole-display');
-    
+    const dashboardBtn = document.getElementById('dashboard-btn');
+    const mobileBtn = document.getElementById('mobile-btn');
+    const whatsappBtn = document.getElementById('whatsapp-btn');
+
     if (badgeContainer && nameDisplay && roleDisplay) {
         badgeContainer.style.setProperty("display", "flex", "important");
         badgeContainer.classList.remove('hidden');
-        
+
         // تنظيف الاسم من الإضافات المكررة وعرض الاسم الصافي
         const cleanName = user.full_name || user.name || 'مستخدم المنصة';
         const formattedName = cleanName.replace(" (مشرف المنصة)", "").replace(" (مزود)", "");
         nameDisplay.innerText = formattedName;
-        
+
         // ترجمة الرتبة لعلامة ملونة مميزة وراقية
         roleDisplay.className = "user-badge-role"; // تصفير الكلاسات السابقة
         if (user.role === 'admin') {
             roleDisplay.innerText = "مشرف";
             roleDisplay.classList.add("role-admin");
+            // إظهار زر لوحة التحكم للمشرف
+            if (dashboardBtn) dashboardBtn.style.display = 'inline-flex';
         } else if (user.role === 'provider') {
             roleDisplay.innerText = "مزود خدمة";
             roleDisplay.classList.add("role-provider");
+            // إظهار أزرار التواصل لمزود الخدمة
+            if (mobileBtn) mobileBtn.style.display = 'inline-flex';
+            if (whatsappBtn) whatsappBtn.style.display = 'inline-flex';
         } else {
             roleDisplay.innerText = "مستخدم";
             roleDisplay.classList.add("role-user");
@@ -125,6 +133,32 @@ function enterPlatform(userData, isAutoboot = false) {
         }
     }
 }
+
+// ==========================================
+// دالة فتح لوحة التحكم
+// ==========================================
+window.openDashboard = function() {
+    // فتح لوحة التحكم في نافذة جديدة
+    window.open('/dashboard.html', '_blank');
+};
+
+// ==========================================
+// دالة فتح رقم الموبايل
+// ==========================================
+window.openMobileContact = function() {
+    // رقم الموبايل للتواصل
+    const mobileNumber = '+970599000000'; // استبدل برقم الموبايل الفعلي
+    window.open(`tel:${mobileNumber}`, '_blank');
+};
+
+// ==========================================
+// دالة فتح واتساب
+// ==========================================
+window.openWhatsApp = function() {
+    // رقم الواتساب للتواصل
+    const whatsappNumber = '970599000000'; // استبدل برقم الواتساب الفعلي
+    window.open(`https://wa.me/${whatsappNumber}`, '_blank');
+};
 
 // ==========================================
 // دالة تسجيل الخروج وتطهير كامل لكاش المتصفح
