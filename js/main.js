@@ -307,8 +307,8 @@ document.addEventListener('DOMContentLoaded', () => {
             Object.assign(splashOverlay.style, {
                 position: 'fixed', top: '0', left: '0', width: '100%', height: '100%',
                 backgroundColor: 'rgba(0, 0, 0, 0.55)', zIndex: '99999',
-                display: 'flex', justifyContent: 'center', alignItems: 'center',
-                direction: 'rtl', padding: '15px', boxSizing: 'border-box'
+                display: 'flex', justifyContent: 'center', alignItems: 'end',
+                direction: 'rtl', padding: '50px', boxSizing: 'border-box'
             });
 
             const dialogBox = document.createElement('div');
