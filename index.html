@@ -480,14 +480,17 @@
 </div>
 
 <div class="feedback-banner-wrapper" style="pointer-events: none !important;">
-    <button type="button" id="toggleBannerBtn" class="banner-toggle-btn" title="تصغير" style="pointer-events: auto !important;"
-            onclick="handleBannerToggle(event, this)">—</button>
+    <!-- تم تغيير النص من — إلى + -->
+    <button type="button" id="toggleBannerBtn" class="banner-toggle-btn" title="تكبير البنر" style="pointer-events: auto !important;"
+            onclick="handleBannerToggle(event, this)">+</button>
+    
     <button type="button" id="dragBannerBtn" class="banner-drag-btn" title="تحريك" style="pointer-events: auto !important;">⋮⋮</button>
 
-    <a href="https://www.facebook.com/MapServesPalestine" target="_blank" class="feedback-banner" id="feedbackBanner" style="pointer-events: auto !important;"
+    <!-- إضافة الكلاس minimized هنا -->
+    <a href="https://www.facebook.com/MapServesPalestine" target="_blank" class="feedback-banner minimized" id="feedbackBanner" style="pointer-events: auto !important;"
        onclick="handleBannerLinkClick(event, this)">
         <div class="banner-full-content">
-            <p>هل لديك استفسار أو تود تقديم شكوى ؟؟</p>
+            <p>هل لديك استفسار أو تود تقديم شكوى ؟؟   </p>
             <p>أو إذا كنت مزود خدمة، تواصل معنا عبر رسائل الصفحة
                 <br><strong>انقر داخل المربع للتواصل</strong>
             </p>
@@ -555,12 +558,15 @@
 <script src="js/main.js"></script>
 
 <script>
+// دالة التبديل (مفتوح/مصغر)
 function handleBannerToggle(event, button) {
     event.preventDefault(); 
     event.stopPropagation(); 
     var banner = document.getElementById('feedbackBanner');
+    
     banner.classList.toggle('minimized');
     
+    // تحديث نص الزر بناءً على الحالة الجديدة
     if(banner.classList.contains('minimized')){
         button.innerText = '+'; 
         button.setAttribute('title', 'تكبير البنر');
@@ -570,6 +576,7 @@ function handleBannerToggle(event, button) {
     }
 }
 
+// دالة الفتح عند النقر على البانر نفسه
 function handleBannerLinkClick(event, banner) {
     if(banner.classList.contains('minimized')){
         event.preventDefault();
