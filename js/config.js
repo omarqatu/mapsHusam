@@ -2,17 +2,12 @@
  * config.js - النسخة الاحترافية المطورة (عقل المنصة)
  */
 
-const getAppBaseUrl = () => {
-    const pathname = window.location.pathname || '/';
-    const basePath = pathname.endsWith('/') ? pathname : pathname.substring(0, pathname.lastIndexOf('/') + 1);
-    return `${window.location.origin}${basePath}`;
-};
-
 const MAP_CONFIG = {
     server: {
-        proxyUrl: `${getAppBaseUrl()}geoserver-proxy/`,
+        // استخدام URL مباشر للـ GeoServer للعمل على الدومين
+        proxyUrl: window.location.protocol === 'https:' ? "http://194.163.174.162:8080/geoserver/" : "/geoserver-proxy/",
         srsName: "EPSG:28191",
-        apiUrl: getAppBaseUrl()
+        apiUrl: window.location.origin + "/"
     },
 
     // إعدادات افتراضية للستايلات (أحجام الأيقونات والخطوط)
