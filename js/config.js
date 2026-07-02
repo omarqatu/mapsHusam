@@ -4,8 +4,9 @@
 
 const MAP_CONFIG = {
     server: {
-        // استخدام URL مباشر للـ GeoServer للعمل على الدومين
-        proxyUrl: window.location.protocol === 'https:' ? "http://194.163.174.162:8080/geoserver/" : "/geoserver-proxy/",
+        // استخدام البروكسي النسبي دائماً (يمر عبر IIS → Node → GeoServer)
+        // هذا يمنع حظر Mixed Content على HTTPS ويخفي الـ IP والبورت عن الواجهة
+        proxyUrl: "/geoserver-proxy/",
         srsName: "EPSG:28191",
         apiUrl: window.location.origin + "/"
     },
