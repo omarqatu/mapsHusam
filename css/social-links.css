@@ -177,7 +177,7 @@
    ========================================================================== */
 @media (max-width: 767px) {
     .feedback-banner-wrapper {
-        top: 650px !important;   
+        top: 180px !important;   
         left: 50% !important;
         transform: translateX(-50%) !important;
         width: auto !important;
