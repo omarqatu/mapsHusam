@@ -28,9 +28,50 @@
 
     let fieldSelect, operatorSelect, valueInputContainer, layerSelect, conditionsContainer;
 
-    function getUniqueValues(layerKey, fieldId) {
+    async function getUniqueValues(layerKey, fieldId) {
         const layer = currentOverlayLayers[layerKey];
         if (!layer) return [];
+
+        // تحديد workspace و layer name
+        const isRealEstate = ['rentLayer', 'saleLayer', 'landLayer'].includes(layerKey);
+        const workspace = isRealEstate ? 'realestate' : 'services';
+        const layerNameMap = { 'rentLayer': 'ApartRent', 'saleLayer': 'ApartSale', 'landLayer': 'LandSale' };
+        const layerName = layerNameMap[layerKey] || layerKey.replace('Layer', '');
+
+        // جلب القيم من PostgreSQL مباشرة عبر API الجديد (أسرع من GeoServer)
+        try {
+            const baseUrl = window.MAP_CONFIG?.server?.proxyUrl || (window.location.origin + "/");
+            const params = new URLSearchParams({
+                layer: layerName,
+                workspace: workspace,
+                field: fieldId
+            });
+
+            const response = await fetch(`${baseUrl}api/get-unique-values?${params.toString()}`);
+            const data = await response.json();
+
+            if (data.success && data.values) {
+                const uniqueValues = data.values.sort();
+
+                // تحديث UI بالقيم الجديدة
+                updateValueUIWithData(uniqueValues);
+                return uniqueValues;
+            }
+        } catch (err) {
+            console.error('Error fetching unique values from PostgreSQL:', err);
+            // Fallback: استخدام البيانات المحلية
+            const localValues = getUniqueValuesLocal(layer, fieldId);
+            updateValueUIWithData(localValues);
+            return localValues;
+        }
+
+        // Fallback: استخدام البيانات المحلية
+        const localValues = getUniqueValuesLocal(layer, fieldId);
+        updateValueUIWithData(localValues);
+        return localValues;
+    }
+
+    function getUniqueValuesLocal(layer, fieldId) {
         const source = layer.getSource();
         const features = source ? source.getFeatures() : [];
         const values = features.map(f => {
@@ -40,59 +81,101 @@
         return [...new Set(values)].sort();
     }
 
+    function updateValueUIWithData(uniqueValues) {
+        if (!valueInputContainer) return;
+        valueInputContainer.innerHTML = '';
+
+        // استخدام select عادية مثل "اختر الطبقة" و "اختر الحقل"
+        const select = document.createElement('select');
+        select.id = 'value-input';
+        select.className = 'search-input-field';
+
+        Object.assign(select.style, {
+            width: "100%",
+            padding: "10px",
+            border: "1px solid #ccc",
+            borderRadius: "4px",
+            backgroundColor: "#fff",
+            fontSize: "14px",
+            minHeight: "40px"
+        });
+
+        // خيار افتراضي
+        const defaultOpt = document.createElement('option');
+        defaultOpt.value = '';
+        defaultOpt.textContent = '-- اختر قيمة --';
+        select.appendChild(defaultOpt);
+
+        // خيار "قيمة مخصصة" للكتابة
+        const customOpt = document.createElement('option');
+        customOpt.value = '__custom__';
+        customOpt.textContent = '✏️ قيمة مخصصة (اكتب)';
+        select.appendChild(customOpt);
+
+        // إضافة جميع القيم مرتبة
+        uniqueValues.forEach(v => {
+            const opt = document.createElement('option');
+            opt.value = v;
+            opt.textContent = v;
+            select.appendChild(opt);
+        });
+
+        // عند اختيار "قيمة مخصصة"، استبدل بـ input مع زر عودة
+        select.onchange = () => {
+            if (select.value === '__custom__') {
+                valueInputContainer.innerHTML = '';
+
+                const container = document.createElement('div');
+                container.style.display = 'flex';
+                container.style.gap = '5px';
+
+                const input = document.createElement('input');
+                input.id = 'value-input';
+                input.className = 'search-input-field';
+                input.placeholder = 'اكتب القيمة هنا...';
+                input.autocomplete = "off";
+
+                Object.assign(input.style, {
+                    flex: "1",
+                    padding: "10px",
+                    border: "1px solid #ccc",
+                    borderRadius: "4px",
+                    backgroundColor: "#fff",
+                    fontSize: "16px",
+                    minHeight: "44px"
+                });
+
+                const backBtn = document.createElement('button');
+                backBtn.type = 'button';
+                backBtn.innerHTML = '📋';
+                backBtn.title = 'العودة للقائمة';
+                backBtn.style.cssText = 'padding: 0 15px; border: 1px solid #ccc; background: #f5f5f5; border-radius: 4px; cursor: pointer; font-size: 16px; minHeight: 44px; white-space: nowrap;';
+
+                backBtn.onclick = () => {
+                    updateValueUIWithData(uniqueValues);
+                };
+
+                container.appendChild(input);
+                container.appendChild(backBtn);
+                valueInputContainer.appendChild(container);
+                input.focus();
+            }
+        };
+
+        valueInputContainer.appendChild(select);
+    }
+
     function updateValueUI() {
         const layerKey = layerSelect.value;
         const fieldId = fieldSelect.value;
         if (!layerKey || !fieldId || !valueInputContainer) return;
         valueInputContainer.innerHTML = '';
-        
-        const uniqueValues = getUniqueValues(layerKey, fieldId);
-        
-        // فحص بيئة التشغيل: هل المستخدم يتصفح من هاتف محمول أو جهاز لوحي؟
-        const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
 
-        if (isMobile) {
-            // حل جذري للموبايل: إنشاء عنصر select لضمان استجابة نظام التشغيل الفورية وإظهار الداتا
-            const select = document.createElement('select');
-            select.id = 'value-input';
-            select.className = 'search-input-field';
-            Object.assign(select.style, { width: "100%", padding: "8px", border: "1px solid #ccc", borderRadius: "4px", backgroundColor: "#fff" });
-            
-            // خيار افتراضي مبدئي لتهيئة المستخدم
-            const defaultOpt = document.createElement('option');
-            defaultOpt.value = '';
-            defaultOpt.textContent = '--- اختر قيمة من القائمة ---';
-            select.appendChild(defaultOpt);
+        // عرض مؤشر تحميل
+        valueInputContainer.innerHTML = '<div style="padding: 10px; color: #666; font-size: 14px;">جاري جلب القيم...</div>';
 
-            uniqueValues.forEach(v => {
-                const opt = document.createElement('option');
-                opt.value = v;
-                opt.textContent = v;
-                select.appendChild(opt);
-            });
-
-            valueInputContainer.appendChild(select);
-        } else {
-            // أجهزة الكمبيوتر: الحفاظ على واجهة الـ input المدعومة بالـ datalist لمرونة البحث والكتابة
-            const input = document.createElement('input');
-            input.id = 'value-input';
-            input.className = 'search-input-field';
-            input.placeholder = 'اختر أو اكتب...';
-            input.setAttribute('list', 'datalist-options');
-            input.autocomplete = "off";
-            Object.assign(input.style, { width: "100%", padding: "8px", border: "1px solid #ccc", borderRadius: "4px" });
-            
-            const dl = document.createElement('datalist');
-            dl.id = 'datalist-options';
-            uniqueValues.forEach(v => {
-                const opt = document.createElement('option');
-                opt.value = v;
-                dl.appendChild(opt);
-            });
-            
-            valueInputContainer.appendChild(input);
-            valueInputContainer.appendChild(dl);
-        }
+        // جلب القيم من السيرفر
+        getUniqueValues(layerKey, fieldId);
     }
 
     function renderConditions() {
