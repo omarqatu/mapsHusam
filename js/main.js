@@ -320,7 +320,7 @@ document.addEventListener('DOMContentLoaded', () => {
             });
 
             dialogBox.innerHTML = `
-                <h3 style="margin-top:0; color:#2c3e50; font-size:18px; margin-bottom:6px; font-weight:700;">منصة الخرائط الجغرافية</h3>
+                <h3 style="margin-top:0; color:#2c3e50; font-size:18px; margin-bottom:2px; font-weight:700;">منصة الخرائط الجغرافية</h3>
                 <p style="color:#7f8c8d; font-size:13px; margin-bottom:20px;">الرجاء اختيار نطاق التركيز الأولي لبدء استكشاف الخريطة:</p>
                 <div id="splash-options-container" style="display:flex; flex-direction:column; gap:10px;">
                     <button class="splash-opt-btn" data-type="default" style="padding:12px; font-size:14px; background:#2c3e50; color:white; border:none; border-radius:4px; cursor:pointer; font-weight:500; text-align:right; transition:background 0.2s;">1. العرض الافتراضي للمنصة</button>
