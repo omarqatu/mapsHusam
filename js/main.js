@@ -217,11 +217,8 @@ document.addEventListener('DOMContentLoaded', () => {
         view: new ol.View({
             projection: 'EPSG:28191',
             center: defaultCenter,
-            zoom: defaultZoom,
-            constrainResolution: true // استخدام مستويات زووم محددة لتحسين الأداء
-        }),
-        loadTilesWhileAnimating: true, // تحميل tiles أثناء التحريك
-        loadTilesWhileInteracting: true // تحميل tiles أثناء التفاعل
+            zoom: defaultZoom
+        })
     });
     window.map = map;
 
