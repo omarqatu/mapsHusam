@@ -69,6 +69,27 @@
 }
 #btn-open-login-nav:hover { background-color: #34495e; }
 
+/* --- أزرار لوحة التحكم والتواصل --- */
+.btn-dashboard-top, .btn-contact-top {
+    background-color: #3498db;
+    color: #ffffff;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-weight: bold;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    padding: 8px 12px;
+    margin: 0 3px;
+    font-size: 12px;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    transition: all 0.3s;
+}
+
+.btn-dashboard-top:hover { background-color: #2980b9; }
+.btn-contact-top:hover { background-color: #25d366; }
+
 /* --- استجابة الموبايل للعناصر العلوية --- */
 @media (max-width: 767px) {
     #user-top-badge-container {
