@@ -237,11 +237,13 @@
             
             row.onclick = () => {
                 mapInstance.getView().fit(f.getGeometry().getExtent(), { duration: 800, maxZoom: 19 });
+                const center = ol.extent.getCenter(f.getGeometry().getExtent());
+                window.currentPopupCoordinate = center;
                 const overlay = mapInstance.getOverlays().getArray().find(o => o.getElement().id === 'popup');
                 if (overlay) {
                     const content = document.getElementById('popup-content');
                     content.innerHTML = cardHtml;
-                    overlay.setPosition(ol.extent.getCenter(f.getGeometry().getExtent()));
+                    overlay.setPosition(center);
                 }
             };
             if (tbody) tbody.appendChild(row);
