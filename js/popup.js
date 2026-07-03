@@ -79,43 +79,31 @@ function initializePopup(map) {
 
     // --- تعديل منطق الواتساب (يأخذ القيمة كما هي من الحقل) ---
     window.handlePhoneCall = function(providerName, localPhone, whatsappNumber, serviceType) {
-        const serverUrl = window.location.origin + '/save-stat';
-        const currentUserId = getRealUserId();
+        const serviceDescription = `(${serviceType}) اتصال مباشر`;
+        if (window.sendTrackingRequest) {
+            window.sendTrackingRequest(providerName, serviceDescription);
+        } else {
+            const serverUrl = window.location.origin + '/save-stat';
+            const currentUserId = getRealUserId();
+            navigator.sendBeacon
+                ? navigator.sendBeacon(serverUrl, new Blob([JSON.stringify({ user_id: currentUserId, provider: providerName, service: serviceDescription })], { type: 'application/json' }))
+                : fetch(serverUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ user_id: currentUserId, provider: providerName, service: serviceDescription }), keepalive: true }).catch(err => console.error('خطأ في تسجيل الإحصائية:', err));
+        }
 
-        // تسجيل الإحصائية عند الاتصال بالموبايل
-        fetch(serverUrl, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                user_id: currentUserId,
-                provider: providerName,
-                service: '(' + serviceType + ') اتصال مباشر'
-            })
-        }).catch(err => console.error('خطأ في تسجيل الإحصائية:', err));
-
-        // فتح رابط الاتصال المباشر
         window.location.href = 'tel:' + localPhone;
     };
 
     window.handleServiceRequest = function(providerName, whatsappNumber, serviceType) {
-        const serverUrl = window.location.origin + '/save-stat';
-        // استدعاء لحظي لضمان الحصول على user_id الحقيقي حتى لو سجل دخوله بعد تحميل الصفحة
-        const currentUserId = getRealUserId();
-
-        // تسجيل الإحصائية
-        fetch(serverUrl, { 
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                user_id: currentUserId,
-                provider: providerName,
-                service: '(' + serviceType + ') واتساب'
-            })
-        })
-        .then(response => {
-            if (response.ok) console.log("✅ تم تسجيل الإحصائية بنجاح");
-        })
-        .catch(err => console.error("⚠️ خطأ في الاتصال بالسيرفر:", err));
+        const serviceDescription = `(${serviceType}) واتساب`;
+        if (window.sendTrackingRequest) {
+            window.sendTrackingRequest(providerName, serviceDescription);
+        } else {
+            const serverUrl = window.location.origin + '/save-stat';
+            const currentUserId = getRealUserId();
+            navigator.sendBeacon
+                ? navigator.sendBeacon(serverUrl, new Blob([JSON.stringify({ user_id: currentUserId, provider: providerName, service: serviceDescription })], { type: 'application/json' }))
+                : fetch(serverUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ user_id: currentUserId, provider: providerName, service: serviceDescription }), keepalive: true }).catch(err => console.error('خطأ في تسجيل الإحصائية:', err));
+        }
 
         const message = `مرحباً ${providerName}، أرغب بالاستفسار عن (${serviceType}) من خلال الخريطة.`;
         
