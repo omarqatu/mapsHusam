@@ -40,10 +40,6 @@
     font-size: 11px;
 }
 
-.provider-panel-body {
-    padding: 15px;
-}
-
 .provider-status-text {
     font-size: 13px;
     margin-top: 0;
@@ -86,7 +82,7 @@
     font-size: 12px;
     text-align: center;
     font-weight: bold;
-    color: #7f8c8d;
+    color: inherit !important;
 }
 
 .hidden {
@@ -100,36 +96,39 @@
     .provider-panel-bottom-left {
         left: 0;
         right: 0;
-        bottom: 0;
-        width: 100%;
-        max-height: 40vh; /* ارتفاع معقول على الموبايل */
-        border-radius: 16px 16px 0 0;
+        margin: 0 auto;
+        bottom: 10px;
+        width: 90%;
+        max-width: 350px;
+        max-height: 55vh; /* زيادة الارتفاع لمشاهدة كامل النص */
+        border-radius: 12px;
         box-shadow: 0 -4px 15px rgba(0,0,0,0.2);
         z-index: 10005; /* لضمان ظهور اللوحة فوق عناصر الخريطة والزووم الثابتة */
-        transform: translateY(0); /* إلغاء أي تحويلات سابقة */
         transition: all 0.3s ease-in-out;
         overflow: hidden; /* منع overflow من اللوحة نفسها */
+        transform: none; /* إلغاء أي تحويلات */
     }
 
     .provider-panel-body {
-        padding: 10px;
-        overflow-y: auto; /* السماح بالتمرير داخل اللوحة */
-        max-height: calc(40vh - 60px); /* ارتفاع اللوحة ناقص الهيدر */
+        padding: 12px;
+        overflow-y: auto !important; /* إجبار التمرير */
+        max-height: 200px !important; /* ارتفاع ثابت للسماح بالتمرير */
         -webkit-overflow-scrolling: touch; /* تحسين التمرير على iOS */
     }
 
     .btn-prov {
         font-size: 13px;
-        padding: 8px;
+        padding: 10px;
     }
 
     .status-indicator-msg {
-        font-size: 11px;
-        padding: 8px;
-        margin-top: 8px;
+        font-size: 12px;
+        padding: 12px;
+        margin-top: 12px;
         border-top: 1px solid #eee;
         background-color: #f9f9f9;
-        border-radius: 4px;
+        border-radius: 6px;
+        line-height: 1.6;
     }
 }
 
@@ -154,40 +153,39 @@
     }
 
     .provider-panel-body {
-        padding: 8px;
-        overflow-y: auto; /* السماح بالتمرير داخل اللوحة */
-        max-height: calc(80vh - 50px); /* ارتفاع اللوحة ناقص الهيدر */
+        padding: 10px;
+        overflow-y: auto !important; /* إجبار التمرير */
+        max-height: 200px !important; /* ارتفاع ثابت للسماح بالتمرير */
         -webkit-overflow-scrolling: touch; /* تحسين التمرير على iOS */
     }
 
     .provider-status-text {
-        font-size: 11px;
-        margin-bottom: 5px;
+        font-size: 12px;
+        margin-bottom: 8px;
     }
 
     .provider-action-buttons {
-        flex-direction: row; /* جعل الأزرار بجانب بعضها لتوفير مساحة رأسية */
-        flex-wrap: wrap;
-        gap: 4px;
+        flex-direction: column; /* الأزرار عمودية */
+        gap: 6px;
     }
 
     .btn-prov {
-        padding: 6px 4px;
-        font-size: 11px;
-        flex: 1 1 45%; /* تمدد الأزرار لتأخذ نصف المساحة تقريباً */
-        gap: 4px;
+        padding: 8px;
+        font-size: 12px;
+        gap: 6px;
     }
 
     .btn-go-to-location {
-        flex: 1 1 100%; /* زر الانتقال للموقع يأخذ سطر كامل أسفلهم لسهولة الضغط */
+        margin-top: 4px;
     }
 
     .status-indicator-msg {
-        font-size: 10px;
-        margin-top: 5px;
-        padding: 6px;
+        font-size: 11px;
+        margin-top: 8px;
+        padding: 10px;
         background-color: #f9f9f9;
-        border-radius: 4px;
+        border-radius: 6px;
         border-top: 1px solid #eee;
+        line-height: 1.5;
     }
 }
