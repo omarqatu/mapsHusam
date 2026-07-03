@@ -93,26 +93,49 @@
 /* --- استجابة الموبايل للعناصر العلوية --- */
 @media (max-width: 767px) {
     #user-top-badge-container {
-        top: 5px; 
+        top: 5px;
         right: 5px;
-        left: auto; 
+        left: auto;
         width: auto;
-        max-width: 60%;
+        max-width: 45%;
         justify-content: flex-start;
-        padding: 6px 10px;
-        font-size: 11px;
+        padding: 4px 8px;
+        font-size: 10px;
         box-shadow: 0 2px 8px rgba(0,0,0,0.2);
-        z-index: 100015 !important; 
+        z-index: 100015 !important;
+        flex-wrap: wrap;
+        gap: 3px;
     }
-    
-    .user-badge-name { font-size: 11px; }
-    .btn-logout-top { padding: 4px 8px; font-size: 10px; }
+
+    .user-badge-name {
+        font-size: 10px;
+        max-width: 100px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .user-badge-role {
+        font-size: 9px;
+        padding: 2px 6px;
+    }
+
+    .btn-dashboard-top {
+        padding: 3px 6px;
+        font-size: 9px;
+        margin: 0 2px;
+    }
+
+    .btn-logout-top {
+        padding: 3px 6px;
+        font-size: 9px;
+    }
 
     #btn-open-login-nav {
         top: 5px;
         left: 5px;
-        padding: 6px 12px;
-        font-size: 11px;
+        padding: 5px 10px;
+        font-size: 10px;
         z-index: 100015 !important;
     }
 }
