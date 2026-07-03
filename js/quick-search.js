@@ -233,7 +233,9 @@ function initializeQuickSearch(map, overlayLayersObj) {
                 const geometry = feat.getGeometry();
                 const coord = geometry.getType() === 'Point' ? geometry.getCoordinates() : ol.extent.getCenter(geometry.getExtent());
                 map.getView().animate({ center: coord, zoom: 19, duration: 800 });
-                
+
+                window.currentPopupCoordinate = coord;
+
                 if (window.generateFeatureHtml) {
                     const content = document.getElementById('popup-content');
                     if (content) content.innerHTML = featureContent;
