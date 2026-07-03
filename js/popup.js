@@ -149,12 +149,38 @@ function initializePopup(map) {
 
         const shareLink = `${baseUrl}?${params.toString()}`;
 
-        navigator.clipboard.writeText(shareLink).then(() => {
-            alert('تم نسخ رابط الموقع بنجاح! يمكنك مشاركته الآن.');
-        }).catch(err => {
+        // طريقة تعمل على جميع الأجهزة (موبايل وكمبيوتر)
+        const textarea = document.createElement('textarea');
+        textarea.value = shareLink;
+        textarea.style.position = 'fixed';
+        textarea.style.opacity = '0';
+        document.body.appendChild(textarea);
+        textarea.select();
+
+        try {
+            const successful = document.execCommand('copy');
+            document.body.removeChild(textarea);
+
+            if (successful) {
+                alert('تم نسخ رابط الموقع بنجاح! يمكنك مشاركته الآن.');
+            } else {
+                // Fallback لـ Clipboard API
+                if (navigator.clipboard && navigator.clipboard.writeText) {
+                    navigator.clipboard.writeText(shareLink).then(() => {
+                        alert('تم نسخ الرابط بنجاح! يمكنك مشاركته الآن.');
+                    }).catch(err => {
+                        console.error('فشل نسخ الرابط:', err);
+                        alert('فشل نسخ الرابط. يرجى المحاولة يدوياً.');
+                    });
+                } else {
+                    alert('فشل نسخ الرابط. يرجى المحاولة يدوياً.');
+                }
+            }
+        } catch (err) {
+            document.body.removeChild(textarea);
             console.error('فشل نسخ الرابط:', err);
             alert('فشل نسخ الرابط. يرجى المحاولة يدوياً.');
-        });
+        }
     };
 
     const overlay = new ol.Overlay({
