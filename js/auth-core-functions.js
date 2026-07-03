@@ -31,8 +31,6 @@ function showTopUserBadge(user) {
     const nameDisplay = document.getElementById('top-username-display');
     const roleDisplay = document.getElementById('top-userrole-display');
     const dashboardBtn = document.getElementById('dashboard-btn');
-    const mobileBtn = document.getElementById('mobile-btn');
-    const whatsappBtn = document.getElementById('whatsapp-btn');
 
     if (badgeContainer && nameDisplay && roleDisplay) {
         badgeContainer.style.setProperty("display", "flex", "important");
@@ -53,9 +51,6 @@ function showTopUserBadge(user) {
         } else if (user.role === 'provider') {
             roleDisplay.innerText = "مزود خدمة";
             roleDisplay.classList.add("role-provider");
-            // إظهار أزرار التواصل لمزود الخدمة
-            if (mobileBtn) mobileBtn.style.display = 'inline-flex';
-            if (whatsappBtn) whatsappBtn.style.display = 'inline-flex';
         } else {
             roleDisplay.innerText = "مستخدم";
             roleDisplay.classList.add("role-user");
