@@ -1,5 +1,8 @@
 /**
- * global-search.js -
+ * global-search.js - النسخة الاحترافية الشاملة والمعدلة بالكامل 2026
+ * تشمل كافة الطبقات الـ 59 (عقارات + خدمات قديمة + خدمات جديدة)
+ * معالجة مرنة ومستقرة للبحث المتعدد الكلمات والفراغات عبر فلاتر CQL موحدة
+ * تدعم التطبيع الكامل والشامل لعيوب الإملاء باللغة العربية (الهمزات، الياء، التاء المربوطة)
  */
 
 const layerAliases = {
@@ -356,25 +359,28 @@ function zoomToGlobalFeature(f) {
     }
 
     const extent = geometry.getExtent();
-    window.map.getView().fit(extent, { 
-        duration: 1000, 
-        padding: [100, 100, 100, 100], 
-        maxZoom: 19 
+    const center = ol.extent.getCenter(extent);
+    window.map.getView().fit(extent, {
+        duration: 1000,
+        padding: [100, 100, 100, 100],
+        maxZoom: 19
     });
 
-    const overlay = window.map.getOverlays().getArray().find(o => 
+    window.currentPopupCoordinate = center;
+
+    const overlay = window.map.getOverlays().getArray().find(o =>
         o.getElement() && (o.getElement().id === 'popup' || o.getElement().classList.contains('ol-popup'))
     );
-    
+
     if (overlay) {
         const content = document.getElementById('popup-content');
         const title = document.getElementById('popup-title');
         if (title) title.innerText = f.customTitle;
-        
-        content.innerHTML = window.generateFeatureHtml ? 
-            window.generateFeatureHtml(feature) : 
+
+        content.innerHTML = window.generateFeatureHtml ?
+            window.generateFeatureHtml(feature) :
             `<div style="padding:10px;"><strong>الاسم:</strong> ${f.properties.name || f.properties.location || 'غير متوفر'}</div>`;
-            
-        overlay.setPosition(ol.extent.getCenter(extent));
+
+        overlay.setPosition(center);
     }
 }
