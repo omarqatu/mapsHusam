@@ -306,6 +306,7 @@ function renderGlobalSuggestions(features, term) {
         
         const subDetails = [
             f.customTitle,
+            props.location || props.location_name,
             props.village_a,
             props.gov_a
         ].filter(t => t && t !== "").join(' | ');
