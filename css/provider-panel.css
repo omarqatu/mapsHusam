@@ -13,6 +13,12 @@
     transition: all 0.3s ease;
 }
 
+.provider-panel-body {
+    padding: 15px;
+    overflow-y: auto;
+    max-height: calc(100vh - 150px);
+}
+
 .provider-panel-header {
     background-color: #2c3e50;
     color: #fff;
@@ -102,15 +108,28 @@
         z-index: 10005; /* لضمان ظهور اللوحة فوق عناصر الخريطة والزووم الثابتة */
         transform: translateY(0); /* إلغاء أي تحويلات سابقة */
         transition: all 0.3s ease-in-out;
+        overflow: hidden; /* منع overflow من اللوحة نفسها */
     }
 
     .provider-panel-body {
         padding: 10px;
+        overflow-y: auto; /* السماح بالتمرير داخل اللوحة */
+        max-height: calc(40vh - 60px); /* ارتفاع اللوحة ناقص الهيدر */
+        -webkit-overflow-scrolling: touch; /* تحسين التمرير على iOS */
     }
 
     .btn-prov {
         font-size: 13px;
         padding: 8px;
+    }
+
+    .status-indicator-msg {
+        font-size: 11px;
+        padding: 8px;
+        margin-top: 8px;
+        border-top: 1px solid #eee;
+        background-color: #f9f9f9;
+        border-radius: 4px;
     }
 }
 
@@ -120,9 +139,10 @@
 @media (max-width: 900px) and (orientation: landscape) {
     .provider-panel-bottom-left {
         width: 240px; /* تقليص العرض */
-        max-height: 80vh; 
+        max-height: 80vh;
         bottom: 5px;
         left: 5px;
+        overflow: hidden; /* منع overflow من اللوحة نفسها */
     }
 
     .provider-panel-header {
@@ -135,6 +155,9 @@
 
     .provider-panel-body {
         padding: 8px;
+        overflow-y: auto; /* السماح بالتمرير داخل اللوحة */
+        max-height: calc(80vh - 50px); /* ارتفاع اللوحة ناقص الهيدر */
+        -webkit-overflow-scrolling: touch; /* تحسين التمرير على iOS */
     }
 
     .provider-status-text {
@@ -162,5 +185,9 @@
     .status-indicator-msg {
         font-size: 10px;
         margin-top: 5px;
+        padding: 6px;
+        background-color: #f9f9f9;
+        border-radius: 4px;
+        border-top: 1px solid #eee;
     }
 }
