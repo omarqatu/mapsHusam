@@ -136,6 +136,27 @@ function initializePopup(map) {
                 </div>`;
     }
 
+    window.copyLocationLink = function(coordinate) {
+        if (!coordinate || coordinate.length < 2) {
+            alert('لا يمكن نسخ الموقع');
+            return;
+        }
+
+        const baseUrl = window.location.origin + window.location.pathname;
+        const params = new URLSearchParams();
+        params.set('x', coordinate[0]);
+        params.set('y', coordinate[1]);
+
+        const shareLink = `${baseUrl}?${params.toString()}`;
+
+        navigator.clipboard.writeText(shareLink).then(() => {
+            alert('تم نسخ رابط الموقع بنجاح! يمكنك مشاركته الآن.');
+        }).catch(err => {
+            console.error('فشل نسخ الرابط:', err);
+            alert('فشل نسخ الرابط. يرجى المحاولة يدوياً.');
+        });
+    };
+
     const overlay = new ol.Overlay({
         element: container,
         autoPan: { animation: { duration: 250 } },
@@ -248,7 +269,7 @@ function initializePopup(map) {
 
                 bodyHtml += `
                 <div style="margin-top: 15px; border-top: 2px solid #eee; padding-top: 12px;">
-                    <div style="display: flex; gap: 8px; margin-bottom: 0;">
+                    <div style="display: flex; gap: 8px; margin-bottom: 8px;">
                         <button onclick="handlePhoneCall('${providerName}', '${localPhone}', '${whatsappNumber}', '${layerTitle}')"
                                 style="flex: 1; background: #1a73e8; color: white; border: none; padding: 12px 8px; border-radius: 10px; cursor: pointer; font-weight: bold; display: flex; align-items: center; justify-content: center; gap: 6px; font-size: 13px; box-shadow: 0 4px 12px rgba(26,115,232,0.3); direction: ltr;">
                             <i class="fas fa-phone" style="font-size: 16px;"></i>
@@ -261,6 +282,15 @@ function initializePopup(map) {
                     </div>
                 </div>`;
             }
+
+            // زر نسخ رابط الموقع يظهر لجميع المعالم
+            bodyHtml += `
+            <div style="margin-top: 15px; border-top: 2px solid #eee; padding-top: 12px;">
+                <button onclick="copyLocationLink(window.currentPopupCoordinate)"
+                        style="width: 100%; background: #6c757d; color: white; border: none; padding: 10px; border-radius: 10px; cursor: pointer; font-weight: bold; display: flex; align-items: center; justify-content: center; gap: 6px; font-size: 12px; box-shadow: 0 4px 12px rgba(108,117,125,0.3);">
+                    <i class="fas fa-link" style="font-size: 14px;"></i> نسخ رابط الموقع
+                </button>
+            </div>`;
 
             if (props.details_link_1 || props.pic) {
                 if (props.details_link_1) bodyHtml += `<div style="margin-top:8px;">🔗 ${createLink(props.details_link_1, "تفاصيل إضافية")}</div>`;
@@ -278,6 +308,15 @@ function initializePopup(map) {
                 const label = areaFieldLabels[key] || key;
                 bodyHtml += `<b>${label}:</b> ${props[key]}<br>`;
             });
+
+            // زر نسخ رابط الموقع يظهر للمناطق أيضاً
+            bodyHtml += `
+            <div style="margin-top: 15px; border-top: 2px solid #eee; padding-top: 12px;">
+                <button onclick="copyLocationLink(window.currentPopupCoordinate)"
+                        style="width: 100%; background: #6c757d; color: white; border: none; padding: 10px; border-radius: 10px; cursor: pointer; font-weight: bold; display: flex; align-items: center; justify-content: center; gap: 6px; font-size: 12px; box-shadow: 0 4px 12px rgba(108,117,125,0.3);">
+                    <i class="fas fa-link" style="font-size: 14px;"></i> نسخ رابط الموقع
+                </button>
+            </div>`;
         }
 
         bodyHtml += `</div>`;
@@ -296,15 +335,16 @@ function initializePopup(map) {
     };
 
     map.on('singleclick', function(event) {
-        if (!isPopupEnabled) return; 
+        if (!isPopupEnabled) return;
         let featureFound = false;
         map.forEachFeatureAtPixel(event.pixel, function(feature, layer) {
             if (isLayerAllowed(layer)) {
                 featureFound = true;
+                window.currentPopupCoordinate = event.coordinate;
                 content.innerHTML = window.generateFeatureHtml(feature, layer);
                 overlay.setPosition(event.coordinate);
                 isPopupPinned = true;
-                return true; 
+                return true;
             }
         });
         if (!featureFound) window.hideFeaturePopup();
@@ -317,10 +357,11 @@ function initializePopup(map) {
         map.forEachFeatureAtPixel(pixel, function(feature, layer) {
             if (isLayerAllowed(layer)) {
                 featureFound = true;
+                window.currentPopupCoordinate = event.coordinate;
                 content.innerHTML = window.generateFeatureHtml(feature, layer);
                 overlay.setPosition(event.coordinate);
                 map.getTargetElement().style.cursor = 'pointer';
-                return true; 
+                return true;
             }
         });
         if (!featureFound) {
@@ -328,4 +369,36 @@ function initializePopup(map) {
             map.getTargetElement().style.cursor = '';
         }
     });
+
+    // قراءة معاملات URL وفتح البوب أب تلقائياً
+    function openLocationFromUrl() {
+        const urlParams = new URLSearchParams(window.location.search);
+        const x = urlParams.get('x');
+        const y = urlParams.get('y');
+
+        if (!x || !y) return;
+
+        const coordinate = [parseFloat(x), parseFloat(y)];
+
+        if (isNaN(coordinate[0]) || isNaN(coordinate[1])) return;
+
+        // تحريك الخريطة إلى الموقع
+        map.getView().animate({
+            center: coordinate,
+            zoom: 19,
+            duration: 1000
+        });
+
+        // إظهار البوب أب في الموقع
+        window.currentPopupCoordinate = coordinate;
+        content.innerHTML = `<div style="padding:10px; text-align:center;">
+            <strong>📍 الموقع المشارك</strong><br>
+            <small>تم توجيهك إلى هذا الموقع</small>
+        </div>`;
+        overlay.setPosition(coordinate);
+        isPopupPinned = true;
+    }
+
+    // استدعاء الدالة بعد تحميل الخريطة
+    setTimeout(openLocationFromUrl, 1000);
 }
