@@ -402,11 +402,14 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- 5. محرك اللوحات الموحد والمعدل للصلاحيات ---
     window.closeAllPanels = () => {
         document.querySelectorAll('.panel-right').forEach(p => {
-            p.classList.add('hidden');
-            // تأمين الإغلاق وإلغاء القفل الخاص بـ display الحماية للمشرف
-            p.style.removeProperty("display");
+            // استثناء لوحة مزود الخدمة من الإغلاق
+            if (p.id !== 'provider-mini-panel') {
+                p.classList.add('hidden');
+                // تأمين الإغلاق وإلغاء القفل الخاص بـ display الحماية للمشرف
+                p.style.removeProperty("display");
+            }
         });
-        
+
         if (window.searchResultsHighlightLayer) window.searchResultsHighlightLayer.getSource().clear();
 
         // تعطيل كافة الأدوات الوظيفية لتجنب التعارض
