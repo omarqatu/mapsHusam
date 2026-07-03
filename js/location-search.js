@@ -255,6 +255,8 @@ function initializeLocationSearch(map, overlayLayersObj) {
                     map.getView().animate({ center: coord, zoom: 19, duration: 800 });
 
                     // 2. إظهار البوب أب (نفس منطق البحث السريع)
+                    window.currentPopupCoordinate = coord;
+
                     if (window.generateFeatureHtml) {
                         const contentElement = document.getElementById('popup-content');
                         if (contentElement) {
