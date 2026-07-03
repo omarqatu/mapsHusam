@@ -130,6 +130,34 @@ function enterPlatform(userData, isAutoboot = false) {
 }
 
 // ==========================================
+// دالة إرسال تتبع الإحصائيات إلى السيرفر الخارجي
+// ==========================================
+window.sendTrackingRequest = function(provider, service) {
+    const serverUrl = window.location.origin + '/save-stat';
+    const payload = {
+        user_id: getRealUserId(),
+        provider,
+        service
+    };
+    const body = JSON.stringify(payload);
+
+    if (navigator.sendBeacon) {
+        const blob = new Blob([body], { type: 'application/json' });
+        navigator.sendBeacon(serverUrl, blob);
+        return Promise.resolve();
+    }
+
+    return fetch(serverUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body,
+        keepalive: true
+    }).catch(err => {
+        console.error('خطأ في تسجيل الإحصائية:', err);
+    });
+};
+
+// ==========================================
 // دالة فتح لوحة التحكم
 // ==========================================
 window.openDashboard = function() {
@@ -143,6 +171,7 @@ window.openDashboard = function() {
 window.openMobileContact = function() {
     // رقم الموبايل للتواصل
     const mobileNumber = '+970599000000'; // استبدل برقم الموبايل الفعلي
+    window.sendTrackingRequest('الدومين', 'اتصال الهاتف الخارجي');
     window.open(`tel:${mobileNumber}`, '_blank');
 };
 
@@ -152,6 +181,7 @@ window.openMobileContact = function() {
 window.openWhatsApp = function() {
     // رقم الواتساب للتواصل
     const whatsappNumber = '970599000000'; // استبدل برقم الواتساب الفعلي
+    window.sendTrackingRequest('الدومين', 'واتساب خارجي');
     window.open(`https://wa.me/${whatsappNumber}`, '_blank');
 };
 
