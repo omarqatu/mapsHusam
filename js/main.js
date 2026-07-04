@@ -183,9 +183,14 @@ document.addEventListener('DOMContentLoaded', () => {
                 const isRoad = key.toLowerCase().includes('road') || title.includes('طرق') || title.includes('شوارع');
                 const isInternalSearch = key.toLowerCase().includes('search') || key.toLowerCase().includes('highlight');
 
-                if (isRoad) lyr.setVisible(false);
-                else if (isInternalSearch) lyr.setVisible(true);
-                else lyr.setVisible(true);
+                if (isRoad) {
+                    lyr.setVisible(false);
+                } else if (isInternalSearch) {
+                    lyr.setVisible(true);
+                } else {
+                    // احترام الحالة الأصلية للطبقة عند الإنشاء، لتجنب تحميل كل الطبقات دفعة واحدة
+                    lyr.setVisible(lyr.getVisible());
+                }
 
                 // تخزين الطبقات في الكائن العالمي
                 window.overlayLayersObj[key] = lyr;
