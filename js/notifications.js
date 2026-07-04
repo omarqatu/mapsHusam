@@ -58,6 +58,7 @@ class NotificationSystem {
             this.notificationCount = notifications.length;
             this.updateNotificationBadge();
             this.renderNotificationDropdown(notifications);
+            console.log('✅ تم عرض الإشعارات في القائمة');
         });
 
         // تأكيد إرسال الإشعار
@@ -221,11 +222,18 @@ class NotificationSystem {
 
     // عرض الإشعارات في القائمة المنبثقة
     renderNotificationDropdown(notifications) {
+        console.log('🎨 بدء عرض الإشعارات في القائمة...');
         const list = document.getElementById('notification-list');
-        if (!list) return;
+        if (!list) {
+            console.error('❌ عنصر notification-list غير موجود');
+            return;
+        }
+
+        console.log('📊 عدد الإشعارات:', notifications.length);
 
         if (notifications.length === 0) {
             list.innerHTML = '<p style="text-align: center; color: #999; padding: 20px;">لا توجد إشعارات</p>';
+            console.log('✅ لا توجد إشعارات للعرض');
             return;
         }
 
@@ -244,6 +252,8 @@ class NotificationSystem {
             };
             list.appendChild(item);
         });
+
+        console.log('✅ تم عرض', notifications.length, 'إشعار في القائمة');
     }
 
     // تعليم جميع الإشعارات كمقروء
