@@ -175,6 +175,7 @@
                 <option value="all_users">كل المستخدمين</option>
                 <option value="regular_users">المستخدمون العاديون فقط</option>
                 <option value="providers">مزودو الخدمات فقط</option>
+                <option value="admins">المشرفون فقط</option>
                 <option value="selected">اختيار متعدد</option>
             </select>
         </div>
@@ -302,7 +303,7 @@
             const userDiv = document.createElement('div');
             userDiv.style.cssText = 'padding: 8px; margin-bottom: 5px; background: #f8f9fa; border-radius: 4px; display: flex; align-items: center; gap: 10px;';
             userDiv.innerHTML = `
-                <input type="checkbox" class="user-checkbox" value="${user.id}" id="user-${user.id}">
+                <input type="checkbox" class="user-checkbox" value="${user.id}" id="user-${user.id}" onchange="console.log('Selected users:', getSelectedUsers())">
                 <label for="user-${user.id}" style="flex: 1; cursor: pointer;">
                     <strong>${user.name || user.username || 'بدون اسم'}</strong>
                     <small style="display: block; color: #666;">ID: ${user.id} | ${user.role || 'user'}</small>
@@ -310,6 +311,8 @@
             `;
             usersList.appendChild(userDiv);
         });
+
+        console.log('تم عرض قائمة المستخدمين:', users.length, 'مستخدم');
     }
 
     // الحصول على المستخدمين المختارين
@@ -356,12 +359,15 @@
             type
         };
 
+        // إضافة البيانات حسب نوع الاستهداف
         if (targetType === 'single') {
             payload.targetUserId = parseInt(userId);
         } else if (targetType === 'selected') {
             payload.targetUserIds = getSelectedUsers();
         }
+        // للأنواع الأخرى (online, all_users, regular_users, providers) لا نحتاج بيانات إضافية
 
+        console.log('إرسال البيانات:', payload);
         socket.emit('send_notification', payload);
     });
 
