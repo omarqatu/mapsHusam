@@ -252,22 +252,41 @@ function initializeShareLocationTools(map) {
         const x = parseFloat(params.get('x'));
         const y = parseFloat(params.get('y'));
         const z = parseFloat(params.get('z'));
+        const crs = params.get('crs');
 
         if (!isNaN(x) && !isNaN(y)) {
+            let projectedCoordinate = [x, y];
+
+            if (crs === '4326' || crs === 'EPSG:4326') {
+                try {
+                    projectedCoordinate = ol.proj.transform([x, y], 'EPSG:4326', 'EPSG:28191');
+                } catch (e) {
+                    console.error('فشل تحويل الإحداثيات من الرابط:', e);
+                }
+            } else if (crs === '28191' || crs === 'EPSG:28191') {
+                projectedCoordinate = [x, y];
+            } else if (Math.abs(x) <= 180 && Math.abs(y) <= 90) {
+                try {
+                    projectedCoordinate = ol.proj.transform([x, y], 'EPSG:4326', 'EPSG:28191');
+                } catch (e) {
+                    console.error('فشل تحويل الإحداثيات المشتبه بها من الرابط:', e);
+                }
+            }
+
             initLayer();
             const view = map.getView();
             
             // تحريك الخريطة للموقع المشترك
-            view.setCenter([x, y]);
+            view.setCenter(projectedCoordinate);
             if (!isNaN(z)) view.setZoom(z);
 
-            const feature = new ol.Feature({ geometry: new ol.geom.Point([x, y]) });
+            const feature = new ol.Feature({ geometry: new ol.geom.Point(projectedCoordinate) });
             shareLayer.getSource().addFeature(feature);
             
             // تحديث واجهة العرض
-            if (palDisplay) palDisplay.innerText = `E: ${x.toFixed(3)} , N: ${y.toFixed(3)}`;
+            if (palDisplay) palDisplay.innerText = `E: ${projectedCoordinate[0].toFixed(3)} , N: ${projectedCoordinate[1].toFixed(3)}`;
             try {
-                const lonLat = ol.proj.transform([x, y], 'EPSG:28191', 'EPSG:4326');
+                const lonLat = ol.proj.transform(projectedCoordinate, 'EPSG:28191', 'EPSG:4326');
                 if (wgsDisplay) wgsDisplay.innerText = `Lat: ${lonLat[1].toFixed(6)} , Lon: ${lonLat[0].toFixed(6)}`;
             } catch(e) {}
             
