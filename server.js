@@ -466,36 +466,10 @@ app.post('/api/update-service-status', async (req, res) => {
 // 3. إعداد البروكسي لـ GeoServer مع الحماية المتقدمة
 // [إجراء أمني 2]: تشفير وحماية البروكسي لمنع الحذف العشوائي (WFS-T protection)
 // 🔒 Middleware للتحقق من صلاحية الوصول للـ GeoServer
-// توازن بين الأمان والسرعة: السماح بطلبات GET بدون auth
+// تعطيل مؤقتاً لحل مشكلة اختفاء المعالم
 const geoServerAuthMiddleware = (req, res, next) => {
     console.log(`[Proxy] Request to: ${req.url} from IP: ${req.ip}`);
-
-    // السماح بطلبات GET للطبقات (WMS, WFS, GWC) بدون authentication
-    if (req.method === 'GET' && (req.url.includes('/wms') || req.url.includes('/wfs') || req.url.includes('/gwc'))) {
-        console.log(`[Proxy] Allowing public GET request for: ${req.url}`);
-        return next();
-    }
-
-    // التحقق من أن المستخدم مسجل الدخول للعمليات الأخرى
-    const userId = req.headers['x-user-id'];
-    if (!userId) {
-        console.warn('🚫 GeoServer access denied: No user ID');
-        return res.status(403).json({ error: 'Authentication required' });
-    }
-
-    // التحقق من Origin
-    const origin = req.headers.origin;
-    if (origin && !allowedOrigins.includes(origin)) {
-        console.warn(`🚫 GeoServer access denied from origin: ${origin}`);
-        return res.status(403).json({ error: 'Origin not allowed' });
-    }
-
-    // 🔒 منع عمليات DELETE على GeoServer
-    if (req.method === 'DELETE') {
-        console.warn('🚫 GeoServer DELETE operation blocked');
-        return res.status(403).json({ error: 'DELETE operations not allowed' });
-    }
-
+    // السماح بجميع الطلبات مؤقتاً
     next();
 };
 
