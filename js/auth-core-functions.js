@@ -99,7 +99,7 @@ function applyMapInterfacePermissions() {
 // ==========================================
 function enterPlatform(userData, isAutoboot = false) {
     window.currentAppUser = userData;
-    
+
     // حفظ الجلسة الموحدة في المتصفح لضمان عدم حدوث تشتت عند عمل Refresh
     localStorage.setItem('map_user', JSON.stringify(window.currentAppUser));
 
@@ -107,14 +107,26 @@ function enterPlatform(userData, isAutoboot = false) {
     applyMapInterfacePermissions();
     showTopUserBadge(window.currentAppUser);
 
+    // تهيئة نظام الإشعارات
+    if (window.notificationSystem && userData.user_id) {
+        window.notificationSystem.init(userData.user_id);
+        console.log('✅ تم تهيئة نظام الإشعارات للمستخدم:', userData.user_id);
+    }
+
+    // إظهار زر الإشعارات
+    const notificationBtn = document.getElementById('notification-toggle-btn');
+    if (notificationBtn) {
+        notificationBtn.style.display = 'flex';
+    }
+
     const authOverlay = document.getElementById('auth-splash-overlay');
-    
+
     if (isAutoboot) {
         // في حالة الكشف التلقائي عن الجلسة، نعطي تأخيراً طفيفاً لضمان تحميل الملفات الأخرى في المتصفح
         setTimeout(() => {
             document.dispatchEvent(new CustomEvent("userLoggedIn", { detail: window.currentAppUser }));
         }, 150);
-        
+
         if (authOverlay) authOverlay.style.display = 'none';
     } else {
         // في حالة تسجيل الدخول اليدوي الفوري
