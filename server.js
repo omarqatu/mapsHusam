@@ -5,10 +5,20 @@
 const express = require('express');
 const { createProxyMiddleware } = require('http-proxy-middleware');
 const path = require('path');
-const { Pool } = require('pg'); 
+const { Pool } = require('pg');
 const cors = require('cors');
+const http = require('http');
+const { Server } = require('socket.io');
 
 const app = express();
+const server = http.createServer(app);
+const io = new Server(server, {
+    cors: {
+        origin: '*',
+        methods: ['GET', 'POST']
+    }
+});
+
 app.set('trust proxy', true);
 const PORT = process.env.PORT || 3000;
 const PG_HOST = process.env.POSTGRES_HOST || '144.91.84.168';
@@ -597,7 +607,39 @@ app.post('/api/auth/login', async (req, res) => {
     }
 });
 
-// 8. API للبحث مع فلترة مكانية BBOX (لعمليات البحث الأربعة)
+// 8. API لجلب القيم الفريدة من PostgreSQL مباشرة (أسرع من GeoServer)
+app.get('/api/get-unique-values', async (req, res) => {
+    try {
+        const { layer, workspace, field } = req.query;
+
+        if (!layer || !workspace || !field) {
+            return res.status(400).json({ error: 'layer, workspace, and field are required' });
+        }
+
+        const targetPool = workspace === 'realestate' ? realestatePool : servicesPool;
+
+        // استعلام لجلب القيم الفريدة من الحقل المحدد
+        const query = `SELECT DISTINCT "${field}" FROM public."${layer}" WHERE status = 0 AND auto_status = 0 AND "${field}" IS NOT NULL AND "${field}" != '' ORDER BY "${field}" ASC LIMIT 10000`;
+
+        console.log(`Unique Values Query for ${layer}.${field}:`, query);
+
+        const result = await targetPool.query(query);
+
+        const values = result.rows.map(row => row[field]).filter(v => v != null && v !== '');
+
+        res.json({
+            success: true,
+            values: values
+        });
+
+    } catch (error) {
+        console.error('Unique Values API Error:', error);
+        console.error('Error details:', error.message);
+        res.status(500).json({ error: 'Database query failed', details: error.message });
+    }
+});
+
+// 9. API للبحث مع فلترة مكانية BBOX (لعمليات البحث الأربعة)
 app.get('/api/search-features', async (req, res) => {
     try {
         const { layer, workspace, field, operator, value, bbox, layerNameAr, conditions_count } = req.query;
@@ -755,13 +797,126 @@ app.use((err, req, res, next) => {
     res.status(err.status || 500).json({ error: err.message || 'Unhandled server error' });
 });
 
-// 11. تشغيل السيرفر
-app.listen(PORT, () => {
+// ==========================================
+// Socket.io - نظام الإشعارات في الوقت الفعلي
+// ==========================================
+
+// تخزين المستخدمين المتصلين مع معرفاتهم
+const connectedUsers = new Map();
+
+io.on('connection', (socket) => {
+    console.log(`🔗 مستخدم جديد متصل: ${socket.id}`);
+
+    // عند تسجيل دخول المستخدم، نقوم بربط Socket ID بمعرف المستخدم
+    socket.on('user_connected', (userId) => {
+        console.log(`👤 المستخدم ${userId} متصل بـ Socket ID: ${socket.id}`);
+        connectedUsers.set(userId, socket.id);
+        socket.userId = userId;
+
+        // إرسال تأكيد الاتصال للمستخدم
+        socket.emit('connection_confirmed', { userId, socketId: socket.id });
+    });
+
+    // عند فصل المستخدم
+    socket.on('disconnect', () => {
+        if (socket.userId) {
+            console.log(`🔌 المستخدم ${socket.userId} انقطع اتصاله`);
+            connectedUsers.delete(socket.userId);
+        }
+    });
+
+    // استقبال إشعار من لوحة التحكم وإرساله للمستخدم المستهدف
+    socket.on('send_notification', async (data) => {
+        const { targetUserId, title, message, type } = data;
+
+        if (!targetUserId || !title || !message) {
+            socket.emit('notification_error', { error: 'بيانات الإشعار غير مكتملة' });
+            return;
+        }
+
+        try {
+            // حفظ الإشعار في قاعدة البيانات
+            const insertQuery = `
+                INSERT INTO "public"."notifications" (user_id, title, message, type, is_read, created_at)
+                VALUES ($1, $2, $3, $4, false, NOW())
+                RETURNING id
+            `;
+            const result = await servicesPool.query(insertQuery, [targetUserId, title, message, type || 'info']);
+
+            const notificationId = result.rows[0].id;
+
+            // إرسال الإشعار في الوقت الفعلي إذا كان المستخدم متصلاً
+            const targetSocketId = connectedUsers.get(targetUserId);
+            if (targetSocketId) {
+                io.to(targetSocketId).emit('new_notification', {
+                    id: notificationId,
+                    title,
+                    message,
+                    type: type || 'info',
+                    created_at: new Date().toISOString()
+                });
+                console.log(`📨 تم إرسال إشعار للمستخدم ${targetUserId}`);
+            } else {
+                console.log(`⚠️ المستخدم ${targetUserId} غير متصل، تم حفظ الإشعار في قاعدة البيانات`);
+            }
+
+            socket.emit('notification_sent', { success: true, notificationId });
+        } catch (err) {
+            console.error('❌ خطأ في إرسال الإشعار:', err);
+            socket.emit('notification_error', { error: 'فشل إرسال الإشعار' });
+        }
+    });
+
+    // طلب الإشعارات غير المقروءة
+    socket.on('get_unread_notifications', async (userId) => {
+        if (!userId) {
+            socket.emit('notifications_error', { error: 'معرف المستخدم مطلوب' });
+            return;
+        }
+
+        try {
+            const query = `
+                SELECT id, title, message, type, created_at
+                FROM "public"."notifications"
+                WHERE user_id = $1 AND is_read = false
+                ORDER BY created_at DESC
+            `;
+            const result = await servicesPool.query(query, [userId]);
+            socket.emit('unread_notifications', result.rows);
+        } catch (err) {
+            console.error('❌ خطأ في جلب الإشعارات:', err);
+            socket.emit('notifications_error', { error: 'فشل جلب الإشعارات' });
+        }
+    });
+
+    // تعليم إشعار كمقروء
+    socket.on('mark_notification_read', async (notificationId) => {
+        try {
+            const query = `
+                UPDATE "public"."notifications"
+                SET is_read = true
+                WHERE id = $1
+            `;
+            await servicesPool.query(query, [notificationId]);
+            socket.emit('notification_marked_read', { success: true });
+        } catch (err) {
+            console.error('❌ خطأ في تعليم الإشعار كمقروء:', err);
+            socket.emit('notification_error', { error: 'فشل تعليم الإشعار' });
+        }
+    });
+});
+
+// تصدير io لاستخدامه في أماكن أخرى إذا لزم الأمر
+global.io = io;
+
+// بدء السيرفر مع دعم Socket.io
+server.listen(PORT, () => {
     console.log('==============================================');
     console.log(`🚀 السيرفر يعمل الآن على: http://0.0.0.0:${PORT}`);
     console.log(`📊 لوحة التحكم: http://0.0.0.0:${PORT}/dashboard.html`);
     console.log(`📊 نظام تحديث الـ PostGIS والـ WFS-T متكامل ومؤمن بالكامل بالقيم الجغرافية الحقيقية`);
     console.log(`📡 قاعدة البيانات: host=${PG_HOST}, services=${SERVICES_DB_NAME}, realestate=${REAL_ESTATE_DB_NAME}`);
     console.log(`📡 GeoServer target: ${GEOSERVER_TARGET}`);
+    console.log(`🔌 Socket.io مفعل وجاهز للإشعارات`);
     console.log('==============================================');
 });
