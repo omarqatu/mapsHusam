@@ -117,31 +117,33 @@ const GEOSERVER_TARGET = process.env.GEOSERVER_TARGET || 'http://194.163.174.162
 
 // 1. إعدادات الاتصال بقواعد البيانات المتعددة 
 
-// 🟢 الاتصال الأول: قاعدة بيانات الخدمات (services_db) مع SSL
+// 🟢 الاتصال الأول: قاعدة بيانات الخدمات (services_db)
+// تعطيل SSL مؤقتاً لاستكشاف مشكلة البحث
 const servicesPool = new Pool({
     user: PG_USER,
     host: PG_HOST,
     database: SERVICES_DB_NAME,
     password: PG_PASSWORD,
     port: PG_PORT,
-    ssl: {
-        rejectUnauthorized: false // للإنتاج يجب استخدام شهادة SSL صالحة
-    },
+    // ssl: {
+    //     rejectUnauthorized: false // للإنتاج يجب استخدام شهادة SSL صالحة
+    // },
     connectionTimeoutMillis: 10000,
     idleTimeoutMillis: 30000,
     max: 20 // حد أقصى لعدد الاتصالات
 });
 
-// 🔵 الاتصال الثاني: قاعدة بيانات العقارات (realestate) مع SSL
+// 🔵 الاتصال الثاني: قاعدة بيانات العقارات (realestate)
+// تعطيل SSL مؤقتاً لاستكشاف مشكلة البحث
 const realestatePool = new Pool({
     user: PG_USER,
     host: PG_HOST,
     database: REAL_ESTATE_DB_NAME,
     password: PG_PASSWORD,
     port: PG_PORT,
-    ssl: {
-        rejectUnauthorized: false // للإنتاج يجب استخدام شهادة SSL صالحة
-    },
+    // ssl: {
+    //     rejectUnauthorized: false // للإنتاج يجب استخدام شهادة SSL صالحة
+    // },
     connectionTimeoutMillis: 10000,
     idleTimeoutMillis: 30000,
     max: 20 // حد أقصى لعدد الاتصالات
