@@ -1026,10 +1026,11 @@ io.on('connection', (socket) => {
         try {
             console.log('🔍 جلب الإشعارات للمستخدم:', userId);
             const query = `
-                SELECT id, title, message, type, created_at
+                SELECT id, title, message, type, is_read, created_at
                 FROM "public"."notifications"
-                WHERE user_id = $1 AND is_read = false
+                WHERE user_id = $1
                 ORDER BY created_at DESC
+                LIMIT 50
             `;
             const result = await servicesPool.query(query, [userId]);
             console.log('✅ تم جلب', result.rows.length, 'إشعار للمستخدم', userId);
