@@ -168,8 +168,30 @@
 
     <form id="notification-form">
         <div class="form-group">
+            <label for="target-type">نوع الاستهداف</label>
+            <select id="target-type" onchange="handleTargetTypeChange()">
+                <option value="single">مستخدم واحد</option>
+                <option value="online">المتصلون حالياً فقط</option>
+                <option value="all_users">كل المستخدمين</option>
+                <option value="regular_users">المستخدمون العاديون فقط</option>
+                <option value="providers">مزودو الخدمات فقط</option>
+                <option value="selected">اختيار متعدد</option>
+            </select>
+        </div>
+
+        <div class="form-group" id="user-id-group">
             <label for="user-id">معرف المستخدم (User ID)</label>
-            <input type="number" id="user-id" required placeholder="أدخل معرف المستخدم المستهدف">
+            <input type="number" id="user-id" placeholder="أدخل معرف المستخدم المستهدف">
+        </div>
+
+        <div class="form-group" id="selected-users-group" style="display: none;">
+            <label>اختر المستخدمين</label>
+            <div id="users-list" style="max-height: 200px; overflow-y: auto; border: 2px solid #e0e0e0; border-radius: 8px; padding: 10px;">
+                <p style="text-align: center; color: #999;">جاري تحميل المستخدمين...</p>
+            </div>
+            <button type="button" onclick="loadUsers()" style="margin-top: 10px; background: #1a73e8;">
+                <i class="fas fa-sync-alt"></i> تحديث قائمة المستخدمين
+            </button>
         </div>
 
         <div class="form-group">
@@ -205,6 +227,7 @@
     const statusText = document.getElementById('status-text');
     const form = document.getElementById('notification-form');
     const sendBtn = document.getElementById('send-btn');
+    let allUsers = [];
 
     // حالة الاتصال
     socket.on('connect', () => {
@@ -222,29 +245,124 @@
         statusText.textContent = 'خطأ في الاتصال';
     });
 
+    // التعامل مع تغيير نوع الاستهداف
+    function handleTargetTypeChange() {
+        const targetType = document.getElementById('target-type').value;
+        const userIdGroup = document.getElementById('user-id-group');
+        const selectedUsersGroup = document.getElementById('selected-users-group');
+
+        userIdGroup.style.display = 'none';
+        selectedUsersGroup.style.display = 'none';
+
+        if (targetType === 'single') {
+            userIdGroup.style.display = 'block';
+            document.getElementById('user-id').required = true;
+        } else if (targetType === 'selected') {
+            selectedUsersGroup.style.display = 'block';
+            document.getElementById('user-id').required = false;
+            loadUsers();
+        } else {
+            document.getElementById('user-id').required = false;
+        }
+    }
+
+    // تحميل قائمة المستخدمين
+    async function loadUsers() {
+        const usersList = document.getElementById('users-list');
+        usersList.innerHTML = '<p style="text-align: center; color: #999;">جاري تحميل المستخدمين...</p>';
+
+        try {
+            const response = await fetch('/api/users');
+            const data = await response.json();
+
+            if (data.success && data.users) {
+                allUsers = data.users;
+                renderUsersList(allUsers);
+            } else {
+                usersList.innerHTML = '<p style="text-align: center; color: #ea4335;">فشل تحميل المستخدمين</p>';
+            }
+        } catch (error) {
+            console.error('Error loading users:', error);
+            usersList.innerHTML = '<p style="text-align: center; color: #ea4335;">خطأ في الاتصال بالسيرفر</p>';
+        }
+    }
+
+    // عرض قائمة المستخدمين
+    function renderUsersList(users) {
+        const usersList = document.getElementById('users-list');
+
+        if (users.length === 0) {
+            usersList.innerHTML = '<p style="text-align: center; color: #999;">لا يوجد مستخدمين</p>';
+            return;
+        }
+
+        usersList.innerHTML = '';
+
+        users.forEach(user => {
+            const userDiv = document.createElement('div');
+            userDiv.style.cssText = 'padding: 8px; margin-bottom: 5px; background: #f8f9fa; border-radius: 4px; display: flex; align-items: center; gap: 10px;';
+            userDiv.innerHTML = `
+                <input type="checkbox" class="user-checkbox" value="${user.id}" id="user-${user.id}">
+                <label for="user-${user.id}" style="flex: 1; cursor: pointer;">
+                    <strong>${user.name || user.username || 'بدون اسم'}</strong>
+                    <small style="display: block; color: #666;">ID: ${user.id} | ${user.role || 'user'}</small>
+                </label>
+            `;
+            usersList.appendChild(userDiv);
+        });
+    }
+
+    // الحصول على المستخدمين المختارين
+    function getSelectedUsers() {
+        const checkboxes = document.querySelectorAll('.user-checkbox:checked');
+        return Array.from(checkboxes).map(cb => parseInt(cb.value));
+    }
+
     // إرسال الإشعار
     form.addEventListener('submit', (e) => {
         e.preventDefault();
 
+        const targetType = document.getElementById('target-type').value;
         const userId = document.getElementById('user-id').value;
         const type = document.getElementById('notification-type').value;
         const title = document.getElementById('notification-title').value;
         const message = document.getElementById('notification-message').value;
 
-        if (!userId || !title || !message) {
+        if (!title || !message) {
             alert('يرجى تعبئة جميع الحقول المطلوبة');
             return;
+        }
+
+        if (targetType === 'single' && !userId) {
+            alert('يرجى إدخال معرف المستخدم');
+            return;
+        }
+
+        if (targetType === 'selected') {
+            const selectedUsers = getSelectedUsers();
+            if (selectedUsers.length === 0) {
+                alert('يرجى اختيار مستخدم واحد على الأقل');
+                return;
+            }
         }
 
         sendBtn.disabled = true;
         sendBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> جاري الإرسال...';
 
-        socket.emit('send_notification', {
-            targetUserId: parseInt(userId),
+        const payload = {
+            targetType,
             title,
             message,
             type
-        });
+        };
+
+        if (targetType === 'single') {
+            payload.targetUserId = parseInt(userId);
+        } else if (targetType === 'selected') {
+            payload.targetUserIds = getSelectedUsers();
+        }
+
+        socket.emit('send_notification', payload);
     });
 
     // تأكيد الإرسال
@@ -253,8 +371,10 @@
         sendBtn.innerHTML = '<i class="fas fa-paper-plane"></i> إرسال الإشعار';
 
         if (data.success) {
-            alert('✅ تم إرسال الإشعار بنجاح!');
+            const count = data.sentCount || 1;
+            alert(`✅ تم إرسال الإشعار بنجاح إلى ${count} مستخدم!`);
             form.reset();
+            handleTargetTypeChange();
         }
     });
 
