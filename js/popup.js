@@ -144,8 +144,21 @@ function initializePopup(map) {
 
         const baseUrl = window.location.origin + window.location.pathname;
         const params = new URLSearchParams();
-        params.set('x', coordinate[0]);
-        params.set('y', coordinate[1]);
+
+        // تحويل الإحداثيات من EPSG:28191 إلى EPSG:4326 (WGS84) للتوافق مع جميع الأجهزة
+        let coordsToUse = coordinate;
+        try {
+            const lonLat = ol.proj.transform(coordinate, 'EPSG:28191', 'EPSG:4326');
+            params.set('x', lonLat[0]);
+            params.set('y', lonLat[1]);
+            params.set('crs', '4326'); // إضافة معامل لتحديد نظام الإحداثيات
+        } catch (err) {
+            // Fallback: استخدام الإحداثيات الأصلية إذا فشل التحويل
+            console.error('فشل تحويل الإحداثيات:', err);
+            params.set('x', coordinate[0]);
+            params.set('y', coordinate[1]);
+            params.set('crs', '28191');
+        }
 
         const shareLink = `${baseUrl}?${params.toString()}`;
 
@@ -401,12 +414,23 @@ function initializePopup(map) {
         const urlParams = new URLSearchParams(window.location.search);
         const x = urlParams.get('x');
         const y = urlParams.get('y');
+        const crs = urlParams.get('crs'); // نظام الإحداثيات
 
         if (!x || !y) return;
 
-        const coordinate = [parseFloat(x), parseFloat(y)];
+        let coordinate = [parseFloat(x), parseFloat(y)];
 
         if (isNaN(coordinate[0]) || isNaN(coordinate[1])) return;
+
+        // تحويل الإحداثيات إذا كانت في EPSG:4326 إلى EPSG:28191
+        if (crs === '4326') {
+            try {
+                coordinate = ol.proj.transform(coordinate, 'EPSG:4326', 'EPSG:28191');
+            } catch (err) {
+                console.error('فشل تحويل الإحداثيات من WGS84:', err);
+                return;
+            }
+        }
 
         // تحريك الخريطة إلى الموقع
         map.getView().animate({
