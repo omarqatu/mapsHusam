@@ -1012,13 +1012,19 @@ io.on('connection', (socket) => {
     });
 
     // طلب الإشعارات غير المقروءة
-    socket.on('get_unread_notifications', async (userId) => {
+    socket.on('get_unread_notifications', async (data) => {
+        console.log('📨 طلب الإشعارات غير المقروءة:', data);
+
+        const userId = data.user_id || data;
+
         if (!userId) {
+            console.error('❌ معرف المستخدم مطلوب');
             socket.emit('notifications_error', { error: 'معرف المستخدم مطلوب' });
             return;
         }
 
         try {
+            console.log('🔍 جلب الإشعارات للمستخدم:', userId);
             const query = `
                 SELECT id, title, message, type, created_at
                 FROM "public"."notifications"
@@ -1026,6 +1032,7 @@ io.on('connection', (socket) => {
                 ORDER BY created_at DESC
             `;
             const result = await servicesPool.query(query, [userId]);
+            console.log('✅ تم جلب', result.rows.length, 'إشعار للمستخدم', userId);
             socket.emit('unread_notifications', result.rows);
         } catch (err) {
             console.error('❌ خطأ في جلب الإشعارات:', err);
