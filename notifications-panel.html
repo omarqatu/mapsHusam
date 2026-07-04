@@ -252,6 +252,8 @@
         const userIdGroup = document.getElementById('user-id-group');
         const selectedUsersGroup = document.getElementById('selected-users-group');
 
+        console.log('🎯 تغيير نوع الاستهداف إلى:', targetType);
+
         userIdGroup.style.display = 'none';
         selectedUsersGroup.style.display = 'none';
 
@@ -259,6 +261,7 @@
             userIdGroup.style.display = 'block';
             document.getElementById('user-id').required = true;
         } else if (targetType === 'selected') {
+            console.log('✅ عرض قائمة اختيار متعدد');
             selectedUsersGroup.style.display = 'block';
             document.getElementById('user-id').required = false;
             loadUsers();
@@ -269,22 +272,29 @@
 
     // تحميل قائمة المستخدمين
     async function loadUsers() {
+        console.log('🔄 بدء تحميل قائمة المستخدمين...');
         const usersList = document.getElementById('users-list');
         usersList.innerHTML = '<p style="text-align: center; color: #999;">جاري تحميل المستخدمين...</p>';
 
         try {
+            console.log('📡 جلب المستخدمين من /api/users...');
             const response = await fetch('/api/users');
+            console.log('📡 استجابة السيرفر:', response.status);
+
             const data = await response.json();
+            console.log('📡 بيانات المستخدمين:', data);
 
             if (data.success && data.users) {
                 allUsers = data.users;
+                console.log('✅ تم جلب', allUsers.length, 'مستخدم');
                 renderUsersList(allUsers);
             } else {
+                console.error('❌ فشل تحميل المستخدمين:', data);
                 usersList.innerHTML = '<p style="text-align: center; color: #ea4335;">فشل تحميل المستخدمين</p>';
             }
         } catch (error) {
-            console.error('Error loading users:', error);
-            usersList.innerHTML = '<p style="text-align: center; color: #ea4335;">خطأ في الاتصال بالسيرفر</p>';
+            console.error('❌ خطأ في الاتصال بالسيرفر:', error);
+            usersList.innerHTML = '<p style="text-align: center; color: #ea4335;">خطأ في الاتصال بالسيرفر: ' + error.message + '</p>';
         }
     }
 
