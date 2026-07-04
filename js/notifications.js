@@ -293,15 +293,33 @@ window.addEventListener('DOMContentLoaded', () => {
         notificationBtn.addEventListener('click', (e) => {
             e.stopPropagation();
 
-            // طلب الإشعارات من السيرفر عند فتح القائمة
+            console.log('🔔 تم النقر على زر الإشعارات');
+            console.log('📊 Socket متصل:', window.notificationSystem?.isConnected);
+            console.log('👤 userId:', window.notificationSystem?.userId);
+
+            // عرض مؤشر التحميل
+            const dropdownBody = notificationDropdown.querySelector('.notification-dropdown-body');
+            if (dropdownBody) {
+                dropdownBody.innerHTML = '<p style="text-align: center; color: #999; padding: 20px;">جاري تحميل الإشعارات...</p>';
+            }
+
+            // فتح القائمة
+            notificationDropdown.classList.add('show');
+
+            // طلب الإشعارات من السيرفر
             if (window.notificationSystem.socket && window.notificationSystem.userId) {
-                console.log('🔄 طلب الإشعارات من السيرفر...');
+                console.log('🔄 طلب الإشعارات من السيرفر للمستخدم:', window.notificationSystem.userId);
                 window.notificationSystem.socket.emit('get_unread_notifications', {
                     user_id: window.notificationSystem.userId
                 });
+            } else {
+                console.warn('⚠️ Socket أو userId غير متاح');
+                console.warn('Socket:', window.notificationSystem?.socket);
+                console.warn('UserId:', window.notificationSystem?.userId);
+                if (dropdownBody) {
+                    dropdownBody.innerHTML = '<p style="text-align: center; color: #ea4335; padding: 20px;">لم يتم الاتصال بالسيرفر</p>';
+                }
             }
-
-            notificationDropdown.classList.toggle('show');
         });
 
         // إغلاق القائمة عند النقر خارجها
