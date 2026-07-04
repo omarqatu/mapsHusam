@@ -240,15 +240,21 @@ class NotificationSystem {
         list.innerHTML = '';
         notifications.forEach(notification => {
             const item = document.createElement('div');
-            item.className = 'notification-dropdown-item unread';
+            // التحقق من حالة القراءة من قاعدة البيانات
+            const isUnread = notification.is_read === false || notification.is_read === null;
+            item.className = isUnread ? 'notification-dropdown-item unread' : 'notification-dropdown-item';
+            item.dataset.id = notification.id;
             item.innerHTML = `
                 <h4>${notification.title}</h4>
                 <p>${notification.message}</p>
                 <small>${new Date(notification.created_at).toLocaleString('ar')}</small>
             `;
             item.onclick = () => {
-                this.markAsRead(notification.id);
-                item.classList.remove('unread');
+                // تعليم كمقروء فقط إذا كان غير مقروء
+                if (isUnread) {
+                    this.markAsRead(notification.id);
+                    item.classList.remove('unread');
+                }
             };
             list.appendChild(item);
         });
