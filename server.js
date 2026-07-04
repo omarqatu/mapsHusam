@@ -1251,7 +1251,7 @@ io.on('connection', (socket) => {
 global.io = io;
 
 // بدء السيرفر مع دعم Socket.io
-server.listen(PORT, () => {
+server.listen(PORT, '0.0.0.0', () => {
     console.log('==============================================');
     console.log(`🚀 السيرفر يعمل الآن على: http://0.0.0.0:${PORT}`);
     console.log(`📊 لوحة التحكم: http://0.0.0.0:${PORT}/dashboard.html`);
