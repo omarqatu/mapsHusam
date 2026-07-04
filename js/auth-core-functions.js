@@ -5,6 +5,20 @@
 
 window.currentAppUser = null;
 
+window.refreshMapLayout = function() {
+    setTimeout(() => {
+        if (window.map && typeof window.map.updateSize === 'function') {
+            window.map.updateSize();
+        }
+
+        const mapEl = document.getElementById('map');
+        if (mapEl) {
+            mapEl.style.minHeight = '100dvh';
+            mapEl.style.height = '100dvh';
+        }
+    }, 250);
+};
+
 // ==========================================
 // دالة الإخفاء الصارم والمطلق لأزرار ولوحات التحرير الخاصة بالمشرف فقط عند بدء التشغيل
 // ==========================================
@@ -124,10 +138,17 @@ function enterPlatform(userData, isAutoboot = false) {
     if (isAutoboot) {
         // في حالة الكشف التلقائي عن الجلسة، نعطي تأخيراً طفيفاً لضمان تحميل الملفات الأخرى في المتصفح
         setTimeout(() => {
+            if (authOverlay && authOverlay.parentNode) {
+                authOverlay.parentNode.removeChild(authOverlay);
+            }
             document.dispatchEvent(new CustomEvent("userLoggedIn", { detail: window.currentAppUser }));
+            window.refreshMapLayout();
         }, 150);
 
-        if (authOverlay) authOverlay.style.display = 'none';
+        if (authOverlay && authOverlay.parentNode) {
+            authOverlay.parentNode.removeChild(authOverlay);
+        }
+        window.refreshMapLayout();
     } else {
         // في حالة تسجيل الدخول اليدوي الفوري
         document.dispatchEvent(new CustomEvent("userLoggedIn", { detail: window.currentAppUser }));
@@ -136,8 +157,14 @@ function enterPlatform(userData, isAutoboot = false) {
             authOverlay.style.transition = "opacity 0.4s ease, visibility 0.4s";
             authOverlay.style.opacity = "0";
             authOverlay.style.visibility = "hidden";
-            setTimeout(() => { authOverlay.remove(); }, 400);
+            setTimeout(() => {
+                if (authOverlay && authOverlay.parentNode) {
+                    authOverlay.parentNode.removeChild(authOverlay);
+                }
+                window.refreshMapLayout();
+            }, 400);
         }
+        window.refreshMapLayout();
     }
 }
 
