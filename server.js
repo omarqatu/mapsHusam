@@ -926,6 +926,21 @@ io.on('connection', (socket) => {
                     }
                     break;
 
+                case 'admins':
+                    // إرسال للمشرفين فقط
+                    console.log('🔍 جلب المشرفين...');
+                    try {
+                        const adminsQuery = `SELECT user_id FROM public.users WHERE role = 'admin'`;
+                        const adminsResult = await servicesPool.query(adminsQuery);
+                        targetUsers = adminsResult.rows.map(row => row.user_id);
+                        console.log(`📡 إرسال للمشرفين: ${targetUsers.length} مستخدم`, targetUsers);
+                    } catch (dbErr) {
+                        console.error('❌ خطأ في جلب المشرفين:', dbErr);
+                        socket.emit('notification_error', { error: 'فشل جلب المشرفين' });
+                        return;
+                    }
+                    break;
+
                 case 'selected':
                     if (!targetUserIds || targetUserIds.length === 0) {
                         console.error('❌ يجب اختيار مستخدم واحد على الأقل');
