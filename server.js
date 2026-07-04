@@ -61,22 +61,25 @@ app.use(helmet({
     referrerPolicy: { policy: 'strict-origin-when-cross-origin' }
 }));
 
-// 🔒 إعدادات CORS - تقييد المصادر المسموح بها
+// 🔒 إعدادات CORS - السماح بالوصول المحلي/الشبكي والدومين مع الحفاظ على الحماية
 const allowedOrigins = process.env.ALLOWED_ORIGINS
-    ? process.env.ALLOWED_ORIGINS.split(',')
-    : ['http://localhost:3000', 'http://144.91.84.168:3000', 'http://194.163.174.162:8080', 'http://144.91.84.168', 'https://144.91.84.168', 'http://194.163.174.162:3000', 'http://192.168.88.5:3000'];
+    ? process.env.ALLOWED_ORIGINS.split(',').map(o => o.trim()).filter(Boolean)
+    : ['http://localhost:3000', 'http://127.0.0.1:3000', 'http://144.91.84.168:3000', 'http://194.163.174.162:3000', 'http://192.168.88.5:3000', 'http://192.168.88.5', 'http://144.91.84.168', 'https://144.91.84.168', 'https://localhost', 'https://127.0.0.1'];
+
+const isAllowedOrigin = (origin) => {
+    if (!origin) return true;
+    if (allowedOrigins.includes(origin)) return true;
+    return /^(http:\/\/|https:\/\/)(localhost|127\.0\.0\.1|192\.168\.|10\.|172\.(1[6-9]|2\d|3[0-1]))(:\d+)?$/i.test(origin);
+};
 
 app.use(cors({
     origin: function (origin, callback) {
-        // السماح بالطلبات بدون origin (مثل mobile apps أو Postman)
-        if (!origin) return callback(null, true);
-
-        if (allowedOrigins.indexOf(origin) !== -1) {
-            callback(null, true);
-        } else {
-            console.warn('🚫 CORS blocked origin:', origin);
-            callback(new Error('Not allowed by CORS'));
+        if (!origin || isAllowedOrigin(origin) || process.env.ALLOW_ALL_ORIGINS === 'true') {
+            return callback(null, true);
         }
+
+        console.warn('🚫 CORS blocked origin:', origin);
+        callback(new Error('Not allowed by CORS'));
     },
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
@@ -105,14 +108,15 @@ app.use('/api/auth/login', authLimiter);
 
 const io = new Server(server, {
     cors: {
-        origin: allowedOrigins,
+        origin: process.env.ALLOW_ALL_ORIGINS === 'true' ? true : allowedOrigins,
         methods: ['GET', 'POST'],
         credentials: true
     }
 });
 
-app.set('trust proxy', true);
-const PORT = process.env.PORT || 3000;
+app.set('trust proxy', Number(process.env.TRUST_PROXY || 1));
+const HOST = process.env.HOST || '0.0.0.0';
+const PORT = Number(process.env.PORT || 3000);
 const PG_HOST = process.env.POSTGRES_HOST || '144.91.84.168';
 const PG_PORT = Number(process.env.POSTGRES_PORT || 5432);
 const PG_USER = process.env.POSTGRES_USER || 'Husam';
@@ -121,6 +125,8 @@ const SERVICES_DB_NAME = process.env.SERVICES_DB_NAME || 'services_db';
 const REAL_ESTATE_DB_NAME = process.env.REAL_ESTATE_DB_NAME || 'realestate';
 // GeoServer يعمل على HTTP، البروكسي سيتولى الاتصال
 const GEOSERVER_TARGET = process.env.GEOSERVER_TARGET || 'http://194.163.174.162:8080/geoserver';
+const GEOSERVER_USER = process.env.GEOSERVER_USER || 'admin';
+const GEOSERVER_PASSWORD = process.env.GEOSERVER_PASSWORD || 'geoserver';
 
 // 1. إعدادات الاتصال بقواعد البيانات المتعددة 
 
@@ -478,15 +484,16 @@ app.use('/geoserver-proxy', geoServerAuthMiddleware, createProxyMiddleware({
     changeOrigin: true,
     pathRewrite: { '^/geoserver-proxy': '' },
     secure: false, // للتعامل مع شهادات SSL غير الموثوقة
+    xfwd: true,
+    timeout: 30000,
+    proxyTimeout: 30000,
     logLevel: 'warn', // تقليل logging
     onProxyReq: (proxyReq, req, res) => {
         console.log(`[Proxy] Forwarding to: ${GEOSERVER_TARGET}${req.url}`);
 
-        // 🔒 إضافة Basic Auth فقط للعمليات الحساسة (POST/PUT/DELETE)
-        if (req.method !== 'GET') {
-            const auth = Buffer.from('admin:geoserver').toString('base64');
-            proxyReq.setHeader('Authorization', `Basic ${auth}`);
-        }
+        // 🔐 إرسال بيانات المصادقة إلى GeoServer لجميع الطلبات، لأن WMS/WFS غالباً تحتاج auth حتى للـ GET
+        const auth = Buffer.from(`${GEOSERVER_USER}:${GEOSERVER_PASSWORD}`).toString('base64');
+        proxyReq.setHeader('Authorization', `Basic ${auth}`);
 
         // الحفاظ على بيانات الـ Body للطلبات القادمة من الخريطة
         const contentType = req.headers['content-type'] || '';
@@ -504,7 +511,7 @@ app.use('/geoserver-proxy', geoServerAuthMiddleware, createProxyMiddleware({
     },
     onError: (err, req, res) => {
         console.error('[Proxy] Error:', err);
-        res.status(500).json({ error: 'GeoServer connection failed' });
+        res.status(502).json({ error: 'GeoServer connection failed', details: err.message });
     }
 }));
 
@@ -939,6 +946,10 @@ app.use('/api', (req, res) => {
     res.status(404).json({ error: 'API endpoint not found', path: req.path });
 });
 
+app.get('/health', (req, res) => {
+    res.json({ status: 'ok', host: HOST, port: PORT, geoserver: GEOSERVER_TARGET });
+});
+
 // 9. تقديم الملفات الثابتة
 app.use(express.static(path.join(__dirname)));
 
@@ -1252,10 +1263,10 @@ io.on('connection', (socket) => {
 global.io = io;
 
 // بدء السيرفر مع دعم Socket.io
-server.listen(PORT, '0.0.0.0', () => {
+server.listen(PORT, HOST, () => {
     console.log('==============================================');
-    console.log(`🚀 السيرفر يعمل الآن على: http://0.0.0.0:${PORT}`);
-    console.log(`📊 لوحة التحكم: http://0.0.0.0:${PORT}/dashboard.html`);
+    console.log(`🚀 السيرفر يعمل الآن على: http://${HOST}:${PORT}`);
+    console.log(`📊 لوحة التحكم: http://${HOST}:${PORT}/dashboard.html`);
     console.log(`📊 نظام تحديث الـ PostGIS والـ WFS-T متكامل ومؤمن بالكامل بالقيم الجغرافية الحقيقية`);
     console.log(`📡 قاعدة البيانات: host=${PG_HOST}, services=${SERVICES_DB_NAME}, realestate=${REAL_ESTATE_DB_NAME}`);
     console.log(`📡 GeoServer target: ${GEOSERVER_TARGET}`);
