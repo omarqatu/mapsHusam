@@ -44,6 +44,17 @@ document.addEventListener("DOMContentLoaded", function () {
         return;
     }
 
+    const isMobileViewport = window.innerWidth <= 768 || /Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+    if (isMobileViewport) {
+        setTimeout(() => {
+            if (!authOverlay || authOverlay.style.display === 'none') return;
+            if (authOverlay.parentNode) {
+                authOverlay.parentNode.removeChild(authOverlay);
+            }
+            window.refreshMapLayout();
+        }, 1200);
+    }
+
     // ==========================================
     // إدارة شروط تفعيل أزرار الترحيب الشاملة
     // ==========================================
