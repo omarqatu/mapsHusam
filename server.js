@@ -776,7 +776,7 @@ app.get('/api/search-features', async (req, res) => {
 app.get('/api/users', async (req, res) => {
     try {
         const query = `
-            SELECT user_id as id, username, full_name as name, email, phone, role
+            SELECT user_id as id, full_name as name, email, phone, role
             FROM public.users
             ORDER BY user_id ASC
         `;
