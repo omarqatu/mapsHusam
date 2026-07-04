@@ -174,18 +174,38 @@
 /* قائمة الإشعارات المنبثقة */
 .notification-dropdown {
     position: fixed;
-    top: 60px;
+    top: 70px;
     left: 50%;
     transform: translateX(-50%);
     background: white;
-    border-radius: 10px;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+    border-radius: 12px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
     min-width: 320px;
-    max-width: 400px;
-    max-height: 400px;
+    max-width: 450px;
+    max-height: 500px;
     overflow-y: auto;
     display: none;
     z-index: 10001;
+}
+
+@media (max-width: 768px) {
+    .notification-dropdown {
+        top: 60px;
+        left: 10px;
+        right: 10px;
+        transform: none;
+        max-width: none;
+        min-width: auto;
+    }
+}
+
+@media (max-width: 480px) {
+    .notification-dropdown {
+        top: 50px;
+        left: 5px;
+        right: 5px;
+        max-height: 400px;
+    }
 }
 
 .notification-dropdown.show {
@@ -204,6 +224,19 @@
     }
 }
 
+@media (max-width: 768px) {
+    @keyframes fadeIn {
+        from {
+            opacity: 0;
+            transform: translateY(-10px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+}
+
 .notification-dropdown-header {
     padding: 15px;
     border-bottom: 1px solid #eee;
@@ -211,7 +244,10 @@
     justify-content: space-between;
     align-items: center;
     background: #f8f9fa;
-    border-radius: 10px 10px 0 0;
+    border-radius: 12px 12px 0 0;
+    position: sticky;
+    top: 0;
+    z-index: 10;
 }
 
 .notification-dropdown-header h3 {
@@ -221,17 +257,33 @@
 }
 
 .notification-dropdown-header button {
-    padding: 5px 10px;
+    padding: 6px 12px;
     background: #1a73e8;
     color: white;
     border: none;
-    border-radius: 4px;
+    border-radius: 6px;
     cursor: pointer;
     font-size: 12px;
+    transition: background 0.2s;
 }
 
 .notification-dropdown-header button:hover {
     background: #1557b0;
+}
+
+@media (max-width: 480px) {
+    .notification-dropdown-header {
+        padding: 12px;
+    }
+
+    .notification-dropdown-header h3 {
+        font-size: 13px;
+    }
+
+    .notification-dropdown-header button {
+        padding: 5px 10px;
+        font-size: 11px;
+    }
 }
 
 .notification-dropdown-body {
@@ -239,62 +291,97 @@
 }
 
 .notification-dropdown-item {
-    padding: 12px;
-    margin-bottom: 8px;
+    padding: 14px;
+    margin-bottom: 10px;
     background: #f8f9fa;
-    border-radius: 6px;
+    border-radius: 8px;
     cursor: pointer;
     transition: all 0.2s;
-    border-right: 3px solid transparent;
+    border-right: 4px solid transparent;
 }
 
 .notification-dropdown-item:hover {
     background: #e8f0fe;
+    transform: translateX(-2px);
 }
 
 .notification-dropdown-item.unread {
     background: #fff;
-    border-right: 3px solid #1a73e8;
+    border-right: 4px solid #1a73e8;
+    box-shadow: 0 2px 8px rgba(26, 115, 232, 0.1);
 }
 
 .notification-dropdown-item h4 {
-    margin: 0 0 5px 0;
-    font-size: 13px;
+    margin: 0 0 6px 0;
+    font-size: 14px;
     color: #333;
+    font-weight: 600;
 }
 
 .notification-dropdown-item p {
-    margin: 0 0 5px 0;
-    font-size: 12px;
+    margin: 0 0 6px 0;
+    font-size: 13px;
     color: #666;
-    line-height: 1.4;
+    line-height: 1.5;
 }
 
 .notification-dropdown-item small {
     display: block;
-    font-size: 10px;
+    font-size: 11px;
     color: #999;
 }
 
+@media (max-width: 480px) {
+    .notification-dropdown-item {
+        padding: 12px;
+        margin-bottom: 8px;
+    }
+
+    .notification-dropdown-item h4 {
+        font-size: 13px;
+    }
+
+    .notification-dropdown-item p {
+        font-size: 12px;
+    }
+}
+
 .notification-dropdown-footer {
-    padding: 10px 15px;
+    padding: 12px 15px;
     border-top: 1px solid #eee;
     text-align: center;
+    background: #f8f9fa;
+    border-radius: 0 0 12px 12px;
+    position: sticky;
+    bottom: 0;
+    z-index: 10;
 }
 
 .notification-dropdown-footer button {
     width: 100%;
-    padding: 8px;
+    padding: 10px;
     background: #666;
     color: white;
     border: none;
-    border-radius: 4px;
+    border-radius: 6px;
     cursor: pointer;
-    font-size: 12px;
+    font-size: 13px;
+    transition: background 0.2s;
 }
 
 .notification-dropdown-footer button:hover {
     background: #555;
+}
+
+@media (max-width: 480px) {
+    .notification-dropdown-footer {
+        padding: 10px;
+    }
+
+    .notification-dropdown-footer button {
+        padding: 8px;
+        font-size: 12px;
+    }
 }
 
 .notification-badge {
