@@ -57,6 +57,7 @@ class NotificationSystem {
             this.notifications = notifications;
             this.notificationCount = notifications.length;
             this.updateNotificationBadge();
+            this.renderNotificationDropdown(notifications);
         });
 
         // تأكيد إرسال الإشعار
@@ -144,10 +145,13 @@ class NotificationSystem {
                 body: notification.message,
                 icon: '/favicon.ico'
             });
-        } else {
-            // عرض إشعار مخصص في الواجهة
-            this.showCustomNotification(notification);
         }
+
+        // عرض إشعار مخصص في الواجهة
+        this.showCustomNotification(notification);
+
+        // تحديث القائمة المنبثقة
+        this.updateNotificationDropdown();
     }
 
     // عرض إشعار مخصص في الواجهة
@@ -206,6 +210,62 @@ class NotificationSystem {
         }
     }
 
+    // تحديث القائمة المنبثقة للإشعارات
+    updateNotificationDropdown() {
+        if (!this.socket || !this.isConnected) {
+            return;
+        }
+
+        this.socket.emit('get_unread_notifications', this.userId);
+    }
+
+    // عرض الإشعارات في القائمة المنبثقة
+    renderNotificationDropdown(notifications) {
+        const list = document.getElementById('notification-list');
+        if (!list) return;
+
+        if (notifications.length === 0) {
+            list.innerHTML = '<p style="text-align: center; color: #999; padding: 20px;">لا توجد إشعارات</p>';
+            return;
+        }
+
+        list.innerHTML = '';
+        notifications.forEach(notification => {
+            const item = document.createElement('div');
+            item.className = 'notification-dropdown-item unread';
+            item.innerHTML = `
+                <h4>${notification.title}</h4>
+                <p>${notification.message}</p>
+                <small>${new Date(notification.created_at).toLocaleString('ar')}</small>
+            `;
+            item.onclick = () => {
+                this.markAsRead(notification.id);
+                item.classList.remove('unread');
+            };
+            list.appendChild(item);
+        });
+    }
+
+    // تعليم جميع الإشعارات كمقروء
+    markAllNotificationsAsRead() {
+        if (!this.socket || !this.isConnected) {
+            console.warn('غير متصل بالسيرفر');
+            return;
+        }
+
+        // الحصول على جميع الإشعارات غير المقروءة من القائمة
+        const unreadItems = document.querySelectorAll('.notification-dropdown-item.unread');
+        unreadItems.forEach(item => {
+            const notificationId = item.dataset.id;
+            if (notificationId) {
+                this.markAsRead(parseInt(notificationId));
+            }
+        });
+
+        // تحديث القائمة
+        this.updateNotificationDropdown();
+    }
+
     // طلب إذن الإشعارات من المتصفح
     requestBrowserPermission() {
         if ('Notification' in window) {
@@ -224,4 +284,22 @@ window.notificationSystem = new NotificationSystem();
 // عند تحميل الصفحة، طلب إذن الإشعارات
 window.addEventListener('DOMContentLoaded', () => {
     window.notificationSystem.requestBrowserPermission();
+
+    // تفعيل زر الإشعارات
+    const notificationBtn = document.getElementById('notification-toggle-btn');
+    const notificationDropdown = document.getElementById('notification-dropdown');
+
+    if (notificationBtn && notificationDropdown) {
+        notificationBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            notificationDropdown.classList.toggle('show');
+        });
+
+        // إغلاق القائمة عند النقر خارجها
+        document.addEventListener('click', (e) => {
+            if (!notificationDropdown.contains(e.target) && !notificationBtn.contains(e.target)) {
+                notificationDropdown.classList.remove('show');
+            }
+        });
+    }
 });
