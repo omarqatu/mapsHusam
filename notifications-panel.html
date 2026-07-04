@@ -39,13 +39,46 @@
         }
 
         @media (max-width: 480px) {
+            body {
+                padding: 0;
+                margin: 0;
+            }
+
             .container {
                 padding: 15px;
-                margin: 5px;
+                margin: 0;
+                border-radius: 0;
+                min-height: 100vh;
+                box-shadow: none;
             }
 
             h1 {
                 font-size: 20px !important;
+                margin-bottom: 20px;
+            }
+        }
+
+        @media (max-height: 600px) and (orientation: landscape) {
+            body {
+                padding: 0;
+                margin: 0;
+            }
+
+            .container {
+                padding: 15px;
+                margin: 0;
+                border-radius: 0;
+                min-height: 100vh;
+                box-shadow: none;
+            }
+
+            h1 {
+                font-size: 18px !important;
+                margin-bottom: 15px;
+            }
+
+            .form-group {
+                margin-bottom: 15px;
             }
         }
 
@@ -235,6 +268,16 @@
                 </button>
             </div>
 
+            <!-- أزرار التحديد السريع -->
+            <div style="display: flex; gap: 10px; margin-bottom: 10px;">
+                <button type="button" onclick="selectAllUsers()" style="flex: 1; padding: 8px; background: #34a853; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 12px;">
+                    <i class="fas fa-check-double"></i> تحديد الكل
+                </button>
+                <button type="button" onclick="deselectAllUsers()" style="flex: 1; padding: 8px; background: #ea4335; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 12px;">
+                    <i class="fas fa-times"></i> إلغاء الكل
+                </button>
+            </div>
+
             <!-- قائمة المستخدمين -->
             <div id="users-list" style="max-height: 300px; overflow-y: auto; border: 2px solid #e0e0e0; border-radius: 8px; padding: 10px;">
                 <p style="text-align: center; color: #999;">جاري تحميل المستخدمين...</p>
@@ -364,7 +407,15 @@
 
         usersList.innerHTML = '';
 
-        users.forEach(user => {
+        // ترتيب المستخدمين: مشرفين أولاً، ثم عاديين، ثم مزودين
+        const roleOrder = { 'admin': 1, 'user': 2, 'provider': 3 };
+        const sortedUsers = [...users].sort((a, b) => {
+            const roleA = roleOrder[a.role] || 99;
+            const roleB = roleOrder[b.role] || 99;
+            return roleA - roleB;
+        });
+
+        sortedUsers.forEach(user => {
             const userDiv = document.createElement('div');
             userDiv.style.cssText = 'padding: 12px; margin-bottom: 8px; background: white; border: 1px solid #e0e0e0; border-radius: 8px; display: flex; align-items: center; gap: 12px; transition: all 0.2s;';
 
@@ -419,11 +470,11 @@
             usersList.appendChild(userDiv);
         });
 
-        console.log('تم عرض قائمة المستخدمين:', users.length, 'مستخدم');
+        console.log('تم عرض قائمة المستخدمين:', sortedUsers.length, 'مستخدم');
         updateSelectionSummary();
     }
 
-    // فلترة المستخدمين حسب الدور
+    // فلترة المستخدمين حسب الدور (toggle mode - يسمح بالاختيار من فئات متعددة)
     function filterUsers(filterType) {
         console.log('🔍 فلترة المستخدمين:', filterType);
 
@@ -439,7 +490,7 @@
             activeBtn.style.color = 'white';
         }
 
-        // فلترة العرض
+        // فلترة العرض (يخفي فقط للعرض، لا يحذف الاختيارات)
         const allCheckboxes = document.querySelectorAll('.user-checkbox');
         allCheckboxes.forEach(checkbox => {
             const userRole = checkbox.dataset.role || 'user';
@@ -451,6 +502,8 @@
                 userDiv.style.display = 'none';
             }
         });
+
+        console.log('📊 عدد المستخدمين المختارين:', getSelectedUsers().length);
     }
 
     // تحديث ملخص الاختيار
@@ -461,6 +514,26 @@
             countElement.textContent = selectedUsers.length;
         }
         console.log('📊 المستخدمون المختارون:', selectedUsers);
+    }
+
+    // تحديد جميع المستخدمين
+    function selectAllUsers() {
+        const allCheckboxes = document.querySelectorAll('.user-checkbox');
+        allCheckboxes.forEach(checkbox => {
+            checkbox.checked = true;
+        });
+        updateSelectionSummary();
+        console.log('✅ تم تحديد جميع المستخدمين');
+    }
+
+    // إلغاء تحديد جميع المستخدمين
+    function deselectAllUsers() {
+        const allCheckboxes = document.querySelectorAll('.user-checkbox');
+        allCheckboxes.forEach(checkbox => {
+            checkbox.checked = false;
+        });
+        updateSelectionSummary();
+        console.log('❌ تم إلغاء تحديد جميع المستخدمين');
     }
 
     // الحصول على المستخدمين المختارين
