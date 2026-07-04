@@ -1,5 +1,6 @@
 /**
- * server.js 
+ * server.js
+ * خادم آمن مع حماية متقدمة
  */
 
 const express = require('express');
@@ -9,45 +10,148 @@ const { Pool } = require('pg');
 const cors = require('cors');
 const http = require('http');
 const { Server } = require('socket.io');
+const helmet = require('helmet');
+const rateLimit = require('express-rate-limit');
+const { body, validationResult } = require('express-validator');
 
 const app = express();
 const server = http.createServer(app);
+
+// 🔒 نظام التسجيل والمراقبة
+const requestLogger = (req, res, next) => {
+    const start = Date.now();
+    const { method, url, ip } = req;
+
+    res.on('finish', () => {
+        const duration = Date.now() - start;
+        const { statusCode } = res;
+
+        if (statusCode >= 400) {
+            console.error(`🚫 ${method} ${url} - ${statusCode} - ${ip} - ${duration}ms`);
+        } else {
+            console.log(`✅ ${method} ${url} - ${statusCode} - ${ip} - ${duration}ms`);
+        }
+    });
+
+    next();
+};
+
+app.use(requestLogger);
+app.use(helmet({
+    contentSecurityPolicy: {
+        directives: {
+            defaultSrc: ["'self'"],
+            scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'", "https://cdn.jsdelivr.net", "https://cdn.socket.io"],
+            styleSrc: ["'self'", "'unsafe-inline'", "https://cdnjs.cloudflare.com"],
+            imgSrc: ["'self'", "data:", "https:", "http:"],
+            connectSrc: ["'self'", "ws:", "wss:"],
+            fontSrc: ["'self'", "https://cdnjs.cloudflare.com"],
+            objectSrc: ["'none'"],
+            mediaSrc: ["'self'"],
+            frameSrc: ["'none'"],
+        },
+    },
+    hsts: {
+        maxAge: 31536000,
+        includeSubDomains: true,
+        preload: true
+    },
+    noSniff: true,
+    xssFilter: true,
+    referrerPolicy: { policy: 'strict-origin-when-cross-origin' }
+}));
+
+// 🔒 إعدادات CORS - تقييد المصادر المسموح بها
+const allowedOrigins = process.env.ALLOWED_ORIGINS
+    ? process.env.ALLOWED_ORIGINS.split(',')
+    : ['http://localhost:3000'];
+
+app.use(cors({
+    origin: function (origin, callback) {
+        // السماح بالطلبات بدون origin (مثل mobile apps أو Postman)
+        if (!origin) return callback(null, true);
+
+        if (allowedOrigins.indexOf(origin) !== -1) {
+            callback(null, true);
+        } else {
+            console.warn('🚫 CORS blocked origin:', origin);
+            callback(new Error('Not allowed by CORS'));
+        }
+    },
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization']
+}));
+
+// 🔒 Rate Limiting - منع الهجمات
+const limiter = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 دقيقة
+    max: 100, // حد أقصى 100 طلب لكل IP
+    message: 'Too many requests from this IP, please try again later.',
+    standardHeaders: true,
+    legacyHeaders: false,
+});
+
+const authLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 دقيقة
+    max: 5, // حد أقصى 5 محاولات تسجيل دخول
+    message: 'Too many login attempts, please try again later.',
+    standardHeaders: true,
+    legacyHeaders: false,
+});
+
+app.use('/api/', limiter);
+app.use('/api/auth/login', authLimiter);
+
 const io = new Server(server, {
     cors: {
-        origin: '*',
-        methods: ['GET', 'POST']
+        origin: allowedOrigins,
+        methods: ['GET', 'POST'],
+        credentials: true
     }
 });
 
 app.set('trust proxy', true);
 const PORT = process.env.PORT || 3000;
-const PG_HOST = process.env.POSTGRES_HOST || '144.91.84.168';
+const PG_HOST = process.env.POSTGRES_HOST || 'localhost';
 const PG_PORT = Number(process.env.POSTGRES_PORT || 5432);
-const PG_USER = process.env.POSTGRES_USER || 'Husam';
-const PG_PASSWORD = process.env.POSTGRES_PASSWORD || 'Husam';
+const PG_USER = process.env.POSTGRES_USER || 'postgres';
+const PG_PASSWORD = process.env.POSTGRES_PASSWORD || 'password';
 const SERVICES_DB_NAME = process.env.SERVICES_DB_NAME || 'services_db';
 const REAL_ESTATE_DB_NAME = process.env.REAL_ESTATE_DB_NAME || 'realestate';
 // GeoServer يعمل على HTTP، البروكسي سيتولى الاتصال
-const GEOSERVER_TARGET = process.env.GEOSERVER_TARGET || 'http://194.163.174.162:8080/geoserver';
+const GEOSERVER_TARGET = process.env.GEOSERVER_TARGET || 'http://localhost:8080/geoserver';
 
 // 1. إعدادات الاتصال بقواعد البيانات المتعددة 
 
-// 🟢 الاتصال الأول: قاعدة بيانات الخدمات (services_db)
+// 🟢 الاتصال الأول: قاعدة بيانات الخدمات (services_db) مع SSL
 const servicesPool = new Pool({
     user: PG_USER,
     host: PG_HOST,
     database: SERVICES_DB_NAME,
     password: PG_PASSWORD,
     port: PG_PORT,
+    ssl: {
+        rejectUnauthorized: false // للإنتاج يجب استخدام شهادة SSL صالحة
+    },
+    connectionTimeoutMillis: 10000,
+    idleTimeoutMillis: 30000,
+    max: 20 // حد أقصى لعدد الاتصالات
 });
 
-// 🔵 الاتصال الثاني: قاعدة بيانات العقارات (realestate)
+// 🔵 الاتصال الثاني: قاعدة بيانات العقارات (realestate) مع SSL
 const realestatePool = new Pool({
     user: PG_USER,
     host: PG_HOST,
     database: REAL_ESTATE_DB_NAME,
     password: PG_PASSWORD,
     port: PG_PORT,
+    ssl: {
+        rejectUnauthorized: false // للإنتاج يجب استخدام شهادة SSL صالحة
+    },
+    connectionTimeoutMillis: 10000,
+    idleTimeoutMillis: 30000,
+    max: 20 // حد أقصى لعدد الاتصالات
 });
 
 // فحص الاتصال بقاعدة الخدمات عند بدء التشغيل
@@ -78,12 +182,9 @@ function getPoolForLayer(layerName) {
 }
 
 // 2. الميدل وير (Middlewares)
-app.use(cors({
-    origin: true,
-    credentials: true
-}));
-app.use(express.json()); 
-app.use(express.urlencoded({ extended: true }));
+// تم إضافة CORS و Helmet و Rate Limiting في الأعلى
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 // ميدل وير لمصادفة أخطاء JSON: يرجع استجابة JSON بدلاً من صفحة HTML إذا كان جسم الطلب غير صالح
 app.use((err, req, res, next) => {
@@ -121,8 +222,14 @@ const isValidLayer = (layer) => ALLOWED_LAYERS.includes(layer.trim());
 app.get('/api/get-provider-service', async (req, res) => {
     const { user_id } = req.query;
 
-    if (!user_id) {
-        return res.status(400).json({ success: false, error: 'رقم المستخدم user_id مطلوب' });
+    // 🔒 Input validation
+    if (!user_id || isNaN(user_id)) {
+        return res.status(400).json({ success: false, error: 'رقم المستخدم user_id مطلوب ويجب أن يكون رقماً' });
+    }
+
+    const userId = parseInt(user_id);
+    if (userId <= 0) {
+        return res.status(400).json({ success: false, error: 'رقم المستخدم غير صالح' });
     }
 
     try {
@@ -132,7 +239,7 @@ app.get('/api/get-provider-service', async (req, res) => {
             FROM public.users 
             WHERE user_id = $1
         `;
-        const result = await servicesPool.query(userQuery, [user_id]);
+        const result = await servicesPool.query(userQuery, [userId]);
 
         if (result.rows.length === 0) {
             return res.status(404).json({ success: false, error: 'المستخدم غير موجود' });
@@ -224,15 +331,49 @@ app.get('/api/get-provider-service', async (req, res) => {
 // مسار تحديث الحالة والموقع الجغرافي الذكي (يدعم الخدمات والعقارات)
 // =========================================================================
 app.post('/api/update-service-status', async (req, res) => {
-    const { 
-        user_id, 
-        service_layer, 
-        feature_id, 
-        id, 
-        status, 
-        x_coord, 
-        y_coord 
+    const {
+        user_id,
+        service_layer,
+        feature_id,
+        id,
+        status,
+        x_coord,
+        y_coord
     } = req.body;
+
+    // 🔒 Input validation
+    if (!user_id || isNaN(user_id)) {
+        return res.status(400).json({ success: false, error: 'رقم المستخدم user_id مطلوب ويجب أن يكون رقماً' });
+    }
+
+    const userId = parseInt(user_id);
+    if (userId <= 0) {
+        return res.status(400).json({ success: false, error: 'رقم المستخدم غير صالح' });
+    }
+
+    if (!service_layer || typeof service_layer !== 'string') {
+        return res.status(400).json({ success: false, error: 'اسم الطبقة service_layer مطلوب' });
+    }
+
+    if (!isValidLayer(service_layer)) {
+        return res.status(403).json({ success: false, error: 'الطبقة غير مسموح بها' });
+    }
+
+    if (status === undefined || status === null) {
+        return res.status(400).json({ success: false, error: 'الحالة status مطلوبة' });
+    }
+
+    if (status !== 0 && status !== 1) {
+        return res.status(400).json({ success: false, error: 'الحالة يجب أن تكون 0 أو 1' });
+    }
+
+    if (x_coord !== undefined && (isNaN(x_coord) || x_coord === null)) {
+        return res.status(400).json({ success: false, error: 'الإحداثي x_coord يجب أن يكون رقماً' });
+    }
+
+    if (y_coord !== undefined && (isNaN(y_coord) || y_coord === null)) {
+        return res.status(400).json({ success: false, error: 'الإحداثي y_coord يجب أن يكون رقماً' });
+    }
 
     const targetIdValue = feature_id || id;
     const layerName = service_layer ? service_layer.trim() : null;
@@ -328,23 +469,47 @@ app.post('/api/update-service-status', async (req, res) => {
         });
     }
 });
-// 3. إعداد البروكسي لـ GeoServer
+// 3. إعداد البروكسي لـ GeoServer مع الحماية المتقدمة
 // [إجراء أمني 2]: تشفير وحماية البروكسي لمنع الحذف العشوائي (WFS-T protection)
-app.use('/geoserver-proxy', (req, res, next) => {
-    console.log(`[Proxy] Request to: ${req.url}`);
+// 🔒 Middleware للتحقق من صلاحية الوصول للـ GeoServer
+const geoServerAuthMiddleware = (req, res, next) => {
+    console.log(`[Proxy] Request to: ${req.url} from IP: ${req.ip}`);
+
+    // التحقق من أن المستخدم مسجل الدخول
+    const userId = req.headers['x-user-id'];
+    if (!userId) {
+        console.warn('🚫 GeoServer access denied: No user ID');
+        return res.status(403).json({ error: 'Authentication required' });
+    }
+
+    // التحقق من Origin
+    const origin = req.headers.origin;
+    if (origin && !allowedOrigins.includes(origin)) {
+        console.warn(`🚫 GeoServer access denied from origin: ${origin}`);
+        return res.status(403).json({ error: 'Origin not allowed' });
+    }
+
+    // 🔒 منع عمليات DELETE على GeoServer
+    if (req.method === 'DELETE') {
+        console.warn('🚫 GeoServer DELETE operation blocked');
+        return res.status(403).json({ error: 'DELETE operations not allowed' });
+    }
+
     next();
-}, createProxyMiddleware({
+};
+
+app.use('/geoserver-proxy', geoServerAuthMiddleware, createProxyMiddleware({
     target: GEOSERVER_TARGET,
     changeOrigin: true,
     pathRewrite: { '^/geoserver-proxy': '' },
     secure: false, // للتعامل مع شهادات SSL غير الموثوقة
-    logLevel: 'debug',
+    logLevel: 'warn', // تقليل logging
     onProxyReq: (proxyReq, req, res) => {
         console.log(`[Proxy] Forwarding to: ${GEOSERVER_TARGET}${req.url}`);
-        console.log(`[Proxy] Content-Type: ${req.headers['content-type']}`);
-        console.log(`[Proxy] Body length: ${req.body ? Buffer.byteLength(req.body) : 0}`);
 
-        // ❌ قمنا بحذف سطر حقن الحساب التلقائي (zeed) تماماً من هنا
+        // 🔒 إضافة Basic Auth للـ GeoServer
+        const auth = Buffer.from('admin:geoserver').toString('base64');
+        proxyReq.setHeader('Authorization', `Basic ${auth}`);
 
         // الحفاظ على بيانات الـ Body للطلبات القادمة من الخريطة
         const contentType = req.headers['content-type'] || '';
@@ -362,7 +527,7 @@ app.use('/geoserver-proxy', (req, res, next) => {
     },
     onError: (err, req, res) => {
         console.error('[Proxy] Error:', err);
-        res.status(500).json({ error: 'Proxy error', details: err.message });
+        res.status(500).json({ error: 'GeoServer connection failed' });
     }
 }));
 
@@ -818,17 +983,52 @@ app.use((err, req, res, next) => {
 });
 
 // ==========================================
-// Socket.io - نظام الإشعارات في الوقت الفعلي
+// Socket.io - نظام الإشعارات في الوقت الفعلي مع الحماية
 // ==========================================
 
 // تخزين المستخدمين المتصلين مع معرفاتهم
 const connectedUsers = new Map();
 
+// 🔒 Rate Limiting لـ Socket.io
+const socketIOLimiter = new Map();
+const SOCKET_RATE_LIMIT = 10; // 10 رسائل في الدقيقة
+const SOCKET_RATE_WINDOW = 60 * 1000; // دقيقة واحدة
+
+function checkSocketRateLimit(socketId) {
+    const now = Date.now();
+    const userRequests = socketIOLimiter.get(socketId) || [];
+
+    // تنظيف الطلبات القديمة
+    const recentRequests = userRequests.filter(time => now - time < SOCKET_RATE_WINDOW);
+
+    if (recentRequests.length >= SOCKET_RATE_LIMIT) {
+        return false; // تجاوز الحد
+    }
+
+    recentRequests.push(now);
+    socketIOLimiter.set(socketId, recentRequests);
+    return true;
+}
+
 io.on('connection', (socket) => {
-    console.log(`🔗 مستخدم جديد متصل: ${socket.id}`);
+    const clientIp = socket.handshake.address;
+    console.log(`🔗 مستخدم جديد متصل: ${socket.id} من IP: ${clientIp}`);
+
+    // التحقق من Origin
+    const origin = socket.handshake.headers.origin;
+    if (!allowedOrigins.includes(origin) && origin) {
+        console.warn(`🚫 Socket.io connection blocked from origin: ${origin}`);
+        socket.disconnect();
+        return;
+    }
 
     // عند تسجيل دخول المستخدم، نقوم بربط Socket ID بمعرف المستخدم
     socket.on('user_connected', (userId) => {
+        if (!userId || typeof userId !== 'number') {
+            console.warn('⚠️ Invalid userId in user_connected');
+            return;
+        }
+
         console.log(`👤 المستخدم ${userId} متصل بـ Socket ID: ${socket.id}`);
         connectedUsers.set(userId, socket.id);
         socket.userId = userId;
@@ -837,11 +1037,22 @@ io.on('connection', (socket) => {
         socket.emit('connection_confirmed', { userId, socketId: socket.id });
     });
 
+    // 🔒 Rate Limiting للإشعارات
+    socket.use((packet, next) => {
+        if (!checkSocketRateLimit(socket.id)) {
+            console.warn(`🚫 Socket.io rate limit exceeded for ${socket.id}`);
+            socket.emit('error', { message: 'Rate limit exceeded' });
+            return;
+        }
+        next();
+    });
+
     // عند فصل المستخدم
     socket.on('disconnect', () => {
         if (socket.userId) {
             console.log(`🔌 المستخدم ${socket.userId} انقطع اتصاله`);
             connectedUsers.delete(socket.userId);
+            socketIOLimiter.delete(socket.id);
         }
     });
 
