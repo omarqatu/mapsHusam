@@ -1043,12 +1043,14 @@ io.on('connection', (socket) => {
     // تعليم إشعار كمقروء
     socket.on('mark_notification_read', async (notificationId) => {
         try {
+            console.log('📖 تعليم الإشعار كمقروء:', notificationId);
             const query = `
                 UPDATE "public"."notifications"
-                SET is_read = true
+                SET is_read = true, read_at = NOW()
                 WHERE id = $1
             `;
             await servicesPool.query(query, [notificationId]);
+            console.log('✅ تم تعليم الإشعار كمقروء وتسجيل وقت القراءة');
             socket.emit('notification_marked_read', { success: true });
         } catch (err) {
             console.error('❌ خطأ في تعليم الإشعار كمقروء:', err);
