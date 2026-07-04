@@ -104,3 +104,5 @@ GeoServer connection settings (URL, workspace, layer names) are defined in `js/l
 ## License
 
 ISC
+
+npm install socket.io
