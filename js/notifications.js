@@ -292,6 +292,15 @@ window.addEventListener('DOMContentLoaded', () => {
     if (notificationBtn && notificationDropdown) {
         notificationBtn.addEventListener('click', (e) => {
             e.stopPropagation();
+
+            // طلب الإشعارات من السيرفر عند فتح القائمة
+            if (window.notificationSystem.socket && window.notificationSystem.userId) {
+                console.log('🔄 طلب الإشعارات من السيرفر...');
+                window.notificationSystem.socket.emit('get_unread_notifications', {
+                    user_id: window.notificationSystem.userId
+                });
+            }
+
             notificationDropdown.classList.toggle('show');
         });
 
