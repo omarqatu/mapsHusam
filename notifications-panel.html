@@ -315,7 +315,7 @@
             userDiv.innerHTML = `
                 <input type="checkbox" class="user-checkbox" value="${user.id}" id="user-${user.id}" onchange="console.log('Selected users:', getSelectedUsers())">
                 <label for="user-${user.id}" style="flex: 1; cursor: pointer;">
-                    <strong>${user.name || user.username || 'بدون اسم'}</strong>
+                    <strong>${user.name || 'بدون اسم'}</strong>
                     <small style="display: block; color: #666;">ID: ${user.id} | ${user.role || 'user'}</small>
                 </label>
             `;
