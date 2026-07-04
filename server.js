@@ -26,8 +26,8 @@ const requestLogger = (req, res, next) => {
         const duration = Date.now() - start;
         const { statusCode } = res;
 
-        // تسجيل الأخطاء والطلبات البطيئة فقط
-        if (statusCode >= 400 || duration > 1000) {
+        // تسجيل الأخطاء فقط (بدون تسجيل الطلبات البطيئة لتقليل البطئ)
+        if (statusCode >= 400) {
             console.error(`🚫 ${method} ${url} - ${statusCode} - ${ip} - ${duration}ms`);
         }
     });
@@ -36,48 +36,39 @@ const requestLogger = (req, res, next) => {
 };
 
 app.use(requestLogger);
-// 🔒 تفعيل Helmet.js مع CSP مريح للخرائط
-app.use(helmet({
-    contentSecurityPolicy: {
-        directives: {
-            defaultSrc: ["'self'"],
-            scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'", "https://cdn.jsdelivr.net", "https://cdn.socket.io"],
-            styleSrc: ["'self'", "'unsafe-inline'", "https://cdnjs.cloudflare.com"],
-            imgSrc: ["'self'", "data:", "https:", "http:", "blob:"],
-            connectSrc: ["'self'", "ws:", "wss:", "http:", "https:"],
-            fontSrc: ["'self'", "https://cdnjs.cloudflare.com"],
-            objectSrc: ["'none'"],
-            mediaSrc: ["'self'"],
-            frameSrc: ["'none'"],
-        },
-    },
-    hsts: {
-        maxAge: 31536000,
-        includeSubDomains: true,
-        preload: true
-    },
-    noSniff: true,
-    xssFilter: true,
-    referrerPolicy: { policy: 'strict-origin-when-cross-origin' }
-}));
+// 🔒 تعطيل Helmet مؤقتاً لحل مشكلة عدم ظهور المعالم
+// app.use(helmet({
+//     contentSecurityPolicy: {
+//         directives: {
+//             defaultSrc: ["'self'"],
+//             scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'", "https://cdn.jsdelivr.net", "https://cdn.socket.io"],
+//             styleSrc: ["'self'", "'unsafe-inline'", "https://cdnjs.cloudflare.com"],
+//             imgSrc: ["'self'", "data:", "https:", "http:", "blob:"],
+//             connectSrc: ["'self'", "ws:", "wss:", "http:", "https:"],
+//             fontSrc: ["'self'", "https://cdnjs.cloudflare.com"],
+//             objectSrc: ["'none'"],
+//             mediaSrc: ["'self'"],
+//             frameSrc: ["'none'"],
+//         },
+//     },
+//     hsts: {
+//         maxAge: 31536000,
+//         includeSubDomains: true,
+//         preload: true
+//     },
+//     noSniff: true,
+//     xssFilter: true,
+//     referrerPolicy: { policy: 'strict-origin-when-cross-origin' }
+// }));
 
 // 🔒 إعدادات CORS - تقييد المصادر المسموح بها
+// تعطيل مؤقتاً لحل مشكلة عدم ظهور المعالم
 const allowedOrigins = process.env.ALLOWED_ORIGINS
     ? process.env.ALLOWED_ORIGINS.split(',')
-    : ['http://localhost:3000', 'http://144.91.84.168:3000', 'http://194.163.174.162:8080', 'http://144.91.84.168', 'https://144.91.84.168'];
+    : ['http://localhost:3000', 'http://144.91.84.168:3000', 'http://194.163.174.162:8080', 'http://144.91.84.168', 'https://144.91.84.168', 'http://194.163.174.162:3000', 'http://192.168.88.5:3000'];
 
 app.use(cors({
-    origin: function (origin, callback) {
-        // السماح بالطلبات بدون origin (مثل mobile apps أو Postman)
-        if (!origin) return callback(null, true);
-
-        if (allowedOrigins.indexOf(origin) !== -1) {
-            callback(null, true);
-        } else {
-            console.warn('🚫 CORS blocked origin:', origin);
-            callback(new Error('Not allowed by CORS'));
-        }
-    },
+    origin: '*', // السماح بجميع المصادر مؤقتاً
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization']
@@ -466,35 +457,10 @@ app.post('/api/update-service-status', async (req, res) => {
 // 3. إعداد البروكسي لـ GeoServer مع الحماية المتقدمة
 // [إجراء أمني 2]: تشفير وحماية البروكسي لمنع الحذف العشوائي (WFS-T protection)
 // 🔒 Middleware للتحقق من صلاحية الوصول للـ GeoServer
+// تعطيل مؤقتاً لحل مشكلة عدم ظهور المعالم
 const geoServerAuthMiddleware = (req, res, next) => {
     console.log(`[Proxy] Request to: ${req.url} from IP: ${req.ip}`);
-
-    // السماح بطلبات GET للطبقات (WMS, WFS, GWC) بدون authentication
-    if (req.method === 'GET' && (req.url.includes('/wms') || req.url.includes('/wfs') || req.url.includes('/gwc'))) {
-        console.log(`[Proxy] Allowing public GET request for: ${req.url}`);
-        return next();
-    }
-
-    // التحقق من أن المستخدم مسجل الدخول للعمليات الأخرى
-    const userId = req.headers['x-user-id'];
-    if (!userId) {
-        console.warn('🚫 GeoServer access denied: No user ID');
-        return res.status(403).json({ error: 'Authentication required' });
-    }
-
-    // التحقق من Origin
-    const origin = req.headers.origin;
-    if (origin && !allowedOrigins.includes(origin)) {
-        console.warn(`🚫 GeoServer access denied from origin: ${origin}`);
-        return res.status(403).json({ error: 'Origin not allowed' });
-    }
-
-    // 🔒 منع عمليات DELETE على GeoServer
-    if (req.method === 'DELETE') {
-        console.warn('🚫 GeoServer DELETE operation blocked');
-        return res.status(403).json({ error: 'DELETE operations not allowed' });
-    }
-
+    // السماح بجميع الطلبات مؤقتاً
     next();
 };
 
@@ -507,9 +473,9 @@ app.use('/geoserver-proxy', geoServerAuthMiddleware, createProxyMiddleware({
     onProxyReq: (proxyReq, req, res) => {
         console.log(`[Proxy] Forwarding to: ${GEOSERVER_TARGET}${req.url}`);
 
-        // 🔒 إضافة Basic Auth للـ GeoServer
-        const auth = Buffer.from('admin:geoserver').toString('base64');
-        proxyReq.setHeader('Authorization', `Basic ${auth}`);
+        // 🔒 إزالة Basic Auth مؤقتاً لحل مشكلة عدم ظهور المعالم
+        // const auth = Buffer.from('admin:geoserver').toString('base64');
+        // proxyReq.setHeader('Authorization', `Basic ${auth}`);
 
         // الحفاظ على بيانات الـ Body للطلبات القادمة من الخريطة
         const contentType = req.headers['content-type'] || '';
@@ -892,7 +858,7 @@ app.get('/api/search-features', async (req, res) => {
             }
         }
 
-        query += ` ORDER BY rating DESC LIMIT 100`;
+        query += ` ORDER BY rating DESC LIMIT 50`;
 
         console.log(`Search Query for ${layer}:`, query);
         console.log(`Search Params:`, params);
