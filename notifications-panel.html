@@ -6,6 +6,10 @@
     <title>لوحة إرسال الإشعارات</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
+        * {
+            box-sizing: border-box;
+        }
+
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -15,12 +19,34 @@
         }
 
         .container {
-            max-width: 600px;
+            max-width: 800px;
             margin: 0 auto;
             background: white;
             padding: 30px;
             border-radius: 15px;
             box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 20px;
+                margin: 10px;
+            }
+
+            body {
+                padding: 10px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .container {
+                padding: 15px;
+                margin: 5px;
+            }
+
+            h1 {
+                font-size: 20px !important;
+            }
         }
 
         h1 {
@@ -48,14 +74,19 @@
             border: 2px solid #e0e0e0;
             border-radius: 8px;
             font-size: 14px;
-            transition: all 0.3s;
-            box-sizing: border-box;
+            transition: border-color 0.3s;
         }
 
         input:focus, select:focus, textarea:focus {
-            border-color: #667eea;
             outline: none;
-            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+            border-color: #667eea;
+        }
+
+        @media (max-width: 480px) {
+            input, select, textarea {
+                padding: 10px;
+                font-size: 13px;
+            }
         }
 
         textarea {
@@ -187,9 +218,33 @@
 
         <div class="form-group" id="selected-users-group" style="display: none;">
             <label>اختر المستخدمين</label>
-            <div id="users-list" style="max-height: 200px; overflow-y: auto; border: 2px solid #e0e0e0; border-radius: 8px; padding: 10px;">
+
+            <!-- فلاتر المستخدمين -->
+            <div style="display: flex; gap: 10px; margin-bottom: 10px; flex-wrap: wrap;">
+                <button type="button" onclick="filterUsers('all')" class="filter-btn active" data-filter="all" style="flex: 1; min-width: 80px; padding: 8px; background: #667eea; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 12px;">
+                    الكل
+                </button>
+                <button type="button" onclick="filterUsers('user')" class="filter-btn" data-filter="user" style="flex: 1; min-width: 80px; padding: 8px; background: #f0f0f0; color: #333; border: none; border-radius: 6px; cursor: pointer; font-size: 12px;">
+                    عاديين
+                </button>
+                <button type="button" onclick="filterUsers('provider')" class="filter-btn" data-filter="provider" style="flex: 1; min-width: 80px; padding: 8px; background: #f0f0f0; color: #333; border: none; border-radius: 6px; cursor: pointer; font-size: 12px;">
+                    مزودين
+                </button>
+                <button type="button" onclick="filterUsers('admin')" class="filter-btn" data-filter="admin" style="flex: 1; min-width: 80px; padding: 8px; background: #f0f0f0; color: #333; border: none; border-radius: 6px; cursor: pointer; font-size: 12px;">
+                    مشرفين
+                </button>
+            </div>
+
+            <!-- قائمة المستخدمين -->
+            <div id="users-list" style="max-height: 300px; overflow-y: auto; border: 2px solid #e0e0e0; border-radius: 8px; padding: 10px;">
                 <p style="text-align: center; color: #999;">جاري تحميل المستخدمين...</p>
             </div>
+
+            <!-- ملخص الاختيار -->
+            <div id="selection-summary" style="margin-top: 10px; padding: 10px; background: #f8f9fa; border-radius: 6px; font-size: 13px; color: #666;">
+                تم اختيار <strong id="selected-count">0</strong> مستخدم
+            </div>
+
             <button type="button" onclick="loadUsers()" style="margin-top: 10px; background: #1a73e8;">
                 <i class="fas fa-sync-alt"></i> تحديث قائمة المستخدمين
             </button>
@@ -311,18 +366,101 @@
 
         users.forEach(user => {
             const userDiv = document.createElement('div');
-            userDiv.style.cssText = 'padding: 8px; margin-bottom: 5px; background: #f8f9fa; border-radius: 4px; display: flex; align-items: center; gap: 10px;';
+            userDiv.style.cssText = 'padding: 12px; margin-bottom: 8px; background: white; border: 1px solid #e0e0e0; border-radius: 8px; display: flex; align-items: center; gap: 12px; transition: all 0.2s;';
+
+            // تحديد لون الدور
+            let roleColor = '#666';
+            let roleLabel = 'مستخدم';
+            let roleIcon = 'user';
+
+            if (user.role === 'admin') {
+                roleColor = '#ea4335';
+                roleLabel = 'مشرف';
+                roleIcon = 'shield-alt';
+            } else if (user.role === 'provider') {
+                roleColor = '#fbbc04';
+                roleLabel = 'مزود خدمة';
+                roleIcon = 'briefcase';
+            } else {
+                roleColor = '#34a853';
+                roleLabel = 'مستخدم عادي';
+                roleIcon = 'user';
+            }
+
             userDiv.innerHTML = `
-                <input type="checkbox" class="user-checkbox" value="${user.id}" id="user-${user.id}" onchange="console.log('Selected users:', getSelectedUsers())">
-                <label for="user-${user.id}" style="flex: 1; cursor: pointer;">
-                    <strong>${user.name || 'بدون اسم'}</strong>
-                    <small style="display: block; color: #666;">ID: ${user.id} | ${user.role || 'user'}</small>
+                <input type="checkbox" class="user-checkbox" value="${user.id}" id="user-${user.id}" data-role="${user.role || 'user'}" onchange="updateSelectionSummary()">
+                <label for="user-${user.id}" style="flex: 1; cursor: pointer; display: flex; align-items: center; gap: 10px;">
+                    <div style="flex: 1;">
+                        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 4px;">
+                            <strong style="color: #333; font-size: 14px;">${user.name || 'بدون اسم'}</strong>
+                            <span style="background: ${roleColor}; color: white; padding: 2px 8px; border-radius: 10px; font-size: 10px; font-weight: bold;">
+                                <i class="fas fa-${roleIcon}"></i> ${roleLabel}
+                            </span>
+                        </div>
+                        <div style="color: #999; font-size: 12px;">
+                            <i class="fas fa-id-card"></i> ID: ${user.id}
+                            ${user.email ? `<span style="margin-right: 10px;"><i class="fas fa-envelope"></i> ${user.email}</span>` : ''}
+                        </div>
+                    </div>
                 </label>
             `;
+
+            // إضافة تأثير عند التحويم
+            userDiv.addEventListener('mouseenter', () => {
+                userDiv.style.borderColor = '#667eea';
+                userDiv.style.boxShadow = '0 2px 8px rgba(102, 126, 234, 0.1)';
+            });
+
+            userDiv.addEventListener('mouseleave', () => {
+                userDiv.style.borderColor = '#e0e0e0';
+                userDiv.style.boxShadow = 'none';
+            });
+
             usersList.appendChild(userDiv);
         });
 
         console.log('تم عرض قائمة المستخدمين:', users.length, 'مستخدم');
+        updateSelectionSummary();
+    }
+
+    // فلترة المستخدمين حسب الدور
+    function filterUsers(filterType) {
+        console.log('🔍 فلترة المستخدمين:', filterType);
+
+        // تحديث أزرار الفلتر
+        document.querySelectorAll('.filter-btn').forEach(btn => {
+            btn.style.background = '#f0f0f0';
+            btn.style.color = '#333';
+        });
+
+        const activeBtn = document.querySelector(`.filter-btn[data-filter="${filterType}"]`);
+        if (activeBtn) {
+            activeBtn.style.background = '#667eea';
+            activeBtn.style.color = 'white';
+        }
+
+        // فلترة العرض
+        const allCheckboxes = document.querySelectorAll('.user-checkbox');
+        allCheckboxes.forEach(checkbox => {
+            const userRole = checkbox.dataset.role || 'user';
+            const userDiv = checkbox.closest('div[style*="padding"]');
+
+            if (filterType === 'all' || userRole === filterType) {
+                userDiv.style.display = 'flex';
+            } else {
+                userDiv.style.display = 'none';
+            }
+        });
+    }
+
+    // تحديث ملخص الاختيار
+    function updateSelectionSummary() {
+        const selectedUsers = getSelectedUsers();
+        const countElement = document.getElementById('selected-count');
+        if (countElement) {
+            countElement.textContent = selectedUsers.length;
+        }
+        console.log('📊 المستخدمون المختارون:', selectedUsers);
     }
 
     // الحصول على المستخدمين المختارين
