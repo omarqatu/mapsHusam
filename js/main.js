@@ -227,6 +227,19 @@ document.addEventListener('DOMContentLoaded', () => {
     });
     window.map = map;
 
+    const refreshMapSize = () => {
+        setTimeout(() => {
+            if (map && typeof map.updateSize === 'function') {
+                map.updateSize();
+            }
+        }, 120);
+    };
+
+    window.addEventListener('resize', refreshMapSize);
+    window.addEventListener('orientationchange', refreshMapSize);
+    window.addEventListener('load', refreshMapSize);
+    refreshMapSize();
+
     // متغيرات تتبع الموقع الحي والمستمر
     window.userLocationWatchId = null;
     let lastUpdateTime = 0;
@@ -350,6 +363,16 @@ document.addEventListener('DOMContentLoaded', () => {
 
             splashOverlay.appendChild(dialogBox);
             document.body.appendChild(splashOverlay);
+
+            const shouldAutoDismissSplash = window.innerWidth <= 768 || /Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+            if (shouldAutoDismissSplash) {
+                setTimeout(() => {
+                    if (document.body.contains(splashOverlay)) {
+                        document.body.removeChild(splashOverlay);
+                        window.refreshMapLayout();
+                    }
+                }, 1800);
+            }
 
             dialogBox.querySelectorAll('.splash-opt-btn').forEach(btn => {
                 btn.addEventListener('click', function() {
