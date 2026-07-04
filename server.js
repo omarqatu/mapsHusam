@@ -17,7 +17,7 @@ const { body, validationResult } = require('express-validator');
 const app = express();
 const server = http.createServer(app);
 
-// 🔒 نظام التسجيل والمراقبة
+// 🔒 نظام التسجيل والمراقبة (مخفف لتحسين الأداء)
 const requestLogger = (req, res, next) => {
     const start = Date.now();
     const { method, url, ip } = req;
@@ -26,10 +26,9 @@ const requestLogger = (req, res, next) => {
         const duration = Date.now() - start;
         const { statusCode } = res;
 
-        if (statusCode >= 400) {
+        // تسجيل الأخطاء والطلبات البطيئة فقط
+        if (statusCode >= 400 || duration > 1000) {
             console.error(`🚫 ${method} ${url} - ${statusCode} - ${ip} - ${duration}ms`);
-        } else {
-            console.log(`✅ ${method} ${url} - ${statusCode} - ${ip} - ${duration}ms`);
         }
     });
 
@@ -37,49 +36,57 @@ const requestLogger = (req, res, next) => {
 };
 
 app.use(requestLogger);
-// 🔒 تعطيل Helmet مؤقتاً لاستكشاف مشكلة الخريطة
-// app.use(helmet({
-//     contentSecurityPolicy: {
-//         directives: {
-//             defaultSrc: ["'self'"],
-//             scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'", "https://cdn.jsdelivr.net", "https://cdn.socket.io"],
-//             styleSrc: ["'self'", "'unsafe-inline'", "https://cdnjs.cloudflare.com"],
-//             imgSrc: ["'self'", "data:", "https:", "http:", "blob:"],
-//             connectSrc: ["'self'", "ws:", "wss:", "http:", "https:"],
-//             fontSrc: ["'self'", "https://cdnjs.cloudflare.com"],
-//             objectSrc: ["'none'"],
-//             mediaSrc: ["'self'"],
-//             frameSrc: ["'none'"],
-//         },
-//     },
-//     hsts: {
-//         maxAge: 31536000,
-//         includeSubDomains: true,
-//         preload: true
-//     },
-//     noSniff: true,
-//     xssFilter: true,
-//     referrerPolicy: { policy: 'strict-origin-when-cross-origin' }
-// }));
+// 🔒 تفعيل Helmet.js مع CSP مريح للخرائط
+app.use(helmet({
+    contentSecurityPolicy: {
+        directives: {
+            defaultSrc: ["'self'"],
+            scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'", "https://cdn.jsdelivr.net", "https://cdn.socket.io"],
+            styleSrc: ["'self'", "'unsafe-inline'", "https://cdnjs.cloudflare.com"],
+            imgSrc: ["'self'", "data:", "https:", "http:", "blob:"],
+            connectSrc: ["'self'", "ws:", "wss:", "http:", "https:"],
+            fontSrc: ["'self'", "https://cdnjs.cloudflare.com"],
+            objectSrc: ["'none'"],
+            mediaSrc: ["'self'"],
+            frameSrc: ["'none'"],
+        },
+    },
+    hsts: {
+        maxAge: 31536000,
+        includeSubDomains: true,
+        preload: true
+    },
+    noSniff: true,
+    xssFilter: true,
+    referrerPolicy: { policy: 'strict-origin-when-cross-origin' }
+}));
 
 // 🔒 إعدادات CORS - تقييد المصادر المسموح بها
-// تعطيل مؤقت لاستكشاف مشكلة الخريطة
 const allowedOrigins = process.env.ALLOWED_ORIGINS
     ? process.env.ALLOWED_ORIGINS.split(',')
-    : ['http://localhost:3000', 'http://144.91.84.168:3000', 'http://194.163.174.162:8080'];
+    : ['http://localhost:3000', 'http://144.91.84.168:3000', 'http://194.163.174.162:8080', 'http://144.91.84.168', 'https://144.91.84.168'];
 
 app.use(cors({
-    origin: '*', // السماح بجميع المصادر مؤقتاً
+    origin: function (origin, callback) {
+        // السماح بالطلبات بدون origin (مثل mobile apps أو Postman)
+        if (!origin) return callback(null, true);
+
+        if (allowedOrigins.indexOf(origin) !== -1) {
+            callback(null, true);
+        } else {
+            console.warn('🚫 CORS blocked origin:', origin);
+            callback(new Error('Not allowed by CORS'));
+        }
+    },
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization']
 }));
 
-// 🔒 Rate Limiting - منع الهجمات
-// تعطيل مؤقت لاستكشاف مشكلة الخريطة
+// 🔒 Rate Limiting - منع الهجمات (مخفف لتحسين الأداء)
 const limiter = rateLimit({
     windowMs: 15 * 60 * 1000, // 15 دقيقة
-    max: 10000, // زيادة الحد مؤقتاً
+    max: 500, // حد معقول
     message: 'Too many requests from this IP, please try again later.',
     standardHeaders: true,
     legacyHeaders: false,
@@ -87,14 +94,14 @@ const limiter = rateLimit({
 
 const authLimiter = rateLimit({
     windowMs: 15 * 60 * 1000, // 15 دقيقة
-    max: 1000, // زيادة الحد مؤقتاً
+    max: 20, // حد معقول
     message: 'Too many login attempts, please try again later.',
     standardHeaders: true,
     legacyHeaders: false,
 });
 
-// app.use('/api/', limiter);
-// app.use('/api/auth/login', authLimiter);
+app.use('/api/', limiter);
+app.use('/api/auth/login', authLimiter);
 
 const io = new Server(server, {
     cors: {
@@ -117,36 +124,28 @@ const GEOSERVER_TARGET = process.env.GEOSERVER_TARGET || 'http://194.163.174.162
 
 // 1. إعدادات الاتصال بقواعد البيانات المتعددة 
 
-// 🟢 الاتصال الأول: قاعدة بيانات الخدمات (services_db)
-// تعطيل SSL مؤقتاً لاستكشاف مشكلة البحث
+// 🟢 الاتصال الأول: قاعدة بيانات الخدمات (services_db) - بدون SSL لتحسين الأداء
 const servicesPool = new Pool({
     user: PG_USER,
     host: PG_HOST,
     database: SERVICES_DB_NAME,
     password: PG_PASSWORD,
     port: PG_PORT,
-    // ssl: {
-    //     rejectUnauthorized: false // للإنتاج يجب استخدام شهادة SSL صالحة
-    // },
-    connectionTimeoutMillis: 10000,
-    idleTimeoutMillis: 30000,
-    max: 20 // حد أقصى لعدد الاتصالات
+    connectionTimeoutMillis: 5000,
+    idleTimeoutMillis: 10000,
+    max: 50 // زيادة عدد الاتصالات لتحسين الأداء
 });
 
-// 🔵 الاتصال الثاني: قاعدة بيانات العقارات (realestate)
-// تعطيل SSL مؤقتاً لاستكشاف مشكلة البحث
+// 🔵 الاتصال الثاني: قاعدة بيانات العقارات (realestate) - بدون SSL لتحسين الأداء
 const realestatePool = new Pool({
     user: PG_USER,
     host: PG_HOST,
     database: REAL_ESTATE_DB_NAME,
     password: PG_PASSWORD,
     port: PG_PORT,
-    // ssl: {
-    //     rejectUnauthorized: false // للإنتاج يجب استخدام شهادة SSL صالحة
-    // },
-    connectionTimeoutMillis: 10000,
-    idleTimeoutMillis: 30000,
-    max: 20 // حد أقصى لعدد الاتصالات
+    connectionTimeoutMillis: 5000,
+    idleTimeoutMillis: 10000,
+    max: 50 // زيادة عدد الاتصالات لتحسين الأداء
 });
 
 // فحص الاتصال بقاعدة الخدمات عند بدء التشغيل
@@ -467,10 +466,35 @@ app.post('/api/update-service-status', async (req, res) => {
 // 3. إعداد البروكسي لـ GeoServer مع الحماية المتقدمة
 // [إجراء أمني 2]: تشفير وحماية البروكسي لمنع الحذف العشوائي (WFS-T protection)
 // 🔒 Middleware للتحقق من صلاحية الوصول للـ GeoServer
-// تعطيل مؤقت لاستكشاف مشكلة الخريطة
 const geoServerAuthMiddleware = (req, res, next) => {
     console.log(`[Proxy] Request to: ${req.url} from IP: ${req.ip}`);
-    // السماح بجميع الطلبات مؤقتاً
+
+    // السماح بطلبات GET للطبقات (WMS, WFS, GWC) بدون authentication
+    if (req.method === 'GET' && (req.url.includes('/wms') || req.url.includes('/wfs') || req.url.includes('/gwc'))) {
+        console.log(`[Proxy] Allowing public GET request for: ${req.url}`);
+        return next();
+    }
+
+    // التحقق من أن المستخدم مسجل الدخول للعمليات الأخرى
+    const userId = req.headers['x-user-id'];
+    if (!userId) {
+        console.warn('🚫 GeoServer access denied: No user ID');
+        return res.status(403).json({ error: 'Authentication required' });
+    }
+
+    // التحقق من Origin
+    const origin = req.headers.origin;
+    if (origin && !allowedOrigins.includes(origin)) {
+        console.warn(`🚫 GeoServer access denied from origin: ${origin}`);
+        return res.status(403).json({ error: 'Origin not allowed' });
+    }
+
+    // 🔒 منع عمليات DELETE على GeoServer
+    if (req.method === 'DELETE') {
+        console.warn('🚫 GeoServer DELETE operation blocked');
+        return res.status(403).json({ error: 'DELETE operations not allowed' });
+    }
+
     next();
 };
 
@@ -483,9 +507,9 @@ app.use('/geoserver-proxy', geoServerAuthMiddleware, createProxyMiddleware({
     onProxyReq: (proxyReq, req, res) => {
         console.log(`[Proxy] Forwarding to: ${GEOSERVER_TARGET}${req.url}`);
 
-        // 🔒 إزالة Basic Auth مؤقتاً لاستكشاف مشكلة الخريطة
-        // const auth = Buffer.from('admin:geoserver').toString('base64');
-        // proxyReq.setHeader('Authorization', `Basic ${auth}`);
+        // 🔒 إضافة Basic Auth للـ GeoServer
+        const auth = Buffer.from('admin:geoserver').toString('base64');
+        proxyReq.setHeader('Authorization', `Basic ${auth}`);
 
         // الحفاظ على بيانات الـ Body للطلبات القادمة من الخريطة
         const contentType = req.headers['content-type'] || '';
