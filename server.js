@@ -772,6 +772,26 @@ app.get('/api/search-features', async (req, res) => {
     }
 });
 
+// API لجلب قائمة المستخدمين
+app.get('/api/users', async (req, res) => {
+    try {
+        const query = `
+            SELECT id, username, name, email, phone, role
+            FROM "public"."users"
+            ORDER BY id ASC
+        `;
+        const result = await servicesPool.query(query);
+
+        res.json({
+            success: true,
+            users: result.rows
+        });
+    } catch (error) {
+        console.error('Error fetching users:', error);
+        res.status(500).json({ error: 'Failed to fetch users', details: error.message });
+    }
+});
+
 // 9. إذا لم يُطابق أي مسار API، نرجع JSON بدل HTML لتجنب مشاكل parse في الفرونت إند
 app.use('/api', (req, res) => {
     res.status(404).json({ error: 'API endpoint not found', path: req.path });
@@ -827,40 +847,107 @@ io.on('connection', (socket) => {
 
     // استقبال إشعار من لوحة التحكم وإرساله للمستخدم المستهدف
     socket.on('send_notification', async (data) => {
-        const { targetUserId, title, message, type } = data;
+        const { targetType, targetUserId, targetUserIds, title, message, type } = data;
 
-        if (!targetUserId || !title || !message) {
+        if (!title || !message) {
             socket.emit('notification_error', { error: 'بيانات الإشعار غير مكتملة' });
             return;
         }
 
         try {
-            // حفظ الإشعار في قاعدة البيانات
-            const insertQuery = `
-                INSERT INTO "public"."notifications" (user_id, title, message, type, is_read, created_at)
-                VALUES ($1, $2, $3, $4, false, NOW())
-                RETURNING id
-            `;
-            const result = await servicesPool.query(insertQuery, [targetUserId, title, message, type || 'info']);
+            let targetUsers = [];
+            let sentCount = 0;
 
-            const notificationId = result.rows[0].id;
+            // تحديد المستخدمين المستهدفين حسب نوع الاستهداف
+            switch (targetType) {
+                case 'single':
+                    if (!targetUserId) {
+                        socket.emit('notification_error', { error: 'معرف المستخدم مطلوب' });
+                        return;
+                    }
+                    targetUsers = [targetUserId];
+                    break;
 
-            // إرسال الإشعار في الوقت الفعلي إذا كان المستخدم متصلاً
-            const targetSocketId = connectedUsers.get(targetUserId);
-            if (targetSocketId) {
-                io.to(targetSocketId).emit('new_notification', {
-                    id: notificationId,
-                    title,
-                    message,
-                    type: type || 'info',
-                    created_at: new Date().toISOString()
-                });
-                console.log(`📨 تم إرسال إشعار للمستخدم ${targetUserId}`);
-            } else {
-                console.log(`⚠️ المستخدم ${targetUserId} غير متصل، تم حفظ الإشعار في قاعدة البيانات`);
+                case 'online':
+                    // إرسال للمستخدمين المتصلين حالياً
+                    targetUsers = Array.from(connectedUsers.keys());
+                    console.log(`📡 إرسال للمتصلين حالياً: ${targetUsers.length} مستخدم`);
+                    break;
+
+                case 'all_users':
+                    // إرسال لجميع المستخدمين في قاعدة البيانات
+                    const allUsersQuery = `SELECT id FROM "public"."users"`;
+                    const allUsersResult = await servicesPool.query(allUsersQuery);
+                    targetUsers = allUsersResult.rows.map(row => row.id);
+                    console.log(`📡 إرسال لجميع المستخدمين: ${targetUsers.length} مستخدم`);
+                    break;
+
+                case 'regular_users':
+                    // إرسال للمستخدمين العاديين فقط
+                    const regularUsersQuery = `SELECT id FROM "public"."users" WHERE role = 'user' OR role IS NULL`;
+                    const regularUsersResult = await servicesPool.query(regularUsersQuery);
+                    targetUsers = regularUsersResult.rows.map(row => row.id);
+                    console.log(`📡 إرسال للمستخدمين العاديين: ${targetUsers.length} مستخدم`);
+                    break;
+
+                case 'providers':
+                    // إرسال لمزودي الخدمات فقط
+                    const providersQuery = `SELECT id FROM "public"."users" WHERE role = 'provider'`;
+                    const providersResult = await servicesPool.query(providersQuery);
+                    targetUsers = providersResult.rows.map(row => row.id);
+                    console.log(`📡 إرسال لمزودي الخدمات: ${targetUsers.length} مستخدم`);
+                    break;
+
+                case 'selected':
+                    if (!targetUserIds || targetUserIds.length === 0) {
+                        socket.emit('notification_error', { error: 'يجب اختيار مستخدم واحد على الأقل' });
+                        return;
+                    }
+                    targetUsers = targetUserIds;
+                    console.log(`📡 إرسال للمستخدمين المختارين: ${targetUsers.length} مستخدم`);
+                    break;
+
+                default:
+                    socket.emit('notification_error', { error: 'نوع استهداف غير صالح' });
+                    return;
             }
 
-            socket.emit('notification_sent', { success: true, notificationId });
+            // إرسال الإشعار لكل مستخدم
+            for (const userId of targetUsers) {
+                try {
+                    // حفظ الإشعار في قاعدة البيانات
+                    const insertQuery = `
+                        INSERT INTO "public"."notifications" (user_id, title, message, type, is_read, created_at)
+                        VALUES ($1, $2, $3, $4, false, NOW())
+                        RETURNING id
+                    `;
+                    const result = await servicesPool.query(insertQuery, [userId, title, message, type || 'info']);
+                    const notificationId = result.rows[0].id;
+
+                    // إرسال الإشعار في الوقت الفعلي إذا كان المستخدم متصلاً
+                    const targetSocketId = connectedUsers.get(userId);
+                    if (targetSocketId) {
+                        io.to(targetSocketId).emit('new_notification', {
+                            id: notificationId,
+                            title,
+                            message,
+                            type: type || 'info',
+                            created_at: new Date().toISOString()
+                        });
+                        sentCount++;
+                    }
+                } catch (err) {
+                    console.error(`❌ خطأ في إرسال إشعار للمستخدم ${userId}:`, err);
+                }
+            }
+
+            console.log(`✅ تم إرسال الإشعار بنجاح إلى ${sentCount} مستخدم متصل، وحفظه لـ ${targetUsers.length} مستخدم`);
+
+            socket.emit('notification_sent', {
+                success: true,
+                sentCount,
+                totalTargeted: targetUsers.length
+            });
         } catch (err) {
             console.error('❌ خطأ في إرسال الإشعار:', err);
             socket.emit('notification_error', { error: 'فشل إرسال الإشعار' });
