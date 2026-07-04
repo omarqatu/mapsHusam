@@ -98,8 +98,7 @@ document.addEventListener("DOMContentLoaded", function () {
             if (submitButton) submitButton.disabled = true; 
 
             try {
-                const apiBaseUrl = window.MAP_CONFIG?.server?.apiUrl || `${window.location.origin}${window.location.pathname.endsWith('/') ? window.location.pathname : window.location.pathname.substring(0, window.location.pathname.lastIndexOf('/') + 1)}`;
-                const response = await fetch(`${apiBaseUrl}api/auth/register`, {
+                const response = await fetch('/api/auth/register', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
                     body: JSON.stringify({
@@ -230,8 +229,7 @@ document.addEventListener("DOMContentLoaded", function () {
             }
 
             try {
-                const apiBaseUrl = window.MAP_CONFIG?.server?.apiUrl || `${window.location.origin}${window.location.pathname.endsWith('/') ? window.location.pathname : window.location.pathname.substring(0, window.location.pathname.lastIndexOf('/') + 1)}`;
-                const response = await fetch(`${apiBaseUrl}api/auth/login`, {
+                const response = await fetch('/api/auth/login', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
                     body: JSON.stringify({ email, phone, password })
@@ -247,7 +245,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
                 if (response.ok && data.user) {
                     alert(`مرحباً بك مجدداً: ${data.user.full_name}`);
-                    
+
                     let finalUserData = {
                         id: parseInt(data.user.user_id),
                         user_id: parseInt(data.user.user_id),
@@ -269,6 +267,12 @@ document.addEventListener("DOMContentLoaded", function () {
                     }
 
                     enterPlatform(finalUserData, false);
+
+                    // تهيئة نظام الإشعارات بعد تسجيل الدخول الناجح
+                    if (window.notificationSystem && finalUserData.user_id) {
+                        window.notificationSystem.init(finalUserData.user_id);
+                        console.log('✅ تم تهيئة نظام الإشعارات للمستخدم:', finalUserData.user_id);
+                    }
 
                 } else {
                     alert(`خطأ في الدخول: ${data.message || data.error || 'بيانات الاعتماد غير صحيحة'}`);
