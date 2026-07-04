@@ -1,108 +1,364 @@
-# منصة العقارات والخدمات (PSM)
+# منصة العقارات والخدمات PSM
 
-**Property and Services Map** — A web-based GIS platform for browsing, searching, and editing geospatial data related to real estate and public services, built with [OpenLayers](https://openlayers.org/) and [GeoServer](https://geoserver.org/).
+هذه المنصة عبارة عن نظام خرائط جغرافية تفاعلي مصمم لعرض وتصفح وتعديل البيانات المكانية المتعلقة بالعقارات والخدمات العامة، مع دعم البحث المتقدم، إدارة الطبقات، وتفاعل المستخدمين عبر واجهة عربية كاملة الاتجاه من اليمين إلى اليسار.
 
----
-
-## Features
-
-- 🗺️ **Interactive Map** — Switch between aerial imagery, OpenStreetMap, ESRI satellite, or no basemap.
-- 📚 **Layer Management** — Toggle and control multiple GeoServer WMS/WFS layers.
-- 🔎 **Advanced Attribute Search** — Filter features by field values with multiple conditions.
-- 📍 **Location-Based Search** — Find nearby services or properties within a specified radius using your current location or a map-selected point.
-- 📏 **Measurement Tools** — Measure distances (meters) and areas (m²), and draw points.
-- 🔗 **Location Sharing** — Pick a point on the map and generate a shareable link with Palestine Grid and WGS84 coordinates.
-- ℹ️ **Feature Popup** — Click on map features to view their attribute details.
-- ✏️ **Feature Editing** — Add, modify, and delete point, polygon, and line features directly on the map via WFS-T transactions.
-- 🌐 **Coordinate Display** — Real-time Palestine Grid (Palestine Transverse Mercator) coordinates shown as you move the cursor.
+المشروع مبني على بنية Frontend + Backend + GeoServer + PostgreSQL، ويهدف إلى تمكين المستخدم من الاستعراض البصري للبيانات الجغرافية، والبحث عن العقارات أو الخدمات في مواقع محددة، وإدارة حالة المزودين والخدمات عبر لوحة تحكم خاصة.
 
 ---
 
-## Tech Stack
+## الهدف العام من المشروع
 
-| Component | Technology |
-|-----------|-----------|
-| Frontend map library | [OpenLayers](https://openlayers.org/) + [ol-ext](https://viglino.github.io/ol-ext/) |
-| Coordinate projection | [proj4js](https://proj4js.org/) |
-| Backend / proxy server | [Node.js](https://nodejs.org/) + [Express](https://expressjs.com/) |
-| Spatial data server | [GeoServer](https://geoserver.org/) |
-| UI icons | [Font Awesome 6](https://fontawesome.com/) |
+المنصة مصممة لتكون حلًا رقميًا متكاملًا يربط بين:
 
----
+- البيانات المكانية (المواقع، العقارات، الطرق، المناطق)
+- البيانات الوصفية (السعر، المساحة، الوصف، رقم الواتساب، الحالة)
+- المستخدمين النهائيين والمزودين والخدمات
+- خادم GeoServer لإدارة الطبقات الجغرافية
+- قاعدة بيانات PostgreSQL لتخزين البيانات الوصفية والبيانات التشغيلية
 
-## Prerequisites
-
-- [Node.js](https://nodejs.org/) v16 or later
-- A running [GeoServer](https://geoserver.org/) instance on `http://localhost:8080/geoserver`
+ببساطة، المشروع يسمح للمستخدم بأن يرى الخريطة، يفتح طبقات مختلفة، يبحث عن عقار أو خدمة في منطقة محددة، ويستعرض التفاصيل، بل ويستطيع أيضًا مزود الخدمة تحديث حالته على الخريطة.
 
 ---
 
-## Getting Started
+## أهم الوظائف والميزات
 
-### 1. Clone the repository
+### 1) عرض خريطة تفاعلية متقدمة
 
-```bash
-git clone https://github.com/Hu2024am/PSM.git
-cd PSM
+- عرض خريطة جغرافية مع طبقات متعددة من OpenLayers
+- دعم التحريك والتكبير/التصغير
+- القدرة على تبديل الطبقات المعروضة مثل:
+  - المحافظات
+  - المدن
+  - المناطق
+  - الطرق
+  - العقارات المعروضة للبيع أو الإيجار
+  - الأراضي
+  - الخدمات المختلفة
+- إمكانية استخدام طبقات WMS و WFS القادمة من GeoServer
+
+### 2) إدارة الطبقات الجغرافية
+
+- تفعيل أو إخفاء الطبقات من واجهة المستخدم
+- التحكم في مستوى الوضوح حسب مستوى التكبير
+- تنظيم الطبقات بشكل منطقي حسب نوع البيانات
+- دعم عرض الطبقات المتعلقة بالعقارات والخدمات بشكل منفصل
+
+### 3) البحث المتقدم عن البيانات
+
+- البحث عن العقارات أو الخدمات حسب الكلمات أو الخصائص
+- دعم البحث بناءً على:
+  - الكلمات المفتاحية
+  - الحقول النصية
+  - الحقول الرقمية
+  - الحقول الزمنية
+- دعم البحث الجغرافي في نطاق BBOX أو حول منطقة محددة
+- إمكانية البحث عبر الطبقات المختلفة دفعة واحدة
+
+### 4) عرض تفاصيل العقار أو الخدمة عند النقر
+
+- عند الضغط على أي معلم على الخريطة تظهر نافذة معلومات تحتوي على:
+  - الاسم
+  - الموقع
+  - السعر أو المساحة
+  - الوصف
+  - رقم الواتساب
+  - الروابط الخارجية
+  - معلومات إضافية أخرى
+- هذه النافذة تسمح للمستخدم بالانتقال المباشر إلى التواصل مع المزود أو الاطلاع على التفاصيل
+
+### 5) أدوات القياس على الخريطة
+
+- قياس المسافات بين نقطتين
+- قياس المساحات للمناطق
+- رسم النقاط أو الأشكال وفق الحاجة
+- هذه الأداة مفيدة جدًا لتحليل الموقع أو تقدير المسافات بين العناصر
+
+### 6) مشاركة الموقع
+
+- يمكن للمستخدم اختيار نقطة على الخريطة
+- النظام يحول الإحداثيات إلى نظامين:
+  - الإحداثيات الفلسطينية
+  - الإحداثيات العالمية WGS84
+- يمكن إنشاء رابط مشترك يحتوي على الموقع المختار ومستوى التكبير
+
+### 7) تحرير البيانات الجغرافية
+
+- دعم تعديل المعالم الجغرافية عبر WFS-T
+- يدعم أنواعًا مختلفة من المعالم مثل:
+  - النقاط
+  - الخطوط
+  - المضلعات
+- يسمح بتحديث الإحداثيات أو الحالة أو المعلومات المرتبطة بالمعلم
+
+### 8) نظام تسجيل الدخول والتسجيل
+
+- تسجيل حساب جديد للمستخدم
+- تسجيل الدخول باستخدام البريد الإلكتروني ورقم الجوال وكلمة المرور
+- التحقق من صحة البيانات قبل الإرسال
+- إدارة المستخدمين حسب الأدوار مثل:
+  - مستخدم عادي
+  - مزود خدمة
+  - مسؤول
+
+### 9) لوحة مزود الخدمة
+
+- يُظهر النظام لمالك الحساب بياناته إذا كان مزود خدمة
+- يسمح له بعرض حالة الحساب أو الخدمة على الخريطة
+- يدعم تحديث الحالة مثل:
+  - متاح
+  - غير متاح
+  - مخفي أو معطل
+- يمكن تحديث الإحداثيات المرتبطة بالمعلم أو الخدمة
+
+### 10) لوحة إدارة السجلات والإحصائيات
+
+- يوجد ملف dashboard مخصص لعرض السجلات التفصيلية عن الطلبات أو الإحصائيات
+- يدعم:
+  - عرض السجلات
+  - التصفية حسب الحقول
+  - التصفح بين الصفحات
+  - حذف السجلات
+  - عرض الإحصائيات العامة
+
+---
+
+## البنية التقنية للمشروع
+
+### الواجهة الأمامية Frontend
+
+الواجهة مبنية باستخدام:
+
+- HTML5
+- CSS3
+- JavaScript
+- OpenLayers
+- proj4js
+- Font Awesome
+
+الواجهة تتولى:
+
+- بناء الخريطة
+- عرض الطبقات
+- إدارة التفاعل مع المستخدم
+- استدعاء APIs
+- تنفيذ أدوات البحث والقياس والتعديل
+
+### الخادم الخلفي Backend
+
+الخادم مبني باستخدام:
+
+- Node.js
+- Express.js
+
+يلعب الخادم دورًا مهمًا في:
+
+- استقبال طلبات الواجهة
+- توجيه الطلبات إلى GeoServer عبر بروكسي
+- توفير APIs للتسجيل والدخول والبحث وتحديث الحالة
+- الاتصال بقاعدة البيانات PostgreSQL
+
+### خادم الخرائط GeoServer
+
+GeoServer مسؤول عن:
+
+- تخزين وتقديم الطبقات الجغرافية
+- إدارة WMS / WFS
+- خدمة البيانات المكانية إلى الواجهة الأمامية
+- دعم التعديل الجغرافي عبر WFS-T
+
+### قاعدة البيانات PostgreSQL
+
+المشروع يعتمد على قواعد بيانات متعددة في بعض السيناريوهات:
+
+- services_db: بيانات الخدمات
+- realestate: بيانات العقارات والمواقع
+- جدول users: المستخدمون
+- جدول map_service_stats: السجلات والإحصائيات
+
+---
+
+## هيكل المشروع
+
+```text
+PSM/
+├── index.html                  # الصفحة الرئيسية للمنصة الرئيسية
+├── dashboard.html             # لوحة إدارة السجلات والإحصائيات
+├── server.js                  # خادم Node.js الرئيسي + APIs + بروكسي GeoServer
+├── package.json               # تبعيات المشروع وسكربتات التشغيل
+├── web.config                 # إعدادات IIS/Windows Server إذا كان النشر على Windows Server
+├── css/                       # ملفات الأنماط الخاصة بالواجهة
+├── js/                        # ملفات JavaScript الخاصة بالمنصة
+│   ├── auth-app-events.js    # أحداث تسجيل الدخول والتسجيل
+│   ├── auth-core-functions.js # وظائف المصادقة الأساسية
+│   ├── config.js             # إعدادات عامة مثل GeoServer والـ API
+│   ├── main.js               # نقطة البداية الرئيسية للمنصة
+│   ├── layers.js             # تعريف الطبقات ومصادرها
+│   ├── popup.js              # نافذة المعلومات عند الضغط على العنصر
+│   ├── search.js             # البحث المتقدم
+│   ├── quick-search.js       # البحث السريع
+│   ├── global-search.js      # البحث الشامل عبر الطبقات
+│   ├── location-search.js    # البحث الجغرافي والمكاني
+│   ├── measure.js            # أدوات القياس
+│   ├── share-location.js     # مشاركة الموقع
+│   ├── editPoints.js         # تعديل النقاط
+│   ├── editPolygons.js       # تعديل المضلعات
+│   ├── editLines.js          # تعديل الخطوط
+│   ├── provider-panel.js     # لوحة مزود الخدمة
+│   ├── panel-controls.js     # تحكمات اللوحات والواجهات
+│   └── layer-manager.js      # إدارة الطبقات المعروضة
+├── ol/                        # مكتبة OpenLayers
+├── proj4/                     # مكتبة proj4js لإدارة الأنظمة الإحداثية
+├── icons/                     # الأيقونات المستخدمة في الواجهة
+└── README.md                  # هذا الملف
 ```
 
-### 2. Install dependencies
+---
+
+## التشغيل المحلي
+
+### المتطلبات الأساسية
+
+قبل تشغيل المشروع تأكد من توفر:
+
+- Node.js الإصدار 16 أو أحدث
+- PostgreSQL مع قاعدة البيانات المتاحة
+- GeoServer يعمل ويحتوي على الطبقات المطلوبة
+
+
+### تثبيت التبعيات
 
 ```bash
 npm install
 ```
 
-### 3. Start the server
+### تشغيل الخادم
 
 ```bash
 npm start
 ```
+npm install socket.io
 
-The application will be available at **http://localhost:3000**.
+بعد ذلك يمكن الوصول إلى:
 
-> The Node.js server acts as a reverse proxy, forwarding all requests to `/proxy/geoserver/*` to the GeoServer instance running on `http://localhost:8080/geoserver`.
+- http://localhost:3000/
+- http://localhost:3000/index.html
+- http://localhost:3000/dashboard
 
 ---
 
-## Project Structure
+## المتغيرات البيئية
 
+يمكن ضبط إعدادات الخادم عبر المتغيرات البيئية التالية:
+
+- PORT: منفذ التشغيل (افتراضيًا 3000)
+- POSTGRES_HOST: عنوان خادم PostgreSQL
+- POSTGRES_PORT: منفذ PostgreSQL
+- POSTGRES_USER: اسم المستخدم
+- POSTGRES_PASSWORD: كلمة المرور
+- SERVICES_DB_NAME: اسم قاعدة بيانات الخدمات
+- REAL_ESTATE_DB_NAME: اسم قاعدة بيانات العقارات
+- GEOSERVER_TARGET: عنوان GeoServer الهدف
+
+مثال:
+
+```bash
+PORT=3000
+POSTGRES_HOST=144.91.84.168
+POSTGRES_PORT=5432
+POSTGRES_USER=Husam
+POSTGRES_PASSWORD=Husam
+SERVICES_DB_NAME=services_db
+REAL_ESTATE_DB_NAME=realestate
+GEOSERVER_TARGET=http://194.163.174.162:8080/geoserver
 ```
-PSM/
-├── index.html              # Main application page (Arabic/RTL)
-├── server.js               # Express server & GeoServer proxy
-├── package.json
-├── css/
-│   └── style.css           # Application styles
-├── js/
-│   ├── main.js             # App entry point & map initialization
-│   ├── layers.js           # Layer definitions and WMS/WFS configuration
-│   ├── layer-manager.js    # Layer panel UI logic
-│   ├── popup.js            # Feature info popup
-│   ├── search.js           # Attribute-based search
-│   ├── location-search.js  # Proximity / location-based search
-│   ├── measure.js          # Distance & area measurement tools
-│   ├── share-location.js   # Location sharing with coordinate display
-│   ├── editPoints.js       # Point feature editing (WFS-T)
-│   ├── editPolygons.js     # Polygon feature editing (WFS-T)
-│   ├── editLines.js        # Line feature editing (WFS-T)
-│   ├── style-utils.js      # Map feature styling utilities
-│   └── autocomplete.js     # Search input autocomplete
-├── ol/                     # OpenLayers library files
-├── proj4/                  # proj4js library files
-├── icons/                  # Application icons
-└── DB_Backups/             # Database backup files
-```
-written by copilot 
----
-
-## Configuration
-
-GeoServer connection settings (URL, workspace, layer names) are defined in `js/layers.js`. Update this file to point to your GeoServer workspace and layers.
 
 ---
 
-## License
+## APIs الرئيسية التي يوفرها الخادم
+
+### المصادقة
+
+- POST /api/auth/register
+  - تسجيل مستخدم جديد
+- POST /api/auth/login
+  - تسجيل الدخول
+
+### إدارة البيانات والخدمات
+
+- GET /api/get-provider-service
+  - جلب بيانات مزود خدمة مرتبط بالمعلم
+- POST /api/update-service-status
+  - تحديث حالة مزود الخدمة أو المعلم
+
+### الإحصائيات والسجلات
+
+- POST /save-stat
+  - حفظ إحصائية أو طلب خدمة
+- GET /api/stats-detailed
+  - جلب السجلات التفصيلية
+- DELETE /api/delete-stat/:id
+  - حذف سجل محدد
+- GET /api/stats-summary
+  - جلب ملخص الإحصائيات
+
+### البحث
+
+- GET /api/search-features
+  - البحث عن المعالم عبر الخادم مع فلترة مكانية وشرطية
+
+### GeoServer Proxy
+
+- /geoserver-proxy/\*
+  - بروكسي يمرر الطلبات إلى GeoServer
+
+---
+
+## ملاحظات مهمة حول النشر على الدومين
+
+عند نشر المشروع على دومين أو خادم خارجي، من المهم التأكد من أن:
+
+- الخادم يعرف كيفية التعامل مع المسارات مثل /dashboard
+- الطلبات إلى /api و /geoserver-proxy لا تتعطل بسبب المسار الجذري
+- إذا كان النشر على IIS أو Windows Server، فيجب استخدام ملف web.config بشكل صحيح
+- إذا كان النشر خلف Reverse Proxy مثل Nginx أو Apache، فيجب توجيه الطلبات إلى المنفذ 3000 الخاص بـ Node.js
+
+في هذا المشروع تم تجهيز المسارات التالية لتسهيل الوصول:
+
+- /dashboard
+- /dashboard.html
+- /index.html
+
+---
+
+## ملاحظات الأمان والتطوير
+
+- تستخدم المنصة بروكسيًا للأمان عند الاتصال بـ GeoServer
+- يتم التحقق من الطبقات المسموح بها قبل التعديل أو الوصول إليها
+- تم إضافة حماية للـ API لمنع الوصول غير المصرح به إلى الطبقات الجغرافية
+- من المستحسن في البيئة الإنتاجية إضافة:
+  - HTTPS
+  - مصادقة أقوى
+  - إدارة Secrets للبيانات الحساسة
+  - حماية إضافية ضد الهجمات الخارجية
+
+---
+
+## الخلاصة
+
+هذا المشروع عبارة عن منصة GIS حديثة تجمع بين:
+
+- الخرائط التفاعلية
+- البيانات الجغرافية
+- البحث المتقدم
+- إدارة العقارات والخدمات
+- مزودو الخدمة
+- اللوحات الإدارية
+- التكامل مع GeoServer و PostgreSQL
+
+وهو مناسب للاستخدام في مشاريع إدارة العقارات، الخريطة الذكية للخدمات، أو أي نظام يعتمد على البيانات المكانية والتفاعل مع المستخدمين.
+
+---
+
+## الترخيص
 
 ISC
-
-npm install socket.io
