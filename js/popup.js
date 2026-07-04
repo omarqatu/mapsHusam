@@ -136,64 +136,180 @@ function initializePopup(map) {
                 </div>`;
     }
 
-    window.copyLocationLink = function(coordinate) {
+    function normalizeLocationCoordinate(x, y, crs) {
+        const xValue = parseFloat(x);
+        const yValue = parseFloat(y);
+        if (isNaN(xValue) || isNaN(yValue)) return null;
+
+        const normalizedCrs = (crs || '').toString().toUpperCase();
+        if (normalizedCrs === '4326' || normalizedCrs === 'EPSG:4326') {
+            try {
+                return ol.proj.transform([xValue, yValue], 'EPSG:4326', 'EPSG:28191');
+            } catch (err) {
+                console.error('فشل تحويل الإحداثيات من EPSG:4326:', err);
+            }
+        }
+
+        if (normalizedCrs === '28191' || normalizedCrs === 'EPSG:28191') {
+            return [xValue, yValue];
+        }
+
+        if (Math.abs(xValue) <= 180 && Math.abs(yValue) <= 90) {
+            try {
+                return ol.proj.transform([xValue, yValue], 'EPSG:4326', 'EPSG:28191');
+            } catch (err) {
+                console.error('فشل تحويل الإحداثيات المتوقعة كـ EPSG:4326:', err);
+            }
+        }
+
+        return [xValue, yValue];
+    }
+
+    function flashCopyFeedback(triggerElement) {
+        if (!triggerElement || !triggerElement.tagName || triggerElement.tagName.toLowerCase() !== 'button') return;
+
+        const originalHtml = triggerElement.innerHTML;
+        const originalStyle = triggerElement.style.cssText;
+        triggerElement.innerHTML = '<i class="fas fa-check"></i> تم النسخ!';
+        triggerElement.style.background = '#28a745';
+        triggerElement.style.color = '#fff';
+
+        setTimeout(() => {
+            triggerElement.innerHTML = originalHtml;
+            triggerElement.style.cssText = originalStyle;
+        }, 1800);
+    }
+
+    function showCopyToast(message) {
+        let toast = document.getElementById('location-copy-toast');
+        if (!toast) {
+            toast = document.createElement('div');
+            toast.id = 'location-copy-toast';
+            toast.style.position = 'fixed';
+            toast.style.bottom = '24px';
+            toast.style.left = '50%';
+            toast.style.transform = 'translateX(-50%)';
+            toast.style.background = 'rgba(40, 167, 69, 0.95)';
+            toast.style.color = '#fff';
+            toast.style.padding = '10px 16px';
+            toast.style.borderRadius = '999px';
+            toast.style.zIndex = '999999';
+            toast.style.fontSize = '14px';
+            toast.style.boxShadow = '0 8px 24px rgba(0,0,0,0.2)';
+            document.body.appendChild(toast);
+        }
+        toast.textContent = message;
+        toast.style.opacity = '1';
+        clearTimeout(showCopyToast.timeout);
+        showCopyToast.timeout = setTimeout(() => {
+            toast.style.opacity = '0';
+        }, 1800);
+    }
+
+    function getFeatureCoordinate(feature) {
+        if (!feature || !feature.getGeometry()) return null;
+        const geometry = feature.getGeometry();
+        if (!geometry) return null;
+
+        if (geometry.getType() === 'Point') {
+            return geometry.getCoordinates();
+        }
+
+        if (typeof geometry.getInteriorPoint === 'function') {
+            try {
+                return geometry.getInteriorPoint().getCoordinates();
+            } catch (err) {
+                console.warn('فشل استخراج نقطة داخلية:', err);
+            }
+        }
+
+        if (typeof geometry.getCentroid === 'function') {
+            try {
+                return geometry.getCentroid().getCoordinates();
+            } catch (err) {
+                console.warn('فشل استخراج المركز الهندسي:', err);
+            }
+        }
+
+        return null;
+    }
+
+    window.copyLocationLink = function(coordinate, triggerElement) {
         if (!coordinate || coordinate.length < 2) {
             alert('لا يمكن نسخ الموقع');
-            return;
+            return false;
         }
 
         const baseUrl = window.location.origin + window.location.pathname;
         const params = new URLSearchParams();
 
-        // تحويل الإحداثيات من EPSG:28191 إلى EPSG:4326 (WGS84) للتوافق مع جميع الأجهزة
-        let coordsToUse = coordinate;
         try {
             const lonLat = ol.proj.transform(coordinate, 'EPSG:28191', 'EPSG:4326');
-            params.set('x', lonLat[0]);
-            params.set('y', lonLat[1]);
-            params.set('crs', '4326'); // إضافة معامل لتحديد نظام الإحداثيات
+            params.set('x', lonLat[0].toFixed(8));
+            params.set('y', lonLat[1].toFixed(8));
+            params.set('crs', '4326');
         } catch (err) {
-            // Fallback: استخدام الإحداثيات الأصلية إذا فشل التحويل
             console.error('فشل تحويل الإحداثيات:', err);
-            params.set('x', coordinate[0]);
-            params.set('y', coordinate[1]);
+            params.set('x', parseFloat(coordinate[0]).toFixed(3));
+            params.set('y', parseFloat(coordinate[1]).toFixed(3));
             params.set('crs', '28191');
         }
 
         const shareLink = `${baseUrl}?${params.toString()}`;
 
-        // طريقة تعمل على جميع الأجهزة (موبايل وكمبيوتر)
-        const textarea = document.createElement('textarea');
-        textarea.value = shareLink;
-        textarea.style.position = 'fixed';
-        textarea.style.opacity = '0';
-        document.body.appendChild(textarea);
-        textarea.select();
-
-        try {
-            const successful = document.execCommand('copy');
-            document.body.removeChild(textarea);
-
-            if (successful) {
-                alert('تم نسخ رابط الموقع بنجاح! يمكنك مشاركته الآن.');
+        const finishCopy = (success, message) => {
+            if (success) {
+                flashCopyFeedback(triggerElement);
+                showCopyToast(message);
             } else {
-                // Fallback لـ Clipboard API
-                if (navigator.clipboard && navigator.clipboard.writeText) {
-                    navigator.clipboard.writeText(shareLink).then(() => {
-                        alert('تم نسخ الرابط بنجاح! يمكنك مشاركته الآن.');
-                    }).catch(err => {
-                        console.error('فشل نسخ الرابط:', err);
-                        alert('فشل نسخ الرابط. يرجى المحاولة يدوياً.');
-                    });
+                const fallbackMessage = `${message}\n\n${shareLink}`;
+                if (window.prompt) {
+                    window.prompt('انسخ الرابط يدويًا:', shareLink);
                 } else {
-                    alert('فشل نسخ الرابط. يرجى المحاولة يدوياً.');
+                    alert(fallbackMessage);
                 }
             }
-        } catch (err) {
-            document.body.removeChild(textarea);
-            console.error('فشل نسخ الرابط:', err);
-            alert('فشل نسخ الرابط. يرجى المحاولة يدوياً.');
-        }
+        };
+
+        const tryClipboardApi = async () => {
+            try {
+                if (navigator.clipboard && navigator.clipboard.writeText && document.hasFocus()) {
+                    await navigator.clipboard.writeText(shareLink);
+                    finishCopy(true, 'تم نسخ رابط الموقع بنجاح! يمكنك مشاركته الآن.');
+                    return true;
+                }
+            } catch (err) {
+                console.warn('فشل النسخ عبر Clipboard API:', err);
+            }
+
+            try {
+                const textarea = document.createElement('textarea');
+                textarea.value = shareLink;
+                textarea.setAttribute('readonly', '');
+                textarea.style.position = 'fixed';
+                textarea.style.left = '-9999px';
+                textarea.style.top = '-9999px';
+                textarea.style.opacity = '0';
+                document.body.appendChild(textarea);
+                textarea.focus();
+                textarea.select();
+                const successful = document.execCommand('copy');
+                document.body.removeChild(textarea);
+
+                if (successful) {
+                    finishCopy(true, 'تم نسخ رابط الموقع بنجاح! يمكنك مشاركته الآن.');
+                    return true;
+                }
+            } catch (err) {
+                console.error('فشل النسخ عبر textarea fallback:', err);
+            }
+
+            finishCopy(false, 'لم تتمكن المتصفّح من النسخ مباشرة، يرجى النسخ يدويًا.');
+            return false;
+        };
+
+        tryClipboardApi();
+        return true;
     };
 
     const overlay = new ol.Overlay({
@@ -325,7 +441,7 @@ function initializePopup(map) {
             // زر نسخ رابط الموقع يظهر لجميع المعالم
             bodyHtml += `
             <div style="margin-top: 15px; border-top: 2px solid #eee; padding-top: 12px;">
-                <button onclick="copyLocationLink(window.currentPopupCoordinate)"
+                <button onclick="copyLocationLink(window.currentPopupCoordinate, this)"
                         style="width: 100%; background: #6c757d; color: white; border: none; padding: 10px; border-radius: 10px; cursor: pointer; font-weight: bold; display: flex; align-items: center; justify-content: center; gap: 6px; font-size: 12px; box-shadow: 0 4px 12px rgba(108,117,125,0.3);">
                     <i class="fas fa-link" style="font-size: 14px;"></i> نسخ رابط الموقع
                 </button>
@@ -351,7 +467,7 @@ function initializePopup(map) {
             // زر نسخ رابط الموقع يظهر للمناطق أيضاً
             bodyHtml += `
             <div style="margin-top: 15px; border-top: 2px solid #eee; padding-top: 12px;">
-                <button onclick="copyLocationLink(window.currentPopupCoordinate)"
+                <button onclick="copyLocationLink(window.currentPopupCoordinate, this)"
                         style="width: 100%; background: #6c757d; color: white; border: none; padding: 10px; border-radius: 10px; cursor: pointer; font-weight: bold; display: flex; align-items: center; justify-content: center; gap: 6px; font-size: 12px; box-shadow: 0 4px 12px rgba(108,117,125,0.3);">
                     <i class="fas fa-link" style="font-size: 14px;"></i> نسخ رابط الموقع
                 </button>
@@ -418,24 +534,14 @@ function initializePopup(map) {
 
         if (!x || !y) return;
 
-        let coordinate = [parseFloat(x), parseFloat(y)];
+        let coordinate = normalizeLocationCoordinate(x, y, crs);
 
-        if (isNaN(coordinate[0]) || isNaN(coordinate[1])) return;
-
-        // تحويل الإحداثيات إذا كانت في EPSG:4326 إلى EPSG:28191
-        if (crs === '4326') {
-            try {
-                coordinate = ol.proj.transform(coordinate, 'EPSG:4326', 'EPSG:28191');
-            } catch (err) {
-                console.error('فشل تحويل الإحداثيات من WGS84:', err);
-                return;
-            }
-        }
+        if (!coordinate || isNaN(coordinate[0]) || isNaN(coordinate[1])) return;
 
         // تحريك الخريطة إلى الموقع
         map.getView().animate({
             center: coordinate,
-            zoom: 19,
+            zoom: urlParams.get('z') ? parseFloat(urlParams.get('z')) : 19,
             duration: 1000
         });
 
