@@ -9,6 +9,25 @@
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f7f6; margin: 0; padding: 20px; }
         .container { width: 95%; max-width: 1400px; margin: auto; background: white; padding: 30px; border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); }
         h1 { color: #1a73e8; text-align: center; margin-bottom: 25px; }
+
+        /* Responsive للكمبيوتر والموبايل */
+        @media (max-width: 768px) {
+            body { padding: 10px; }
+            .container { width: 100%; padding: 15px; border-radius: 10px; }
+            h1 { font-size: 20px; margin-bottom: 15px; }
+        }
+
+        @media (max-width: 480px) {
+            body { padding: 0; margin: 0; }
+            .container { width: 100%; padding: 10px; border-radius: 0; box-shadow: none; min-height: 100vh; }
+            h1 { font-size: 18px; margin-bottom: 10px; padding: 0 10px; }
+        }
+
+        @media (max-height: 600px) and (orientation: landscape) {
+            body { padding: 0; margin: 0; }
+            .container { width: 100%; padding: 10px; border-radius: 0; box-shadow: none; min-height: 100vh; }
+            h1 { font-size: 16px; margin-bottom: 10px; padding: 0 10px; }
+        }
         
         /* تنسيق الجدول */
         .table-container { overflow-x: auto; border-radius: 10px; border: 1px solid #e0e0e0; margin-top: 20px; }
@@ -67,6 +86,9 @@
     
     <div class="header-actions">
         <button class="refresh-btn" onclick="resetFiltersAndLoad()"><i class="fas fa-sync-alt"></i> إعادة تعيين الفلاتر والتحميل</button>
+        <button class="refresh-btn" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);" onclick="window.open('notifications-panel.html', '_blank')">
+            <i class="fas fa-bell"></i> إرسال إشعار
+        </button>
         <div id="statsInfo">
             <span id="totalInfo" class="badge-count"></span>
         </div>
