@@ -42,9 +42,27 @@
     <button id="dashboard-btn" class="btn-dashboard-top" onclick="window.openDashboard()" style="display: none;">
         <i class="fas fa-chart-line"></i> لوحة التحكم
     </button>
+    <button class="notification-btn" id="notification-toggle-btn" style="display: none;">
+        <i class="fas fa-bell"></i>
+        <span id="notification-badge">0</span>
+    </button>
     <button class="btn-logout-top" onclick="window.logoutPlatform()">
         <i class="fas fa-sign-out-alt"></i> تسجيل الخروج
     </button>
+</div>
+
+<!-- قائمة الإشعارات المنبثقة -->
+<div id="notification-dropdown" class="notification-dropdown">
+    <div class="notification-dropdown-header">
+        <h3>الإشعارات</h3>
+        <button onclick="window.notificationSystem.getUnreadNotifications(window.currentUser?.user_id)">تحديث</button>
+    </div>
+    <div class="notification-dropdown-body" id="notification-list">
+        <p style="text-align: center; color: #999; padding: 20px;">لا توجد إشعارات</p>
+    </div>
+    <div class="notification-dropdown-footer">
+        <button onclick="window.markAllNotificationsAsRead()">تعليم الكل كمقروء</button>
+    </div>
 </div>
 
 <div id="map-header">
