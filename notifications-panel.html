@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>لوحة إرسال الإشعارات</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            margin: 0;
+            padding: 20px;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+        }
+
+        h1 {
+            color: #667eea;
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 24px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: bold;
+            color: #333;
+            font-size: 14px;
+        }
+
+        input, select, textarea {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: all 0.3s;
+            box-sizing: border-box;
+        }
+
+        input:focus, select:focus, textarea:focus {
+            border-color: #667eea;
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        textarea {
+            resize: vertical;
+            min-height: 100px;
+        }
+
+        button {
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .status-indicator {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 20px;
+            padding: 10px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            font-size: 13px;
+        }
+
+        .status-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: #ccc;
+        }
+
+        .status-dot.connected {
+            background: #34a853;
+            box-shadow: 0 0 5px #34a853;
+        }
+
+        .status-dot.disconnected {
+            background: #ea4335;
+            box-shadow: 0 0 5px #ea4335;
+        }
+
+        .info-box {
+            background: #e8f0fe;
+            border-right: 4px solid #1a73e8;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-size: 13px;
+            color: #333;
+        }
+
+        .back-link {
+            display: inline-block;
+            margin-bottom: 20px;
+            color: white;
+            text-decoration: none;
+            font-weight: bold;
+            transition: all 0.3s;
+        }
+
+        .back-link:hover {
+            color: #e0e0e0;
+        }
+    </style>
+</head>
+<body>
+
+<a href="dashboard.html" class="back-link">
+    <i class="fas fa-arrow-right"></i> العودة للوحة التحكم
+</a>
+
+<div class="container">
+    <h1><i class="fas fa-bell"></i> لوحة إرسال الإشعارات</h1>
+
+    <div class="status-indicator">
+        <div id="status-dot" class="status-dot"></div>
+        <span id="status-text">جاري الاتصال...</span>
+    </div>
+
+    <div class="info-box">
+        <i class="fas fa-info-circle"></i>
+        <strong>ملاحظة:</strong> سيتم إرسال الإشعار فوراً إذا كان المستخدم متصلاً، وإلا سيتم حفظه في قاعدة البيانات للعرض عند تسجيل الدخول.
+    </div>
+
+    <form id="notification-form">
+        <div class="form-group">
+            <label for="user-id">معرف المستخدم (User ID)</label>
+            <input type="number" id="user-id" required placeholder="أدخل معرف المستخدم المستهدف">
+        </div>
+
+        <div class="form-group">
+            <label for="notification-type">نوع الإشعار</label>
+            <select id="notification-type">
+                <option value="info">معلومات</option>
+                <option value="success">نجاح</option>
+                <option value="warning">تحذير</option>
+                <option value="error">خطأ</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label for="notification-title">عنوان الإشعار</label>
+            <input type="text" id="notification-title" required placeholder="أدخل عنوان الإشعار" maxlength="255">
+        </div>
+
+        <div class="form-group">
+            <label for="notification-message">نص الإشعار</label>
+            <textarea id="notification-message" required placeholder="أدخل نص الإشعار"></textarea>
+        </div>
+
+        <button type="submit" id="send-btn">
+            <i class="fas fa-paper-plane"></i> إرسال الإشعار
+        </button>
+    </form>
+</div>
+
+<script src="/socket.io/socket.io.js"></script>
+<script>
+    const socket = io();
+    const statusDot = document.getElementById('status-dot');
+    const statusText = document.getElementById('status-text');
+    const form = document.getElementById('notification-form');
+    const sendBtn = document.getElementById('send-btn');
+
+    // حالة الاتصال
+    socket.on('connect', () => {
+        statusDot.className = 'status-dot connected';
+        statusText.textContent = 'متصل بالسيرفر';
+    });
+
+    socket.on('disconnect', () => {
+        statusDot.className = 'status-dot disconnected';
+        statusText.textContent = 'غير متصل';
+    });
+
+    socket.on('connect_error', () => {
+        statusDot.className = 'status-dot disconnected';
+        statusText.textContent = 'خطأ في الاتصال';
+    });
+
+    // إرسال الإشعار
+    form.addEventListener('submit', (e) => {
+        e.preventDefault();
+
+        const userId = document.getElementById('user-id').value;
+        const type = document.getElementById('notification-type').value;
+        const title = document.getElementById('notification-title').value;
+        const message = document.getElementById('notification-message').value;
+
+        if (!userId || !title || !message) {
+            alert('يرجى تعبئة جميع الحقول المطلوبة');
+            return;
+        }
+
+        sendBtn.disabled = true;
+        sendBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> جاري الإرسال...';
+
+        socket.emit('send_notification', {
+            targetUserId: parseInt(userId),
+            title,
+            message,
+            type
+        });
+    });
+
+    // تأكيد الإرسال
+    socket.on('notification_sent', (data) => {
+        sendBtn.disabled = false;
+        sendBtn.innerHTML = '<i class="fas fa-paper-plane"></i> إرسال الإشعار';
+
+        if (data.success) {
+            alert('✅ تم إرسال الإشعار بنجاح!');
+            form.reset();
+        }
+    });
+
+    // خطأ في الإرسال
+    socket.on('notification_error', (error) => {
+        sendBtn.disabled = false;
+        sendBtn.innerHTML = '<i class="fas fa-paper-plane"></i> إرسال الإشعار';
+        alert('❌ خطأ: ' + (error.error || 'حدث خطأ غير معروف'));
+    });
+</script>
+
+</body>
+</html>
