@@ -553,6 +553,26 @@ html, body {
 
 /* لضمان أن المودال (نافذة السمات) تظهر فوق كل شيء دائماً */
 .modal {
-    z-index: 100000 !important; 
+    z-index: 100000 !important;
     background-color: rgba(0,0,0,0.3) !important; /* شفافية أخف لترى الخريطة */
+}
+
+/* Toast notification for copy feedback */
+#location-copy-toast {
+    position: fixed;
+    bottom: 80px;
+    left: 50%;
+    transform: translateX(-50%);
+    background-color: rgba(40, 167, 69, 0.95);
+    color: white;
+    padding: 12px 24px;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: bold;
+    z-index: 100000;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    pointer-events: none;
+    transition: opacity 0.3s ease;
+    text-align: center;
+    direction: rtl;
 }
