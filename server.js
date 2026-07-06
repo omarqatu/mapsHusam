@@ -36,26 +36,10 @@ const requestLogger = (req, res, next) => {
 };
 
 app.use(requestLogger);
-// 🔒 تفعيل Helmet.js مع CSP مريح للخرائط (تأثير بسيط على الأداء)
+// 🔒 تفعيل Helmet.js مع CSP مريح للخرائط (تعطيل للتطوير المحلي)
 app.use(helmet({
-    contentSecurityPolicy: {
-        directives: {
-            defaultSrc: ["'self'"],
-            scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'", "https://cdn.jsdelivr.net", "https://cdn.socket.io"],
-            styleSrc: ["'self'", "'unsafe-inline'", "https://cdnjs.cloudflare.com"],
-            imgSrc: ["'self'", "data:", "https:", "http:", "blob:"],
-            connectSrc: ["'self'", "ws:", "wss:", "http:", "https:"],
-            fontSrc: ["'self'", "https://cdnjs.cloudflare.com"],
-            objectSrc: ["'none'"],
-            mediaSrc: ["'self'"],
-            frameSrc: ["'none'"],
-        },
-    },
-    hsts: {
-        maxAge: 31536000,
-        includeSubDomains: true,
-        preload: true
-    },
+    contentSecurityPolicy: false, // تعطيل CSP للتطوير المحلي
+    hsts: false, // تعطيل HSTS للتطوير المحلي
     noSniff: true,
     xssFilter: true,
     referrerPolicy: { policy: 'strict-origin-when-cross-origin' }
@@ -64,7 +48,7 @@ app.use(helmet({
 // 🔒 إعدادات CORS - السماح بالوصول المحلي/الشبكي والدومين مع الحفاظ على الحماية
 const allowedOrigins = process.env.ALLOWED_ORIGINS
     ? process.env.ALLOWED_ORIGINS.split(',').map(o => o.trim()).filter(Boolean)
-    : ['http://localhost:3000', 'http://127.0.0.1:3000', 'http://144.91.84.168:3000', 'http://194.163.174.162:3000', 'http://192.168.88.5:3000', 'http://192.168.88.5', 'http://144.91.84.168', 'https://144.91.84.168', 'https://localhost', 'https://127.0.0.1'];
+    : ['http://localhost:3000', 'http://127.0.0.1:3000', 'http://144.91.84.168:3000', 'http://194.163.174.162:3000', 'http://192.168.88.5:3000', 'http://192.168.88.5', 'http://144.91.84.168', 'https://144.91.84.168', 'https://localhost', 'https://127.0.0.1', '*'];
 
 const isAllowedOrigin = (origin) => {
     if (!origin) return true;
@@ -959,6 +943,10 @@ app.get('/', (req, res) => {
 
 app.get('/index.html', (req, res) => {
     res.sendFile(path.join(__dirname, 'index.html'));
+});
+
+app.get('/dashboard.html', (req, res) => {
+    res.sendFile(path.join(__dirname, 'dashboard.html'));
 });
 
 // 10. خطأ عام للميدل وير
