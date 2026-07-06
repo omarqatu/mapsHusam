@@ -541,26 +541,26 @@ app.post('/save-stat', async (req, res) => {
 app.get('/api/stats-detailed', async (req, res) => {
     try {
         const page = parseInt(req.query.page) || 1;
-        const limit = 10; 
+        const limit = 10;
         const offset = (page - 1) * limit;
 
-        console.log(`📋 جلب السجلات - الصفحة: ${page}`);
+        console.log(`📋 جلب السجلات - الصفحة: ${page}, DB Host: ${PG_HOST}`);
 
         const dataQuery = `
-            SELECT 
-                s.id, 
+            SELECT
+                s.id,
                 s.user_identifier,
                 COALESCE(u.full_name, s.user_identifier) as user_name,
                 COALESCE(u.phone, '---') as user_phone,
-                s.provider_name, 
-                s.service_type, 
+                s.provider_name,
+                s.service_type,
                 TO_CHAR(s.request_date, 'YYYY-MM-DD HH24:MI:SS') as formatted_date
             FROM "public"."map_service_stats" s
             LEFT JOIN "public"."users" u ON u.user_id::text = s.user_identifier
-            ORDER BY s.request_date DESC 
+            ORDER BY s.request_date DESC
             LIMIT $1 OFFSET $2
         `;
-        
+
         const countQuery = 'SELECT COUNT(*) FROM "public"."map_service_stats"';
 
         const [dataRes, countRes] = await Promise.all([
@@ -579,7 +579,13 @@ app.get('/api/stats-detailed', async (req, res) => {
         });
     } catch (err) {
         console.error('❌ خطأ أثناء جلب البيانات التفصيلية:', err.message);
-        res.status(500).json({ error: 'Failed to fetch logs', details: err.message });
+        console.error('❌ تفاصيل الخطأ:', err);
+        res.status(500).json({
+            error: 'Failed to fetch logs',
+            details: err.message,
+            dbHost: PG_HOST,
+            hint: 'تأكد من أن قاعدة البيانات متاحة من الدومين'
+        });
     }
 });
 
