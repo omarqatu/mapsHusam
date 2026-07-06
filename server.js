@@ -469,8 +469,8 @@ app.use('/geoserver-proxy', geoServerAuthMiddleware, createProxyMiddleware({
     pathRewrite: { '^/geoserver-proxy': '' },
     secure: false, // للتعامل مع شهادات SSL غير الموثوقة
     xfwd: true,
-    timeout: 30000,
-    proxyTimeout: 30000,
+    timeout: 60000,
+    proxyTimeout: 60000,
     logLevel: 'warn', // تقليل logging
     onProxyReq: (proxyReq, req, res) => {
         console.log(`[Proxy] Forwarding to: ${GEOSERVER_TARGET}${req.url}`);
@@ -494,8 +494,16 @@ app.use('/geoserver-proxy', geoServerAuthMiddleware, createProxyMiddleware({
         }
     },
     onError: (err, req, res) => {
-        console.error('[Proxy] Error:', err);
-        res.status(502).json({ error: 'GeoServer connection failed', details: err.message });
+        console.error('[Proxy] Error:', err.message);
+        console.error('[Proxy] GeoServer Target:', GEOSERVER_TARGET);
+        if (!res.headersSent) {
+            res.status(502).json({
+                error: 'GeoServer connection failed',
+                details: err.message,
+                target: GEOSERVER_TARGET,
+                hint: 'تأكد من أن GeoServer يعمل على العنوان المحدد'
+            });
+        }
     }
 }));
 
@@ -990,9 +998,9 @@ io.on('connection', (socket) => {
     const clientIp = socket.handshake.address;
     console.log(`🔗 مستخدم جديد متصل: ${socket.id} من IP: ${clientIp}`);
 
-    // التحقق من Origin
+    // التحقق من Origin - أكثر مرونة للإنتاج
     const origin = socket.handshake.headers.origin;
-    if (!allowedOrigins.includes(origin) && origin) {
+    if (origin && !isAllowedOrigin(origin)) {
         console.warn(`🚫 Socket.io connection blocked from origin: ${origin}`);
         socket.disconnect();
         return;
