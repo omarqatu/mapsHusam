@@ -4,7 +4,7 @@
  */
 
 const express = require('express');
-const { createProxyMiddleware } = require('http-proxy-middleware');
+const { createProxyMiddleware, fixRequestBody } = require('http-proxy-middleware');
 const path = require('path');
 const { Pool } = require('pg');
 const cors = require('cors');
@@ -48,7 +48,7 @@ app.use(helmet({
 // 🔒 إعدادات CORS - السماح بالوصول المحلي/الشبكي والدومين مع الحفاظ على الحماية
 const allowedOrigins = process.env.ALLOWED_ORIGINS
     ? process.env.ALLOWED_ORIGINS.split(',').map(o => o.trim()).filter(Boolean)
-    : ['http://localhost:3000', 'http://127.0.0.1:3000', 'http://144.91.84.168:3000', 'http://194.163.174.162:3000', 'http://192.168.88.5:3000', 'http://192.168.88.5', 'http://144.91.84.168', 'https://144.91.84.168', 'https://localhost', 'https://127.0.0.1', '*'];
+    : ['http://localhost:3000', 'http://127.0.0.1:3000', 'http://144.91.84.168:3000', 'http://194.163.174.162:3000', 'http://192.168.88.5:3000', 'http://192.168.88.5', 'http://144.91.84.168', 'https://144.91.84.168', 'https://localhost', 'https://127.0.0.1', 'https://psm.alameenapps.com', 'http://psm.alameenapps.com', '*'];
 
 const isAllowedOrigin = (origin) => {
     if (!origin) return true;
@@ -472,37 +472,28 @@ app.use('/geoserver-proxy', geoServerAuthMiddleware, createProxyMiddleware({
     timeout: 60000,
     proxyTimeout: 60000,
     logLevel: 'warn', // تقليل logging
-    onProxyReq: (proxyReq, req, res) => {
-        console.log(`[Proxy] Forwarding to: ${GEOSERVER_TARGET}${req.url}`);
+    on: {
+        proxyReq: (proxyReq, req, res) => {
+            console.log(`[Proxy] Forwarding to: ${GEOSERVER_TARGET}${req.url}`);
 
-        // 🔐 إرسال بيانات المصادقة إلى GeoServer لجميع الطلبات، لأن WMS/WFS غالباً تحتاج auth حتى للـ GET
-        const auth = Buffer.from(`${GEOSERVER_USER}:${GEOSERVER_PASSWORD}`).toString('base64');
-        proxyReq.setHeader('Authorization', `Basic ${auth}`);
+            // 🔐 إرسال بيانات المصادقة إلى GeoServer لجميع الطلبات، لأن WMS/WFS غالباً تحتاج auth حتى للـ GET
+            const auth = Buffer.from(`${GEOSERVER_USER}:${GEOSERVER_PASSWORD}`).toString('base64');
+            proxyReq.setHeader('Authorization', `Basic ${auth}`);
 
-        // الحفاظ على بيانات الـ Body للطلبات القادمة من الخريطة
-        const contentType = req.headers['content-type'] || '';
-        if (req.body) {
-            if (contentType.includes('application/json')) {
-                const bodyData = JSON.stringify(req.body);
-                proxyReq.setHeader('Content-Length', Buffer.byteLength(bodyData));
-                proxyReq.write(bodyData);
-            } else if (contentType.includes('text/xml') || contentType.includes('application/xml')) {
-                // للطلبات XML (WFS-T)
-                proxyReq.setHeader('Content-Length', Buffer.byteLength(req.body));
-                proxyReq.write(req.body);
+            // إصلاح جسم الطلب بعد express body parsers عند الحاجة، خصوصاً JSON.
+            fixRequestBody(proxyReq, req, res);
+        },
+        error: (err, req, res) => {
+            console.error('[Proxy] Error:', err.message);
+            console.error('[Proxy] GeoServer Target:', GEOSERVER_TARGET);
+            if (!res.headersSent) {
+                res.status(502).json({
+                    error: 'GeoServer connection failed',
+                    details: err.message,
+                    target: GEOSERVER_TARGET,
+                    hint: 'تأكد من أن GeoServer يعمل على العنوان المحدد'
+                });
             }
-        }
-    },
-    onError: (err, req, res) => {
-        console.error('[Proxy] Error:', err.message);
-        console.error('[Proxy] GeoServer Target:', GEOSERVER_TARGET);
-        if (!res.headersSent) {
-            res.status(502).json({
-                error: 'GeoServer connection failed',
-                details: err.message,
-                target: GEOSERVER_TARGET,
-                hint: 'تأكد من أن GeoServer يعمل على العنوان المحدد'
-            });
         }
     }
 }));
