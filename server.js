@@ -36,10 +36,19 @@ const requestLogger = (req, res, next) => {
 };
 
 app.use(requestLogger);
-// 🔒 تفعيل Helmet.js مع CSP مريح للخرائط (تعطيل للتطوير المحلي)
+// 🔒 تفعيل Helmet.js مع CSP مريح للخرائط
 app.use(helmet({
-    contentSecurityPolicy: false, // تعطيل CSP للتطوير المحلي
-    hsts: false, // تعطيل HSTS للتطوير المحلي
+    contentSecurityPolicy: process.env.NODE_ENV === 'production' ? {
+        directives: {
+            defaultSrc: ["'self'"],
+            scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'", "https://cdn.jsdelivr.net", "https://cdnjs.cloudflare.com"],
+            styleSrc: ["'self'", "'unsafe-inline'", "https://cdnjs.cloudflare.com"],
+            imgSrc: ["'self'", "data:", "https://cdn-icons-png.flaticon.com", "https://*.tile.openstreetmap.org"],
+            connectSrc: ["'self'", "https://cdn.jsdelivr.net"],
+            fontSrc: ["'self'", "https://cdnjs.cloudflare.com"]
+        }
+    } : false, // تعطيل للتطوير المحلي
+    hsts: process.env.NODE_ENV === 'production', // تفعيل HSTS للإنتاج فقط
     noSniff: true,
     xssFilter: true,
     referrerPolicy: { policy: 'strict-origin-when-cross-origin' }
@@ -48,7 +57,7 @@ app.use(helmet({
 // 🔒 إعدادات CORS - السماح بالوصول المحلي/الشبكي والدومين مع الحفاظ على الحماية
 const allowedOrigins = process.env.ALLOWED_ORIGINS
     ? process.env.ALLOWED_ORIGINS.split(',').map(o => o.trim()).filter(Boolean)
-    : ['http://localhost:3000', 'http://127.0.0.1:3000', 'http://144.91.84.168:3000', 'http://194.163.174.162:3000', 'http://192.168.88.5:3000', 'http://192.168.88.5', 'http://144.91.84.168', 'https://144.91.84.168', 'https://localhost', 'https://127.0.0.1', 'https://psm.alameenapps.com', 'http://psm.alameenapps.com', '*'];
+    : ['http://localhost:3000', 'http://127.0.0.1:3000', 'http://144.91.84.168:3000', 'http://194.163.174.162:3000', 'http://192.168.88.5:3000', 'http://192.168.88.5', 'http://144.91.84.168', 'https://144.91.84.168', 'https://localhost', 'https://127.0.0.1', 'https://psm.alameenapps.com', 'http://psm.alameenapps.com'];
 
 const isAllowedOrigin = (origin) => {
     if (!origin) return true;
