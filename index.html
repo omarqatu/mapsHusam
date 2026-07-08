@@ -2,15 +2,7 @@
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <script>
-        (function () {
-            var isLocalHost = window.location.hostname === '127.0.0.1' || window.location.hostname === 'localhost';
-            if (isLocalHost && window.location.port && window.location.port !== '3000') {
-                window.location.replace('http://localhost:3000' + window.location.pathname + window.location.search + window.location.hash);
-            }
-        })();
-    </script>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>خريطة الخدمات الفلسطينية</title>
 
     <!-- Open Graph Tags لتحسين ظهور الرابط في مواقع التواصل الاجتماعي -->
@@ -43,7 +35,7 @@
     <link rel="stylesheet" href="./css/notifications.css">
 </head>
 <body>
-    
+
 <div id="user-top-badge-container" class="hidden" style="display: none;">
     <span class="user-badge-name" id="top-username-display">---</span>
     <span class="user-badge-role" id="top-userrole-display">---</span>
@@ -92,7 +84,7 @@
     </div>
 
     <h2>خريطة الخدمات الفلسطينية</h2>
-    
+
     <div id="basemap-switcher">
         <select id="basemap-select">
             <option value="esri" selected>صورة فضائية</option>
@@ -394,7 +386,7 @@
             المنصة التفاعلية الأولى لربط المستخدمين بمزودي الخدمات وأصحاب العقارات في فلسطين. 
             سواء كنت تبحث عن خدمة، أو لديك عقار للبيع أو الإيجار، نحن نمنحك تسويقاً جغرافياً ذكياً يربطك مباشرة بالجمهور.
         </p>
-        
+
         <hr class="auth-divider">
 
         <h4 class="auth-section-title">سياسة وشروط الاستخدام:</h4>
@@ -412,7 +404,7 @@
                 <input type="checkbox" id="agree-to-terms">
                 <span>أوافق على سياسة الاستخدام وإخلاء المسؤولية المذكورة أعلاه.</span>
             </label>
-            
+
             <div class="facebook-like-section">
                 <p>يدعمنا استمراركم، يرجى تسجيل الإعجاب بصفحتنا على فيسبوك للمتابعة:</p>
                 <a href="https://www.facebook.com/MapServesPalestine/" target="_blank" id="fb-page-link" class="fb-button">
@@ -431,7 +423,7 @@
                 📧 التسجيل عبر البريد الإلكتروني
             </button>
         </div>
-        
+
         <button type="button" class="btn-auth" id="btn-welcome-back-to-login" style="background-color: #27ae60; width: 100%; margin-top: 15px; color: white; padding: 12px; border: none; border-radius: 5px; cursor: pointer; font-size: 16px;">
             ⬅️ إذا كنت مسجلاً مسبقاً، انقر هنا لتسجيل الدخول
         </button>
@@ -440,13 +432,13 @@
     <div id="auth-login-form-section" class="auth-dialog-box hidden">
         <h3 class="auth-title">تسجيل الدخول للخريطة</h3>
         <p class="auth-welcome-text" style="text-align: center;">أدخل بيانات حسابك المسجل للدخول إلى الخريطة التفاعلية</p>
-        
+
         <form id="login-form">
             <div class="auth-form-group">
                 <label>البريد الإلكتروني:</label>
                 <input type="email" id="login-email" placeholder="example@mail.com" required>
             </div>
-            
+
             <div class="auth-form-group">
                 <label>رقم الجوال:</label>
                 <input type="text" id="login-phone" placeholder="05xxxxxxxx" required>
@@ -458,7 +450,7 @@
             </div>
 
             <button type="submit" class="btn-auth btn-submit-reg" style="background-color: #27ae60;" id="btn-submit-login">دخول إلى المنصة</button>
-            
+
             <hr class="auth-divider">
             <p style="text-align:center; margin-bottom:5px; font-size:16px; color:#777;">أو يمكنك مراجعة الاتفاقية والشروط ثم إنشاء حساب جديد:</p>
             <button type="button" class="btn-auth-back" id="btn-login-back-to-welcome" style="background-color: #3c384d; margin-top:0;">📋 من هنا للموافقة على الاتفاقية والشروط</button>
@@ -472,18 +464,18 @@
 
         <h3 class="auth-title">إنشاء حساب جديد بالبريد</h3>
         <p class="auth-welcome-text" style="text-align: center;">يرجى ملء البيانات التالية للانضمام إلى الخريطة</p>
-        
+
         <form id="register-form">
             <div class="auth-form-group">
                 <label>الاسم الكامل:</label>
                 <input type="text" id="reg-name" placeholder="أدخل اسمك الشخصي أو التجاري" required>
             </div>
-            
+
             <div class="auth-form-group">
                 <label>البريد الإلكتروني:</label>
                 <input type="email" id="reg-email" placeholder="example@mail.com" required>
             </div>
-            
+
             <div class="auth-form-group">
                 <label>كلمة المرور:</label>
                 <input type="password" id="reg-password" placeholder="••••••••" required>
@@ -503,7 +495,7 @@
             </div>
 
             <button type="submit" class="btn-auth btn-submit-reg" id="btn-submit-register">إتمام التسجيل والدخول الخريطة</button>
-            
+
             <p style="text-align:center; margin-top:12px; font-size:13px; color:#444;">
                 لديك حساب بالفعل؟ <a href="#" id="go-to-login" style="color:#2980b9; font-weight:bold; text-decoration:underline;">تسجيل الدخول من هنا</a>
             </p>
@@ -515,7 +507,7 @@
     <!-- تم تغيير النص من — إلى + -->
     <button type="button" id="toggleBannerBtn" class="banner-toggle-btn" title="تكبير البنر" style="pointer-events: auto !important;"
             onclick="handleBannerToggle(event, this)">+</button>
-    
+
     <button type="button" id="dragBannerBtn" class="banner-drag-btn" title="تحريك" style="pointer-events: auto !important;">⋮⋮</button>
 
     <!-- إضافة الكلاس minimized هنا -->
@@ -595,9 +587,9 @@ function handleBannerToggle(event, button) {
     event.preventDefault(); 
     event.stopPropagation(); 
     var banner = document.getElementById('feedbackBanner');
-    
+
     banner.classList.toggle('minimized');
-    
+
     // تحديث نص الزر بناءً على الحالة الجديدة
     if(banner.classList.contains('minimized')){
         button.innerText = '+'; 
@@ -614,7 +606,7 @@ function handleBannerLinkClick(event, banner) {
         event.preventDefault();
         event.stopPropagation();
         banner.classList.remove('minimized');
-        
+
         var toggleBtn = document.getElementById('toggleBannerBtn');
         toggleBtn.innerText = '—';
         toggleBtn.setAttribute('title', 'تصغير');
