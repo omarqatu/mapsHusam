@@ -9,12 +9,12 @@ document.addEventListener("DOMContentLoaded", function () {
     const welcomeSection = document.getElementById("auth-welcome-section");
     const emailFormSection = document.getElementById("auth-email-form-section");
     const authLoginSection = document.getElementById("auth-login-form-section");
-    
+
     const agreeCheckbox = document.getElementById("agree-to-terms");
     const likedCheckbox = document.getElementById("liked-fb-page");
     const buttonsGroup = document.getElementById("auth-buttons-group");
     const registerForm = document.getElementById("register-form");
-    
+
     // الزر المضاف للانتقال للتسجيل
     const btnGoToRegisterEmail = document.getElementById("btn-go-to-register-email");
 
@@ -28,7 +28,7 @@ document.addEventListener("DOMContentLoaded", function () {
     if (savedUser && authOverlay) {
         try {
             const parsedUser = JSON.parse(savedUser);
-            
+
             // تمرير الكائن لعمل تفعيل فوري للمنصة وتخطي شاشة شاشة الحجب الرمادية
             enterPlatform(parsedUser, true); 
             return; 
@@ -42,17 +42,6 @@ document.addEventListener("DOMContentLoaded", function () {
     if (!authOverlay || !agreeCheckbox || !likedCheckbox || !buttonsGroup) {
         console.warn("نظام الترحيب: بعض عناصر HTML الترحيبية غير متوفرة بعد في الـ DOM أو تم تعديلها.");
         return;
-    }
-
-    const isMobileViewport = window.innerWidth <= 768 || /Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
-    if (isMobileViewport) {
-        setTimeout(() => {
-            if (!authOverlay || authOverlay.style.display === 'none') return;
-            if (authOverlay.parentNode) {
-                authOverlay.parentNode.removeChild(authOverlay);
-            }
-            window.refreshMapLayout();
-        }, 1200);
     }
 
     // ==========================================
@@ -90,12 +79,12 @@ document.addEventListener("DOMContentLoaded", function () {
     if (registerForm) {
         registerForm.addEventListener("submit", async function (e) {
             e.preventDefault(); 
-            
+
             const nameValue = document.getElementById("reg-name").value;
             const emailValue = document.getElementById("reg-email").value.trim().toLowerCase();
             const phoneValue = document.getElementById("reg-phone").value.trim();
             const passwordValue = document.getElementById("reg-password").value;
-            
+
             // تحقق صارم من رقم الجوال في الفرونت إند (10 أرقام تبدأ بـ 05)
             const phoneRegex = /^05\d{8}$/;
             if (!phoneRegex.test(phoneValue)) {
@@ -110,6 +99,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
             try {
                 const response = await fetch('/api/auth/register', {
+
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
                     body: JSON.stringify({
@@ -221,7 +211,7 @@ document.addEventListener("DOMContentLoaded", function () {
     if (loginForm) {
         loginForm.addEventListener('submit', async function(e) {
             e.preventDefault();
-            
+
             const email = document.getElementById('login-email').value.trim();
             const phone = document.getElementById('login-phone').value.trim();
             const password = document.getElementById('login-password').value;
@@ -241,6 +231,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
             try {
                 const response = await fetch('/api/auth/login', {
+
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
                     body: JSON.stringify({ email, phone, password })
