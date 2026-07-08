@@ -16,7 +16,7 @@
 .provider-panel-body {
     padding: 15px;
     overflow-y: auto;
-    max-height: calc(100vh - 150px);
+    max-height: none; /* إزالة الحد الأقصى للارتفاع على الكمبيوتر */
 }
 
 .provider-panel-header {
