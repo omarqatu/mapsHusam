@@ -183,14 +183,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 const isRoad = key.toLowerCase().includes('road') || title.includes('طرق') || title.includes('شوارع');
                 const isInternalSearch = key.toLowerCase().includes('search') || key.toLowerCase().includes('highlight');
 
-                if (isRoad) {
-                    lyr.setVisible(false);
-                } else if (isInternalSearch) {
-                    lyr.setVisible(true);
-                } else {
-                    // احترام الحالة الأصلية للطبقة عند الإنشاء، لتجنب تحميل كل الطبقات دفعة واحدة
-                    lyr.setVisible(lyr.getVisible());
-                }
+                if (isRoad) lyr.setVisible(false);
+                else if (isInternalSearch) lyr.setVisible(true);
+                else lyr.setVisible(true);
 
                 // تخزين الطبقات في الكائن العالمي
                 window.overlayLayersObj[key] = lyr;
@@ -226,19 +221,6 @@ document.addEventListener('DOMContentLoaded', () => {
         })
     });
     window.map = map;
-
-    const refreshMapSize = () => {
-        setTimeout(() => {
-            if (map && typeof map.updateSize === 'function') {
-                map.updateSize();
-            }
-        }, 120);
-    };
-
-    window.addEventListener('resize', refreshMapSize);
-    window.addEventListener('orientationchange', refreshMapSize);
-    window.addEventListener('load', refreshMapSize);
-    refreshMapSize();
 
     // متغيرات تتبع الموقع الحي والمستمر
     window.userLocationWatchId = null;
@@ -363,16 +345,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
             splashOverlay.appendChild(dialogBox);
             document.body.appendChild(splashOverlay);
-
-            const shouldAutoDismissSplash = window.innerWidth <= 768 || /Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
-            if (shouldAutoDismissSplash) {
-                setTimeout(() => {
-                    if (document.body.contains(splashOverlay)) {
-                        document.body.removeChild(splashOverlay);
-                        window.refreshMapLayout();
-                    }
-                }, 1800);
-            }
 
             dialogBox.querySelectorAll('.splash-opt-btn').forEach(btn => {
                 btn.addEventListener('click', function() {
