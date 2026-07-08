@@ -110,7 +110,6 @@ function enterPlatform(userData, isAutoboot = false) {
     // تهيئة نظام الإشعارات
     if (window.notificationSystem && userData.user_id) {
         window.notificationSystem.init(userData.user_id);
-        console.log('✅ تم تهيئة نظام الإشعارات للمستخدم:', userData.user_id);
     }
 
     // إظهار زر الإشعارات
