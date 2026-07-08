@@ -6,7 +6,7 @@
     left: 50%; 
     transform: translateX(-50%);
     text-align: center; 
-    z-index: 350; 
+    z-index: 500; 
     display: flex; 
     justify-content: center;
     flex-wrap: wrap; 
