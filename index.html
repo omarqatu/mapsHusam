@@ -35,7 +35,6 @@
     <link rel="stylesheet" href="./css/notifications.css">
 </head>
 <body>
-
 <div id="user-top-badge-container" class="hidden" style="display: none;">
     <span class="user-badge-name" id="top-username-display">---</span>
     <span class="user-badge-role" id="top-userrole-display">---</span>
@@ -46,12 +45,16 @@
         <i class="fas fa-bell"></i>
         <span id="notification-badge">0</span>
     </button>
+    
+    <button class="btn-change-pwd-top" id="btn-change-password" onclick="window.changeUserPassword(event)">
+    <i class="fas fa-key"></i> تغيير كلمة المرور
+    </button>
+
     <button class="btn-logout-top" onclick="window.logoutPlatform()">
         <i class="fas fa-sign-out-alt"></i> تسجيل الخروج
     </button>
 </div>
 
-<!-- قائمة الإشعارات المنبثقة -->
 <div id="notification-dropdown" class="notification-dropdown">
     <div class="notification-dropdown-header">
         <h3>الإشعارات</h3>

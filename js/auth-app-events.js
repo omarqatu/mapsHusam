@@ -3,6 +3,136 @@
  * يحتوي على منطق التشغيل، التعامل مع النماذج، والاتصال بالسيرفر
  */
 
+// ==========================================
+// ⚙️ نظام تغيير كلمة المرور المطور بنافذة منبثقة مخفية وآمنة
+// ==========================================
+window.changeUserPassword = function (e) {
+    if (e) e.preventDefault();
+
+    // 1. جلب بيانات المستخدم لمعرفة معرفه (ID)
+    const savedUser = localStorage.getItem('map_user');
+    if (!savedUser) {
+        alert("يرجى تسجيل الدخول أولاً لتتمكن من تغيير كلمة المرور.");
+        return;
+    }
+    
+    let parsedUser;
+    try {
+        parsedUser = JSON.parse(savedUser);
+    } catch(err) {
+        alert("خطأ في قراءة بيانات المستخدم الحالي.");
+        return;
+    }
+    
+    const userId = parsedUser.user_id || parsedUser.id;
+
+    // إزالة أي نافذة قديمة إن وجدت بالصفحة
+    const oldModal = document.getElementById('custom-pwd-modal');
+    if (oldModal) oldModal.remove();
+
+    // 2. إنشاء عناصر النافذة المنبثقة ديناميكياً وتنسيقها
+    const modal = document.createElement('div');
+    modal.id = 'custom-pwd-modal';
+    modal.style.cssText = `
+        position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+        background: rgba(0,0,0,0.6); z-index: 200000; display: flex;
+        align-items: center; justify-content: center; font-family: system-ui, sans-serif;
+        direction: rtl; padding: 15px; box-sizing: border-box;
+    `;
+
+    const content = document.createElement('div');
+    content.style.cssText = `
+        background: #fff; padding: 25px; border-radius: 12px; width: 100%; max-width: 400px;
+        box-shadow: 0 5px 20px rgba(0,0,0,0.3); border: 1px solid #e0e0e0;
+    `;
+
+    content.innerHTML = `
+        <h3 style="margin-top: 0; color: #2c3e50; font-size: 18px; border-bottom: 2px solid #34495e; padding-bottom: 10px;">
+            <i class="fas fa-key"></i> تغيير كلمة المرور بأمان
+        </h3>
+        
+        <div style="margin-top: 15px;">
+            <label style="display:block; font-size: 13px; color: #555; margin-bottom: 5px; font-weight: bold;">كلمة المرور الحالية:</label>
+            <input type="password" id="modal-curr-pwd" style="width:100%; padding: 10px; border: 1px solid #ccc; border-radius: 6px; box-sizing: border-box; font-size: 14px; outline: none;" placeholder="••••••••">
+        </div>
+
+        <div style="margin-top: 15px;">
+            <label style="display:block; font-size: 13px; color: #555; margin-bottom: 5px; font-weight: bold;">كلمة المرور الجديدة (6 خانات كحد أدنى):</label>
+            <input type="password" id="modal-new-pwd" style="width:100%; padding: 10px; border: 1px solid #ccc; border-radius: 6px; box-sizing: border-box; font-size: 14px; outline: none;" placeholder="••••••••">
+        </div>
+
+        <p style="margin: 15px 0 0 0; font-size: 12px; color: #7f8c8d; line-height: 1.5; background: #f9f9f9; padding: 8px; border-radius: 6px; border-right: 3px solid #3498db;">
+            💡 <strong>تواجه مشكلة؟</strong> تواصل معنا مباشرة عبر <a href="https://www.facebook.com/MapServesPalestine" target="_blank" style="color: #2980b9; text-decoration: underline; font-weight: bold;">صفحتنا على الفيس بوك</a> لمساعدتك فوراً.
+        </p>
+
+        <div style="margin-top: 20px; display: flex; gap: 10px; justify-content: flex-end;">
+            <button id="modal-submit-btn" style="background: #27ae60; color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 13px;">تحديث</button>
+            <button id="modal-close-btn" style="background: #7f8c8d; color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer; font-size: 13px;">إلغاء</button>
+        </div>
+    `;
+
+    modal.appendChild(content);
+    document.body.appendChild(modal);
+
+    // 3. إدارة أحداث أزرار النافذة المخصصة
+    document.getElementById('modal-close-btn').onclick = function() {
+        modal.remove();
+    };
+
+    document.getElementById('modal-submit-btn').onclick = async function() {
+        const currentPassword = document.getElementById('modal-curr-pwd').value;
+        const newPassword = document.getElementById('modal-new-pwd').value;
+        const submitBtn = document.getElementById('modal-submit-btn');
+
+        if (!currentPassword.trim()) {
+            alert("خطأ: لا يمكن ترك حقل كلمة المرور الحالية فارغاً.");
+            return;
+        }
+        if (newPassword.trim().length < 6) {
+            alert("خطأ: يجب أن تتكون كلمة المرور الجديدة من 6 خانات أو أكثر.");
+            return;
+        }
+
+        submitBtn.disabled = true;
+        submitBtn.innerText = "جاري التعديل...";
+
+        try {
+            const response = await fetch('/api/auth/change-password', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+                body: JSON.stringify({
+                    userId: userId,
+                    currentPassword: currentPassword,
+                    newPassword: newPassword
+                })
+            });
+
+            const resText = await response.text();
+            let data;
+            try {
+                data = JSON.parse(resText);
+            } catch(pErr) {
+                throw new Error("استجابة غير متوقعة من خادم المنصة.");
+            }
+
+            if (response.ok && data.status === 'success') {
+                alert("🎉 تم تغيير كلمة المرور بنجاح!");
+                modal.remove(); // إغلاق النافذة عند النجاح
+            } else {
+                alert("❌ فشل التعديل: " + (data.error || data.message || "حدث خطأ غير متوقع"));
+                submitBtn.disabled = false;
+                submitBtn.innerText = "تحديث";
+            }
+
+        } catch (error) {
+            console.error('❌ خطأ أثناء الاتصال بالسيرفر لتغيير كلمة المرور:', error);
+            alert(error.message || 'حدث خطأ أثناء الاتصال بالسيرفر، يرجى المحاولة لاحقاً.');
+            submitBtn.disabled = false;
+            submitBtn.innerText = "تحديث";
+        }
+    };
+};
+
 document.addEventListener("DOMContentLoaded", function () {
     // جلب عناصر شاشة الترحيب والتسجيل
     const authOverlay = document.getElementById("auth-splash-overlay");
@@ -15,21 +145,14 @@ document.addEventListener("DOMContentLoaded", function () {
     const buttonsGroup = document.getElementById("auth-buttons-group");
     const registerForm = document.getElementById("register-form");
 
-    // الزر المضاف للانتقال للتسجيل
     const btnGoToRegisterEmail = document.getElementById("btn-go-to-register-email");
 
-    // إخفاء فوري وتام لجميع لوحات وأزرار التحرير الخاصة بالمشرف عند بدء التشغيل لحين التحقق
     hideAllEditPanelsAndButtonsGlobally();
 
-    // ==========================================
-    // 🔥 فحص حالة تسجيل الدخول المستمر (جلسة المستخدم) عند فتح الصفحة
-    // ==========================================
     const savedUser = localStorage.getItem('map_user');
     if (savedUser && authOverlay) {
         try {
             const parsedUser = JSON.parse(savedUser);
-
-            // تمرير الكائن لعمل تفعيل فوري للمنصة وتخطي شاشة شاشة الحجب الرمادية
             enterPlatform(parsedUser, true); 
             return; 
         } catch (e) {
@@ -38,15 +161,11 @@ document.addEventListener("DOMContentLoaded", function () {
         }
     }
 
-    // فحص سلامة العناصر لمنع إيقاف الـ Script بالكامل في حال غياب أحد الديفات بالصفحة
     if (!authOverlay || !agreeCheckbox || !likedCheckbox || !buttonsGroup) {
         console.warn("نظام الترحيب: بعض عناصر HTML الترحيبية غير متوفرة بعد في الـ DOM أو تم تعديلها.");
         return;
     }
 
-    // ==========================================
-    // إدارة شروط تفعيل أزرار الترحيب الشاملة
-    // ==========================================
     function validateWelcomeTerms() {
         if (agreeCheckbox.checked && likedCheckbox.checked) {
             buttonsGroup.classList.remove("auth-buttons-disabled");
@@ -60,7 +179,6 @@ document.addEventListener("DOMContentLoaded", function () {
     agreeCheckbox.addEventListener("change", validateWelcomeTerms);
     likedCheckbox.addEventListener("change", validateWelcomeTerms);
 
-    // تفعيل وظيفة الزر للانتقال للتسجيل
     if (btnGoToRegisterEmail) {
         btnGoToRegisterEmail.addEventListener("click", function(e) {
             e.preventDefault();
@@ -73,9 +191,6 @@ document.addEventListener("DOMContentLoaded", function () {
         });
     }
 
-    // ==========================================
-    // إرسال نموذج إنشاء حساب جديد مع التحقق من رقم الجوال
-    // ==========================================
     if (registerForm) {
         registerForm.addEventListener("submit", async function (e) {
             e.preventDefault(); 
@@ -85,7 +200,6 @@ document.addEventListener("DOMContentLoaded", function () {
             const phoneValue = document.getElementById("reg-phone").value.trim();
             const passwordValue = document.getElementById("reg-password").value;
 
-            // تحقق صارم من رقم الجوال في الفرونت إند (10 أرقام تبدأ بـ 05)
             const phoneRegex = /^05\d{8}$/;
             if (!phoneRegex.test(phoneValue)) {
                 alert("خطأ: يجب أن يتكون رقم الجوال من 10 أرقام ويبدأ بـ 05 (مثال: 0599123456)");
@@ -93,13 +207,11 @@ document.addEventListener("DOMContentLoaded", function () {
             }
 
             const roleValue = "user"; 
-
             const submitButton = document.getElementById("btn-submit-register");
             if (submitButton) submitButton.disabled = true; 
 
             try {
                 const response = await fetch('/api/auth/register', {
-
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
                     body: JSON.stringify({
@@ -124,23 +236,25 @@ document.addEventListener("DOMContentLoaded", function () {
                 }
 
                 if (registerData.status === 'success') {
-                    const newUser = registerData.user || {};
-                    let finalUserData = {
-                        id: parseInt(newUser.user_id),
-                        user_id: parseInt(newUser.user_id),
-                        name: newUser.full_name,
-                        full_name: newUser.full_name,
-                        email: newUser.email,
-                        phone: newUser.phone,
-                        role: newUser.role,
-                        service_layer: null,
-                        feature_id: null,
-                        targetLayer: null,
-                        targetId: null
-                    };
+                    const userConfirmed = confirm(
+                        "🎉 تم تسجيل حسابك بنجاح!\n\n" +
+                        "لتفعيل الحساب والتمكن من الدخول للمنصة، يرجى التواصل معنا عبر رسائل صفحتنا على الفيس بوك وإرسال الاسم الكامل ورقم جوالك.\n\n" +
+                        "اضغط على (موافق) لفتح صفحة الفيس بوك ومراسلتنا الآن للتفعيل 👇"
+                    );
+                    
+                    if (userConfirmed) {
+                        window.open("https://www.facebook.com/MapServesPalestine", "_blank");
+                    }
 
-                    enterPlatform(finalUserData, false);
+                    if (emailFormSection) emailFormSection.classList.add("hidden");
+                    if (authLoginSection) authLoginSection.classList.remove("hidden");
+                    
+                    if (submitButton) {
+                        submitButton.disabled = false;
+                    }
+                    return; 
                 }
+
             } catch (error) {
                 console.error('❌ خطأ في عملية التسجيل:', error);
                 alert(error.message || 'حدث خطأ أثناء التسجيل، يرجى المحاولة لاحقاً.');
@@ -151,9 +265,6 @@ document.addEventListener("DOMContentLoaded", function () {
 
     validateWelcomeTerms();
 
-    // ==========================================
-    // نظام التنقل الفوري والتبادلي للشاشات من شاشة الدخول الأساسية
-    // ==========================================
     const goToRegisterBtn = document.getElementById('go-to-register');
     if (goToRegisterBtn) {
         goToRegisterBtn.addEventListener('click', function(e) {
@@ -204,9 +315,6 @@ document.addEventListener("DOMContentLoaded", function () {
         });
     }
 
-    // ==========================================
-    // إرسال نموذج تسجيل الدخول (Login) إلى السيرفر
-    // ==========================================
     const loginForm = document.getElementById('login-form');
     if (loginForm) {
         loginForm.addEventListener('submit', async function(e) {
@@ -217,7 +325,6 @@ document.addEventListener("DOMContentLoaded", function () {
             const password = document.getElementById('login-password').value;
             const submitBtn = document.getElementById('btn-submit-login');
 
-            // فحص أولي لرقم الهاتف قبل إرساله إلى السيرفر
             const phoneRegex = /^05\d{8}$/;
             if (!phoneRegex.test(phone)) {
                 alert("صيغة رقم الجوال غير صحيحة، يجب أن يتكون من 10 أرقام ويبدأ بـ 05.");
@@ -231,7 +338,6 @@ document.addEventListener("DOMContentLoaded", function () {
 
             try {
                 const response = await fetch('/api/auth/login', {
-
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
                     body: JSON.stringify({ email, phone, password })
@@ -270,7 +376,6 @@ document.addEventListener("DOMContentLoaded", function () {
 
                     enterPlatform(finalUserData, false);
 
-                    // تهيئة نظام الإشعارات بعد تسجيل الدخول الناجح
                     if (window.notificationSystem && finalUserData.user_id) {
                         window.notificationSystem.init(finalUserData.user_id);
                         console.log('✅ تم تهيئة نظام الإشعارات للمستخدم:', finalUserData.user_id);

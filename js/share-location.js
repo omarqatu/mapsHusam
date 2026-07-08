@@ -104,7 +104,7 @@ function initializeShareLocationTools(map) {
         observer.observe(targetPanel, { attributes: true, attributeFilter: ['class'] });
     }
 
-    // برمجة زر النسخ
+// برمجة زر النسخ
     copyBtn?.addEventListener('click', async () => {
         if (!shareLinkInput || !shareLinkInput.value) {
             alert("يرجى تحديد موقع على الخريطة أولاً.");
@@ -112,17 +112,29 @@ function initializeShareLocationTools(map) {
         }
 
         const urlToCopy = shareLinkInput.value;
+        const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
 
-        // طريقة متوافقة مع الموبايل والكمبيوتر
+        // 📱 على الموبايل: استخدام قائمة المشاركة الأصلية لتفادي مشكلة تحويل الرابط لبحث جوجل عند اللصق
+        if (isMobile && navigator.share) {
+            try {
+                await navigator.share({
+                    title: 'موقع مشارك على الخريطة',
+                    url: urlToCopy
+                });
+            } catch (e) {
+                // المستخدم ألغى المشاركة، لا حاجة لفعل شيء
+            }
+            return;
+        }
+
+        // 💻 على الكمبيوتر: نفس منطق النسخ القديم
         try {
-            // المحاولة الأولى: استخدام Clipboard API الحديث
             if (navigator.clipboard && navigator.clipboard.writeText) {
                 await navigator.clipboard.writeText(urlToCopy);
                 showCopySuccess();
             } else {
-                // الفallback: استخدام الطريقة القديمة
                 shareLinkInput.select();
-                shareLinkInput.setSelectionRange(0, 99999); // للموبايل
+                shareLinkInput.setSelectionRange(0, 99999);
                 const successful = document.execCommand('copy');
                 if (successful) {
                     showCopySuccess();
@@ -146,7 +158,6 @@ function initializeShareLocationTools(map) {
             }, 2000);
         }
     });
-
     // برمجة زر نسخ الإحداثيات الفلسطينية
     const copyPalBtn = document.getElementById('copy-pal-coords-btn');
     copyPalBtn?.addEventListener('click', async () => {

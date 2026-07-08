@@ -481,7 +481,9 @@ app.get('/api/stats-summary', async (req, res) => {
     }
 });
 
-// مسار تسجيل مستخدم جديد
+// ==========================================
+// 1️⃣ مسار تسجيل مستخدم جديد
+// ==========================================
 app.post('/api/auth/register', async (req, res) => {
     const { name, email, phone, password, role } = req.body;
 
@@ -513,7 +515,7 @@ app.post('/api/auth/register', async (req, res) => {
 
         const insertUserQuery = `
             INSERT INTO public.users (full_name, email, phone, password_hash, role, status, is_active)
-            VALUES ($1, $2, $3, $4, $5, 0, true)
+            VALUES ($1, $2, $3, $4, $5, 0, false)
             RETURNING user_id, full_name, email, phone, role
         `;
 
@@ -556,7 +558,64 @@ app.post('/api/auth/register', async (req, res) => {
             details: err.message 
         });
     }
-});
+}); 
+
+// ==========================================
+// 2️⃣ مسار تغيير كلمة المرور للمستخدم (التحقق من الحالية ثم كتابة الجديدة)
+// ==========================================
+app.post('/api/auth/change-password', async (req, res) => {
+    const { userId, currentPassword, newPassword } = req.body;
+
+    console.log(`📥 محاولة تغيير كلمة المرور للمستخدم رقم: ${userId}`);
+
+    // التأكد من إرسال كافة البيانات المطلوبة
+    if (!userId || !currentPassword || !newPassword) {
+        return res.status(400).json({ error: 'الرجاء إدخال كلمة المرور الحالية وكلمة المرور الجديدة.' });
+    }
+
+    if (newPassword.trim().length < 6) {
+        return res.status(400).json({ error: 'يجب أن تتكون كلمة المرور الجديدة من 6 خانات على الأقل.' });
+    }
+
+    try {
+        // 1. جلب كلمة المرور الحالية المخزنة في قاعدة البيانات لهذا المستخدم
+        const getUserQuery = 'SELECT password_hash FROM public.users WHERE user_id = $1';
+        const userResult = await servicesPool.query(getUserQuery, [userId]);
+
+        if (userResult.rows.length === 0) {
+            return res.status(404).json({ error: 'المستخدم غير موجود في النظام!' });
+        }
+
+        const storedPassword = userResult.rows[0].password_hash;
+
+        // 2. مقارنة كلمة المرور المدخلة بالحالية نصياً مباشرة
+        if (currentPassword !== storedPassword) {
+            return res.status(400).json({ error: 'كلمة المرور الحالية التي أدخلتها غير صحيحة!' });
+        }
+
+        // 3. تحديث كلمة المرور الجديدة في قاعدة البيانات
+        const updatePasswordQuery = `
+            UPDATE public.users 
+            SET password_hash = $1 
+            WHERE user_id = $2
+        `;
+        await servicesPool.query(updatePasswordQuery, [newPassword, userId]);
+
+        console.log(`✅ تم تحديث كلمة المرور بنجاح للمستخدم رقم: ${userId}`);
+
+        res.status(200).json({
+            status: 'success',
+            message: 'تم تغيير كلمة المرور بنجاح!'
+        });
+
+    } catch (err) {
+        console.error('❌ خطأ أثناء تغيير كلمة المرور في قاعدة البيانات:', err.message);
+        res.status(500).json({ 
+            error: 'حدث خطأ داخلي بالسيرفر أثناء تعديل كلمة المرور',
+            details: err.message 
+        });
+    }
+}); 
 
 // مسار تسجيل الدخول المحدث (الفحص الثلاثي المتطابق الشامل بدون أي قيم وهمية)
 app.post('/api/auth/login', async (req, res) => {

@@ -162,3 +162,36 @@
     }
 }
 
+/* --- تنسيق زر تغيير كلمة المرور الجديد --- */
+.btn-change-pwd-top {
+    background-color: #34495e;
+    color: white;
+    border: none;
+    padding: 4px 10px;
+    border-radius: 4px;
+    font-size: 12px;
+    cursor: pointer;
+    transition: background 0.3s;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+.btn-change-pwd-top:hover { 
+    background-color: #2c3e50; 
+}
+
+/* التوافق مع شاشات الموبايل العمودية */
+@media (max-width: 767px) {
+    .btn-change-pwd-top {
+        padding: 3px 6px;
+        font-size: 9px;
+    }
+}
+
+/* التوافق مع شاشات الموبايل الأفقية Landscape */
+@media (max-width: 900px) and (orientation: landscape) {
+    .btn-change-pwd-top { 
+        padding: 3px 6px !important; 
+        font-size: 9px !important; 
+    }
+}

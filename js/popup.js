@@ -136,7 +136,7 @@ function initializePopup(map) {
                 </div>`;
     }
 
-    window.copyLocationLink = function(coordinate) {
+window.copyLocationLink = function(coordinate) {
         if (!coordinate || coordinate.length < 2) {
             alert('لا يمكن نسخ الموقع');
             return;
@@ -148,8 +148,18 @@ function initializePopup(map) {
         params.set('y', coordinate[1]);
 
         const shareLink = `${baseUrl}?${params.toString()}`;
+        const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
 
-        // طريقة تعمل على جميع الأجهزة (موبايل وكمبيوتر)
+        // 📱 على الموبايل: استخدام قائمة المشاركة الأصلية لتفادي مشكلة تحويل الرابط لبحث جوجل عند اللصق
+        if (isMobile && navigator.share) {
+            navigator.share({
+                title: 'موقع على الخريطة',
+                url: shareLink
+            }).catch(() => { /* المستخدم ألغى المشاركة، لا حاجة لفعل شيء */ });
+            return;
+        }
+
+        // 💻 على الكمبيوتر (أو إذا كانت المشاركة الأصلية غير مدعومة): نسخ تقليدي للحافظة
         const textarea = document.createElement('textarea');
         textarea.value = shareLink;
         textarea.style.position = 'fixed';
@@ -164,7 +174,6 @@ function initializePopup(map) {
             if (successful) {
                 alert('تم نسخ رابط الموقع بنجاح! يمكنك مشاركته الآن.');
             } else {
-                // Fallback لـ Clipboard API
                 if (navigator.clipboard && navigator.clipboard.writeText) {
                     navigator.clipboard.writeText(shareLink).then(() => {
                         alert('تم نسخ الرابط بنجاح! يمكنك مشاركته الآن.');
@@ -182,7 +191,7 @@ function initializePopup(map) {
             alert('فشل نسخ الرابط. يرجى المحاولة يدوياً.');
         }
     };
-
+    
     const overlay = new ol.Overlay({
         element: container,
         autoPan: { animation: { duration: 250 } },
