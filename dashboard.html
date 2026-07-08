@@ -2,14 +2,6 @@
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <script>
-        (function () {
-            var isLocalHost = window.location.hostname === '127.0.0.1' || window.location.hostname === 'localhost';
-            if (isLocalHost && window.location.port && window.location.port !== '3000') {
-                window.location.replace('http://localhost:3000' + window.location.pathname + window.location.search + window.location.hash);
-            }
-        })();
-    </script>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>إدارة السجلات - نظام الفلترة المتقدم</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
@@ -36,18 +28,18 @@
             .container { width: 100%; padding: 10px; border-radius: 0; box-shadow: none; min-height: 100vh; }
             h1 { font-size: 16px; margin-bottom: 10px; padding: 0 10px; }
         }
-        
+
         /* تنسيق الجدول */
         .table-container { overflow-x: auto; border-radius: 10px; border: 1px solid #e0e0e0; margin-top: 20px; }
         table { width: 100%; border-collapse: collapse; min-width: 1000px; }
         th { background-color: #1a73e8; color: white; padding: 15px; font-size: 14px; position: sticky; top: 0; z-index: 10; }
         td { padding: 12px; border-bottom: 1px solid #eee; text-align: center; font-size: 13px; }
         tr:hover { background-color: #f8f9fa; }
-        
+
         /* صف الفلاتر المتقدم */
         .filter-row { background-color: #f8f9fb; }
         .filter-row th { padding: 10px 5px; background-color: #f8f9fb; border-bottom: 2px solid #1a73e8; }
-        
+
         .filter-group { display: flex; flex-direction: column; gap: 5px; align-items: center; }
         .filter-input, .filter-select { 
             width: 90%; 
@@ -63,25 +55,25 @@
 
         /* أزرار التحكم والصفحات */
         .header-actions { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
-        
+
         /* شريط التنقل الذكي */
         .pagination-wrapper { display: flex; justify-content: space-between; align-items: center; margin-top: 25px; flex-wrap: wrap; gap: 20px; background: #fafafa; padding: 15px; border-radius: 10px; border: 1px solid #eee; }
         .page-size-selector { display: flex; align-items: center; gap: 10px; font-size: 13px; color: #333; font-weight: bold; }
         .page-size-select { padding: 6px 12px; border: 1px solid #ccc; border-radius: 5px; outline: none; background: white; cursor: pointer; font-weight: bold; color: #1a73e8; }
-        
+
         .pagination { display: flex; justify-content: center; align-items: center; gap: 8px; }
         .page-btn { background: #1a73e8; color: white; border: none; padding: 8px 14px; border-radius: 5px; cursor: pointer; font-weight: bold; font-size: 13px; display: flex; align-items: center; gap: 5px; transition: 0.2s; }
         .page-btn:disabled { background: #ccc; cursor: not-allowed; }
-        
+
         /* أزرار أرقام الصفحات */
         .page-num-btn { background: white; color: #1a73e8; border: 1px solid #e0e0e0; padding: 8px 14px; border-radius: 5px; cursor: pointer; font-weight: bold; transition: all 0.3s; font-size: 13px; }
         .page-num-btn:hover { background: #e8f0fe; border-color: #1a73e8; }
         .page-num-btn.active { background: #1a73e8; color: white; border-color: #1a73e8; box-shadow: 0 4px 10px rgba(26,115,232,0.3); }
-        
+
         .delete-btn { background: #d93025; color: white; border: none; padding: 6px 10px; border-radius: 4px; cursor: pointer; transition: 0.2s; }
         .delete-btn:hover { background: #a51d14; }
         .refresh-btn { background: #34a853; color: white; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; display: flex; align-items: center; gap: 8px; font-weight: bold; }
-        
+
         small { color: #666; font-family: monospace; font-size: 10px; }
         .no-data { padding: 40px; text-align: center; color: #999; font-style: italic; }
         .badge-count { font-weight: bold; color: #1a73e8; background: #e8f0fe; padding: 5px 15px; border-radius: 20px; }
@@ -91,7 +83,7 @@
 
 <div class="container">
     <h1><i class="fas fa-chart-line"></i> لوحة إدارة السجلات الذكية</h1>
-    
+
     <div class="header-actions">
         <button class="refresh-btn" onclick="resetFiltersAndLoad()"><i class="fas fa-sync-alt"></i> إعادة تعيين الفلاتر والتحميل</button>
         <button class="refresh-btn" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);" onclick="window.open('notifications-panel.html', '_blank')">
@@ -166,17 +158,17 @@
                 <option value="100">100</option>
             </select>
         </div>
-        
+
         <div class="pagination">
             <button id="prevGroupBtn" class="page-btn" onclick="changePageGroup(-1)" title="10 صفحات للخلف"><i class="fas fa-angle-double-right"></i></button>
             <button id="prevBtn" class="page-btn" onclick="changePage(-1)"><i class="fas fa-chevron-right"></i> السابق</button>
-            
+
             <div id="pageNumbers" style="display: flex; gap: 6px; align-items: center; margin: 0 5px;"></div>
-            
+
             <button id="nextBtn" class="page-btn" onclick="changePage(1)">التالي <i class="fas fa-chevron-left"></i></button>
             <button id="nextGroupBtn" class="page-btn" onclick="changePageGroup(1)" title="10 صفحات للأمام"><i class="fas fa-angle-double-left"></i></button>
         </div>
-        
+
         <span id="pageIndicator" style="font-weight: bold; color: #555; font-size: 13px;">صفحة 1 من 1</span>
     </div>
 </div>
@@ -192,7 +184,7 @@
         try {
             // السيرفر مبرمج خارجياً لإرجاع 10 سجلات كحد أقصى في كل طلب صفحة
             const backendPageSize = 10; 
-            
+
             // حساب نطاق الصفحات الخلفية المطلوب جلبها لتغطية العدد المحدد في الواجهة الأمامية
             const startBackendPage = Math.floor(((page - 1) * pageSize) / backendPageSize) + 1;
             const endBackendPage = Math.floor(((page * pageSize) - 1) / backendPageSize) + 1;
@@ -210,7 +202,7 @@
 
             // تنفيذ جلب البيانات بالتوازي لسرعة فائقة في الاستجابة
             const results = await Promise.all(fetchPromises);
-            
+
             results.forEach(result => {
                 if (result && result.data) {
                     fetchedData = fetchedData.concat(result.data);
@@ -222,7 +214,7 @@
 
             allData = fetchedData;
             currentPage = page;
-            
+
             // حساب إجمالي عدد الصفحات بناءً على الـ pageSize الفعلي المحدد
             if (totalRecords) {
                 totalPages = Math.ceil(totalRecords / pageSize);
@@ -234,7 +226,7 @@
             updateFilterOptions(allData);
             applyFilters();
             renderPaginationControls();
-            
+
             document.getElementById('totalInfo').innerText = `إجمالي السجلات: ${totalRecords || allData.length}`;
 
         } catch (err) {
@@ -245,12 +237,12 @@
     function renderPaginationControls() {
         const pageNumbersContainer = document.getElementById('pageNumbers');
         pageNumbersContainer.innerHTML = '';
-        
+
         const blockSize = 10; 
         const currentBlock = Math.ceil(currentPage / blockSize);
         const startPage = (currentBlock - 1) * blockSize + 1;
         const endPage = Math.min(startPage + blockSize - 1, totalPages);
-        
+
         for (let i = startPage; i <= endPage; i++) {
             const btn = document.createElement('button');
             btn.className = `page-num-btn ${i === currentPage ? 'active' : ''}`;
@@ -258,12 +250,12 @@
             btn.onclick = () => loadLogs(i);
             pageNumbersContainer.appendChild(btn);
         }
-        
+
         document.getElementById('pageIndicator').innerText = `صفحة ${currentPage} من ${totalPages}`;
-        
+
         document.getElementById('prevBtn').disabled = (currentPage === 1);
         document.getElementById('nextBtn').disabled = (currentPage === totalPages || totalPages === 0);
-        
+
         document.getElementById('prevGroupBtn').disabled = (startPage === 1);
         document.getElementById('nextGroupBtn').disabled = (endPage === totalPages || totalPages === 0);
     }
@@ -272,13 +264,13 @@
         const blockSize = 10;
         const currentBlock = Math.ceil(currentPage / blockSize);
         let newPage;
-        
+
         if (direction === -1) {
             newPage = (currentBlock - 2) * blockSize + 1;
         } else {
             newPage = currentBlock * blockSize + 1;
         }
-        
+
         if (newPage >= 1 && newPage <= totalPages) {
             loadLogs(newPage);
         }
@@ -291,20 +283,20 @@
 
     function updateFilterOptions(data) {
         const columns = ['user_name', 'provider_name', 'service_type', 'formatted_date'];
-        
+
         columns.forEach(col => {
             const select = document.querySelector(`.filter-select[data-col="${col}"]`);
             if (!select) return;
             const currentValue = select.value;
-            
+
             let uniqueValues;
-            
+
             if (select.getAttribute('data-type') === 'date-only') {
                 uniqueValues = [...new Set(data.map(item => item[col] ? item[col].split(' ')[0] : ''))].filter(Boolean).sort().reverse();
             } else {
                 uniqueValues = [...new Set(data.map(item => item[col]))].filter(Boolean).sort();
             }
-            
+
             select.innerHTML = '<option value="">الكل</option>';
             uniqueValues.forEach(val => {
                 const opt = document.createElement('option');
@@ -353,7 +345,7 @@
     function applyFilters() {
         const inputs = document.querySelectorAll('.filter-input');
         const selects = document.querySelectorAll('.filter-select');
-        
+
         const filteredData = allData.filter(row => {
             let isMatch = true;
 
