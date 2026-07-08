@@ -76,7 +76,6 @@ function initializeQuickSearch(map, overlayLayersObj) {
     if (MAP_CONFIG.layers.realestate) {
         MAP_CONFIG.layers.realestate.forEach(l => {
             if (!globalExcludedKeys.includes(l.id)) {
-                console.log(`Adding realestate layer to quick search: ${l.id} (${l.title})`);
                 dynamicQuickLayers.push({
                     key: l.id,
                     title: l.title,
