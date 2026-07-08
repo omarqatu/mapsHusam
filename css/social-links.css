@@ -10,7 +10,7 @@
    ========================================================================== */
 .feedback-banner-wrapper {
     position: fixed !important;
-    top: 200px !important;       /* التحكم بالارتفاع (نزول/طلوع) في الكمبيوتر */
+    top: 100px !important;       /* التحكم بالارتفاع (نزول/طلوع) في الكمبيوتر */
     left: 15% !important;        /* عملية السنترة المطلوبة فوق الخريطة */
     right: auto !important;
     transform: translateX(-50%) !important;
@@ -180,7 +180,7 @@
    ========================================================================== */
 @media (max-width: 767px) {
     .feedback-banner-wrapper {
-        top: 180px !important;   
+        top: 120px !important;   
         left: 50% !important;
         transform: translateX(-50%) !important;
         width: auto !important;

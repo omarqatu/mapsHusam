@@ -1,33 +1,39 @@
-/* features.css - البحث السريع، الطباعة، والنوافذ (Modal) المحدثة */
+/* features.css - التحكم الحصري والكامل بالأزرار والبحث السريع والـ Modals */
 
-/* البحث السريع */
+/* تثبيت شريط معلومات المستخدم في أعلى الصفحة وضمان ظهوره بشكل مستقر */
+.user-top-badge-container {
+    position: absolute !important;
+    top: 10px !important;
+    right: 20px !important;
+    z-index: 5000 !important; /* البقاء فوق كل عناصر الخريطة والبحث */
+}
+
+/* --- أشرطة البحث السريع والتصنيفات الدائرية المحدثة لمنع التداخل --- */
 .quick-search-wrapper {
     position: fixed !important; 
-    top: 80px !important; /* زيادة المسافة الرأسية لتجنب التداخل مع مربع الهوية والبحث الرئيسي */
+    top: 50px !important; /* تم دفعه للأسفل على الكمبيوتر ليكون مصفوفاً بانتظام أسفل مربع البحث والمستخدم */
     width: 85vw !important;
     max-width: 1400px !important; 
     left: 50% !important; 
     transform: translateX(-50%) !important;
     display: flex !important; 
     align-items: center !important; 
-    z-index: 9999 !important; /* يبقى تحت الهوية العلوية لمنع الحجب عند الانتقال الفجائي للموبايل */
+    z-index: 9999 !important; 
     background: transparent !important; 
     border: none !important; 
     box-shadow: none !important; 
     padding: 5px !important;
 }
 
-/* حل مشكلة عدم استجابة الـ top باستخدام المارجن السالب وإعادة التموضع */
 @media (max-width: 768px) {
     .quick-search-wrapper {
-        /* إجبار العنصر على الارتفاع للأعلى عبر المارجن السالب والـ transform */
-        margin-top: -25px !important; /* تحكم في الارتفاع من هنا: كلما زاد الرقم بالسالب (مثلا -45px) ارتفع الشريط للأعلى أكثر */
+        margin-top: 0px !important; 
         transform: translateX(-50%) !important; 
         padding-top: 0px !important;
         padding-bottom: 0px !important;
     }
     .quick-search-bar {
-        padding-top: 2px !important; /* تقليص الحشوة العلوية للشريط لمنع الفراغ */
+        padding-top: 2px !important; 
         padding-bottom: 2px !important;
     }
 }
@@ -76,7 +82,8 @@
     box-shadow: 0 4px 10px rgba(0,0,0,0.2) !important;
     border: none;
 }
-/* الطباعة والنتائج */
+
+/* --- طباعة ومخرجات الخريطة --- */
 .results-header-container { 
     display: flex; 
     justify-content: space-between; 
@@ -102,7 +109,7 @@
 .print-results-btn:hover { background-color: #218838; }
 .close-results-btn { background: none; border: none; color: #ff4d4d; font-size: 18px; cursor: pointer; line-height: 1; }
 
-/* تعديل شامل ومطور للـ Modals لحل مشكلة الشاشات الصغيرة والزووم */
+/* --- النوافذ المنبثقة والجداول الحيوية --- */
 .modal { 
     display: none; 
     position: fixed; 
@@ -112,7 +119,7 @@
     width: 100%; 
     height: 100%; 
     background-color: rgba(0,0,0,0.5); 
-    overflow-y: auto; /* تفعيل سكرول للمودال الأب عند الحاجة */
+    overflow-y: auto; 
     display: flex;
     align-items: center;
     justify-content: center;
@@ -128,8 +135,8 @@
     text-align: right; 
     direction: rtl; 
     box-shadow: 0 5px 25px rgba(0,0,0,0.3);
-    max-height: 85vh; /* حصر النافذة داخل حدود الشاشة لمنع اختفاء الأزرار */
-    overflow-y: auto; /* سكرول داخلي للحقول الكثيرة */
+    max-height: 85vh; 
+    overflow-y: auto; 
 }
 
 #attributeForm label { display: block; margin-bottom: 5px; font-weight: bold; }
@@ -139,12 +146,187 @@
 @media (max-width: 768px) {
     .quick-search-wrapper { 
         width: 95vw !important; 
-        top: 98px !important; /* النزول بمقدار متناسق على الموبايل لكي يتبع الـ map-header ولا يحدث تداخل هجين */
+        top: 125px !important; /* النزول المتناسق لعدم حجب شريط البحث العلوي */
     }
     .modal-content {
         width: 95%;
         padding: 15px;
         margin: 5% auto;
-        max-height: 75vh; /* تقليص الارتفاع قليلاً لملائمة الكيبورد الافتراضي */
+        max-height: 75vh; 
+    }
+}
+
+/* ==========================================================================
+   💻 1. الهيكلة الهندسية لأدوات الخريطة على شاشات الكمبيوتر (Desktop الافتراضي)
+   ========================================================================== */
+.ol-zoom {
+    position: absolute !important;
+    top: 220px !important; /* تم إنزال حاوية الزوم لمنعها من حجب صندوق تسجيل الدخول أو أزرار التصنيفات */
+    left: 20px !important;
+    right: auto !important;
+    bottom: auto !important;
+    z-index: 1000 !important;
+    background: rgba(255, 255, 255, 0.9) !important;
+    padding: 5px !important;
+    border-radius: 6px !important;
+    box-shadow: 0 3px 12px rgba(0,0,0,0.15) !important;
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 5px !important;
+    border: 1px solid #ccc !important;
+}
+
+.ol-zoom button {
+    margin: 0 !important;
+    background-color: #1e3799 !important; 
+    color: white !important;
+    font-size: 18px !important;
+    font-weight: bold !important;
+    border: none !important;
+    border-radius: 4px !important;
+    width: 34px !important;
+    height: 34px !important;
+    cursor: pointer !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    transition: background 0.2s ease !important;
+}
+.ol-zoom button:hover {
+    background-color: #0a3d62 !important;
+}
+
+.ol-zoom .ol-custom-location-btn {
+    background-color: #ffffff !important;
+    color: #333 !important;
+    border: 1px solid #ccc !important;
+    font-size: 15px !important;
+    line-height: 34px !important;
+    margin-top: 0 !important;
+}
+.ol-zoom .ol-custom-location-btn:hover {
+    background-color: #f1f2f6 !important;
+}
+
+#custom-splash-overlay {
+    align-items: center !important; 
+}
+#custom-splash-dialog {
+    background-color: #ffffff;
+    padding: 30px;
+    border-radius: 12px;
+    width: 90%;
+    max-width: 440px;
+    box-shadow: 0 15px 35px rgba(0,0,0,0.3);
+    text-align: center;
+    font-family: system-ui, sans-serif;
+    max-height: 85vh;
+    overflow-y: auto;
+}
+
+/* ==========================================================================
+   📱 2. محددات شاشات الموبايل والتابلت بالوضع العمودي (Portrait <= 768px)
+   ========================================================================== */
+@media (max-width: 768px) {
+    .user-top-badge-container {
+        position: absolute !important;
+        top: 5px !important;
+        right: 10px !important;
+        width: auto !important;
+    }
+
+    .user-top-badge-container, .map-header {
+        flex-wrap: wrap !important;
+        gap: 5px !important;
+        padding: 5px !important;
+    }
+
+    .ol-zoom {
+        top: auto !important;
+        bottom: 45px !important; 
+        left: 15px !important;
+        right: auto !important;
+        position: fixed !important;
+    }
+
+    .compass-btn, .rotate-control, .leaflet-control-rotate { 
+        position: fixed !important;
+        left: 15px !important; 
+        right: auto !important;
+        top: auto !important;
+        bottom: 175px !important; 
+        z-index: 99999 !important;
+        margin: 0 !important;
+    }
+
+    .compass-btn i, .rotate-control i {
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        width: 34px !important; 
+        height: 34px !important;
+        background: #ffffff !important;
+        color: #333 !important;
+        border-radius: 4px !important;
+        box-shadow: 0 1px 5px rgba(0,0,0,0.4) !important;
+        font-size: 16px !important;
+        border: 1px solid #ccc !important;
+    }
+
+    #custom-splash-overlay {
+        align-items: flex-end !important; 
+        padding: 15px !important;
+    }
+    #custom-splash-dialog {
+        max-height: 65vh !important;
+    }
+}
+
+/* ==========================================================================
+   🔄 3. محددات شاشات الموبايل والتابلت بالوضع الأفقي المائل (Landscape)
+   ========================================================================== */
+@media (max-width: 950px) and (orientation: landscape) {
+    /* نقل حاوية الهوية في الأفقي لليمين والنزول بها لكي تبتعد عن شريط الأدوات الافتراضي للمتصفحات */
+    .user-top-badge-container {
+        top: 15px !important;
+        right: 15px !important;
+    }
+
+    .ol-zoom {
+        top: auto !important;
+        bottom: 25px !important; 
+        left: 20px !important;
+        right: auto !important;
+        flex-direction: row !important; 
+        position: fixed !important;
+    }
+
+    .compass-btn, .rotate-control, .leaflet-control-rotate {
+        bottom: 25px !important;
+        top: auto !important;
+        left: 155px !important; 
+    }
+    
+    .quick-search-wrapper {
+        top: 180px !important; /* إنزال أزرار البحث السريع الدائرية لمنع التفافها فوق الهيدر في الوضع الأفقي */
+        margin-top: 0px !important;
+    }
+
+    #custom-splash-overlay {
+        align-items: center !important;
+        padding: 10px !important;
+    }
+    #custom-splash-dialog {
+        max-width: 520px !important;
+        max-height: 80vh !important;
+        padding: 15px 25px !important;
+    }
+    #splash-options-container {
+        display: grid !important; 
+        grid-template-columns: 1fr 1fr; 
+        gap: 10px !important;
+    }
+    #custom-splash-dialog p {
+        margin-bottom: 10px !important;
     }
 }

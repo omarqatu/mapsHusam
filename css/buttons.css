@@ -2,7 +2,7 @@
 
 #map-controls {
     position: absolute; 
-    top: 55px; /* زيادة التباعد الرأسي لمنع التراص فوق الفئات السريعة للبحث */
+    top: 190px; /* زيادة التباعد الرأسي لمنع التراص فوق الفئات السريعة للبحث */
     left: 50%; 
     transform: translateX(-50%);
     text-align: center; 

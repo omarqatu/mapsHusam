@@ -290,92 +290,96 @@ document.addEventListener('DOMContentLoaded', () => {
     setTimeout(() => {
         const zoomContainer = document.querySelector('.ol-zoom');
         if (zoomContainer) {
-            const locationBtn = document.createElement('button');
-            locationBtn.className = 'ol-custom-location-btn';
-            locationBtn.setAttribute('type', 'button');
-            locationBtn.setAttribute('title', 'تحديد موقعي الحالي');
-            locationBtn.innerHTML = '🎯'; 
-            
-            zoomContainer.appendChild(locationBtn);
+            // تحقق لمنع تكرار حقن الزر
+            if (!document.querySelector('.ol-custom-location-btn')) {
+                const locationBtn = document.createElement('button');
+                locationBtn.className = 'ol-custom-location-btn';
+                locationBtn.setAttribute('type', 'button');
+                locationBtn.setAttribute('title', 'تحديد موقعي الحالي');
+                locationBtn.innerHTML = '🎯'; 
+                
+                zoomContainer.appendChild(locationBtn);
 
-            locationBtn.onclick = () => {
-                getUserCurrentLocation(locationBtn);
-            };
+                locationBtn.onclick = () => {
+                    getUserCurrentLocation(locationBtn);
+                };
+            }
 
-            const splashOverlay = document.createElement('div');
-            splashOverlay.id = 'custom-splash-overlay';
-            Object.assign(splashOverlay.style, {
-                position: 'fixed', top: '0', left: '0', width: '100%', height: '100%',
-                backgroundColor: 'rgba(0, 0, 0, 0.55)', zIndex: '99999',
-                display: 'flex', justifyContent: 'center', alignItems: 'end',
-                direction: 'rtl', padding: '50px', boxSizing: 'border-box'
-            });
-
-            const dialogBox = document.createElement('div');
-            dialogBox.id = 'custom-splash-dialog';
-            Object.assign(dialogBox.style, {
-                backgroundColor: '#ffffff', padding: '25px', borderRadius: '8px',
-                width: '100%', maxWidth: '420px', boxShadow: '0 4px 20px rgba(0,0,0,0.2)',
-                textAlign: 'center', fontFamily: 'system-ui, sans-serif'
-            });
-
-            dialogBox.innerHTML = `
-                <h3 style="margin-top:0; color:#2c3e50; font-size:18px; margin-bottom:2px; font-weight:700;">منصة الخرائط الجغرافية</h3>
-                <p style="color:#7f8c8d; font-size:13px; margin-bottom:20px;">الرجاء اختيار نطاق التركيز الأولي لبدء استكشاف الخريطة:</p>
-                <div id="splash-options-container" style="display:flex; flex-direction:column; gap:10px;">
-                    <button class="splash-opt-btn" data-type="default" style="padding:12px; font-size:14px; background:#2c3e50; color:white; border:none; border-radius:4px; cursor:pointer; font-weight:500; text-align:right; transition:background 0.2s;">1. العرض الافتراضي للمنصة</button>
-                    <button class="splash-opt-btn" data-type="gps" style="padding:12px; font-size:14px; background:#2c3e50; color:white; border:none; border-radius:4px; cursor:pointer; font-weight:500; text-align:right; transition:background 0.2s;">2. تحديد النطاق حسب موقعي الحالي (GPS)</button>
-                </div>
-            `;
-
-            const optionsContainer = dialogBox.querySelector('#splash-options-container');
-            Object.keys(citiesCoordinates).forEach(key => {
-                const cityBtn = document.createElement('button');
-                cityBtn.className = 'splash-opt-btn';
-                cityBtn.setAttribute('data-type', 'city');
-                cityBtn.setAttribute('data-city', key);
-                cityBtn.innerText = citiesCoordinates[key].name;
-                Object.assign(cityBtn.style, {
-                    padding: '12px', fontSize: '14px', background: '#2c3e50', color: 'white',
-                    border: 'none', borderRadius: '4px', cursor: 'pointer', fontWeight: '500',
-                    textAlign: 'right', transition: 'background 0.2s'
+            // تحقق لمنع تكرار حقن النافذة
+            if (!document.getElementById('custom-splash-overlay')) {
+                const splashOverlay = document.createElement('div');
+                splashOverlay.id = 'custom-splash-overlay';
+                // تم إسناد الخصائص الأساسية برمجياً مع ترك التحكم المرن للـ CSS
+                Object.assign(splashOverlay.style, {
+                    position: 'fixed', top: '0', left: '0', width: '100%', height: '100%',
+                    backgroundColor: 'rgba(0, 0, 0, 0.55)', zIndex: '200000',
+                    display: 'flex', justifyContent: 'center', direction: 'rtl', padding: '15px', boxSizing: 'border-box'
                 });
-                optionsContainer.appendChild(cityBtn);
-            });
 
-            splashOverlay.appendChild(dialogBox);
-            document.body.appendChild(splashOverlay);
+                const dialogBox = document.createElement('div');
+                dialogBox.id = 'custom-splash-dialog';
 
-            dialogBox.querySelectorAll('.splash-opt-btn').forEach(btn => {
-                btn.addEventListener('click', function() {
-                    const type = this.getAttribute('data-type');
-                    
-                    if (type === 'default') {
-                        document.body.removeChild(splashOverlay);
-                    } 
-                    else if (type === 'gps') {
-                        document.body.removeChild(splashOverlay);
-                        getUserCurrentLocation(locationBtn);
-                    } 
-                    else if (type === 'city') {
-                        const cityName = this.getAttribute('data-city');
-                        const cityData = citiesCoordinates[cityName];
-                        if (cityData && cityData.coords) {
-                            map.getView().animate({
-                                center: cityData.coords,
-                                zoom: 19,
-                                duration: 1000
-                            });
+                dialogBox.innerHTML = `
+                    <h3 style="margin-top:0; color:#2c3e50; font-size:18px; margin-bottom:2px; font-weight:700;">منصة الخرائط الجغرافية</h3>
+                    <p style="color:#7f8c8d; font-size:13px; margin-bottom:20px;">الرجاء اختيار نطاق التركيز الأولي لبدء استكشاف الخريطة:</p>
+                    <div id="splash-options-container" style="display:flex; flex-direction:column; gap:10px;">
+                        <button class="splash-opt-btn" data-type="default" style="padding:12px; font-size:14px; background:#2c3e50; color:white; border:none; border-radius:4px; cursor:pointer; font-weight:500; text-align:right; transition:background 0.2s;">1. العرض الافتراضي للمنصة</button>
+                        <button class="splash-opt-btn" data-type="gps" style="padding:12px; font-size:14px; background:#2c3e50; color:white; border:none; border-radius:4px; cursor:pointer; font-weight:500; text-align:right; transition:background 0.2s;">2. تحديد النطاق حسب موقعي الحالي (GPS)</button>
+                    </div>
+                `;
+
+                const optionsContainer = dialogBox.querySelector('#splash-options-container');
+                if (typeof citiesCoordinates !== 'undefined') {
+                    Object.keys(citiesCoordinates).forEach(key => {
+                        const cityBtn = document.createElement('button');
+                        cityBtn.className = 'splash-opt-btn';
+                        cityBtn.setAttribute('data-type', 'city');
+                        cityBtn.setAttribute('data-city', key);
+                        cityBtn.innerText = citiesCoordinates[key].name;
+                        Object.assign(cityBtn.style, {
+                            padding: '12px', fontSize: '14px', background: '#2c3e50', color: 'white',
+                            border: 'none', borderRadius: '4px', cursor: 'pointer', fontWeight: '500',
+                            textAlign: 'right', transition: 'background 0.2s'
+                        });
+                        optionsContainer.appendChild(cityBtn);
+                    });
+                }
+
+                splashOverlay.appendChild(dialogBox);
+                document.body.appendChild(splashOverlay);
+
+                dialogBox.querySelectorAll('.splash-opt-btn').forEach(btn => {
+                    btn.addEventListener('click', function() {
+                        const type = this.getAttribute('data-type');
+                        const locationBtnEl = document.querySelector('.ol-custom-location-btn');
+                        
+                        if (type === 'default') {
+                            splashOverlay.remove();
+                        } 
+                        else if (type === 'gps') {
+                            splashOverlay.remove();
+                            getUserCurrentLocation(locationBtnEl);
+                        } 
+                        else if (type === 'city') {
+                            const cityName = this.getAttribute('data-city');
+                            const cityData = citiesCoordinates[cityName];
+                            if (cityData && cityData.coords) {
+                                map.getView().animate({
+                                    center: cityData.coords,
+                                    zoom: 19,
+                                    duration: 1000
+                                });
+                            }
+                            splashOverlay.remove();
                         }
-                        document.body.removeChild(splashOverlay);
-                    }
-                });
+                    });
 
-                btn.addEventListener('mouseover', function() { this.style.background = '#34495e'; });
-                btn.addEventListener('mouseout', function() { this.style.background = '#2c3e50'; });
-            });
+                    btn.addEventListener('mouseover', function() { this.style.background = '#34495e'; });
+                    btn.addEventListener('mouseout', function() { this.style.background = '#2c3e50'; });
+                });
+            }
         }
-    }, 1000); 
+    }, 1000);
 
     // --- 4. إدارة تعبئة قوائم التحرير ---
     const populateEditSelects = () => {

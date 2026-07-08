@@ -12,9 +12,10 @@ body {
     box-sizing: border-box;
 }
 
+/* --- تعديل شريط الهيدر الرئيسي ليصبح مرناً ويتفادى صندوق المستخدم --- */
 #map-header {
     position: absolute;
-    top: 10px; /* تم إنزاله قليلاً لإعطاء مساحة للهوية العلوية على الموبايل والـ Desktop */
+    top: 80px; /* تم زيادة القيمة هنا في الكمبيوتر ليفسح مجالاً كاملاً لصندوق المستخدم العلوي دون حجب */
     left: 50%;
     transform: translateX(-50%);
     z-index: 1000;
@@ -95,7 +96,6 @@ body {
     will-change: transform !important;
 }
 
-/* إضافة رأس قابل للسحب والتصغير لجميع اللوحات */
 .panel-header {
     display: flex;
     justify-content: space-between;
@@ -180,7 +180,7 @@ body {
 
 #search-panel, #nearby-apartments-panel, #results-panel, #layerPanel,
 #measurePanel, #shareLocationPanel, #editPanel, #polygonEditPanel, #lineEditPanel {
-    top: 150px;
+    top: 220px;
     transform: none;
 }
 
@@ -188,7 +188,6 @@ body {
 #measurePanel { width: 220px; }
 #editPanel, #polygonEditPanel, #lineEditPanel { width: 280px; }
 
-/* تحسين عرض نتائج القياس */
 #measure-result {
     white-space: pre-line !important;
     word-wrap: break-word !important;
@@ -196,7 +195,6 @@ body {
     line-height: 1.5 !important;
 }
 
-/* تحكم في ارتفاع لوحة النتائج */
 #results-panel {
     max-height: 60vh;
 }
@@ -214,7 +212,6 @@ body {
 }
 .close-btn:hover { color: #000; }
 
-/* تحسين أحجام اللوحات للموبايل */
 @media (max-width: 768px) {
     .panel-right {
         width: 80vw !important;
@@ -244,7 +241,6 @@ body {
         max-height: 30vh;
     }
 
-    /* تحسين عرض نتائج القياس على الموبايل */
     #measure-result {
         font-size: 11px !important;
         line-height: 1.4 !important;
@@ -277,7 +273,6 @@ body {
 }
 #results-table thead th, #nearby-apartments-table thead th { background-color: #f2f2f2; }
 
-/* ضبط شريط الإحداثيات للكمبيوتر بشكل افتراضي */
 #coordinates {
     display: block; 
     position: absolute; 
@@ -292,7 +287,7 @@ body {
     text-align: center; 
     font-size: 13px; 
     font-weight: bold;
-    z-index: 2000; /* يضمن ظهوره فوق طبقات الخريطة */
+    z-index: 2000;
     direction: ltr; 
     color: #333; 
     white-space: nowrap; 
@@ -302,7 +297,6 @@ body {
 }
 #coordinates p { margin: 0; }
 
-/* Popup styles */
 .ol-popup {
     position: absolute; background-color: white; box-shadow: 0 1px 8px rgba(0,0,0,0.3);
     padding: 10px; border-radius: 10px; border: 1px solid #ccc;
@@ -312,12 +306,10 @@ body {
 .ol-popup:after { border-top-color: white; border-width: 10px; left: 50%; transform: translateX(-50%); }
 .ol-popup-closer { text-decoration: none; position: absolute; top: 2px; right: 8px; font-weight: bold; font-size: 18px; color: #999; cursor: pointer; }
 
-/* Tooltip styles */
 .ol-tooltip { position: relative; background: rgba(0, 0, 0, 0.7); color: white; padding: 7px 10px; border-radius: 4px; white-space: nowrap; font-size: 14px; pointer-events: none; z-index: 7000; direction: ltr; }
 .ol-tooltip-measure { opacity: 0.9; font-weight: bold; }
 .ol-tooltip-static { background-color: #ffcc33; color: #333; border: 1px solid #ffcc33; box-shadow: 0 2px 4px rgba(0,0,0,0.2); font-size: 13px; }
 
-/* المربع العام للبحث */
 .global-search-wrapper {
     display: flex;
     align-items: center;
@@ -387,51 +379,10 @@ body {
 .suggestion-item .name { font-weight: bold; font-size: 13px; }
 .suggestion-item .sub { font-size: 11px; color: #70757a; }
 
-/* تنسيقات أدوات الخريطة (الزووم والموقع) للكمبيوتر بشكل افتراضي */
-.ol-zoom {
-    top: 10px !important; /* تم زيادة القيمة لكي لا يغطي عناصر التحرير والبحث الجديدة المتتالية */
-    left: 10px !important;
-    z-index: 499 !important;
-}
 
-/* تحسين مظهر الأزرار لتصبح أسهل في اللمس */
-.ol-zoom .ol-zoom-in, .ol-zoom .ol-zoom-out {
-    width: 40px !important;
-    height: 40px !important;
-    font-size: 20px !important;
-    background-color: rgba(0, 60, 136, 0.85) !important; 
-}
-
-/* تنسيق زر تحديد الموقع الجديد المدمج */
-.ol-zoom .ol-custom-location-btn {
-    margin-top: 4px !important;
-    display: block;
-    padding: 0;
-    color: white;
-    font-size: 20px !important;
-    font-weight: bold;
-    text-decoration: none;
-    text-align: center;
-    height: 40px !important;
-    width: 40px !important;
-    line-height: 40px !important;
-    background-color: rgba(0, 60, 136, 0.85) !important;
-    border: none;
-    border-radius: 4px !important;
-    cursor: pointer;
-}
-
-.ol-zoom .ol-custom-location-btn:hover {
-    background-color: rgba(0,60,136,.7);
-}
-
-
-/* ==========================================================================
-   1. الحل الجذري لشاشات الموبايل والتابلت (الوضع العمودي Portrait)
-   ========================================================================== */
 @media (max-width: 767px) and (orientation: portrait) {
     #map-header {
-        top: 45px; /* إنزاله ليفسح المجال للهوية العلوية المطلقة */
+        top: 45px;
         width: 95%;
         border-radius: 24px;
         padding: 4px 10px;
@@ -439,7 +390,6 @@ body {
         transform: translateX(-50%);
     }
     #map-header h2 { display: none; }
-
 
     .panel-right {
         right: 10vw;
@@ -450,7 +400,7 @@ body {
         height: 40vh;
         border-radius: 16px;
         box-shadow: 0 -4px 15px rgba(0,0,0,0.2);
-        z-index: 10005; /* لضمان ظهور اللوحة فوق عناصر الخريطة والزووم الثابتة */
+        z-index: 10005;
     }
     #search-panel, #nearby-apartments-panel, #results-panel, #layerPanel, #measurePanel, #shareLocationPanel, #editPanel, #polygonEditPanel, #lineEditPanel {
         top: auto;
@@ -458,7 +408,6 @@ body {
     }
     #layerPanel, #measurePanel, #editPanel, #polygonEditPanel, #lineEditPanel { width: 80vw; }
     
-    /* تثبيت شريط الإحداثيات وضمان بقائه مرئياً وفوق لوحات التحكم عند الحاجة */
     #coordinates { 
         position: fixed !important;
         bottom: 5px !important; 
@@ -474,51 +423,28 @@ body {
         box-shadow: 0 2px 6px rgba(0,0,0,0.3);
         z-index: 10010; 
     }
-
-    /* تعديل الارتفاعات والتناسق لأدوات الخريطة في الموبايل */
-    .ol-zoom {
-        top: 170px !important; /* الحل هنا: صغرنا القيمة لرفع أدوات التكبير والتصغير والموقع للأعلى على الموبايل لتصبح تحت سهم البحث السريع */
-    }
-    .ol-zoom .ol-custom-location-btn {
-        width: 40px !important;
-        height: 40px !important;
-        font-size: 18px !important;
-        line-height: 40px !important;
-        margin-top: 4px !important;
-    }
 }
 
-
-/* ==========================================================================
-   2. التحكم الكامل والمطلق في وضع الأفقي (Landscape) لشاشات الموبايل والتابلت المتطورة
-   ========================================================================== */
 @media (max-width: 1100px) and (orientation: landscape) {
     #map-header {
-        top: 15px !important;
-
-        /* 1. التحكم في الإزاحة لجهة الشمال (اليسار): لدفعه لليسار أكثر، قم بزيادة رقم الـ right المكتوب بالأسفل */
-        right: 400px !important;
-        left: auto !important;       /* إلغاء تموضع اليسار الافتراضي */
-        transform: none !important;  /* إلغاء السنترة الإجبارية لتفعيل الإزاحة */
-
-        /* 2. التحكم في العرض: كلما قللت النسبة المئوية، صغر الشريط وابتعد عن أزرار اليمين */
-        width: 50% !important;
-        max-width: 420px !important;
-
+        top: 75px !important; /* إنزال محاذاة البحث السريع والهيدر في الموبايل الأفقي لإفساح المجال لشريط المستخدم */
+        right: auto !important;
+        left: 50% !important;
+        transform: translateX(-50%) !important;
+        width: 90% !important;
+        max-width: 450px !important;
         padding: 4px 12px !important;
         border-radius: 25px !important;
     }
 
     #map-header h2 {
-        display: none !important;    /* إخفاء نصوص العناوين في هذا الوضع الضيق */
+        display: none !important;
     }
 
-    /* لضمان إنزال الفئات الدائرية تحت الهيدر في الوضع الأفقي وعدم تداخلها */
     .category-slider, .menu-items-container {
-        top: 65px !important;
+        top: 130px !important; /* إزاحة شريط الفئات لكي لا يغطي عناصر التصفح */
     }
 
-    /* تعديل اللوحات للوضع الأفقي - عريضة وأقل من نصف الشاشة */
     .panel-right {
         width: 80vw !important;
         max-width: 80vw;
@@ -536,16 +462,13 @@ body {
     }
 }
 
-
-/* عند تصغير اللوحة للتحرير الحر */
 .panel-right.minimized {
-    height: 60px !important; /* ارتفاع بسيط جداً يظهر فقط زر "إلغاء" أو "رجوع" */
+    height: 60px !important;
     overflow: hidden;
     transition: all 0.3s ease;
 }
 
-/* لضمان أن المودال (نافذة السمات) تظهر فوق كل شيء دائماً */
 .modal {
     z-index: 100000 !important; 
-    background-color: rgba(0,0,0,0.3) !important; /* شفافية أخف لترى الخريطة */
+    background-color: rgba(0,0,0,0.3) !important;
 }
