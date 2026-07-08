@@ -174,8 +174,6 @@ const createWFSLayer = (workspace, name, title, styleFunc, maxRes = 10, visible 
         title: title,
         visible: visible,
         maxResolution: maxRes,
-        renderMode: 'image',
-        declutter: true,
         style: styleFunc,
         zIndex: zIndex,
         source: new ol.source.Vector({
@@ -252,7 +250,7 @@ if (MAP_CONFIG && MAP_CONFIG.globalExclusions) {
             labelField: 'name', 
             zoomThresholdForLabel: 0.7 
         });
-        window.appLayers[key + 'Layer'] = createWFSLayer('services', key, info.name, sStyle, 4, false, 30); 
+        window.appLayers[key + 'Layer'] = createWFSLayer('services', key, info.name, sStyle, 4, true, 30); 
     });
 }
 
