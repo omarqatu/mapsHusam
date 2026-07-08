@@ -10,7 +10,7 @@
     transform: translateX(-50%) !important;
     display: flex !important; 
     align-items: center !important; 
-    z-index: 300 !important; /* خفضه لعدم تغطية الخريطة على الموبايل */
+    z-index: 9999 !important; /* يبقى تحت الهوية العلوية لمنع الحجب عند الانتقال الفجائي للموبايل */
     background: transparent !important; 
     border: none !important; 
     box-shadow: none !important; 
@@ -148,4 +148,3 @@
         max-height: 75vh; /* تقليص الارتفاع قليلاً لملائمة الكيبورد الافتراضي */
     }
 }
-
