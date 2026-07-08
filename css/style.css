@@ -1,15 +1,11 @@
 /* style.css - الإعدادات العامة، الخريطة، واللوحات المحدثة بالكامل */
 
-html, body {
+body {
     margin: 0;
-    width: 100%;
-    height: 100%;
-    min-height: 100%;
     font-family: Arial, sans-serif;
     direction: rtl;
     text-align: center;
     overflow-x: hidden;
-    -webkit-text-size-adjust: 100%;
 }
 
 * {
@@ -21,7 +17,7 @@ html, body {
     top: 10px; /* تم إنزاله قليلاً لإعطاء مساحة للهوية العلوية على الموبايل والـ Desktop */
     left: 50%;
     transform: translateX(-50%);
-    z-index: 400;
+    z-index: 1000;
     background-color: rgba(255, 255, 255, 0.95);
     padding: 8px 15px;
     border-radius: 30px;
@@ -70,12 +66,9 @@ html, body {
 
 .map {
     width: 100%;
-    height: 100dvh;
-    min-height: 100dvh;
+    height: 100vh;
     direction: ltr;
     z-index: 1;
-    position: relative;
-    display: block;
 }
 
 /* ستايل اللوحات الجانبية */
@@ -299,7 +292,7 @@ html, body {
     text-align: center; 
     font-size: 13px; 
     font-weight: bold;
-    z-index: 250; /* لا يتداخل مع طبقات الخريطة */
+    z-index: 2000; /* يضمن ظهوره فوق طبقات الخريطة */
     direction: ltr; 
     color: #333; 
     white-space: nowrap; 
@@ -553,26 +546,6 @@ html, body {
 
 /* لضمان أن المودال (نافذة السمات) تظهر فوق كل شيء دائماً */
 .modal {
-    z-index: 100000 !important;
+    z-index: 100000 !important; 
     background-color: rgba(0,0,0,0.3) !important; /* شفافية أخف لترى الخريطة */
-}
-
-/* Toast notification for copy feedback */
-#location-copy-toast {
-    position: fixed;
-    bottom: 80px;
-    left: 50%;
-    transform: translateX(-50%);
-    background-color: rgba(40, 167, 69, 0.95);
-    color: white;
-    padding: 12px 24px;
-    border-radius: 8px;
-    font-size: 14px;
-    font-weight: bold;
-    z-index: 100000;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-    pointer-events: none;
-    transition: opacity 0.3s ease;
-    text-align: center;
-    direction: rtl;
 }
