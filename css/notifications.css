@@ -374,6 +374,7 @@
     align-items: center;
     justify-content: center;
     gap: 5px;
+
 }
 
 .notification-dropdown-footer i {
@@ -387,6 +388,7 @@
 
     .notification-dropdown-footer p {
         font-size: 11px;
+
     }
 }
 
