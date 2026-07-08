@@ -28,13 +28,9 @@
     pointer-events: auto !important; /* السماح بالسحب */
 }
 
-/* عند السحب، منع النقر على الرابط */
-.feedback-banner-wrapper.draggable .feedback-banner {
+/* عند السحب الفعلي، منع النقر على الرابط */
+.feedback-banner-wrapper.dragging .feedback-banner {
     pointer-events: none !important;
-}
-
-.feedback-banner-wrapper.draggable:hover .feedback-banner {
-    pointer-events: auto !important;
 }
 
 /* المربع الأساسي - الرابط */
