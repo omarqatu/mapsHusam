@@ -5,20 +5,6 @@
 
 window.currentAppUser = null;
 
-window.refreshMapLayout = function() {
-    setTimeout(() => {
-        if (window.map && typeof window.map.updateSize === 'function') {
-            window.map.updateSize();
-        }
-
-        const mapEl = document.getElementById('map');
-        if (mapEl) {
-            mapEl.style.minHeight = '100dvh';
-            mapEl.style.height = '100dvh';
-        }
-    }, 250);
-};
-
 // ==========================================
 // دالة الإخفاء الصارم والمطلق لأزرار ولوحات التحرير الخاصة بالمشرف فقط عند بدء التشغيل
 // ==========================================
@@ -78,12 +64,12 @@ function showTopUserBadge(user) {
 function applyMapInterfacePermissions() {
     if (!window.currentAppUser) return;
     const userRole = window.currentAppUser.role;
-    
+
     const panels = ["editPanel", "polygonEditPanel", "lineEditPanel"];
     const buttons = ["editBtn", "polygonEditBtn", "lineEditBtn"];
 
     if (userRole === "admin") {
-        
+
         buttons.forEach(id => {
             const el = document.getElementById(id);
             if (el) el.style.setProperty("display", "inline-block", "important");
@@ -95,7 +81,7 @@ function applyMapInterfacePermissions() {
             if (el) el.style.setProperty("display", "none", "important");
         });
     } else {
-        
+
         buttons.forEach(id => {
             const el = document.getElementById(id);
             if (el) el.style.setProperty("display", "none", "important");
@@ -138,17 +124,10 @@ function enterPlatform(userData, isAutoboot = false) {
     if (isAutoboot) {
         // في حالة الكشف التلقائي عن الجلسة، نعطي تأخيراً طفيفاً لضمان تحميل الملفات الأخرى في المتصفح
         setTimeout(() => {
-            if (authOverlay && authOverlay.parentNode) {
-                authOverlay.parentNode.removeChild(authOverlay);
-            }
             document.dispatchEvent(new CustomEvent("userLoggedIn", { detail: window.currentAppUser }));
-            window.refreshMapLayout();
         }, 150);
 
-        if (authOverlay && authOverlay.parentNode) {
-            authOverlay.parentNode.removeChild(authOverlay);
-        }
-        window.refreshMapLayout();
+        if (authOverlay) authOverlay.style.display = 'none';
     } else {
         // في حالة تسجيل الدخول اليدوي الفوري
         document.dispatchEvent(new CustomEvent("userLoggedIn", { detail: window.currentAppUser }));
@@ -157,14 +136,8 @@ function enterPlatform(userData, isAutoboot = false) {
             authOverlay.style.transition = "opacity 0.4s ease, visibility 0.4s";
             authOverlay.style.opacity = "0";
             authOverlay.style.visibility = "hidden";
-            setTimeout(() => {
-                if (authOverlay && authOverlay.parentNode) {
-                    authOverlay.parentNode.removeChild(authOverlay);
-                }
-                window.refreshMapLayout();
-            }, 400);
+            setTimeout(() => { authOverlay.remove(); }, 400);
         }
-        window.refreshMapLayout();
     }
 }
 
@@ -243,7 +216,7 @@ window.logoutPlatform = function() {
         sessionStorage.removeItem('map_user');
         localStorage.removeItem('user');
         sessionStorage.removeItem('user');
-        
+
         window.location.reload();
     }
 }
