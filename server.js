@@ -331,13 +331,16 @@ app.post('/api/update-service-status', async (req, res) => {
 // 3. إعداد البروكسي لـ GeoServer
 // [إجراء أمني 2]: تشفير وحماية البروكسي لمنع الحذف العشوائي (WFS-T protection)
 app.use('/geoserver-proxy', (req, res, next) => {
-    console.log(`[Proxy] Request to: ${req.url}`);
+    console.log(`[Proxy] Request to: ${req.url} from IP: ${req.ip}`);
+    console.log(`[Proxy] GeoServer Target: ${GEOSERVER_TARGET}`);
     next();
 }, createProxyMiddleware({
     target: GEOSERVER_TARGET,
     changeOrigin: true,
     pathRewrite: { '^/geoserver-proxy': '' },
     secure: false, // للتعامل مع شهادات SSL غير الموثوقة
+    timeout: 60000,
+    proxyTimeout: 60000,
     logLevel: 'debug',
     onProxyReq: (proxyReq, req, res) => {
         console.log(`[Proxy] Forwarding to: ${GEOSERVER_TARGET}${req.url}`);
@@ -361,8 +364,18 @@ app.use('/geoserver-proxy', (req, res, next) => {
         }
     },
     onError: (err, req, res) => {
-        console.error('[Proxy] Error:', err);
-        res.status(500).json({ error: 'Proxy error', details: err.message });
+        console.error('[Proxy] Error:', err.message);
+        console.error('[Proxy] GeoServer Target:', GEOSERVER_TARGET);
+        console.error('[Proxy] Request URL:', req.url);
+        if (!res.headersSent) {
+            res.status(502).json({
+                error: 'GeoServer connection failed',
+                details: err.message,
+                target: GEOSERVER_TARGET,
+                url: req.url,
+                hint: 'تأكد من أن GeoServer يعمل على العنوان المحدد وأن السيرفر Node.js يعمل'
+            });
+        }
     }
 }));
 
