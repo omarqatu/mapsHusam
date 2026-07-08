@@ -56,13 +56,6 @@ function initializeBannerDraggable() {
     const banner = document.querySelector('.feedback-banner');
     const dragBtn = document.querySelector('.banner-drag-btn');
     if (bannerWrapper && banner && dragBtn) {
-        // منع propagation من زر التحريك إلى الرابط
-        dragBtn.addEventListener('click', function(e) {
-            e.preventDefault();
-            e.stopPropagation();
-            e.stopImmediatePropagation();
-        });
-
         // استخدام زر التحريك الجديد كـ handle للسحب
         bannerWrapper.classList.add('draggable');
         makeDraggable(bannerWrapper, dragBtn);
@@ -74,13 +67,14 @@ function makeDraggable(element, handle) {
     let isDragging = false;
     let offsetX = 0, offsetY = 0;
 
-    handle.onmousedown = dragMouseDown;
+    handle.addEventListener('mousedown', dragMouseDown);
 
     // دعم اللمس للموبايل
-    handle.ontouchstart = dragTouchStart;
+    handle.addEventListener('touchstart', dragTouchStart, { passive: false });
 
     function dragMouseDown(e) {
         e.preventDefault();
+        e.stopPropagation();
         isDragging = true;
 
         const rect = element.getBoundingClientRect();
@@ -94,8 +88,8 @@ function makeDraggable(element, handle) {
         element.style.bottom = 'auto';
         element.style.transform = 'none';
 
-        document.onmouseup = closeDragElement;
-        document.onmousemove = elementDrag;
+        document.addEventListener('mouseup', closeDragElement);
+        document.addEventListener('mousemove', elementDrag);
 
         element.classList.add('dragging');
     }
@@ -121,12 +115,14 @@ function makeDraggable(element, handle) {
     function closeDragElement() {
         isDragging = false;
         element.classList.remove('dragging');
-        document.onmouseup = null;
-        document.onmousemove = null;
+        document.removeEventListener('mouseup', closeDragElement);
+        document.removeEventListener('mousemove', elementDrag);
     }
 
     // دعم اللمس للموبايل
     function dragTouchStart(e) {
+        e.preventDefault();
+        e.stopPropagation();
         isDragging = true;
         const touch = e.touches[0];
 
@@ -141,8 +137,8 @@ function makeDraggable(element, handle) {
         element.style.bottom = 'auto';
         element.style.transform = 'none';
 
-        document.ontouchend = closeDragElement;
-        document.ontouchmove = elementTouchDrag;
+        document.addEventListener('touchend', closeDragElement);
+        document.addEventListener('touchmove', elementTouchDrag, { passive: false });
 
         element.classList.add('dragging');
     }
