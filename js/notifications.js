@@ -27,7 +27,6 @@ class NotificationSystem {
 
         // عند الاتصال الناجح
         this.socket.on('connect', () => {
-            console.log('✅ تم الاتصال بـ Socket.io');
             this.isConnected = true;
 
             // إرسال معرف المستخدم للسيرفر
@@ -38,7 +37,6 @@ class NotificationSystem {
 
         // تأكيد الاتصال من السيرفر
         this.socket.on('connection_confirmed', (data) => {
-            console.log('🎯 تم تأكيد الاتصال:', data);
             this.updateConnectionStatus(true);
         });
 
@@ -287,7 +285,6 @@ class NotificationSystem {
         if ('Notification' in window) {
             Notification.requestPermission().then(permission => {
                 if (permission === 'granted') {
-                    console.log('✅ تم منح إذن الإشعارات');
                 }
             });
         }
