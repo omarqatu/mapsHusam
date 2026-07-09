@@ -186,3 +186,20 @@
         font-size: 12px;
     }
 }
+
+/* ==========================================================================
+   تعديل مخصص: جعل بادج الملف الشخصي في الوسط عند الطي
+   ========================================================================== */
+#user-top-badge-container.ui-group-collapsed {
+    left: 50% !important;
+    right: auto !important;
+    transform: translateX(-50%) !important; /* سحب العنصر لنصف عرضه ليصبح بالسنتر تماماً */
+    
+    /* إذا كنت تريد إرجاعه للوسط أيضاً في وضع الموبايل الأفقي Landscape */
+    top: 10px !important; 
+}
+
+/* إعادة ضبط موضع الزر بداخلها ليظهر بشكل متناسق في الوسط */
+#user-top-badge-container.ui-group-collapsed .ui-collapse-btn {
+    margin: 0 auto !important;
+}
