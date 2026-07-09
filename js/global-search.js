@@ -93,8 +93,7 @@ function buildFlexibleArabicCQL(word) {
         .replace(/[ىي]/g, '_')
         .replace(/[ؤئء]/g, '_');
 
-    return `search_tags ILIKE '%${wildcardWord}%'`;
-}
+        return `(search_tags ILIKE '%${wildcardWord}%' OR des ILIKE '%${wildcardWord}%')`;}
 
 // دالة تفكيك النص وبناء فلتر موحد ونظيف تماماً يتوافق مع الكلمات المتعددة والتطبيع
 function buildUnifiedCQLFilter(term) {
