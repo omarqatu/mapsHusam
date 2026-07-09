@@ -241,7 +241,6 @@ if (MAP_CONFIG && MAP_CONFIG.layers && MAP_CONFIG.layers.realestate) {
 // ج) توليد كافة طبقات الخدمات الـ 59 آلياً وحقنها في أعلى الخريطة (Z-Index: 30)
 if (MAP_CONFIG && MAP_CONFIG.globalExclusions) {
     Object.keys(serviceTranslations).forEach(key => {
-        // استثناء الطبقات المحددة في MAP_CONFIG.globalExclusions
         if (MAP_CONFIG.globalExclusions.includes(key)) return;
 
         const info = serviceTranslations[key];
@@ -250,7 +249,9 @@ if (MAP_CONFIG && MAP_CONFIG.globalExclusions) {
             labelField: 'name', 
             zoomThresholdForLabel: 0.7 
         });
-        window.appLayers[key + 'Layer'] = createWFSLayer('services', key, info.name, sStyle, 4, true, 30); 
+        window.appLayers[key + 'Layer'] = createWFSLayer('services', key, info.name, sStyle, 0.5, true, 30); 
+        //                                                                              ↑
+        //                                                              التحكم بزووم ظهور معالم الخدمات maxResolution
     });
 }
 

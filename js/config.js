@@ -21,7 +21,7 @@ const MAP_CONFIG = {
 
     // 5. طبقات مستثناة عالمياً من العرض والبحث
     // ملاحظة: يجب استخدام "المفتاح البرمجي" (Key) المستخدم في ملف layers.js
-    globalExclusions: [ 
+    globalExclusions: [ 'cityLayer', 'locationLayer', 'roadsLayer', 'GovernorateLayer'
        
         
     ],
@@ -112,13 +112,13 @@ const MAP_CONFIG = {
         ],
         // طبقات العقارات: تظهر عند الاقتراب لضمان الدقة
         realestate: [
-            { id: "rentLayer", workspace: "realestate", name: "ApartRent", title: "شقق الإيجار", style: "window.styleRent", maxRes: 10, labelThreshold: 0.8 },
-            { id: "saleLayer", workspace: "realestate", name: "ApartSale", title: "شقق للبيع", style: "window.styleSale", maxRes: 10, labelThreshold: 0.8 },
-            { id: "landLayer", workspace: "realestate", name: "LandSale", title: "الأراضي للبيع", style: "window.styleLand", maxRes: 15, labelThreshold: 1.2 }
+            { id: "rentLayer", workspace: "realestate", name: "ApartRent", title: "شقق الإيجار", style: "window.styleRent", maxRes: 1, labelThreshold: 0.8 },
+            { id: "saleLayer", workspace: "realestate", name: "ApartSale", title: "شقق للبيع", style: "window.styleSale", maxRes: 1, labelThreshold: 0.8 },
+            { id: "landLayer", workspace: "realestate", name: "LandSale", title: "الأراضي للبيع", style: "window.styleLand", maxRes: 1, labelThreshold: 1.2 }
         ],
         // طبقات الخدمات: 59 طبقة، تظهر فقط عند زووم عالي لتفادي ازدحام الخريطة
         services: [
-            { workspace: "services", stylePrefix: "service", maxRes: 8, labelThreshold: 0.6 }
+            { workspace: "services", stylePrefix: "service", maxRes: 0.5, labelThreshold: 0.6 }
         ]
     }
 };

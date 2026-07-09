@@ -184,7 +184,7 @@ body {
     transform: none;
 }
 
-#layerPanel { width: 200px; }
+#layerPanel { width: 250px; }
 #measurePanel { width: 220px; }
 #editPanel, #polygonEditPanel, #lineEditPanel { width: 280px; }
 

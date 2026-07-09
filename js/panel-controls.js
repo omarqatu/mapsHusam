@@ -72,6 +72,14 @@ function makeDraggable(element, handle) {
     // دعم اللمس للموبايل
     handle.addEventListener('touchstart', dragTouchStart, { passive: false });
 
+    // بعض العناصر (مثل بانر التواصل) مثبتة عبر قواعد CSS بأولوية !important
+    // (top/left/right/transform)، والقيم العادية عبر style.prop = value لا يمكنها
+    // التغلب على !important الخاص بملف CSS خارجي، لذلك نستخدم setProperty مع
+    // أولوية 'important' لضمان عمل السحب فعلياً على كل العناصر بدون استثناء.
+    function setImportantStyle(el, prop, value) {
+        el.style.setProperty(prop, value, 'important');
+    }
+
     function dragMouseDown(e) {
         e.preventDefault();
         e.stopPropagation();
@@ -81,12 +89,12 @@ function makeDraggable(element, handle) {
         offsetX = e.clientX - rect.left;
         offsetY = e.clientY - rect.top;
 
-        element.style.position = 'fixed';
-        element.style.left = rect.left + 'px';
-        element.style.top = rect.top + 'px';
-        element.style.right = 'auto';
-        element.style.bottom = 'auto';
-        element.style.transform = 'none';
+        setImportantStyle(element, 'position', 'fixed');
+        setImportantStyle(element, 'left', rect.left + 'px');
+        setImportantStyle(element, 'top', rect.top + 'px');
+        setImportantStyle(element, 'right', 'auto');
+        setImportantStyle(element, 'bottom', 'auto');
+        setImportantStyle(element, 'transform', 'none');
 
         document.addEventListener('mouseup', closeDragElement);
         document.addEventListener('mousemove', elementDrag);
@@ -108,8 +116,8 @@ function makeDraggable(element, handle) {
         newTop = Math.max(0, Math.min(newTop, maxTop));
         newLeft = Math.max(0, Math.min(newLeft, maxLeft));
 
-        element.style.left = newLeft + 'px';
-        element.style.top = newTop + 'px';
+        setImportantStyle(element, 'left', newLeft + 'px');
+        setImportantStyle(element, 'top', newTop + 'px');
     }
 
     function closeDragElement() {
@@ -130,12 +138,12 @@ function makeDraggable(element, handle) {
         offsetX = touch.clientX - rect.left;
         offsetY = touch.clientY - rect.top;
 
-        element.style.position = 'fixed';
-        element.style.left = rect.left + 'px';
-        element.style.top = rect.top + 'px';
-        element.style.right = 'auto';
-        element.style.bottom = 'auto';
-        element.style.transform = 'none';
+        setImportantStyle(element, 'position', 'fixed');
+        setImportantStyle(element, 'left', rect.left + 'px');
+        setImportantStyle(element, 'top', rect.top + 'px');
+        setImportantStyle(element, 'right', 'auto');
+        setImportantStyle(element, 'bottom', 'auto');
+        setImportantStyle(element, 'transform', 'none');
 
         document.addEventListener('touchend', closeDragElement);
         document.addEventListener('touchmove', elementTouchDrag, { passive: false });
@@ -157,8 +165,8 @@ function makeDraggable(element, handle) {
         newTop = Math.max(0, Math.min(newTop, maxTop));
         newLeft = Math.max(0, Math.min(newLeft, maxLeft));
 
-        element.style.left = newLeft + 'px';
-        element.style.top = newTop + 'px';
+        setImportantStyle(element, 'left', newLeft + 'px');
+        setImportantStyle(element, 'top', newTop + 'px');
     }
 }
 
