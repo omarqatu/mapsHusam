@@ -21,7 +21,7 @@ const MAP_CONFIG = {
 
     // 5. طبقات مستثناة عالمياً من العرض والبحث
     // ملاحظة: يجب استخدام "المفتاح البرمجي" (Key) المستخدم في ملف layers.js
-    globalExclusions: [ 'cityLayer', 'locationLayer', 'roadsLayer', 'GovernorateLayer'
+    globalExclusions: [ 'cityLayer', 'locationLayer', 'roadsLayer', 'governorateLayer'
        
         
     ],
