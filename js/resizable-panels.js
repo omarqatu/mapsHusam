@@ -41,11 +41,11 @@
     }
 
     function init() {
-        document.querySelectorAll('.panel-right').forEach(function (panel) {
-            restoreSize(panel);
-            watchResize(panel);
-        });
-    }
+    document.querySelectorAll('.panel-right:not(#provider-mini-panel)').forEach(function (panel) {
+        restoreSize(panel);
+        watchResize(panel);
+    });
+        }
 
     document.addEventListener('DOMContentLoaded', init);
 })();

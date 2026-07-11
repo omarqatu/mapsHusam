@@ -499,39 +499,119 @@ function initProviderPanelEvents() {
 // ==========================================
 (function initProviderPanelToggle() {
     function setup() {
-        const toggleBtn = document.getElementById('provider-panel-toggle');
-        const panelBody = document.querySelector('#provider-mini-panel .provider-panel-body');
-        const header = document.querySelector('#provider-mini-panel .provider-panel-header');
-        
-        if (!toggleBtn || !panelBody) return;
+        const panel = document.getElementById('provider-panel'); 
+        const toggleBtn = document.querySelector('.panel-minimize-btn');
+        const panelBody = document.querySelector('.provider-panel-body');
 
+        // فحص أمان: إذا لم توجد العناصر، نتوقف عن التنفيذ فوراً لتجنب الخطأ
+        if (!panel || !toggleBtn || !panelBody) {
+            console.warn("⚠️ لم يتم العثور على عناصر اللوحة، تخطي التهيئة.");
+            return;
+        }
+
+        const savedPos = localStorage.getItem('provider_panel_pos');
+        if (savedPos) {
+            try {
+                const pos = JSON.parse(savedPos);
+                panel.style.left = pos.left;
+                panel.style.top = pos.top;
+            } catch (e) { console.error("Error parsing panel position"); }
+        }
+        
         let isMinimized = false;
 
         toggleBtn.addEventListener('click', function () {
             isMinimized = !isMinimized;
-
-            if (isMinimized) {
-                panelBody.style.display = 'none';
-                header.style.borderBottom = 'none';
-                header.style.marginBottom = '0';
-                header.style.paddingBottom = '0';
-                toggleBtn.textContent = '+';
-                toggleBtn.title = 'تكبير اللوحة';
-            } else {
-                panelBody.style.display = 'block';
-                header.style.borderBottom = '2px solid #f5f5f5';
-                header.style.marginBottom = '12px';
-                header.style.paddingBottom = '10px';
-                toggleBtn.textContent = '−';
-                toggleBtn.title = 'تصغير اللوحة';
+            // فحص أمان إضافي عند النقر
+            if (panelBody) {
+                panelBody.style.display = isMinimized ? 'none' : 'block';
             }
+            toggleBtn.textContent = isMinimized ? '+' : '−';
+            toggleBtn.title = isMinimized ? 'تكبير اللوحة' : 'تصغير اللوحة';
         });
     }
 
-    // ننتظر حتى يتم إنشاء اللوحة من provider-panel.js
+    // التأكد من أن DOM جاهز تماماً قبل التنفيذ
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', setup);
     } else {
-        setTimeout(setup, 1500);
+        // تأخير بسيط لضمان تحميل جميع العناصر الديناميكية
+        setTimeout(setup, 500); 
     }
+})();
+
+/**
+ * هذا الكود يجمع بين:
+ * 1. إمكانية سحب اللوحة من الهيدر
+ * 2. إمكانية تصغير وتكبير اللوحة
+ */
+(function setupProviderPanel() {
+    const panel = document.getElementById('provider-mini-panel');
+    if (!panel) return;
+
+    const header = panel.querySelector('.panel-header');
+    const toggleBtn = panel.querySelector('.panel-minimize-btn');
+    const body = panel.querySelector('.provider-panel-body');
+
+    // 1. منطق التصغير (يعمل باللمس والماوس تلقائياً)
+    if (toggleBtn) {
+        toggleBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            const isHidden = body.style.display === 'none';
+            body.style.display = isHidden ? 'block' : 'none';
+            toggleBtn.textContent = isHidden ? '−' : '+';
+        });
+    }
+
+    // 2. منطق التحريك (دعم الماوس واللمس)
+    let isDragging = false;
+    let offset = { x: 0, y: 0 };
+
+    function startDrag(e) {
+        isDragging = true;
+        // دعم الماوس (clientX) واللمس (touches[0].clientX)
+        const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+        const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+        
+        offset.x = clientX - panel.offsetLeft;
+        offset.y = clientY - panel.offsetTop;
+        panel.style.transition = 'none';
+    }
+
+    function moveDrag(e) {
+        if (!isDragging) return;
+        e.preventDefault(); // منع سحب الصفحة أثناء تحريك اللوحة
+        const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+        const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+        
+        requestAnimationFrame(() => {
+            panel.style.left = (clientX - offset.x) + 'px';
+            panel.style.top = (clientY - offset.y) + 'px';
+            panel.style.right = 'auto';
+            panel.style.bottom = 'auto';
+        });
+    }
+
+    function endDrag() {
+        isDragging = false;
+        function endDrag() {
+    isDragging = false;
+    // حفظ الموقع الحالي في localStorage
+    localStorage.setItem('provider_panel_pos', JSON.stringify({
+        left: panel.style.left,
+        top: panel.style.top
+    }));
+}
+    }
+
+    // ربط الأحداث
+    header.addEventListener('mousedown', startDrag);
+    header.addEventListener('touchstart', startDrag, { passive: false });
+    
+    document.addEventListener('mousemove', moveDrag);
+    document.addEventListener('touchmove', moveDrag, { passive: false });
+    
+    document.addEventListener('mouseup', endDrag);
+    document.addEventListener('touchend', endDrag);
 })();

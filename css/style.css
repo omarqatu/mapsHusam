@@ -81,14 +81,16 @@ body {
     border: 1px solid #ccc;
     border-radius: 8px;
     z-index: 502;
-    width: 320px;
+    width: 320px; 
     font-size: 14px;
     box-shadow: 0 4px 10px rgba(0,0,0,0.15);
     direction: rtl;
-    max-height: calc(100vh - 120px);
+    
+    /* تغييرات جوهرية هنا */
+    top: 150px !important; /* ابدأ اللوحة دائماً تحت الهيدر بمسافة كافية */
+    max-height: calc(100vh - 170px); /* المساحة المتبقية للشاشة */
+    transform: none !important; /* إلغاء التوسيط العمودي */
     overflow-y: auto;
-    top: 50%;
-    transform: translateY(-50%);
     transition: none !important;
 }
 
@@ -180,8 +182,9 @@ body {
 
 #search-panel, #nearby-apartments-panel, #results-panel, #layerPanel,
 #measurePanel, #shareLocationPanel, #editPanel, #polygonEditPanel, #lineEditPanel {
-    top: 220px;
-    transform: none;
+    top: 200px !important; /* نفس قيمة الـ top في .panel-right */
+    transform: none !important;
+    right: 50px !important; /* التأكد من محاذاتها لليمين */
 }
 
 #layerPanel { width: 250px; }
@@ -447,7 +450,7 @@ body {
 
     .panel-right {
         width: 80vw !important;
-        max-width: 80vw;
+        max-width: 150vw;
         right: 10vw;
         max-height: 40vh;
         top: auto;
@@ -471,4 +474,10 @@ body {
 .modal {
     z-index: 100000 !important; 
     background-color: rgba(0,0,0,0.3) !important;
+}
+
+
+
+body {
+    touch-action: manipulation; /* يسمح بالزوم العادي للخريطة ويمنع الزوم غير المقصود للواجهة */
 }

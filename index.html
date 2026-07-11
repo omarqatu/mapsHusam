@@ -23,19 +23,28 @@
     <meta name="description" content="منصة شاملة للبحث عن الخدمات والعقارات في فلسطين - شقق للإيجار والبيع، أراضي، ومختلف الخدمات المهنية">
     <meta name="keywords" content="فلسطين, خدمات, عقارات, شقق, أراضي, خريطة, بحث">
 
-    <link rel="stylesheet" href="./css/style.css">
-    <link rel="stylesheet" href="./css/buttons.css">
-    <link rel="stylesheet" href="./css/features.css">
-    <link rel="stylesheet" href="./css/auth-app-events.css">
-    <link rel="stylesheet" href="./css/ui-collapse.css">
-    <link rel="stylesheet" href="./css/auth-core-functions.css">
+    <!-- 1. مكتبات خارجية أولاً -->
     <link rel="stylesheet" href="ol/ol.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
-    <link rel="stylesheet" href="./css/social-links.css">
-    <link rel="stylesheet" href="./css/provider-panel.css">
-    <link rel="stylesheet" href="./css/notifications.css">
+
+    <!-- 2. التصميم الأساسي (Global Styles) -->
     <link rel="stylesheet" href="./css/resizable-panels.css">
+    <link rel="stylesheet" href="./css/style.css">
+
+    <!-- 3. المكونات الأساسية (Layout & Features) -->
+    <link rel="stylesheet" href="./css/buttons.css">
+    <link rel="stylesheet" href="./css/features.css">
+    <link rel="stylesheet" href="./css/ui-collapse.css">
+    
+    <link rel="stylesheet" href="./css/provider-panel.css">
+
+    <!-- 4. ملفات التفاعل والوظائف الخاصة -->
+    <link rel="stylesheet" href="./css/auth-app-events.css">
+    <link rel="stylesheet" href="./css/auth-core-functions.css">
+    <link rel="stylesheet" href="./css/notifications.css">
     <link rel="stylesheet" href="./css/promo-splash.css">
+    <link rel="stylesheet" href="./css/social-links.css">
+
 </head>
 <body>
 
@@ -698,8 +707,8 @@ document.addEventListener('DOMContentLoaded', function() {
     </a>
 </div>
 
-<div id="provider-mini-panel" class="provider-panel-bottom-left hidden panel-right" style="display: none; position: fixed; bottom: 25px; left: 25px; z-index: 99999; background: #ffffff; box-shadow: 0 4px 20px rgba(0,0,0,0.25); border-radius: 10px; width: 310px; direction: rtl; font-family: system-ui, -apple-system, sans-serif;">
-
+<div class="provider-panel-bottom-left" id="provider-mini-panel">
+    
     <input type="hidden" id="provider-layer-name" value="">
     <input type="hidden" id="provider-feature-id" value="">
 
@@ -867,7 +876,7 @@ document.addEventListener('DOMContentLoaded', function() {
 <script src="js/global-search.js"></script>
 <script src="js/panel-controls.js"></script>
 <script src="js/main.js"></script>
-<script src="js/resizable-panels.js"></script>
+
 
 <script>
 // دالة التبديل (مفتوح/مصغر)
@@ -904,6 +913,7 @@ function handleBannerLinkClick(event, banner) {
 
 <script src="js/provider-panel.js"></script>
 <script src="js/ui-collapse.js"></script>
+<script src="js/resizable-panels.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
 <script src="js/notifications.js"></script>

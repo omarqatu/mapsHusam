@@ -3,20 +3,23 @@
     position: fixed;
     bottom: 20px;
     left: 20px;
-    width: 320px;
+    width: auto;            /* تغيير من 320px إلى auto */
+    min-width: 280px;      /* عرض أدنى مناسب للنصوص */
+    max-width: 90vw;       /* لضمان عدم خروجها عن الشاشة في الموبايل */
     background-color: #ffffff;
     border-radius: 8px;
     box-shadow: 0 4px 15px rgba(0,0,0,0.2);
     z-index: 1000;
-    overflow: hidden;
+    /* إزالة overflow: hidden للسماح للوحة بالتمدد حسب المحتوى */
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     transition: all 0.3s ease;
 }
 
 .provider-panel-body {
     padding: 15px;
+    height: auto; 
+    max-height: 70vh; /* تحديد أقصى ارتفاع فقط ليتم التمرير إذا كان المحتوى طويلاً جداً */
     overflow-y: auto;
-    max-height: none; /* إزالة الحد الأقصى للارتفاع على الكمبيوتر */
 }
 
 .provider-panel-header {
@@ -98,9 +101,10 @@
         right: 0;
         margin: 0 auto;
         bottom: 10px;
-        width: 90%;
+        width: 90% !important;
         max-width: 350px;
         max-height: 55vh; /* زيادة الارتفاع لمشاهدة كامل النص */
+        height: auto !important;
         border-radius: 12px;
         box-shadow: 0 -4px 15px rgba(0,0,0,0.2);
         z-index: 10005; /* لضمان ظهور اللوحة فوق عناصر الخريطة والزووم الثابتة */
@@ -112,7 +116,7 @@
     .provider-panel-body {
         padding: 12px;
         overflow-y: auto !important; /* إجبار التمرير */
-        max-height: 200px !important; /* ارتفاع ثابت للسماح بالتمرير */
+        max-height: 40vh !important; /* ارتفاع ثابت للسماح بالتمرير */
         -webkit-overflow-scrolling: touch; /* تحسين التمرير على iOS */
     }
 
@@ -188,4 +192,46 @@
         border-top: 1px solid #eee;
         line-height: 1.5;
     }
+}
+
+.btn-prov.active {
+    background-color: #27ae60 !important;
+    color: white !important;
+}
+
+/* ==========================================================================
+   تنسيقات اللوحة المتحركة (الموحدة)
+   ========================================================================== */
+#provider-mini-panel {
+    position: absolute !important;
+    width: 300px !important; /* عرض ثابت للوحة */
+    min-height: 100px;
+    max-width: 90vw;
+    z-index: 9999;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    background: white;
+    border-radius: 8px;
+    overflow: hidden;
+    transition: none; /* تم حذف الـ transition هنا بناءً على طلبك */
+    touch-action: none; /* يخبر المتصفح أن هذه المنطقة مخصصة للتحريك */
+    user-select: none;
+}
+
+#provider-mini-panel .panel-header {
+    cursor: move; /* يوضح للمستخدم أنها قابلة للتحريك */
+    background: #f8f9fa;
+    padding: 10px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+/* هذا يمنع اللوحة من التفاعل مع أوامر الزوم الخاصة بالخريطة */
+.provider-panel-bottom-left, 
+#provider-mini-panel, 
+.provider-panel-body,
+.panel-header {
+    touch-action: none; 
+    -webkit-user-select: none; /* يمنع تحديد النصوص بالخطأ أثناء الحركة */
+    user-select: none;
 }
