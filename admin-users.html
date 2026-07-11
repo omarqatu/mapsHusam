@@ -73,6 +73,16 @@
             <option value="linked">مرتبط</option>
             <option value="unlinked">غير مرتبط</option>
         </select>
+
+        <label><i class="fas fa-calendar-alt"></i> تاريخ الإنشاء:</label>
+        <select id="date-filter" onchange="handleDateFilterChange()">
+            <option value="">الكل</option>
+            <option value="2days">آخر يومين</option>
+            <option value="week">آخر أسبوع</option>
+            <option value="month">آخر شهر</option>
+            <option value="custom">تاريخ محدد</option>
+        </select>
+        <input type="date" id="custom-date-input" style="display:none; padding:8px 12px; border:1px solid #ccc; border-radius:6px; font-size:13px;" onchange="applyFilters()">
     </div>
 
     <!-- Header actions -->
@@ -99,12 +109,13 @@
                     <th>is_active</th>
                     <th>طبقة الخدمة</th>
                     <th>Feature ID</th>
+                    <th>تاريخ الإنشاء</th>
                     <th>الإجراءات</th>
                 </tr>
             </thead>
             <tbody id="users-tbody">
                 <tr>
-                    <td colspan="10" class="no-data">
+                    <td colspan="11" class="no-data">
                         <i class="fas fa-spinner fa-spin"></i> جاري تحميل المستخدمين...
                     </td>
                 </tr>
@@ -213,7 +224,7 @@
     // ==========================================
     async function refreshUsersList() {
         const tbody = document.getElementById('users-tbody');
-        tbody.innerHTML = '<tr><td colspan="10" class="loading-spinner"><i class="fas fa-spinner"></i> جاري تحميل المستخدمين...</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="11" class="loading-spinner"><i class="fas fa-spinner"></i> جاري تحميل المستخدمين...</td></tr>';
 
         try {
             const response = await fetch('/api/admin/users');
@@ -224,12 +235,37 @@
                 applyFilters();
             } else {
                 showAlert('فشل تحميل المستخدمين: ' + (data.error || 'خطأ غير معروف'), 'error');
-                tbody.innerHTML = '<tr><td colspan="10" class="no-data">فشل تحميل المستخدمين</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="11" class="no-data">فشل تحميل المستخدمين</td></tr>';
             }
         } catch (err) {
             showAlert('خطأ في الاتصال بالسيرفر: ' + err.message, 'error');
-            tbody.innerHTML = '<tr><td colspan="10" class="no-data">خطأ في الاتصال بالسيرفر</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="11" class="no-data">خطأ في الاتصال بالسيرفر</td></tr>';
         }
+    }
+
+    // ==========================================
+    // 🆕 تحويل تاريخ بوستجرس (مثل "2026-06-28 22:35:58.529724") إلى Date صالح
+    // بوستجرس بيرجع أحياناً 6 خانات للميكروثانية، والجافاسكريبت بيفهم 3 فقط (ميلي ثانية)،
+    // وبيتوقع T بدل المسافة الفاصلة بين التاريخ والوقت. بدون هالتصحيح new Date() بترجع Invalid Date.
+    // ==========================================
+    function parseServerDate(dateStr) {
+        if (!dateStr) return null;
+        let normalized = String(dateStr).trim().replace(' ', 'T');
+        // تقليم الأجزاء العشرية للثانية إلى 3 خانات فقط (ميلي ثانية) إذا كانت أطول
+        normalized = normalized.replace(/(\.\d{3})\d+/, '$1');
+        const d = new Date(normalized);
+        return isNaN(d.getTime()) ? null : d;
+    }
+
+    // ==========================================
+    // 🆕 إظهار/إخفاء حقل التاريخ المخصص عند اختيار "تاريخ محدد"
+    // ==========================================
+    function handleDateFilterChange() {
+        const val = document.getElementById('date-filter').value;
+        const customInput = document.getElementById('custom-date-input');
+        customInput.style.display = val === 'custom' ? 'inline-block' : 'none';
+        if (val !== 'custom') customInput.value = '';
+        applyFilters();
     }
 
     // ==========================================
@@ -240,6 +276,8 @@
         const roleFilter = document.getElementById('role-filter').value;
         const statusFilter = document.getElementById('status-filter').value;
         const serviceFilter = document.getElementById('service-filter').value;
+        const dateFilter = document.getElementById('date-filter').value;
+        const customDateVal = document.getElementById('custom-date-input').value;
 
         let filtered = allUsers.filter(user => {
             // Search
@@ -263,6 +301,32 @@
             if (serviceFilter === 'linked' && !user.service_layer) return false;
             if (serviceFilter === 'unlinked' && user.service_layer) return false;
 
+            // 🆕 Date filter (created_at)
+            if (dateFilter) {
+                const createdDate = parseServerDate(user.created_at);
+                if (!createdDate) return false;
+                const now = new Date();
+
+                if (dateFilter === '2days') {
+                    const cutoff = new Date(now);
+                    cutoff.setDate(cutoff.getDate() - 2);
+                    if (createdDate < cutoff) return false;
+                } else if (dateFilter === 'week') {
+                    const cutoff = new Date(now);
+                    cutoff.setDate(cutoff.getDate() - 7);
+                    if (createdDate < cutoff) return false;
+                } else if (dateFilter === 'month') {
+                    const cutoff = new Date(now);
+                    cutoff.setMonth(cutoff.getMonth() - 1);
+                    if (createdDate < cutoff) return false;
+                } else if (dateFilter === 'custom' && customDateVal) {
+                    const selected = new Date(customDateVal);
+                    const createdOnly = new Date(createdDate.getFullYear(), createdDate.getMonth(), createdDate.getDate());
+                    const selectedOnly = new Date(selected.getFullYear(), selected.getMonth(), selected.getDate());
+                    if (createdOnly.getTime() !== selectedOnly.getTime()) return false;
+                }
+            }
+
             return true;
         });
 
@@ -278,12 +342,19 @@
         tbody.innerHTML = '';
 
         if (users.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="10" class="no-data">لا يوجد مستخدمين متطابقين مع الفلترة</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="11" class="no-data">لا يوجد مستخدمين متطابقين مع الفلترة</td></tr>';
             return;
         }
 
-        // Sort by ID descending (newest first)
-        users.sort((a, b) => (b.user_id || b.id) - (a.user_id || a.id));
+        // 🆕 ترتيب حسب تاريخ الإنشاء: الأحدث أولاً (يعتمد إن جاء created_at من السيرفر)
+        users.sort((a, b) => {
+            const parsedA = parseServerDate(a.created_at);
+            const parsedB = parseServerDate(b.created_at);
+            const dateA = parsedA ? parsedA.getTime() : 0;
+            const dateB = parsedB ? parsedB.getTime() : 0;
+            if (dateB !== dateA) return dateB - dateA;
+            return (b.user_id || b.id) - (a.user_id || a.id);
+        });
 
         users.forEach(user => {
             const userId = user.user_id || user.id;
@@ -294,6 +365,12 @@
             const isActive = user.is_active === true;
             const serviceLayer = user.service_layer || '';
             const featureId = user.feature_id || '';
+
+            // 🆕 تنسيق تاريخ الإنشاء للعرض
+            const parsedCreatedAt = parseServerDate(user.created_at);
+            const createdAtDisplay = parsedCreatedAt
+                ? parsedCreatedAt.toLocaleString('ar-EG', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' })
+                : '—';
 
             // Role badge
             let roleBadgeClass = 'user';
@@ -319,6 +396,7 @@
                 </td>
                 <td>${serviceLayer ? '<span style="color:#1a73e8;font-weight:bold;">' + serviceLayer + '</span>' : '<span style="color:#999;">—</span>'}</td>
                 <td>${featureId ? '<span style="font-weight:bold;direction:ltr;display:inline-block;">' + featureId + '</span>' : '<span style="color:#999;">—</span>'}</td>
+                <td style="white-space:nowrap; font-size:11px;">${createdAtDisplay}</td>
                 <td class="actions-cell">
                     <button class="action-btn" style="background:#1a73e8;color:white;" onclick="openEditModal(${userId})" title="تعديل المستخدم">
                         <i class="fas fa-edit"></i>

@@ -903,6 +903,7 @@ app.get('/api/admin/users', async (req, res) => {
                 feature_id,
                 x_coord,
                 y_coord
+                created_at
             FROM public.users
             ORDER BY user_id ASC
         `;

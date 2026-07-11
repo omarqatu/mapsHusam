@@ -263,6 +263,25 @@ window.copyLocationLink = function(coordinate) {
         const isService = serviceLayerNames.includes(layerTitle);
         const isAreaLayer = layerTitle === areaLayerName; 
 
+        // 🆕 استخراج رقم الـ ID المناسب لعرضه بجانب التصنيف:
+        // العقارات (شقق إيجار/بيع، أراضي للبيع) => العمود الرئيسي fid
+        // الخدمات => العمود الرئيسي id
+        let displayFeatureId = null;
+        if (isRealEstate) {
+            displayFeatureId = (props.fid !== undefined && props.fid !== null && props.fid !== '') ? props.fid : null;
+        } else if (isService) {
+            displayFeatureId = (props.id !== undefined && props.id !== null && props.id !== '') ? props.id : null;
+        }
+        // احتياط: إذا الحقل مش موجود كـ property (يصير أحياناً مع WFS من GeoServer)،
+        // نستخرجه من معرف OpenLayers الداخلي للمعلم (شكله مثلاً "ApartRent.123")
+        if (displayFeatureId === null && typeof feature.getId === 'function') {
+            const olId = feature.getId();
+            if (olId) {
+                const idParts = String(olId).split('.');
+                displayFeatureId = idParts[idParts.length - 1];
+            }
+        }
+
         if (popupTitle) {
             if (!isAreaLayer) {
                 popupTitle.innerHTML = ""; 
@@ -275,7 +294,7 @@ window.copyLocationLink = function(coordinate) {
         }
 
         let bodyHtml = `<div class="popup-body" style="font-size: 13px; line-height: 1.6; max-height:350px; overflow-y:auto; padding-right:5px; direction: rtl; text-align: right;">`;
-        bodyHtml += `<div style="margin-bottom: 8px; border-bottom: 1px solid #eee; padding-bottom: 5px;"><b style="color: #007bff;">🛠️ التصنيف:</b> <b>${layerTitle}</b></div>`;
+        bodyHtml += `<div style="margin-bottom: 8px; border-bottom: 1px solid #eee; padding-bottom: 5px;"><b style="color: #007bff;">🛠️ التصنيف:</b> <b>${layerTitle}</b>${displayFeatureId !== null ? ` <span style="color:#888; font-size:12px;">(رقم: ${window.sanitizeHTML(String(displayFeatureId))})</span>` : ''}</div>`;
         
         if (!isAreaLayer) bodyHtml += getStatusHtml(props.auto_status, props.work_hours);
 
