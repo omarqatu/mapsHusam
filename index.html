@@ -34,8 +34,91 @@
     <link rel="stylesheet" href="./css/social-links.css">
     <link rel="stylesheet" href="./css/provider-panel.css">
     <link rel="stylesheet" href="./css/notifications.css">
+    <link rel="stylesheet" href="./css/resizable-panels.css">
+    <link rel="stylesheet" href="./css/promo-splash.css">
 </head>
 <body>
+
+<!-- ====== شاشة التسويق الترحيبية ====== -->
+<div id="promo-splash-overlay">
+    <div class="promo-slideshow-bg" id="promo-slideshow"></div>
+    <div class="promo-overlay-dark" style="background: linear-gradient(180deg, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.6) 50%, rgba(0,0,0,0.85) 100%);"></div>
+
+    <!-- كلمات متطايرة -->
+    <div class="promo-floating-text" style="left:5%; animation-delay:0s;">🧭 خريطة الخدمات</div>
+    <div class="promo-floating-text" style="left:15%; animation-delay:3s;">🏠 عقارات</div>
+    <div class="promo-floating-text" style="left:30%; animation-delay:6s;">🔧 فنيين</div>
+    <div class="promo-floating-text" style="left:50%; animation-delay:2s;">📍 GPS</div>
+    <div class="promo-floating-text" style="left:65%; animation-delay:5s;">📸 مصورين</div>
+    <div class="promo-floating-text" style="left:78%; animation-delay:1s;">🚑 إسعاف</div>
+    <div class="promo-floating-text" style="left:90%; animation-delay:4s;">⚡ كهربائي</div>
+    <div class="promo-floating-text" style="left:10%; animation-delay:7s;">🩺 تمريض</div>
+    <div class="promo-floating-text" style="left:40%; animation-delay:8s;">🚕 تاكسي</div>
+    <div class="promo-floating-text" style="left:75%; animation-delay:9s;">🛠️ بناء</div>
+
+    <div class="promo-content">
+        <span class="promo-logo-icon">🗺️</span>
+        
+        <h1 class="promo-title">
+            <span class="highlight">خريطة الخدمات الفلسطينية</span>
+            <br>كل ما تحتاج، في مكان واحد
+        </h1>
+
+        <p class="promo-subtitle">
+            المنصة التفاعلية الأولى في فلسطين — ابحث عن أي خدمة أو عقار بنقرة واحدة، 
+            تواصل مباشرة مع مزودي الخدمات، وكن على بعد خطوة من كل ما تريد.
+        </p>
+
+        <div class="promo-features-grid">
+            <div class="promo-feature-item">
+                <span class="icon">🏘️</span>
+                <span class="label">شقق للبيع والإيجار</span>
+                <span class="desc">آلاف العقارات المحدثة يومياً</span>
+            </div>
+            <div class="promo-feature-item">
+                <span class="icon">🔧</span>
+                <span class="label">مزودو خدمات</span>
+                <span class="desc">أكثر من ٥٠ تخصص مهني</span>
+            </div>
+            <div class="promo-feature-item">
+                <span class="icon">📍</span>
+                <span class="label">تحديد مواقع دقيق</span>
+                <span class="desc">GPS + خريطة تفاعلية</span>
+            </div>
+            <div class="promo-feature-item">
+                <span class="icon">💬</span>
+                <span class="label">تواصل مباشر</span>
+                <span class="desc">واتساب — دون وسطاء</span>
+            </div>
+            <div class="promo-feature-item">
+                <span class="icon">📋</span>
+                <span class="label">بحث ذكي</span>
+                <span class="desc">فلترة بالموقع والسعر والفئة</span>
+            </div>
+            <div class="promo-feature-item">
+                <span class="icon">🆓</span>
+                <span class="label">مجاني بالكامل</span>
+                <span class="desc">لكافة المستخدمين</span>
+            </div>
+        </div>
+
+        <!-- أزرار الإجراء الرئيسية ثابتة -->
+        <div class="promo-action-buttons">
+            <button class="promo-action-btn promo-btn-primary" id="promo-btn-register">
+                <i class="fas fa-user-plus"></i> إنشاء حساب جديد
+            </button>
+            <button class="promo-action-btn promo-btn-secondary" id="promo-btn-login">
+                <i class="fas fa-sign-in-alt"></i> لديك حساب؟ سجل الدخول
+            </button>
+        </div>
+
+        <p class="promo-footer-text">
+            تفضل بزيارة الخريطة — ابدأ بإنشاء حساب جديد، أو إذا كان لديك حساب قم بتسجيل الدخول
+        </p>
+    </div>
+</div>
+<!-- ====== نهاية الشاشة الترحيبية ====== -->
+
 <div id="user-top-badge-container" class="hidden" style="display: none;">
     <span class="user-badge-name" id="top-username-display">---</span>
     <span class="user-badge-role" id="top-userrole-display">---</span>
@@ -507,6 +590,91 @@
     </div>
 </div>
 
+<!-- ====== دليل الاستخدام واتصل بنا - أزرار عائمة ====== -->
+<div id="guide-contact-floating-buttons" style="position:fixed; bottom:80px; right:15px; z-index:5000; display:flex; flex-direction:column; gap:10px; direction:rtl;">
+    <button id="btn-user-guide" style="width:50px; height:50px; border-radius:50%; background:linear-gradient(135deg,#1a73e8,#0d47a1); color:white; border:none; cursor:pointer; box-shadow:0 4px 15px rgba(26,115,232,0.4); font-size:20px; display:flex; align-items:center; justify-content:center; transition:all 0.3s ease;" title="دليل الاستخدام" onmouseover="this.style.transform='scale(1.1)'" onmouseout="this.style.transform='scale(1)'">
+        <i class="fas fa-book"></i>
+    </button>
+    <a href="https://www.facebook.com/MapServesPalestine" target="_blank" style="width:50px; height:50px; border-radius:50%; background:linear-gradient(135deg,#1877f2,#0a4c8c); color:white; text-decoration:none; cursor:pointer; box-shadow:0 4px 15px rgba(24,119,242,0.4); font-size:20px; display:flex; align-items:center; justify-content:center; transition:all 0.3s ease;" title="اتصل بنا عبر فيسبوك" onmouseover="this.style.transform='scale(1.1)'" onmouseout="this.style.transform='scale(1)'">
+        <i class="fab fa-facebook-f"></i>
+    </a>
+</div>
+
+<!-- ====== مودال دليل الاستخدام ====== -->
+<div id="user-guide-modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.6); z-index:100000; align-items:center; justify-content:center; direction:rtl; padding:20px;">
+    <div style="background:#fff; border-radius:16px; max-width:700px; width:100%; max-height:85vh; overflow-y:auto; padding:30px; box-shadow:0 10px 40px rgba(0,0,0,0.3); position:relative;">
+        <button onclick="document.getElementById('user-guide-modal').style.display='none'" style="position:absolute; top:12px; left:12px; background:#f0f0f0; border:none; border-radius:50%; width:36px; height:36px; cursor:pointer; font-size:18px; display:flex; align-items:center; justify-content:center;">
+            ✕
+        </button>
+
+        <h2 style="color:#1a73e8; font-size:22px; margin-top:0; margin-bottom:20px; border-bottom:2px solid #1a73e8; padding-bottom:10px;">
+            <i class="fas fa-book-open"></i> دليل استخدام المنصة
+        </h2>
+
+        <div style="margin-bottom:20px;">
+            <p style="font-size:14px; color:#555; line-height:1.8;">
+                مرحباً بك في <strong>خريطة الخدمات الفلسطينية</strong>. هذا الدليل يساعدك على فهم كيفية استخدام المنصة خطوة بخطوة.
+            </p>
+        </div>
+
+        <!-- خطوات الدليل -->
+        <div style="display:flex; flex-direction:column; gap:15px; margin-bottom:25px;">
+            <div style="background:#f8f9fa; border-right:4px solid #1a73e8; padding:15px; border-radius:8px;">
+                <strong style="color:#1a73e8; font-size:15px;">📝 ١. إنشاء حساب:</strong>
+                <p style="margin:5px 0 0; font-size:13px; color:#666;">اضغط على "إنشاء حساب جديد"، املأ بياناتك (الاسم، البريد، رقم الجوال، كلمة المرور)، ثم تواصل معنا عبر فيسبوك لتفعيل الحساب.</p>
+            </div>
+
+            <div style="background:#f8f9fa; border-right:4px solid #34a853; padding:15px; border-radius:8px;">
+                <strong style="color:#34a853; font-size:15px;">🔍 ٢. البحث عن خدمات:</strong>
+                <p style="margin:5px 0 0; font-size:13px; color:#666;">استخدم شريط البحث العام في أعلى الخريطة. اكتب اسم الخدمة (مثل: كهربائي، شقة للبيع، مطعم...) وستظهر النتائج على الخريطة مباشرة.</p>
+            </div>
+
+            <div style="background:#f8f9fa; border-right:4px solid #fbbc04; padding:15px; border-radius:8px;">
+                <strong style="color:#e37400; font-size:15px;">📍 ٣. البحث حسب الموقع:</strong>
+                <p style="margin:5px 0 0; font-size:13px; color:#666;">اضغط على أيقونة الموقع <i class="fas fa-map-marker-alt"></i>، حدد موقعك على الخريطة أو استخدم GPS، ثم اختر الخدمات القريبة منك.</p>
+            </div>
+
+            <div style="background:#f8f9fa; border-right:4px solid #ea4335; padding:15px; border-radius:8px;">
+                <strong style="color:#ea4335; font-size:15px;">📞 ٤. التواصل مع مزود الخدمة:</strong>
+                <p style="margin:5px 0 0; font-size:13px; color:#666;">اضغط على أيقونة الخدمة على الخريطة، ستظهر نافذة بمعلومات مزود الخدمة. انقر على رابط واتساب للتواصل المباشر.</p>
+            </div>
+
+            <div style="background:#f8f9fa; border-right:4px solid #7c3aed; padding:15px; border-radius:8px;">
+                <strong style="color:#7c3aed; font-size:15px;">🏠 ٥. إضافة عقار أو خدمة:</strong>
+                <p style="margin:5px 0 0; font-size:13px; color:#666;">إذا كنت مزود خدمة أو لديك عقار، تواصل معنا عبر صفحة فيسبوك لإضافتك إلى المنصة.</p>
+            </div>
+        </div>
+
+        <!-- ملاحظة عن المحتوى القادم -->
+        <div style="background:#e8f0fe; border-radius:10px; padding:15px; margin-bottom:20px; text-align:center;">
+            <p style="margin:0; font-size:13px; color:#1a73e8;">
+                <i class="fas fa-video"></i> <strong>قريباً:</strong> فيديوهات تعليمية وصور توضيحية خطوة بخطوة
+            </p>
+        </div>
+
+        <div style="text-align:center; margin-top:25px; padding-top:20px; border-top:1px solid #eee;">
+            <p style="font-size:13px; color:#888;">للتواصل مع الإدارة أو الإبلاغ عن مشكلة:</p>
+            <a href="https://www.facebook.com/MapServesPalestine" target="_blank" style="display:inline-block; background:#1877f2; color:white; padding:12px 30px; border-radius:30px; text-decoration:none; font-weight:bold; font-size:14px;">
+                <i class="fab fa-facebook-f"></i> راسلنا عبر فيسبوك
+            </a>
+        </div>
+    </div>
+</div>
+<!-- ====== نهاية مودال دليل الاستخدام ====== -->
+
+<script>
+// زر فتح دليل الاستخدام
+document.addEventListener('DOMContentLoaded', function() {
+    var guideBtn = document.getElementById('btn-user-guide');
+    var guideModal = document.getElementById('user-guide-modal');
+    if (guideBtn && guideModal) {
+        guideBtn.addEventListener('click', function() {
+            guideModal.style.display = 'flex';
+        });
+    }
+});
+</script>
+
 <div class="feedback-banner-wrapper" style="pointer-events: none !important;">
     <!-- تم تغيير النص من — إلى + -->
     <button type="button" id="toggleBannerBtn" class="banner-toggle-btn" title="تكبير البنر" style="pointer-events: auto !important;"
@@ -566,6 +734,121 @@
 <script src="proj4/proj4.js"></script>
 
 <script src="js/auth-core-functions.js"></script>
+
+<!-- ====== شاشة التسويق الترحيبية - JavaScript ====== -->
+<script>
+(function() {
+    // لا تظهر الشاشة إذا كان هناك مستخدم مسجل الدخول مسبقاً
+    try {
+        var savedUser = JSON.parse(localStorage.getItem('map_user')) || JSON.parse(sessionStorage.getItem('map_user'));
+        if (savedUser) {
+            var overlay = document.getElementById('promo-splash-overlay');
+            if (overlay) overlay.style.display = 'none';
+            return; // لا تعرض البرومو
+        }
+    } catch(e) {}
+
+    var overlay = document.getElementById('promo-splash-overlay');
+    if (!overlay) return;
+
+    var images = [
+        'pic/Picture1.jpg',
+        'pic/Picture2.jpg',
+        'pic/Picture3.jpg',
+        'pic/Picture4.jpg',
+        'pic/Picture5.jpg',
+        'pic/Picture6.jpg',
+        'pic/Picture7.jpg',
+        'pic/Picture8.jpg',
+        'pic/Picture9.jpg',
+        'pic/Picture10.jpg',
+        'pic/Picture11.jpg',
+        'pic/Picture12.jpg',
+        'pic/Picture13.jpg',
+        'pic/Picture14.jpg',
+        'pic/Picture15.jpg',
+        'pic/Picture16.jpg',
+        'pic/غلاف1.png'
+    ];
+
+    // إنشاء عناصر الصور المتحركة
+    var slideshow = document.getElementById('promo-slideshow');
+    if (slideshow) {
+        images.forEach(function(src, index) {
+            var img = document.createElement('img');
+            img.className = 'promo-slide-img' + (index === 0 ? ' active' : '');
+            img.src = src;
+            img.alt = 'صورة تسويقية ' + (index + 1);
+            slideshow.appendChild(img);
+        });
+
+        // تغيير الصورة كل 4 ثواني
+        var currentSlide = 0;
+        setInterval(function() {
+            var slides = slideshow.querySelectorAll('.promo-slide-img');
+            slides.forEach(function(s) { s.classList.remove('active'); });
+            currentSlide = (currentSlide + 1) % slides.length;
+            slides[currentSlide].classList.add('active');
+        }, 4000);
+    }
+
+    // إخفاء البرومو وإظهار شاشة التسجيل
+    function dismissPromo(goToRegister, goToLogin) {
+        if (!overlay) return;
+        overlay.classList.add('promo-hidden');
+        setTimeout(function() {
+            overlay.style.display = 'none';
+            // تفعيل auth overlay
+            var authOverlay = document.getElementById('auth-splash-overlay');
+            if (authOverlay) {
+                authOverlay.style.display = 'flex';
+                authOverlay.style.opacity = '1';
+                authOverlay.style.visibility = 'visible';
+            }
+            // التوجيه للشاشة المناسبة
+            if (goToRegister) {
+                var welcomeSection = document.getElementById('auth-welcome-section');
+                var emailFormSection = document.getElementById('auth-email-form-section');
+                if (welcomeSection && emailFormSection) {
+                    welcomeSection.classList.add('hidden');
+                    emailFormSection.classList.remove('hidden');
+                }
+            } else if (goToLogin) {
+                var welcomeSec = document.getElementById('auth-welcome-section');
+                var loginSec = document.getElementById('auth-login-form-section');
+                if (welcomeSec && loginSec) {
+                    welcomeSec.classList.add('hidden');
+                    loginSec.classList.remove('hidden');
+                }
+            }
+        }, 800);
+    }
+
+    // زر إنشاء حساب جديد — يودي على صفحة الشروط والموافقة أولاً
+    var registerBtn = document.getElementById('promo-btn-register');
+    if (registerBtn) {
+        registerBtn.addEventListener('click', function() {
+            dismissPromo(false, false); // يروح للـ auth-welcome-section (الشروط)
+        });
+    }
+
+    // زر تسجيل الدخول
+    var loginBtn = document.getElementById('promo-btn-login');
+    if (loginBtn) {
+        loginBtn.addEventListener('click', function() {
+            dismissPromo(false, true);
+        });
+    }
+
+    // إخفاء auth overlay في البداية
+    var authOverlay = document.getElementById('auth-splash-overlay');
+    if (authOverlay) {
+        authOverlay.style.display = 'none';
+    }
+})();
+</script>
+<!-- ====== نهاية شاشة التسويق ====== -->
+
 <script src="js/auth-app-events.js"></script>
 
 <script src="js/quick-search.js"></script>
@@ -584,6 +867,7 @@
 <script src="js/global-search.js"></script>
 <script src="js/panel-controls.js"></script>
 <script src="js/main.js"></script>
+<script src="js/resizable-panels.js"></script>
 
 <script>
 // دالة التبديل (مفتوح/مصغر)

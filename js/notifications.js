@@ -73,6 +73,20 @@ class NotificationSystem {
             alert('خطأ: ' + (error.error || 'حدث خطأ غير معروف'));
         });
 
+        // استقبال أمر إعادة تسجيل الدخول من المشرف (force_relogin)
+        this.socket.on('force_relogin', (data) => {
+            console.log('🚨 أمر إعادة تسجيل الدخول من الإدارة:', data);
+            const message = data.message || 'تم تحديث حسابك من قبل الإدارة. يرجى تسجيل الدخول مرة أخرى.';
+            alert('🚨 ' + message);
+            // مسح الجلسة المحفوظة
+            localStorage.removeItem('map_user');
+            sessionStorage.removeItem('map_user');
+            localStorage.removeItem('user');
+            sessionStorage.removeItem('user');
+            // إعادة تحميل الصفحة للعودة إلى شاشة تسجيل الدخول
+            window.location.reload();
+        });
+
         // تأكيد تعليم الإشعار كمقروء
         this.socket.on('notification_marked_read', (data) => {
             console.log('✅ تم تعليم الإشعار كمقروء:', data);

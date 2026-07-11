@@ -1,0 +1,531 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>إدارة المستخدمين - لوحة المشرف</title>
+
+    <!-- 🔒 Access guard: only admin can view -->
+    <style id="access-guard-style">
+        html { visibility: hidden; }
+    </style>
+    <script>
+    (function () {
+        function getStoredUser() {
+            try {
+                return JSON.parse(localStorage.getItem('map_user')) ||
+                       JSON.parse(sessionStorage.getItem('map_user')) ||
+                       JSON.parse(localStorage.getItem('user')) ||
+                       JSON.parse(sessionStorage.getItem('user'));
+            } catch (e) {
+                return null;
+            }
+        }
+
+        var user = getStoredUser();
+        if (!user || user.role !== 'admin') {
+            window.location.replace('/index.html');
+        } else {
+            document.addEventListener('DOMContentLoaded', function () {
+                document.documentElement.style.visibility = 'visible';
+            });
+        }
+    })();
+    </script>
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="css/admin-users.css">
+</head>
+<body>
+
+<div class="container">
+    <a href="dashboard.html" class="back-link"><i class="fas fa-arrow-right"></i> العودة للوحة التحكم</a>
+
+    <h1><i class="fas fa-users-cog"></i> إدارة المستخدمين</h1>
+    <p class="subtitle">تفعيل الحسابات، تعيين مزودي الخدمة، تغيير كلمات المرور</p>
+
+    <!-- Alert container -->
+    <div id="alert-container"></div>
+
+    <!-- Filter bar -->
+    <div class="filter-bar">
+        <label><i class="fas fa-search"></i> بحث:</label>
+        <input type="text" id="search-input" placeholder="اسم، بريد، رقم موبايل..." onkeyup="applyFilters()">
+        
+        <label><i class="fas fa-filter"></i> الدور:</label>
+        <select id="role-filter" onchange="applyFilters()">
+            <option value="">الكل</option>
+            <option value="admin">مشرف</option>
+            <option value="provider">مزود خدمة</option>
+            <option value="user">مستخدم عادي</option>
+        </select>
+
+        <label><i class="fas fa-toggle-on"></i> الحالة:</label>
+        <select id="status-filter" onchange="applyFilters()">
+            <option value="">الكل</option>
+            <option value="active">مفعل</option>
+            <option value="inactive">غير مفعل</option>
+        </select>
+
+        <label><i class="fas fa-link"></i> مرتبط بخدمة:</label>
+        <select id="service-filter" onchange="applyFilters()">
+            <option value="">الكل</option>
+            <option value="linked">مرتبط</option>
+            <option value="unlinked">غير مرتبط</option>
+        </select>
+    </div>
+
+    <!-- Header actions -->
+    <div class="header-actions">
+        <div class="btn-group">
+            <button class="btn btn-success" onclick="refreshUsersList()">
+                <i class="fas fa-sync-alt"></i> تحديث القائمة
+            </button>
+        </div>
+        <span class="user-count-badge"><i class="fas fa-users"></i> العدد: <span id="user-count">0</span></span>
+    </div>
+
+    <!-- Users table -->
+    <div class="table-container">
+        <table id="users-table">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>الاسم الكامل</th>
+                    <th>البريد الإلكتروني</th>
+                    <th>رقم الجوال</th>
+                    <th>الدور</th>
+                    <th>الحالة</th>
+                    <th>is_active</th>
+                    <th>طبقة الخدمة</th>
+                    <th>Feature ID</th>
+                    <th>الإجراءات</th>
+                </tr>
+            </thead>
+            <tbody id="users-tbody">
+                <tr>
+                    <td colspan="10" class="no-data">
+                        <i class="fas fa-spinner fa-spin"></i> جاري تحميل المستخدمين...
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- User Edit Modal -->
+<div id="user-modal" class="modal-overlay" style="display:none;">
+    <div class="modal-content">
+        <h2><i class="fas fa-user-edit"></i> تعديل بيانات المستخدم</h2>
+
+        <div id="modal-alert"></div>
+
+        <!-- User info display -->
+        <div class="service-info-box">
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+                <div>
+                    <label>المستخدم:</label>
+                    <span class="value" id="modal-user-name"></span>
+                </div>
+                <div>
+                    <label>ID:</label>
+                    <span class="value" id="modal-user-id"></span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Toggle activation -->
+        <div class="form-group">
+            <label class="checkbox-label">
+                <input type="checkbox" id="modal-is-active">
+                <span><strong>تفعيل الحساب</strong> (is_active = true)</span>
+            </label>
+            <small>عند تفعيله سيتمكن المستخدم من تسجيل الدخول. عند إلغاء التفعيل سيتم منعه.</small>
+        </div>
+
+        <hr>
+
+        <!-- Role selector -->
+        <div class="form-group">
+            <label for="modal-role"><i class="fas fa-user-tag"></i> نوع الحساب (role):</label>
+            <select id="modal-role">
+                <option value="user">مستخدم عادي</option>
+                <option value="provider">مزود خدمة</option>
+                <option value="admin">مشرف</option>
+            </select>
+            <small>تغيير نوع الحساب. ملاحظة: إذا اخترت "مزود خدمة" فيجب تعبئة حقل الطبقة ورقم المعلم أدناه.</small>
+        </div>
+
+        <hr>
+
+        <!-- Service provider binding -->
+        <div class="form-group">
+            <label for="modal-service-layer"><i class="fas fa-layer-group"></i> ربط كمزود خدمة - اسم الطبقة (service_layer):</label>
+            <select id="modal-service-layer" onchange="onServiceLayerChange()">
+                <option value="">-- غير مرتبط --</option>
+            </select>
+            <small>اختر الطبقة لربط المستخدم كمزود خدمة.</small>
+        </div>
+
+        <div class="form-group" id="modal-feature-id-group" style="display:none;">
+            <label for="modal-feature-id"><i class="fas fa-map-pin"></i> رقم ID المعلم في الطبقة (feature_id):</label>
+            <input type="number" id="modal-feature-id" placeholder="أدخل رقم ID المعلم (مثال: 14)">
+            <small>رقم المعرف (id) للمعلم الجغرافي المرتبط بهذه الطبقة.</small>
+        </div>
+
+        <hr>
+
+        <!-- Change password section -->
+        <div class="pwd-section">
+            <h3><i class="fas fa-key"></i> تغيير كلمة المرور</h3>
+            <div class="form-group">
+                <label for="modal-new-password">كلمة المرور الجديدة:</label>
+                <input type="text" id="modal-new-password" placeholder="أدخل كلمة مرور جديدة" minlength="6">
+                <small>اتركه فارغاً إذا كنت لا تريد تغيير كلمة المرور. الحد الأدنى 6 أحرف.</small>
+            </div>
+
+            <div class="form-group">
+                <label class="checkbox-label">
+                    <input type="checkbox" id="modal-force-pwd-change">
+                    <span>إجبار المستخدم على تغيير كلمة المرور عند تسجيل الدخول القادم</span>
+                </label>
+            </div>
+        </div>
+
+        <!-- Modal actions -->
+        <div class="modal-actions">
+            <button class="btn-save" onclick="saveUserChanges()">
+                <i class="fas fa-save"></i> حفظ التغييرات
+            </button>
+            <button class="btn-cancel" onclick="closeUserModal()">
+                <i class="fas fa-times"></i> إلغاء
+            </button>
+        </div>
+    </div>
+</div>
+
+<script>
+    let allUsers = [];
+    let currentEditUserId = null;
+
+    // ==========================================
+    // جلب جميع المستخدمين من السيرفر
+    // ==========================================
+    async function refreshUsersList() {
+        const tbody = document.getElementById('users-tbody');
+        tbody.innerHTML = '<tr><td colspan="10" class="loading-spinner"><i class="fas fa-spinner"></i> جاري تحميل المستخدمين...</td></tr>';
+
+        try {
+            const response = await fetch('/api/admin/users');
+            const data = await response.json();
+
+            if (data.success) {
+                allUsers = data.users;
+                applyFilters();
+            } else {
+                showAlert('فشل تحميل المستخدمين: ' + (data.error || 'خطأ غير معروف'), 'error');
+                tbody.innerHTML = '<tr><td colspan="10" class="no-data">فشل تحميل المستخدمين</td></tr>';
+            }
+        } catch (err) {
+            showAlert('خطأ في الاتصال بالسيرفر: ' + err.message, 'error');
+            tbody.innerHTML = '<tr><td colspan="10" class="no-data">خطأ في الاتصال بالسيرفر</td></tr>';
+        }
+    }
+
+    // ==========================================
+    // تطبيق الفلاتر
+    // ==========================================
+    function applyFilters() {
+        const searchTerm = document.getElementById('search-input').value.toLowerCase().trim();
+        const roleFilter = document.getElementById('role-filter').value;
+        const statusFilter = document.getElementById('status-filter').value;
+        const serviceFilter = document.getElementById('service-filter').value;
+
+        let filtered = allUsers.filter(user => {
+            // Search
+            if (searchTerm) {
+                const fullName = (user.full_name || user.name || '').toLowerCase();
+                const email = (user.email || '').toLowerCase();
+                const phone = (user.phone || '');
+                if (!fullName.includes(searchTerm) && !email.includes(searchTerm) && !phone.includes(searchTerm)) {
+                    return false;
+                }
+            }
+
+            // Role filter
+            if (roleFilter && user.role !== roleFilter) return false;
+
+            // Status filter (is_active)
+            if (statusFilter === 'active' && !user.is_active) return false;
+            if (statusFilter === 'inactive' && user.is_active) return false;
+
+            // Service layer filter
+            if (serviceFilter === 'linked' && !user.service_layer) return false;
+            if (serviceFilter === 'unlinked' && user.service_layer) return false;
+
+            return true;
+        });
+
+        document.getElementById('user-count').textContent = filtered.length;
+        renderUsersTable(filtered);
+    }
+
+    // ==========================================
+    // عرض جدول المستخدمين
+    // ==========================================
+    function renderUsersTable(users) {
+        const tbody = document.getElementById('users-tbody');
+        tbody.innerHTML = '';
+
+        if (users.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="10" class="no-data">لا يوجد مستخدمين متطابقين مع الفلترة</td></tr>';
+            return;
+        }
+
+        // Sort by ID descending (newest first)
+        users.sort((a, b) => (b.user_id || b.id) - (a.user_id || a.id));
+
+        users.forEach(user => {
+            const userId = user.user_id || user.id;
+            const userName = user.full_name || user.name || 'بدون اسم';
+            const userEmail = user.email || '---';
+            const userPhone = user.phone || '---';
+            const userRole = user.role || 'user';
+            const isActive = user.is_active === true;
+            const serviceLayer = user.service_layer || '';
+            const featureId = user.feature_id || '';
+
+            // Role badge
+            let roleBadgeClass = 'user';
+            let roleLabel = 'مستخدم';
+            if (userRole === 'admin') { roleBadgeClass = 'admin'; roleLabel = 'مشرف'; }
+            else if (userRole === 'provider') { roleBadgeClass = 'provider'; roleLabel = 'مزود خدمة'; }
+
+            // Status badge
+            let statusBadgeClass = isActive ? 'user-status-active' : 'user-status-disabled';
+            let statusLabel = isActive ? 'مفعل ✓' : 'غير مفعل ✗';
+
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td><strong>${userId}</strong></td>
+                <td style="text-align:right; font-weight:bold;">${userName}</td>
+                <td style="direction:ltr;">${userEmail}</td>
+                <td style="direction:ltr;">${userPhone}</td>
+                <td><span class="role-badge ${roleBadgeClass}">${roleLabel}</span></td>
+                <td><span class="user-status-badge ${statusBadgeClass}">${statusLabel}</span></td>
+                <td>
+                    <span style="display:inline-block; width:12px; height:12px; border-radius:50%; background:${isActive ? '#34a853' : '#ea4335'};"></span>
+                    ${isActive ? 'true' : 'false'}
+                </td>
+                <td>${serviceLayer ? '<span style="color:#1a73e8;font-weight:bold;">' + serviceLayer + '</span>' : '<span style="color:#999;">—</span>'}</td>
+                <td>${featureId ? '<span style="font-weight:bold;direction:ltr;display:inline-block;">' + featureId + '</span>' : '<span style="color:#999;">—</span>'}</td>
+                <td class="actions-cell">
+                    <button class="action-btn" style="background:#1a73e8;color:white;" onclick="openEditModal(${userId})" title="تعديل المستخدم">
+                        <i class="fas fa-edit"></i>
+                    </button>
+                    <button class="action-btn ${isActive ? 'btn-warning' : 'btn-success'}" onclick="toggleUserActive(${userId}, ${!isActive})" title="${isActive ? 'تعطيل' : 'تفعيل'} الحساب">
+                        <i class="fas ${isActive ? 'fa-ban' : 'fa-check-circle'}"></i>
+                    </button>
+                </td>
+            `;
+            tbody.appendChild(tr);
+        });
+    }
+
+    // ==========================================
+    // فتح نافذة تعديل المستخدم
+    // ==========================================
+    async function openEditModal(userId) {
+        currentEditUserId = userId;
+        const user = allUsers.find(u => (u.user_id || u.id) == userId);
+        if (!user) {
+            showAlert('المستخدم غير موجود', 'error');
+            return;
+        }
+
+        document.getElementById('modal-user-name').textContent = user.full_name || user.name || 'بدون اسم';
+        document.getElementById('modal-user-id').textContent = userId;
+
+        // is_active
+        document.getElementById('modal-is-active').checked = user.is_active === true;
+
+        // Role
+        document.getElementById('modal-role').value = user.role || 'user';
+
+        // Service layer
+        const serviceLayerSelect = document.getElementById('modal-service-layer');
+        await populateServiceLayers(serviceLayerSelect, user.service_layer || '');
+
+        // feature_id
+        document.getElementById('modal-feature-id').value = user.feature_id || '';
+        document.getElementById('modal-feature-id-group').style.display = user.service_layer ? 'block' : 'none';
+
+        // Clear password field
+        document.getElementById('modal-new-password').value = '';
+        document.getElementById('modal-force-pwd-change').checked = false;
+
+        // Clear modal alert
+        document.getElementById('modal-alert').innerHTML = '';
+
+        // Show modal
+        document.getElementById('user-modal').style.display = 'flex';
+    }
+
+    // ==========================================
+    // تعبئة قائمة طبقات الخدمة
+    // ==========================================
+    async function populateServiceLayers(selectEl, selectedValue) {
+        selectEl.innerHTML = '<option value="">-- غير مرتبط --</option>';
+
+        const serviceLayers = [
+            'electrician', 'ac_technician', 'plumber', 'general_maintenance', 'painter',
+            'carpenter', 'blacksmith', 'builder', 'house_cleaner', 'aluminum_tech',
+            'car_mechanic', 'car_electrician', 'tire_tech', 'car_wash', 'motorcycle_repair',
+            'taxi_driver', 'delivery_services', 'tow_truck', 'cctv_installer',
+            'party_planner', 'zaffa_bands', 'music_bands', 'photographer', 'party_rental',
+            'home_nurse', 'masseur', 'cupping_specialist', 'nutritionist', 'truck_driver',
+            'security_firms', 'furniture_buyer', 'gardener', 'pet_care', 'clown_entertainer',
+            'online_stores', 'villas_rent', 'martial_arts_gymnastics', 'public_parks_recreation',
+            'hotels', 'free_distribution', 'barber_shop', 'video_design_ads',
+            'pharmacies_on_call', 'taxis_on_call', 'emergency_hospitals', 'clinics',
+            'doctors_on_call', 'ambulances_on_call', 'music_training', 'lawyers',
+            'land_surveyors', 'real_estate_valuers', 'private_tutors', 'programmers',
+            'car_delivery_on_call', 'motorcycle_delivery_on_call', 'bicycle_delivery_on_call',
+            'photographers', 'student_research_assist'
+        ];
+
+        serviceLayers.forEach(layer => {
+            const opt = document.createElement('option');
+            opt.value = layer;
+            opt.textContent = layer;
+            if (layer === selectedValue) opt.selected = true;
+            selectEl.appendChild(opt);
+        });
+    }
+
+    // ==========================================
+   // عند تغيير طبقة الخدمة
+    // ==========================================
+    function onServiceLayerChange() {
+        const layer = document.getElementById('modal-service-layer').value;
+        const featureIdGroup = document.getElementById('modal-feature-id-group');
+        featureIdGroup.style.display = layer ? 'block' : 'none';
+        if (!layer) {
+            document.getElementById('modal-feature-id').value = '';
+        }
+    }
+
+    // ==========================================
+    // حفظ تغييرات المستخدم
+    // ==========================================
+    async function saveUserChanges() {
+        if (!currentEditUserId) return;
+
+        const isActive = document.getElementById('modal-is-active').checked;
+        const newRole = document.getElementById('modal-role').value;
+        const serviceLayer = document.getElementById('modal-service-layer').value;
+        const featureId = serviceLayer ? (document.getElementById('modal-feature-id').value || null) : null;
+        const newPassword = document.getElementById('modal-new-password').value.trim();
+
+        const payload = {
+            user_id: currentEditUserId,
+            role: newRole,
+            is_active: isActive
+        };
+
+        if (serviceLayer) {
+            payload.service_layer = serviceLayer;
+            payload.feature_id = featureId ? parseInt(featureId) : null;
+        } else {
+            payload.service_layer = null;
+            payload.feature_id = null;
+        }
+
+        if (newPassword && newPassword.length >= 6) {
+            payload.new_password = newPassword;
+        }
+
+        try {
+            const response = await fetch('/api/admin/users/update', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                showAlert('✅ ' + data.message, 'success');
+                closeUserModal();
+                refreshUsersList();
+            } else {
+                showAlert('❌ ' + (data.error || 'فشل تحديث المستخدم'), 'error');
+            }
+        } catch (err) {
+            showAlert('❌ خطأ في الاتصال: ' + err.message, 'error');
+        }
+    }
+
+    // ==========================================
+    // تفعيل / تعطيل حساب (سريع)
+    // ==========================================
+    async function toggleUserActive(userId, newStatus) {
+        if (!confirm(`هل أنت متأكد من ${newStatus ? 'تفعيل' : 'تعطيل'} هذا الحساب؟`)) return;
+
+        try {
+            const response = await fetch('/api/admin/users/update', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+                body: JSON.stringify({ user_id: userId, is_active: newStatus })
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                showAlert(`✅ تم ${newStatus ? 'تفعيل' : 'تعطيل'} الحساب بنجاح`, 'success');
+                refreshUsersList();
+            } else {
+                showAlert('❌ ' + (data.error || 'فشل التحديث'), 'error');
+            }
+        } catch (err) {
+            showAlert('❌ خطأ في الاتصال: ' + err.message, 'error');
+        }
+    }
+
+    // ==========================================
+    // إغلاق النافذة
+    // ==========================================
+    function closeUserModal() {
+        document.getElementById('user-modal').style.display = 'none';
+        currentEditUserId = null;
+    }
+
+    // إغلاق المودال بالضغط خارج المحتوى
+    document.getElementById('user-modal').addEventListener('click', function(e) {
+        if (e.target === this) closeUserModal();
+    });
+
+    // ==========================================
+    // عرض التنبيهات
+    // ==========================================
+    function showAlert(message, type = 'info') {
+        const container = document.getElementById('alert-container');
+        const alertEl = document.createElement('div');
+        alertEl.className = `alert alert-${type}`;
+        alertEl.innerHTML = message;
+        container.appendChild(alertEl);
+
+        // Auto-dismiss after 5 seconds
+        setTimeout(() => {
+            if (alertEl.parentElement) alertEl.remove();
+        }, 5000);
+    }
+
+    // ==========================================
+    // التحميل عند فتح الصفحة
+    // ==========================================
+    document.addEventListener('DOMContentLoaded', refreshUsersList);
+</script>
+
+</body>
+</html>

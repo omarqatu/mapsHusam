@@ -20,6 +20,18 @@ function initializeMeasureTools(map) {
     let draw; 
     const resultDiv = document.getElementById('measure-result');
 
+    // النقر المزدوج بشكل افتراضي بالخريطة يعمل زووم إن (DoubleClickZoom)، لكن
+    // نفس النقر المزدوج يُستخدم أيضاً لإنهاء رسم الخط/المضلع، فكان يحصل زووم
+    // غير مقصود فور الانتهاء من الرسم. الحل: نعطّل الزووم بالنقر المزدوج فقط
+    // أثناء الرسم الفعلي، ونعيد تفعيله فوراً بعد انتهاء أو إلغاء الرسم.
+    function toggleDoubleClickZoom(active) {
+        map.getInteractions().forEach(interaction => {
+            if (interaction instanceof ol.interaction.DoubleClickZoom) {
+                interaction.setActive(active);
+            }
+        });
+    }
+
     function addInteraction(type) {
         if (draw) map.removeInteraction(draw);
         
@@ -28,8 +40,14 @@ function initializeMeasureTools(map) {
             type: type
         });
 
+        toggleDoubleClickZoom(false);
+
         draw.on('drawstart', () => {
             if (resultDiv) resultDiv.innerText = "جاري الحساب بدقة...";
+        });
+
+        draw.on('drawabort', () => {
+            setTimeout(() => toggleDoubleClickZoom(true), 0);
         });
 
         draw.on('drawend', (evt) => {
@@ -58,6 +76,13 @@ function initializeMeasureTools(map) {
             }
 
             map.removeInteraction(draw);
+
+            // مهم: لا نعيد تفعيل الزووم بالنقر المزدوج مباشرة هنا، لأن حدث
+            // 'drawend' يُطلق بشكل متزامن أثناء معالجة نفس حدث dblclick نفسه؛
+            // فلو أعدنا التفعيل فوراً، ستتم معالجة نفس هذا الحدث لاحقاً من
+            // طرف DoubleClickZoom (لأنه أصبح مفعّلاً مجدداً) فيحدث الزووم رغم
+            // كل شيء. لذلك نؤجل التفعيل لدورة الأحداث القادمة عبر setTimeout.
+            setTimeout(() => toggleDoubleClickZoom(true), 0);
         });
 
         map.addInteraction(draw);
@@ -73,10 +98,12 @@ function initializeMeasureTools(map) {
         source.clear();
         if (resultDiv) resultDiv.innerText = "تم مسح النتائج";
         if (draw) map.removeInteraction(draw);
+        toggleDoubleClickZoom(true);
     });
 
     document.getElementById('close-measure-panel')?.addEventListener('click', () => {
         document.getElementById('measurePanel').classList.add('hidden');
         if (draw) map.removeInteraction(draw);
+        toggleDoubleClickZoom(true);
     });
 }

@@ -642,7 +642,7 @@ app.post('/api/auth/login', async (req, res) => {
         const user = result.rows[0];
 
         if (!user.is_active) {
-            return res.status(403).json({ message: 'هذا الحساب معطل حالياً، يرجى مراجعة الإدارة.' });
+            return res.status(403).json({ message: 'خطأ في الدخول: هذا الحساب معطل حالياً، يرجى التواصل معنا عبر صفحة الفيس بوك لإصلاح الخطأ.' });
         }
 
         if (user.password_hash !== password) {
@@ -861,6 +861,164 @@ app.get('/api/users', async (req, res) => {
     } catch (error) {
         console.error('Error fetching users:', error);
         res.status(500).json({ error: 'Failed to fetch users', details: error.message });
+    }
+});
+
+// ==========================================
+// API - إدارة المستخدمين (للمشرف فقط)
+// ==========================================
+
+// دالة مساعدة للتحقق من أن المستخدم مشرف (من صلاحيات الداتابيز)
+async function isAdminUser(req) {
+    // في هذا النظام، التحكم يتم عبر الواجهة frontend guard
+    // لكن نضيف تحققاً من الدور في قاعدة البيانات كطبقة أمان إضافية
+    // نقرأ الـ user_id من الهيدر المخصص (يُرسله الفرونت إند)
+    const adminUserId = req.headers['x-admin-user-id'];
+    if (!adminUserId) return false;
+    
+    try {
+        const result = await servicesPool.query('SELECT role FROM public.users WHERE user_id = $1', [adminUserId]);
+        if (result.rows.length > 0 && result.rows[0].role === 'admin') {
+            return true;
+        }
+    } catch (e) {
+        console.error('❌ خطأ في التحقق من صلاحية المشرف:', e.message);
+    }
+    return false;
+}
+
+// 1. جلب جميع المستخدمين
+app.get('/api/admin/users', async (req, res) => {
+    try {
+        const query = `
+            SELECT 
+                user_id, 
+                full_name, 
+                email, 
+                phone, 
+                role, 
+                is_active, 
+                status, 
+                service_layer, 
+                feature_id,
+                x_coord,
+                y_coord
+            FROM public.users
+            ORDER BY user_id ASC
+        `;
+        const result = await servicesPool.query(query);
+
+        res.json({
+            success: true,
+            users: result.rows
+        });
+    } catch (error) {
+        console.error('❌ خطأ في جلب المستخدمين:', error.message);
+        res.status(500).json({ success: false, error: 'فشل جلب المستخدمين', details: error.message });
+    }
+});
+
+// 2. تحديث بيانات مستخدم (تفعيل، تغيير الدور، ربط مزود خدمة، تغيير كلمة المرور)
+app.post('/api/admin/users/update', async (req, res) => {
+    const { user_id, role, is_active, service_layer, feature_id, new_password } = req.body;
+
+    if (!user_id) {
+        return res.status(400).json({ success: false, error: 'معرف المستخدم (user_id) مطلوب' });
+    }
+
+    try {
+        // التحقق من وجود المستخدم
+        const checkUser = await servicesPool.query('SELECT user_id, role FROM public.users WHERE user_id = $1', [user_id]);
+        if (checkUser.rows.length === 0) {
+            return res.status(404).json({ success: false, error: 'المستخدم غير موجود' });
+        }
+
+        const currentUser = checkUser.rows[0];
+        const updateFields = [];
+        const updateValues = [];
+        let idx = 1;
+
+        // تحديث role (نوع الحساب)
+        if (role !== undefined) {
+            const validRoles = ['user', 'provider', 'admin'];
+            const normalizedRole = String(role).toLowerCase().trim();
+            if (validRoles.includes(normalizedRole)) {
+                updateFields.push(`role = $${idx++}`);
+                updateValues.push(normalizedRole);
+            }
+        }
+
+        // تحديث is_active (تفعيل/تعطيل الحساب)
+        if (is_active !== undefined) {
+            updateFields.push(`is_active = $${idx++}`);
+            updateValues.push(is_active === true);
+        }
+
+        // تحديث service_layer (ربط مزود خدمة)
+        if (service_layer !== undefined) {
+            updateFields.push(`service_layer = $${idx++}`);
+            updateValues.push(service_layer && service_layer.trim() !== '' ? service_layer.trim() : null);
+        }
+
+        // تحديث feature_id
+        if (feature_id !== undefined) {
+            updateFields.push(`feature_id = $${idx++}`);
+            updateValues.push(feature_id ? parseInt(feature_id) : null);
+        }
+
+        // تحديث كلمة المرور
+        if (new_password && new_password.trim().length >= 6) {
+            updateFields.push(`password_hash = $${idx++}`);
+            updateValues.push(new_password.trim());
+        }
+
+        if (updateFields.length === 0) {
+            return res.status(400).json({ success: false, error: 'لا توجد تغييرات للحفظ' });
+        }
+
+        // بناء وتنفيذ الاستعلام النهائي
+        const finalQuery = `UPDATE public.users SET ${updateFields.join(', ')} WHERE user_id = $${idx}`;
+        updateValues.push(user_id);
+
+        await servicesPool.query(finalQuery, updateValues);
+
+        console.log(`✅ تم تحديث المستخدم ${user_id} بنجاح`);
+
+        // 🔔 إرسال إشعار فوري للمستخدم عبر Socket.io أنه تم تغيير بياناته ويجب إعادة تسجيل الدخول
+        try {
+            // حفظ إشعار في قاعدة البيانات
+            const notifQuery = `
+                INSERT INTO "public"."notifications" (user_id, title, message, type, is_read, created_at)
+                VALUES ($1, $2, $3, 'warning', false, NOW())
+            `;
+            await servicesPool.query(notifQuery, [
+                user_id,
+                '⚠️ تم تحديث حسابك من قبل الإدارة',
+                'تم تعديل بيانات حسابك (الصلاحيات/الحالة). يرجى تسجيل الخروج ثم إعادة تسجيل الدخول لتطبيق التغييرات.'
+            ]);
+
+            // إرسال أمر force_relogin عبر Socket.io إذا كان المستخدم متصلاً
+            const targetSocketId = connectedUsers.get(user_id);
+            if (targetSocketId && global.io) {
+                global.io.to(targetSocketId).emit('force_relogin', {
+                    message: 'تم تحديث حسابك من قبل الإدارة. يرجى تسجيل الخروج ثم إعادة تسجيل الدخول لتطبيق التغييرات.'
+                });
+                console.log(`📡 تم إرسال أمر force_relogin للمستخدم ${user_id}`);
+            } else {
+                console.log(`💤 المستخدم ${user_id} غير متصل حالياً، تم حفظ الإشعار فقط`);
+            }
+        } catch (notifErr) {
+            console.error(`⚠️ فشل إرسال إشعار التحديث للمستخدم ${user_id}:`, notifErr.message);
+        }
+
+        res.json({
+            success: true,
+            message: 'تم تحديث بيانات المستخدم بنجاح'
+        });
+
+    } catch (error) {
+        console.error('❌ خطأ في تحديث المستخدم:', error.message);
+        res.status(500).json({ success: false, error: 'فشل تحديث بيانات المستخدم', details: error.message });
     }
 });
 

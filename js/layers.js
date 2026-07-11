@@ -249,7 +249,7 @@ if (MAP_CONFIG && MAP_CONFIG.globalExclusions) {
             labelField: 'name', 
             zoomThresholdForLabel: 0.7 
         });
-        window.appLayers[key + 'Layer'] = createWFSLayer('services', key, info.name, sStyle, 0.5, true, 30); 
+        window.appLayers[key + 'Layer'] = createWFSLayer('services', key, info.name, sStyle, 1, true, 30); 
         //                                                                              ↑
         //                                                              التحكم بزووم ظهور معالم الخدمات maxResolution
     });
