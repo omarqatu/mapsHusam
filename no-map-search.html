@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>البحث بدون خريطة - خريطة الخدمات الفلسطينية</title>
+    <meta name="description" content="ابحث عن أي خدمة أو عقار في فلسطين بدون الحاجة لفتح الخريطة التفاعلية - أسرع وأخف على جميع الأجهزة">
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="stylesheet" href="./css/no-map-search.css">
+</head>
+<body>
+
+<div class="nms-page">
+
+    <header class="nms-topbar">
+        <a href="index.html" class="nms-back-home" target="_blank" rel="noopener"><i class="fas fa-arrow-right"></i> الرئيسية</a>
+        <h1><i class="fas fa-magnifying-glass"></i> البحث بدون خريطة</h1>
+        <span class="nms-topbar-spacer"></span>
+    </header>
+
+    <div class="nms-layout">
+
+        <aside class="nms-ad-space nms-ad-side" aria-hidden="true">
+            <span>مساحة إعلانية</span>
+        </aside>
+
+        <main class="nms-main">
+
+            <section class="nms-intro">
+                <h2><i class="fas fa-lightbulb"></i> كيف تبحث بأسهل طريقة؟</h2>
+                <p>
+                    اختر نوع الخدمة أو العقار الذي تبحث عنه من المربعات أدناه، وستظهر لك فوراً جميع
+                    النتائج المتاحة مرتبة حسب الأعلى تقييماً. تقدر كمان تستخدم الفلاتر لتضييق النتائج
+                    حسب المنطقة، السعر، أو أي تفاصيل ثانية — بدون الحاجة لفتح الخريطة أو الانتظار حتى تحمّل.
+                </p>
+                <a href="index.html" class="nms-map-link" target="_blank" rel="noopener">
+                    <i class="fas fa-map-marked-alt"></i>
+                    تفضّل بالانتقال للبحث من خلال الخريطة التفاعلية
+                    </a>
+            </section>
+
+            <!-- ============== شبكة الفئات ============== -->
+            <section id="nms-categories-view" class="nms-categories-view">
+                <h3 class="nms-section-title"><i class="fas fa-grip"></i> اختر نوع الخدمة أو العقار</h3>
+                <div id="nms-categories-grid" class="nms-categories-grid"></div>
+            </section>
+
+            <!-- ============== الفلاتر + النتائج ============== -->
+            <section id="nms-results-view" class="nms-results-view hidden">
+                <button id="nms-back-to-categories" class="nms-back-btn">
+                    <i class="fas fa-arrow-right"></i> عودة لكل الفئات
+                </button>
+
+                <h2 id="nms-current-category-title" class="nms-current-category-title"></h2>
+
+                <div class="nms-filters-box">
+                    <p class="nms-filters-hint"><i class="fas fa-filter"></i> فلترة النتائج (اختياري):</p>
+                    <div class="nms-filter-row">
+                        <select id="nms-field-select" class="nms-select"></select>
+                        <select id="nms-operator-select" class="nms-select">
+                            <option value="=">يساوي</option>
+                            <option value="contains">يحتوي على</option>
+                            <option value=">">أكبر من أو يساوي</option>
+                            <option value="<">أصغر من أو يساوي</option>
+                        </select>
+                        <div id="nms-value-container" class="nms-value-container"></div>
+                        <button id="nms-add-condition" class="nms-btn nms-btn-secondary">
+                            <i class="fas fa-plus"></i> إضافة شرط
+                        </button>
+                    </div>
+
+                    <div id="nms-conditions-list" class="nms-conditions-list"></div>
+
+                    <div class="nms-filter-actions">
+                        <button id="nms-run-search" class="nms-btn nms-btn-primary">
+                            <i class="fas fa-search"></i> تنفيذ البحث
+                        </button>
+                        <button id="nms-clear-search" class="nms-btn nms-btn-muted">
+                            <i class="fas fa-broom"></i> إعادة تعيين
+                        </button>
+                    </div>
+                </div>
+
+                <div id="nms-results-count" class="nms-results-count"></div>
+                <div id="nms-results-list" class="nms-results-list"></div>
+            </section>
+
+        </main>
+
+        <aside class="nms-ad-space nms-ad-side" aria-hidden="true">
+            <span>مساحة إعلانية</span>
+        </aside>
+
+    </div>
+
+    <div class="nms-ad-space nms-ad-bottom" aria-hidden="true">
+        <span>مساحة إعلانية</span>
+    </div>
+
+</div>
+
+<!-- 
+  ملاحظة تزامن مهمة:
+  نحمّل js/search.js هنا فقط ليُصدِّر تعريف الحقول (fieldsConfig) على window.searchFieldsConfig
+  (تم إضافة سطر تصدير واحد في أعلى الملف - راجع الشرح). هذا يضمن أن أي تعديل مستقبلي على حقول
+  لوحة "بحث بالسمات" داخل الخريطة (search.js) ينعكس تلقائياً هنا بدون أي تكرار للكود.
+  لا داعي للقلق: تحميل الملف وحده لا يُفعّل أي أداة، لأنه لا يُستدعى initializeSearch() إلا من main.js.
+-->
+<script src="js/search.js"></script>
+<script src="js/no-map-search.js"></script>
+
+</body>
+</html>

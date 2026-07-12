@@ -1,6 +1,5 @@
 /**
- * main.js - النسخة النهائية المطورة مع نظام الإقلاع الديناميكي الموحد (ستاندرد) وإدارة صلاحيات المشرف ومزود الخدمة
- * تم حل مشكلة تباين الزووم عند النقر على زر الانتقال إلى موقع الخدمة ليصبح زووم 19 فورياً من النقرة الأولى.
+ * main.js - 
  */
 
 if (typeof proj4 !== 'undefined') {
@@ -167,6 +166,14 @@ window.userLiveLocationLayer = new ol.layer.Vector({
 });
 
 document.addEventListener('DOMContentLoaded', () => {
+    // ربط وظيفة زر البحث بدون خريطة
+    const noMapBtn = document.getElementById('no-map-search-btn');
+        if (noMapBtn) {
+            noMapBtn.addEventListener('click', () => {
+                window.location.href = 'no-map-search.html';
+            });
+        }
+    
     const layers = window.appLayers || {};
     const baseKeys = ['aerialLayer', 'osmBaseLayer', 'esriImageryLayer', 'noBasemapLayer'];
     const mapLayersArray = [];
@@ -286,26 +293,42 @@ document.addEventListener('DOMContentLoaded', () => {
         );
     };
 
-    // --- 3. بناء واجهة الاختيار المطور وحقن زر الموقع والنافذة المنبثقة لإقلاع الخريطة ---
-    setTimeout(() => {
-        const zoomContainer = document.querySelector('.ol-zoom');
-        if (zoomContainer) {
-            // تحقق لمنع تكرار حقن الزر
-            if (!document.querySelector('.ol-custom-location-btn')) {
-                const locationBtn = document.createElement('button');
-                locationBtn.className = 'ol-custom-location-btn';
-                locationBtn.setAttribute('type', 'button');
-                locationBtn.setAttribute('title', 'تحديد موقعي الحالي');
-                locationBtn.innerHTML = '🎯'; 
-                
-                zoomContainer.appendChild(locationBtn);
+            // --- 3. بناء واجهة الاختيار المطور وحقن زر الموقع والنافذة المنبثقة لإقلاع الخريطة ---
+            setTimeout(() => {
+                const zoomContainer = document.querySelector('.ol-zoom');
+                if (zoomContainer) {
+                    // تحقق لمنع تكرار حقن الزر
+                    if (!document.querySelector('.ol-custom-location-btn')) {
+                        const locationBtn = document.createElement('button');
+                        locationBtn.className = 'ol-custom-location-btn';
+                        locationBtn.setAttribute('type', 'button');
+                        locationBtn.setAttribute('title', 'تحديد موقعي الحالي');
+                        locationBtn.innerHTML = '🎯'; 
+                        
+                        zoomContainer.appendChild(locationBtn);
 
-                locationBtn.onclick = () => {
-                    getUserCurrentLocation(locationBtn);
-                };
+                        locationBtn.onclick = () => {
+                            getUserCurrentLocation(locationBtn);
+                        };
+                    }
+
+            // [تطوير ذكي]: التحقق من وجود إحداثيات في الرابط لتخطي نافذة الإقلاع تلقائياً
+            const urlParams = new URLSearchParams(window.location.search);
+            const xParam = urlParams.get('x');
+            const yParam = urlParams.get('y');
+
+            if (xParam && yParam) {
+                const targetCoords = [parseFloat(xParam), parseFloat(yParam)];
+                // التوجه المباشر للموقع بزووم 19 فوراً
+                map.getView().animate({ 
+                    center: targetCoords, 
+                    zoom: 19, 
+                    duration: 1000 
+                });
+                return; // الخروج وعدم بناء النافذة لأننا نريد التوجه للموقع مباشرة
             }
 
-            // تحقق لمنع تكرار حقن النافذة
+            // تحقق لمنع تكرار حقن النافذة (لن تنفذ إذا كان هناك إحداثيات في الرابط)
             if (!document.getElementById('custom-splash-overlay')) {
                 const splashOverlay = document.createElement('div');
                 splashOverlay.id = 'custom-splash-overlay';
@@ -320,13 +343,30 @@ document.addEventListener('DOMContentLoaded', () => {
                 dialogBox.id = 'custom-splash-dialog';
 
                 dialogBox.innerHTML = `
-                    <h3 style="margin-top:0; color:#2c3e50; font-size:18px; margin-bottom:2px; font-weight:700;">منصة الخرائط الجغرافية</h3>
-                    <p style="color:#7f8c8d; font-size:13px; margin-bottom:20px;">الرجاء اختيار نطاق التركيز الأولي لبدء استكشاف الخريطة:</p>
+                    <h3 style="margin-top:0; color:#2c3e50; font-size:18px; margin-bottom:15px; font-weight:700; text-align:center;">منصة الخرائط الجغرافية</h3>
+                    
+                    <!-- مربع المعلومات الجديد - تم إضافة target="_blank" للفتح في تبويب جديد -->
+                    <div id="no-map-link-container" style="background: #ffffff; padding: 12px; border-radius: 4px; margin-bottom: 15px; border: 1px solid #dcdde1; box-shadow: 0 2px 4px rgba(0,0,0,0.05); text-align: center;">
+                        <p style="font-size: 13px; color: #57606f; margin: 0 0 10px 0; line-height: 1.5;">
+                            يمكنك أيضاً البحث عن الخدمات من خلال قائمة المعلومات بدلاً من الخريطة، والتنقل بينهما بسهولة.
+                        </p>
+                        <a href="no-map-search.html" id="no-map-link" target="_blank" rel="noopener" style="display: inline-block; padding: 8px 20px; background: #3498db; color: #ffffff; border-radius: 4px; font-weight: 600; text-decoration: none; font-size: 13px; transition: background 0.3s;">
+                            ⇽ الانتقال إلى صفحة البحث بالقائمة
+                        </a>
+                    </div>
+
+                    <p style="color:#7f8c8d; font-size:12px; margin-bottom:10px; text-align:center;">اختر نطاق التركيز لبدء استكشاف الخريطة:</p>
+                    
                     <div id="splash-options-container" style="display:flex; flex-direction:column; gap:10px;">
                         <button class="splash-opt-btn" data-type="default" style="padding:12px; font-size:14px; background:#2c3e50; color:white; border:none; border-radius:4px; cursor:pointer; font-weight:500; text-align:right; transition:background 0.2s;">1. العرض الافتراضي للمنصة / مشاركة موقع</button>
                         <button class="splash-opt-btn" data-type="gps" style="padding:12px; font-size:14px; background:#2c3e50; color:white; border:none; border-radius:4px; cursor:pointer; font-weight:500; text-align:right; transition:background 0.2s;">2. تحديد النطاق حسب موقعي الحالي (GPS)</button>
                     </div>
                 `;
+
+                // إضافة تأثير الـ Hover للرابط برمجياً
+                const noMapLink = dialogBox.querySelector('#no-map-link');
+                noMapLink.addEventListener('mouseover', () => noMapLink.style.background = '#2980b9');
+                noMapLink.addEventListener('mouseout', () => noMapLink.style.background = '#3498db');
 
                 const optionsContainer = dialogBox.querySelector('#splash-options-container');
                 if (typeof citiesCoordinates !== 'undefined') {
@@ -376,10 +416,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
                     btn.addEventListener('mouseover', function() { this.style.background = '#34495e'; });
                     btn.addEventListener('mouseout', function() { this.style.background = '#2c3e50'; });
-                });
-            }
-        }
-    }, 1000);
+                            });
+                        }
+                    }
+                }, 1000);
 
     // --- 4. إدارة تعبئة قوائم التحرير ---
     const populateEditSelects = () => {
@@ -499,6 +539,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         
         // [محرك المزامنة التلقائية]: تحديث ذكي كل 15 ثانية لضمان رؤية التغييرات دون إرهاق السيرفر
+        startSmartMapSync(15000);
         
     }, 1000);
 

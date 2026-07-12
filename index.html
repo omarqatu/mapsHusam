@@ -29,6 +29,7 @@
 
     <!-- 2. التصميم الأساسي (Global Styles) -->
     <link rel="stylesheet" href="./css/resizable-panels.css">
+    <link rel="stylesheet" href="./css/no-map-search.css">
     <link rel="stylesheet" href="./css/style.css">
 
     <!-- 3. المكونات الأساسية (Layout & Features) -->
@@ -167,9 +168,17 @@
     <div class="global-search-wrapper">
         <i class="fas fa-search"></i>
         <input type="text" id="global-search-input" placeholder="ابحث عن عقار، مطعم، فني...">
+        
+        <!-- زر التحديث -->
         <button id="global-refresh-btn" class="global-refresh-btn" title="تحديث الخريطة">
             <i class="fas fa-sync-alt"></i>
         </button>
+
+        <!-- زر البحث بدون خريطة الجديد -->
+             <button id="no-map-search-btn" class="global-refresh-btn" title="بحث في القائمة" onclick="window.open('no-map-search.html', '_blank');">
+                <i class="fas fa-list"></i>
+            </button>
+        
         <div id="search-suggestions"></div>
     </div>
 
@@ -599,6 +608,8 @@
     </div>
 </div>
 
+
+
 <!-- ====== دليل الاستخدام واتصل بنا - أزرار عائمة ====== -->
 <div id="guide-contact-floating-buttons" style="position:fixed; bottom:80px; right:15px; z-index:5000; display:flex; flex-direction:column; gap:10px; direction:rtl;">
     <button id="btn-user-guide" style="width:50px; height:50px; border-radius:50%; background:linear-gradient(135deg,#1a73e8,#0d47a1); color:white; border:none; cursor:pointer; box-shadow:0 4px 15px rgba(26,115,232,0.4); font-size:20px; display:flex; align-items:center; justify-content:center; transition:all 0.3s ease;" title="دليل الاستخدام" onmouseover="this.style.transform='scale(1.1)'" onmouseout="this.style.transform='scale(1)'">
@@ -625,6 +636,7 @@
                 مرحباً بك في <strong>خريطة الخدمات الفلسطينية</strong>. هذا الدليل يساعدك على فهم كيفية استخدام المنصة خطوة بخطوة.
             </p>
         </div>
+        
 
         <!-- خطوات الدليل -->
         <div style="display:flex; flex-direction:column; gap:15px; margin-bottom:25px;">
@@ -728,6 +740,10 @@ document.addEventListener('DOMContentLoaded', function() {
             <div style="display: flex; gap: 8px; width: 100%;">
                 <button type="button" class="btn-prov btn-status-available" id="btn-prov-available-current" style="flex: 1; padding: 10px 5px; border: 2px solid #27ae60; background: #fff; color: #27ae60; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 11px; transition: all 0.2s ease;">🟢 متوفر (موقعي)</button>
                 <button type="button" class="btn-prov btn-status-available" id="btn-prov-available-prev" style="flex: 1; padding: 10px 5px; border: 2px solid #27ae60; background: #fff; color: #27ae60; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 11px; transition: all 0.2s ease;">🟢 متوفر (السابق)</button>
+                <button type="button" class="btn-prov" id="btn-prov-live-gps" 
+                    style="width: 100%; padding: 10px; border: 2px solid #2980b9; background: #fff; color: #2980b9; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 13px; transition: all 0.2s ease;">
+                    📍 تتبع مباشر (كل 10 ثوانٍ)
+                </button>
             </div>
             <button type="button" class="btn-prov btn-status-busy" id="btn-prov-busy" style="flex: 1; padding: 10px; border: 2px solid #c0392b; background: #fff; color: #c0392b; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 13px; transition: all 0.2s ease;">🔴 غير متوفر</button>
         </div>
@@ -912,6 +928,7 @@ function handleBannerLinkClick(event, banner) {
 </script>
 
 <script src="js/provider-panel.js"></script>
+<script src="js/no-map-search.js"></script>
 <script src="js/ui-collapse.js"></script>
 <script src="js/resizable-panels.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>

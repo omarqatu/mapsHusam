@@ -405,9 +405,20 @@ body {
     border: 1px solid #cccccc;
     min-width: 280px;
     z-index: 1000;
+    
+    /* 1. الحل الجوهري: منع النافذة من اعتراض نقرات الماوس */
+    pointer-events: none; 
+    
+    /* 2. إضافة إزاحة بسيطة بعيداً عن النقطة مباشرة */
+    margin-bottom: 15px; 
 }
 
-/* 1. السهم الافتراضي (البوب أب فوق النقطة) */
+/* 3. السماح للنقر فقط داخل محتويات البوب أب (الأزرار والروابط) */
+.ol-popup > * {
+    pointer-events: auto;
+}
+
+/* 4. تعديل السهم ليتناسب مع الإزاحة */
 .ol-popup:after {
     top: 100%; 
     left: 50%;
@@ -419,14 +430,52 @@ body {
     height: 0;
     width: 0;
     position: absolute;
-    pointer-events: none;
+    /* pointer-events: none; تبقى كما هي */
 }
 
-/* 2. التعديل الذكي: إذا قام OpenLayers بقلب النافذة لأسفل، نجعل السهم في الأعلى */
-.ol-popup.ol-position-top:after {
-    top: -20px; /* سحب السهم للأعلى */
-    border-top-color: transparent;
-    border-bottom-color: white; /* تغيير لون السهم ليناسب خلفية البوب أب */
+#no-map-search-btn {
+    background: #2980b9;
+    color: white;
+    border: none;
+    padding: 8px 12px;
+    border-radius: 4px;
+    margin-right: 5px;
+    cursor: pointer;
+    transition: background 0.3s;
+}
+
+#no-map-search-btn:hover {
+    background: #1f6391;
+}
+
+/* تنسيق زر البحث بدون خريطة المدمج */
+.no-map-search-btn-v2 {
+    background: #27ae60 !important; /* لون أخضر مميز */
+    color: white !important;
+    border: none !important;
+    padding: 6px 12px !important;
+    border-radius: 20px !important;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: bold;
+    margin: 0 5px;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    transition: background 0.3s;
+}
+
+.no-map-search-btn-v2:hover {
+    background: #219150 !important;
+}
+
+/* تحسين شريط الهيدر لاستيعاب الزر الجديد */
+#map-header {
+    gap: 5px;
+}
+
+#no-map-search-btn {
+    background-color: #27ae60 !important; /* أخضر لتمييزه عن التحديث */
 }
 
 .modal { z-index: 100000 !important; background-color: rgba(0,0,0,0.3) !important; }

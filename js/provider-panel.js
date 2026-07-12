@@ -1,7 +1,7 @@
 /**
  * js/provider-panel.js
  */
-
+window.liveGpsInterval = null; // للمتغير الجديد
 window.providerPanelInitialized = false;
 window.providerCheckInterval = null;
 window.currentProviderService = null; 
@@ -309,7 +309,8 @@ if (typeof proj4 !== 'undefined' && !proj4.defs('EPSG:28191')) {
 }
 
 function handleStatusChangeRequest(statusValue, updateGPS = false) {
-    if (window.isCoolingDown) return;
+    // إذا كان التتبع المباشر نشطاً، نسمح بالتحديث حتى لو كان هناك Cooldown
+    if (window.isCoolingDown && !window.liveGpsInterval) return;
 
     if (!window.currentProviderService || !window.currentProviderService.service_layer) {
         alert("خطأ: لا توجد طبقة خدمة مرتبطة بهذا الحساب.");
@@ -475,6 +476,11 @@ function initProviderPanelEvents() {
     const btnAvailPrev = document.getElementById("btn-prov-available-prev");
     const btnBusy = document.getElementById("btn-prov-busy");
     const btnFly = document.getElementById("btn-prov-fly");
+    const btnLiveGps = document.getElementById("btn-prov-live-gps");
+    if (btnLiveGps && !btnLiveGps.dataset.hasListener) {
+        btnLiveGps.addEventListener("click", toggleLiveGpsTracking);
+        btnLiveGps.dataset.hasListener = "true";
+    }
 
     if (btnAvailCurrent && !btnAvailCurrent.dataset.hasListener) {
         btnAvailCurrent.addEventListener("click", () => handleStatusChangeRequest(0, true)); 
@@ -615,3 +621,31 @@ function initProviderPanelEvents() {
     document.addEventListener('mouseup', endDrag);
     document.addEventListener('touchend', endDrag);
 })();
+
+function toggleLiveGpsTracking() {
+    const btn = document.getElementById('btn-prov-live-gps');
+    
+    // إذا كان التتبع يعمل، أوقفه
+    if (window.liveGpsInterval) {
+        clearInterval(window.liveGpsInterval);
+        window.liveGpsInterval = null;
+        btn.style.background = "#fff";
+        btn.style.color = "#2980b9";
+        btn.innerText = "📍 تتبع مباشر (كل 10 ثوانٍ)";
+        return;
+    }
+
+    // تفعيل التتبع
+    btn.style.background = "#2980b9";
+    btn.style.color = "#fff";
+    btn.innerText = "🛑 إيقاف التتبع المباشر";
+
+    // تنفيذ أول مرة فوراً
+    handleStatusChangeRequest(0, true);
+
+    // تكرار كل 10 ثوانٍ
+    window.liveGpsInterval = setInterval(() => {
+        console.log("🔄 تحديث تلقائي للموقع...");
+        handleStatusChangeRequest(0, true);
+    }, 10000);
+}

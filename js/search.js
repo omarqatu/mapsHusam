@@ -26,6 +26,8 @@
         ]
     };
 
+    window.searchFieldsConfig = fieldsConfig;
+
     let fieldSelect, operatorSelect, valueInputContainer, layerSelect, conditionsContainer;
 
     async function getUniqueValues(layerKey, fieldId) {
