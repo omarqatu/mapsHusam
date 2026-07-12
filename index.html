@@ -203,12 +203,36 @@
 
 <div id="map-controls">
     <div id="top-buttons-container" class="hidden-buttons-container">
-        <button id="search-btn" class="top-button" data-panel="search-panel" title="بحث متقدم"><i class="fas fa-search"></i></button>
-        <button id="togglePopupBtn" class="top-button" title="استعلام"><i class="fas fa-info-circle"></i></button>
-        <button id="activate-location-btn" class="top-button" data-panel="nearby-apartments-panel" title="البحث القريب"><i class="fas fa-map-marker-alt"></i></button>
-        <button id="toggleLayerPanel" class="top-button" data-panel="layerPanel" title="الطبقات"><i class="fas fa-layer-group"></i></button>
-        <button id="measure-tools-toggle-btn" class="top-button" data-panel="measurePanel" title="قياسات"><i class="fas fa-ruler"></i></button>
-        <button id="share-location-btn" class="top-button" data-panel="shareLocationPanel" title="مشاركة"><i class="fas fa-share-alt"></i></button>
+                    <!-- استخدم هذا التنسيق الموحد لكل الأزرار الستة -->
+                <button id="search-btn" class="top-button" data-panel="search-panel" 
+                    style="height: 42px; padding: 0 16px; font-size: 14px; font-weight: 500; border-radius: 20px; border: 1px solid #ddd; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; color: #444; background-color: #f8f9fa; margin: 2px; transition: 0.2s;">
+                    <i class="fas fa-search" style="font-size: 16px;"></i> <span>البحث الذكي</span>
+                </button>
+
+                <button id="togglePopupBtn" class="top-button" 
+                    style="height: 42px; padding: 0 16px; font-size: 14px; font-weight: 500; border-radius: 20px; border: 1px solid #ddd; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; color: #444; background-color: #f8f9fa; margin: 2px; transition: 0.2s;">
+                    <i class="fas fa-info-circle" style="font-size: 16px;"></i> <span>استعلام</span>
+                </button>
+
+                <button id="activate-location-btn" class="top-button" data-panel="nearby-apartments-panel" 
+                    style="height: 42px; padding: 0 16px; font-size: 14px; font-weight: 500; border-radius: 20px; border: 1px solid #ddd; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; color: #444; background-color: #f8f9fa; margin: 2px; transition: 0.2s;">
+                    <i class="fas fa-map-marker-alt" style="font-size: 16px;"></i> <span>البحث من خلال الموقع</span>
+                </button>
+
+                <button id="toggleLayerPanel" class="top-button" data-panel="layerPanel" 
+                    style="height: 42px; padding: 0 16px; font-size: 14px; font-weight: 500; border-radius: 20px; border: 1px solid #ddd; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; color: #444; background-color: #f8f9fa; margin: 2px; transition: 0.2s;">
+                    <i class="fas fa-layer-group" style="font-size: 16px;"></i> <span>ظهور /اخفاء الخدمات</span>
+                </button>
+
+                <button id="measure-tools-toggle-btn" class="top-button" data-panel="measurePanel" 
+                    style="padding: 0 16px; height: 42px; font-size: 14px; font-weight: 500; border-radius: 20px; border: 1px solid #ddd; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; color: #444; background-color: #f8f9fa; margin: 2px; transition: 0.2s;">
+                    <i class="fas fa-ruler" style="font-size: 16px;"></i> <span>أدوات القياس</span>
+                </button>
+
+                <button id="share-location-btn" class="top-button" data-panel="shareLocationPanel" 
+                    style="height: 42px; padding: 0 16px; font-size: 14px; font-weight: 500; border-radius: 20px; border: 1px solid #ddd; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; color: #444; background-color: #f8f9fa; margin: 2px; transition: 0.2s;">
+                    <i class="fas fa-share-alt" style="font-size: 16px;"></i> <span>مشاركة موقع</span>
+                </button>
         <button id="editBtn" class="top-button" data-panel="editPanel" data-edit-type="point" title="تحرير النقاط"><i class="fas fa-edit"></i></button>
         <button id="polygonEditBtn" class="top-button" data-panel="polygonEditPanel" data-edit-type="polygon" title="تحرير مساحات"><i class="fas fa-draw-polygon"></i></button>
         <button id="lineEditBtn" class="top-button" data-panel="lineEditPanel" data-edit-type="line" title="تحرير خطوط"><i class="fas fa-route"></i></button>
