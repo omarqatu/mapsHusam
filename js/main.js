@@ -343,22 +343,27 @@ document.addEventListener('DOMContentLoaded', () => {
                 dialogBox.id = 'custom-splash-dialog';
 
                 dialogBox.innerHTML = `
-                    <h3 style="margin-top:0; color:#2c3e50; font-size:18px; margin-bottom:15px; font-weight:700; text-align:center;">منصة الخرائط الجغرافية</h3>
-                    
-                    <!-- مربع المعلومات الجديد - تم إضافة target="_blank" للفتح في تبويب جديد -->
-                    <div id="no-map-link-container" style="background: #ffffff; padding: 12px; border-radius: 4px; margin-bottom: 15px; border: 1px solid #dcdde1; box-shadow: 0 2px 4px rgba(0,0,0,0.05); text-align: center;">
-                        <p style="font-size: 13px; color: #57606f; margin: 0 0 10px 0; line-height: 1.5;">
-                            يمكنك أيضاً البحث عن الخدمات من خلال قائمة المعلومات بدلاً من الخريطة، والتنقل بينهما بسهولة.
-                        </p>
-                        <a href="no-map-search.html" id="no-map-link" target="_blank" rel="noopener" style="display: inline-block; padding: 8px 20px; background: #3498db; color: #ffffff; border-radius: 4px; font-weight: 600; text-decoration: none; font-size: 13px; transition: background 0.3s;">
-                            ⇽ الانتقال إلى صفحة البحث بالقائمة
-                        </a>
-                    </div>
+                    <h3 style="margin-top:-20px; color:#2c3e50; font-size:18px; margin-bottom:5px; font-weight:700; text-align:center;">منصة خريطة الخدمات الفلسطينية</h3>
+                    <p style="margin-top:0; margin-bottom:15px; color:#1a5276; font-size:14px; text-align:center; font-weight:700; background:#f0f7ff; padding:8px; border-radius:6px; border: 1px solid #d1e7ff;">
+                        النسخة التجريبية - و لإعادة ترتيب الواجهات واللوحات قم بتحديث المتصفح (يمكن تصغير/تكبير او تحريك أي لوحة او قائمة)
+                    </p>
+                    <!-- مربع المعلومات المحدث -->
+                        <div id="no-map-link-container" style="background: #ffffff; padding: 15px; border-radius: 8px; margin-bottom: 20px; border: 2px solid #e1f5fe; box-shadow: 0 4px 6px rgba(0,0,0,0.05); text-align: center;">
+                            <p style="font-size: 14px; color: #2c3e50; font-weight: 600; margin: 0 0 15px 0; line-height: 1.5;">
+                                💡 يمكنك أيضاً البحث عن الخدمات من خلال قائمة المعلومات بدلاً من الخريطة، والتنقل بينهما بسهولة.
+                            </p>
+                            <a href="no-map-search.html" id="no-map-link" target="_blank" rel="noopener" style="display: inline-block; padding: 10px 25px; background: #3498db; color: #ffffff; border-radius: 6px; font-weight: 700; text-decoration: none; font-size: 14px; transition: background 0.3s; box-shadow: 0 2px 4px rgba(52, 152, 219, 0.3);">
+                                ⇽ الانتقال إلى صفحة البحث بالمعلومات
+                            </a>
+                        </div>
 
-                    <p style="color:#7f8c8d; font-size:12px; margin-bottom:10px; text-align:center;">اختر نطاق التركيز لبدء استكشاف الخريطة:</p>
+                        <!-- نص نطاق التركيز المحدث -->
+                        <p style="color:#2c3e50; font-size: 15px; margin-bottom: 15px; text-align: center; font-weight: 700; padding: 5px; border-bottom: 2px solid #f1f2f6;">
+                            📍 للبدء إختر نطاق التركيز لبدء استكشاف الخريط 📍
+                        </p>
                     
                     <div id="splash-options-container" style="display:flex; flex-direction:column; gap:10px;">
-                        <button class="splash-opt-btn" data-type="default" style="padding:12px; font-size:14px; background:#2c3e50; color:white; border:none; border-radius:4px; cursor:pointer; font-weight:500; text-align:right; transition:background 0.2s;">1. العرض الافتراضي للمنصة / مشاركة موقع</button>
+                        <button class="splash-opt-btn" data-type="default" style="padding:12px; font-size:14px; background:#2c3e50; color:white; border:none; border-radius:4px; cursor:pointer; font-weight:500; text-align:right; transition:background 0.2s;">1. العرض الافتراضي للمنصة  </button>
                         <button class="splash-opt-btn" data-type="gps" style="padding:12px; font-size:14px; background:#2c3e50; color:white; border:none; border-radius:4px; cursor:pointer; font-weight:500; text-align:right; transition:background 0.2s;">2. تحديد النطاق حسب موقعي الحالي (GPS)</button>
                     </div>
                 `;
