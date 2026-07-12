@@ -192,12 +192,32 @@ window.copyLocationLink = function(coordinate) {
         }
     };
     
-    const overlay = new ol.Overlay({
-        element: container,
-        autoPan: { animation: { duration: 250 } },
-        positioning: 'bottom-center',
-        offset: [0, 0]
-    });
+    // استبدل تعريف الـ overlay الحالي بهذا التعريف
+        const overlay = new ol.Overlay({
+            element: container,
+            autoPan: {
+                animation: { duration: 250 },
+                margin: 40
+            },
+            // تغيير التموضع إلى 'bottom-center' مع السماح للمكتبة بالتعامل معه
+            positioning: 'bottom-center',
+            stopEvent: true,
+            offset: [0, -15] 
+        });
+
+        // هذا الجزء هو المسؤول عن تحديث الكلاس بناءً على التموضع الفعلي (السر هنا)
+        overlay.on('change:positioning', function(e) {
+            const positioning = overlay.getPositioning();
+            container.classList.remove('ol-position-top', 'ol-position-bottom');
+            
+            // إذا تغير التموضع إلى top-center يعني النافذة أصبحت تحت النقطة
+            if (positioning === 'top-center') {
+                container.classList.add('ol-position-top');
+            } else {
+                container.classList.add('ol-position-bottom');
+            }
+        });
+
     map.addOverlay(overlay);
     
     window.setPopupState = function(state) {

@@ -6,16 +6,17 @@ body {
     direction: rtl;
     text-align: center;
     overflow-x: hidden;
+    touch-action: manipulation;
 }
 
 * {
     box-sizing: border-box;
 }
 
-/* --- تعديل شريط الهيدر الرئيسي ليصبح مرناً ويتفادى صندوق المستخدم --- */
+/* --- تعديل شريط الهيدر الرئيسي --- */
 #map-header {
     position: absolute;
-    top: 80px; /* تم زيادة القيمة هنا في الكمبيوتر ليفسح مجالاً كاملاً لصندوق المستخدم العلوي دون حجب */
+    top: 80px;
     left: 50%;
     transform: translateX(-50%);
     z-index: 1000;
@@ -72,7 +73,7 @@ body {
     z-index: 1;
 }
 
-/* ستايل اللوحات الجانبية */
+/* --- ستايل اللوحات الجانبية الأساسي --- */
 .panel-right {
     position: absolute;
     right: 10px;
@@ -81,17 +82,16 @@ body {
     border: 1px solid #ccc;
     border-radius: 8px;
     z-index: 502;
-    width: 320px; 
+    width: 320px;
     font-size: 14px;
     box-shadow: 0 4px 10px rgba(0,0,0,0.15);
     direction: rtl;
-    
-    /* تغييرات جوهرية هنا */
-    top: 150px !important; /* ابدأ اللوحة دائماً تحت الهيدر بمسافة كافية */
-    max-height: calc(100vh - 170px); /* المساحة المتبقية للشاشة */
-    transform: none !important; /* إلغاء التوسيط العمودي */
+    top: 150px !important;
+    max-height: calc(100vh - 170px);
+    transform: none !important;
     overflow-y: auto;
     transition: none !important;
+    touch-action: manipulation;
 }
 
 .panel-right.dragging {
@@ -168,23 +168,41 @@ body {
 
 .panel-body {
     padding: 15px;
-    transition: all 0.3s ease;
+}
+
+/* --- حالة التصغير الموحدة --- */
+.panel-right.minimized {
+    width: 250px !important;
+    height: 50px !important;
+    min-height: 50px !important;
+    min-width: 250px !important;
+    max-width: 250px !important;
+    overflow: hidden !important;
+    padding: 0 !important;
+    transition: none !important;
 }
 
 .panel-right.minimized .panel-body {
-    display: none;
+    display: none !important;
 }
 
-.panel-right.minimized {
-    width: auto !important;
-    min-width: 150px;
+.panel-right.minimized .panel-header {
+    height: 50px !important;
+    width: 100% !important;
+    border-radius: 8px !important;
+    border-bottom: none !important;
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+    cursor: move !important;
 }
 
+/* --- اللوحات الخاصة --- */
 #search-panel, #nearby-apartments-panel, #results-panel, #layerPanel,
 #measurePanel, #shareLocationPanel, #editPanel, #polygonEditPanel, #lineEditPanel {
-    top: 200px !important; /* نفس قيمة الـ top في .panel-right */
+    top: 200px !important;
     transform: none !important;
-    right: 50px !important; /* التأكد من محاذاتها لليمين */
+    right: 50px !important;
 }
 
 #layerPanel { width: 250px; }
@@ -198,10 +216,7 @@ body {
     line-height: 1.5 !important;
 }
 
-#results-panel {
-    max-height: 60vh;
-}
-
+#results-panel { max-height: 60vh; }
 #results-panel .results-table-container {
     max-height: 45vh;
     overflow-y: auto;
@@ -215,269 +230,203 @@ body {
 }
 .close-btn:hover { color: #000; }
 
-@media (max-width: 768px) {
-    .panel-right {
-        width: 80vw !important;
-        max-width: 80vw;
-        right: 10vw;
-        max-height: 40vh;
-        top: auto;
-        bottom: 8vh;
-        transform: none;
-    }
-
-    .panel-right.minimized {
-        width: auto !important;
-        min-width: 120px;
-        max-height: auto;
-    }
-
-    #layerPanel { width: 80vw !important; }
-    #measurePanel { width: 80vw !important; }
-    #editPanel, #polygonEditPanel, #lineEditPanel { width: 80vw !important; }
-
-    #results-panel {
-        max-height: 40vh;
-    }
-
-    #results-panel .results-table-container {
-        max-height: 30vh;
-    }
-
-    #measure-result {
-        font-size: 11px !important;
-        line-height: 1.4 !important;
-        padding: 8px !important;
-        min-height: 50px !important;
-    }
-
-    .panel-body {
-        padding: 10px;
-    }
-
-    .panel-header h3, .panel-header h4 {
-        font-size: 12px;
-    }
-}
-
-.panel-right label { display: block; margin-bottom: 5px; font-weight: bold; text-align: right; direction: rtl; }
+/* --- المدخلات والجداول --- */
+.panel-right label { display: block; margin-bottom: 5px; font-weight: bold; text-align: right; }
 .panel-right select, .panel-right input[type="text"], .panel-right input[type="number"] {
     width: 100%; padding: 8px; margin-bottom: 10px;
     border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box;
-    text-align: right; direction: rtl;
 }
-.panel-right button { padding: 8px 12px; margin-right: 5px; margin-top: 10px; border: none; border-radius: 4px; cursor: pointer; direction: rtl; }
-
+.panel-right button { padding: 8px 12px; margin-right: 5px; margin-top: 10px; border: none; border-radius: 4px; cursor: pointer; }
 .hidden { display: none; }
-
 #results-table, #nearby-apartments-table { width: 100%; border-collapse: collapse; margin-top: 10px; }
 #results-table th, #results-table td, #nearby-apartments-table th, #nearby-apartments-table td {
     padding: 8px; text-align: center; font-size: 13px; cursor: pointer; border: 1px solid #ddd;
 }
 #results-table thead th, #nearby-apartments-table thead th { background-color: #f2f2f2; }
 
+/* --- الإحداثيات والبحث --- */
 #coordinates {
-    display: block; 
-    position: absolute; 
-    bottom: 15px; 
-    left: 50%; 
-    transform: translateX(-50%);
-    border: 1px solid #1a73e8; 
-    background-color: rgba(255, 255, 255, 0.9);
-    padding: 6px 16px; 
-    border-radius: 20px; 
-    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
-    text-align: center; 
-    font-size: 13px; 
-    font-weight: bold;
-    z-index: 2000;
-    direction: ltr; 
-    color: #333; 
-    white-space: nowrap; 
-    max-width: 90%; 
-    overflow: hidden; 
-    text-overflow: ellipsis;
+    display: block; position: absolute; bottom: 15px; left: 50%;
+    transform: translateX(-50%); border: 1px solid #1a73e8;
+    background-color: rgba(255, 255, 255, 0.9); padding: 6px 16px;
+    border-radius: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+    text-align: center; font-size: 13px; font-weight: bold;
+    z-index: 2000; direction: ltr; color: #333;
 }
-#coordinates p { margin: 0; }
 
-.ol-popup {
-    position: absolute; background-color: white; box-shadow: 0 1px 8px rgba(0,0,0,0.3);
-    padding: 10px; border-radius: 10px; border: 1px solid #ccc;
-    min-width: 250px; max-width: 90%; font-size: 14px; direction: rtl; z-index: 5500;
-}
-.ol-popup:after, .ol-popup:before { top: 100%; border: solid transparent; content: ""; height: 0; width: 0; position: absolute; pointer-events: none; }
-.ol-popup:after { border-top-color: white; border-width: 10px; left: 50%; transform: translateX(-50%); }
-.ol-popup-closer { text-decoration: none; position: absolute; top: 2px; right: 8px; font-weight: bold; font-size: 18px; color: #999; cursor: pointer; }
+.global-search-wrapper { display: flex; align-items: center; background: white; border-radius: 24px; padding: 2px 10px; margin-right: 5px; flex: 1; }
+.global-search-wrapper input { border: none; outline: none; padding: 6px; width: 100%; font-size: 13px; }
+.global-refresh-btn { background: none; border: none; color: #1a73e8; cursor: pointer; }
 
-.ol-tooltip { position: relative; background: rgba(0, 0, 0, 0.7); color: white; padding: 7px 10px; border-radius: 4px; white-space: nowrap; font-size: 14px; pointer-events: none; z-index: 7000; direction: ltr; }
-.ol-tooltip-measure { opacity: 0.9; font-weight: bold; }
-.ol-tooltip-static { background-color: #ffcc33; color: #333; border: 1px solid #ffcc33; box-shadow: 0 2px 4px rgba(0,0,0,0.2); font-size: 13px; }
+/* --- التجاوب (Media Queries) --- */
 
-.global-search-wrapper {
-    display: flex;
-    align-items: center;
-    background: white;
-    border-radius: 24px;
-    padding: 2px 10px;
-    margin-right: 5px;
-    flex: 1;
-    position: relative;
+/* الموبايل العمودي */
+@media (max-width: 767px) and (orientation: portrait) {
+    #map-header { top: 45px; width: 95%; }
+    
+    .panel-right, #search-panel, #nearby-apartments-panel, #results-panel, 
+    #layerPanel, #measurePanel, #shareLocationPanel, #editPanel, #polygonEditPanel, #lineEditPanel {
+        right: 5vw !important;
+        width: 90vw !important;
+        top: auto !important;
+        bottom: 2vh !important; /* إنزال اللوحة للأسفل */
+        transform: none !important;
+    }
+    
+    #coordinates { bottom: 5px !important; }
 }
-.global-search-wrapper input {
-    border: none;
-    outline: none;
-    padding: 6px;
-    width: 100%;
-    font-size: 13px;
+
+/* الموبايل الأفقي */
+@media (max-width: 1100px) and (orientation: landscape) {
+    
+    /* جعل اللوحة الجانبية بعرض ثابت ومناسب (350px) بدلاً من 80vw */
+    .panel-right, #search-panel, #nearby-apartments-panel, #results-panel, 
+    #layerPanel, #measurePanel, #shareLocationPanel, #editPanel, #polygonEditPanel, #lineEditPanel {
+        width: 350px !important;       /* العرض الجديد للوحات */
+        max-width: 90vw !important;    /* لا تتجاوز 90% من الشاشة في الحالات الضيقة جداً */
+        right: 10px !important;        /* تثبيت من اليمين */
+        top: 220px !important;         /* إنزالها تحت شريط البحث */
+        bottom: 10px !important;       /* ترك مسافة من الأسفل */
+        max-height: calc(100vh - 140px) !important; /* ضمان عدم تجاوز طول الشاشة */
+    }
+
+    /* ضبط حجم الجداول داخل اللوحات في وضع الأفقي */
+    #results-panel .results-table-container {
+        max-height: 50vh !important;
+    }
+
+    /* تصغير طفيف للخطوط إذا لزم الأمر في الأفقي */
+    .panel-header h3, .panel-header h4 {
+        font-size: 13px !important;
+    }
 }
-.global-search-wrapper i {
-    color: #1a73e8;
-}
-.global-refresh-btn {
-    background: none;
-    border: none;
-    color: #1a73e8;
+
+/* هذا الكود يضمن أن كل أزرار الإغلاق في كافة اللوحات لها نفس الشكل */
+.panel-close-btn {
+    background: none !important;
+    border: 1px solid #ddd !important;
+    color: #555 !important; /* لون رمادي طبيعي وليس أحمر */
     cursor: pointer;
-    padding: 6px 8px;
-    font-size: 14px;
-    transition: transform 0.3s ease;
+    border-radius: 4px;
+    width: 24px;
+    height: 24px;
     display: flex;
     align-items: center;
     justify-content: center;
+    font-size: 14px;
+    font-weight: bold;
+    transition: all 0.2s;
 }
-.global-refresh-btn:hover {
-    transform: rotate(180deg);
-    color: #0d5ec7;
+
+.panel-close-btn:hover {
+    background: #e0e0e0 !important;
+    color: #000 !important;
 }
-.global-refresh-btn:active {
-    transform: rotate(360deg);
+
+/* تنظيف تنسيق العنوان ليكون متوافقاً مع باقي اللوحات */
+.panel-header h3 {
+    margin: 0;
+    font-size: 14px;
+    color: #333;
 }
-@media (max-width: 768px) {
-    .global-refresh-btn {
-        padding: 4px 6px;
-        font-size: 12px;
-    }
-}
-#search-suggestions {
-    position: absolute;
-    top: 100%;
-    left: 0;
-    right: 0;
-    background: white;
-    border-radius: 0 0 8px 8px;
-    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-    max-height: 240px;
-    overflow-y: auto;
-    z-index: 10000;
-    display: none;
-}
-.suggestion-item {
-    padding: 10px 15px;
-    cursor: pointer;
-    border-bottom: 1px solid #eee;
+
+/* تنسيق موحد لكل أزرار الهيدر في كل اللوحات */
+.panel-header {
     display: flex;
-    flex-direction: column;
-}
-.suggestion-item:hover { background: #f1f3f4; }
-.suggestion-item .name { font-weight: bold; font-size: 13px; }
-.suggestion-item .sub { font-size: 11px; color: #70757a; }
-
-
-@media (max-width: 767px) and (orientation: portrait) {
-    #map-header {
-        top: 45px;
-        width: 95%;
-        border-radius: 24px;
-        padding: 4px 10px;
-        left: 50%;
-        transform: translateX(-50%);
-    }
-    #map-header h2 { display: none; }
-
-    .panel-right {
-        right: 10vw;
-        width: 80vw;
-        top: auto;
-        bottom: 8vh;
-        transform: none;
-        height: 40vh;
-        border-radius: 16px;
-        box-shadow: 0 -4px 15px rgba(0,0,0,0.2);
-        z-index: 10005;
-    }
-    #search-panel, #nearby-apartments-panel, #results-panel, #layerPanel, #measurePanel, #shareLocationPanel, #editPanel, #polygonEditPanel, #lineEditPanel {
-        top: auto;
-        bottom: 8vh;
-    }
-    #layerPanel, #measurePanel, #editPanel, #polygonEditPanel, #lineEditPanel { width: 80vw; }
-    
-    #coordinates { 
-        position: fixed !important;
-        bottom: 5px !important; 
-        top: auto !important;
-        left: 50% !important;
-        transform: translateX(-50%) !important;
-        width: auto;
-        max-width: 85%;
-        font-size: 11px;
-        padding: 4px 12px;
-        background-color: rgba(255, 255, 255, 0.95);
-        border: 1px solid #3f51b5;
-        box-shadow: 0 2px 6px rgba(0,0,0,0.3);
-        z-index: 10010; 
-    }
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 15px;
+    background: #f9f9f9;
+    border-bottom: 1px solid #eee;
 }
 
-@media (max-width: 1100px) and (orientation: landscape) {
-    #map-header {
-        top: 75px !important; /* إنزال محاذاة البحث السريع والهيدر في الموبايل الأفقي لإفساح المجال لشريط المستخدم */
-        right: auto !important;
-        left: 50% !important;
-        transform: translateX(-50%) !important;
-        width: 90% !important;
-        max-width: 450px !important;
-        padding: 4px 12px !important;
-        border-radius: 25px !important;
-    }
-
-    #map-header h2 {
-        display: none !important;
-    }
-
-    .category-slider, .menu-items-container {
-        top: 130px !important; /* إزاحة شريط الفئات لكي لا يغطي عناصر التصفح */
-    }
-
-    .panel-right {
-        width: 80vw !important;
-        max-width: 150vw;
-        right: 10vw;
-        max-height: 40vh;
-        top: auto;
-        bottom: 8vh;
-        transform: none;
-    }
-
-    #search-panel, #nearby-apartments-panel, #results-panel, #layerPanel, #measurePanel, #shareLocationPanel, #editPanel, #polygonEditPanel, #lineEditPanel {
-        width: 80vw !important;
-        top: auto;
-        bottom: 8vh;
-    }
+.panel-controls {
+    display: flex;
+    gap: 5px; /* المسافة بين الأزرار */
 }
 
-.panel-right.minimized {
-    height: 60px !important;
-    overflow: hidden;
-    transition: all 0.3s ease;
+/* تنسيق الأزرار (إغلاق، تصغير، تحريك) */
+.panel-close-btn, .panel-minimize-btn, .panel-drag-btn {
+    background: #fff !important;
+    border: 1px solid #ddd !important;
+    color: #555 !important;
+    width: 28px !important;
+    height: 28px !important;
+    cursor: pointer;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    padding: 0 !important;
+    margin: 0 !important;
 }
 
-.modal {
-    z-index: 100000 !important; 
-    background-color: rgba(0,0,0,0.3) !important;
+.panel-close-btn:hover, .panel-minimize-btn:hover {
+    background: #eee !important;
+    color: #000 !important;
 }
 
-
-
-body {
-    touch-action: manipulation; /* يسمح بالزوم العادي للخريطة ويمنع الزوم غير المقصود للواجهة */
+/* تنسيق الحاوية التي تضم الأزرار */
+.panel-controls {
+    display: flex !important;
+    flex-direction: row-reverse; /* لترتيب الأزرار من اليمين لليسار */
+    gap: 5px;
+    align-items: center;
 }
+
+/* توحيد شكل الأزرار */
+.panel-header button {
+    width: 30px !important;
+    height: 30px !important;
+    padding: 0 !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    border: 1px solid #ddd !important;
+    background: #f9f9f9 !important;
+    cursor: pointer;
+    border-radius: 4px;
+    font-size: 16px;
+    color: #555 !important;
+}
+
+.panel-header button:hover {
+    background: #e0e0e0 !important;
+    color: #000 !important;
+}
+
+.ol-popup {
+    position: absolute;
+    background-color: white;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.2);
+    padding: 15px;
+    border-radius: 10px;
+    border: 1px solid #cccccc;
+    min-width: 280px;
+    z-index: 1000;
+}
+
+/* 1. السهم الافتراضي (البوب أب فوق النقطة) */
+.ol-popup:after {
+    top: 100%; 
+    left: 50%;
+    margin-left: -10px;
+    border: solid transparent;
+    border-top-color: white;
+    border-width: 10px;
+    content: " ";
+    height: 0;
+    width: 0;
+    position: absolute;
+    pointer-events: none;
+}
+
+/* 2. التعديل الذكي: إذا قام OpenLayers بقلب النافذة لأسفل، نجعل السهم في الأعلى */
+.ol-popup.ol-position-top:after {
+    top: -20px; /* سحب السهم للأعلى */
+    border-top-color: transparent;
+    border-bottom-color: white; /* تغيير لون السهم ليناسب خلفية البوب أب */
+}
+
+.modal { z-index: 100000 !important; background-color: rgba(0,0,0,0.3) !important; }

@@ -1,48 +1,16 @@
-// js/layer-manager.js
-
 function initializeLayerManager(map, overlayLayersObj) {
     const container = document.getElementById('layer-list-container');
-    const closeBtn = document.getElementById('close-layer-panel');
     const panel = document.getElementById('layerPanel');
 
-    if (!container) {
-        console.error("لم يتم العثور على حاوية قائمة الطبقات");
-        return;
-    }
+    if (!container) return;
 
-    // 1. إصلاح موضع زر الإغلاق (X) ليكون في أقصى اليسار بعيداً عن العنوان
-    if (closeBtn) {
-        closeBtn.style.cssText = `
-            position: absolute;
-            left: 15px;
-            top: 15px;
-            cursor: pointer;
-            font-size: 20px;
-            color: #ff5e5e;
-            background: none;
-            border: none;
-            z-index: 10;
-            line-height: 1;
-        `;
-    }
-
-    // 2. تنسيق العنوان داخل اللوحة لضمان عدم تداخله مع الإكس
-    const headerTitle = panel ? panel.querySelector('h3') : null;
-    if (headerTitle) {
-        headerTitle.style.cssText = `
-            margin: 0;
-            padding: 15px 10px 15px 40px; /* مسافة إضافية من اليسار للإكس */
-            font-size: 18px;
-            color: #333;
-            border-bottom: 1px solid #eee;
-            text-align: right;
-        `;
-    }
+    // تم حذف التحكم بـ closeBtn و headerTitle تماماً هنا
+    // سنعتمد الآن كلياً على ملف CSS لترتيب الأزرار
 
     // 3. تنظيف المحتوى القديم
     container.innerHTML = ''; 
 
-    // 4. أزرار التحكم الجماعي (تصميم يشبه الصور المرفقة)
+    // 4. أزرار التحكم الجماعي
     const controlsDiv = document.createElement('div');
     controlsDiv.style.cssText = `
         display: flex; 
@@ -54,22 +22,8 @@ function initializeLayerManager(map, overlayLayersObj) {
     const createBtn = (text, visible) => {
         const btn = document.createElement('button');
         btn.innerHTML = text;
-        btn.style.cssText = `
-            flex: 1; 
-            cursor: pointer; 
-            font-size: 12px; 
-            padding: 10px 5px; 
-            border-radius: 8px; 
-            border: 1px solid #e0e0e0; 
-            background: #fff; 
-            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
-            font-weight: bold;
-            color: #555;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 5px;
-        `;
+        // يمكنك إبقاء تنسيق الأزرار الجماعية كما هي أو نقلها لملف CSS
+        btn.style.cssText = `flex: 1; cursor: pointer; font-size: 12px; padding: 10px 5px; border-radius: 8px; border: 1px solid #e0e0e0; background: #fff; box-shadow: 0 2px 5px rgba(0,0,0,0.05); font-weight: bold; color: #555; display: flex; align-items: center; justify-content: center; gap: 5px;`;
         
         btn.onclick = () => {
             Object.keys(overlayLayersObj).forEach(key => {
@@ -88,7 +42,7 @@ function initializeLayerManager(map, overlayLayersObj) {
     controlsDiv.appendChild(createBtn('إخفاء الكل ❌', false));
     container.appendChild(controlsDiv);
 
-    // 5. بناء قائمة الطبقات (Checkbox على اليسار والنص على اليمين)
+    // 5. بناء قائمة الطبقات
     const listWrapper = document.createElement('div');
     listWrapper.style.cssText = "max-height: 400px; overflow-y: auto; padding: 0 5px; direction: rtl;";
 
@@ -99,13 +53,7 @@ function initializeLayerManager(map, overlayLayersObj) {
         if (!title || key.toLowerCase().includes('highlight') || key.toLowerCase().includes('marker')) return; 
 
         const item = document.createElement('div');
-        item.style.cssText = `
-            display: flex; 
-            align-items: center; 
-            justify-content: space-between;
-            padding: 12px 10px; 
-            border-bottom: 1px solid #f9f9f9;
-        `;
+        item.style.cssText = "display: flex; align-items: center; justify-content: space-between; padding: 12px 10px; border-bottom: 1px solid #f9f9f9;";
 
         const label = document.createElement('label');
         label.htmlFor = 'chk-' + key;
