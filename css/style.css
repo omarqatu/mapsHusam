@@ -285,7 +285,7 @@ body {
 
 /* الموبايل العمودي */
 @media (max-width: 767px) and (orientation: portrait) {
-    #map-header { top: 45px; width: 95%; }
+    #map-header { top: 55px; width: 95%; }
     
     .panel-right, #search-panel, #nearby-apartments-panel, #results-panel, 
     #layerPanel, #measurePanel, #shareLocationPanel, #editPanel, #polygonEditPanel, #lineEditPanel {
