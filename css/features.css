@@ -330,3 +330,44 @@
         margin-bottom: 10px !important;
     }
 }
+
+/* ==========================================================================
+   📱 2. محددات شاشات الموبايل والتابلت بالوضع العمودي (Portrait <= 768px)
+   ========================================================================== */
+@media (max-width: 768px) {
+    /* ... التنسيقات السابقة كما هي ... */
+
+    #custom-splash-overlay {
+        align-items: center !important; /* قمت بتغييرها من flex-end لـ center لتوسيط المربع */
+        padding: 10px !important;
+    }
+    #custom-splash-dialog {
+        width: 95% !important;        /* توسيع العرض ليشغل كامل الشاشة تقريباً */
+        max-width: 95% !important;    /* إزالة القيود الضيقة السابقة */
+        max-height: 90vh !important;  /* استغلال 90% من طول الشاشة */
+        padding: 20px !important;
+    }
+}
+
+/* ==========================================================================
+   🔄 3. محددات شاشات الموبايل والتابلت بالوضع الأفقي المائل (Landscape)
+   ========================================================================== */
+@media (max-width: 950px) and (orientation: landscape) {
+    /* ... التنسيقات السابقة كما هي ... */
+
+    #custom-splash-overlay {
+        align-items: center !important;
+        padding: 10px !important;
+    }
+    #custom-splash-dialog {
+        width: 85% !important;        /* توسيع العرض في الوضع الأفقي */
+        max-width: 800px !important;  /* السماح له بالتوسع أكثر في الشاشات العريضة */
+        max-height: 90vh !important;  /* استغلال 90% من طول الشاشة */
+        padding: 20px !important;
+    }
+    #splash-options-container {
+        display: grid !important; 
+        grid-template-columns: 1fr 1fr; 
+        gap: 10px !important;
+    }
+}

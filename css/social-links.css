@@ -180,7 +180,7 @@
    ========================================================================== */
 @media (max-width: 767px) {
     .feedback-banner-wrapper {
-        top: 120px !important;   
+        top: 640px !important;   
         left: 50% !important;
         transform: translateX(-50%) !important;
         width: auto !important;
