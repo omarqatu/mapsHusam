@@ -15,6 +15,64 @@
         const baseUrl = window.location.origin + '/';
 
         // ==========================================================================
+        // 0-أ) مودال "من نحن"
+        // ==========================================================================
+        (function initAboutModal() {
+            const aboutBtn = document.getElementById('nms-about-btn');
+            const aboutModal = document.getElementById('nms-about-modal');
+            const aboutClose = document.getElementById('nms-about-close');
+            if (!aboutBtn || !aboutModal || !aboutClose) return;
+
+            const openModal = () => aboutModal.classList.remove('hidden');
+            const closeModal = () => aboutModal.classList.add('hidden');
+
+            aboutBtn.addEventListener('click', openModal);
+            aboutClose.addEventListener('click', closeModal);
+            aboutModal.addEventListener('click', (e) => {
+                if (e.target === aboutModal) closeModal(); // إغلاق عند النقر خارج الصندوق
+            });
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape' && !aboutModal.classList.contains('hidden')) closeModal();
+            });
+        })();
+
+        // ==========================================================================
+        // 0) خلفية بصرية هادئة لقسم "كيف تبحث؟" - سلايدشو بطيء جداً من صور المنصة
+        //    (نفس مجلد pic المستخدم في شاشة الترحيب الترويجية)، بشفافية خفيفة
+        //    وتحوّل ناعم كل عدة ثوانٍ. يحترم تفضيل تقليل الحركة لدى المستخدم.
+        // ==========================================================================
+        (function initHeroSlideshow() {
+            const slideshow = document.getElementById('nms-hero-slideshow');
+            if (!slideshow) return;
+
+            const images = [
+                'pic/Picture2.jpg', 'pic/Picture5.jpg', 'pic/Picture8.jpg',
+                'pic/Picture11.jpg', 'pic/Picture14.jpg', 'pic/غلاف1.png'
+            ];
+
+            images.forEach((src, index) => {
+                const img = document.createElement('img');
+                img.className = 'nms-hero-slide' + (index === 0 ? ' active' : '');
+                img.src = src;
+                img.alt = '';
+                img.loading = index === 0 ? 'eager' : 'lazy';
+                slideshow.appendChild(img);
+            });
+
+            const prefersReducedMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+            if (prefersReducedMotion || images.length < 2) return; // صورة ثابتة فقط، بدون تبديل
+
+            let current = 0;
+            setInterval(() => {
+                const slides = slideshow.querySelectorAll('.nms-hero-slide');
+                if (!slides.length) return;
+                slides[current].classList.remove('active');
+                current = (current + 1) % slides.length;
+                slides[current].classList.add('active');
+            }, 7000); // بطيء وهادئ - كل 7 ثواني
+        })();
+
+        // ==========================================================================
         // 1) بيانات الفئات (62 فئة: 3 عقارات + 59 خدمة)
         // ==========================================================================
         const iconMap = {
@@ -66,10 +124,64 @@
         };
 
         const globalExclusions = [];
+
+        // ==========================================================================
+        // تصنيف الفروع (التبويبات): كل خدمة أو عقار يتبع فرعاً واحداً لتسهيل الفلترة.
+        // العرض الافتراضي "الكل" يبقى يعرض كافة الـ 62 فئة كما هو معتاد.
+        // ==========================================================================
+        const groupDefs = [
+            { id: 'all',           title: 'الكل',                    icon: 'fa-border-all' },
+            { id: 'realestate',    title: 'العقارات',                icon: 'fa-building' },
+            { id: 'technicians',   title: 'الفنيين والصيانة',        icon: 'fa-tools' },
+            { id: 'health',        title: 'الصحة والرعاية',          icon: 'fa-briefcase-medical' },
+            { id: 'vehicles',      title: 'المركبات والتوصيل',       icon: 'fa-car' },
+            { id: 'professional',  title: 'المهن الحرة والخصوصي',    icon: 'fa-user-tie' },
+            { id: 'events',        title: 'مناسبات وضيافة وترفيه',   icon: 'fa-champagne-glasses' },
+            { id: 'misc',          title: 'متفرقات',                 icon: 'fa-ellipsis' }
+        ];
+
+        // خريطة تصنيف كل خدمة (المفتاح البرمجي كما في serviceNames) إلى الفرع المناسب
+        const serviceGroupMap = {
+            // 🛠️ الفنيين والصيانة المنزلية
+            electrician: 'technicians', ac_technician: 'technicians', plumber: 'technicians',
+            general_maintenance: 'technicians', painter: 'technicians', carpenter: 'technicians',
+            blacksmith: 'technicians', builder: 'technicians', house_cleaner: 'technicians',
+            aluminum_tech: 'technicians', cctv_installer: 'technicians', gardener: 'technicians',
+            security_firms: 'technicians', furniture_buyer: 'technicians',
+
+            // 🩺 الصحة والرعاية
+            home_nurse: 'health', masseur: 'health', cupping_specialist: 'health',
+            nutritionist: 'health', pharmacies_on_call: 'health', emergency_hospitals: 'health',
+            clinics: 'health', doctors_on_call: 'health', ambulances_on_call: 'health',
+            pet_care: 'health',
+
+            // 🚗 المركبات والتوصيل
+            car_mechanic: 'vehicles', car_electrician: 'vehicles', tire_tech: 'vehicles',
+            car_wash: 'vehicles', motorcycle_repair: 'vehicles', taxi_driver: 'vehicles',
+            delivery_services: 'vehicles', tow_truck: 'vehicles', truck_driver: 'vehicles',
+            taxis_on_call: 'vehicles', car_delivery_on_call: 'vehicles',
+            motorcycle_delivery_on_call: 'vehicles', bicycle_delivery_on_call: 'vehicles',
+
+            // 👔 المهن الحرة والخصوصي
+            lawyers: 'professional', land_surveyors: 'professional', real_estate_valuers: 'professional',
+            private_tutors: 'professional', programmers: 'professional', music_training: 'professional',
+            student_research_assist: 'professional',
+
+            // 🎉 مناسبات وضيافة وترفيه
+            party_planner: 'events', zaffa_bands: 'events', music_bands: 'events',
+            photographer: 'events', party_rental: 'events', clown_entertainer: 'events',
+            martial_arts_gymnastics: 'events', public_parks_recreation: 'events', hotels: 'events',
+            villas_rent: 'events', barber_shop: 'events', video_design_ads: 'events',
+            photographers: 'events',
+
+            // 📦 متفرقات
+            online_stores: 'misc', free_distribution: 'misc'
+        };
+
         const categories = [
-            { key: 'rentLayer', title: 'شقق الإيجار', icon: iconMap['rentLayer'], isRealEstate: true },
-            { key: 'saleLayer', title: 'شقق للبيع', icon: iconMap['saleLayer'], isRealEstate: true },
-            { key: 'landLayer', title: 'الأراضي للبيع', icon: iconMap['landLayer'], isRealEstate: true }
+            { key: 'rentLayer', title: 'شقق الإيجار', icon: iconMap['rentLayer'], isRealEstate: true, group: 'realestate' },
+            { key: 'saleLayer', title: 'شقق للبيع', icon: iconMap['saleLayer'], isRealEstate: true, group: 'realestate' },
+            { key: 'landLayer', title: 'الأراضي للبيع', icon: iconMap['landLayer'], isRealEstate: true, group: 'realestate' }
         ];
 
         Object.keys(serviceNames).forEach(key => {
@@ -78,7 +190,8 @@
                 key: key + 'Layer',
                 title: serviceNames[key],
                 icon: iconMap[key] || 'fa-question-circle',
-                isRealEstate: false
+                isRealEstate: false,
+                group: serviceGroupMap[key] || 'misc'
             });
         });
 
@@ -101,21 +214,55 @@
         const resultsView = document.getElementById('nms-results-view');
         const backBtn = document.getElementById('nms-back-to-categories');
         const categoryTitleEl = document.getElementById('nms-current-category-title');
+        const groupsTabsEl = document.getElementById('nms-groups-tabs');
 
         if (!categoriesGrid) return; // الخروج إذا لم تكن عناصر الصفحة موجودة
 
-        function renderCategoriesGrid() {
+        let activeGroup = 'all';
+
+        function renderCategoriesGrid(groupId) {
             categoriesGrid.innerHTML = '';
-            categories.forEach(cat => {
+            const filtered = (!groupId || groupId === 'all') ? categories : categories.filter(c => c.group === groupId);
+
+            if (filtered.length === 0) {
+                categoriesGrid.innerHTML = '<div class="nms-empty">لا توجد فئات ضمن هذا الفرع حالياً.</div>';
+                return;
+            }
+
+            filtered.forEach((cat, index) => {
                 const card = document.createElement('button');
                 card.type = 'button';
                 card.className = 'nms-category-card';
+                card.style.setProperty('--i', Math.min(index, 24)); // تهدئة التتابع بعد أول 24 عنصر
                 card.innerHTML = `<i class="fas ${cat.icon}"></i><span>${cat.title}</span>`;
                 card.onclick = () => openCategory(cat);
                 categoriesGrid.appendChild(card);
             });
         }
-        renderCategoriesGrid();
+
+        function renderGroupsTabs() {
+            if (!groupsTabsEl) return;
+            groupsTabsEl.innerHTML = '';
+            groupDefs.forEach((g, gIndex) => {
+                const tab = document.createElement('button');
+                tab.type = 'button';
+                tab.className = 'nms-group-tab' + (g.id === activeGroup ? ' active' : '');
+                tab.style.setProperty('--i', gIndex);
+                tab.dataset.group = g.id;
+                tab.innerHTML = `<i class="fas ${g.icon}"></i><span>${g.title}</span>`;
+                tab.onclick = () => {
+                    activeGroup = g.id;
+                    groupsTabsEl.querySelectorAll('.nms-group-tab').forEach(t => t.classList.remove('active'));
+                    tab.classList.add('active');
+                    renderCategoriesGrid(activeGroup);
+                    categoriesGrid.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                };
+                groupsTabsEl.appendChild(tab);
+            });
+        }
+
+        renderGroupsTabs();
+        renderCategoriesGrid(activeGroup); // العرض الافتراضي: الكل (62 فئة)
 
         backBtn.onclick = () => {
             resultsView.classList.add('hidden');
@@ -311,11 +458,12 @@
             features = features.slice().sort((a, b) => (parseFloat(b.properties.rating) || 0) - (parseFloat(a.properties.rating) || 0));
 
             resultsListEl.innerHTML = '';
-            features.forEach(f => {
+            features.forEach((f, index) => {
                 const p = f.properties;
                 const coords = getFeatureCoords(f);
                 const card = document.createElement('div');
                 card.className = 'nms-result-card';
+                card.style.setProperty('--i', Math.min(index, 20));
 
                 let html = '';
                 if (!isRealEstate) html += getStatusBadge(p.auto_status, p.work_hours);

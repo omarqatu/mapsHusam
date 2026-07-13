@@ -11,12 +11,26 @@
 </head>
 <body>
 
+<!-- زخرفة خلفية هادئة جداً (فقاعات ضبابية متحركة ببطء) - لا تتفاعل مع النقر إطلاقاً -->
+<div class="nms-ambient" aria-hidden="true">
+    <span class="nms-blob nms-blob-1"></span>
+    <span class="nms-blob nms-blob-2"></span>
+    <span class="nms-blob nms-blob-3"></span>
+</div>
+
 <div class="nms-page">
 
     <header class="nms-topbar">
         <a href="index.html" class="nms-back-home" target="_blank" rel="noopener"><i class="fas fa-arrow-right"></i> الرئيسية</a>
         <h1><i class="fas fa-magnifying-glass"></i> البحث بدون خريطة</h1>
-        <span class="nms-topbar-spacer"></span>
+        <div class="nms-topbar-actions">
+            <button type="button" id="nms-about-btn" class="nms-topbar-action-btn">
+                <i class="fas fa-circle-info"></i> <span>من نحن</span>
+            </button>
+            <a href="https://www.facebook.com/MapServesPalestine" target="_blank" rel="noopener" class="nms-topbar-action-btn nms-topbar-action-fb">
+                <i class="fab fa-facebook-f"></i> <span>اتصل بنا</span>
+            </a>
+        </div>
     </header>
 
     <div class="nms-layout">
@@ -27,22 +41,30 @@
 
         <main class="nms-main">
 
-            <section class="nms-intro">
-                <h2><i class="fas fa-lightbulb"></i> كيف تبحث بأسهل طريقة؟</h2>
-                <p>
-                    اختر نوع الخدمة أو العقار الذي تبحث عنه من المربعات أدناه، وستظهر لك فوراً جميع
-                    النتائج المتاحة مرتبة حسب الأعلى تقييماً. تقدر كمان تستخدم الفلاتر لتضييق النتائج
-                    حسب المنطقة، السعر، أو أي تفاصيل ثانية — بدون الحاجة لفتح الخريطة أو الانتظار حتى تحمّل.
-                </p>
-                <a href="index.html" class="nms-map-link" target="_blank" rel="noopener">
-                    <i class="fas fa-map-marked-alt"></i>
-                    تفضّل بالانتقال للبحث من خلال الخريطة التفاعلية
-                    </a>
+            <section class="nms-hero">
+                <div class="nms-hero-slideshow" id="nms-hero-slideshow" aria-hidden="true"></div>
+                <div class="nms-hero-overlay" aria-hidden="true"></div>
+                <div class="nms-hero-content">
+                    <h2><i class="fas fa-lightbulb"></i> كيف تبحث بأسهل طريقة؟</h2>
+                    <p>
+                        اختر نوع الخدمة أو العقار الذي تبحث عنه من المربعات أدناه، وستظهر لك فوراً جميع
+                        النتائج المتاحة.
+                        تقدر كمان تستخدم الفلاتر لتضييق النتائج
+                        حسب المنطقة، السعر، أو أي تفاصيل ثانية — بدون الحاجة لفتح الخريطة أو الانتظار حتى تحمّل.
+                    </p>
+                    <a href="index.html" class="nms-map-link" target="_blank" rel="noopener">
+                        <i class="fas fa-map-marked-alt"></i>
+                        تفضّل بالانتقال للبحث من خلال الخريطة التفاعلية
+                        </a>
+                </div>
             </section>
 
             <!-- ============== شبكة الفئات ============== -->
             <section id="nms-categories-view" class="nms-categories-view">
                 <h3 class="nms-section-title"><i class="fas fa-grip"></i> اختر نوع الخدمة أو العقار</h3>
+
+                <div id="nms-groups-tabs" class="nms-groups-tabs"></div>
+
                 <div id="nms-categories-grid" class="nms-categories-grid"></div>
             </section>
 
@@ -98,6 +120,50 @@
         <span>مساحة إعلانية</span>
     </div>
 
+</div>
+
+<!-- ====== مودال "من نحن" ====== -->
+<div id="nms-about-modal" class="nms-modal-overlay hidden">
+    <div class="nms-modal-box">
+        <button type="button" id="nms-about-close" class="nms-modal-close" aria-label="إغلاق">✕</button>
+
+        <h2 class="nms-modal-title"><i class="fas fa-circle-info"></i> من نحن</h2>
+
+        <p class="nms-modal-lead">
+            <strong>خريطة الخدمات الفلسطينية</strong> منصة رقمية مجانية هدفها الأول ربط أي شخص في فلسطين
+            بأقرب وأنسب خدمة أو عقار يحتاجه، بأقل وقت ممكن ودون وسطاء — سواء كنت تبحث عن فني، طبيب،
+            محامٍ، شقة للإيجار، أو حتى أرض للبيع. كل هذا عبر خريطة تفاعلية ذكية أو عبر بحث نصّي بسيط بدون
+            الحاجة لفتح الخريطة إطلاقاً.
+        </p>
+
+        <div class="nms-modal-section">
+            <h3><i class="fas fa-map-marked-alt"></i> البحث من خلال الخريطة التفاعلية</h3>
+            <p>الخريطة الرئيسية فيها مجموعة أزرار جاهزة أعلى الشاشة، كل زر بيفتحلك أداة مختلفة:</p>
+            <ul class="nms-modal-list">
+                <li><b>🔍 البحث الذكي:</b> بحث بالسمات (اختر طبقة، حقل، وشرط) مع إمكانية إضافة أكثر من شرط دفعة وحدة.</li>
+                <li><b>ℹ️ استعلام:</b> فعّله ثم مرر أو انقر على أي معلم بالخريطة لتظهر لك كل تفاصيله فوراً.</li>
+                <li><b>📍 البحث من خلال الموقع:</b> حدد موقعك (GPS أو نقطة على الخريطة) وابحث عن أقرب الخدمات ضمن مسافة تحددها.</li>
+                <li><b>📚 ظهور / اخفاء الخدمات:</b> تحكم بأي طبقات تظهر لك على الخريطة من أصل الـ 62 فئة.</li>
+                <li><b>📏 أدوات القياس:</b> قياس مسافة، مساحة، أو رسم نقطة بإحداثيات دقيقة.</li>
+                <li><b>🔗 مشاركة موقع:</b> حدد أي نقطة واحصل على رابط مباشر لها بإحداثيات فلسطينية وعالمية لمشاركتها.</li>
+                <li><b>🔎 شريط البحث العلوي والأزرار السريعة:</b> اكتب اسم أي خدمة أو اختر فئة جاهزة للانتقال المباشر لها على الخريطة.</li>
+            </ul>
+        </div>
+
+        <div class="nms-modal-section">
+            <h3><i class="fas fa-list-check"></i> البحث بدون خريطة (هذه الصفحة)</h3>
+            <p>
+                بديل أخف وأسرع لمن لا يريد تحميل الخريطة: فروع مصنّفة (عقارات، فنيين وصيانة، صحة ورعاية،
+                مركبات وتوصيل، مهن حرة وخصوصي، مناسبات وترفيه)، فلاتر اختيارية لتضييق النتائج، ثم نتائج
+                مباشرة فيها كل التفاصيل مع أزرار اتصال وواتساب فورية، أو زر للانتقال بنفس الموقع على
+                الخريطة التفاعلية إذا حبيت.
+            </p>
+        </div>
+
+        <a href="https://www.facebook.com/MapServesPalestine" target="_blank" rel="noopener" class="nms-modal-fb-link">
+            <i class="fab fa-facebook-f"></i> تواصل معنا عبر صفحة الفيسبوك
+        </a>
+    </div>
 </div>
 
 <!-- 
