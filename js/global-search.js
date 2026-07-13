@@ -228,7 +228,6 @@ window.initializeGlobalSearch = function() {
     // زر تحديث الخريطة
     if (refreshBtn) {
         refreshBtn.onclick = () => {
-            // تحديث جميع الطبقات
             if (window.overlayLayersObj) {
                 Object.values(window.overlayLayersObj).forEach(layer => {
                     if (layer && layer.getSource && typeof layer.getSource().refresh === 'function') {
@@ -242,6 +241,13 @@ window.initializeGlobalSearch = function() {
         };
     }
 
+    // إغلاق اللوحة عند النقر في أي مكان خارجها
+    document.addEventListener('click', (e) => {
+        if (suggestionsPanel && !suggestionsPanel.contains(e.target) && e.target !== searchInput) {
+            suggestionsPanel.style.display = 'none';
+        }
+    });
+
     let timeout;
     searchInput.addEventListener('input', (e) => {
         const term = e.target.value; 
@@ -252,14 +258,14 @@ window.initializeGlobalSearch = function() {
 
         clearTimeout(timeout);
         timeout = setTimeout(async () => {
-            suggestionsPanel.innerHTML = '<div class="suggestion-item"><i class="fas fa-spinner fa-spin"></i> جاري البحث...</div>';
+            // تنظيف اللوحة وإظهار حالة التحميل
+            suggestionsPanel.innerHTML = '<div class="suggestion-item" style="padding:10px;">جاري البحث...</div>';
             suggestionsPanel.style.display = 'block';
 
             const promises = Object.keys(searchConfig).map(group => fetchGroupWFS(group, term));
             const resultsArray = await Promise.all(promises);
             const allResults = resultsArray.flat();
 
-            // الفرز الذكي اللحظي للمقترحات بناءً على مطابقة التسميات المطبعة أولاً
             allResults.sort((a, b) => {
                 const normTerm = normalizeArabic(term.trim());
                 const normATitle = normalizeArabic(a.customTitle);
@@ -273,16 +279,54 @@ window.initializeGlobalSearch = function() {
 
                 const aRating = parseFloat(a.properties.rating) || 0;
                 const bRating = parseFloat(b.properties.rating) || 0;
-                if (aRating !== bRating) {
-                    return bRating - aRating;
-                }
-                return 0;
+                return bRating - aRating;
             });
 
             renderGlobalSuggestions(allResults, term);
         }, 400);
     });
 };
+
+function renderGlobalSuggestions(features, term) {
+    const panel = document.getElementById('search-suggestions');
+    
+    // تفريغ اللوحة تماماً قبل البدء بالعرض الجديد
+    panel.innerHTML = ''; 
+    
+    if (!features || features.length === 0) {
+        panel.innerHTML = '<div class="suggestion-item" style="padding:10px;">لا توجد نتائج مطابقة</div>';
+        panel.style.display = 'block';
+        return;
+    }
+
+    features.slice(0, 50).forEach(f => {
+        const item = document.createElement('div');
+        item.className = 'suggestion-item';
+        // الستايل مدمج هنا لضمان عدم تأثره بأي كلاسات خارجية
+        item.style.padding = '12px 15px';
+        item.style.borderBottom = '1px solid #f0f0f0';
+        item.style.cursor = 'pointer';
+        
+        const props = f.properties;
+        const rawMainName = props.name || props.location || props.location_name || "معلم غير مسمى";
+        const subDetails = [f.customTitle, props.location || props.location_name, props.village_a, props.gov_a].filter(t => t && t !== "").join(' | ');
+
+        item.innerHTML = `
+            <div>
+                <div class="name" style="font-size: 14px; color: #222; font-weight:bold;">
+                    <i class="fas fa-map-marker-alt" style="margin-left:8px; color:#e74c3c;"></i>${highlightMatch(rawMainName, term)}
+                </div>
+                <div class="sub" style="font-size:11px; color:#666; margin-right:24px;">${highlightMatch(subDetails, term)}</div>
+            </div>
+        `;
+
+        item.onclick = () => {
+            panel.style.display = 'none';
+            zoomToGlobalFeature(f);
+        };
+        panel.appendChild(item);
+    });
+}
 
 function renderGlobalSuggestions(features, term) {
     const panel = document.getElementById('search-suggestions');

@@ -146,7 +146,7 @@
 @media (max-width: 768px) {
     .quick-search-wrapper { 
         width: 95vw !important; 
-        top: 125px !important; /* النزول المتناسق لعدم حجب شريط البحث العلوي */
+        top: 60px !important; /* النزول المتناسق لعدم حجب شريط البحث العلوي */
     }
     .modal-content {
         width: 95%;
