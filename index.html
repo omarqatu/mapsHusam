@@ -175,9 +175,15 @@
         </button>
 
         <!-- زر البحث بدون خريطة الجديد -->
-             <button id="no-map-search-btn" class="global-refresh-btn" title="بحث في القائمة" onclick="window.open('no-map-search.html', '_blank');">
-                <i class="fas fa-list"></i>
-            </button>
+             <a href="no-map-search.html" target="_blank" rel="noopener noreferrer" 
+                class="global-refresh-btn" 
+                title="بحث في القائمة" 
+                style="display: inline-flex; align-items: center; justify-content: center; 
+                        background-color: #28a745; color: white; width: 40px; height: 40px; 
+                        border-radius: 8px; text-decoration: none; box-shadow: 0 4px 8px rgba(40, 167, 69, 0.4); 
+                        transition: transform 0.2s, background-color 0.2s;">
+                    <i class="fas fa-list" style="font-size: 20px;"></i>
+                </a>
         
         <div id="search-suggestions"></div>
     </div>
