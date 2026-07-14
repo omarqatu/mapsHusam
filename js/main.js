@@ -272,7 +272,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 map.getView().animate({
                     center: transformedCoords,
                     zoom: map.getView().getZoom() < 17 ? 18 : map.getView().getZoom(),
-                    duration: 1500
+                    duration: 500
                 });
 
                 if (targetButton) targetButton.innerHTML = '📡';

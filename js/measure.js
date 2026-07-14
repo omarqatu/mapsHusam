@@ -55,12 +55,12 @@ function initializeMeasureTools(map) {
             let output = "";
 
             if (type === 'Polygon') {
-                const area = ol.sphere.getArea(geom, { projection: 'EPSG:28191' });
+                const area = geom.getArea();(geom, { projection: 'EPSG:28191' });
                 // تقريب لـ 3 خانات عشرية
                 output = "📐 المساحة: " + area.toFixed(3) + " متر مربع";
             } 
             else if (type === 'LineString') {
-                const length = ol.sphere.getLength(geom, { projection: 'EPSG:28191' });
+                const length = geom.getLength();(geom, { projection: 'EPSG:28191' });
                 // تقريب لـ 3 خانات عشرية
                 output = "📏 المسافة: " + length.toFixed(3) + " متر طولي";
             } 
