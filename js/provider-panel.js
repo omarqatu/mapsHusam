@@ -576,7 +576,6 @@ function initProviderPanelEvents() {
 
     function startDrag(e) {
         isDragging = true;
-        // دعم الماوس (clientX) واللمس (touches[0].clientX)
         const clientX = e.touches ? e.touches[0].clientX : e.clientX;
         const clientY = e.touches ? e.touches[0].clientY : e.clientY;
         
@@ -587,7 +586,7 @@ function initProviderPanelEvents() {
 
     function moveDrag(e) {
         if (!isDragging) return;
-        e.preventDefault(); // منع سحب الصفحة أثناء تحريك اللوحة
+        e.preventDefault();
         const clientX = e.touches ? e.touches[0].clientX : e.clientX;
         const clientY = e.touches ? e.touches[0].clientY : e.clientY;
         
@@ -600,15 +599,13 @@ function initProviderPanelEvents() {
     }
 
     function endDrag() {
+        if (!isDragging) return;
         isDragging = false;
-        function endDrag() {
-    isDragging = false;
-    // حفظ الموقع الحالي في localStorage
-    localStorage.setItem('provider_panel_pos', JSON.stringify({
-        left: panel.style.left,
-        top: panel.style.top
-    }));
-}
+        // حفظ الموقع الحالي في localStorage
+        localStorage.setItem('provider_panel_pos', JSON.stringify({
+            left: panel.style.left,
+            top: panel.style.top
+        }));
     }
 
     // ربط الأحداث
