@@ -320,9 +320,12 @@
                     cutoff.setMonth(cutoff.getMonth() - 1);
                     if (createdDate < cutoff) return false;
                 } else if (dateFilter === 'custom' && customDateVal) {
-                    const selected = new Date(customDateVal);
+                    // ملاحظة: قيمة <input type="date"> بصيغة YYYY-MM-DD يفسّرها new Date() كـ UTC،
+                    // بينما created_at بيترجم بتوقيت محلي عبر parseServerDate. لتفادي أي فرق يوم واحد
+                    // بسبب فرق التوقيت، نفكّك السنة/الشهر/اليوم يدوياً بدل الاعتماد على new Date(customDateVal).
+                    const [selYear, selMonth, selDay] = customDateVal.split('-').map(Number);
                     const createdOnly = new Date(createdDate.getFullYear(), createdDate.getMonth(), createdDate.getDate());
-                    const selectedOnly = new Date(selected.getFullYear(), selected.getMonth(), selected.getDate());
+                    const selectedOnly = new Date(selYear, selMonth - 1, selDay);
                     if (createdOnly.getTime() !== selectedOnly.getTime()) return false;
                 }
             }
