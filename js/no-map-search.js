@@ -7,12 +7,57 @@
  * أي تعديل مستقبلي على الحقول داخل search.js (إضافة/حذف/تغيير تسمية) ينعكس هنا تلقائياً
  * بدون الحاجة لتعديل هذا الملف، طالما تم تحميل js/search.js قبل هذا السكربت في الصفحة.
  */
+
 (function () {
+    
     'use strict';
 
     document.addEventListener('DOMContentLoaded', () => {
 
         const baseUrl = window.location.origin + '/';
+
+        // ==========================================================================
+        // مساعدات مشتركة: هوية المستخدم الحالي + فحص حد الطلبات (الأحداث) قبل أي
+        // اتصال/واتساب. افتراضياً كل المستخدمين "مفتوحين" بدون أي حد؛ لا يُطبَّق
+        // الفحص إلا إذا حدد المشرف رقماً صريحاً لهذا المستخدم من لوحة الإدارة.
+        // ==========================================================================
+        function getRealUserId() {
+            try {
+                const saved = localStorage.getItem('map_user');
+                if (saved) {
+                    const parsed = JSON.parse(saved);
+                    if (parsed && (parsed.user_id || parsed.id)) return String(parsed.user_id || parsed.id);
+                }
+            } catch (e) {}
+            if (!localStorage.getItem('map_user_guid')) {
+                localStorage.setItem('map_user_guid', 'guest_' + Math.random().toString(36).substr(2, 9));
+            }
+            return localStorage.getItem('map_user_guid');
+        }
+
+        async function checkRequestQuotaOrAlert(userId, popupRef) {
+            try {
+                const res = await fetch(baseUrl + 'api/check-request-limit', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ user_id: userId })
+                });
+                const data = await res.json();
+
+                if (data && data.allowed === false) {
+                    if (popupRef && !popupRef.closed) popupRef.close();
+                    const periodLabels = { daily: 'اليوم', weekly: 'هذا الأسبوع', monthly: 'هذا الشهر' };
+                    const periodText = periodLabels[data.period] || 'هذه الفترة';
+                    alert(`⛔ لقد تجاوزت الحد المسموح من الطلبات (${data.limit}) ${periodText}. يرجى المحاولة لاحقاً أو التواصل مع الإدارة.`);
+                    return { allowed: false };
+                }
+                return { allowed: true };
+            } catch (err) {
+                // فشل الفحص لأي سبب (شبكة/سيرفر) => لا نمنع المستخدم من استخدام الخدمة الأساسية
+                console.warn('تعذر التحقق من حد الطلبات، سيتم السماح بالطلب:', err.message);
+                return { allowed: true };
+            }
+        }
 
         // ==========================================================================
         // 0-أ) مودال "من نحن"
@@ -78,49 +123,49 @@
         const iconMap = {
             'rentLayer': 'fa-home', 'saleLayer': 'fa-key', 'landLayer': 'fa-map',
             'electrician': 'fa-bolt', 'ac_technician': 'fa-snowflake', 'plumber': 'fa-faucet',
-            'general_maintenance': 'fa-tools', 'painter': 'fa-paint-roller', 'carpenter': 'fa-hammer',
+            'general_maintenance': 'fa-tools', 'painter': 'fa-paint-roller', 'carpenter': 'fa-hammer', 'photographer': 'fa-palette',
             'blacksmith': 'fa-industry', 'builder': 'fa-hard-hat', 'house_cleaner': 'fa-broom',
-            'aluminum_tech': 'fa-window-maximize', 'car_mechanic': 'fa-car-wrench', 'car_electrician': 'fa-car-battery',
+            'aluminum_tech': 'fa-window-maximize', 'car_mechanic': 'fa-wrench', 'car_electrician': 'fa-car-battery',
             'tire_tech': 'fa-circle-notch', 'car_wash': 'fa-shuttle-van', 'motorcycle_repair': 'fa-motorcycle',
-            'taxi_driver': 'fa-taxi', 'delivery_services': 'fa-truck-delivery', 'tow_truck': 'fa-truck-pickup',
-            'cctv_installer': 'fa-video', 'party_planner': 'fa-calendar-star', 'zaffa_bands': 'fa-music',
-            'music_bands': 'fa-guitar', 'photographer': 'fa-camera', 'party_rental': 'fa-chair',
+            'taxi_driver': 'fa-taxi', 'delivery_services': 'fa-truck-fast', 'tow_truck': 'fa-truck-pickup',
+            'cctv_installer': 'fa-video', 'party_planner': 'fa-magic', 'zaffa_bands': 'fa-music',
+            'music_bands': 'fa-guitar',  'party_rental': 'fa-chair',
             'home_nurse': 'fa-user-nurse', 'masseur': 'fa-hands-holding', 'cupping_specialist': 'fa-kit-medical',
             'nutritionist': 'fa-apple-whole', 'truck_driver': 'fa-truck', 'security_firms': 'fa-shield-halved',
             'furniture_buyer': 'fa-couch', 'gardener': 'fa-leaf', 'pet_care': 'fa-dog',
             'clown_entertainer': 'fa-face-smile-beam', 'online_stores': 'fa-shopping-basket', 'villas_rent': 'fa-vihara',
             'martial_arts_gymnastics': 'fa-user-ninja', 'public_parks_recreation': 'fa-tree', 'hotels': 'fa-hotel',
-            'free_distribution': 'fa-gift', 'barber_shop': 'fa-cut', 'video_design_ads': 'fa-film',
+            'free_distribution': 'fa-gift', 'barber_shop': 'fa-cut', 'photographers': 'fa-camera-retro', 'video_design_ads': 'fa-film',
             'pharmacies_on_call': 'fa-pills', 'taxis_on_call': 'fa-hand-holding-usd', 'emergency_hospitals': 'fa-hospital',
             'clinics': 'fa-stethoscope', 'doctors_on_call': 'fa-user-md', 'ambulances_on_call': 'fa-ambulance',
             'music_training': 'fa-music', 'lawyers': 'fa-gavel', 'land_surveyors': 'fa-ruler-combined',
             'real_estate_valuers': 'fa-calculator', 'private_tutors': 'fa-chalkboard-teacher', 'programmers': 'fa-code',
             'car_delivery_on_call': 'fa-car', 'motorcycle_delivery_on_call': 'fa-motorcycle',
-            'bicycle_delivery_on_call': 'fa-bicycle', 'photographers': 'fa-camera-retro',
+            'bicycle_delivery_on_call': 'fa-bicycle', 
             'student_research_assist': 'fa-book'
         };
 
         const serviceNames = {
             'electrician': 'فني كهرباء', 'ac_technician': 'فني تكييف وتبريد', 'plumber': 'سباك (مواسيرجي)',
-            'general_maintenance': 'صيانة عامة', 'painter': 'دهان وديكور', 'carpenter': 'نجار',
+            'general_maintenance': 'صيانة عامة', 'painter': 'دهان/طراشة', 'photographer': 'فني ديكور', 'carpenter': 'نجار',
             'blacksmith': 'حداد', 'builder': 'بناء ومعمار', 'house_cleaner': 'خدمات تنظيف', 'aluminum_tech': 'فني ألمنيوم',
             'car_mechanic': 'ميكانيكي سيارات', 'car_electrician': 'كهربائي سيارات', 'tire_tech': 'بنشري / إطارات',
             'car_wash': 'غسيل سيارات', 'motorcycle_repair': 'صيانة دراجات نارية', 'taxi_driver': 'مكتب تاكسي',
             'delivery_services': 'خدمات توصيل', 'tow_truck': 'ونش إنقاذ', 'cctv_installer': 'فني كاميرات مراقبة',
             'party_planner': 'منظم حفلات', 'zaffa_bands': 'فرقة زفة', 'music_bands': 'فرق موسيقية',
-            'photographer': 'مصور فوتوغرافي', 'party_rental': 'تأجير مستلزمات حفلات', 'home_nurse': 'تمريض منزلي',
+            'party_rental': 'تأجير مستلزمات حفلات', 'home_nurse': 'تمريض منزلي',
             'masseur': 'أخصائي مساج', 'cupping_specialist': 'أخصائي حجامة', 'nutritionist': 'أخصائي تغذية',
             'truck_driver': 'سائق شاحنة', 'security_firms': 'شركات أمن وحراسة', 'furniture_buyer': 'شراء أثاث مستعمل',
             'gardener': 'تنسيق حدائق', 'pet_care': 'رعاية حيوانات أليفة', 'clown_entertainer': 'مهرج وعروض أطفال',
             'online_stores': 'متاجر أون لاين', 'villas_rent': 'فلل أجار', 'martial_arts_gymnastics': 'فنون قتالية وجمباز',
             'public_parks_recreation': 'حدائق ومناطق ترفيهية', 'hotels': 'فنادق', 'free_distribution': 'توزيع أغراض مجاناً',
-            'barber_shop': 'حلاقة شباب', 'video_design_ads': 'تصميم فيديو إعلاني', 'pharmacies_on_call': 'صيدليات مناوبة',
+            'barber_shop': 'حلاقة شباب', 'photographers': 'مصور فوتوغرافي', 'video_design_ads': 'تصميم فيديو إعلاني', 'pharmacies_on_call': 'صيدليات مناوبة',
             'taxis_on_call': 'تكاسي نظام مناوبة', 'emergency_hospitals': 'طوارئ ومستشفيات', 'clinics': 'عيادات',
             'doctors_on_call': 'دكاترة مناوبة', 'ambulances_on_call': 'إسعاف مناوبة', 'music_training': 'تدريب موسيقى ومعاهد',
             'lawyers': 'محاميين', 'land_surveyors': 'مساحين أراضي', 'real_estate_valuers': 'مخمنين عقاريين',
             'private_tutors': 'أساتذة خصوصي', 'programmers': 'مبرمجين', 'car_delivery_on_call': 'دليفري سيارات (مناوبة)',
             'motorcycle_delivery_on_call': 'دليفري دراجات (مناوبة)', 'bicycle_delivery_on_call': 'دليفري هوائية (مناوبة)',
-            'photographers': 'مصور فوتوغرافي', 'student_research_assist': 'مساعد أبحاث طلاب'
+            'student_research_assist': 'مساعد أبحاث طلاب'
         };
 
         const globalExclusions = [];
@@ -144,7 +189,7 @@
         const serviceGroupMap = {
             // 🛠️ الفنيين والصيانة المنزلية
             electrician: 'technicians', ac_technician: 'technicians', plumber: 'technicians',
-            general_maintenance: 'technicians', painter: 'technicians', carpenter: 'technicians',
+            general_maintenance: 'technicians', painter: 'technicians', photographer: 'technicians', carpenter: 'technicians',
             blacksmith: 'technicians', builder: 'technicians', house_cleaner: 'technicians',
             aluminum_tech: 'technicians', cctv_installer: 'technicians', gardener: 'technicians',
             security_firms: 'technicians', furniture_buyer: 'technicians',
@@ -169,7 +214,7 @@
 
             // 🎉 مناسبات وضيافة وترفيه
             party_planner: 'events', zaffa_bands: 'events', music_bands: 'events',
-            photographer: 'events', party_rental: 'events', clown_entertainer: 'events',
+            party_rental: 'events', clown_entertainer: 'events',
             martial_arts_gymnastics: 'events', public_parks_recreation: 'events', hotels: 'events',
             villas_rent: 'events', barber_shop: 'events', video_design_ads: 'events',
             photographers: 'events',
@@ -332,6 +377,33 @@
                 .catch(() => renderValueSelect([]));
         }
 
+        // 🆕 دالة موحّدة لإضافة قائمة اختيار العملة بجانب حقل قيمة السعر
+        function appendCurrencySelector(container) {
+            const wrap = document.createElement('div');
+            wrap.style.marginTop = '8px';
+
+            const label = document.createElement('div');
+            label.textContent = 'العملة:';
+            label.style.cssText = 'font-size:12px; font-weight:bold; color:#555; margin-bottom:4px;';
+
+            const currencySelect = document.createElement('select');
+            currencySelect.id = 'nms-price-currency-select';
+            Object.assign(currencySelect.style, {
+                width: "100%", padding: "10px", border: "1px solid #ccc",
+                borderRadius: "4px", backgroundColor: "#fff", fontSize: "14px"
+            });
+            currencySelect.innerHTML = `
+                <option value="">كل العملات</option>
+                <option value="USD">دولار $</option>
+                <option value="ILS">شيكل ₪</option>
+                <option value="JOD">دينار د.أ</option>
+            `;
+
+            wrap.appendChild(label);
+            wrap.appendChild(currencySelect);
+            container.appendChild(wrap);
+        }
+
         function renderValueSelect(values) {
             valueContainer.innerHTML = '';
             const select = document.createElement('select');
@@ -341,10 +413,24 @@
                 values.map(v => `<option value="${v}">${v}</option>`).join('');
             select.onchange = () => {
                 if (select.value === '__custom__') {
-                    valueContainer.innerHTML = '<input type="text" id="nms-value-select" placeholder="اكتب القيمة هنا...">';
+                    valueContainer.innerHTML = '';
+                    const input = document.createElement('input');
+                    input.type = 'text';
+                    input.id = 'nms-value-select';
+                    input.placeholder = 'اكتب القيمة هنا...';
+                    valueContainer.appendChild(input);
+
+                    if (fieldSelect && fieldSelect.value === 'price') {
+                        appendCurrencySelector(valueContainer);
+                    }
                 }
             };
             valueContainer.appendChild(select);
+
+            // 🆕 إذا كان الحقل المختار هو السعر، أضف قائمة اختيار العملة
+            if (fieldSelect && fieldSelect.value === 'price') {
+                appendCurrencySelector(valueContainer);
+            }
         }
 
         const operatorLabels = { '=': 'يساوي', 'contains': 'يحتوي على', '>': '≥', '<': '≤' };
@@ -371,6 +457,21 @@
                 operatorLabel: operatorLabels[operatorSelect.value],
                 value: val
             });
+
+            // 🆕 إضافة شرط العملة تلقائياً إذا كان الحقل هو السعر وتم اختيار عملة محددة
+            if (fieldSelect.value === 'price') {
+                const currencySelect = document.getElementById('nms-price-currency-select');
+                if (currencySelect && currencySelect.value) {
+                    conditions.push({
+                        field: 'currency',
+                        fieldName: 'العملة',
+                        operator: '=',
+                        operatorLabel: operatorLabels['='],
+                        value: currencySelect.value
+                    });
+                }
+            }
+
             renderConditions();
         };
 
@@ -385,6 +486,11 @@
         async function executeSearch() {
             resultsListEl.innerHTML = '<div class="nms-loading"><i class="fas fa-spinner fa-spin"></i> جاري البحث...</div>';
             resultsCountEl.textContent = '';
+
+            // تسجيل حدث البحث بدون خريطة
+            if (window.logMapEvent) {
+                window.logMapEvent('no_map_search', null, currentCategory.title);
+            }
 
             const { workspace, layerName, isRealEstate } = getWorkspaceAndName(currentCategory.key);
             const params = new URLSearchParams({ layer: layerName, workspace });
@@ -471,7 +577,11 @@
                 if (p.location_name || p.location) html += `<div class="nms-r-loc"><i class="fas fa-map-marker-alt"></i> ${sanitize(p.location_name || p.location)}</div>`;
 
                 if (isRealEstate) {
-                    if (p.price) html += `<div class="nms-r-line"><b>💰 السعر:</b> ${Number(p.price).toLocaleString()} $</div>`;
+                    if (p.price) {
+                        const symbols = { USD: 'دولار', ILS: 'شيقل', JOD: 'دينار' };
+                        const sym = symbols[p.currency] || '';
+                        html += `<div class="nms-r-line"><b>💰 السعر:</b> ${Number(p.price).toLocaleString()} ${sym}</div>`;
+                    }
                     if (p.area) html += `<div class="nms-r-line"><b>📐 المساحة:</b> ${p.area} م²</div>`;
                     if (p.village_a) html += `<div class="nms-r-line"><b>🏘️ البلدة:</b> ${sanitize(p.village_a)}</div>`;
                     if (p.gov_a) html += `<div class="nms-r-line"><b>🌍 المحافظة:</b> ${sanitize(p.gov_a)}</div>`;
@@ -490,19 +600,31 @@
                     const actions = document.createElement('div');
                     actions.className = 'nms-r-actions';
                     actions.innerHTML = `
-                        <button class="nms-call-btn"><i class="fas fa-phone"></i> ${localPhone}</button>
+                        <button class="nms-call-btn"><i class="fas fa-mobile-alt"></i> اتصال</button>
                         <button class="nms-whatsapp-btn"><i class="fab fa-whatsapp"></i> واتساب</button>
                     `;
-                    actions.querySelector('.nms-call-btn').onclick = () => {
+                    actions.querySelector('.nms-call-btn').onclick = async () => {
+                        const quota = await checkRequestQuotaOrAlert(getRealUserId(), null);
+                        if (!quota.allowed) return;
                         trackRequest(providerName, `(${layerTitle}) اتصال مباشر`);
                         window.location.href = 'tel:' + localPhone;
                     };
-                    actions.querySelector('.nms-whatsapp-btn').onclick = () => {
+                    actions.querySelector('.nms-whatsapp-btn').onclick = async () => {
+                        // نفتح تبويباً فارغاً فوراً ضمن نفس حركة النقر لتفادي حجب المتصفح
+                        // للنوافذ المنبثقة، ثم نوجهه للرابط الصحيح بعد التأكد من عدم تجاوز الحد
+                        const newTab = window.open('', '_blank');
+                        const quota = await checkRequestQuotaOrAlert(getRealUserId(), newTab);
+                        if (!quota.allowed) return;
                         trackRequest(providerName, `(${layerTitle}) واتساب`);
                         const message = `مرحباً ${providerName}، أرغب بالاستفسار عن (${layerTitle}) من خلال منصة الخدمات.`;
                         let cleanNumber = whatsappNumber.replace(/\D/g, '');
                         if (cleanNumber.startsWith('00')) cleanNumber = cleanNumber.substring(2);
-                        window.open(`https://api.whatsapp.com/send?phone=${cleanNumber}&text=${encodeURIComponent(message)}`, '_blank');
+                        const whatsappUrl = `https://api.whatsapp.com/send?phone=${cleanNumber}&text=${encodeURIComponent(message)}`;
+                        if (newTab) {
+                            newTab.location.href = whatsappUrl;
+                        } else {
+                            window.open(whatsappUrl, '_blank');
+                        }
                     };
                     card.appendChild(actions);
                 }
@@ -523,19 +645,6 @@
         }
 
         function trackRequest(provider, service) {
-            function getRealUserId() {
-                try {
-                    const saved = localStorage.getItem('map_user');
-                    if (saved) {
-                        const parsed = JSON.parse(saved);
-                        if (parsed && (parsed.user_id || parsed.id)) return String(parsed.user_id || parsed.id);
-                    }
-                } catch (e) {}
-                if (!localStorage.getItem('map_user_guid')) {
-                    localStorage.setItem('map_user_guid', 'guest_' + Math.random().toString(36).substr(2, 9));
-                }
-                return localStorage.getItem('map_user_guid');
-            }
             const payload = JSON.stringify({ user_id: getRealUserId(), provider, service });
             const url = baseUrl + 'save-stat';
             if (navigator.sendBeacon) {

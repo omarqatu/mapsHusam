@@ -11,7 +11,8 @@ const serviceTranslations = {
     'ac_technician': { name: 'فني تكييف وتبريد', icon: '❄️' },
     'plumber': { name: 'سباك (مواسيرجي)', icon: '🔧' },
     'general_maintenance': { name: 'صيانة عامة', icon: '🛠️' },
-    'painter': { name: 'دهان وديكور', icon: '🎨' },
+    'painter': { name: 'دهان/طراشة', icon: '🎨' },
+    'photographer': { name: 'فني ديكور', icon: '🛋️' },
     'carpenter': { name: 'نجار', icon: '🪵' },
     'blacksmith': { name: 'حداد', icon: '🔨' },
     'builder': { name: 'بناء ومعمار', icon: '🧱' },
@@ -29,7 +30,6 @@ const serviceTranslations = {
     'party_planner': { name: 'منظم حفلات', icon: '🎈' },
     'zaffa_bands': { name: 'فرقة زفة', icon: '🥁' },
     'music_bands': { name: 'فرق موسيقية', icon: '🎸' },
-    'photographer': { name: 'مصور فوتوغرافي', icon: '📸' },
     'party_rental': { name: 'تأجير مستلزمات حفلات', icon: '🎪' },
     'home_nurse': { name: 'تمريض منزلي', icon: '🩺' },
     'masseur': { name: 'أخصائي مساج', icon: '💆' },
@@ -49,6 +49,7 @@ const serviceTranslations = {
     'hotels': { name: 'فنادق', icon: '🏨' },
     'free_distribution': { name: 'توزيع أغراض مجاناً', icon: '🎁' },
     'barber_shop': { name: 'حلاقة شباب', icon: '💈' },
+    'photographers': { name: 'مصور فوتوغرافي', icon: '📷' },
     'video_design_ads': { name: 'تصميم فيديو إعلاني', icon: '🎬' },
     'pharmacies_on_call': { name: 'صيدليات مناوبة', icon: '💊' },
     'taxis_on_call': { name: 'تكاسي نظام مناوبة', icon: '🚕' },
@@ -65,7 +66,6 @@ const serviceTranslations = {
     'car_delivery_on_call': { name: 'دليفري سيارات (مناوبة)', icon: '🚗' },
     'motorcycle_delivery_on_call': { name: 'دليفري دراجات (مناوبة)', icon: '🏍️' },
     'bicycle_delivery_on_call': { name: 'دليفري هوائية (مناوبة)', icon: '🚲' },
-    'photographers': { name: 'مصور فوتوغرافي', icon: '📷' },
     'student_research_assist': { name: 'مساعد أبحاث طلاب', icon: '📚' }
 };
 

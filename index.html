@@ -107,8 +107,8 @@
             </div>
             <div class="promo-feature-item">
                 <span class="icon">🆓</span>
-                <span class="label">مجاني للباحثين عن الخدمات</span>
-                <span class="desc">اشتراكات رمزية لمزودي الخدمات</span>
+                <span class="label">مجاني بالكامل</span>
+                <span class="desc">لكافة المستفيدين من الخدمات</span>
             </div>
         </div>
 
@@ -128,6 +128,15 @@
     </div>
 </div>
 <!-- ====== نهاية الشاشة الترحيبية ====== -->
+
+<!-- ==========================================================================
+     🆕 app-shell: غلاف كامل واجهة الخريطة وعناصرها.
+     يبقى display:none تماماً منذ أول تحميل للصفحة، ولا يظهر إلا بعد استدعاء
+     showPlatformShell() من داخل enterPlatform() (auth-core-functions.js)،
+     أي فقط بعد اكتمال تسجيل الدخول/التسجيل فعلياً. هذا يمنع أي وميض للخريطة
+     أو أي من أزرارها/لوحاتها أثناء عرض شاشتي الترحيب والتسجيل.
+     ========================================================================== -->
+<div id="app-shell" style="display:none;">
 
 <div id="user-top-badge-container" class="hidden" style="display: none;">
     <span class="user-badge-name" id="top-username-display">---</span>
@@ -167,7 +176,7 @@
 <div id="map-header">
     <div class="global-search-wrapper">
         <i class="fas fa-search"></i>
-        <input type="text" id="global-search-input" placeholder="ابحث عن فني، عقار، اي خدمة...">
+        <input type="text" id="global-search-input" placeholder="ابحث عن عقار، مطعم، فني...">
         
         <!-- زر التحديث -->
         <button id="global-refresh-btn" class="global-refresh-btn" title="تحديث الخريطة">
@@ -513,6 +522,8 @@
     <p id="palestineCoords">E: 0, N: 0</p>
 </div>
 
+</div><!-- 🆕 نهاية #app-shell -->
+
 <div id="auth-splash-overlay" class="auth-overlay">
     <div id="auth-welcome-section" class="auth-dialog-box">
         <h2 class="auth-title">منصة خريطة الخدمات الفلسطينية</h2>
@@ -629,7 +640,7 @@
                 </select>
             </div>
 
-            <button type="submit" class="btn-auth btn-submit-reg" id="btn-submit-register">إتمام التسجيل وطريقة تفعيل الحساب</button>
+            <button type="submit" class="btn-auth btn-submit-reg" id="btn-submit-register">إتمام التسجيل والدخول الخريطة</button>
 
             <p style="text-align:center; margin-top:12px; font-size:13px; color:#444;">
                 لديك حساب بالفعل؟ <a href="#" id="go-to-login" style="color:#2980b9; font-weight:bold; text-decoration:underline;">تسجيل الدخول من هنا</a>
@@ -667,34 +678,42 @@
             </p>
         </div>
         
-
-        <!-- خطوات الدليل -->
-        <div style="display:flex; flex-direction:column; gap:15px; margin-bottom:25px;">
-            <div style="background:#f8f9fa; border-right:4px solid #1a73e8; padding:15px; border-radius:8px;">
-                <strong style="color:#1a73e8; font-size:15px;">📝 ١. إنشاء حساب:</strong>
-                <p style="margin:5px 0 0; font-size:13px; color:#666;">اضغط على "إنشاء حساب جديد"، املأ بياناتك (الاسم، البريد، رقم الجوال، كلمة المرور)، ثم تواصل معنا عبر فيسبوك لتفعيل الحساب.</p>
-            </div>
-
-            <div style="background:#f8f9fa; border-right:4px solid #34a853; padding:15px; border-radius:8px;">
-                <strong style="color:#34a853; font-size:15px;">🔍 ٢. البحث عن خدمات:</strong>
-                <p style="margin:5px 0 0; font-size:13px; color:#666;">استخدم شريط البحث العام في أعلى الخريطة. اكتب اسم الخدمة (مثل: كهربائي، شقة للبيع، مطعم...) وستظهر النتائج على الخريطة مباشرة.</p>
-            </div>
-
-            <div style="background:#f8f9fa; border-right:4px solid #fbbc04; padding:15px; border-radius:8px;">
-                <strong style="color:#e37400; font-size:15px;">📍 ٣. البحث حسب الموقع:</strong>
-                <p style="margin:5px 0 0; font-size:13px; color:#666;">اضغط على أيقونة الموقع <i class="fas fa-map-marker-alt"></i>، حدد موقعك على الخريطة أو استخدم GPS، ثم اختر الخدمات القريبة منك.</p>
-            </div>
-
-            <div style="background:#f8f9fa; border-right:4px solid #ea4335; padding:15px; border-radius:8px;">
-                <strong style="color:#ea4335; font-size:15px;">📞 ٤. التواصل مع مزود الخدمة:</strong>
-                <p style="margin:5px 0 0; font-size:13px; color:#666;">اضغط على أيقونة الخدمة على الخريطة، ستظهر نافذة بمعلومات مزود الخدمة. انقر على رابط واتساب للتواصل المباشر.</p>
-            </div>
-
-            <div style="background:#f8f9fa; border-right:4px solid #7c3aed; padding:15px; border-radius:8px;">
-                <strong style="color:#7c3aed; font-size:15px;">🏠 ٥. إضافة عقار أو خدمة:</strong>
-                <p style="margin:5px 0 0; font-size:13px; color:#666;">إذا كنت مزود خدمة أو لديك عقار، تواصل معنا عبر صفحة فيسبوك لإضافتك إلى المنصة.</p>
-            </div>
+<div style="display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; direction: rtl;">
+    
+    <div style="width: 100%; max-width: 500px; display: flex; flex-direction: column; gap: 18px;">
+        
+        <!-- البطاقة ١ -->
+        <div style="background: #ffffff; border-right: 5px solid #34a853; padding: 18px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); transition: transform 0.2s;">
+            <strong style="color: #34a853; font-size: 16px; display: block; margin-bottom: 8px;">🔍 ١. البحث الذكي (خريطة وقائمة)</strong>
+            <p style="margin: 0; font-size: 14px; color: #555; line-height: 1.6;">ابحث باسم الخدمة عبر شريط البحث. استخدم زر "تحديث البيانات" لضمان ظهور أحدث النتائج، وبدل بسهولة بين عرض "الخريطة" أو "قائمة البحث" السريعة.</p>
         </div>
+
+        <!-- البطاقة ٢ -->
+        <div style="background: #ffffff; border-right: 5px solid #fbbc04; padding: 18px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.05);">
+            <strong style="color: #e37400; font-size: 16px; display: block; margin-bottom: 8px;">📍 ٢. تحديد النطاق والمسافة</strong>
+            <p style="margin: 0; font-size: 14px; color: #555; line-height: 1.6;">حدد موقعك بدقة أو استخدم الـ GPS، واضبط مسافة البحث بالمتر لتجد أقرب مزودي الخدمة المتاحين حالياً حولك بكل سهولة.</p>
+        </div>
+
+        <!-- البطاقة ٣ -->
+        <div style="background: #ffffff; border-right: 5px solid #ea4335; padding: 18px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.05);">
+            <strong style="color: #ea4335; font-size: 16px; display: block; margin-bottom: 8px;">📞 ٣. تواصل مباشر وسريع</strong>
+            <p style="margin: 0; font-size: 14px; color: #555; line-height: 1.6;">اضغط على أي خدمة على الخريطة لتفتح نافذة المعلومات، واستخدم أزرار الاتصال أو الواتساب للتحدث مباشرة مع المزود وإرسال تفاصيل طلبك.</p>
+        </div>
+
+        <!-- البطاقة ٤ -->
+        <div style="background: #ffffff; border-right: 5px solid #7c3aed; padding: 18px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.05);">
+            <strong style="color: #7c3aed; font-size: 16px; display: block; margin-bottom: 8px;">📏 ٤. أدوات القياس والمشاركة</strong>
+            <p style="margin: 0; font-size: 14px; color: #555; line-height: 1.6;">استفد من أدوات القياس لحساب المساحات والأطوال بدقة، وشارك مواقع الخدمات مع أصدقائك عبر رابط مباشر أو خرائط جوجل.</p>
+        </div>
+
+        <!-- البطاقة ٥ -->
+        <div style="background: #ffffff; border-right: 5px solid #4285f4; padding: 18px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.05);">
+            <strong style="color: #1a73e8; font-size: 16px; display: block; margin-bottom: 8px;">⚙️ ٥. تخصيص الخريطة</strong>
+            <p style="margin: 0; font-size: 14px; color: #555; line-height: 1.6;">تحكم في نمط الخريطة (فضائية، شوارع، أو أساسية)، وأغلق لوحات البحث لتستمتع بعرض كامل ومريح للنتائج.</p>
+        </div>
+
+    </div>
+</div>
 
         <!-- ملاحظة عن المحتوى القادم -->
         <div style="background:#e8f0fe; border-radius:10px; padding:15px; margin-bottom:20px; text-align:center;">
@@ -749,7 +768,7 @@ document.addEventListener('DOMContentLoaded', function() {
     </a>
 </div>
 
-<div class="provider-panel-bottom-left" id="provider-mini-panel">
+<div class="provider-panel-bottom-left" id="provider-mini-panel" style="display:none;">
     
     <input type="hidden" id="provider-layer-name" value="">
     <input type="hidden" id="provider-feature-id" value="">
@@ -920,6 +939,7 @@ document.addEventListener('DOMContentLoaded', function() {
 <script src="js/editPolygons.js"></script>
 <script src="js/editLines.js"></script>
 <script src="js/global-search.js"></script>
+<script src="js/viewport-guard.js"></script>
 <script src="js/panel-controls.js"></script>
 <script src="js/main.js"></script>
 

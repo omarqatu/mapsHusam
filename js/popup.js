@@ -18,6 +18,27 @@ function getRealUserId() {
     return localStorage.getItem('map_user_guid');
 }
 
+// 2. دالة تسجيل حدث/نقرة على الخريطة أو البحث
+async function logMapEvent(eventType, provider = null, service = null) {
+    try {
+        const userId = getRealUserId();
+        const serverUrl = window.location.origin + '/api/log-map-event';
+        
+        await fetch(serverUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                user_id: userId,
+                event_type: eventType,
+                provider: provider,
+                service: service
+            })
+        });
+    } catch (err) {
+        console.warn('فشل تسجيل الحدث:', err.message);
+    }
+}
+
 function initializePopup(map) {
     const container = document.getElementById('popup');
     const content = document.getElementById('popup-content');
@@ -38,20 +59,20 @@ function initializePopup(map) {
 
     // مصفوفة الخدمات الشاملة
     const serviceLayerNames = [
-        'فني كهرباء', 'فني تكييف وتبريد', 'سباك (مواسيرجي)', 'صيانة عامة', 'دهان وديكور',
+        'فني كهرباء', 'فني تكييف وتبريد', 'سباك (مواسيرجي)', 'صيانة عامة', 'دهان/طراشة', 'فني ديكور',
         'نجار', 'حداد', 'بناء ومعمار', 'خدمات تنظيف', 'فني ألمنيوم', 'ميكانيكي سيارات',
         'كهربائي سيارات', 'بنشري / إطارات', 'غسيل سيارات', 'صيانة دراجات نارية', 
         'مكتب تاكسي', 'خدمات توصيل', 'ونش إنقاذ', 'فني كاميرات مراقبة', 
-        'منظم حفلات', 'فرقة زفة', 'فرق موسيقية', 'مصور فوتوغرافي', 'تأجير مستلزمات حفلات',
+        'منظم حفلات', 'فرقة زفة', 'فرق موسيقية',  'تأجير مستلزمات حفلات',
         'تمريض منزلي', 'أخصائي مساج', 'أخصائي حجامة', 'أخصائي تغذية', 'سائق شاحنة',
         'شركات أمن وحراسة', 'شراء أثاث مستعمل', 'تنسيق حدائق', 'رعاية حيوانات أليفة', 'مهرج وعروض أطفال',
         'متاجر أون لاين', 'فلل أجار', 'فنون قتالية وجمباز', 'حدائق ومناطق ترفيهية',
-        'فنادق', 'توزيع أغراض مجاناً', 'حلاقة شباب', 'تصميم فيديو إعلاني', 
+        'فنادق', 'توزيع أغراض مجاناً', 'حلاقة شباب', 'مصور فوتوغرافي', 'تصميم فيديو إعلاني', 
         'صيدليات مناوبة', 'تكاسي نظام مناوبة', 'طوارئ ومستشفيات', 'عيادات', 
         'دكاترة مناوبة', 'إسعاف مناوبة', 'تدريب موسيقى ومعاهد', 'محاميين', 
         'مساحين أراضي', 'مخمنين عقاريين', 'أساتذة خصوصي', 'مبرمجين', 
         'دليفري سيارات (مناوبة)', 'دليفري دراجات (مناوبة)', 'دليفري هوائية (مناوبة)', 
-        'مصور فوتوغرافي', 'مساعد أبحاث طلاب'
+         'مساعد أبحاث طلاب'
     ];
 
     const realEstateLayerNames = ['شقق الإيجار', 'شقق للبيع', 'الأراضي للبيع']; // تم تصحيح المسمى ليطابق config.js
@@ -77,14 +98,45 @@ function initializePopup(map) {
         return url;
     }
 
+    // --- 🆕 فحص حد الطلبات (الأحداث) المُعرّف من المشرف قبل تنفيذ أي اتصال/واتساب ---
+    // افتراضياً كل المستخدمين "مفتوحين" بدون أي حد؛ لا يُطبَّق الفحص إلا إذا حدد
+    // المشرف رقماً صريحاً لهذا المستخدم من لوحة إدارة المستخدمين.
+    async function checkRequestQuotaOrAlert(userId, popupRef) {
+        try {
+            const serverUrl = window.location.origin + '/api/check-request-limit';
+            const res = await fetch(serverUrl, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ user_id: userId })
+            });
+            const data = await res.json();
+
+            if (data && data.allowed === false) {
+                if (popupRef && !popupRef.closed) popupRef.close();
+                const periodLabels = { daily: 'اليوم', weekly: 'هذا الأسبوع', monthly: 'هذا الشهر' };
+                const periodText = periodLabels[data.period] || 'هذه الفترة';
+                alert(`⛔ لقد تجاوزت الحد المسموح من الطلبات (${data.limit}) ${periodText}. يرجى المحاولة لاحقاً أو التواصل مع الإدارة.`);
+                return { allowed: false };
+            }
+            return { allowed: true };
+        } catch (err) {
+            // فشل الفحص لأي سبب (شبكة/سيرفر) => لا نمنع المستخدم من استخدام الخدمة الأساسية (Fail-open)
+            console.warn('تعذر التحقق من حد الطلبات، سيتم السماح بالطلب:', err.message);
+            return { allowed: true };
+        }
+    }
+
     // --- تعديل منطق الواتساب (يأخذ القيمة كما هي من الحقل) ---
-    window.handlePhoneCall = function(providerName, localPhone, whatsappNumber, serviceType) {
+    window.handlePhoneCall = async function(providerName, localPhone, whatsappNumber, serviceType) {
+        const currentUserId = getRealUserId();
+        const quota = await checkRequestQuotaOrAlert(currentUserId, null);
+        if (!quota.allowed) return;
+
         const serviceDescription = `(${serviceType}) اتصال مباشر`;
         if (window.sendTrackingRequest) {
             window.sendTrackingRequest(providerName, serviceDescription);
         } else {
             const serverUrl = window.location.origin + '/save-stat';
-            const currentUserId = getRealUserId();
             navigator.sendBeacon
                 ? navigator.sendBeacon(serverUrl, new Blob([JSON.stringify({ user_id: currentUserId, provider: providerName, service: serviceDescription })], { type: 'application/json' }))
                 : fetch(serverUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ user_id: currentUserId, provider: providerName, service: serviceDescription }), keepalive: true }).catch(err => console.error('خطأ في تسجيل الإحصائية:', err));
@@ -93,13 +145,20 @@ function initializePopup(map) {
         window.location.href = 'tel:' + localPhone;
     };
 
-    window.handleServiceRequest = function(providerName, whatsappNumber, serviceType) {
+    window.handleServiceRequest = async function(providerName, whatsappNumber, serviceType) {
+        // نفتح تبويباً فارغاً فوراً ضمن نفس حركة المستخدم (Click) لتفادي حجب المتصفح
+        // للنوافذ المنبثقة، ثم نوجهه للرابط الصحيح بعد التأكد من عدم تجاوز الحد
+        const newTab = window.open('', '_blank');
+
+        const currentUserId = getRealUserId();
+        const quota = await checkRequestQuotaOrAlert(currentUserId, newTab);
+        if (!quota.allowed) return;
+
         const serviceDescription = `(${serviceType}) واتساب`;
         if (window.sendTrackingRequest) {
             window.sendTrackingRequest(providerName, serviceDescription);
         } else {
             const serverUrl = window.location.origin + '/save-stat';
-            const currentUserId = getRealUserId();
             navigator.sendBeacon
                 ? navigator.sendBeacon(serverUrl, new Blob([JSON.stringify({ user_id: currentUserId, provider: providerName, service: serviceDescription })], { type: 'application/json' }))
                 : fetch(serverUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ user_id: currentUserId, provider: providerName, service: serviceDescription }), keepalive: true }).catch(err => console.error('خطأ في تسجيل الإحصائية:', err));
@@ -117,7 +176,11 @@ function initializePopup(map) {
 
         // ملاحظة: الرابط سيعمل إذا كان الرقم يبدأ بـ 970 أو 972 مباشرة
         const whatsappUrl = `https://api.whatsapp.com/send?phone=${cleanNumber}&text=${encodeURIComponent(message)}`;
-        window.open(whatsappUrl, '_blank');
+        if (newTab) {
+            newTab.location.href = whatsappUrl;
+        } else {
+            window.open(whatsappUrl, '_blank');
+        }
     };
 
     function createLink(url, text = "للتفاصيل انقر هنا") {
@@ -274,7 +337,10 @@ window.copyLocationLink = function(coordinate) {
                     <div style="font-size: 12px; color: #444; margin-top: 5px; line-height: 1.4;">${timeText}</div>
                 </div>`;
     }
-
+            function getCurrencySymbol(code) {
+                    const symbols = { USD: 'دولار', ILS: 'شيقل', JOD: 'دينار' };
+                    return symbols[code] || '';
+                }
     window.generateFeatureHtml = function(feature, layer) {
         const props = feature.getProperties();
         const layerTitle = layer ? (layer.get('title') || 'معلم') : 'معلم';
@@ -323,7 +389,7 @@ window.copyLocationLink = function(coordinate) {
             if (props.location_name || props.location) bodyHtml += `<b>📍 الموقع:</b> ${window.sanitizeHTML(props.location_name || props.location)}<br>`;
             
             if (isRealEstate) {
-                if (props.price) bodyHtml += `<b>💰 السعر:</b> ${Number(props.price).toLocaleString()} $<br>`;
+                if (props.price) bodyHtml += `<b>💰 السعر:</b> ${Number(props.price).toLocaleString()} ${getCurrencySymbol(props.currency)}<br>`;
                 if (props.area) bodyHtml += `<b>📐 المساحة:</b> ${props.area} م²<br>`;
                 if (props.village_a) bodyHtml += `<b>🏘️ البلدة:</b> ${window.sanitizeHTML(props.village_a)}<br>`;
                 if (props.gov_a) bodyHtml += `<b>🌍 المحافظة:</b> ${window.sanitizeHTML(props.gov_a)}<br>`;
@@ -345,9 +411,8 @@ window.copyLocationLink = function(coordinate) {
                 <div style="margin-top: 15px; border-top: 2px solid #eee; padding-top: 12px;">
                     <div style="display: flex; gap: 8px; margin-bottom: 8px;">
                         <button onclick="handlePhoneCall('${providerName}', '${localPhone}', '${whatsappNumber}', '${layerTitle}')"
-                                style="flex: 1; background: #1a73e8; color: white; border: none; padding: 12px 8px; border-radius: 10px; cursor: pointer; font-weight: bold; display: flex; align-items: center; justify-content: center; gap: 6px; font-size: 13px; box-shadow: 0 4px 12px rgba(26,115,232,0.3); direction: ltr;">
-                            <i class="fas fa-phone" style="font-size: 16px;"></i>
-                            <span style="direction: ltr;">${localPhone}</span>
+                                style="flex: 1; background: #1a73e8; color: white; border: none; padding: 12px 8px; border-radius: 10px; cursor: pointer; font-weight: bold; display: flex; align-items: center; justify-content: center; gap: 6px; font-size: 13px; box-shadow: 0 4px 12px rgba(26,115,232,0.3);">
+                            <i class="fas fa-mobile-alt" style="font-size: 16px;"></i> اتصال
                         </button>
                         <button onclick="handleServiceRequest('${providerName}', '${whatsappNumber}', '${layerTitle}')"
                                 style="flex: 1; background: #25d366; color: white; border: none; padding: 12px 8px; border-radius: 10px; cursor: pointer; font-weight: bold; display: flex; align-items: center; justify-content: center; gap: 6px; font-size: 13px; box-shadow: 0 4px 12px rgba(37,211,102,0.3);">
@@ -418,6 +483,13 @@ window.copyLocationLink = function(coordinate) {
                 content.innerHTML = window.generateFeatureHtml(feature, layer);
                 overlay.setPosition(event.coordinate);
                 isPopupPinned = true;
+
+                // تسجيل حدث النقر على الخريطة
+                const layerTitle = layer.get('title') || 'معلم';
+                const props = feature.getProperties();
+                const providerName = props.name || (props.location_name || 'غير معروف');
+                logMapEvent('map_click', providerName, layerTitle);
+
                 return true;
             }
         });

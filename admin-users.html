@@ -51,7 +51,7 @@
     <div class="filter-bar">
         <label><i class="fas fa-search"></i> بحث:</label>
         <input type="text" id="search-input" placeholder="اسم، بريد، رقم موبايل..." onkeyup="applyFilters()">
-        
+
         <label><i class="fas fa-filter"></i> الدور:</label>
         <select id="role-filter" onchange="applyFilters()">
             <option value="">الكل</option>
@@ -65,6 +65,13 @@
             <option value="">الكل</option>
             <option value="active">مفعل</option>
             <option value="inactive">غير مفعل</option>
+        </select>
+
+        <label><i class="fas fa-wifi"></i> الاتصال:</label>
+        <select id="online-filter" onchange="applyFilters()">
+            <option value="">الكل</option>
+            <option value="online">متصل الآن</option>
+            <option value="offline">غير متصل</option>
         </select>
 
         <label><i class="fas fa-link"></i> مرتبط بخدمة:</label>
@@ -92,6 +99,22 @@
                 <i class="fas fa-sync-alt"></i> تحديث القائمة
             </button>
         </div>
+
+        <div class="btn-group">
+            <button class="btn btn-danger" onclick="forceLogoutAllUsers('all')" title="تسجيل خروج جميع المستخدمين">
+                <i class="fas fa-user-slash"></i> تسجيل خروج الكل
+            </button>
+            <button class="btn btn-warning" onclick="forceLogoutAllUsers('online')" title="تسجيل خروج المتصلين فقط">
+                <i class="fas fa-wifi"></i> تسجيل خروج المتصلين
+            </button>
+            <button class="btn btn-secondary" onclick="forceLogoutAllUsers('offline')" title="تسجيل خروج غير المتصلين">
+                <i class="fas fa-user-clock"></i> تسجيل خروج غير المتصلين
+            </button>
+            <button class="btn btn-primary" onclick="forceLogoutSelectedUsers()" title="تسجيل خروج المستخدمين المختارين">
+                <i class="fas fa-check-square"></i> تسجيل خروج المختارين
+            </button>
+        </div>
+
         <span class="user-count-badge"><i class="fas fa-users"></i> العدد: <span id="user-count">0</span></span>
     </div>
 
@@ -100,22 +123,25 @@
         <table id="users-table">
             <thead>
                 <tr>
+                    <th><input type="checkbox" id="select-all-users" onchange="toggleSelectAll()"></th>
                     <th>ID</th>
                     <th>الاسم الكامل</th>
                     <th>البريد الإلكتروني</th>
                     <th>رقم الجوال</th>
                     <th>الدور</th>
+                    <th>الاتصال</th>
                     <th>الحالة</th>
                     <th>is_active</th>
                     <th>طبقة الخدمة</th>
                     <th>Feature ID</th>
+                    <th>حد الطلبات</th>
                     <th>تاريخ الإنشاء</th>
                     <th>الإجراءات</th>
                 </tr>
             </thead>
             <tbody id="users-tbody">
                 <tr>
-                    <td colspan="11" class="no-data">
+                    <td colspan="14" class="no-data">
                         <i class="fas fa-spinner fa-spin"></i> جاري تحميل المستخدمين...
                     </td>
                 </tr>
@@ -186,6 +212,27 @@
 
         <hr>
 
+        <!-- Request quota (events limit) -->
+        <div class="quota-section">
+            <h3><i class="fas fa-stopwatch"></i> حد الطلبات (الأحداث)</h3>
+            <div class="form-group">
+                <label for="modal-request-limit"><i class="fas fa-hashtag"></i> أقصى عدد طلبات مسموح (اتصال / واتساب):</label>
+                <input type="number" id="modal-request-limit" min="1" placeholder="اتركه فارغاً = مفتوح بدون حد (الوضع الافتراضي)" oninput="onRequestLimitChange()">
+                <small>كل طلب = نقرة اتصال أو واتساب واحدة على معلم بالخريطة. اتركه فارغاً ليبقى بدون أي حد.</small>
+            </div>
+            <div class="form-group">
+                <label for="modal-request-period"><i class="fas fa-calendar-week"></i> فترة تجديد الحد:</label>
+                <select id="modal-request-period" disabled>
+                    <option value="daily">يومياً</option>
+                    <option value="weekly">أسبوعياً</option>
+                    <option value="monthly">شهرياً</option>
+                </select>
+                <small>يُعاد احتساب العداد من الصفر تلقائياً مع بداية كل فترة جديدة.</small>
+            </div>
+        </div>
+
+        <hr>
+
         <!-- Change password section -->
         <div class="pwd-section">
             <h3><i class="fas fa-key"></i> تغيير كلمة المرور</h3>
@@ -218,13 +265,15 @@
 <script>
     let allUsers = [];
     let currentEditUserId = null;
+    let onlineUserIds = new Set(); // 🟢 معرفات المستخدمين المتصلين الآن (يتم تحديثها دورياً)
+    let onlineStatusInterval = null;
 
     // ==========================================
     // جلب جميع المستخدمين من السيرفر
     // ==========================================
     async function refreshUsersList() {
         const tbody = document.getElementById('users-tbody');
-        tbody.innerHTML = '<tr><td colspan="11" class="loading-spinner"><i class="fas fa-spinner"></i> جاري تحميل المستخدمين...</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="13" class="loading-spinner"><i class="fas fa-spinner"></i> جاري تحميل المستخدمين...</td></tr>';
 
         try {
             const response = await fetch('/api/admin/users');
@@ -232,15 +281,38 @@
 
             if (data.success) {
                 allUsers = data.users;
+                if (Array.isArray(data.onlineUserIds)) {
+                    onlineUserIds = new Set(data.onlineUserIds.map(String));
+                }
                 applyFilters();
+                startOnlineStatusPolling();
             } else {
                 showAlert('فشل تحميل المستخدمين: ' + (data.error || 'خطأ غير معروف'), 'error');
-                tbody.innerHTML = '<tr><td colspan="11" class="no-data">فشل تحميل المستخدمين</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="13" class="no-data">فشل تحميل المستخدمين</td></tr>';
             }
         } catch (err) {
             showAlert('خطأ في الاتصال بالسيرفر: ' + err.message, 'error');
-            tbody.innerHTML = '<tr><td colspan="11" class="no-data">خطأ في الاتصال بالسيرفر</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="13" class="no-data">خطأ في الاتصال بالسيرفر</td></tr>';
         }
+    }
+
+    // ==========================================
+    // 🆕 تحديث دوري خفيف لحالة الاتصال (متصل/غير متصل) فقط، بدون إعادة جلب كامل الجدول
+    // ==========================================
+    function startOnlineStatusPolling() {
+        if (onlineStatusInterval) clearInterval(onlineStatusInterval);
+        onlineStatusInterval = setInterval(async () => {
+            try {
+                const res = await fetch('/api/admin/online-users');
+                const data = await res.json();
+                if (data.success && Array.isArray(data.onlineUserIds)) {
+                    onlineUserIds = new Set(data.onlineUserIds.map(String));
+                    applyFilters(); // إعادة رسم الجدول بنفس الفلاتر الحالية مع تحديث نقاط الاتصال فقط
+                }
+            } catch (e) {
+                // تجاهل أخطاء الشبكة المؤقتة أثناء الاستطلاع الدوري
+            }
+        }, 8000); // كل 8 ثوانٍ
     }
 
     // ==========================================
@@ -275,6 +347,7 @@
         const searchTerm = document.getElementById('search-input').value.toLowerCase().trim();
         const roleFilter = document.getElementById('role-filter').value;
         const statusFilter = document.getElementById('status-filter').value;
+        const onlineFilter = document.getElementById('online-filter').value;
         const serviceFilter = document.getElementById('service-filter').value;
         const dateFilter = document.getElementById('date-filter').value;
         const customDateVal = document.getElementById('custom-date-input').value;
@@ -296,6 +369,12 @@
             // Status filter (is_active)
             if (statusFilter === 'active' && !user.is_active) return false;
             if (statusFilter === 'inactive' && user.is_active) return false;
+
+            // 🆕 Online status filter (متصل/غير متصل)
+            const userId = String(user.user_id || user.id);
+            const isOnline = onlineUserIds.has(userId);
+            if (onlineFilter === 'online' && !isOnline) return false;
+            if (onlineFilter === 'offline' && isOnline) return false;
 
             // Service layer filter
             if (serviceFilter === 'linked' && !user.service_layer) return false;
@@ -345,7 +424,7 @@
         tbody.innerHTML = '';
 
         if (users.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="11" class="no-data">لا يوجد مستخدمين متطابقين مع الفلترة</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="14" class="no-data">لا يوجد مستخدمين متطابقين مع الفلترة</td></tr>';
             return;
         }
 
@@ -385,13 +464,37 @@
             let statusBadgeClass = isActive ? 'user-status-active' : 'user-status-disabled';
             let statusLabel = isActive ? 'مفعل ✓' : 'غير مفعل ✗';
 
+            // 🆕 حالة الاتصال الحية (متصل الآن / غير متصل) بالاعتماد على Socket.io
+            const isOnline = onlineUserIds.has(String(userId));
+            const onlineDotColor = isOnline ? '#34a853' : '#bbb';
+            const onlineLabel = isOnline ? 'متصل الآن' : 'غير متصل';
+            const onlineTextColor = isOnline ? '#1e7e34' : '#888';
+
+            // 🆕 عرض حد الطلبات المُعرّف لهذا المستخدم (أو "غير محدود" إن كان مفتوحاً)
+            const requestLimit = user.request_limit ? parseInt(user.request_limit, 10) : null;
+            const periodLabels = { daily: 'يومياً', weekly: 'أسبوعياً', monthly: 'شهرياً' };
+            const requestPeriodLabel = periodLabels[user.request_limit_period] || 'يومياً';
+            const quotaDisplay = requestLimit
+                ? `<span style="color:#e37400; font-weight:bold;">${requestLimit}</span> <span style="color:#999; font-size:11px;">/ ${requestPeriodLabel}</span>`
+                : '<span style="color:#34a853; font-weight:bold;">غير محدود</span>';
+
+            // اسم آمن للاستخدام داخل onclick (تفادي كسر الـ HTML لو الاسم فيه علامات اقتباس)
+            const safeUserName = userName.replace(/'/g, "\\'").replace(/"/g, '&quot;');
+
             const tr = document.createElement('tr');
             tr.innerHTML = `
+                <td><input type="checkbox" class="user-checkbox" data-user-id="${userId}"></td>
                 <td><strong>${userId}</strong></td>
                 <td style="text-align:right; font-weight:bold;">${userName}</td>
                 <td style="direction:ltr;">${userEmail}</td>
                 <td style="direction:ltr;">${userPhone}</td>
                 <td><span class="role-badge ${roleBadgeClass}">${roleLabel}</span></td>
+                <td>
+                    <span style="display:inline-flex; align-items:center; gap:6px; font-size:11.5px; font-weight:bold; color:${onlineTextColor};">
+                        <span style="width:9px; height:9px; border-radius:50%; background:${onlineDotColor}; ${isOnline ? 'box-shadow:0 0 5px ' + onlineDotColor + ';' : ''}"></span>
+                        ${onlineLabel}
+                    </span>
+                </td>
                 <td><span class="user-status-badge ${statusBadgeClass}">${statusLabel}</span></td>
                 <td>
                     <span style="display:inline-block; width:12px; height:12px; border-radius:50%; background:${isActive ? '#34a853' : '#ea4335'};"></span>
@@ -399,6 +502,7 @@
                 </td>
                 <td>${serviceLayer ? '<span style="color:#1a73e8;font-weight:bold;">' + serviceLayer + '</span>' : '<span style="color:#999;">—</span>'}</td>
                 <td>${featureId ? '<span style="font-weight:bold;direction:ltr;display:inline-block;">' + featureId + '</span>' : '<span style="color:#999;">—</span>'}</td>
+                <td style="white-space:nowrap;">${quotaDisplay}</td>
                 <td style="white-space:nowrap; font-size:11px;">${createdAtDisplay}</td>
                 <td class="actions-cell">
                     <button class="action-btn" style="background:#1a73e8;color:white;" onclick="openEditModal(${userId})" title="تعديل المستخدم">
@@ -406,6 +510,9 @@
                     </button>
                     <button class="action-btn ${isActive ? 'btn-warning' : 'btn-success'}" onclick="toggleUserActive(${userId}, ${!isActive})" title="${isActive ? 'تعطيل' : 'تفعيل'} الحساب">
                         <i class="fas ${isActive ? 'fa-ban' : 'fa-check-circle'}"></i>
+                    </button>
+                    <button class="action-btn" style="background:#c0392b;color:white;" onclick="forceLogoutUser(${userId}, '${safeUserName}')" title="تسجيل خروج فوري + تنبيه">
+                        <i class="fas fa-user-slash"></i>
                     </button>
                 </td>
             `;
@@ -440,6 +547,13 @@
         // feature_id
         document.getElementById('modal-feature-id').value = user.feature_id || '';
         document.getElementById('modal-feature-id-group').style.display = user.service_layer ? 'block' : 'none';
+
+        // 🆕 حد الطلبات (فارغ = مفتوح بدون حد، وهو الوضع الافتراضي)
+        const requestLimitInput = document.getElementById('modal-request-limit');
+        const requestPeriodSelect = document.getElementById('modal-request-period');
+        requestLimitInput.value = user.request_limit ? user.request_limit : '';
+        requestPeriodSelect.value = user.request_limit_period || 'daily';
+        onRequestLimitChange();
 
         // Clear password field
         document.getElementById('modal-new-password').value = '';
@@ -497,6 +611,14 @@
     }
 
     // ==========================================
+    // 🆕 تفعيل/تعطيل اختيار فترة التجديد حسب وجود قيمة لحد الطلبات
+    // ==========================================
+    function onRequestLimitChange() {
+        const limitVal = document.getElementById('modal-request-limit').value;
+        document.getElementById('modal-request-period').disabled = !limitVal;
+    }
+
+    // ==========================================
     // حفظ تغييرات المستخدم
     // ==========================================
     async function saveUserChanges() {
@@ -525,6 +647,11 @@
         if (newPassword && newPassword.length >= 6) {
             payload.new_password = newPassword;
         }
+
+        // 🆕 حد الطلبات: فارغ = مفتوح بدون حد (يُرسل null فيمسح أي قيمة سابقة)
+        const requestLimitVal = document.getElementById('modal-request-limit').value.trim();
+        payload.request_limit = requestLimitVal ? parseInt(requestLimitVal, 10) : null;
+        payload.request_limit_period = document.getElementById('modal-request-period').value || 'daily';
 
         try {
             const response = await fetch('/api/admin/users/update', {
@@ -574,6 +701,37 @@
     }
 
     // ==========================================
+    // 🆕 تسجيل خروج فوري لمستخدم من قبل المشرف + إشعاره بضرورة العودة للإدارة
+    // ==========================================
+    async function forceLogoutUser(userId, userName) {
+        const isOnline = onlineUserIds.has(String(userId));
+        const confirmMsg = isOnline
+            ? `المستخدم "${userName}" متصل الآن فعلياً. هل تريد تسجيل خروجه فوراً وإرسال تنبيه له بالرجوع للإدارة لحل مشكلة الحظر؟`
+            : `المستخدم "${userName}" غير متصل حالياً. سيتم حفظ الإشعار وسيصله فور دخوله. متابعة؟`;
+
+        if (!confirm(confirmMsg)) return;
+
+        try {
+            const response = await fetch('/api/admin/users/force-logout', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+                body: JSON.stringify({ user_id: userId })
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                showAlert('✅ ' + data.message, 'success');
+                refreshUsersList();
+            } else {
+                showAlert('❌ ' + (data.error || 'فشل تنفيذ تسجيل الخروج الإجباري'), 'error');
+            }
+        } catch (err) {
+            showAlert('❌ خطأ في الاتصال: ' + err.message, 'error');
+        }
+    }
+
+    // ==========================================
     // إغلاق النافذة
     // ==========================================
     function closeUserModal() {
@@ -603,9 +761,98 @@
     }
 
     // ==========================================
-    // التحميل عند فتح الصفحة
+    // 🆕 اختيار/إلغاء اختيار جميع المستخدمين
     // ==========================================
-    document.addEventListener('DOMContentLoaded', refreshUsersList);
+    function toggleSelectAll() {
+        const selectAllCheckbox = document.getElementById('select-all-users');
+        const userCheckboxes = document.querySelectorAll('.user-checkbox');
+        userCheckboxes.forEach(cb => {
+            cb.checked = selectAllCheckbox.checked;
+        });
+    }
+
+    // ==========================================
+    // 🆕 الحصول على قائمة المستخدمين المختارين
+    // ==========================================
+    function getSelectedUserIds() {
+        const selectedCheckboxes = document.querySelectorAll('.user-checkbox:checked');
+        return Array.from(selectedCheckboxes).map(cb => parseInt(cb.getAttribute('data-user-id'), 10));
+    }
+
+    // ==========================================
+    // 🆕 تسجيل خروج جماعي (الكل، المتصلين، غير المتصلين)
+    // ==========================================
+    async function forceLogoutAllUsers(targetType) {
+        const targetLabels = {
+            'all': 'جميع المستخدمين',
+            'online': 'المستخدمين المتصلين حالياً',
+            'offline': 'المستخدمين غير المتصلين'
+        };
+        const confirmMsg = `هل أنت متأكد من تسجيل خروج ${targetLabels[targetType]}؟ سيتم إرسال إشعار لهم وسيُطلب منهم إعادة تسجيل الدخول.`;
+
+        if (!confirm(confirmMsg)) return;
+
+        try {
+            const response = await fetch('/api/admin/users/force-logout-all', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+                body: JSON.stringify({ target_type: targetType })
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                showAlert(`✅ ${data.message}`, 'success');
+                refreshUsersList();
+            } else {
+                showAlert('❌ ' + (data.error || 'فشل تنفيذ تسجيل الخروج الجماعي'), 'error');
+            }
+        } catch (err) {
+            showAlert('❌ خطأ في الاتصال: ' + err.message, 'error');
+        }
+    }
+
+    // ==========================================
+    // 🆕 تسجيل خروج المستخدمين المختارين
+    // ==========================================
+    async function forceLogoutSelectedUsers() {
+        const selectedUserIds = getSelectedUserIds();
+
+        if (selectedUserIds.length === 0) {
+            showAlert('⚠️ يرجى اختيار مستخدم واحد على الأقل', 'warning');
+            return;
+        }
+
+        const confirmMsg = `هل أنت متأكد من تسجيل خروج ${selectedUserIds.length} مستخدم مختار؟ سيتم إرسال إشعار لهم وسيُطلب منهم إعادة تسجيل الدخول.`;
+
+        if (!confirm(confirmMsg)) return;
+
+        try {
+            const response = await fetch('/api/admin/users/force-logout-all', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+                body: JSON.stringify({ target_type: 'selected', user_ids: selectedUserIds })
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                showAlert(`✅ ${data.message}`, 'success');
+                // إلغاء اختيار جميع المستخدمين بعد التنفيذ
+                document.getElementById('select-all-users').checked = false;
+                refreshUsersList();
+            } else {
+                showAlert('❌ ' + (data.error || 'فشل تنفيذ تسجيل الخروج الجماعي'), 'error');
+            }
+        } catch (err) {
+            showAlert('❌ خطأ في الاتصال: ' + err.message, 'error');
+        }
+    }
+
+    // ==========================================
+    // تحميل القائمة عند فتح الصفحة
+    // ==========================================
+    refreshUsersList();
 </script>
 
 </body>

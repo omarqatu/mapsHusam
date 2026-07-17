@@ -51,25 +51,25 @@ function initializeQuickSearch(map, overlayLayersObj) {
     const iconMap = {
         'rentLayer': 'fa-home', 'saleLayer': 'fa-key', 'landLayer': 'fa-map',
         'electrician': 'fa-bolt', 'ac_technician': 'fa-snowflake', 'plumber': 'fa-faucet',
-        'general_maintenance': 'fa-tools', 'painter': 'fa-paint-roller', 'carpenter': 'fa-hammer',
+        'general_maintenance': 'fa-tools', 'painter': 'fa-paint-roller', 'carpenter': 'fa-hammer', 'photographer': 'fa-camera',
         'blacksmith': 'fa-industry', 'builder': 'fa-hard-hat', 'house_cleaner': 'fa-broom',
         'aluminum_tech': 'fa-window-maximize', 'car_mechanic': 'fa-car-wrench', 'car_electrician': 'fa-car-battery',
         'tire_tech': 'fa-circle-notch', 'car_wash': 'fa-shuttle-van', 'motorcycle_repair': 'fa-motorcycle',
         'taxi_driver': 'fa-taxi', 'delivery_services': 'fa-truck-delivery', 'tow_truck': 'fa-truck-pickup',
         'cctv_installer': 'fa-video', 'party_planner': 'fa-calendar-star', 'zaffa_bands': 'fa-music',
-        'music_bands': 'fa-guitar', 'photographer': 'fa-camera', 'party_rental': 'fa-chair',
+        'music_bands': 'fa-guitar',  'party_rental': 'fa-chair',
         'home_nurse': 'fa-user-nurse', 'masseur': 'fa-hands-holding', 'cupping_specialist': 'fa-kit-medical',
         'nutritionist': 'fa-apple-whole', 'truck_driver': 'fa-truck', 'security_firms': 'fa-shield-halved',
         'furniture_buyer': 'fa-couch', 'gardener': 'fa-leaf', 'pet_care': 'fa-dog',
         'clown_entertainer': 'fa-face-smile-beam', 'online_stores': 'fa-shopping-basket', 'villas_rent': 'fa-vihara',
         'martial_arts_gymnastics': 'fa-user-ninja', 'public_parks_recreation': 'fa-tree', 'hotels': 'fa-hotel',
-        'free_distribution': 'fa-gift', 'barber_shop': 'fa-cut', 'video_design_ads': 'fa-film',
+        'free_distribution': 'fa-gift', 'barber_shop': 'fa-cut', 'photographers': 'fa-camera-retro', 'video_design_ads': 'fa-film',
         'pharmacies_on_call': 'fa-pills', 'taxis_on_call': 'fa-hand-holding-usd', 'emergency_hospitals': 'fa-hospital',
         'clinics': 'fa-stethoscope', 'doctors_on_call': 'fa-user-md', 'ambulances_on_call': 'fa-ambulance',
         'music_training': 'fa-music', 'lawyers': 'fa-gavel', 'land_surveyors': 'fa-ruler-combined',
         'real_estate_valuers': 'fa-calculator', 'private_tutors': 'fa-chalkboard-teacher', 'programmers': 'fa-code',
         'car_delivery_on_call': 'fa-car', 'motorcycle_delivery_on_call': 'fa-motorcycle',
-        'bicycle_delivery_on_call': 'fa-bicycle', 'photographers': 'fa-camera-retro',
+        'bicycle_delivery_on_call': 'fa-bicycle', 
         'student_research_assist': 'fa-book'
     };
 
@@ -115,6 +115,11 @@ function initializeQuickSearch(map, overlayLayersObj) {
             console.warn(`الطبقة "${layerKey}" غير محملة.`);
             alert(`الطبقة "${layerTitle}" غير محملة حالياً.`);
             return;
+        }
+
+        // تسجيل حدث البحث السريع
+        if (window.logMapEvent) {
+            window.logMapEvent('quick_search', null, layerTitle);
         }
 
         // تحديد workspace و layer name

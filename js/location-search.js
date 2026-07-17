@@ -100,6 +100,12 @@ function initializeLocationSearch(map, overlayLayersObj) {
         const selectedLayerKey = searchLayerSelect.value;
         if (!selectedLayerKey) return alert("الرجاء اختيار نوع العقار أو الخدمة.");
 
+        // تسجيل حدث البحث المكاني
+        if (window.logMapEvent) {
+            const layerTitle = overlayLayersObj[selectedLayerKey]?.get('title') || selectedLayerKey;
+            window.logMapEvent('location_search', null, layerTitle);
+        }
+
         const radiusStr = searchRadiusInput.value.trim();
 
         // تحديد workspace و layer name

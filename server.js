@@ -2,6 +2,7 @@
  * server.js 
  */
 
+
 const express = require('express');
 const { createProxyMiddleware } = require('http-proxy-middleware');
 const path = require('path');
@@ -114,6 +115,65 @@ const ALLOWED_LAYERS = [
 ];
 
 const isValidLayer = (layer) => ALLOWED_LAYERS.includes(layer.trim());
+
+// =========================================================================
+// [نظام حد الطلبات/الأحداث لكل مستخدم]: افتراضياً "مفتوح" بدون أي حد.
+// المشرف قادر على تحديد رقم أقصى (مثلاً 20) ونوع الفترة (يومي/أسبوعي/شهري)
+// من لوحة إدارة المستخدمين. يتم فحص هذا الحد عند كل "طلب/حدث" (نقرة اتصال
+// أو واتساب) قبل تسجيلها، عبر عمود "user_identifier" في جدول الإحصائيات
+// الذي يخزن رقم المستخدم الحقيقي (user_id) عند تسجيل الدخول.
+// =========================================================================
+async function checkUserRequestQuota(userId) {
+    // بدون معرف مستخدم (زائر) => لا يوجد حد مطبق إطلاقاً
+    if (!userId) {
+        return { allowed: true, unlimited: true };
+    }
+
+    try {
+        const userResult = await servicesPool.query(
+            'SELECT request_limit, request_limit_period FROM public.users WHERE user_id = $1',
+            [userId]
+        );
+
+        if (userResult.rows.length === 0) {
+            // مستخدم غير مسجل بقاعدة البيانات (ضيف مثلاً) => بدون حد
+            return { allowed: true, unlimited: true };
+        }
+
+        const { request_limit, request_limit_period } = userResult.rows[0];
+
+        // الحد الافتراضي: مفتوح تماماً (بدون أي رقم محدد)
+        if (!request_limit || request_limit <= 0) {
+            return { allowed: true, unlimited: true };
+        }
+
+        const period = ['daily', 'weekly', 'monthly'].includes(request_limit_period) ? request_limit_period : 'daily';
+        const intervalMap = { daily: '1 day', weekly: '7 days', monthly: '1 month' };
+        const intervalSql = intervalMap[period];
+
+        const countResult = await servicesPool.query(
+            `SELECT COUNT(*) FROM "public"."map_service_stats"
+             WHERE user_identifier = $1 AND request_date >= NOW() - INTERVAL '${intervalSql}'`,
+            [String(userId)]
+        );
+
+        const used = parseInt(countResult.rows[0].count, 10) || 0;
+        const remaining = Math.max(0, request_limit - used);
+
+        return {
+            allowed: used < request_limit,
+            unlimited: false,
+            limit: request_limit,
+            period,
+            used,
+            remaining
+        };
+    } catch (err) {
+        console.error('⚠️ خطأ أثناء فحص حد الطلبات، سيتم السماح بالطلب (Fail-open):', err.message);
+        // في حال أي خطأ غير متوقع لا نمنع المستخدم من استخدام الخدمة الأساسية
+        return { allowed: true, unlimited: true, error: true };
+    }
+}
 
 // =========================================================================
 // مسار جلب الخدمة المربوطة بمزود الخدمة والتحقق من اكتمال الحقول مع الإحداثيات
@@ -379,6 +439,54 @@ app.use('/geoserver-proxy', (req, res, next) => {
     }
 }));
 
+// 4-أ. مسار فحص حد الطلبات قبل تنفيذ أي "حدث/نقرة" (اتصال أو واتساب) - يُستدعى
+// من الواجهة الأمامية قبل فتح رابط الاتصال أو الواتساب فعلياً
+app.post('/api/check-request-limit', async (req, res) => {
+    const { user_id } = req.body;
+    const quota = await checkUserRequestQuota(user_id);
+    res.json({ success: true, ...quota });
+});
+
+// 4-ب. مسار تسجيل حدث/نقرة على الخريطة أو البحث (يُستدعى عند كل نقرة)
+app.post('/api/log-map-event', async (req, res) => {
+    const { user_id, event_type, provider, service } = req.body;
+
+    console.log("📥 تسجيل حدث خريطة/بحث:", req.body);
+
+    if (!user_id || !event_type) {
+        console.log("⚠️ بيانات ناقصة في تسجيل الحدث");
+        return res.status(400).json({ error: 'Missing required fields' });
+    }
+
+    try {
+        // 🛡️ فحص حد الطلبات كحاجز أمان على مستوى السيرفر
+        const quota = await checkUserRequestQuota(user_id);
+        if (!quota.allowed) {
+            console.log(`⛔ تم رفض الحدث: المستخدم ${user_id} تجاوز الحد المسموح (${quota.limit} / ${quota.period})`);
+            return res.status(429).json({
+                error: 'تم تجاوز الحد المسموح من الطلبات لهذه الفترة',
+                quota
+            });
+        }
+
+        const query = `
+            INSERT INTO "public"."map_service_stats" ("user_identifier", "provider_name", "service_type", "request_date")
+            VALUES ($1, $2, $3, NOW())
+        `;
+
+        await servicesPool.query(query, [user_id, provider || null, event_type]);
+
+        console.log(`\x1b[32m%s\x1b[0m`, `✅ نجاح تسجيل الحدث: ${event_type}`);
+        res.status(200).json({ status: 'success', message: 'Event logged successfully' });
+    } catch (err) {
+        console.error('❌ خطأ داخلي في SQL أثناء تسجيل الحدث:', err.message);
+        res.status(500).json({ 
+            error: 'Internal Server Error', 
+            details: err.message 
+        });
+    }
+});
+
 // 4. مسار استقبال الإحصائيات (POST)
 app.post('/save-stat', async (req, res) => {
     const { user_id, provider, service } = req.body;
@@ -391,6 +499,16 @@ app.post('/save-stat', async (req, res) => {
     }
 
     try {
+        // 🛡️ فحص حد الطلبات كحاجز أمان أخير على مستوى السيرفر (حتى لو تجاوزته الواجهة الأمامية)
+        const quota = await checkUserRequestQuota(user_id);
+        if (!quota.allowed) {
+            console.log(`⛔ تم رفض الطلب: المستخدم ${user_id} تجاوز الحد المسموح (${quota.limit} / ${quota.period})`);
+            return res.status(429).json({
+                error: 'تم تجاوز الحد المسموح من الطلبات لهذه الفترة',
+                quota
+            });
+        }
+
         const query = `
             INSERT INTO "public"."map_service_stats" ("user_identifier", "provider_name", "service_type", "request_date")
             VALUES ($1, $2, $3, NOW())
@@ -429,11 +547,15 @@ app.get('/api/stats-detailed', async (req, res) => {
                 TO_CHAR(s.request_date, 'YYYY-MM-DD HH24:MI:SS') as formatted_date
             FROM "public"."map_service_stats" s
             LEFT JOIN "public"."users" u ON u.user_id::text = s.user_identifier
+            WHERE (s.service_type ILIKE '%اتصال%' OR s.service_type ILIKE '%واتساب%')
             ORDER BY s.request_date DESC 
             LIMIT $1 OFFSET $2
         `;
 
-        const countQuery = 'SELECT COUNT(*) FROM "public"."map_service_stats"';
+        const countQuery = `
+            SELECT COUNT(*) FROM "public"."map_service_stats" s
+            WHERE (s.service_type ILIKE '%اتصال%' OR s.service_type ILIKE '%واتساب%')
+        `;
 
         const [dataRes, countRes] = await Promise.all([
             servicesPool.query(dataQuery, [limit, offset]),
@@ -691,7 +813,7 @@ app.get('/api/get-unique-values', async (req, res) => {
         const targetPool = workspace === 'realestate' ? realestatePool : servicesPool;
 
         // استعلام لجلب القيم الفريدة من الحقل المحدد
-        const query = `SELECT DISTINCT "${field}" FROM public."${layer}" WHERE status = 0 AND auto_status = 0 AND "${field}" IS NOT NULL AND "${field}" != '' ORDER BY "${field}" ASC LIMIT 10000`;
+        const query = `SELECT DISTINCT "${field}" FROM public."${layer}" WHERE status = 0 AND auto_status = 0 AND "${field}" IS NOT NULL AND "${field}"::text != '' ORDER BY "${field}" ASC LIMIT 10000`;
 
         console.log(`Unique Values Query for ${layer}.${field}:`, query);
 
@@ -887,10 +1009,12 @@ async function isAdminUser(req) {
     return false;
 }
 
-// 1. جلب جميع المستخدمين
+// 1. جلب جميع المستخدمين مع خيارات البحث والتصفية
 app.get('/api/admin/users', async (req, res) => {
     try {
-        const query = `
+        const { search, status_filter, role_filter } = req.query;
+        
+        let query = `
             SELECT 
                 user_id, 
                 full_name, 
@@ -903,15 +1027,80 @@ app.get('/api/admin/users', async (req, res) => {
                 feature_id,
                 x_coord,
                 y_coord,
-                created_at
+                created_at,
+                request_limit,
+                request_limit_period
             FROM public.users
-            ORDER BY user_id ASC
         `;
-        const result = await servicesPool.query(query);
+        
+        const conditions = [];
+        const params = [];
+        let paramIndex = 1;
+
+        // إضافة شرط البحث النصي (الاسم أو البريد أو رقم الجوال)
+        if (search && search.trim() !== '') {
+            conditions.push(`(
+                full_name ILIKE $${paramIndex} OR 
+                email ILIKE $${paramIndex} OR 
+                phone ILIKE $${paramIndex}
+            )`);
+            params.push(`%${search.trim()}%`);
+            paramIndex++;
+        }
+
+        // إضافة شرط حالة الاتصال (متصل/غير متصل)
+        if (status_filter === 'online') {
+            const onlineUserIds = Array.from(connectedUsers.keys());
+            if (onlineUserIds.length > 0) {
+                conditions.push(`user_id = ANY($${paramIndex})`);
+                params.push(onlineUserIds);
+                paramIndex++;
+            } else {
+                // إذا لم يكن هناك متصلين، نرجع قائمة فارغة
+                return res.json({
+                    success: true,
+                    users: [],
+                    onlineUserIds: [],
+                    total: 0
+                });
+            }
+        } else if (status_filter === 'offline') {
+            const onlineUserIds = Array.from(connectedUsers.keys());
+            if (onlineUserIds.length > 0) {
+                conditions.push(`user_id != ALL($${paramIndex})`);
+                params.push(onlineUserIds);
+                paramIndex++;
+            }
+        }
+
+        // إضافة شرط نوع المستخدم (دور المستخدم)
+        if (role_filter && role_filter !== 'all') {
+            conditions.push(`role = $${paramIndex}`);
+            params.push(role_filter);
+            paramIndex++;
+        }
+
+        // إضافة الشروط إلى الاستعلام
+        if (conditions.length > 0) {
+            query += ' WHERE ' + conditions.join(' AND ');
+        }
+
+        query += ' ORDER BY user_id ASC';
+
+        const result = await servicesPool.query(query, params);
+
+        // إضافة حالة الاتصال لكل مستخدم
+        const onlineUserIds = Array.from(connectedUsers.keys()).map(id => String(id));
+        const usersWithStatus = result.rows.map(user => ({
+            ...user,
+            is_online: onlineUserIds.includes(String(user.user_id))
+        }));
 
         res.json({
             success: true,
-            users: result.rows
+            users: usersWithStatus,
+            onlineUserIds: onlineUserIds,
+            total: usersWithStatus.length
         });
     } catch (error) {
         console.error('❌ خطأ في جلب المستخدمين:', error.message);
@@ -919,9 +1108,160 @@ app.get('/api/admin/users', async (req, res) => {
     }
 });
 
+// 1-أ. جلب قائمة معرّفات المستخدمين المتصلين حالياً فقط (لتحديث سريع دوري بدون إعادة جلب كل الجدول)
+app.get('/api/admin/online-users', (req, res) => {
+    try {
+        const onlineUserIds = Array.from(connectedUsers.keys()).map(id => String(id));
+        res.json({ success: true, onlineUserIds });
+    } catch (error) {
+        console.error('❌ خطأ في جلب حالة الاتصال:', error.message);
+        res.status(500).json({ success: false, error: 'فشل جلب حالة الاتصال', details: error.message });
+    }
+});
+
+// 1-ب. تسجيل خروج فوري لمستخدم محدد من قبل المشرف + إشعاره فوراً
+app.post('/api/admin/users/force-logout', async (req, res) => {
+    const { user_id } = req.body;
+
+    if (!user_id) {
+        return res.status(400).json({ success: false, error: 'معرف المستخدم مطلوب' });
+    }
+
+    try {
+        const checkUser = await servicesPool.query('SELECT user_id, full_name FROM public.users WHERE user_id = $1', [user_id]);
+        if (checkUser.rows.length === 0) {
+            return res.status(404).json({ success: false, error: 'المستخدم غير موجود' });
+        }
+
+        const title = '🚨 تسجيل خروج إجباري من الإدارة';
+        const message = 'تم تسجيل خروجك فوراً من قبل الإدارة. يرجى التواصل مع الإدارة حالاً لحل مشكلة الحظر قبل محاولة الدخول مجدداً.';
+
+        // حفظ الإشعار بقاعدة البيانات (يظهر له لاحقاً حتى لو كان غير متصل الآن)
+        await servicesPool.query(
+            `INSERT INTO "public"."notifications" (user_id, title, message, type, is_read, created_at)
+             VALUES ($1, $2, $3, 'error', false, NOW())`,
+            [user_id, title, message]
+        );
+
+        // إخراجه فوراً إن كان متصلاً حالياً عبر Socket.io
+        const targetSocketId = connectedUsers.get(user_id) || connectedUsers.get(String(user_id)) || connectedUsers.get(Number(user_id));
+        let wasOnline = false;
+        if (targetSocketId && global.io) {
+            global.io.to(targetSocketId).emit('force_relogin', { message });
+            wasOnline = true;
+            console.log(`🚨 تم تسجيل خروج إجباري فوري للمستخدم ${user_id}`);
+        } else {
+            console.log(`💤 المستخدم ${user_id} غير متصل حالياً، سيصله الإشعار عند دخوله القادم`);
+        }
+
+        res.json({
+            success: true,
+            message: wasOnline
+                ? 'تم تسجيل خروج المستخدم فوراً وإرسال التنبيه بنجاح'
+                : 'المستخدم غير متصل حالياً، لكن تم حفظ الإشعار وسيتم إخراجه فوراً فور دخوله',
+            wasOnline
+        });
+    } catch (error) {
+        console.error('❌ خطأ في تسجيل الخروج الإجباري:', error.message);
+        res.status(500).json({ success: false, error: 'فشل تنفيذ تسجيل الخروج الإجباري', details: error.message });
+    }
+});
+
+// 1-ج. تسجيل خروج جماعي لجميع المستخدمين (متصلين وغير متصلين)
+app.post('/api/admin/users/force-logout-all', async (req, res) => {
+    const { target_type, user_ids } = req.body; // target_type: 'all', 'online', 'offline', 'selected'
+
+    try {
+        let targetUsers = [];
+        let title = '🚨 تسجيل خروج جماعي من الإدارة';
+        let message = 'تم تسجيل خروجك من قبل الإدارة. يرجى إعادة تسجيل الدخول للمتابعة.';
+
+        // تحديد المستخدمين المستهدفين حسب نوع الاستهداف
+        switch (target_type) {
+            case 'all':
+                // جميع المستخدمين
+                const allUsersQuery = `SELECT user_id FROM public.users`;
+                const allUsersResult = await servicesPool.query(allUsersQuery);
+                targetUsers = allUsersResult.rows.map(row => row.user_id);
+                message = 'تم تسجيل خروج جميع المستخدمين من قبل الإدارة. يرجى إعادة تسجيل الدخول للمتابعة.';
+                break;
+
+            case 'online':
+                // المستخدمين المتصلين حالياً فقط
+                targetUsers = Array.from(connectedUsers.keys()).map(id => Number(id));
+                message = 'تم تسجيل خروج جميع المستخدمين المتصلين حالياً من قبل الإدارة.';
+                break;
+
+            case 'offline':
+                // المستخدمين غير المتصلين
+                const onlineUserIds = Array.from(connectedUsers.keys()).map(id => Number(id));
+                const offlineUsersQuery = `SELECT user_id FROM public.users WHERE user_id != ALL($1)`;
+                const offlineUsersResult = await servicesPool.query(offlineUsersQuery, [onlineUserIds.length > 0 ? onlineUserIds : [0]]);
+                targetUsers = offlineUsersResult.rows.map(row => row.user_id);
+                message = 'تم تسجيل خروج جميع المستخدمين غير المتصلين من قبل الإدارة.';
+                break;
+
+            case 'selected':
+                // مستخدمين محددين
+                if (!user_ids || user_ids.length === 0) {
+                    return res.status(400).json({ success: false, error: 'يجب اختيار مستخدم واحد على الأقل' });
+                }
+                targetUsers = user_ids.map(id => Number(id));
+                message = 'تم تسجيل خروجك من قبل الإدارة. يرجى إعادة تسجيل الدخول للمتابعة.';
+                break;
+
+            default:
+                return res.status(400).json({ success: false, error: 'نوع استهداف غير صالح' });
+        }
+
+        if (targetUsers.length === 0) {
+            return res.status(400).json({ success: false, error: 'لا يوجد مستخدمين مستهدفين' });
+        }
+
+        let onlineCount = 0;
+        let offlineCount = 0;
+
+        // إرسال الإشعارات وتسجيل الخروج لكل مستخدم
+        for (const userId of targetUsers) {
+            try {
+                // حفظ الإشعار في قاعدة البيانات
+                await servicesPool.query(
+                    `INSERT INTO "public"."notifications" (user_id, title, message, type, is_read, created_at)
+                     VALUES ($1, $2, $3, 'error', false, NOW())`,
+                    [userId, title, message]
+                );
+
+                // إخراجه فوراً إن كان متصلاً حالياً عبر Socket.io
+                const targetSocketId = connectedUsers.get(userId) || connectedUsers.get(String(userId)) || connectedUsers.get(Number(userId));
+                if (targetSocketId && global.io) {
+                    global.io.to(targetSocketId).emit('force_relogin', { message });
+                    onlineCount++;
+                    console.log(`🚨 تم تسجيل خروج فوري للمستخدم ${userId}`);
+                } else {
+                    offlineCount++;
+                    console.log(`💤 المستخدم ${userId} غير متصل، تم حفظ الإشعار فقط`);
+                }
+            } catch (err) {
+                console.error(`❌ خطأ في تسجيل خروج المستخدم ${userId}:`, err.message);
+            }
+        }
+
+        res.json({
+            success: true,
+            message: `تم تسجيل خروج ${targetUsers.length} مستخدم (${onlineCount} متصل، ${offlineCount} غير متصل)`,
+            total: targetUsers.length,
+            online: onlineCount,
+            offline: offlineCount
+        });
+    } catch (error) {
+        console.error('❌ خطأ في تسجيل الخروج الجماعي:', error.message);
+        res.status(500).json({ success: false, error: 'فشل تنفيذ تسجيل الخروج الجماعي', details: error.message });
+    }
+});
+
 // 2. تحديث بيانات مستخدم (تفعيل، تغيير الدور، ربط مزود خدمة، تغيير كلمة المرور)
 app.post('/api/admin/users/update', async (req, res) => {
-    const { user_id, role, is_active, service_layer, feature_id, new_password } = req.body;
+    const { user_id, role, is_active, service_layer, feature_id, new_password, request_limit, request_limit_period } = req.body;
 
     if (!user_id) {
         return res.status(400).json({ success: false, error: 'معرف المستخدم (user_id) مطلوب' });
@@ -971,6 +1311,21 @@ app.post('/api/admin/users/update', async (req, res) => {
         if (new_password && new_password.trim().length >= 6) {
             updateFields.push(`password_hash = $${idx++}`);
             updateValues.push(new_password.trim());
+        }
+
+        // تحديث حد الطلبات/الأحداث (اتركه فارغاً = مفتوح بدون حد - وهو الوضع الافتراضي)
+        if (request_limit !== undefined) {
+            const parsedLimit = (request_limit === null || request_limit === '') ? null : parseInt(request_limit, 10);
+            updateFields.push(`request_limit = $${idx++}`);
+            updateValues.push((parsedLimit && parsedLimit > 0) ? parsedLimit : null);
+        }
+
+        // تحديث نوع فترة حد الطلبات (يومي / أسبوعي / شهري)
+        if (request_limit_period !== undefined) {
+            const validPeriods = ['daily', 'weekly', 'monthly'];
+            const normalizedPeriod = validPeriods.includes(request_limit_period) ? request_limit_period : 'daily';
+            updateFields.push(`request_limit_period = $${idx++}`);
+            updateValues.push(normalizedPeriod);
         }
 
         if (updateFields.length === 0) {

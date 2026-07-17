@@ -35,7 +35,12 @@ function initializePolygonEditTools(map, overlayLayersObj) {
 
     // مصفوفات الحقول المتطابقة مع قاعدة البيانات الجغرافية
     const fieldsLand = [
-        { name: 'price', label: 'السعر ($)', type: 'number' },
+        { name: 'price', label: 'السعر', type: 'number' },
+        { name: 'currency', label: 'العملة', type: 'select', options: [
+            { value: 'USD', label: 'دولار $' },
+            { value: 'ILS', label: 'شيكل ₪' },
+            { value: 'JOD', label: 'دينار د.أ' }
+        ] },
         { name: 'des', label: 'وصف العقار', type: 'text' },
         { name: 'pic', label: 'رابط الصورة', type: 'url' },
         { name: 'area', label: 'المساحة (م٢)', type: 'number' },
@@ -195,6 +200,12 @@ function initializePolygonEditTools(map, overlayLayersObj) {
                 inputHTML = `<input type="date" name="${f.name}" value="${val}" style="width:100%; padding:8px; box-sizing:border-box;">`;
             } else if (f.type === 'number') {
                 inputHTML = `<input type="number" name="${f.name}" value="${val}" step="any" style="width:100%; padding:8px; box-sizing:border-box;">`;
+            } else if (f.type === 'select') {
+                const currentVal = val || (f.options && f.options[0] ? f.options[0].value : '');
+                const optionsHTML = (f.options || []).map(opt =>
+                    `<option value="${opt.value}" ${opt.value === currentVal ? 'selected' : ''}>${opt.label}</option>`
+                ).join('');
+                inputHTML = `<select name="${f.name}" style="width:100%; padding:8px; box-sizing:border-box;">${optionsHTML}</select>`;
             } else {
                 let align = (f.name === 'whatsapp') ? 'ltr' : 'rtl';
                 inputHTML = `<input type="text" name="${f.name}" value="${val}" style="width:100%; padding:8px; box-sizing:border-box; direction:${align};">`;
@@ -419,7 +430,7 @@ function initializePolygonEditTools(map, overlayLayersObj) {
 
             // الالتزام التام بالترتيب الهيكلي الصارم لطبقات المضلعات بداخل الجيوسيرفر (بدون حقول الإحداثيات)
             const landSchemaOrder = [
-                'geom', 'location', 'price', 'des', 'pic', 'area',
+                'geom', 'location', 'price', 'currency', 'des', 'pic', 'area',
                 'status', 'gov_a', 'village_a',
                 'start_date', 'end_date', 'work_hours',
                 'auto_status', 'whatsapp', 'search_tags', 'rating'
@@ -441,6 +452,7 @@ function initializePolygonEditTools(map, overlayLayersObj) {
                         if (k === 'rating') val = 5;
                         else if (k === 'price' || k === 'area') val = 0;
                         else if (k === 'status' || k === 'auto_status') val = 0;
+                        else if (k === 'currency') val = 'USD';
                         else return; // تخطي الحقول الفارغة الأخرى غير الإلزامية
                     }
                     if (k === 'rating') val = Number(val).toFixed(1);
@@ -456,8 +468,8 @@ function initializePolygonEditTools(map, overlayLayersObj) {
                 return;
             }
             let propsXML = '';
-            const allowedPropsUpdate = isRealEstate ? 
-                ['price', 'des', 'pic', 'area', 'end_date', 'work_hours', 'whatsapp', 'rating', 'search_tags'] :
+           const allowedPropsUpdate = isRealEstate ? 
+                ['price', 'currency', 'des', 'pic', 'area', 'end_date', 'work_hours', 'whatsapp', 'rating', 'search_tags'] :
                 ['gov_a', 'village_a', 'location'];
 
             allowedPropsUpdate.forEach(k => {

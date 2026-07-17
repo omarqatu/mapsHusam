@@ -19,7 +19,12 @@ function initializeEditTools(map, overlayLayersObjParam) {
     realEstateLayers = ['rentLayer', 'saleLayer']; 
 
     const fieldsRealEstate = [
-        { name: 'price', label: 'السعر ($)', type: 'number' },
+        { name: 'price', label: 'السعر', type: 'number' },
+        { name: 'currency', label: 'العملة', type: 'select', options: [
+            { value: 'USD', label: 'دولار $' },
+            { value: 'ILS', label: 'شيكل ₪' },
+            { value: 'JOD', label: 'دينار د.أ' }
+        ] },
         { name: 'des', label: 'وصف العقار', type: 'text' },
         { name: 'pic', label: 'رابط الصورة', type: 'url' },
         { name: 'video', label: 'رابط الفيديو', type: 'url' },
@@ -217,6 +222,12 @@ function initializeEditTools(map, overlayLayersObjParam) {
                 inputHTML = `<input type="date" name="${f.name}" value="${val}" style="width:100%; padding:8px; border:1px solid #ccc; border-radius:4px;">`;
             } else if (f.type === 'number') {
                 inputHTML = `<input type="number" name="${f.name}" value="${val}" step="any" style="width:100%; padding:8px; border:1px solid #ccc; border-radius:4px;">`;
+            } else if (f.type === 'select') {
+                const currentVal = val || (f.options && f.options[0] ? f.options[0].value : '');
+                const optionsHTML = (f.options || []).map(opt =>
+                    `<option value="${opt.value}" ${opt.value === currentVal ? 'selected' : ''}>${opt.label}</option>`
+                ).join('');
+                inputHTML = `<select name="${f.name}" style="width:100%; padding:8px; border:1px solid #ccc; border-radius:4px;">${optionsHTML}</select>`;
             } else {
                 let align = (f.name === 'whatsapp') ? 'ltr' : 'rtl';
                 inputHTML = `<input type="text" name="${f.name}" value="${val}" style="width:100%; padding:8px; border:1px solid #ccc; border-radius:4px; direction:${align};">`;
@@ -248,13 +259,13 @@ function initializeEditTools(map, overlayLayersObjParam) {
 
         const servicesMapping = {
             'electrician': 'فني كهرباء', 'ac_technician': 'فني تكييف وتبريد', 'plumber': 'سباك مواسيرجي',
-            'general_maintenance': 'صيانة عامة', 'painter': 'دهان وديكور', 'carpenter': 'نجار',
+            'general_maintenance': 'صيانة عامة', 'painter': 'دهان/طراشة', 'photographer': 'فني ديكور', 'carpenter': 'نجار',
             'blacksmith': 'حداد', 'builder': 'بناء ومعمار', 'house_cleaner': 'خدمات تنظيف',
             'aluminum_tech': 'فني ألمنيوم', 'car_mechanic': 'ميكانيكي سيارات', 'car_electrician': 'كهربائي سيارات',
             'tire_tech': 'بنشري إطارات', 'car_wash': 'غسيل سيارات', 'motorcycle_repair': 'صيانة دراجات نارية',
             'taxi_driver': 'مكتب تاكسي', 'delivery_services': 'خدمات توصيل', 'tow_truck': 'ونش إنقاذ',
             'cctv_installer': 'فني كاميرات مراقبة', 'party_planner': 'منظم حفلات', 'zaffa_bands': 'فرقة زفة',
-            'music_bands': 'فرق موسيقية', 'photographer': 'مصور فوتوغرافي', 'party_rental': 'تأجير مستلزمات حفلات',
+            'music_bands': 'فرق موسيقية',  'party_rental': 'تأجير مستلزمات حفلات',
             'home_nurse': 'تمريض منزلي', 'masseur': 'أخصائي مساج', 'cupping_specialist': 'أخصائي حجامة',
             'nutritionist': 'أخصائي تغذية', 'truck_driver': 'سائق شاحنة', 'security_firms': 'شركات أمن وحراسة',
             'furniture_buyer': 'شراء أثاث مستعمل', 'gardener': 'تنسيق حدائق', 'pet_care': 'رعاية حيوانات أليفة',
@@ -274,7 +285,8 @@ function initializeEditTools(map, overlayLayersObjParam) {
             'ac_technician': 'تكييف، تبريد، غاز فريون، تصليح مكيفات، مكيف، سنترال، غسالات، ثلاجات، فك وتركيب',
             'plumber': 'مواسير، حنفيات، تسريب مياه، تصريف، مضخات، فلاتر مياه، جيزر، حمامات، صيانة سباكة',
             'general_maintenance': 'ترميم، تصليحات عامة، صيانة منازل، منشآت، تشطيب، خدمات منزلية شاملة',
-            'painter': 'دهانات، ديكور، جدران، ورق حائط، منازل، شقق، جبصين، معجونة، طلاء، أصباغ',
+            'painter': 'دهانات، ديكور، جدران، ورق حائط، طريش منازل، شقق، جبصين، معجونة، طلاء، أصباغ',
+            'photographer': 'ديكور، زينة بيت، جبسين، جابسين، جبس، اشكال حيطان للبيت، معلم ديكور',
             'carpenter': 'منجرة، خشب، تصليح اثاث، مطابخ، غرف نوم، ابواب خشب، فك وتركيب، نجارة، صيانة أثاث',
             'blacksmith': 'حديد، حماية نوافذ، أبواب حديد، مظلات، دربزينات، لحام حديد، ورشة حدادة',
             'builder': 'مقاولات، بناء، طوب، حجر، إسمنت، عظم، تشطيب، معمار، صبة، مقاول بنا وخرسانة',
@@ -292,7 +304,6 @@ function initializeEditTools(map, overlayLayersObjParam) {
             'party_planner': 'تجهيز حفلات، أعياد ميلاد، خطوبة، أعراس، منسق حفلات، ديكورات حفلات، بالونات',
             'zaffa_bands': 'فرقة زفة، زفات، أعراس، طبول، عرس، أحداث ومناسبات، زفة عرسان، فلكلور',
             'music_bands': 'فرق موسيقية، دي جي، مطرب، إحياء حفلات، صوتيات، أجهزة صوت، مكبرات، موسيقى حية',
-            'photographer': 'جلسات تصوير، تصوير فيديو، فوتوغرافي، تصوير عرسان، تصوير منتجات، البومات، كاميرا',
             'party_rental': 'كراسي للحفلات، تأجير طاولات، خيم، سماعات، ليتات، مستلزمات مناسبات، تأجير صواوين',
             'home_nurse': 'رعاية صحية، تمريض منزلي، غيار جروح، إبر، رعاية كبار السن، مرافق طبي، ضغط وسكري',
             'masseur': 'مساج طبيعي، تدليك، استرخاء، مساج منزلي، علاج طبيعي، مساج علاجي، تشنجات عضلية',

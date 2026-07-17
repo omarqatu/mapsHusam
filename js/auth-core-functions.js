@@ -1,9 +1,27 @@
 /**
  * auth-core-functions.js
  * يحتوي على الدوال الأساسية ومنطق التحكم في الواجهة للمستخدمين (مستخدم عادي، مزود خدمة، مشرف)
+ *
+ * 🆕 تعديل عزل الخريطة: أضيفت window.__platformEntered و showPlatformShell().
+ * الخريطة (#app-shell كاملاً) تبقى display:none من الـ HTML مباشرة، ولا تظهر
+ * ولا تتم تهيئتها (initMapPlatform) إلا من داخل enterPlatform() هنا - أي فقط
+ * بعد اكتمال تسجيل الدخول أو التسجيل فعلياً (أو التحقق من جلسة محفوظة صحيحة).
  */
 
 window.currentAppUser = null;
+
+// 🆕 حارس عام: هل اكتمل الدخول فعلياً ويُسمح بإظهار/تهيئة الخريطة؟
+window.__platformEntered = window.__platformEntered || false;
+
+// 🆕 إظهار غلاف الخريطة (#app-shell) فقط - لا يقوم بأي تهيئة، فقط يزيل الإخفاء
+function showPlatformShell() {
+    const shell = document.getElementById('app-shell');
+    if (shell) shell.style.display = 'block';
+
+    // لوحة مزود الخدمة خارج app-shell (بنهاية الصفحة)، تُفك حمايتها هنا فقط
+    const providerPanel = document.getElementById('provider-mini-panel');
+    if (providerPanel) providerPanel.style.removeProperty('display');
+}
 
 // ==========================================
 // دالة الإخفاء الصارم والمطلق لأزرار ولوحات التحرير الخاصة بالمشرف فقط عند بدء التشغيل
@@ -96,12 +114,23 @@ function applyMapInterfacePermissions() {
 
 // ==========================================
 // دالة الدخول وتفعيل النظام وتوزيع الصلاحيات وحفظ الجلسة
+// 🆕 هذه هي النقطة الوحيدة المسموح منها إظهار #app-shell وتهيئة الخريطة
 // ==========================================
 function enterPlatform(userData, isAutoboot = false) {
     window.currentAppUser = userData;
 
     // حفظ الجلسة الموحدة في المتصفح لضمان عدم حدوث تشتت عند عمل Refresh
     localStorage.setItem('map_user', JSON.stringify(window.currentAppUser));
+
+    // 🆕 الخطوة 3 (بعد التسجيل/الدخول): فك تجميد الخريطة بالترتيب الصحيح:
+    // أولاً إظهار الغلاف (ليأخذ الـ #map أبعاده الحقيقية)، ثم تهيئة الخريطة
+    // مرة واحدة فقط طوال عمر الصفحة.
+    window.__platformEntered = true;
+    showPlatformShell();
+    if (typeof window.initMapPlatform === 'function' && !window.__mapPlatformInitialized) {
+        window.__mapPlatformInitialized = true;
+        window.initMapPlatform();
+    }
 
     // تطبيق الصلاحيات وبناء شريط الهوية
     applyMapInterfacePermissions();

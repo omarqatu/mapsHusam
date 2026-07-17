@@ -541,4 +541,10 @@ body {
     background-color: #27ae60 !important; /* أخضر لتمييزه عن التحديث */
 }
 
+/* هذا يضمن أن الخريطة مخفية تماماً لحظة بدء تحميل الصفحة */
+#map {
+    opacity: 0;
+    transition: opacity 0.5s ease-in-out;
+}
+
 .modal { z-index: 100000 !important; background-color: rgba(0,0,0,0.3) !important; }

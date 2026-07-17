@@ -1,5 +1,9 @@
 /**
  * main.js - 
+ * 🆕 تعديل عزل الخريطة: كامل كود التهيئة أصبح داخل window.initMapPlatform()
+ * ولا يتم استدعاؤه تلقائياً عند تحميل الصفحة (DOMContentLoaded). يتم استدعاؤه
+ * فقط مرة واحدة من enterPlatform() في auth-core-functions.js بعد اكتمال
+ * تسجيل الدخول/التسجيل فعلياً، لمنع أي init أو ظهور مبكر للخريطة وطبقاتها.
  */
 
 if (typeof proj4 !== 'undefined') {
@@ -165,7 +169,12 @@ window.userLiveLocationLayer = new ol.layer.Vector({
     zIndex: 2001
 });
 
-document.addEventListener('DOMContentLoaded', () => {
+// 🆕 حارس منع الاستدعاء المزدوج (initMapPlatform يجب أن ينفذ مرة واحدة فقط)
+window.__mapPlatformInitialized = window.__mapPlatformInitialized || false;
+
+// 🆕 كامل منطق تهيئة الخريطة أصبح دالة عامة تُستدعى صراحة من enterPlatform()
+// بعد إظهار #app-shell، وليس تلقائياً عند تحميل الصفحة.
+window.initMapPlatform = function () {
     // ربط وظيفة زر البحث بدون خريطة
     const noMapBtn = document.getElementById('no-map-search-btn');
         if (noMapBtn) {
@@ -228,6 +237,9 @@ document.addEventListener('DOMContentLoaded', () => {
         })
     });
     window.map = map;
+
+    // 🆕 التأكد من أن الخريطة تأخذ الأبعاد الصحيحة بعد ظهور #app-shell فعلياً
+    requestAnimationFrame(() => map.updateSize());
 
     // متغيرات تتبع الموقع الحي والمستمر
     window.userLocationWatchId = null;
@@ -293,47 +305,34 @@ document.addEventListener('DOMContentLoaded', () => {
         );
     };
 
-            // --- 3. بناء واجهة الاختيار المطور وحقن زر الموقع والنافذة المنبثقة لإقلاع الخريطة ---
+           // --- 3. بناء واجهة الاختيار المطور وحقن زر الموقع والنافذة المنبثقة لإقلاع الخريطة ---
 setTimeout(() => {
     const zoomContainer = document.querySelector('.ol-zoom');
     if (zoomContainer) {
-        // تحقق لمنع تكرار حقن الزر
         if (!document.querySelector('.ol-custom-location-btn')) {
             const locationBtn = document.createElement('button');
             locationBtn.className = 'ol-custom-location-btn';
             locationBtn.setAttribute('type', 'button');
             locationBtn.setAttribute('title', 'تحديد موقعي الحالي');
             locationBtn.innerHTML = '🎯';
-
             zoomContainer.appendChild(locationBtn);
-
-            locationBtn.onclick = () => {
-                getUserCurrentLocation(locationBtn);
-            };
+            locationBtn.onclick = () => { getUserCurrentLocation(locationBtn); };
         }
     }
 
-    // [تطوير ذكي]: التحقق من وجود إحداثيات في الرابط لتخطي نافذة الإقلاع تلقائياً
     const urlParams = new URLSearchParams(window.location.search);
     const xParam = urlParams.get('x');
     const yParam = urlParams.get('y');
 
     if (xParam && yParam) {
-        const targetCoords = [parseFloat(xParam), parseFloat(yParam)];
-        // التوجه المباشر للموقع بزووم 19 فوراً
-        map.getView().animate({
-            center: targetCoords,
-            zoom: 19,
-            duration: 1000
-        });
-        return; // الخروج وعدم بناء النافذة لأننا نريد التوجه للموقع مباشرة
+        document.getElementById('map').style.opacity = '1'; // إظهار الخريطة
+        map.getView().animate({ center: [parseFloat(xParam), parseFloat(yParam)], zoom: 19, duration: 1000 });
+        return;
     }
 
-    // تحقق لمنع تكرار حقن النافذة (لن تنفذ إذا كان هناك إحداثيات في الرابط)
     if (!document.getElementById('custom-splash-overlay')) {
         const splashOverlay = document.createElement('div');
         splashOverlay.id = 'custom-splash-overlay';
-        // تم إسناد الخصائص الأساسية برمجياً مع ترك التحكم المرن للـ CSS
         Object.assign(splashOverlay.style, {
             position: 'fixed', top: '0', left: '0', width: '100%', height: '100%',
             backgroundColor: 'rgba(0, 0, 0, 0.55)', zIndex: '200000',
@@ -346,42 +345,22 @@ setTimeout(() => {
 
         dialogBox.innerHTML = `
             <div style="font-family: sans-serif; color: #2c3e50;">
-                <h3 style="margin-top:0; margin-bottom:15px; font-size:20px; font-weight:700; text-align:center;">
-                    منصة خريطة الخدمات الفلسطينية
-                </h3>
-                
-                <!-- مربع النسخة التجريبية -->
+                <h3 style="margin-top:0; margin-bottom:15px; font-size:20px; font-weight:700; text-align:center;">منصة خريطة الخدمات الفلسطينية</h3>
                 <p style="margin-bottom:20px; color:#1a5276; font-size:13px; text-align:center; font-weight:600; background:#f0f7ff; padding:12px; border-radius:8px; border: 1px solid #d1e7ff;">
                     ✨ النسخة التجريبية - و لإعادة ترتيب الواجهات واللوحات قم بتحديث المتصفح (يمكن تصغير/تكبير او تحريك أي لوحة او قائمة).
                 </p>
-
-                <p style="font-size: 14px; text-align: center; font-weight: 700; margin-bottom: 15px;">
-                    📍 للبدء إختر نطاق التركيز لبدء استكشاف الخريطة 📍:
-                </p>
-                
+                <p style="font-size: 14px; text-align: center; font-weight: 700; margin-bottom: 15px;">📍 للبدء إختر نطاق التركيز لبدء استكشاف الخريطة 📍:</p>
                 <div id="splash-options-container" style="display:flex; flex-direction:column; gap:10px;">
-                        <button class="splash-opt-btn" data-type="default" style="padding:12px; font-size:14px; background:#2c3e50; color:white; border:none; border-radius:4px; cursor:pointer; font-weight:500; text-align:right; transition:background 0.2s;">1. العرض الافتراضي للمنصة  </button>
-                        <button class="splash-opt-btn" data-type="gps" style="padding:12px; font-size:14px; background:#2c3e50; color:white; border:none; border-radius:4px; cursor:pointer; font-weight:500; text-align:right; transition:background 0.2s;">2. تحديد النطاق حسب موقعي الحالي (GPS)</button>
-                    </div>
-
-                <!-- مربع البحث (موحد بنفس تنسيق مربع النسخة التجريبية) -->
-                <div id="no-map-link-container" style="background:#f0f7ff; padding:12px; border-radius:8px; border:1px solid #d1e7ff; text-align:center;">
-                    <p style="font-size: 13px; color: #1a5276; font-weight: 600; margin: 0 0 12px 0;">
-                        💡 يمكنك أيضاً البحث عن الخدمات من خلال قائمة المعلومات بدلاً من الخريطة، والتنقل بينهما بسهولة.
-                    </p>
-                    <a href="no-map-search.html" id="no-map-link" target="_blank" style="display: inline-block; padding: 10px 20px; background: #27ae60; color: #ffffff; border-radius: 6px; font-weight: 700; text-decoration: none; font-size: 13px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
-                        ⇽ الانتقال إلى صفحة البحث بالمعلومات
-                    </a>
+                    <button class="splash-opt-btn" data-type="default" style="padding:12px; font-size:14px; background:#2c3e50; color:white; border:none; border-radius:4px; cursor:pointer; font-weight:500; text-align:right; transition:background 0.2s;">1. العرض الافتراضي للمنصة  </button>
+                    <button class="splash-opt-btn" data-type="gps" style="padding:12px; font-size:14px; background:#2c3e50; color:white; border:none; border-radius:4px; cursor:pointer; font-weight:500; text-align:right; transition:background 0.2s;">2. تحديد النطاق حسب موقعي الحالي (GPS)</button>
+                </div>
+                <div id="no-map-link-container" style="margin-top:15px; background:#f0f7ff; padding:12px; border-radius:8px; border:1px solid #d1e7ff; text-align:center;">
+                    <p style="font-size: 13px; color: #1a5276; font-weight: 600; margin: 0 0 12px 0;">💡 يمكنك أيضاً البحث عن الخدمات من خلال قائمة المعلومات بدلاً من الخريطة، والتنقل بينهما بسهولة.</p>
+                    <a href="no-map-search.html" id="no-map-link" target="_blank" style="display: inline-block; padding: 10px 20px; background: #27ae60; color: #ffffff; border-radius: 6px; font-weight: 700; text-decoration: none; font-size: 13px;">⇽ الانتقال إلى صفحة البحث بالمعلومات</a>
                 </div>
             </div>
         `;
 
-        // إضافة تأثير الـ Hover للرابط برمجياً
-        const noMapLink = dialogBox.querySelector('#no-map-link');
-        noMapLink.addEventListener('mouseover', () => noMapLink.style.background = '#219150');
-        noMapLink.addEventListener('mouseout', () => noMapLink.style.background = '#27ae60');
-
-        // حقن أزرار المدن برمجياً داخل الحاوية الموجودة في الـ HTML
         const optionsContainer = dialogBox.querySelector('#splash-options-container');
         if (typeof citiesCoordinates !== 'undefined') {
             Object.keys(citiesCoordinates).forEach(key => {
@@ -390,11 +369,7 @@ setTimeout(() => {
                 cityBtn.setAttribute('data-type', 'city');
                 cityBtn.setAttribute('data-city', key);
                 cityBtn.innerText = citiesCoordinates[key].name;
-                Object.assign(cityBtn.style, {
-                    padding: '10px', fontSize: '14px', background: '#34495e', color: 'white',
-                    border: 'none', borderRadius: '4px', cursor: 'pointer', fontWeight: '500',
-                    textAlign: 'right', transition: 'background 0.2s'
-                });
+                Object.assign(cityBtn.style, { padding: '10px', fontSize: '14px', background: '#34495e', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', fontWeight: '500', textAlign: 'right' });
                 optionsContainer.appendChild(cityBtn);
             });
         }
@@ -402,36 +377,24 @@ setTimeout(() => {
         splashOverlay.appendChild(dialogBox);
         document.body.appendChild(splashOverlay);
 
-        // ربط الأحداث لجميع الأزرار
         dialogBox.querySelectorAll('.splash-opt-btn').forEach(btn => {
             btn.addEventListener('click', function() {
                 const type = this.getAttribute('data-type');
                 const locationBtnEl = document.querySelector('.ol-custom-location-btn');
+                
+                // إظهار الخريطة عند الاختيار
+                document.getElementById('map').style.opacity = '1';
+                splashOverlay.remove();
 
-                if (type === 'default') {
-                    splashOverlay.remove();
-                } else if (type === 'gps') {
-                    splashOverlay.remove();
-                    getUserCurrentLocation(locationBtnEl);
-                } else if (type === 'city') {
-                    const cityName = this.getAttribute('data-city');
-                    const cityData = citiesCoordinates[cityName];
-                    if (cityData && cityData.coords) {
-                        map.getView().animate({
-                            center: cityData.coords,
-                            zoom: 19,
-                            duration: 1000
-                        });
-                    }
-                    splashOverlay.remove();
+                if (type === 'gps') { getUserCurrentLocation(locationBtnEl); } 
+                else if (type === 'city') {
+                    const cityData = citiesCoordinates[this.getAttribute('data-city')];
+                    if (cityData) map.getView().animate({ center: cityData.coords, zoom: 19, duration: 1000 });
                 }
             });
-
-            btn.addEventListener('mouseover', function() { this.style.background = '#2c3e50'; });
-                        btn.addEventListener('mouseout', function() { this.style.background = '#34495e'; });
-                    });
-                }
-            }, 1000);
+        });
+    }
+}, 100);
 
         // --- 4. إدارة تعبئة قوائم التحرير ---
         const populateEditSelects = () => {
@@ -618,4 +581,4 @@ setTimeout(() => {
             });
         };
     }
-});
+}; // 🆕 نهاية window.initMapPlatform

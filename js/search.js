@@ -5,6 +5,33 @@
     let currentOverlayLayers = null;
     let conditions = [];
 
+    // 🆕 دالة موحّدة لإضافة قائمة اختيار العملة بجانب حقل القيمة عند البحث بالسعر
+    function appendCurrencySelector(container) {
+        const wrap = document.createElement('div');
+        wrap.style.marginTop = '8px';
+
+        const label = document.createElement('div');
+        label.textContent = 'العملة:';
+        label.style.cssText = 'font-size:12px; font-weight:bold; color:#555; margin-bottom:4px;';
+
+        const currencySelect = document.createElement('select');
+        currencySelect.id = 'value-currency-select';
+        Object.assign(currencySelect.style, {
+            width: "100%", padding: "10px", border: "1px solid #ccc",
+            borderRadius: "4px", backgroundColor: "#fff", fontSize: "14px"
+        });
+        currencySelect.innerHTML = `
+            <option value="">كل العملات</option>
+            <option value="USD">دولار $</option>
+            <option value="ILS">شيكل ₪</option>
+            <option value="JOD">دينار د.أ</option>
+        `;
+
+        wrap.appendChild(label);
+        wrap.appendChild(currencySelect);
+        container.appendChild(wrap);
+    }
+
     const fieldsConfig = {
         realEstate: [
             { id: 'village_a', name: 'المدينة/القرية', type: 'dropdown' },
@@ -160,12 +187,24 @@
                 container.appendChild(input);
                 container.appendChild(backBtn);
                 valueInputContainer.appendChild(container);
+                container.appendChild(input);
+                container.appendChild(backBtn);
+                valueInputContainer.appendChild(container);
+                // 🆕 إعادة إضافة قائمة العملة بعد التحويل لإدخال يدوي
+                if (fieldSelect && fieldSelect.value === 'price') {
+                    appendCurrencySelector(valueInputContainer);
+                }
+                input.focus();
                 input.focus();
             }
         };
 
         valueInputContainer.appendChild(select);
+        if (fieldSelect && fieldSelect.value === 'price') {
+            appendCurrencySelector(valueInputContainer);
+        }
     }
+    
 
     function updateValueUI() {
         const layerKey = layerSelect.value;
@@ -307,6 +346,14 @@
             const currentVal = document.getElementById('value-input')?.value.trim();
             if (finalConditions.length === 0 && currentVal) {
                 finalConditions.push({ field: fieldSelect.value, fieldName: fieldSelect.options[fieldSelect.selectedIndex].text, operator: operatorSelect.value, value: currentVal });
+
+                // 🆕 إضافة شرط العملة تلقائياً بنفس المسار السريع
+                if (fieldSelect.value === 'price') {
+                    const currencySelect = document.getElementById('value-currency-select');
+                    if (currencySelect && currencySelect.value) {
+                        finalConditions.push({ field: 'currency', fieldName: 'العملة', operator: '=', value: currencySelect.value });
+                    }
+                }
             }
             if (finalConditions.length === 0) return alert("حدد معايير البحث.");
 
@@ -376,6 +423,15 @@
             const val = document.getElementById('value-input')?.value.trim();
             if (!val) return;
             conditions.push({ field: fieldSelect.value, fieldName: fieldSelect.options[fieldSelect.selectedIndex].text, operator: operatorSelect.value, value: val });
+
+            // 🆕 إضافة شرط العملة تلقائياً إذا كان الحقل هو السعر وتم اختيار عملة محددة
+            if (fieldSelect.value === 'price') {
+                const currencySelect = document.getElementById('value-currency-select');
+                if (currencySelect && currencySelect.value) {
+                    conditions.push({ field: 'currency', fieldName: 'العملة', operator: '=', value: currencySelect.value });
+                }
+            }
+
             renderConditions();
             
             // تهيئة الحقل بعد الإضافة حسب نوعه (تفادياً لمشاكل الخيار الفارغ في الـ select)
@@ -384,7 +440,6 @@
                 inputElem.value = '';
             }
         };
-
         document.getElementById('clear-search').onclick = () => {
             conditions = [];
             renderConditions();

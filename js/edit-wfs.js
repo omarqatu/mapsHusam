@@ -89,12 +89,12 @@ async function sendWFS_T(feature, type) {
 
     // عزل حقول المدخلات اليدوية لكل بيئة بشكل مستقل ومضمون (شقق عقارات مقابل خدمات نقاط)
     const allowedPropsAdd = isRealEstate ?
-        ['price', 'des', 'pic', 'video', 'area', 'whatsapp', 'end_date', 'work_hours', 'rating', 'location'] :
+        ['price', 'currency', 'des', 'pic', 'video', 'area', 'whatsapp', 'end_date', 'work_hours', 'rating', 'location'] :
         ['name', 'whatsapp', 'des', 'pic', 'rating', 'details_link_1', 'details_link_2', 'end_date', 'work_hours'];
 
     // إضافة search_tags وغيرها لضمان تحديثها عند التعديل
     const allowedPropsUpdate = isRealEstate ?
-        ['price', 'des', 'pic', 'video', 'area', 'end_date', 'work_hours', 'whatsapp', 'rating', 'location', 'search_tags'] :
+        ['price', 'currency', 'des', 'pic', 'video', 'area', 'end_date', 'work_hours', 'whatsapp', 'rating', 'location', 'search_tags'] :
         ['name', 'whatsapp', 'pic', 'rating', 'details_link_1', 'details_link_2', 'end_date', 'work_hours', 'des', 'search_tags'];
 
     let payload = '';
@@ -169,7 +169,7 @@ async function sendWFS_T(feature, type) {
 
         // 🎯 الترتيب الهيكلي المتطابق تماماً مع Schema الجيوسيرفر لجدول الشقق والخدمات (الـ Sequence الصارم)
         const realEstateSchemaOrder = [
-            'geom', 'location', 'price', 'des', 'pic', 'video', 'area',
+            'geom', 'location', 'price', 'currency', 'des', 'pic', 'video', 'area',
             'x_coord', 'y_coord', 'status', 'gov_a', 'village_a',
             'X', 'Y', 'start_date', 'end_date', 'work_hours',
             'auto_status', 'whatsapp', 'search_tags', 'rating'

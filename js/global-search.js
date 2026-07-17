@@ -13,13 +13,13 @@ const layerAliases = {
     
     // --- الخدمات القديمة (34) ---
     'electrician': 'فني كهرباء', 'ac_technician': 'فني تكييف وتبريد', 'plumber': 'سباك (مواسيرجي)',
-    'general_maintenance': 'صيانة عامة', 'painter': 'دهان وديكور', 'carpenter': 'نجار',
+    'general_maintenance': 'صيانة عامة', 'painter': 'دهان/طراشة', 'photographer': 'فني ديكور', 'carpenter': 'نجار',
     'blacksmith': 'حداد', 'builder': 'بناء ومعمار', 'aluminum_tech': 'فني ألمنيوم',
     'house_cleaner': 'خدمات تنظيف تعزيل', 'gardener': 'تنسيق حدائق', 'car_mechanic': 'ميكانيكي سيارات',
     'car_electrician': 'كهربائي سيارات', 'tire_tech': 'بنشري / إطارات', 'car_wash': 'غسيل سيارات',
     'motorcycle_repair': 'صيانة دراجات نارية', 'taxi_driver': 'مكتب تاكسي', 'delivery_services': 'خدمات توصيل',
     'tow_truck': 'ونش إنقاذ / سطحة', 'truck_driver': 'سائق شاحنة', 'party_planner': 'منظم حفلات',
-    'zaffa_bands': 'فرق زفة أعراس', 'music_bands': 'فرق موسيقية', 'photographer': 'مصور فوتوغرافي',
+    'zaffa_bands': 'فرق زفة أعراس', 'music_bands': 'فرق موسيقية', 
     'party_rental': 'تأجير مستلزمات حفلات', 'clown_entertainer': 'مهرج وعروض أطفال',
     'home_nurse': 'تمريض منزلي', 'masseur': 'أخصائي مساج', 'cupping_specialist': 'أخصائي حجامة',
     'nutritionist': 'أخصائي تغذية', 'pet_care': 'رعاية حيوانات أليفة', 'cctv_installer': 'فني كاميرات مراقبة',
@@ -29,7 +29,7 @@ const layerAliases = {
     'online_stores': 'متاجر أون لاين', 'villas_rent': 'فلل أجار', 
     'martial_arts_gymnastics': 'فنون قتالية وجمباز', 'public_parks_recreation': 'حدائق ومناطق ترفيهية',
     'hotels': 'فنادق', 'free_distribution': 'توزيع أغراض مجاناً', 
-    'barber_shop': 'حلاقة شباب', 'video_design_ads': 'تصميم فيديو إعلاني', 
+    'barber_shop': 'حلاقة شباب', 'photographers': 'مصور فوتوغرافي', 'video_design_ads': 'تصميم فيديو إعلاني', 
     'pharmacies_on_call': 'صيدليات مناوبة', 'taxis_on_call': 'تكاسي نظام مناوبة', 
     'emergency_hospitals': 'طوارئ ومستشفيات', 'clinics': 'عيادات', 
     'doctors_on_call': 'دكاترة مناوبة', 'ambulances_on_call': 'إسعاف مناوبة', 
@@ -37,7 +37,7 @@ const layerAliases = {
     'land_surveyors': 'مساحين أراضي', 'real_estate_valuers': 'مخمنين عقاريين', 
     'private_tutors': 'أساتذة خصوصي', 'programmers': 'مبرمجين', 
     'car_delivery_on_call': 'دليفري سيارات (مناوبة)', 'motorcycle_delivery_on_call': 'دليفري دراجات (مناوبة)', 
-    'bicycle_delivery_on_call': 'دليفري هوائية (مناوبة)', 'photographers': 'مصور فوتوغرافي', 
+    'bicycle_delivery_on_call': 'دليفري هوائية (مناوبة)',  
     'student_research_assist': 'مساعد أبحاث طلاب'
 };
 
@@ -250,7 +250,7 @@ window.initializeGlobalSearch = function() {
 
     let timeout;
     searchInput.addEventListener('input', (e) => {
-        const term = e.target.value; 
+        const term = e.target.value;
         if (term.trim().length < 2) {
             suggestionsPanel.style.display = 'none';
             return;
@@ -262,6 +262,11 @@ window.initializeGlobalSearch = function() {
             suggestionsPanel.innerHTML = '<div class="suggestion-item" style="padding:10px;">جاري البحث...</div>';
             suggestionsPanel.style.display = 'block';
 
+            // تسجيل حدث البحث العام
+            if (window.logMapEvent) {
+                window.logMapEvent('global_search', null, term);
+            }
+
             const promises = Object.keys(searchConfig).map(group => fetchGroupWFS(group, term));
             const resultsArray = await Promise.all(promises);
             const allResults = resultsArray.flat();
@@ -270,7 +275,7 @@ window.initializeGlobalSearch = function() {
                 const normTerm = normalizeArabic(term.trim());
                 const normATitle = normalizeArabic(a.customTitle);
                 const normBTitle = normalizeArabic(b.customTitle);
-                
+
                 const aAliasMatch = normATitle.includes(normTerm);
                 const bAliasMatch = normBTitle.includes(normTerm);
 

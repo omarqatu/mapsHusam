@@ -9,6 +9,12 @@
 (function () {
     'use strict';
 
+    function safeClamp(panel) {
+        if (typeof window.clampElementToViewport === 'function') {
+            window.clampElementToViewport(panel);
+        }
+    }
+
     function restoreSize(panel) {
         if (!panel.id) return;
         try {
@@ -17,6 +23,9 @@
             const size = JSON.parse(saved);
             if (size && size.width) panel.style.width = size.width;
             if (size && size.height) panel.style.height = size.height;
+            // 🛡️ حجم محفوظ من شاشة أكبر قد يجعل اللوحة تتجاوز حدود الشاشة الحالية
+            // (خصوصاً من الأسفل، لأن max-height بالـ CSS لا يأخذ موضع top الحالي بالحسبان)
+            requestAnimationFrame(function () { safeClamp(panel); });
         } catch (err) { /* تجاهل أي خطأ تخزين أو تحليل */ }
     }
 
@@ -25,6 +34,11 @@
 
         let debounceToken = null;
         const observer = new ResizeObserver(function () {
+            // 🛡️ تصحيح فوري: تكبير اللوحة يدوياً من زاويتها قد يدفع حافتها
+            // السفلية أو اليمنى خارج الشاشة حتى مع وجود max-width/max-height بالـ CSS
+            // (لأنهما لا يعرفان موضع اللوحة top/left الحالي)
+            safeClamp(panel);
+
             clearTimeout(debounceToken);
             debounceToken = setTimeout(function () {
                 const rect = panel.getBoundingClientRect();
