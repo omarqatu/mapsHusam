@@ -111,7 +111,7 @@
                 <i class="fas fa-user-clock"></i> تسجيل خروج غير المتصلين
             </button>
             <button class="btn btn-primary" onclick="forceLogoutSelectedUsers()" title="تسجيل خروج المستخدمين المختارين">
-                <i class="fas fa-check-square"></i> تسجيل خروج المختارين
+                <i class="fas fa-check-square"></i> تسجيل خروج المختارين (<span id="selected-count-badge">0</span>)
             </button>
         </div>
 
@@ -268,6 +268,12 @@
     let onlineUserIds = new Set(); // 🟢 معرفات المستخدمين المتصلين الآن (يتم تحديثها دورياً)
     let onlineStatusInterval = null;
 
+    // 🆕 [إصلاح ثغرة فقدان التحديد]: مجموعة مستقلة تماماً عن الـ DOM تحتفظ
+    // بمعرفات المستخدمين المختارين. لا تُفرَّغ أبداً عند إعادة رسم الجدول
+    // بسبب الفلترة، وتبقى محفوظة حتى لو اختفى المستخدم من العرض الحالي
+    // بسبب فلتر مختلف، إلى أن يُلغى تحديده يدوياً أو تُنفَّذ عملية عليه.
+    let selectedUserIds = new Set();
+
     // ==========================================
     // جلب جميع المستخدمين من السيرفر
     // ==========================================
@@ -414,6 +420,8 @@
 
         document.getElementById('user-count').textContent = filtered.length;
         renderUsersTable(filtered);
+        syncSelectAllCheckboxState(); // 🆕 مزامنة حالة "تحديد الكل" بناءً على الصفوف الظاهرة حالياً فقط
+        updateSelectedCountBadge(); // 🆕 تحديث عداد المختارين الإجمالي (بمعزل عن الفلترة)
     }
 
     // ==========================================
@@ -481,9 +489,12 @@
             // اسم آمن للاستخدام داخل onclick (تفادي كسر الـ HTML لو الاسم فيه علامات اقتباس)
             const safeUserName = userName.replace(/'/g, "\\'").replace(/"/g, '&quot;');
 
+            // 🆕 حالة التحديد المحفوظة مسبقاً (مستقلة عن الفلترة الحالية)
+            const isChecked = selectedUserIds.has(userId);
+
             const tr = document.createElement('tr');
             tr.innerHTML = `
-                <td><input type="checkbox" class="user-checkbox" data-user-id="${userId}"></td>
+                <td><input type="checkbox" class="user-checkbox" data-user-id="${userId}" ${isChecked ? 'checked' : ''} onchange="onUserCheckboxChange(${userId}, this.checked)"></td>
                 <td><strong>${userId}</strong></td>
                 <td style="text-align:right; font-weight:bold;">${userName}</td>
                 <td style="direction:ltr;">${userEmail}</td>
@@ -518,6 +529,46 @@
             `;
             tbody.appendChild(tr);
         });
+    }
+
+    // ==========================================
+    // 🆕 تحديث مجموعة التحديد عند تبديل أي checkbox فردي - مستقل تماماً عن
+    // الفلترة الحالية، لذلك لا يُفقد التحديد عند تغيير الفلاتر لاحقاً.
+    // ==========================================
+    function onUserCheckboxChange(userId, isChecked) {
+        if (isChecked) {
+            selectedUserIds.add(userId);
+        } else {
+            selectedUserIds.delete(userId);
+        }
+        syncSelectAllCheckboxState();
+        updateSelectedCountBadge();
+    }
+
+    // ==========================================
+    // 🆕 مزامنة حالة "تحديد الكل" بناءً على الصفوف الظاهرة حالياً فقط
+    // (وليس على كامل المستخدمين المختارين عبر كل الفلاتر)
+    // ==========================================
+    function syncSelectAllCheckboxState() {
+        const visibleCheckboxes = document.querySelectorAll('.user-checkbox');
+        const selectAllCheckbox = document.getElementById('select-all-users');
+        if (!selectAllCheckbox) return;
+        if (visibleCheckboxes.length === 0) {
+            selectAllCheckbox.checked = false;
+            selectAllCheckbox.indeterminate = false;
+            return;
+        }
+        const checkedCount = Array.from(visibleCheckboxes).filter(cb => selectedUserIds.has(parseInt(cb.getAttribute('data-user-id'), 10))).length;
+        selectAllCheckbox.checked = checkedCount === visibleCheckboxes.length;
+        selectAllCheckbox.indeterminate = checkedCount > 0 && checkedCount < visibleCheckboxes.length;
+    }
+
+    // ==========================================
+    // 🆕 تحديث عداد المستخدمين المختارين إجمالياً (بمعزل عن الفلترة الحالية)
+    // ==========================================
+    function updateSelectedCountBadge() {
+        const badge = document.getElementById('selected-count-badge');
+        if (badge) badge.textContent = selectedUserIds.size;
     }
 
     // ==========================================
@@ -702,12 +753,16 @@
 
     // ==========================================
     // 🆕 تسجيل خروج فوري لمستخدم من قبل المشرف + إشعاره بضرورة العودة للإدارة
+    // ملاحظة: السيرفر أصبح يفعّل علامة force_logout_flag فعلياً بقاعدة
+    // البيانات، فيُمنع دخول هذا المستخدم تلقائياً بجلسته المحفوظة محلياً
+    // في المرة القادمة حتى لو كان غير متصل الآن (تم إغلاق ثغرة الدخول
+    // المباشر للمنصة بعد تسجيل الخروج الإجباري).
     // ==========================================
     async function forceLogoutUser(userId, userName) {
         const isOnline = onlineUserIds.has(String(userId));
         const confirmMsg = isOnline
             ? `المستخدم "${userName}" متصل الآن فعلياً. هل تريد تسجيل خروجه فوراً وإرسال تنبيه له بالرجوع للإدارة لحل مشكلة الحظر؟`
-            : `المستخدم "${userName}" غير متصل حالياً. سيتم حفظ الإشعار وسيصله فور دخوله. متابعة؟`;
+            : `المستخدم "${userName}" غير متصل حالياً. سيتم إبطال جلسته فعلياً وحفظ الإشعار وسيصله فور دخوله. متابعة؟`;
 
         if (!confirm(confirmMsg)) return;
 
@@ -761,22 +816,32 @@
     }
 
     // ==========================================
-    // 🆕 اختيار/إلغاء اختيار جميع المستخدمين
+    // 🆕 اختيار/إلغاء اختيار جميع المستخدمين (الصفوف الظاهرة حالياً فقط،
+    // حسب الفلاتر النشطة في هذه اللحظة، دون التأثير على تحديد مستخدمين
+    // آخرين مختارين مسبقاً وغير ظاهرين حالياً بسبب فلتر مختلف)
     // ==========================================
     function toggleSelectAll() {
         const selectAllCheckbox = document.getElementById('select-all-users');
         const userCheckboxes = document.querySelectorAll('.user-checkbox');
         userCheckboxes.forEach(cb => {
             cb.checked = selectAllCheckbox.checked;
+            const uid = parseInt(cb.getAttribute('data-user-id'), 10);
+            if (selectAllCheckbox.checked) {
+                selectedUserIds.add(uid);
+            } else {
+                selectedUserIds.delete(uid);
+            }
         });
+        updateSelectedCountBadge();
     }
 
     // ==========================================
-    // 🆕 الحصول على قائمة المستخدمين المختارين
+    // 🆕 الحصول على قائمة المستخدمين المختارين (من المجموعة المستقلة
+    // selectedUserIds، وليس من استعلام DOM المباشر الذي كان يفقد التحديد
+    // القديم عند تغيير الفلاتر)
     // ==========================================
     function getSelectedUserIds() {
-        const selectedCheckboxes = document.querySelectorAll('.user-checkbox:checked');
-        return Array.from(selectedCheckboxes).map(cb => parseInt(cb.getAttribute('data-user-id'), 10));
+        return Array.from(selectedUserIds);
     }
 
     // ==========================================
@@ -816,14 +881,14 @@
     // 🆕 تسجيل خروج المستخدمين المختارين
     // ==========================================
     async function forceLogoutSelectedUsers() {
-        const selectedUserIds = getSelectedUserIds();
+        const selectedIds = getSelectedUserIds();
 
-        if (selectedUserIds.length === 0) {
+        if (selectedIds.length === 0) {
             showAlert('⚠️ يرجى اختيار مستخدم واحد على الأقل', 'warning');
             return;
         }
 
-        const confirmMsg = `هل أنت متأكد من تسجيل خروج ${selectedUserIds.length} مستخدم مختار؟ سيتم إرسال إشعار لهم وسيُطلب منهم إعادة تسجيل الدخول.`;
+        const confirmMsg = `هل أنت متأكد من تسجيل خروج ${selectedIds.length} مستخدم مختار؟ سيتم إرسال إشعار لهم وسيُطلب منهم إعادة تسجيل الدخول.`;
 
         if (!confirm(confirmMsg)) return;
 
@@ -831,15 +896,21 @@
             const response = await fetch('/api/admin/users/force-logout-all', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
-                body: JSON.stringify({ target_type: 'selected', user_ids: selectedUserIds })
+                body: JSON.stringify({ target_type: 'selected', user_ids: selectedIds })
             });
 
             const data = await response.json();
 
             if (data.success) {
                 showAlert(`✅ ${data.message}`, 'success');
-                // إلغاء اختيار جميع المستخدمين بعد التنفيذ
-                document.getElementById('select-all-users').checked = false;
+                // 🆕 إلغاء اختيار جميع المستخدمين من المجموعة المستقلة بعد التنفيذ بنجاح
+                selectedUserIds.clear();
+                updateSelectedCountBadge();
+                const selectAllCheckbox = document.getElementById('select-all-users');
+                if (selectAllCheckbox) {
+                    selectAllCheckbox.checked = false;
+                    selectAllCheckbox.indeterminate = false;
+                }
                 refreshUsersList();
             } else {
                 showAlert('❌ ' + (data.error || 'فشل تنفيذ تسجيل الخروج الجماعي'), 'error');

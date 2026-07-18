@@ -142,6 +142,67 @@ window.changeUserPassword = function (e) {
     };
 };
 
+// ==========================================
+// 🆕 دالة موحّدة لمسح الجلسة المحفوظة محلياً بالكامل (تُستخدم عند اكتشاف
+// أن الجلسة أصبحت غير صالحة: تسجيل خروج إجباري من الإدارة أو تعطيل الحساب)
+// ==========================================
+function clearSavedSessionCompletely() {
+    localStorage.removeItem('map_user');
+    sessionStorage.removeItem('map_user');
+    localStorage.removeItem('user');
+    sessionStorage.removeItem('user');
+}
+
+// ==========================================
+// 🆕 التحقق من صلاحية الجلسة المحفوظة محلياً عبر السيرفر قبل السماح بالدخول
+// التلقائي (autoboot). يسد ثغرة إمكانية الدخول بجلسة قديمة بعد أن يقوم
+// المشرف بتسجيل خروج المستخدم إجبارياً وهو غير متصل بالإنترنت وقتها.
+// ==========================================
+function verifySavedSessionThenEnter(parsedUser) {
+    const savedUserId = parsedUser.user_id || parsedUser.id;
+
+    if (!savedUserId) {
+        // لا يوجد معرف مستخدم صالح بالبيانات المحفوظة - لا يمكن التحقق، نمسحها ونعرض شاشة الدخول
+        clearSavedSessionCompletely();
+        window.location.reload();
+        return;
+    }
+
+    fetch('/api/auth/verify-session', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+        body: JSON.stringify({ user_id: savedUserId })
+    })
+    .then(function (res) { return res.json(); })
+    .then(function (data) {
+        if (data && data.valid === false) {
+            // 🚨 الجلسة أصبحت غير صالحة (تسجيل خروج إجباري أو تعطيل الحساب)
+            clearSavedSessionCompletely();
+
+            if (data.reason === 'force_logout') {
+                alert('🚨 تم تسجيل خروجك من قبل الإدارة. يرجى التواصل مع الإدارة عبر صفحة الفيسبوك قبل محاولة الدخول مجدداً.');
+            } else if (data.reason === 'inactive') {
+                alert('⚠️ حسابك معطل حالياً. يرجى التواصل مع الإدارة عبر صفحة الفيسبوك.');
+            } else if (data.reason === 'not_found') {
+                alert('⚠️ لم يتم العثور على هذا الحساب، يرجى تسجيل الدخول من جديد.');
+            }
+
+            // إعادة تحميل الصفحة لعرض شاشة تسجيل الدخول الطبيعية بدل الدخول التلقائي
+            window.location.reload();
+            return;
+        }
+
+        // ✅ الجلسة سليمة → إتمام الدخول التلقائي كالمعتاد
+        enterPlatform(parsedUser, true);
+    })
+    .catch(function (err) {
+        // فشل الاتصال بالسيرفر لأي سبب (شبكة/عطل مؤقت) => Fail-open حتى لا نمنع
+        // مستخدمين شرعيين من الدخول بسبب انقطاع مؤقت لا علاقة له بصلاحية الجلسة
+        console.warn('تعذر التحقق من صلاحية الجلسة، سيتم الدخول مؤقتاً (Fail-open):', err.message);
+        enterPlatform(parsedUser, true);
+    });
+}
+
 document.addEventListener("DOMContentLoaded", function () {
     // جلب عناصر شاشة الترحيب والتسجيل
     const authOverlay = document.getElementById("auth-splash-overlay");
@@ -162,7 +223,10 @@ document.addEventListener("DOMContentLoaded", function () {
     if (savedUser && authOverlay) {
         try {
             const parsedUser = JSON.parse(savedUser);
-            enterPlatform(parsedUser, true); 
+
+            // 🔒 [إصلاح الثغرة]: التحقق من صلاحية الجلسة عبر السيرفر قبل الدخول
+            // التلقائي، بدلاً من استدعاء enterPlatform() مباشرة بلا أي تحقق.
+            verifySavedSessionThenEnter(parsedUser);
             return; 
         } catch (e) {
             console.error("خطأ في قراءة بيانات الجلسة المخزنة:", e);

@@ -69,6 +69,23 @@ realestatePool.connect((err, client, release) => {
     release();
 });
 
+// =========================================================================
+// 🆕 ضمان وجود عمود force_logout_flag (تسجيل الخروج الإجباري الحقيقي)
+// يُستخدم لإبطال الجلسة المحفوظة في المتصفح فعلياً حتى لو كان المستخدم
+// غير متصل وقت الضغط على "تسجيل خروج" من لوحة الإدارة. بدون هذا العمود
+// كان تسجيل الخروج الإجباري مجرد إشعار تجميلي لا يمنع الدخول التلقائي
+// (autoboot) بجلسة محفوظة قديمة في localStorage.
+// =========================================================================
+async function ensureSchemaColumns() {
+    try {
+        await servicesPool.query(`ALTER TABLE public.users ADD COLUMN IF NOT EXISTS force_logout_flag BOOLEAN DEFAULT false`);
+        console.log('✅ تم التأكد من وجود عمود force_logout_flag في جدول users');
+    } catch (err) {
+        console.error('⚠️ خطأ أثناء التأكد من مخطط قاعدة البيانات (force_logout_flag):', err.message);
+    }
+}
+ensureSchemaColumns();
+
 // دالة مسارة لاختيار الاتصال المناسب حسب الطبقة
 function getPoolForLayer(layerName) {
     const realEstateLayers = ['ApartRent', 'ApartSale', 'LandSale', 'Location', 'RoadsTest'];
@@ -739,6 +756,48 @@ app.post('/api/auth/change-password', async (req, res) => {
     }
 }); 
 
+// =========================================================================
+// 🆕 مسار التحقق من صلاحية الجلسة المحفوظة محلياً (يُستدعى عند كل دخول
+// تلقائي autoboot في auth-app-events.js قبل السماح بالدخول للمنصة). يمنع
+// دخول أي مستخدم تم تسجيل خروجه إجبارياً أو تعطيل حسابه من قبل الإدارة،
+// حتى لو كان غير متصل بالإنترنت وقت تنفيذ الإجراء من لوحة التحكم.
+// =========================================================================
+app.post('/api/auth/verify-session', async (req, res) => {
+    const { user_id } = req.body;
+
+    if (!user_id) {
+        return res.status(400).json({ valid: false, reason: 'missing_user_id' });
+    }
+
+    try {
+        const result = await servicesPool.query(
+            'SELECT is_active, force_logout_flag FROM public.users WHERE user_id = $1',
+            [user_id]
+        );
+
+        if (result.rows.length === 0) {
+            return res.json({ valid: false, reason: 'not_found' });
+        }
+
+        const { is_active, force_logout_flag } = result.rows[0];
+
+        if (!is_active) {
+            return res.json({ valid: false, reason: 'inactive' });
+        }
+
+        if (force_logout_flag === true) {
+            return res.json({ valid: false, reason: 'force_logout' });
+        }
+
+        return res.json({ valid: true });
+    } catch (err) {
+        console.error('❌ خطأ أثناء التحقق من صلاحية الجلسة:', err.message);
+        // Fail-open عند خطأ سيرفر مؤقت (شبكة/قاعدة بيانات) حتى لا نمنع مستخدمين
+        // شرعيين من الدخول بسبب عطل عابر لا علاقة له بصلاحية الجلسة فعلياً
+        return res.json({ valid: true, error: true });
+    }
+});
+
 // مسار تسجيل الدخول المحدث (الفحص الثلاثي المتطابق الشامل بدون أي قيم وهمية)
 app.post('/api/auth/login', async (req, res) => {
     const requestBody = req.body || {};
@@ -770,6 +829,11 @@ app.post('/api/auth/login', async (req, res) => {
         if (user.password_hash !== password) {
             return res.status(401).json({ message: 'كلمة المرور المدخلة غير صحيحة.' });
         }
+
+        // 🆕 إعادة تفعيل الحساب: تسجيل الدخول الناجح يلغي أي علامة "تسجيل خروج
+        // إجباري" سابقة كانت مفعّلة من قبل الإدارة، حتى يستطيع المستخدم
+        // استخدام المنصة بشكل طبيعي بعد إعادة الدخول الصريحة ببياناته.
+        await servicesPool.query('UPDATE public.users SET force_logout_flag = false WHERE user_id = $1', [user.user_id]);
 
         // 🛑 [إصلاح حاسم للأمان وجذر المشكلة]: إرجاع القيمة الفعلية من الداتابيز فقط (null إذا لم يكن مربوطاً)
         // تم إلغاء فرض طبقة النجار carpenter والمعلم 14 للحسابات غير المربوطة بشكل كامل هنا.
@@ -1136,6 +1200,12 @@ app.post('/api/admin/users/force-logout', async (req, res) => {
         const title = '🚨 تسجيل خروج إجباري من الإدارة';
         const message = 'تم تسجيل خروجك فوراً من قبل الإدارة. يرجى التواصل مع الإدارة حالاً لحل مشكلة الحظر قبل محاولة الدخول مجدداً.';
 
+        // 🆕 [إصلاح الثغرة]: تفعيل علامة إبطال الجلسة فعلياً في قاعدة البيانات.
+        // هذا يضمن أن المستخدم لن يستطيع الدخول تلقائياً بجلسته المحفوظة محلياً
+        // حتى لو كان غير متصل الآن، لأن /api/auth/verify-session سيرفض جلسته
+        // في المرة القادمة التي يفتح فيها الصفحة.
+        await servicesPool.query('UPDATE public.users SET force_logout_flag = true WHERE user_id = $1', [user_id]);
+
         // حفظ الإشعار بقاعدة البيانات (يظهر له لاحقاً حتى لو كان غير متصل الآن)
         await servicesPool.query(
             `INSERT INTO "public"."notifications" (user_id, title, message, type, is_read, created_at)
@@ -1151,14 +1221,14 @@ app.post('/api/admin/users/force-logout', async (req, res) => {
             wasOnline = true;
             console.log(`🚨 تم تسجيل خروج إجباري فوري للمستخدم ${user_id}`);
         } else {
-            console.log(`💤 المستخدم ${user_id} غير متصل حالياً، سيصله الإشعار عند دخوله القادم`);
+            console.log(`💤 المستخدم ${user_id} غير متصل حالياً، سيصله الإشعار عند دخوله القادم وسيُمنع دخوله التلقائي فوراً`);
         }
 
         res.json({
             success: true,
             message: wasOnline
                 ? 'تم تسجيل خروج المستخدم فوراً وإرسال التنبيه بنجاح'
-                : 'المستخدم غير متصل حالياً، لكن تم حفظ الإشعار وسيتم إخراجه فوراً فور دخوله',
+                : 'المستخدم غير متصل حالياً، لكن تم إبطال جلسته فعلياً وسيُمنع من الدخول التلقائي في المرة القادمة',
             wasOnline
         });
     } catch (error) {
@@ -1218,6 +1288,11 @@ app.post('/api/admin/users/force-logout-all', async (req, res) => {
             return res.status(400).json({ success: false, error: 'لا يوجد مستخدمين مستهدفين' });
         }
 
+        // 🆕 [إصلاح الثغرة]: تفعيل علامة إبطال الجلسة دفعة واحدة لكل المستخدمين
+        // المستهدفين، بغض النظر عن كونهم متصلين الآن أم لا. هذا يمنعهم من
+        // الدخول التلقائي بجلسة محفوظة قديمة عبر /api/auth/verify-session.
+        await servicesPool.query('UPDATE public.users SET force_logout_flag = true WHERE user_id = ANY($1)', [targetUsers]);
+
         let onlineCount = 0;
         let offlineCount = 0;
 
@@ -1239,7 +1314,7 @@ app.post('/api/admin/users/force-logout-all', async (req, res) => {
                     console.log(`🚨 تم تسجيل خروج فوري للمستخدم ${userId}`);
                 } else {
                     offlineCount++;
-                    console.log(`💤 المستخدم ${userId} غير متصل، تم حفظ الإشعار فقط`);
+                    console.log(`💤 المستخدم ${userId} غير متصل، تم حفظ الإشعار وإبطال جلسته المحفوظة`);
                 }
             } catch (err) {
                 console.error(`❌ خطأ في تسجيل خروج المستخدم ${userId}:`, err.message);
@@ -1248,7 +1323,7 @@ app.post('/api/admin/users/force-logout-all', async (req, res) => {
 
         res.json({
             success: true,
-            message: `تم تسجيل خروج ${targetUsers.length} مستخدم (${onlineCount} متصل، ${offlineCount} غير متصل)`,
+            message: `تم تسجيل خروج ${targetUsers.length} مستخدم (${onlineCount} متصل، ${offlineCount} غير متصل) وإبطال جلساتهم فعلياً`,
             total: targetUsers.length,
             online: onlineCount,
             offline: offlineCount
