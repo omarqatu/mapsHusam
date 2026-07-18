@@ -5,8 +5,8 @@
 /* --- تنسيق الهوية العلوية للمستخدم (كمبيوتر) --- */
 #user-top-badge-container {
     position: fixed;
-    top: 15px; 
-    right: 20px;
+    top: 3px; 
+    right: 120px;
     z-index: 100010 !important; 
     background: rgba(255, 255, 255, 0.95);
     padding: 8px 15px;
