@@ -487,9 +487,14 @@
             resultsListEl.innerHTML = '<div class="nms-loading"><i class="fas fa-spinner fa-spin"></i> جاري البحث...</div>';
             resultsCountEl.textContent = '';
 
-            // تسجيل حدث البحث بدون خريطة
-            if (window.logMapEvent) {
-                window.logMapEvent('no_map_search', null, currentCategory.title);
+            // 🆕 فحص حد الطلبات وتسجيله قبل تنفيذ البحث - يمنع التنفيذ فوراً عند التجاوز
+            if (window.checkAndLogMapEvent) {
+                const quotaCheck = await window.checkAndLogMapEvent('no_map_search', null, currentCategory.title);
+                if (!quotaCheck.allowed) {
+                    resultsListEl.innerHTML = '';
+                    resultsCountEl.textContent = '';
+                    return;
+                }
             }
 
             const { workspace, layerName, isRealEstate } = getWorkspaceAndName(currentCategory.key);

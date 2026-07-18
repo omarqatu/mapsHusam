@@ -5,6 +5,47 @@
     let currentOverlayLayers = null;
     let conditions = [];
 
+    // 🆕 دالة موحّدة لفحص حد الطلبات + تسجيل الحدث دفعة واحدة (Atomic).
+    // تُستخدم من كل عمليات البحث (سريع، عالمي، ذكي، بالموقع، بدون خريطة) لضمان
+    // أن كل بحث يُخصم من نفس رصيد الاتصال/الواتساب، ويمنع التنفيذ فوراً عند التجاوز.
+    function getSharedUserIdForQuota() {
+        try {
+            const saved = localStorage.getItem('map_user');
+            if (saved) {
+                const parsed = JSON.parse(saved);
+                if (parsed && (parsed.user_id || parsed.id)) return String(parsed.user_id || parsed.id);
+            }
+        } catch (e) {}
+        if (!localStorage.getItem('map_user_guid')) {
+            localStorage.setItem('map_user_guid', 'guest_' + Math.random().toString(36).substr(2, 9));
+        }
+        return localStorage.getItem('map_user_guid');
+    }
+
+    window.checkAndLogMapEvent = async function (eventType, provider, service) {
+        const userId = getSharedUserIdForQuota();
+        try {
+            const res = await fetch(window.location.origin + '/api/log-map-event', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ user_id: userId, event_type: eventType, provider: provider || null, service: service || null })
+            });
+
+            if (res.status === 429) {
+                const data = await res.json().catch(() => ({}));
+                const quota = data.quota || {};
+                const periodLabels = { daily: 'اليوم', weekly: 'هذا الأسبوع', monthly: 'هذا الشهر' };
+                const periodText = periodLabels[quota.period] || 'هذه الفترة';
+                alert(`⛔ لقد تجاوزت الحد المسموح من الطلبات (${quota.limit || ''}) ${periodText}. يرجى المحاولة لاحقاً أو التواصل مع الإدارة.`);
+                return { allowed: false };
+            }
+            return { allowed: true };
+        } catch (err) {
+            console.warn('تعذر التحقق من حد الطلبات، سيتم السماح بالطلب:', err.message);
+            return { allowed: true }; // Fail-open فقط عند تعذر الاتصال بالشبكة
+        }
+    };
+
     // 🆕 دالة موحّدة لإضافة قائمة اختيار العملة بجانب حقل القيمة عند البحث بالسعر
     function appendCurrencySelector(container) {
         const wrap = document.createElement('div');
@@ -341,6 +382,13 @@
         document.getElementById('run-search').onclick = async () => {
             const layerKey = layerSelect.value;
             if (!layerKey) return alert("اختر الطبقة للبحث أولاً.");
+
+            // 🆕 فحص حد الطلبات قبل تنفيذ البحث الذكي (يُحسب من نفس رصيد الاتصال/الواتساب)
+            const layerTitleForQuota = layerSelect.options[layerSelect.selectedIndex]?.text || layerKey;
+            if (window.checkAndLogMapEvent) {
+                const quotaCheck = await window.checkAndLogMapEvent('attribute_search', null, layerTitleForQuota);
+                if (!quotaCheck.allowed) return;
+            }
 
             let finalConditions = [...conditions];
             const currentVal = document.getElementById('value-input')?.value.trim();

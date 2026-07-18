@@ -1,6 +1,33 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
+    <!-- 🔒 حارس الوصول: يمنع عرض الصفحة لأي شخص غير مسجل دخول بالمنصة -->
+    <style id="access-guard-style">
+        html { visibility: hidden; }
+    </style>
+    <script>
+    (function () {
+        function getStoredUser() {
+            try {
+                return JSON.parse(localStorage.getItem('map_user')) ||
+                       JSON.parse(sessionStorage.getItem('map_user'));
+            } catch (e) {
+                return null;
+            }
+        }
+        var user = getStoredUser();
+        if (!user) {
+            // أي شخص غير مسجل دخول يُعاد توجيهه فوراً لصفحة الدخول الرئيسية
+            window.location.replace('/index.html');
+        } else {
+            window.__nmsAuthenticatedUser = user;
+            document.addEventListener('DOMContentLoaded', function () {
+                document.documentElement.style.visibility = 'visible';
+            });
+        }
+    })();
+    </script>
+
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>البحث بدون خريطة - خريطة الخدمات الفلسطينية</title>
@@ -8,6 +35,8 @@
 
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <link rel="stylesheet" href="./css/no-map-search.css">
+    <link rel="stylesheet" href="./css/auth-core-functions.css">
+    <link rel="stylesheet" href="./css/notifications.css">
 </head>
 <body>
 
@@ -21,7 +50,29 @@
 <div class="nms-page">
 
     <header class="nms-topbar">
-        <a href="index.html" class="nms-back-home" target="_blank" rel="noopener"><i class="fas fa-arrow-right"></i> الرئيسية</a>
+        <div class="nms-topbar-left" style="display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
+            <a href="index.html" class="nms-back-home" target="_blank" rel="noopener"><i class="fas fa-arrow-right"></i> الرئيسية</a>
+
+            <!-- 🆕 شريط هوية المستخدم (اسم، رتبة، إشعارات، تغيير كلمة مرور، تسجيل خروج) -->
+            <div id="user-top-badge-container" class="hidden" style="display:none;">
+                <span class="user-badge-name" id="top-username-display">---</span>
+                <span class="user-badge-role" id="top-userrole-display">---</span>
+                <button id="dashboard-btn" class="btn-dashboard-top" onclick="window.openDashboard()" style="display: none;">
+                    <i class="fas fa-chart-line"></i> لوحة التحكم
+                </button>
+                <button class="notification-btn" id="notification-toggle-btn" style="display: none;">
+                    <i class="fas fa-bell"></i>
+                    <span id="notification-badge">0</span>
+                </button>
+                <button class="btn-change-pwd-top" id="btn-change-password" onclick="window.changeUserPassword(event)">
+                    <i class="fas fa-key"></i> تغيير كلمة المرور
+                </button>
+                <button class="btn-logout-top" onclick="window.logoutPlatform()">
+                    <i class="fas fa-sign-out-alt"></i> تسجيل الخروج
+                </button>
+            </div>
+        </div>
+
         <h1><i class="fas fa-magnifying-glass"></i> البحث بدون خريطة</h1>
         <div class="nms-topbar-actions">
             <button type="button" id="nms-about-btn" class="nms-topbar-action-btn">
@@ -32,6 +83,22 @@
             </a>
         </div>
     </header>
+
+    <!-- 🆕 قائمة الإشعارات المنسدلة -->
+    <div id="notification-dropdown" class="notification-dropdown">
+        <div class="notification-dropdown-header">
+            <h3>الإشعارات</h3>
+            <button onclick="window.notificationSystem.getUnreadNotifications(window.currentAppUser?.user_id)">تحديث</button>
+        </div>
+        <div class="notification-dropdown-body" id="notification-list">
+            <p style="text-align: center; color: #999; padding: 20px;">لا توجد إشعارات</p>
+        </div>
+        <div class="notification-dropdown-footer">
+            <p style="margin: 0; font-size: 12px; color: #666; text-align: center;">
+                <i class="fas fa-info-circle"></i> انقر أو المس الإشعار لتعليمه كمقروء
+            </p>
+        </div>
+    </div>
 
     <div class="nms-layout">
 
@@ -173,8 +240,39 @@
   لوحة "بحث بالسمات" داخل الخريطة (search.js) ينعكس تلقائياً هنا بدون أي تكرار للكود.
   لا داعي للقلق: تحميل الملف وحده لا يُفعّل أي أداة، لأنه لا يُستدعى initializeSearch() إلا من main.js.
 -->
+
+<!-- 🆕 ملفات الهوية والإشعارات (نفس المستخدم بصفحة الخريطة، بدون تهيئة أي كود خاص بالخريطة) -->
+<script src="js/auth-core-functions.js"></script>
+<script src="js/auth-app-events.js"></script>
+<script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+<script src="js/notifications.js"></script>
+
 <script src="js/search.js"></script>
 <script src="js/no-map-search.js"></script>
+
+<script>
+// 🆕 تفعيل شريط الملف الشخصي ونظام الإشعارات في صفحة البحث بدون خريطة
+document.addEventListener('DOMContentLoaded', function () {
+    var user = window.__nmsAuthenticatedUser;
+    if (!user) return; // احتياط إضافي - الحارس أعلاه في <head> يتكفل بإعادة التوجيه أصلاً
+
+    window.currentAppUser = user;
+    if (typeof showTopUserBadge === 'function') {
+        showTopUserBadge(user); // دالة معرّفة في auth-core-functions.js
+    }
+
+    var uid = user.user_id || user.id;
+    if (window.notificationSystem && uid) {
+        window.notificationSystem.init(uid);
+    }
+
+    var notificationBtn = document.getElementById('notification-toggle-btn');
+    if (notificationBtn) notificationBtn.style.display = 'flex';
+});
+</script>
+
+<!-- حاوية الإشعارات المنبثقة -->
+<div id="notification-container"></div>
 
 </body>
 </html>

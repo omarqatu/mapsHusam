@@ -100,10 +100,11 @@ function initializeLocationSearch(map, overlayLayersObj) {
         const selectedLayerKey = searchLayerSelect.value;
         if (!selectedLayerKey) return alert("الرجاء اختيار نوع العقار أو الخدمة.");
 
-        // تسجيل حدث البحث المكاني
-        if (window.logMapEvent) {
-            const layerTitle = overlayLayersObj[selectedLayerKey]?.get('title') || selectedLayerKey;
-            window.logMapEvent('location_search', null, layerTitle);
+        // 🆕 فحص حد الطلبات وتسجيله قبل تنفيذ البحث المكاني - يمنع التنفيذ فوراً عند التجاوز
+        const layerTitle = overlayLayersObj[selectedLayerKey]?.get('title') || selectedLayerKey;
+        if (window.checkAndLogMapEvent) {
+            const quotaCheck = await window.checkAndLogMapEvent('location_search', null, layerTitle);
+            if (!quotaCheck.allowed) return;
         }
 
         const radiusStr = searchRadiusInput.value.trim();

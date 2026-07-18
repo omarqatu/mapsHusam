@@ -262,9 +262,13 @@ window.initializeGlobalSearch = function() {
             suggestionsPanel.innerHTML = '<div class="suggestion-item" style="padding:10px;">جاري البحث...</div>';
             suggestionsPanel.style.display = 'block';
 
-            // تسجيل حدث البحث العام
-            if (window.logMapEvent) {
-                window.logMapEvent('global_search', null, term);
+            // 🆕 فحص حد الطلبات وتسجيله قبل تنفيذ البحث العالمي - يمنع التنفيذ فوراً عند التجاوز
+            if (window.checkAndLogMapEvent) {
+                const quotaCheck = await window.checkAndLogMapEvent('global_search', null, term);
+                if (!quotaCheck.allowed) {
+                    suggestionsPanel.style.display = 'none';
+                    return;
+                }
             }
 
             const promises = Object.keys(searchConfig).map(group => fetchGroupWFS(group, term));
@@ -291,47 +295,6 @@ window.initializeGlobalSearch = function() {
         }, 400);
     });
 };
-
-function renderGlobalSuggestions(features, term) {
-    const panel = document.getElementById('search-suggestions');
-    
-    // تفريغ اللوحة تماماً قبل البدء بالعرض الجديد
-    panel.innerHTML = ''; 
-    
-    if (!features || features.length === 0) {
-        panel.innerHTML = '<div class="suggestion-item" style="padding:10px;">لا توجد نتائج مطابقة</div>';
-        panel.style.display = 'block';
-        return;
-    }
-
-    features.slice(0, 50).forEach(f => {
-        const item = document.createElement('div');
-        item.className = 'suggestion-item';
-        // الستايل مدمج هنا لضمان عدم تأثره بأي كلاسات خارجية
-        item.style.padding = '12px 15px';
-        item.style.borderBottom = '1px solid #f0f0f0';
-        item.style.cursor = 'pointer';
-        
-        const props = f.properties;
-        const rawMainName = props.name || props.location || props.location_name || "معلم غير مسمى";
-        const subDetails = [f.customTitle, props.location || props.location_name, props.village_a, props.gov_a].filter(t => t && t !== "").join(' | ');
-
-        item.innerHTML = `
-            <div>
-                <div class="name" style="font-size: 14px; color: #222; font-weight:bold;">
-                    <i class="fas fa-map-marker-alt" style="margin-left:8px; color:#e74c3c;"></i>${highlightMatch(rawMainName, term)}
-                </div>
-                <div class="sub" style="font-size:11px; color:#666; margin-right:24px;">${highlightMatch(subDetails, term)}</div>
-            </div>
-        `;
-
-        item.onclick = () => {
-            panel.style.display = 'none';
-            zoomToGlobalFeature(f);
-        };
-        panel.appendChild(item);
-    });
-}
 
 function renderGlobalSuggestions(features, term) {
     const panel = document.getElementById('search-suggestions');

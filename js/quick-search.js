@@ -117,9 +117,10 @@ function initializeQuickSearch(map, overlayLayersObj) {
             return;
         }
 
-        // تسجيل حدث البحث السريع
-        if (window.logMapEvent) {
-            window.logMapEvent('quick_search', null, layerTitle);
+        // 🆕 فحص حد الطلبات وتسجيله قبل تنفيذ البحث - يمنع التنفيذ فوراً عند التجاوز
+        if (window.checkAndLogMapEvent) {
+            const quotaCheck = await window.checkAndLogMapEvent('quick_search', null, layerTitle);
+            if (!quotaCheck.allowed) return;
         }
 
         // تحديد workspace و layer name
