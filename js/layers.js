@@ -18,6 +18,7 @@ const serviceTranslations = {
     'builder': { name: 'بناء ومعمار', icon: '🧱' },
     'house_cleaner': { name: 'خدمات تنظيف', icon: '🧹' },
     'aluminum_tech': { name: 'فني ألمنيوم', icon: '🪟' },
+    'glass_tech': { name: 'فني زجاج وسكريت', icon: '🛡️' },
     'car_mechanic': { name: 'ميكانيكي سيارات', icon: '🚗' },
     'car_electrician': { name: 'كهربائي سيارات', icon: '🔌' },
     'tire_tech': { name: 'بنشري / إطارات', icon: '🛞' },

@@ -50,6 +50,59 @@ CREATE INDEX glass_tech_geom_idx ON public.glass_tech USING GIST (geom);
 
 اسم الجدول (`glass_tech`) هو الذي سيُستخدم حرفياً بكل مكان لاحقاً (workspace key)، فاختاره بعناية بالإنجليزي بدون مسافات.
 
+ثانياً: دالة التريجر (Trigger Function)
+هذه الدالة ستقوم بـ:
+
+جلب اسم المنطقة والمحافظة والقرية من location_layer باستخدام تقاطع مكاني.
+
+ملء الإحداثيات.
+
+تحديث auto_status بناءً على end_date.
+CREATE OR REPLACE FUNCTION fn_process_glass_tech()
+RETURNS TRIGGER AS $$
+DECLARE
+    loc_record RECORD;
+BEGIN
+    -- 1. جلب البيانات المكانية والإدارية من location_layer
+    SELECT location, gov_a, village_a 
+    INTO loc_record
+    FROM location_layer
+    WHERE ST_Intersects(location_layer.geom, NEW.geom)
+    LIMIT 1;
+
+    -- 2. تعبئة الحقول الإدارية
+    NEW.location_name := loc_record.location;
+    NEW.gov_a := loc_record.gov_a;
+    NEW.village_a := loc_record.village_a;
+
+    -- 3. تعبئة الإحداثيات (بافتراض أنك تستخدم إسقاط فلسطين Transverse Mercator)
+    NEW.x_global := ST_X(NEW.geom);
+    NEW.y_global := ST_Y(NEW.geom);
+    
+    -- لتعبئة x_coord/y_coord الفلسطيني، يجب تحويل الإسقاط (مثلاً EPSG:28191)
+    NEW.x_coord := ST_X(ST_Transform(NEW.geom, 28191));
+    NEW.y_coord := ST_Y(ST_Transform(NEW.geom, 28191));
+
+    -- 4. تحديد auto_status
+    -- الحالة 1 إذا كان end_date قبل اليوم أو status ليست 0
+    IF (NEW.status <> 0 OR (NEW.end_date IS NOT NULL AND NEW.end_date < CURRENT_DATE)) THEN
+        NEW.auto_status := 1;
+    ELSE
+        NEW.auto_status := 0;
+    END IF;
+
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+ثالثاً: تفعيل التريجر
+نربط الدالة بالجدول لتعمل عند كل إدخال أو تحديث:
+CREATE TRIGGER trg_glass_tech_auto
+BEFORE INSERT OR UPDATE ON glass_tech
+FOR EACH ROW
+EXECUTE FUNCTION fn_process_glass_tech();
+
+
 ### 2) GeoServer — نشر الطبقة (Publish)
 
 1. ادخل GeoServer admin → **Layers → Add a new layer**.

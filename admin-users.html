@@ -131,7 +131,6 @@
                     <th>الدور</th>
                     <th>الاتصال</th>
                     <th>الحالة</th>
-                    <th>is_active</th>
                     <th>طبقة الخدمة</th>
                     <th>Feature ID</th>
                     <th>حد الطلبات</th>
@@ -141,7 +140,7 @@
             </thead>
             <tbody id="users-tbody">
                 <tr>
-                    <td colspan="14" class="no-data">
+                    <td colspan="13" class="no-data">
                         <i class="fas fa-spinner fa-spin"></i> جاري تحميل المستخدمين...
                     </td>
                 </tr>
@@ -432,7 +431,7 @@
         tbody.innerHTML = '';
 
         if (users.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="14" class="no-data">لا يوجد مستخدمين متطابقين مع الفلترة</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="13" class="no-data">لا يوجد مستخدمين متطابقين مع الفلترة</td></tr>';
             return;
         }
 
@@ -507,10 +506,7 @@
                     </span>
                 </td>
                 <td><span class="user-status-badge ${statusBadgeClass}">${statusLabel}</span></td>
-                <td>
-                    <span style="display:inline-block; width:12px; height:12px; border-radius:50%; background:${isActive ? '#34a853' : '#ea4335'};"></span>
-                    ${isActive ? 'true' : 'false'}
-                </td>
+            
                 <td>${serviceLayer ? '<span style="color:#1a73e8;font-weight:bold;">' + serviceLayer + '</span>' : '<span style="color:#999;">—</span>'}</td>
                 <td>${featureId ? '<span style="font-weight:bold;direction:ltr;display:inline-block;">' + featureId + '</span>' : '<span style="color:#999;">—</span>'}</td>
                 <td style="white-space:nowrap;">${quotaDisplay}</td>
@@ -625,7 +621,7 @@
 
         const serviceLayers = [
             'electrician', 'ac_technician', 'plumber', 'general_maintenance', 'painter',
-            'carpenter', 'blacksmith', 'builder', 'house_cleaner', 'aluminum_tech',
+            'carpenter', 'blacksmith', 'builder', 'house_cleaner', 'aluminum_tech', 'glass_tech',
             'car_mechanic', 'car_electrician', 'tire_tech', 'car_wash', 'motorcycle_repair',
             'taxi_driver', 'delivery_services', 'tow_truck', 'cctv_installer',
             'party_planner', 'zaffa_bands', 'music_bands', 'photographer', 'party_rental',

@@ -116,7 +116,7 @@ app.use((err, req, res, next) => {
 const ALLOWED_LAYERS = [
     // --- طبقات الخدمات التفاعلية ---
     'electrician', 'ac_technician', 'plumber', 'general_maintenance', 'painter', 'carpenter', 
-    'blacksmith', 'builder', 'house_cleaner', 'aluminum_tech', 'car_mechanic', 'car_electrician', 
+    'blacksmith', 'builder', 'house_cleaner', 'aluminum_tech', 'glass_tech', 'car_mechanic', 'car_electrician', 
     'tire_tech', 'car_wash', 'motorcycle_repair', 'taxi_driver', 'delivery_services', 'tow_truck', 
     'cctv_installer', 'party_planner', 'zaffa_bands', 'music_bands', 'photographer', 'party_rental', 
     'home_nurse', 'masseur', 'cupping_specialist', 'nutritionist', 'truck_driver', 'security_firms', 

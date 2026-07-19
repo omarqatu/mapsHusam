@@ -14,7 +14,7 @@ const layerAliases = {
     // --- الخدمات القديمة (34) ---
     'electrician': 'فني كهرباء', 'ac_technician': 'فني تكييف وتبريد', 'plumber': 'سباك (مواسيرجي)',
     'general_maintenance': 'صيانة عامة', 'painter': 'دهان/طراشة', 'photographer': 'فني ديكور', 'carpenter': 'نجار',
-    'blacksmith': 'حداد', 'builder': 'بناء ومعمار', 'aluminum_tech': 'فني ألمنيوم',
+    'blacksmith': 'حداد', 'builder': 'بناء ومعمار', 'aluminum_tech': 'فني ألمنيوم', 'glass_tech': 'فني زجاج وسكريت',
     'house_cleaner': 'خدمات تنظيف تعزيل', 'gardener': 'تنسيق حدائق', 'car_mechanic': 'ميكانيكي سيارات',
     'car_electrician': 'كهربائي سيارات', 'tire_tech': 'بنشري / إطارات', 'car_wash': 'غسيل سيارات',
     'motorcycle_repair': 'صيانة دراجات نارية', 'taxi_driver': 'مكتب تاكسي', 'delivery_services': 'خدمات توصيل',
@@ -52,7 +52,7 @@ const searchConfig = {
             // تصفية الطبقات بناءً على الإعدادات العامة
             ...[
             'electrician', 'ac_technician', 'plumber', 'general_maintenance',
-            'painter', 'carpenter', 'blacksmith', 'builder', 'aluminum_tech',
+            'painter', 'carpenter', 'blacksmith', 'builder', 'aluminum_tech',  'glass_tech',
             'house_cleaner', 'gardener', 'car_mechanic', 'car_electrician', 
             'tire_tech', 'car_wash', 'motorcycle_repair', 'taxi_driver', 
             'delivery_services', 'tow_truck', 'truck_driver', 'party_planner', 

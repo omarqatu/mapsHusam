@@ -125,7 +125,7 @@
             'electrician': 'fa-bolt', 'ac_technician': 'fa-snowflake', 'plumber': 'fa-faucet',
             'general_maintenance': 'fa-tools', 'painter': 'fa-paint-roller', 'carpenter': 'fa-hammer', 'photographer': 'fa-palette',
             'blacksmith': 'fa-industry', 'builder': 'fa-hard-hat', 'house_cleaner': 'fa-broom',
-            'aluminum_tech': 'fa-window-maximize', 'car_mechanic': 'fa-wrench', 'car_electrician': 'fa-car-battery',
+            'aluminum_tech': 'fa-window-maximize', 'glass_tech': 'fa-vector-square', 'car_mechanic': 'fa-wrench', 'car_electrician': 'fa-car-battery',
             'tire_tech': 'fa-circle-notch', 'car_wash': 'fa-shuttle-van', 'motorcycle_repair': 'fa-motorcycle',
             'taxi_driver': 'fa-taxi', 'delivery_services': 'fa-truck-fast', 'tow_truck': 'fa-truck-pickup',
             'cctv_installer': 'fa-video', 'party_planner': 'fa-magic', 'zaffa_bands': 'fa-music',
@@ -148,7 +148,7 @@
         const serviceNames = {
             'electrician': 'فني كهرباء', 'ac_technician': 'فني تكييف وتبريد', 'plumber': 'سباك (مواسيرجي)',
             'general_maintenance': 'صيانة عامة', 'painter': 'دهان/طراشة', 'photographer': 'فني ديكور', 'carpenter': 'نجار',
-            'blacksmith': 'حداد', 'builder': 'بناء ومعمار', 'house_cleaner': 'خدمات تنظيف', 'aluminum_tech': 'فني ألمنيوم',
+            'blacksmith': 'حداد', 'builder': 'بناء ومعمار', 'house_cleaner': 'خدمات تنظيف', 'aluminum_tech': 'فني ألمنيوم', 'glass_tech': 'فني زجاج وسكريت',
             'car_mechanic': 'ميكانيكي سيارات', 'car_electrician': 'كهربائي سيارات', 'tire_tech': 'بنشري / إطارات',
             'car_wash': 'غسيل سيارات', 'motorcycle_repair': 'صيانة دراجات نارية', 'taxi_driver': 'مكتب تاكسي',
             'delivery_services': 'خدمات توصيل', 'tow_truck': 'ونش إنقاذ', 'cctv_installer': 'فني كاميرات مراقبة',
@@ -191,7 +191,7 @@
             electrician: 'technicians', ac_technician: 'technicians', plumber: 'technicians',
             general_maintenance: 'technicians', painter: 'technicians', photographer: 'technicians', carpenter: 'technicians',
             blacksmith: 'technicians', builder: 'technicians', house_cleaner: 'technicians',
-            aluminum_tech: 'technicians', cctv_installer: 'technicians', gardener: 'technicians',
+            aluminum_tech: 'technicians', glass_tech: 'technicians', cctv_installer: 'technicians', gardener: 'technicians',
             security_firms: 'technicians', furniture_buyer: 'technicians',
 
             // 🩺 الصحة والرعاية
