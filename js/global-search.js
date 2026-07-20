@@ -13,7 +13,7 @@ const layerAliases = {
     
     // --- الخدمات القديمة (34) ---
     'electrician': 'فني كهرباء', 'ac_technician': 'فني تكييف وتبريد', 'plumber': 'سباك (مواسيرجي)',
-    'general_maintenance': 'صيانة عامة', 'painter': 'دهان/طراشة', 'photographer': 'فني ديكور', 'carpenter': 'نجار',
+    'general_maintenance': 'صيانة عامة', 'painter': 'دهان/طراشة', 'Finisher': 'فني ديكور', 'carpenter': 'نجار',
     'blacksmith': 'حداد', 'builder': 'بناء ومعمار', 'aluminum_tech': 'فني ألمنيوم', 'glass_tech': 'فني زجاج وسكريت',
     'house_cleaner': 'خدمات تنظيف تعزيل', 'gardener': 'تنسيق حدائق', 'car_mechanic': 'ميكانيكي سيارات',
     'car_electrician': 'كهربائي سيارات', 'tire_tech': 'بنشري / إطارات', 'car_wash': 'غسيل سيارات',
@@ -56,7 +56,7 @@ const searchConfig = {
             'house_cleaner', 'gardener', 'car_mechanic', 'car_electrician', 
             'tire_tech', 'car_wash', 'motorcycle_repair', 'taxi_driver', 
             'delivery_services', 'tow_truck', 'truck_driver', 'party_planner', 
-            'zaffa_bands', 'music_bands', 'photographer', 'party_rental', 
+            'zaffa_bands', 'music_bands', 'Finisher', 'party_rental', 
             'clown_entertainer', 'home_nurse', 'masseur', 'cupping_specialist', 
             'nutritionist', 'pet_care', 'cctv_installer', 'security_firms', 
             'furniture_buyer', 'online_stores', 'villas_rent', 'martial_arts_gymnastics',

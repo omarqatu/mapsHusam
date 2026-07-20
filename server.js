@@ -118,7 +118,7 @@ const ALLOWED_LAYERS = [
     'electrician', 'ac_technician', 'plumber', 'general_maintenance', 'painter', 'carpenter', 
     'blacksmith', 'builder', 'house_cleaner', 'aluminum_tech', 'glass_tech', 'car_mechanic', 'car_electrician', 
     'tire_tech', 'car_wash', 'motorcycle_repair', 'taxi_driver', 'delivery_services', 'tow_truck', 
-    'cctv_installer', 'party_planner', 'zaffa_bands', 'music_bands', 'photographer', 'party_rental', 
+    'cctv_installer', 'party_planner', 'zaffa_bands', 'music_bands', 'Finisher', 'party_rental', 
     'home_nurse', 'masseur', 'cupping_specialist', 'nutritionist', 'truck_driver', 'security_firms', 
     'furniture_buyer', 'gardener', 'pet_care', 'clown_entertainer', 'online_stores', 'villas_rent', 
     'martial_arts_gymnastics', 'public_parks_recreation', 'hotels', 'free_distribution', 'barber_shop', 

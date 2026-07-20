@@ -12,7 +12,7 @@ const serviceTranslations = {
     'plumber': { name: 'سباك (مواسيرجي)', icon: '🔧' },
     'general_maintenance': { name: 'صيانة عامة', icon: '🛠️' },
     'painter': { name: 'دهان/طراشة', icon: '🎨' },
-    'photographer': { name: 'فني ديكور', icon: '🛋️' },
+    'Finisher': { name: 'فني ديكور', icon: '🛋️' },
     'carpenter': { name: 'نجار', icon: '🪵' },
     'blacksmith': { name: 'حداد', icon: '🔨' },
     'builder': { name: 'بناء ومعمار', icon: '🧱' },

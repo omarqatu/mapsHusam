@@ -51,7 +51,7 @@ function initializeQuickSearch(map, overlayLayersObj) {
     const iconMap = {
         'rentLayer': 'fa-home', 'saleLayer': 'fa-key', 'landLayer': 'fa-map',
         'electrician': 'fa-bolt', 'ac_technician': 'fa-snowflake', 'plumber': 'fa-faucet',
-        'general_maintenance': 'fa-tools', 'painter': 'fa-paint-roller', 'carpenter': 'fa-hammer', 'photographer': 'fa-camera',
+        'general_maintenance': 'fa-tools', 'painter': 'fa-paint-roller', 'carpenter': 'fa-hammer', 'Finisher': 'fa-camera',
         'blacksmith': 'fa-industry', 'builder': 'fa-hard-hat', 'house_cleaner': 'fa-broom',
         'aluminum_tech': 'fa-window-maximize', 'car_mechanic': 'fa-car-wrench', 'car_electrician': 'fa-car-battery',
         'tire_tech': 'fa-circle-notch', 'car_wash': 'fa-shuttle-van', 'motorcycle_repair': 'fa-motorcycle',

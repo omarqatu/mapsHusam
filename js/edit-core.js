@@ -259,7 +259,7 @@ function initializeEditTools(map, overlayLayersObjParam) {
 
         const servicesMapping = {
             'electrician': 'فني كهرباء', 'ac_technician': 'فني تكييف وتبريد', 'plumber': 'سباك مواسيرجي',
-            'general_maintenance': 'صيانة عامة', 'painter': 'دهان/طراشة', 'photographer': 'فني ديكور', 'carpenter': 'نجار',
+            'general_maintenance': 'صيانة عامة', 'painter': 'دهان/طراشة', 'Finisher': 'فني ديكور', 'carpenter': 'نجار',
             'blacksmith': 'حداد', 'builder': 'بناء ومعمار', 'house_cleaner': 'خدمات تنظيف',
             'aluminum_tech': 'فني ألمنيوم', 'glass_tech': 'فني زجاج وسكريت', 'car_mechanic': 'ميكانيكي سيارات', 'car_electrician': 'كهربائي سيارات',
             'tire_tech': 'بنشري إطارات', 'car_wash': 'غسيل سيارات', 'motorcycle_repair': 'صيانة دراجات نارية',
@@ -286,7 +286,7 @@ function initializeEditTools(map, overlayLayersObjParam) {
             'plumber': 'مواسير، حنفيات، تسريب مياه، تصريف، مضخات، فلاتر مياه، جيزر، حمامات، صيانة سباكة',
             'general_maintenance': 'ترميم، تصليحات عامة، صيانة منازل، منشآت، تشطيب، خدمات منزلية شاملة',
             'painter': 'دهانات، ديكور، جدران، ورق حائط، طريش منازل، شقق، جبصين، معجونة، طلاء، أصباغ',
-            'photographer': 'ديكور، زينة بيت، جبسين، جابسين، جبس، اشكال حيطان للبيت، معلم ديكور',
+            'Finisher': 'ديكور، زينة بيت، جبسين، جابسين، جبس، اشكال حيطان للبيت، معلم ديكور',
             'carpenter': 'منجرة، خشب، تصليح اثاث، مطابخ، غرف نوم، ابواب خشب، فك وتركيب، نجارة، صيانة أثاث',
             'blacksmith': 'حديد، حماية نوافذ، أبواب حديد، مظلات، دربزينات، لحام حديد، ورشة حدادة',
             'builder': 'مقاولات، بناء، طوب، حجر، إسمنت، عظم، تشطيب، معمار، صبة، مقاول بنا وخرسانة',
