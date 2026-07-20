@@ -379,7 +379,7 @@ window.copyLocationLink = function(coordinate) {
             }
         }
 
-        let bodyHtml = `<div class="popup-body" style="font-size: 13px; line-height: 1.6; max-height:350px; overflow-y:auto; padding-right:5px; direction: rtl; text-align: right;">`;
+        let bodyHtml = `<div class="popup-body" style="font-size: 13px; line-height: 1.6;  overflow-y:auto; padding-right:5px; direction: rtl; text-align: right;">`;
         bodyHtml += `<div style="margin-bottom: 8px; border-bottom: 1px solid #eee; padding-bottom: 5px;"><b style="color: #007bff;">🛠️ التصنيف:</b> <b>${layerTitle}</b>${displayFeatureId !== null ? ` <span style="color:#888; font-size:12px;">(رقم: ${window.sanitizeHTML(String(displayFeatureId))})</span>` : ''}</div>`;
         
         if (!isAreaLayer) bodyHtml += getStatusHtml(props.auto_status, props.work_hours);
