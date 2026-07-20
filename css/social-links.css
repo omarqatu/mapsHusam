@@ -180,8 +180,8 @@
    ========================================================================== */
 @media (max-width: 767px) {
     .feedback-banner-wrapper {
-        top: 640px !important;   
-        left: 50% !important;
+        top: 10px !important;   
+        left: 40% !important;
         transform: translateX(-50%) !important;
         width: auto !important;
     }
@@ -211,7 +211,7 @@
    ========================================================================== */
 @media (max-width: 900px) and (orientation: landscape) {
     .feedback-banner-wrapper {
-        top: 210px !important;   
+        top: 2px !important;   
         left: 50% !important;
         transform: translateX(-50%) !important;
     }

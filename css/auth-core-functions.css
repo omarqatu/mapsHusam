@@ -1,58 +1,233 @@
 /* ==========================================================================
-   auth-core-functions.css - تصميم الهوية العلوية للمستخدم (كمبيوتر وموبايل)
+   auth-core-functions.css - تصميم بوابة الملف الشخصي الجانبية (كمبيوتر وموبايل)
    ========================================================================== */
 
-/* --- تنسيق الهوية العلوية للمستخدم (كمبيوتر) --- */
+/* --------------------------------------------------------------------------
+   الحاوية الأساسية: لا شكل مرئي لها بحد ذاتها إطلاقاً، فقط غلاف يحمل زر
+   التبديل وجسم البوابة الجانبية، وكلاهما بموضع fixed مستقل عن حجم هذا الغلاف.
+   هذا يضمن أنها لا تُصغّر الخريطة أبداً لأنها لا تدخل ضمن تخطيط الصفحة.
+   -------------------------------------------------------------------------- */
 #user-top-badge-container {
-    position: fixed;
-    top: 3px; 
-    right: 120px;
-    z-index: 100010 !important; 
-    background: rgba(255, 255, 255, 0.95);
-    padding: 8px 15px;
-    border-radius: 8px;
-    box-shadow: 0 2px 10px rgba(0,0,0,0.15);
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    font-family: system-ui, -apple-system, sans-serif;
-    border: 1px solid #ddd;
+    position: fixed !important;
+    top: 0 !important;
+    right: 0 !important;
+    left: auto !important;
+    bottom: auto !important;
+    width: 0 !important;
+    height: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    border: none !important;
+    overflow: visible !important;
+    z-index: 100020;
     direction: rtl;
+    font-family: system-ui, -apple-system, sans-serif;
 }
 
+/* --------------------------------------------------------------------------
+   زر تبديل فتح/إغلاق البوابة - دائري وثابت في أعلى يمين الشاشة دائماً
+   -------------------------------------------------------------------------- */
+.ui-profile-toggle-btn {
+    position: fixed;
+    top: 5px;
+    right: 120px;
+    width: 46px;
+    height: 46px;
+    border-radius: 50%;
+    background-color: #2c3e50;
+    color: #ffffff;
+    border: 2px solid #ffffff;
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.3);
+    font-size: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    z-index: 100031;
+    transition: background-color 0.2s ease, transform 0.2s ease;
+    padding: 0;
+}
+
+.ui-profile-toggle-btn:hover {
+    background-color: #3f51b5;
+    transform: scale(1.08);
+}
+
+/* --------------------------------------------------------------------------
+   جسم البوابة الجانبية: عمود منزلق من جهة اليمين فوق كل شيء (fixed)، بعرض
+   محدود وغير كبير حتى لا يُخفي الخريطة أو يُصغّرها
+   -------------------------------------------------------------------------- */
+.ui-profile-drawer-body {
+    position: fixed;
+    top: 0;
+    right: 0;
+    height: 100vh;
+    width: 290px;
+    max-width: 85vw;
+    box-sizing: border-box;
+    background: #ffffff;
+    box-shadow: -6px 0 25px rgba(0, 0, 0, 0.25);
+    padding: 78px 18px 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    overflow-y: auto;
+    transform: translateX(100%);
+    transition: transform 0.3s ease;
+    z-index: 100030;
+    pointer-events: none;
+}
+
+#user-top-badge-container.ui-profile-open .ui-profile-drawer-body {
+    transform: translateX(0);
+    pointer-events: auto;
+}
+
+.ui-profile-drawer-title {
+    font-size: 15px;
+    font-weight: bold;
+    color: #2c3e50;
+    padding-bottom: 10px;
+    margin-bottom: 6px;
+    border-bottom: 2px solid #f0f0f0;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+/* --------------------------------------------------------------------------
+   فاصل بصري بين مجموعات الأزرار داخل البوابة (مثلاً بين أزرار الحساب
+   وأزرار "دليل الاستخدام / تواصل معنا")
+   -------------------------------------------------------------------------- */
+.ui-profile-drawer-divider {
+    border: none;
+    border-top: 1px solid #eee;
+    margin: 8px 0;
+}
+
+/* --------------------------------------------------------------------------
+   عناصر البادج داخل البوابة (الاسم، الرتبة، الأزرار) - عرض كامل وتوزيع عمودي
+   -------------------------------------------------------------------------- */
 .user-badge-name {
     font-weight: bold;
     color: #2c3e50;
-    font-size: 13px;
+    font-size: 16px;
+    text-align: center;
 }
 
 .user-badge-role {
-    font-size: 11px;
-    padding: 2px 8px;
+    align-self: center;
+    font-size: 12px;
+    padding: 4px 14px;
     border-radius: 20px;
     color: white;
     font-weight: bold;
+    margin-bottom: 6px;
 }
 
 .role-admin { background-color: #e74c3c; }
 .role-provider { background-color: #2980b9; }
 .role-user { background-color: #27ae60; }
 
+/* استخدام محدد ID + كلاس لضمان أولوية أعلى من ملفات CSS الأخرى بغض النظر عن ترتيب التحميل */
+#user-top-badge-container .btn-dashboard-top,
+#user-top-badge-container .btn-change-pwd-top,
+#user-top-badge-container .btn-logout-top,
+#user-top-badge-container .btn-guide-top,
+#user-top-badge-container .btn-fb-top,
+#user-top-badge-container .notification-btn {
+    width: 100%;
+    box-sizing: border-box;
+    justify-content: center;
+    padding: 12px 10px;
+    font-size: 13px;
+    border-radius: 8px;
+    margin: 0;
+    text-decoration: none;
+}
+
+.btn-dashboard-top {
+    background-color: #3498db;
+    color: #ffffff;
+    border: none;
+    cursor: pointer;
+    font-weight: bold;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: all 0.2s;
+}
+.btn-dashboard-top:hover { background-color: #2980b9; }
+
+.btn-change-pwd-top {
+    background-color: #34495e;
+    color: white;
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: background 0.3s;
+}
+.btn-change-pwd-top:hover { background-color: #2c3e50; }
+
 .btn-logout-top {
     background-color: #7f8c8d;
     color: white;
     border: none;
-    padding: 4px 10px;
-    border-radius: 4px;
-    font-size: 12px;
     cursor: pointer;
-    transition: background 0.3s;
     display: flex;
     align-items: center;
-    gap: 5px;
+    gap: 8px;
+    transition: background 0.3s;
 }
 .btn-logout-top:hover { background-color: #c0392b; }
 
+/* 🆕 زر "دليل الاستخدام" داخل البوابة */
+.btn-guide-top {
+    background-color: #16a085;
+    color: #ffffff;
+    border: none;
+    cursor: pointer;
+    font-weight: bold;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: background 0.3s;
+}
+.btn-guide-top:hover { background-color: #12876f; }
+
+/* 🆕 زر "تواصل معنا عبر فيسبوك" داخل البوابة */
+.btn-fb-top {
+    background-color: #1877f2;
+    color: #ffffff;
+    border: none;
+    cursor: pointer;
+    font-weight: bold;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: background 0.3s;
+}
+.btn-fb-top:hover { background-color: #145dbf; }
+
+#user-top-badge-container .notification-btn {
+    position: relative;
+}
+
+/* 🆕 إخفاء الغلاف العائم القديم لزرَي "دليل الاستخدام" و"تواصل معنا" بعد
+   نقلهما إلى داخل بوابة الملف الشخصي عبر ui-collapse.js. يبقى هذا العنصر
+   فارغاً في الصفحة (بدون أي محتوى مرئي) بعد النقل، لذلك إخفاؤه هنا أمان
+   إضافي بحتة ولا يؤثر على أي صفحة لا يوجد فيها هذا العنصر أصلاً. */
+#guide-contact-floating-buttons {
+    display: none !important;
+}
+
+/* --------------------------------------------------------------------------
+   عناصر أخرى غير مرتبطة بالبوابة (زر تسجيل دخول عائم قديم)
+   -------------------------------------------------------------------------- */
 #btn-open-login-nav {
     position: fixed;
     top: 15px;
@@ -69,68 +244,10 @@
 }
 #btn-open-login-nav:hover { background-color: #34495e; }
 
-/* --- أزرار لوحة التحكم والتواصل --- */
-.btn-dashboard-top, .btn-contact-top {
-    background-color: #3498db;
-    color: #ffffff;
-    border: none;
-    border-radius: 5px;
-    cursor: pointer;
-    font-weight: bold;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
-    padding: 8px 12px;
-    margin: 0 3px;
-    font-size: 12px;
-    display: inline-flex;
-    align-items: center;
-    gap: 5px;
-    transition: all 0.3s;
-}
-
-.btn-dashboard-top:hover { background-color: #2980b9; }
-.btn-contact-top:hover { background-color: #25d366; }
-
-/* --- استجابة الموبايل للعناصر العلوية --- */
+/* --------------------------------------------------------------------------
+   استجابة الموبايل: تضييق عرض البوابة قليلاً على الشاشات الصغيرة جداً
+   -------------------------------------------------------------------------- */
 @media (max-width: 767px) {
-    #user-top-badge-container {
-        top: 5px;
-        right: 5px;
-        left: auto;
-        width: auto;
-        max-width: 100%;
-        justify-content: flex-start;
-        padding: 4px 8px;
-        font-size: 10px;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.2);
-        z-index: 100015 !important;
-        flex-wrap: wrap;
-        gap: 3px;
-    }
-
-    .user-badge-name {
-        font-size: 10px;
-        max-width: 100px;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
-    }
-
-    .user-badge-role {
-        font-size: 9px;
-        padding: 2px 6px;
-    }
-
-    .btn-dashboard-top {
-        padding: 3px 6px;
-        font-size: 9px;
-        margin: 0 2px;
-    }
-
-    .btn-logout-top {
-        padding: 3px 6px;
-        font-size: 9px;
-    }
-
     #btn-open-login-nav {
         top: 5px;
         left: 5px;
@@ -140,58 +257,29 @@
     }
 }
 
-/* --- تعديل مخصص وحصري للموبايل الأفقي (Landscape) --- */
-@media (max-width: 900px) and (orientation: landscape) {
-    #user-top-badge-container {
-        top: 4px !important;
-        right: 4px !important;
-        padding: 4px 8px !important;
-        font-size: 10px !important;
-        max-width: 45% !important;
+@media (max-width: 480px) {
+    .ui-profile-drawer-body {
+        width: 260px;
+        max-width: 88vw;
+        padding: 70px 14px 20px;
     }
+    .ui-profile-toggle-btn {
+        width: 42px;
+        height: 42px;
+        font-size: 16px;
+        top: 5px;
+        right: 60px;
+    }
+}
 
-    .user-badge-name { font-size: 10px !important; }
-    .user-badge-role { font-size: 9px !important; padding: 1px 5px !important; }
-    .btn-logout-top { padding: 3px 6px !important; font-size: 9px !important; }
-
+@media (max-width: 900px) and (orientation: landscape) {
+    .ui-profile-drawer-body {
+        padding-top: 62px;
+    }
     #btn-open-login-nav {
-        top: 4px !important;
-        left: 4px !important;
-        padding: 4px 10px !important;
-        font-size: 10px !important;
-    }
-}
-
-/* --- تنسيق زر تغيير كلمة المرور الجديد --- */
-.btn-change-pwd-top {
-    background-color: #34495e;
-    color: white;
-    border: none;
-    padding: 4px 10px;
-    border-radius: 4px;
-    font-size: 12px;
-    cursor: pointer;
-    transition: background 0.3s;
-    display: flex;
-    align-items: center;
-    gap: 5px;
-}
-.btn-change-pwd-top:hover { 
-    background-color: #2c3e50; 
-}
-
-/* التوافق مع شاشات الموبايل العمودية */
-@media (max-width: 767px) {
-    .btn-change-pwd-top {
-        padding: 3px 6px;
-        font-size: 9px;
-    }
-}
-
-/* التوافق مع شاشات الموبايل الأفقية Landscape */
-@media (max-width: 900px) and (orientation: landscape) {
-    .btn-change-pwd-top { 
-        padding: 3px 6px !important; 
-        font-size: 9px !important; 
+        top: 4px;
+        left: 4px;
+        padding: 4px 10px;
+        font-size: 10px;
     }
 }
