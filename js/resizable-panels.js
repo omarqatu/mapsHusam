@@ -34,13 +34,13 @@
 
         let debounceToken = null;
         const observer = new ResizeObserver(function () {
-            // 🛡️ تصحيح فوري: تكبير اللوحة يدوياً من زاويتها قد يدفع حافتها
-            // السفلية أو اليمنى خارج الشاشة حتى مع وجود max-width/max-height بالـ CSS
-            // (لأنهما لا يعرفان موضع اللوحة top/left الحالي)
+            if (document.body.classList.contains('mobile-tabs-portrait') || document.body.classList.contains('mobile-tabs-landscape')) return;
+
             safeClamp(panel);
 
             clearTimeout(debounceToken);
             debounceToken = setTimeout(function () {
+                if (document.body.classList.contains('mobile-tabs-portrait') || document.body.classList.contains('mobile-tabs-landscape')) return;
                 const rect = panel.getBoundingClientRect();
                 try {
                     localStorage.setItem('panel_size_' + panel.id, JSON.stringify({
@@ -53,7 +53,7 @@
 
         observer.observe(panel);
     }
-
+    
     function init() {
     document.querySelectorAll('.panel-right:not(#provider-mini-panel)').forEach(function (panel) {
         restoreSize(panel);

@@ -1,39 +1,30 @@
 #feedbackBanner.minimized {
-    /* حدد هنا ارتفاع البانر وهو مصغر */
     height: 40px; 
     overflow: hidden;
-    /* وأي تنسيق إضافي */
 }
 
-/* ==========================================================================
-   1. شاشة الكمبيوتر (الشاشات الكبيرة) - متموضع في الوسط تماماً أفقياً
-   ========================================================================== */
 .feedback-banner-wrapper {
     position: fixed !important;
-    top: 100px !important;       /* التحكم بالارتفاع (نزول/طلوع) في الكمبيوتر */
-    left: 15% !important;        /* عملية السنترة المطلوبة فوق الخريطة */
+    top: 100px !important;      
+    left: 15% !important;        
     right: auto !important;
     transform: translateX(-50%) !important;
     z-index: 999999999 !important;
 }
 
-/* إعادة تفعيل النقرات للعناصر الداخلية فقط */
-.banner-toggle-btn, .feedback-banner {
-    pointer-events: auto !important; /* يعيد تفعيل النقرات للزر والبنر حصراً */
+.banner-toggle-btn, .banner-close-btn, .banner-drag-btn, .feedback-banner {
+    pointer-events: auto !important; 
 }
 
-/* إضافة قابلية السحب للبنر */
 .feedback-banner-wrapper.draggable {
     cursor: move !important;
-    pointer-events: auto !important; /* السماح بالسحب */
+    pointer-events: auto !important; 
 }
 
-/* عند السحب الفعلي، منع النقر على الرابط */
 .feedback-banner-wrapper.dragging .feedback-banner {
     pointer-events: none !important;
 }
 
-/* المربع الأساسي - الرابط */
 .feedback-banner {
     display: block !important;
     background: #ffffff !important;
@@ -51,41 +42,76 @@
     z-index: 1 !important; 
 }
 
-/* زر التصغير والتكبير الدائري - الموضع الافتراضي عند فتح البنر */
-.banner-toggle-btn {
+/* زر الإغلاق - أقصى اليمين */
+.banner-close-btn {
     position: absolute !important;
-    top: 8px !important;
-    right: 8px !important;
-    background: #e0f0ff !important;
+    top: 9px !important;
+    right: 8px !important; 
+    background: rgba(255, 255, 255, 0.8) !important;
     border: none !important;
-    color: #0084ff !important;
-    width: 24px !important;
-    height: 24px !important;
+    color: #d32f2f !important;
+    width: 22px !important;
+    height: 22px !important;
     border-radius: 50% !important;
-    font-size: 14px !important;
+    font-size: 13px !important;
     font-weight: bold !important;
     cursor: pointer !important;
     display: flex !important;
     align-items: center !important;
     justify-content: center !important;
-    z-index: 9999999999 !important; /* يضمن ظهور الزر فوق البنر دائماً وقابلية النقر عليه */
+    z-index: 99999999999 !important;
     transition: all 0.2s ease !important;
     padding: 0 !important;
     line-height: 1 !important;
 }
 
-/* زر التحريك الجديد */
+.banner-close-btn:hover {
+    background: #d32f2f !important;
+    color: #ffffff !important;
+    transform: scale(1.1) !important;
+}
+
+/* زر التكبير والتصغير - بجانب زر الإغلاق */
+.banner-toggle-btn {
+    position: absolute !important;
+    top: 9px !important;
+    right: 32px !important; 
+    background: rgba(255, 255, 255, 0.8) !important;
+    border: none !important;
+    color: #0084ff !important;
+    width: 22px !important;
+    height: 22px !important;
+    border-radius: 50% !important;
+    font-size: 13px !important;
+    font-weight: bold !important;
+    cursor: pointer !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    z-index: 9999999999 !important; 
+    transition: all 0.2s ease !important;
+    padding: 0 !important;
+    line-height: 1 !important;
+}
+
+.banner-toggle-btn:hover {
+    background: #0084ff !important;
+    color: #ffffff !important;
+    transform: scale(1.1) !important;
+}
+
+/* زر التحريك - أقصى اليسار */
 .banner-drag-btn {
     position: absolute !important;
-    top: 8px !important;
+    top: 9px !important;
     left: 8px !important;
-    background: #f0f0f0 !important;
-    border: 1px solid #ccc !important;
+    background: rgba(255, 255, 255, 0.8) !important;
+    border: none !important;
     color: #555 !important;
-    width: 24px !important;
-    height: 24px !important;
+    width: 22px !important;
+    height: 22px !important;
     border-radius: 4px !important;
-    font-size: 12px !important;
+    font-size: 11px !important;
     font-weight: bold !important;
     cursor: move !important;
     display: flex !important;
@@ -95,7 +121,6 @@
     transition: all 0.2s ease !important;
     padding: 0 !important;
     line-height: 1 !important;
-    pointer-events: auto !important;
 }
 
 .banner-drag-btn:hover {
@@ -104,23 +129,15 @@
     border-color: #0084ff !important;
 }
 
-.banner-toggle-btn:hover {
-    background: #0084ff !important;
-    color: #ffffff !important;
-    transform: scale(1.1) !important;
-}
-
-/* إخفاء نص التصغير افتراضياً في الحالة الكبيرة للمربع */
 .banner-minimized-content {
     display: none !important;
 }
 
-/* 🔥 حالة التصغير (عندما ينكمش البنر ويتحول لمستطيل تواصل معنا عبر فيسبوك) */
 .feedback-banner.minimized {
-    width: 220px !important;            /* عرض مثالي ومستقر يمنع كسر السطر */
-    height: 42px !important;            /* ارتفاع مستطيل متناسق ورشيق */
-    padding: 0 !important;         
-    border-radius: 6px !important;      /* شكل مستطيل زواياه ناعمة وأنيقة */
+    width: 250px !important;            
+    height: 42px !important;            
+    padding: 0 !important;        
+    border-radius: 6px !important;      
     background: #0084ff !important;
     border-color: #0084ff !important;
     display: flex !important;
@@ -129,26 +146,24 @@
     box-shadow: 0 4px 12px rgba(0, 132, 255, 0.4) !important;
 }
 
-/* عند التصغير: إخفاء نصوص البنر الكبيرة بالكامل */
 .feedback-banner.minimized .banner-full-content {
     display: none !important;
 }
 
-/* عند التصغير: إظهار نص المستطيل الأزرق وتنسيقه باللون الأبيض */
+/* تمديد مساحة النص للأعلى واليمين لعدم تداخله مع الأزرار */
 .feedback-banner.minimized .banner-minimized-content {
     display: block !important;
     color: #ffffff !important;
-    font-size: 18px !important;
+    font-size: 16px !important;
     font-weight: bold !important;
-    font-family: inherit !important;
     text-align: center !important;
     width: 100% !important;
-    line-height: 42px !important;      /* سنترة النص عمودياً تماماً داخل المستطيل */
-}
-
-/* 🔥 إخفاء الدائرة الصغيرة تماماً عند التصغير لمنع تشوه المظهر أو التداخل */
-.feedback-banner.minimized ~ .banner-toggle-btn {
-    display: none !important;
+    line-height: 42px !important;
+    padding: 0 35px !important; /* ترك مسافة يميناً ويساراً للأزرار حتى لا تغطي على النص */
+    box-sizing: border-box !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 .banner-full-content { 
@@ -175,9 +190,6 @@
     transform: translateY(-3px) !important; 
 }
 
-/* ==========================================================================
-   2. الموبايل العمودي (Portrait)
-   ========================================================================== */
 @media (max-width: 767px) {
     .feedback-banner-wrapper {
         top: 10px !important;   
@@ -185,48 +197,14 @@
         transform: translateX(-50%) !important;
         width: auto !important;
     }
-    
     .feedback-banner {
         width: 210px !important; 
         padding: 15px 10px !important; 
     }
-    
-    /* الحفاظ على أبعاد المستطيل متناسقة تماماً في الموبايل */
     .feedback-banner.minimized {
         width: 190px !important;
         height: 38px !important;
     }
-    
-    .feedback-banner.minimized .banner-minimized-content {
-        font-size: 12px !important;
-        line-height: 38px !important;
-    }
-    
-    .feedback-banner p { font-size: 11px !important; }
-    .feedback-banner span { font-size: 9px !important; }
-}
-
-/* ==========================================================================
-   3. الموبايل الأفقي (Landscape)
-   ========================================================================== */
-@media (max-width: 900px) and (orientation: landscape) {
-    .feedback-banner-wrapper {
-        top: 2px !important;   
-        left: 50% !important;
-        transform: translateX(-50%) !important;
-    }
-    
-    .feedback-banner {
-        width: 220px !important; 
-        padding: 15px 10px !important;
-    }
-    
-    /* الحفاظ على أبعاد المستطيل متناسقة في الموبايل الأفقي */
-    .feedback-banner.minimized {
-        width: 190px !important;
-        height: 38px !important;
-    }
-    
     .feedback-banner.minimized .banner-minimized-content {
         font-size: 12px !important;
         line-height: 38px !important;

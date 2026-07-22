@@ -1,0 +1,428 @@
+/* ==========================================================================
+   mobile-tabs.css
+   نظام "خريطة + تبويبات" للموبايل (عمودي وأفقي) على غرار خرائط جوجل.
+   كل لوحة تبقى بمكانها الأصلي في الـ DOM ولا يتم نقلها إطلاقاً؛ فقط يتم
+   تغيير موقعها البصري (position: fixed) لتطابق صندوق التبويبات، وإخفاء أي
+   لوحة غير نشطة حالياً. هذا يمنع أي تضارب مع أي كود آخر يتعامل مع اللوحات.
+   ========================================================================== */
+
+.swal2-container { z-index: 200000 !important; }
+
+body.mobile-tabs-portrait,
+body.mobile-tabs-landscape {
+    --mt-size: 34vh;
+    --mt-header-height: 58px;
+}
+
+/* ------------------ 1) تصغير الخريطة وحجز مكان صندوق التبويبات ------------------ */
+body.mobile-tabs-portrait #map {
+    height: calc(100vh - var(--mt-size)) !important;
+    width: 100% !important;
+}
+body.mobile-tabs-landscape #map {
+    width: calc(100vw - var(--mt-size)) !important;
+    height: 100vh !important;
+}
+
+body.mt-animate #map,
+body.mt-animate #mobile-tab-area,
+body.mt-animate .ol-zoom,
+body.mt-animate #coordinates {
+    transition: all 0.25s ease !important;
+}
+
+/* ------------------ 2) صندوق التبويبات (الخلفية البصرية فقط) ------------------ */
+#mobile-tab-area { display: none; }
+
+body.mobile-tabs-portrait #mobile-tab-area {
+    display: flex !important;
+    flex-direction: column;
+    position: fixed !important;
+    left: 0; right: 0; bottom: 0;
+    width: 100%;
+    height: var(--mt-size);
+    background: #ffffff;
+    box-shadow: 0 -6px 20px rgba(0,0,0,0.18);
+    border-radius: 16px 16px 0 0;
+    z-index: 6000;
+    overflow: hidden;
+    direction: rtl;
+}
+
+body.mobile-tabs-landscape #mobile-tab-area {
+    display: flex !important;
+    flex-direction: column;
+    position: fixed !important;
+    top: 0; right: 0; bottom: 0;
+    width: var(--mt-size);
+    height: 100vh;
+    background: #ffffff;
+    box-shadow: -6px 0 20px rgba(0,0,0,0.18);
+    border-radius: 16px 0 0 16px;
+    z-index: 6000;
+    overflow: hidden;
+    direction: rtl;
+}
+
+/* ------------------ 3) رأس الصندوق: مقبض السحب + شريط التبويبات (ارتفاع ثابت دقيق) ------------------ */
+#mobile-tab-header {
+    flex-shrink: 0;
+    height: var(--mt-header-height);
+    box-sizing: border-box;
+    overflow: hidden;
+    background: #f4f6f8;
+    border-bottom: 1px solid #e3e6ea;
+}
+
+#mobile-tab-handle {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 18px;
+    cursor: ns-resize;
+    touch-action: none;
+    user-select: none;
+}
+body.mobile-tabs-landscape #mobile-tab-handle { cursor: ew-resize; }
+
+.mt-handle-pill {
+    display: block;
+    width: 44px;
+    height: 5px;
+    border-radius: 4px;
+    background: #cfd4da;
+}
+body.mobile-tabs-landscape .mt-handle-pill {
+    width: 5px;
+    height: 44px;
+}
+#mobile-tab-handle:active .mt-handle-pill { background: #1a73e8; }
+
+#mobile-tab-bar {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    height: 40px;
+    box-sizing: border-box;
+    padding: 0 8px 8px;
+    overflow-x: auto;
+    overflow-y: hidden;
+    white-space: nowrap;
+}
+#mobile-tab-bar::-webkit-scrollbar { height: 4px; }
+#mobile-tab-bar::-webkit-scrollbar-thumb { background: #ccc; border-radius: 4px; }
+
+.mobile-tab-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: #fff;
+    border: 1px solid #ddd;
+    color: #444;
+    font-size: 12.5px;
+    font-weight: bold;
+    padding: 6px 10px;
+    border-radius: 18px;
+    cursor: pointer;
+    flex-shrink: 0;
+    transition: all 0.15s ease;
+}
+.mobile-tab-btn.active {
+    background: #1a73e8;
+    border-color: #1a73e8;
+    color: #fff;
+}
+.mobile-tab-btn .mobile-tab-close {
+    margin-right: 2px;
+    opacity: 0.85;
+    font-weight: bold;
+    padding: 0 3px;
+}
+.mobile-tab-btn .mobile-tab-close:hover { opacity: 1; }
+
+/* ------------------ 4) تبويب الرئيسية (الترحيب) ------------------ */
+#mobile-tab-content { position: relative; flex: 1; overflow: hidden; }
+
+#mobile-tab-home {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 20px;
+    gap: 10px;
+    color: #667;
+    overflow-y: auto;
+}
+#mobile-tab-home .mth-icon { font-size: 34px; }
+#mobile-tab-home .mth-title { font-size: 15px; font-weight: bold; color: #2c3e50; }
+#mobile-tab-home .mth-desc { font-size: 12.5px; line-height: 1.7; color: #777; max-width: 280px; }
+
+/* ==========================================================================
+   5) اللوحات نفسها: تبقى بمكانها الأصلي بالـ DOM، ويتم فقط تغيير موقعها
+   البصري. استخدام المعرّف (#id) صراحة هنا إجباري لضمان الأولوية على قواعد
+   style.css / provider-panel.css التي تستهدف نفس اللوحات بمعرّفات مع !important.
+   ========================================================================== */
+
+/* تعطيل السحب اليدوي للحجم بالكامل بوضع الموبايل */
+body.mobile-tabs-portrait #search-panel,
+body.mobile-tabs-portrait #nearby-apartments-panel,
+body.mobile-tabs-portrait #layerPanel,
+body.mobile-tabs-portrait #measurePanel,
+body.mobile-tabs-portrait #shareLocationPanel,
+body.mobile-tabs-portrait #editPanel,
+body.mobile-tabs-portrait #polygonEditPanel,
+body.mobile-tabs-portrait #lineEditPanel,
+body.mobile-tabs-portrait #results-panel,
+body.mobile-tabs-portrait #provider-mini-panel,
+body.mobile-tabs-landscape #search-panel,
+body.mobile-tabs-landscape #nearby-apartments-panel,
+body.mobile-tabs-landscape #layerPanel,
+body.mobile-tabs-landscape #measurePanel,
+body.mobile-tabs-landscape #shareLocationPanel,
+body.mobile-tabs-landscape #editPanel,
+body.mobile-tabs-landscape #polygonEditPanel,
+body.mobile-tabs-landscape #lineEditPanel,
+body.mobile-tabs-landscape #results-panel,
+body.mobile-tabs-landscape #provider-mini-panel {
+    resize: none !important;
+}
+
+/* أي لوحة ليست التبويب النشط حالياً => مخفية تماماً */
+body.mobile-tabs-portrait #search-panel:not(.mobile-tab-target),
+body.mobile-tabs-portrait #nearby-apartments-panel:not(.mobile-tab-target),
+body.mobile-tabs-portrait #layerPanel:not(.mobile-tab-target),
+body.mobile-tabs-portrait #measurePanel:not(.mobile-tab-target),
+body.mobile-tabs-portrait #shareLocationPanel:not(.mobile-tab-target),
+body.mobile-tabs-portrait #editPanel:not(.mobile-tab-target),
+body.mobile-tabs-portrait #polygonEditPanel:not(.mobile-tab-target),
+body.mobile-tabs-portrait #lineEditPanel:not(.mobile-tab-target),
+body.mobile-tabs-portrait #results-panel:not(.mobile-tab-target),
+body.mobile-tabs-portrait #provider-mini-panel:not(.mobile-tab-target),
+body.mobile-tabs-landscape #search-panel:not(.mobile-tab-target),
+body.mobile-tabs-landscape #nearby-apartments-panel:not(.mobile-tab-target),
+body.mobile-tabs-landscape #layerPanel:not(.mobile-tab-target),
+body.mobile-tabs-landscape #measurePanel:not(.mobile-tab-target),
+body.mobile-tabs-landscape #shareLocationPanel:not(.mobile-tab-target),
+body.mobile-tabs-landscape #editPanel:not(.mobile-tab-target),
+body.mobile-tabs-landscape #polygonEditPanel:not(.mobile-tab-target),
+body.mobile-tabs-landscape #lineEditPanel:not(.mobile-tab-target),
+body.mobile-tabs-landscape #results-panel:not(.mobile-tab-target),
+body.mobile-tabs-landscape #provider-mini-panel:not(.mobile-tab-target) {
+    display: none !important;
+}
+
+/* اللوحة النشطة حالياً (عمودي): تملأ منطقة المحتوى تحت رأس الصندوق تماماً */
+body.mobile-tabs-portrait #search-panel.mobile-tab-target,
+body.mobile-tabs-portrait #nearby-apartments-panel.mobile-tab-target,
+body.mobile-tabs-portrait #layerPanel.mobile-tab-target,
+body.mobile-tabs-portrait #measurePanel.mobile-tab-target,
+body.mobile-tabs-portrait #shareLocationPanel.mobile-tab-target,
+body.mobile-tabs-portrait #editPanel.mobile-tab-target,
+body.mobile-tabs-portrait #polygonEditPanel.mobile-tab-target,
+body.mobile-tabs-portrait #lineEditPanel.mobile-tab-target,
+body.mobile-tabs-portrait #results-panel.mobile-tab-target,
+body.mobile-tabs-portrait #provider-mini-panel.mobile-tab-target {
+    display: block !important;
+    position: fixed !important;
+    top: calc(100vh - var(--mt-size) + var(--mt-header-height)) !important;
+    left: 0 !important;
+    right: 0 !important;
+    bottom: 0 !important;
+    width: 100% !important;
+    height: auto !important;
+    max-width: 100% !important;
+    max-height: none !important;
+    min-width: 0 !important;
+    min-height: 0 !important;
+    margin: 0 !important;
+    transform: none !important;
+    border: none !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    z-index: 6001 !important;
+    overflow-y: auto !important;
+}
+
+/* اللوحة النشطة حالياً (أفقي): تملأ الجزء الأيمن تحت رأس الصندوق تماماً */
+body.mobile-tabs-landscape #search-panel.mobile-tab-target,
+body.mobile-tabs-landscape #nearby-apartments-panel.mobile-tab-target,
+body.mobile-tabs-landscape #layerPanel.mobile-tab-target,
+body.mobile-tabs-landscape #measurePanel.mobile-tab-target,
+body.mobile-tabs-landscape #shareLocationPanel.mobile-tab-target,
+body.mobile-tabs-landscape #editPanel.mobile-tab-target,
+body.mobile-tabs-landscape #polygonEditPanel.mobile-tab-target,
+body.mobile-tabs-landscape #lineEditPanel.mobile-tab-target,
+body.mobile-tabs-landscape #results-panel.mobile-tab-target,
+body.mobile-tabs-landscape #provider-mini-panel.mobile-tab-target {
+    display: block !important;
+    position: fixed !important;
+    top: var(--mt-header-height) !important;
+    right: 0 !important;
+    left: auto !important;
+    bottom: 0 !important;
+    width: var(--mt-size) !important;
+    height: auto !important;
+    max-width: 100% !important;
+    max-height: none !important;
+    min-width: 0 !important;
+    min-height: 0 !important;
+    margin: 0 !important;
+    transform: none !important;
+    border: none !important;
+    border-radius: 0 0 0 16px !important;
+    box-shadow: none !important;
+    z-index: 6001 !important;
+    overflow-y: auto !important;
+}
+
+/* إخفاء أزرار السحب/التصغير غير المفيدة داخل نظام التبويبات */
+body.mobile-tabs-portrait .panel-right .panel-drag-btn,
+body.mobile-tabs-portrait .panel-right .panel-minimize-btn,
+body.mobile-tabs-landscape .panel-right .panel-drag-btn,
+body.mobile-tabs-landscape .panel-right .panel-minimize-btn,
+body.mobile-tabs-portrait #provider-mini-panel .panel-header,
+body.mobile-tabs-landscape #provider-mini-panel .panel-header {
+    display: none !important;
+}
+
+body.mobile-tabs-portrait #search-panel.mobile-tab-target .panel-body,
+body.mobile-tabs-portrait #nearby-apartments-panel.mobile-tab-target .panel-body,
+body.mobile-tabs-portrait #layerPanel.mobile-tab-target .panel-body,
+body.mobile-tabs-portrait #measurePanel.mobile-tab-target .panel-body,
+body.mobile-tabs-portrait #shareLocationPanel.mobile-tab-target .panel-body,
+body.mobile-tabs-portrait #editPanel.mobile-tab-target .panel-body,
+body.mobile-tabs-portrait #polygonEditPanel.mobile-tab-target .panel-body,
+body.mobile-tabs-portrait #lineEditPanel.mobile-tab-target .panel-body,
+body.mobile-tabs-portrait #results-panel.mobile-tab-target .panel-body,
+body.mobile-tabs-landscape #search-panel.mobile-tab-target .panel-body,
+body.mobile-tabs-landscape #nearby-apartments-panel.mobile-tab-target .panel-body,
+body.mobile-tabs-landscape #layerPanel.mobile-tab-target .panel-body,
+body.mobile-tabs-landscape #measurePanel.mobile-tab-target .panel-body,
+body.mobile-tabs-landscape #shareLocationPanel.mobile-tab-target .panel-body,
+body.mobile-tabs-landscape #editPanel.mobile-tab-target .panel-body,
+body.mobile-tabs-landscape #polygonEditPanel.mobile-tab-target .panel-body,
+body.mobile-tabs-landscape #lineEditPanel.mobile-tab-target .panel-body,
+body.mobile-tabs-landscape #results-panel.mobile-tab-target .panel-body {
+    max-height: none !important;
+    height: calc(100% - 42px) !important;
+    overflow-y: auto !important;
+}
+
+body.mobile-tabs-portrait #provider-mini-panel.mobile-tab-target .provider-panel-body,
+body.mobile-tabs-landscape #provider-mini-panel.mobile-tab-target .provider-panel-body {
+    max-height: 100% !important;
+    height: 100% !important;
+    padding: 15px !important;
+}
+
+body.mobile-tabs-portrait #results-panel.mobile-tab-target .results-table-container,
+body.mobile-tabs-landscape #results-panel.mobile-tab-target .results-table-container {
+    max-height: none !important;
+}
+
+/* ------------------ 6) أزرار الزووم ومربع الإحداثيات تتبع حجم الصندوق حياً ------------------ */
+body.mobile-tabs-portrait .ol-zoom {
+    bottom: calc(var(--mt-size) + 45px) !important;
+}
+body.mobile-tabs-portrait #coordinates {
+    bottom: calc(var(--mt-size) + 10px) !important;
+}
+
+/* ------------------ 6-ب) العمودي: تثبيت شريط البحث وأزرار التحكم فوق منطقة الخريطة فقط ------------------ */
+body.mobile-tabs-portrait #map-header {
+    top: 10px !important;
+    width: 92% !important;
+}
+body.mobile-tabs-portrait .quick-search-wrapper {
+    top: 55px !important;
+}
+body.mobile-tabs-portrait #map-controls {
+    top: 105px !important;
+}
+
+/* ------------------ 7) الوضع الأفقي: توسيط شريط البحث فوق منطقة الخريطة فقط ------------------ */
+body.mobile-tabs-landscape #map-header {
+    left: calc((100vw - var(--mt-size)) / 2) !important;
+    width: calc((100vw - var(--mt-size)) * 0.9) !important;
+    max-width: none !important;
+}
+body.mobile-tabs-landscape .quick-search-wrapper {
+    left: calc((100vw - var(--mt-size)) / 2) !important;
+    width: calc((100vw - var(--mt-size)) * 0.9) !important;
+    max-width: none !important;
+}
+body.mobile-tabs-landscape #map-controls {
+    left: calc((100vw - var(--mt-size)) / 2) !important;
+    max-width: calc((100vw - var(--mt-size)) * 0.9) !important;
+}
+body.mobile-tabs-landscape #coordinates {
+    left: calc((100vw - var(--mt-size)) / 2) !important;
+}
+body.mobile-tabs-landscape .feedback-banner-wrapper {
+    left: calc((100vw - var(--mt-size)) / 3) !important;
+    
+}
+
+/* ==========================================================================
+   🆕 إصلاح موقع مربع الإحداثيات (#coordinates) على الموبايل: نفرض
+   position:fixed بدل absolute (الموروثة من style.css) لضمان ارتباطه
+   الفعلي بحواف الشاشة المرئية دائماً، بغض النظر عن طول الصفحة الكامل.
+   ========================================================================== */
+body.mobile-tabs-portrait #coordinates,
+body.mobile-tabs-landscape #coordinates {
+    position: fixed !important;
+}
+
+body.mobile-tabs-portrait #coordinates {
+    bottom: calc(var(--mt-size) + 10px) !important;
+    left: 50% !important;
+    transform: translateX(-50%) !important;
+}
+
+body.mobile-tabs-landscape #coordinates {
+    bottom: 15px !important;
+    left: calc((100vw - var(--mt-size)) / 2) !important;
+    transform: translateX(-50%) !important;
+}
+
+/* ==========================================================================
+   🆕 إصلاح لوحة "إدارة الخدمة" داخل صندوق التبويبات: تجاوز صريح لقواعد
+   provider-panel.css القديمة (max-height:40vh وغيرها) التي كانت تمنع
+   السكرول الداخلي الصحيح، واستبدالها بتخطيط flex يضمن أن الرأس مخفي
+   والجسم يأخذ كامل المساحة المتبقية ويعمل سكرول داخلي دائماً عند الحاجة.
+   ========================================================================== */
+body.mobile-tabs-portrait #provider-mini-panel.mobile-tab-target,
+body.mobile-tabs-landscape #provider-mini-panel.mobile-tab-target {
+    display: flex !important;
+    flex-direction: column !important;
+}
+
+body.mobile-tabs-portrait #provider-mini-panel.mobile-tab-target .provider-panel-body,
+body.mobile-tabs-landscape #provider-mini-panel.mobile-tab-target .provider-panel-body {
+    flex: 1 1 auto !important;
+    min-height: 0 !important;
+    max-height: none !important;
+    height: auto !important;
+    overflow-y: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    padding: 15px !important;
+    box-sizing: border-box !important;
+}
+
+/* منع تراكب/قطع أزرار حالة التوفر (متوفر موقعي / متوفر السابق) عند ضيق العرض */
+body.mobile-tabs-portrait #provider-mini-panel.mobile-tab-target .provider-action-buttons,
+body.mobile-tabs-landscape #provider-mini-panel.mobile-tab-target .provider-action-buttons,
+body.mobile-tabs-portrait #provider-mini-panel.mobile-tab-target .provider-action-buttons > div,
+body.mobile-tabs-landscape #provider-mini-panel.mobile-tab-target .provider-action-buttons > div {
+    flex-wrap: wrap !important;
+}
+
+body.mobile-tabs-portrait #provider-mini-panel.mobile-tab-target .btn-prov,
+body.mobile-tabs-landscape #provider-mini-panel.mobile-tab-target .btn-prov {
+    min-width: 110px !important;
+    white-space: normal !important;
+    line-height: 1.3 !important;
+}

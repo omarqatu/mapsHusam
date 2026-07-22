@@ -203,10 +203,15 @@
    تنسيقات اللوحة المتحركة (الموحدة)
    ========================================================================== */
 #provider-mini-panel {
-    position: absolute !important;
+    /* 🆕 تصحيح: كانت absolute بينما .provider-panel-bottom-left تفرض fixed،
+       فيصير التموضع مرتبطاً بارتفاع المستند الكامل بدل الشاشة المرئية فعلياً
+       (يظهر بوضوح عند تمرير الصفحة أو تغيّر ارتفاعها). توحيدها الآن لـ fixed
+       يضمن ثباتها بالنسبة للـ viewport دائماً، بما يطابق باقي منطق اللوحة. */
+    position: fixed !important;
     width: 300px !important; /* عرض ثابت للوحة */
     min-height: 100px;
     max-width: 90vw;
+    box-sizing: border-box !important;
     z-index: 9999;
     box-shadow: 0 4px 6px rgba(0,0,0,0.1);
     background: white;
@@ -215,6 +220,26 @@
     transition: none; /* تم حذف الـ transition هنا بناءً على طلبك */
     touch-action: none; /* يخبر المتصفح أن هذه المنطقة مخصصة للتحريك */
     user-select: none;
+}
+
+/* ==========================================================================
+   🆕 شبكة أمان دائمة (بدون أي شرط على وضع الموبايل): تمنع أي صف أزرار داخل
+   اللوحة من التمدد خارج حدود اللوحة نفسها على أي حجم شاشة. هذا يعالج جذرياً
+   مشكلة انفجار العرض (overflow) الناتجة عن أي زر بعرض 100% موضوع بالخطأ
+   داخل صف flex يحوي أزراراً أخرى بـ flex:1 (مثل ما حصل مع زر "تتبع مباشر").
+   ========================================================================== */
+#provider-mini-panel * {
+    box-sizing: border-box !important;
+    min-width: 0 !important; /* يسمح لعناصر flex بالانكماش بدل فرض عرضها الطبيعي */
+}
+#provider-mini-panel .provider-action-buttons,
+#provider-mini-panel .provider-action-buttons > div {
+    flex-wrap: wrap !important;
+    max-width: 100% !important;
+}
+#provider-mini-panel .provider-panel-body {
+    max-width: 100% !important;
+    overflow-x: hidden !important; /* يمنع أي overflow أفقي متبقٍ من الظهور خارج اللوحة */
 }
 
 #provider-mini-panel .panel-header {

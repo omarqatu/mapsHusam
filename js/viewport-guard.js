@@ -26,7 +26,8 @@
      * جزئياً أو كلياً، دون أي تأثير إطلاقاً إن كان أصلاً داخل الحدود بالكامل.
      */
     function clampElementToViewport(el, margin) {
-        if (!el) return;
+    if (!el) return;
+    if (document.body.classList.contains('mobile-tabs-portrait') || document.body.classList.contains('mobile-tabs-landscape')) return;
 
         const m = typeof margin === 'number' ? margin : MARGIN;
         const rect = el.getBoundingClientRect();
@@ -116,12 +117,45 @@
         });
     });
 
+    // ==========================================================================
+    // 🆕 مراقبة تغيّر الحجم الفعلي (وليس فقط الكلاس) لكل عنصر محروس. هذا يلتقط
+    // حالات مثل: صف أزرار ينكسر أو يتمدد داخلياً (overflow) فيكبر ارتفاع/عرض
+    // اللوحة الفعلي دون أي تغيير بكلاس hidden - وهي بالضبط الحالة التي كانت
+    // تفوت على bodyObserver سابقاً (مثل مشكلة تمدد صف أزرار مزود الخدمة).
+    // ==========================================================================
+    let sizeObserver = null;
+    function initSizeObserver() {
+        if (typeof window.ResizeObserver === 'undefined') return;
+        if (sizeObserver) return;
+
+        sizeObserver = new ResizeObserver(function (entries) {
+            entries.forEach(function (entry) {
+                const el = entry.target;
+                // لا داعي للفحص إن كانت اللوحة مخفية أصلاً
+                if (el.classList && el.classList.contains('hidden')) return;
+                if (el.style && el.style.display === 'none') return;
+                requestAnimationFrame(function () { clampElementToViewport(el); });
+            });
+        });
+    }
+
+    function observeSizeOf(el) {
+        if (!el || !sizeObserver) return;
+        try { sizeObserver.observe(el); } catch (err) { /* تجاهل */ }
+    }
+
     function initObservers() {
+        initSizeObserver();
+
         document.querySelectorAll('.panel-right').forEach(function (p) {
             bodyObserver.observe(p, { attributes: true });
+            observeSizeOf(p);
         });
         const provider = document.getElementById('provider-mini-panel');
-        if (provider) bodyObserver.observe(provider, { attributes: true });
+        if (provider) {
+            bodyObserver.observe(provider, { attributes: true });
+            observeSizeOf(provider);
+        }
 
         // فحص أولي عند التحميل (مثلاً لوحة مزود الخدمة قد تظهر تلقائياً بعد تسجيل الدخول)
         setTimeout(clampAllVisible, 800);

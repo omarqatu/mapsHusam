@@ -247,7 +247,7 @@ body {
 /* --- الإحداثيات والبحث --- */
 #coordinates {
     display: inline-block; /* بدلاً من block ليأخذ حجم المحتوى فقط */
-    position: absolute; 
+    position: fixed; 
     bottom: 15px; 
     left: 50%;
     transform: translateX(-50%); 
@@ -323,46 +323,7 @@ body {
 
 /* --- التجاوب (Media Queries) --- */
 
-/* الموبايل العمودي */
-@media (max-width: 767px) and (orientation: portrait) {
-    #map-header { top: 55px; width: 95%; }
-    
-    .panel-right, #search-panel, #nearby-apartments-panel, #results-panel, 
-    #layerPanel, #measurePanel, #shareLocationPanel, #editPanel, #polygonEditPanel, #lineEditPanel {
-        right: 5vw !important;
-        width: 90vw !important;
-        top: auto !important;
-        bottom: 2vh !important; /* إنزال اللوحة للأسفل */
-        transform: none !important;
-    }
-    
-    #coordinates { bottom: 5px !important; }
-}
 
-/* الموبايل الأفقي */
-@media (max-width: 1100px) and (orientation: landscape) {
-    
-    /* جعل اللوحة الجانبية بعرض ثابت ومناسب (350px) بدلاً من 80vw */
-    .panel-right, #search-panel, #nearby-apartments-panel, #results-panel, 
-    #layerPanel, #measurePanel, #shareLocationPanel, #editPanel, #polygonEditPanel, #lineEditPanel {
-        width: 350px !important;       /* العرض الجديد للوحات */
-        max-width: 90vw !important;    /* لا تتجاوز 90% من الشاشة في الحالات الضيقة جداً */
-        right: 10px !important;        /* تثبيت من اليمين */
-        top: 220px !important;         /* إنزالها تحت شريط البحث */
-        bottom: 10px !important;       /* ترك مسافة من الأسفل */
-        max-height: calc(100vh - 140px) !important; /* ضمان عدم تجاوز طول الشاشة */
-    }
-
-    /* ضبط حجم الجداول داخل اللوحات في وضع الأفقي */
-    #results-panel .results-table-container {
-        max-height: 50vh !important;
-    }
-
-    /* تصغير طفيف للخطوط إذا لزم الأمر في الأفقي */
-    .panel-header h3, .panel-header h4 {
-        font-size: 13px !important;
-    }
-}
 
 /* هذا الكود يضمن أن كل أزرار الإغلاق في كافة اللوحات لها نفس الشكل */
 .panel-close-btn {
@@ -543,8 +504,7 @@ body {
 
 /* هذا يضمن أن الخريطة مخفية تماماً لحظة بدء تحميل الصفحة */
 #map {
-    opacity: 0;
-    transition: opacity 0.5s ease-in-out;
+    opacity: 1;
 }
 
 .modal { z-index: 100000 !important; background-color: rgba(0,0,0,0.3) !important; }

@@ -1,5 +1,22 @@
 /**
  * ui-collapse.js
+ * ------------------------------------------------------------------
+ * 🆕 تحسين هام مضاف هنا (إصلاح تعارض CSS عند التصغير):
+ * سابقاً كانت حالة "مصغّر" تعتمد فقط على كلاس CSS (.ui-group-collapsed)
+ * الذي يفرض width: auto !important. لكن في وضع الموبايل، ملف mobile-tabs.css
+ * يحتوي قاعدة أعلى تخصيصاً (ID + كلاس body):
+ *      body.mobile-tabs-portrait #map-header { width: 92% !important; }
+ * وهذه كانت تتغلب على كلاس .ui-group-collapsed رغم كلاهما !important،
+ * لأن التخصيص (specificity) للقاعدة الخارجية أعلى.
+ *
+ * الحل: عند التصغير، نفرض الآن width بأسلوب inline عبر
+ * style.setProperty('width', 'auto', 'important'). الأسلوب المضمّن (inline)
+ * بأولوية !important يتفوق دائماً على أي قاعدة !important في ملفات CSS
+ * خارجية بغض النظر عن تخصيصها، فيصبح الانكماش الفعلي مضموناً 100% في كل
+ * الحالات (مربع عمليات الخريطة، شريط البحث السريع، أزرار الخريطة).
+ * عند إعادة التكبير، نُزيل هذا الـ override يدوياً لنعيد التحكم الكامل
+ * لملفات CSS الخارجية كما كان قبل هذا التعديل.
+ * ------------------------------------------------------------------
  */
 (function () {
     'use strict';
@@ -30,6 +47,16 @@
             target.classList.toggle('ui-group-collapsed', isCollapsed);
             iconSpan.textContent = isCollapsed ? '+' : '−';
             btn.title = isCollapsed ? 'تكبير' : 'تصغير';
+
+            // 🆕 فرض/إزالة override الأولوية القصوى للعرض لضمان الانكماش الفعلي
+            // حتى لو وُجدت قاعدة CSS خارجية بتخصيص أعلى وبنفس أولوية !important
+            // (مثل حالة #map-header في وضع الموبايل).
+            if (isCollapsed) {
+                target.style.setProperty('width', 'auto', 'important');
+            } else {
+                target.style.removeProperty('width');
+            }
+
             if (typeof onToggle === 'function') {
                 onToggle(isCollapsed);
             }
@@ -174,9 +201,116 @@
             } catch (err) { /* تجاهل */ }
         }
 
+        // ==================================================================
+        // 🆕 تفعيل سحب أيقونة الملف الشخصي نفسها (تبقى بنفس الشكل والمكان
+        // الافتراضي دائماً عند أول زيارة، وتحترم آخر موضع حرّكه المستخدم
+        // يدوياً لاحقاً - نفس فلسفة باقي اللوحات القابلة للسحب بالمنصة)
+        // ==================================================================
+        let toggleWasDragged = false;
+
+        (function makeProfileToggleDraggable() {
+            let isDragging = false;
+            let offsetX = 0, offsetY = 0;
+            let startX = 0, startY = 0;
+            const DRAG_THRESHOLD = 6;
+
+            function setImportantStyle(el, prop, value) {
+                el.style.setProperty(prop, value, 'important');
+            }
+
+            function onDown(e) {
+                const point = e.touches ? e.touches[0] : e;
+                isDragging = true;
+                toggleWasDragged = false;
+                const rect = toggleBtn.getBoundingClientRect();
+                offsetX = point.clientX - rect.left;
+                offsetY = point.clientY - rect.top;
+                startX = point.clientX;
+                startY = point.clientY;
+
+                document.addEventListener('mousemove', onMove);
+                document.addEventListener('mouseup', onUp);
+                document.addEventListener('touchmove', onMove, { passive: false });
+                document.addEventListener('touchend', onUp);
+            }
+
+            function onMove(e) {
+                if (!isDragging) return;
+                const point = e.touches ? e.touches[0] : e;
+                const dx = point.clientX - startX;
+                const dy = point.clientY - startY;
+
+                if (!toggleWasDragged && (Math.abs(dx) > DRAG_THRESHOLD || Math.abs(dy) > DRAG_THRESHOLD)) {
+                    toggleWasDragged = true;
+                }
+                if (!toggleWasDragged) return;
+                if (e.cancelable) e.preventDefault();
+
+                let newLeft = point.clientX - offsetX;
+                let newTop = point.clientY - offsetY;
+
+                const maxLeft = window.innerWidth - toggleBtn.offsetWidth;
+                const maxTop = window.innerHeight - toggleBtn.offsetHeight;
+                newLeft = Math.max(0, Math.min(newLeft, maxLeft));
+                newTop = Math.max(0, Math.min(newTop, maxTop));
+
+                setImportantStyle(toggleBtn, 'position', 'fixed');
+                setImportantStyle(toggleBtn, 'left', newLeft + 'px');
+                setImportantStyle(toggleBtn, 'top', newTop + 'px');
+                setImportantStyle(toggleBtn, 'right', 'auto');
+                setImportantStyle(toggleBtn, 'bottom', 'auto');
+            }
+
+            function onUp() {
+                if (!isDragging) return;
+                isDragging = false;
+                document.removeEventListener('mousemove', onMove);
+                document.removeEventListener('mouseup', onUp);
+                document.removeEventListener('touchmove', onMove);
+                document.removeEventListener('touchend', onUp);
+
+                if (toggleWasDragged) {
+                    try {
+                        localStorage.setItem('ui_profile_toggle_pos', JSON.stringify({
+                            left: toggleBtn.style.left,
+                            top: toggleBtn.style.top
+                        }));
+                    } catch (err) { /* تجاهل */ }
+                }
+            }
+
+            toggleBtn.addEventListener('mousedown', onDown);
+            toggleBtn.addEventListener('touchstart', onDown, { passive: true });
+
+            // استعادة آخر موضع محفوظ (إن وجد)، مع تصحيحه داخل حدود الشاشة الحالية
+            try {
+                const saved = localStorage.getItem('ui_profile_toggle_pos');
+                if (saved) {
+                    const pos = JSON.parse(saved);
+                    if (pos && pos.left && pos.top) {
+                        setImportantStyle(toggleBtn, 'position', 'fixed');
+                        setImportantStyle(toggleBtn, 'left', pos.left);
+                        setImportantStyle(toggleBtn, 'top', pos.top);
+                        setImportantStyle(toggleBtn, 'right', 'auto');
+                        setImportantStyle(toggleBtn, 'bottom', 'auto');
+                        requestAnimationFrame(function () {
+                            if (typeof window.clampElementToViewport === 'function') {
+                                window.clampElementToViewport(toggleBtn);
+                            }
+                        });
+                    }
+                }
+            } catch (err) { /* تجاهل */ }
+        })();
+
         toggleBtn.addEventListener('click', function (e) {
             e.preventDefault();
             e.stopPropagation();
+            // 🆕 لا نفتح/نغلق البوابة إذا كانت آخر حركة "سحب" فعلي وليس نقرة عادية
+            if (toggleWasDragged) {
+                toggleWasDragged = false;
+                return;
+            }
             setOpen(!container.classList.contains('ui-profile-open'));
         });
 

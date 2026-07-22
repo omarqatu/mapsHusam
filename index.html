@@ -45,6 +45,7 @@
     <link rel="stylesheet" href="./css/notifications.css">
     <link rel="stylesheet" href="./css/promo-splash.css">
     <link rel="stylesheet" href="./css/social-links.css">
+    <link rel="stylesheet" href="./css/mobile-tabs.css">
 
 </head>
 <body>
@@ -748,16 +749,19 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 </script>
 
-<div class="feedback-banner-wrapper" style="pointer-events: none !important;">
-    <!-- تم تغيير النص من — إلى + -->
-    <button type="button" id="toggleBannerBtn" class="banner-toggle-btn" title="تكبير البنر" style="pointer-events: auto !important;"
-            onclick="handleBannerToggle(event, this)">+</button>
+<div id="feedbackBannerWrapper" class="feedback-banner-wrapper" style="pointer-events: none !important;">
+    
+    <!-- زر الإغلاق المؤقت (×) - أعلى اليمين -->
+    <button type="button" id="closeBannerBtn" class="banner-close-btn" title="إغلاق مؤقت" onclick="closeBannerTemporarily()">×</button>
 
-    <button type="button" id="dragBannerBtn" class="banner-drag-btn" title="تحريك" style="pointer-events: auto !important;">⋮⋮</button>
+    <!-- زر التكبير والتصغير (+) - بجانب زر الإغلاق -->
+    <button type="button" id="toggleBannerBtn" class="banner-toggle-btn" title="تكبير البنر" onclick="handleBannerToggle(event, this)">+</button>
 
-    <!-- إضافة الكلاس minimized هنا -->
-    <a href="https://www.facebook.com/MapServesPalestine" target="_blank" class="feedback-banner minimized" id="feedbackBanner" style="pointer-events: auto !important;"
-       onclick="handleBannerLinkClick(event, this)">
+    <!-- زر التحريك والسحب (⋮⋮) - أعلى اليسار -->
+    <button type="button" id="dragBannerBtn" class="banner-drag-btn" title="تحريك">⋮⋮</button>
+
+    <!-- البنر الرئيسي (يبدأ مصغراً minimized) -->
+    <a href="https://www.facebook.com/MapServesPalestine" target="_blank" class="feedback-banner minimized" id="feedbackBanner" onclick="handleBannerLinkClick(event, this)">
         <div class="banner-full-content">
             <p>هل لديك استفسار أو تود تقديم شكوى ؟؟   </p>
             <p>أو إذا كنت مزود خدمة، تواصل معنا عبر رسائل الصفحة
@@ -956,7 +960,6 @@ function handleBannerToggle(event, button) {
 
     banner.classList.toggle('minimized');
 
-    // تحديث نص الزر بناءً على الحالة الجديدة
     if(banner.classList.contains('minimized')){
         button.innerText = '+'; 
         button.setAttribute('title', 'تكبير البنر');
@@ -974,10 +977,83 @@ function handleBannerLinkClick(event, banner) {
         banner.classList.remove('minimized');
 
         var toggleBtn = document.getElementById('toggleBannerBtn');
-        toggleBtn.innerText = '—';
-        toggleBtn.setAttribute('title', 'تصغير');
+        if(toggleBtn) {
+            toggleBtn.innerText = '—';
+            toggleBtn.setAttribute('title', 'تصغير');
+        }
     }
 }
+
+// متغيّر لحفظ مؤقت الـ setTimeout
+let bannerTimeout;
+
+// دالة إغلاق الإعلان مؤقتاً (تجمع بين الـ 5 دقائق والـ Refresh)
+function closeBannerTemporarily() {
+    const wrapper = document.getElementById('feedbackBannerWrapper');
+    if (wrapper) {
+        wrapper.style.display = 'none'; 
+    }
+
+    // 1. حساب وقت إعادة الإظهار بعد 5 دقائق من الآن
+    const duration = 5 * 60 * 1000; // 5 دقائق بالميلي ثانية
+    const expirationTime = new Date().getTime() + duration; 
+    sessionStorage.setItem('bannerHiddenUntil', expirationTime);
+
+    // 2. تشغيل مؤقت خفي يُظهر البانر تلقائياً بعد 5 دقائق دون الحاجة لـ Refresh
+    clearTimeout(bannerTimeout);
+    bannerTimeout = setTimeout(function() {
+        if (wrapper) {
+            wrapper.style.display = 'block';
+            sessionStorage.removeItem('bannerHiddenUntil');
+        }
+    }, duration);
+}
+
+// فحص حالة الإعلان عند تحميل الصفحة أو تحديثها (Refresh)
+function checkBannerStatus() {
+    const wrapper = document.getElementById('feedbackBannerWrapper');
+    if (!wrapper) return;
+
+    // كشف ما إذا كانت الصفحة قد تم عمل Refresh لها بواسطة المستخدم
+    const navigationEntries = performance.getEntriesByType("navigation");
+    const isRefresh = navigationEntries.length > 0 && navigationEntries[0].type === "reload";
+
+    if (isRefresh) {
+        // الحوزة الأولى: إذا قام المستخدم بعمل Refresh للخريطة، أظهره فوراً ونظف التخزين
+        sessionStorage.removeItem('bannerHiddenUntil');
+        wrapper.style.display = 'block';
+        return;
+    }
+
+    // الحوزة الثانية: فحص مؤقت الـ 5 دقائق المتبقي (في حال التنقل العادي أو فتح الصفحة)
+    const hiddenUntil = sessionStorage.getItem('bannerHiddenUntil');
+    if (hiddenUntil) {
+        const currentTime = new Date().getTime();
+        const timeLeft = hiddenUntil - currentTime;
+
+        if (timeLeft > 0) {
+            // لا يزال هناك وقت متبقي من الـ 5 دقائق، يبدأ مخفياً
+            wrapper.style.display = 'none';
+            
+            // تعيين الـ setTimeout للوقت المتبقي ليعود تلقائياً
+            clearTimeout(bannerTimeout);
+            bannerTimeout = setTimeout(function() {
+                wrapper.style.display = 'block';
+                sessionStorage.removeItem('bannerHiddenUntil');
+            }, timeLeft);
+        } else {
+            // انتهت الـ 5 دقائق بالفعل
+            sessionStorage.removeItem('bannerHiddenUntil');
+            wrapper.style.display = 'block';
+        }
+    } else {
+        // لم يتم الضغط على إغلاق مطلقاً
+        wrapper.style.display = 'block';
+    }
+}
+
+// تشغيل الفحص فور تحميل وتجهيز عناصر الصفحة
+document.addEventListener('DOMContentLoaded', checkBannerStatus);
 </script>
 
 <script src="js/provider-panel.js"></script>
@@ -990,6 +1066,7 @@ function handleBannerLinkClick(event, banner) {
 
 <!-- حاوية الإشعارات -->
 <div id="notification-container"></div>
+<script src="js/mobile-tabs.js"></script>
 
 </body>
 </html>
