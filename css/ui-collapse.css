@@ -66,8 +66,8 @@
 }
 
 .quick-search-wrapper > .ui-collapse-btn {
-    top: -9px;
-    right: -9px;
+    top: 0px;
+    right: 180px;
     left: auto;
 }
 
@@ -135,10 +135,13 @@
 }
 
 .ui-group-collapsed {
+    position: relative !important;
     min-width: 0 !important;
     width: auto !important;
+    max-width: none !important;
     min-height: 0 !important;
     height: auto !important;
+    max-height: none !important;
     padding: 0 !important;
     margin: 0 !important;
     background: transparent !important;
@@ -149,29 +152,18 @@
 }
 
 .ui-group-collapsed .ui-collapse-btn {
-    position: static !important;
-    width: auto;
-    height: auto;
-    padding: 8px 14px;
-    border-radius: 8px;
-    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.4);
+    position: relative !important; /* الحفاظ على مكان العنصر الطبيعي دون تغيير فجائي */
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    width: auto !important;
+    height: auto !important;
+    padding: 8px 14px !important;
+    border-radius: 8px !important;
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.4) !important;
+    margin: 0 auto !important; /* ضمان بقائها متمركزة في الوسط */
 }
 
 .ui-group-collapsed .ui-collapse-label {
-    display: inline-block;
-}
-
-/* عند اللمس على الموبايل نكبّر الزر قليلاً ليسهل الضغط عليه */
-@media (max-width: 900px) {
-    .ui-collapse-btn {
-        width: 26px;
-        height: 26px;
-        font-size: 15px;
-    }
-    .ui-group-collapsed .ui-collapse-btn {
-        padding: 9px 14px;
-    }
-    .ui-collapse-label {
-        font-size: 12px;
-    }
+    display: inline-block !important;
 }

@@ -92,123 +92,13 @@
     display: none !important;
 }
 
-/* ==========================================================================
-   استجابة لوحة مزود الخدمة للموبايل (Portrait)
-   ========================================================================== */
-@media (max-width: 767px) and (orientation: portrait) {
-    .provider-panel-bottom-left {
-        left: 0;
-        right: 0;
-        margin: 0 auto;
-        bottom: 10px;
-        width: 90% !important;
-        max-width: 350px;
-        max-height: 55vh; /* زيادة الارتفاع لمشاهدة كامل النص */
-        height: auto !important;
-        border-radius: 12px;
-        box-shadow: 0 -4px 15px rgba(0,0,0,0.2);
-        z-index: 10005; /* لضمان ظهور اللوحة فوق عناصر الخريطة والزووم الثابتة */
-        transition: all 0.3s ease-in-out;
-        overflow: hidden; /* منع overflow من اللوحة نفسها */
-        transform: none; /* إلغاء أي تحويلات */
-    }
-
-    .provider-panel-body {
-        padding: 12px;
-        overflow-y: auto !important; /* إجبار التمرير */
-        max-height: 40vh !important; /* ارتفاع ثابت للسماح بالتمرير */
-        -webkit-overflow-scrolling: touch; /* تحسين التمرير على iOS */
-    }
-
-    .btn-prov {
-        font-size: 13px;
-        padding: 10px;
-    }
-
-    .status-indicator-msg {
-        font-size: 12px;
-        padding: 12px;
-        margin-top: 12px;
-        border-top: 1px solid #eee;
-        background-color: #f9f9f9;
-        border-radius: 6px;
-        line-height: 1.6;
-    }
-}
-
-/* ==========================================================================
-   استجابة لوحة مزود الخدمة للموبايل (Landscape)
-   ========================================================================== */
-@media (max-width: 900px) and (orientation: landscape) {
-    .provider-panel-bottom-left {
-        width: 240px; /* تقليص العرض */
-        max-height: 80vh;
-        bottom: 5px;
-        left: 5px;
-        overflow: hidden; /* منع overflow من اللوحة نفسها */
-    }
-
-    .provider-panel-header {
-        padding: 6px 10px;
-    }
-
-    .provider-panel-header h4 {
-        font-size: 12px;
-    }
-
-    .provider-panel-body {
-        padding: 10px;
-        overflow-y: auto !important; /* إجبار التمرير */
-        max-height: 200px !important; /* ارتفاع ثابت للسماح بالتمرير */
-        -webkit-overflow-scrolling: touch; /* تحسين التمرير على iOS */
-    }
-
-    .provider-status-text {
-        font-size: 12px;
-        margin-bottom: 8px;
-    }
-
-    .provider-action-buttons {
-        flex-direction: column; /* الأزرار عمودية */
-        gap: 6px;
-    }
-
-    .btn-prov {
-        padding: 8px;
-        font-size: 12px;
-        gap: 6px;
-    }
-
-    .btn-go-to-location {
-        margin-top: 4px;
-    }
-
-    .status-indicator-msg {
-        font-size: 11px;
-        margin-top: 8px;
-        padding: 10px;
-        background-color: #f9f9f9;
-        border-radius: 6px;
-        border-top: 1px solid #eee;
-        line-height: 1.5;
-    }
-}
-
-.btn-prov.active {
-    background-color: #27ae60 !important;
-    color: white !important;
-}
 
 /* ==========================================================================
    تنسيقات اللوحة المتحركة (الموحدة)
    ========================================================================== */
 #provider-mini-panel {
-    /* 🆕 تصحيح: كانت absolute بينما .provider-panel-bottom-left تفرض fixed،
-       فيصير التموضع مرتبطاً بارتفاع المستند الكامل بدل الشاشة المرئية فعلياً
-       (يظهر بوضوح عند تمرير الصفحة أو تغيّر ارتفاعها). توحيدها الآن لـ fixed
-       يضمن ثباتها بالنسبة للـ viewport دائماً، بما يطابق باقي منطق اللوحة. */
     position: fixed !important;
-    width: 300px !important; /* عرض ثابت للوحة */
+    width: 300px !important;
     min-height: 100px;
     max-width: 90vw;
     box-sizing: border-box !important;
@@ -217,46 +107,15 @@
     background: white;
     border-radius: 8px;
     overflow: hidden;
-    transition: none; /* تم حذف الـ transition هنا بناءً على طلبك */
-    touch-action: none; /* يخبر المتصفح أن هذه المنطقة مخصصة للتحريك */
-    user-select: none;
-}
-
-/* ==========================================================================
-   🆕 شبكة أمان دائمة (بدون أي شرط على وضع الموبايل): تمنع أي صف أزرار داخل
-   اللوحة من التمدد خارج حدود اللوحة نفسها على أي حجم شاشة. هذا يعالج جذرياً
-   مشكلة انفجار العرض (overflow) الناتجة عن أي زر بعرض 100% موضوع بالخطأ
-   داخل صف flex يحوي أزراراً أخرى بـ flex:1 (مثل ما حصل مع زر "تتبع مباشر").
-   ========================================================================== */
-#provider-mini-panel * {
-    box-sizing: border-box !important;
-    min-width: 0 !important; /* يسمح لعناصر flex بالانكماش بدل فرض عرضها الطبيعي */
-}
-#provider-mini-panel .provider-action-buttons,
-#provider-mini-panel .provider-action-buttons > div {
-    flex-wrap: wrap !important;
-    max-width: 100% !important;
-}
-#provider-mini-panel .provider-panel-body {
-    max-width: 100% !important;
-    overflow-x: hidden !important; /* يمنع أي overflow أفقي متبقٍ من الظهور خارج اللوحة */
-}
-
-#provider-mini-panel .panel-header {
-    cursor: move; /* يوضح للمستخدم أنها قابلة للتحريك */
-    background: #f8f9fa;
-    padding: 10px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-}
-
-/* هذا يمنع اللوحة من التفاعل مع أوامر الزوم الخاصة بالخريطة */
-.provider-panel-bottom-left, 
-#provider-mini-panel, 
-.provider-panel-body,
-.panel-header {
+    transition: none; 
     touch-action: none; 
-    -webkit-user-select: none; /* يمنع تحديد النصوص بالخطأ أثناء الحركة */
     user-select: none;
+}
+
+/* جعل الارتفاع مرناً في الشاشات العادية، وسيتم إعادة ضبطه تلقائياً عبر قاعدتنا الأعلى في الموبايل */
+#provider-mini-panel .provider-panel-body {
+    padding: 15px;
+    height: auto; 
+    max-height: 70vh; 
+    overflow-y: auto;
 }

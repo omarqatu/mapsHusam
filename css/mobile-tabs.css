@@ -324,14 +324,36 @@ body.mobile-tabs-landscape #results-panel.mobile-tab-target .results-table-conta
 }
 
 /* ------------------ 6) أزرار الزووم ومربع الإحداثيات تتبع حجم الصندوق حياً ------------------ */
+
+/* أزرار الزووم في مكانها على اليسار فوق الصندوق */
 body.mobile-tabs-portrait .ol-zoom {
-    bottom: calc(var(--mt-size) + 45px) !important;
-}
-body.mobile-tabs-portrait #coordinates {
-    bottom: calc(var(--mt-size) + 10px) !important;
+    position: absolute !important;
+    left: 10px !important;
+    bottom: calc(var(--mt-size) + -240px) !important;
+    top: auto !important;
+    transition: bottom 0.1s ease-out !important;
 }
 
-/* ------------------ 6-ب) العمودي: تثبيت شريط البحث وأزرار التحكم فوق منطقة الخريطة فقط ------------------ */
+/* منع تمدد أزرار الزووم طولياً */
+body.mobile-tabs-portrait .ol-zoom button {
+    height: 28px !important;
+    width: 28px !important;
+}
+
+/* مربع الإحداثيات: على اليسار في الأسفل، ويتحرك صعوداً وهبوطاً مع سحب الصندوق حياً */
+body.mobile-tabs-portrait #coordinates {
+    position: absolute !important;
+    left: 10px !important;
+    bottom: calc(var(--mt-size) + 10px) !important;
+    right: auto !important;
+    transform: none !important; /* إلغاء التوسيط القديم ليلتصق باليسار تماماً */
+    z-index: 999 !important;
+    transition: bottom 0.1s ease-out !important;
+    font-size: 11px !important;
+    padding: 4px 8px !important;
+}
+
+/* ------------------ 7-ب) العمودي: تثبيت شريط البحث وأزرار التحكم فوق منطقة الخريطة فقط ------------------ */
 body.mobile-tabs-portrait #map-header {
     top: 10px !important;
     width: 92% !important;
@@ -340,10 +362,10 @@ body.mobile-tabs-portrait .quick-search-wrapper {
     top: 55px !important;
 }
 body.mobile-tabs-portrait #map-controls {
-    top: 105px !important;
+    top: 120px !important;
 }
 
-/* ------------------ 7) الوضع الأفقي: توسيط شريط البحث فوق منطقة الخريطة فقط ------------------ */
+/* ------------------ 8) الوضع الأفقي: توسيط شريط البحث فوق منطقة الخريطة فقط ------------------ */
 body.mobile-tabs-landscape #map-header {
     left: calc((100vw - var(--mt-size)) / 2) !important;
     width: calc((100vw - var(--mt-size)) * 0.9) !important;
@@ -389,40 +411,66 @@ body.mobile-tabs-landscape #coordinates {
 }
 
 /* ==========================================================================
-   🆕 إصلاح لوحة "إدارة الخدمة" داخل صندوق التبويبات: تجاوز صريح لقواعد
-   provider-panel.css القديمة (max-height:40vh وغيرها) التي كانت تمنع
-   السكرول الداخلي الصحيح، واستبدالها بتخطيط flex يضمن أن الرأس مخفي
-   والجسم يأخذ كامل المساحة المتبقية ويعمل سكرول داخلي دائماً عند الحاجة.
+   إصلاح جذري خاص بلوحة إدارة الخدمة (#provider-mini-panel) في الوضع العمودي والأفقي
    ========================================================================== */
-body.mobile-tabs-portrait #provider-mini-panel.mobile-tab-target,
-body.mobile-tabs-landscape #provider-mini-panel.mobile-tab-target {
+
+/* 1) الحاوية الرئيسية للوحة في الوضع العمودي: نثبت الارتفاع والعرض بدقة مطلقة ونلغي الـ bottom المتقاطع */
+body.mobile-tabs-portrait #provider-mini-panel.mobile-tab-target {
     display: flex !important;
     flex-direction: column !important;
-}
-
-body.mobile-tabs-portrait #provider-mini-panel.mobile-tab-target .provider-panel-body,
-body.mobile-tabs-landscape #provider-mini-panel.mobile-tab-target .provider-panel-body {
-    flex: 1 1 auto !important;
-    min-height: 0 !important;
+    position: fixed !important;
+    top: calc(100vh - var(--mt-size) + var(--mt-header-height)) !important;
+    left: 0 !important;
+    right: 0 !important;
+    bottom: auto !important; /* إلغاء التداخل مع bottom: 0 العام */
+    width: 100% !important;
+    height: calc(var(--mt-size) - var(--mt-header-height)) !important;
     max-height: none !important;
-    height: auto !important;
-    overflow-y: auto !important;
-    -webkit-overflow-scrolling: touch !important;
-    padding: 15px !important;
+    min-height: 0 !important;
+    margin: 0 !important;
+    transform: none !important;
+    border: none !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    z-index: 6001 !important;
+    overflow: hidden !important;
     box-sizing: border-box !important;
 }
 
-/* منع تراكب/قطع أزرار حالة التوفر (متوفر موقعي / متوفر السابق) عند ضيق العرض */
-body.mobile-tabs-portrait #provider-mini-panel.mobile-tab-target .provider-action-buttons,
-body.mobile-tabs-landscape #provider-mini-panel.mobile-tab-target .provider-action-buttons,
-body.mobile-tabs-portrait #provider-mini-panel.mobile-tab-target .provider-action-buttons > div,
-body.mobile-tabs-landscape #provider-mini-panel.mobile-tab-target .provider-action-buttons > div {
-    flex-wrap: wrap !important;
+/* 2) الحاوية الرئيسية للوحة في الوضع الأفقي */
+body.mobile-tabs-landscape #provider-mini-panel.mobile-tab-target {
+    display: flex !important;
+    flex-direction: column !important;
+    position: fixed !important;
+    top: var(--mt-header-height) !important;
+    right: 0 !important;
+    left: auto !important;
+    bottom: 0 !important;
+    width: var(--mt-size) !important;
+    height: calc(100vh - var(--mt-header-height)) !important;
+    max-height: none !important;
+    min-height: 0 !important;
+    margin: 0 !important;
+    transform: none !important;
+    border: none !important;
+    border-radius: 0 0 0 16px !important;
+    box-shadow: none !important;
+    z-index: 6001 !important;
+    overflow: hidden !important;
+    box-sizing: border-box !important;
 }
 
-body.mobile-tabs-portrait #provider-mini-panel.mobile-tab-target .btn-prov,
-body.mobile-tabs-landscape #provider-mini-panel.mobile-tab-target .btn-prov {
-    min-width: 110px !important;
-    white-space: normal !important;
-    line-height: 1.3 !important;
+/* 3) جسم اللوحة الداخلي في كلا الوضعين ليملأ المساحة المتبقية بمرونة ويمنع الفراغ الرمادي */
+body.mobile-tabs-portrait #provider-mini-panel.mobile-tab-target .provider-panel-body,
+body.mobile-tabs-landscape #provider-mini-panel.mobile-tab-target .provider-panel-body {
+    flex: 1 1 auto !important;
+    display: block !important;
+    width: 100% !important;
+    height: 100% !important;
+    max-height: none !important;
+    overflow-y: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    padding: 10px 15px 45px 15px !important;
+    box-sizing: border-box !important;
+    background-color: #ffffff !important; /* ضمان عدم ظهور لون رمادي خلف المحتوى */
 }

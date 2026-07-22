@@ -49,12 +49,12 @@
             btn.title = isCollapsed ? 'تكبير' : 'تصغير';
 
             // 🆕 فرض/إزالة override الأولوية القصوى للعرض لضمان الانكماش الفعلي
-            // حتى لو وُجدت قاعدة CSS خارجية بتخصيص أعلى وبنفس أولوية !important
-            // (مثل حالة #map-header في وضع الموبايل).
             if (isCollapsed) {
                 target.style.setProperty('width', 'auto', 'important');
+                target.style.setProperty('max-height', 'none', 'important'); // السماح بالتكيف حسب الحاجة
             } else {
                 target.style.removeProperty('width');
+                target.style.removeProperty('max-height');
             }
 
             if (typeof onToggle === 'function') {
@@ -200,146 +200,112 @@
                 localStorage.setItem('ui_profile_drawer_open', isOpen ? '1' : '0');
             } catch (err) { /* تجاهل */ }
         }
+// ==================================================================
+    // 🆕 تفعيل سحب أيقونة الملف الشخصي (تعود لموضعها الافتراضي عند تحديث الصفحة)
+    // ==================================================================
+    let toggleWasDragged = false;
 
-        // ==================================================================
-        // 🆕 تفعيل سحب أيقونة الملف الشخصي نفسها (تبقى بنفس الشكل والمكان
-        // الافتراضي دائماً عند أول زيارة، وتحترم آخر موضع حرّكه المستخدم
-        // يدوياً لاحقاً - نفس فلسفة باقي اللوحات القابلة للسحب بالمنصة)
-        // ==================================================================
-        let toggleWasDragged = false;
+    (function makeProfileToggleDraggable() {
+        let isDragging = false;
+        let offsetX = 0, offsetY = 0;
+        let startX = 0, startY = 0;
+        const DRAG_THRESHOLD = 6;
 
-        (function makeProfileToggleDraggable() {
-            let isDragging = false;
-            let offsetX = 0, offsetY = 0;
-            let startX = 0, startY = 0;
-            const DRAG_THRESHOLD = 6;
+        function setImportantStyle(el, prop, value) {
+            el.style.setProperty(prop, value, 'important');
+        }
 
-            function setImportantStyle(el, prop, value) {
-                el.style.setProperty(prop, value, 'important');
+        function onDown(e) {
+            const point = e.touches ? e.touches[0] : e;
+            isDragging = true;
+            toggleWasDragged = false;
+            const rect = toggleBtn.getBoundingClientRect();
+            offsetX = point.clientX - rect.left;
+            offsetY = point.clientY - rect.top;
+            startX = point.clientX;
+            startY = point.clientY;
+
+            document.addEventListener('mousemove', onMove);
+            document.addEventListener('mouseup', onUp);
+            document.addEventListener('touchmove', onMove, { passive: false });
+            document.addEventListener('touchend', onUp);
+        }
+
+        function onMove(e) {
+            if (!isDragging) return;
+            const point = e.touches ? e.touches[0] : e;
+            const dx = point.clientX - startX;
+            const dy = point.clientY - startY;
+
+            if (!toggleWasDragged && (Math.abs(dx) > DRAG_THRESHOLD || Math.abs(dy) > DRAG_THRESHOLD)) {
+                toggleWasDragged = true;
             }
+            if (!toggleWasDragged) return;
+            if (e.cancelable) e.preventDefault();
 
-            function onDown(e) {
-                const point = e.touches ? e.touches[0] : e;
-                isDragging = true;
-                toggleWasDragged = false;
-                const rect = toggleBtn.getBoundingClientRect();
-                offsetX = point.clientX - rect.left;
-                offsetY = point.clientY - rect.top;
-                startX = point.clientX;
-                startY = point.clientY;
+            let newLeft = point.clientX - offsetX;
+            let newTop = point.clientY - offsetY;
 
-                document.addEventListener('mousemove', onMove);
-                document.addEventListener('mouseup', onUp);
-                document.addEventListener('touchmove', onMove, { passive: false });
-                document.addEventListener('touchend', onUp);
-            }
+            const maxLeft = window.innerWidth - toggleBtn.offsetWidth;
+            const maxTop = window.innerHeight - toggleBtn.offsetHeight;
+            newLeft = Math.max(0, Math.min(newLeft, maxLeft));
+            newTop = Math.max(0, Math.min(newTop, maxTop));
 
-            function onMove(e) {
-                if (!isDragging) return;
-                const point = e.touches ? e.touches[0] : e;
-                const dx = point.clientX - startX;
-                const dy = point.clientY - startY;
+            setImportantStyle(toggleBtn, 'position', 'fixed');
+            setImportantStyle(toggleBtn, 'left', newLeft + 'px');
+            setImportantStyle(toggleBtn, 'top', newTop + 'px');
+            setImportantStyle(toggleBtn, 'right', 'auto');
+            setImportantStyle(toggleBtn, 'bottom', 'auto');
+        }
 
-                if (!toggleWasDragged && (Math.abs(dx) > DRAG_THRESHOLD || Math.abs(dy) > DRAG_THRESHOLD)) {
-                    toggleWasDragged = true;
-                }
-                if (!toggleWasDragged) return;
-                if (e.cancelable) e.preventDefault();
+        function onUp() {
+            if (!isDragging) return;
+            isDragging = false;
+            document.removeEventListener('mousemove', onMove);
+            document.removeEventListener('mouseup', onUp);
+            document.removeEventListener('touchmove', onMove);
+            document.removeEventListener('touchend', onUp);
+            // تم حذف تخزين الموضع نهائياً
+        }
 
-                let newLeft = point.clientX - offsetX;
-                let newTop = point.clientY - offsetY;
+        toggleBtn.addEventListener('mousedown', onDown);
+        toggleBtn.addEventListener('touchstart', onDown, { passive: true });
+    })();
 
-                const maxLeft = window.innerWidth - toggleBtn.offsetWidth;
-                const maxTop = window.innerHeight - toggleBtn.offsetHeight;
-                newLeft = Math.max(0, Math.min(newLeft, maxLeft));
-                newTop = Math.max(0, Math.min(newTop, maxTop));
-
-                setImportantStyle(toggleBtn, 'position', 'fixed');
-                setImportantStyle(toggleBtn, 'left', newLeft + 'px');
-                setImportantStyle(toggleBtn, 'top', newTop + 'px');
-                setImportantStyle(toggleBtn, 'right', 'auto');
-                setImportantStyle(toggleBtn, 'bottom', 'auto');
-            }
-
-            function onUp() {
-                if (!isDragging) return;
-                isDragging = false;
-                document.removeEventListener('mousemove', onMove);
-                document.removeEventListener('mouseup', onUp);
-                document.removeEventListener('touchmove', onMove);
-                document.removeEventListener('touchend', onUp);
-
-                if (toggleWasDragged) {
-                    try {
-                        localStorage.setItem('ui_profile_toggle_pos', JSON.stringify({
-                            left: toggleBtn.style.left,
-                            top: toggleBtn.style.top
-                        }));
-                    } catch (err) { /* تجاهل */ }
-                }
-            }
-
-            toggleBtn.addEventListener('mousedown', onDown);
-            toggleBtn.addEventListener('touchstart', onDown, { passive: true });
-
-            // استعادة آخر موضع محفوظ (إن وجد)، مع تصحيحه داخل حدود الشاشة الحالية
-            try {
-                const saved = localStorage.getItem('ui_profile_toggle_pos');
-                if (saved) {
-                    const pos = JSON.parse(saved);
-                    if (pos && pos.left && pos.top) {
-                        setImportantStyle(toggleBtn, 'position', 'fixed');
-                        setImportantStyle(toggleBtn, 'left', pos.left);
-                        setImportantStyle(toggleBtn, 'top', pos.top);
-                        setImportantStyle(toggleBtn, 'right', 'auto');
-                        setImportantStyle(toggleBtn, 'bottom', 'auto');
-                        requestAnimationFrame(function () {
-                            if (typeof window.clampElementToViewport === 'function') {
-                                window.clampElementToViewport(toggleBtn);
-                            }
-                        });
-                    }
-                }
-            } catch (err) { /* تجاهل */ }
-        })();
-
-        toggleBtn.addEventListener('click', function (e) {
-            e.preventDefault();
-            e.stopPropagation();
-            // 🆕 لا نفتح/نغلق البوابة إذا كانت آخر حركة "سحب" فعلي وليس نقرة عادية
-            if (toggleWasDragged) {
-                toggleWasDragged = false;
-                return;
-            }
-            setOpen(!container.classList.contains('ui-profile-open'));
-        });
-
-        // إغلاق البوابة تلقائياً عند النقر خارجها
-        document.addEventListener('click', function (e) {
-            if (!container.classList.contains('ui-profile-open')) return;
-            if (container.contains(e.target)) return;
-            setOpen(false);
-        });
-
-        // إغلاق البوابة عند الضغط على مفتاح Escape
-        document.addEventListener('keydown', function (e) {
-            if (e.key === 'Escape' && container.classList.contains('ui-profile-open')) {
-                setOpen(false);
-            }
-        });
-
-        // 🆕 الوضع الافتراضي: مغلقة (مصغّرة) دائماً عند أول زيارة، وتحترم
-        // اختيار المستخدم إن كان قد تركها مفتوحة سابقاً
-        let storedVal = null;
-        try {
-            storedVal = localStorage.getItem('ui_profile_drawer_open');
-        } catch (err) { /* تجاهل */ }
-        setOpen(storedVal === '1');
-    }
-
-    document.addEventListener('DOMContentLoaded', function () {
-        initStaticGroups();
-        initMapToolsGroup();
-        initProfileDrawer();
+    toggleBtn.addEventListener('click', function (e) {
+        e.preventDefault();
+        e.stopPropagation();
+        if (toggleWasDragged) {
+            toggleWasDragged = false;
+            return;
+        }
+        setOpen(!container.classList.contains('ui-profile-open'));
     });
+
+    // إغلاق البوابة تلقائياً عند النقر خارجها
+    document.addEventListener('click', function (e) {
+        if (!container.classList.contains('ui-profile-open')) return;
+        if (container.contains(e.target)) return;
+        setOpen(false);
+    });
+
+    // إغلاق البوابة عند الضغط على مفتاح Escape
+    document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape' && container.classList.contains('ui-profile-open')) {
+            setOpen(false);
+        }
+    });
+
+    let storedVal = null;
+    try {
+        storedVal = localStorage.getItem('ui_profile_drawer_open');
+    } catch (err) { /* تجاهل */ }
+    setOpen(storedVal === '1');
+}
+
+document.addEventListener('DOMContentLoaded', function () {
+    initStaticGroups();
+    initMapToolsGroup();
+    initProfileDrawer();
+});
 })();
