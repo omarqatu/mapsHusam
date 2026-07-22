@@ -216,9 +216,9 @@ body {
     line-height: 1.5 !important;
 }
 
-#results-panel { max-height: 60vh; }
+#results-panel { max-height: calc(100vh - 170px); }
 #results-panel .results-table-container {
-    max-height: 45vh;
+    max-height: calc(100vh - 260px);
     overflow-y: auto;
     overflow-x: hidden;
 }

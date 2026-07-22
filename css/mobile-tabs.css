@@ -329,7 +329,7 @@ body.mobile-tabs-landscape #results-panel.mobile-tab-target .results-table-conta
 body.mobile-tabs-portrait .ol-zoom {
     position: absolute !important;
     left: 10px !important;
-    bottom: calc(var(--mt-size) + -240px) !important;
+    bottom: calc(var(--mt-size) + 0px) !important;
     top: auto !important;
     transition: bottom 0.1s ease-out !important;
 }
