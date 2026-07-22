@@ -111,7 +111,7 @@
 /* عند تصغير مجموعة أزرار الخريطة: مربع بعرض تلقائي + إزاحة يمينية بسيطة
    حتى لا يختفي جزء من النص خارج حدود الخريطة (كانت قريبة جداً من الحافة) */
 .ol-zoom.ui-group-collapsed {
-    left: 26px !important;
+    left: -850px !important;
 }
 
 .ol-zoom.ui-group-collapsed .ui-collapse-btn {
