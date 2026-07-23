@@ -10,12 +10,58 @@ const { Pool } = require('pg');
 const cors = require('cors');
 const http = require('http');
 const { Server } = require('socket.io');
+const bcrypt = require('bcrypt'); // 🆕 لتشفير كلمات المرور - شغّل: npm install bcrypt
+const BCRYPT_SALT_ROUNDS = 10;
+const BCRYPT_HASH_REGEX = /^\$2[aby]\$\d{2}\$/; // نمط تعرف صيغة bcrypt القياسية
+
+// =========================================================================
+// 🆕 [ترحيل آمن لكلمات المرور]: الحسابات القديمة محفوظة بكلمة مرور نصية
+// صريحة بقاعدة البيانات (قبل هذا التعديل). هذه الدالة تتحقق من كلمة المرور
+// بطريقتين: إذا كانت القيمة المخزّنة تبدو كـ bcrypt hash نستخدم bcrypt.compare
+// العادي، وإلا (حساب قديم لم يُحدَّث بعد) نقارنها نصياً كما كان يعمل النظام
+// سابقاً فقط لمرة الدخول هذه، ثم نُعيد تشفيرها فوراً بـ bcrypt حتى لا تبقى
+// نصاً صريحاً بعد أول تسجيل دخول ناجح لهذا المستخدم.
+// =========================================================================
+async function verifyPasswordWithMigration(plainPassword, storedValue) {
+    if (!storedValue) return { valid: false, needsRehash: false };
+
+    if (BCRYPT_HASH_REGEX.test(storedValue)) {
+        const valid = await bcrypt.compare(plainPassword, storedValue);
+        return { valid, needsRehash: false };
+    }
+
+    // حساب قديم لم يُهاجَر بعد: مقارنة نصية كما كان النظام يعمل سابقاً
+    const valid = plainPassword === storedValue;
+    return { valid, needsRehash: valid }; // إذا صحّت، نعيد تشفيرها فوراً بعد هذا الاستدعاء
+}
+
+// =========================================================================
+// 🆕 [تشديد أمني]: قائمة الدومينات المسموح لها بالوصول عبر CORS. اضبط متغير
+// البيئة ALLOWED_ORIGINS بدومين واحد أو أكثر مفصولين بفاصلة (مثلاً
+// "https://palestine-services-map.com,https://www.palestine-services-map.com").
+// إذا لم يُضبط، نسمح بأي دومين مؤقتاً (نفس السلوك القديم) مع تحذير بالكونسول،
+// لتفادي كسر الموقع فوراً، لكن يُنصح بشدة بضبط هذا المتغير بالإنتاج.
+// =========================================================================
+const ALLOWED_ORIGINS = process.env.ALLOWED_ORIGINS
+    ? process.env.ALLOWED_ORIGINS.split(',').map(o => o.trim()).filter(Boolean)
+    : null;
+
+if (!ALLOWED_ORIGINS) {
+    console.warn('⚠️ [أمان] متغير البيئة ALLOWED_ORIGINS غير مضبوط - سيتم السماح لأي دومين بالوصول عبر CORS مؤقتاً. اضبطه بالإنتاج لتقييد الوصول.');
+}
+
+function corsOriginCheck(origin, callback) {
+    // طلبات بدون origin (مثل curl أو تطبيقات موبايل أو نفس السيرفر) نسمح بها دائماً
+    if (!origin || !ALLOWED_ORIGINS) return callback(null, true);
+    if (ALLOWED_ORIGINS.includes(origin)) return callback(null, true);
+    return callback(new Error('غير مسموح بالوصول من هذا الدومين (CORS)'));
+}
 
 const app = express();
 const server = http.createServer(app);
 const io = new Server(server, {
     cors: {
-        origin: '*',
+        origin: ALLOWED_ORIGINS || '*',
         methods: ['GET', 'POST']
     }
 });
@@ -97,7 +143,7 @@ function getPoolForLayer(layerName) {
 
 // 2. الميدل وير (Middlewares)
 app.use(cors({
-    origin: true,
+    origin: corsOriginCheck,
     credentials: true
 }));
 app.use(express.json()); 
@@ -131,7 +177,17 @@ const ALLOWED_LAYERS = [
     'ApartRent', 'ApartSale', 'LandSale', 'Location', 'RoadsTest'
 ];
 
-const isValidLayer = (layer) => ALLOWED_LAYERS.includes(layer.trim());
+const isValidLayer = (layer) => typeof layer === 'string' && ALLOWED_LAYERS.includes(layer.trim());
+
+// =========================================================================
+// 🆕 [تشديد أمني]: أسماء الحقول (columns) القادمة من الفرونت إند كانت تُدمج
+// مباشرة داخل نص استعلام SQL بدون أي تحقق (في /api/get-unique-values و
+// /api/search-features)، وهذا يفتح ثغرة SQL Injection حقيقية عبر تمرير اسم
+// حقل خبيث بدل اسم حقيقي. هذه الدالة تتحقق أن الاسم يطابق نمط معرّف SQL
+// عادي فقط (حروف/أرقام/شرطة سفلية) قبل استخدامه داخل أي استعلام.
+// =========================================================================
+const SQL_IDENTIFIER_REGEX = /^[a-zA-Z_][a-zA-Z0-9_]{0,63}$/;
+const isValidSqlIdentifier = (name) => typeof name === 'string' && SQL_IDENTIFIER_REGEX.test(name);
 
 // =========================================================================
 // [نظام حد الطلبات/الأحداث لكل مستخدم]: افتراضياً "مفتوح" بدون أي حد.
@@ -652,6 +708,11 @@ app.post('/api/auth/register', async (req, res) => {
             return res.status(400).json({ error: 'رقم الجوال هذا مستخدم بالفعل من قبل حساب آخر!' });
         }
 
+        // 🆕 [إصلاح ثغرة حرجة]: تشفير كلمة المرور بـ bcrypt قبل حفظها، بدل حفظها
+        // كنص صريح بقاعدة البيانات (أي تسريب لقاعدة البيانات كان سيكشف كل
+        // كلمات مرور المستخدمين فوراً وبدون أي جهد).
+        const hashedPassword = await bcrypt.hash(password, BCRYPT_SALT_ROUNDS);
+
         const insertUserQuery = `
             INSERT INTO public.users (full_name, email, phone, password_hash, role, status, is_active)
             VALUES ($1, $2, $3, $4, $5, 0, false)
@@ -662,7 +723,7 @@ app.post('/api/auth/register', async (req, res) => {
             name.trim(),
             email.toLowerCase().trim(),
             phone.trim(),
-            password,
+            hashedPassword,
             role
         ]);
 
@@ -727,18 +788,21 @@ app.post('/api/auth/change-password', async (req, res) => {
 
         const storedPassword = userResult.rows[0].password_hash;
 
-        // 2. مقارنة كلمة المرور المدخلة بالحالية نصياً مباشرة
-        if (currentPassword !== storedPassword) {
+        // 2. مقارنة كلمة المرور المدخلة بالحالية - يدعم الحسابات المشفرة
+        //    بـ bcrypt والحسابات القديمة (نصية) على حد سواء
+        const { valid } = await verifyPasswordWithMigration(currentPassword, storedPassword);
+        if (!valid) {
             return res.status(400).json({ error: 'كلمة المرور الحالية التي أدخلتها غير صحيحة!' });
         }
 
-        // 3. تحديث كلمة المرور الجديدة في قاعدة البيانات
+        // 3. تحديث كلمة المرور الجديدة في قاعدة البيانات (مشفّرة دائماً بـ bcrypt)
+        const hashedNewPassword = await bcrypt.hash(newPassword, BCRYPT_SALT_ROUNDS);
         const updatePasswordQuery = `
             UPDATE public.users 
             SET password_hash = $1 
             WHERE user_id = $2
         `;
-        await servicesPool.query(updatePasswordQuery, [newPassword, userId]);
+        await servicesPool.query(updatePasswordQuery, [hashedNewPassword, userId]);
 
         console.log(`✅ تم تحديث كلمة المرور بنجاح للمستخدم رقم: ${userId}`);
 
@@ -826,8 +890,18 @@ app.post('/api/auth/login', async (req, res) => {
             return res.status(403).json({ message: 'خطأ في الدخول: هذا الحساب معطل حالياً، يرجى التواصل معنا عبر صفحة الفيس بوك لإصلاح الخطأ.' });
         }
 
-        if (user.password_hash !== password) {
+        // 🆕 [إصلاح ثغرة حرجة]: التحقق من كلمة المرور يدعم الآن bcrypt، مع
+        // ترحيل شفاف للحسابات القديمة (كانت مخزَّنة كنص صريح) إلى bcrypt فور
+        // أول تسجيل دخول ناجح لها، بدل مقارنة نصية مباشرة كما كان سابقاً.
+        const { valid: passwordValid, needsRehash } = await verifyPasswordWithMigration(password, user.password_hash);
+        if (!passwordValid) {
             return res.status(401).json({ message: 'كلمة المرور المدخلة غير صحيحة.' });
+        }
+
+        if (needsRehash) {
+            const migratedHash = await bcrypt.hash(password, BCRYPT_SALT_ROUNDS);
+            await servicesPool.query('UPDATE public.users SET password_hash = $1 WHERE user_id = $2', [migratedHash, user.user_id]);
+            console.log(`🔐 تم ترحيل كلمة مرور المستخدم ${user.user_id} من نص صريح إلى bcrypt.`);
         }
 
         // 🆕 إعادة تفعيل الحساب: تسجيل الدخول الناجح يلغي أي علامة "تسجيل خروج
@@ -874,6 +948,16 @@ app.get('/api/get-unique-values', async (req, res) => {
             return res.status(400).json({ error: 'layer, workspace, and field are required' });
         }
 
+        // 🆕 [إصلاح ثغرة SQL Injection]: layer و field كانا يُدمَجان مباشرة داخل
+        // نص الاستعلام بدون أي تحقق. الآن نتحقق أن layer ضمن القائمة البيضاء
+        // المعتمدة وأن field يطابق نمط معرّف SQL عادي فقط قبل استخدامهما.
+        if (!isValidLayer(layer)) {
+            return res.status(403).json({ error: 'اسم طبقة غير مسموح به.' });
+        }
+        if (!isValidSqlIdentifier(field)) {
+            return res.status(400).json({ error: 'اسم حقل غير صالح.' });
+        }
+
         const targetPool = workspace === 'realestate' ? realestatePool : servicesPool;
 
         // استعلام لجلب القيم الفريدة من الحقل المحدد
@@ -904,6 +988,14 @@ app.get('/api/search-features', async (req, res) => {
 
         if (!layer || !workspace) {
             return res.status(400).json({ error: 'layer and workspace are required' });
+        }
+
+        // 🆕 [إصلاح ثغرة SQL Injection]: layer وأسماء الحقول (field / field_N) كانت
+        // تُدمَج مباشرة داخل نص الاستعلام بدون أي تحقق - أخطر نقطة كانت حلقة
+        // field_${i} القادمة مباشرة من query params العميل. الآن نتحقق من كل
+        // اسم حقل ضد نمط معرّف SQL عادي، ونتجاهل أي شرط لا يطابقه بدل تنفيذه.
+        if (!isValidLayer(layer)) {
+            return res.status(403).json({ error: 'اسم طبقة غير مسموح به.' });
         }
 
         const targetPool = workspace === 'realestate' ? realestatePool : servicesPool;
@@ -938,6 +1030,9 @@ app.get('/api/search-features', async (req, res) => {
                 const condOperator = req.query[`operator_${i}`];
                 const condValue = req.query[`value_${i}`];
 
+                // 🛡️ تجاهل أي شرط لا يطابق اسم حقل SQL صالح بدل تنفيذه كما هو
+                if (!isValidSqlIdentifier(condField)) continue;
+
                 if (condField && condValue) {
                     const valStr = String(condValue).trim();
                     if (condOperator === '=') {
@@ -961,7 +1056,7 @@ app.get('/api/search-features', async (req, res) => {
                     }
                 }
             }
-        } else if (field && value) {
+        } else if (field && value && isValidSqlIdentifier(field)) {
             // للتوافق مع الكود القديم (شرط واحد)
             const valStr = String(value).trim();
             if (operator === '=') {
@@ -1031,7 +1126,7 @@ app.get('/api/search-features', async (req, res) => {
 });
 
 // API لجلب قائمة المستخدمين
-app.get('/api/users', async (req, res) => {
+app.get('/api/users', requireAdmin, async (req, res) => {
     try {
         const query = `
             SELECT user_id as id, full_name as name, email, phone, role
@@ -1054,27 +1149,51 @@ app.get('/api/users', async (req, res) => {
 // API - إدارة المستخدمين (للمشرف فقط)
 // ==========================================
 
-// دالة مساعدة للتحقق من أن المستخدم مشرف (من صلاحيات الداتابيز)
-async function isAdminUser(req) {
-    // في هذا النظام، التحكم يتم عبر الواجهة frontend guard
-    // لكن نضيف تحققاً من الدور في قاعدة البيانات كطبقة أمان إضافية
-    // نقرأ الـ user_id من الهيدر المخصص (يُرسله الفرونت إند)
+// =========================================================================
+// 🆕 [إصلاح ثغرة حرجة]: كانت هذه الدالة معرّفة لكن غير مستخدمة إطلاقاً على أي
+// من مسارات /api/admin/*، أي أن أي شخص (حتى بدون تسجيل دخول) كان قادراً على
+// استدعاء تلك المسارات مباشرة (مثلاً عبر Postman) وتعديل صلاحيات أي مستخدم
+// أو تسجيل خروج الجميع، لأن الحماية كانت موجودة فقط بواجهة المتصفح
+// (access-guard-style) وهي حماية شكلية يسهل تجاوزها من console المتصفح.
+//
+// الآن أصبحت middleware حقيقية تُطبَّق على كل مسارات الأدمن: تتحقق من هيدر
+// x-admin-user-id (يرسله الفرونت إند مع كل طلب)، وتتأكد أن صاحب هذا المعرّف
+// فعلاً role = 'admin' وأن حسابه مُفعّل وغير مسجَّل خروجه إجبارياً، قبل
+// السماح للطلب بالمتابعة. أي طلب بدون هيدر صالح يُرفض بـ 403 فوراً.
+// =========================================================================
+async function requireAdmin(req, res, next) {
     const adminUserId = req.headers['x-admin-user-id'];
-    if (!adminUserId) return false;
-    
+    if (!adminUserId) {
+        return res.status(401).json({ success: false, error: 'مطلوب تسجيل دخول كمشرف (هيدر x-admin-user-id مفقود).' });
+    }
+
     try {
-        const result = await servicesPool.query('SELECT role FROM public.users WHERE user_id = $1', [adminUserId]);
-        if (result.rows.length > 0 && result.rows[0].role === 'admin') {
-            return true;
+        const result = await servicesPool.query(
+            'SELECT role, is_active, force_logout_flag FROM public.users WHERE user_id = $1',
+            [adminUserId]
+        );
+
+        if (result.rows.length === 0) {
+            return res.status(403).json({ success: false, error: 'حساب المشرف غير موجود.' });
         }
+
+        const { role, is_active, force_logout_flag } = result.rows[0];
+
+        if (role !== 'admin' || !is_active || force_logout_flag === true) {
+            return res.status(403).json({ success: false, error: 'لا تملك صلاحية المشرف اللازمة لهذا الإجراء.' });
+        }
+
+        next();
     } catch (e) {
         console.error('❌ خطأ في التحقق من صلاحية المشرف:', e.message);
+        // 🛡️ عند حدوث خطأ في التحقق نفسه (وليس بالصلاحية) نرفض الطلب أيضاً
+        // (Fail-closed) لأن هذه مسارات حساسة، بعكس المسارات العامة الأخرى.
+        return res.status(500).json({ success: false, error: 'تعذر التحقق من صلاحية المشرف.' });
     }
-    return false;
 }
 
 // 1. جلب جميع المستخدمين مع خيارات البحث والتصفية
-app.get('/api/admin/users', async (req, res) => {
+app.get('/api/admin/users', requireAdmin, async (req, res) => {
     try {
         const { search, status_filter, role_filter } = req.query;
         
@@ -1173,7 +1292,7 @@ app.get('/api/admin/users', async (req, res) => {
 });
 
 // 1-أ. جلب قائمة معرّفات المستخدمين المتصلين حالياً فقط (لتحديث سريع دوري بدون إعادة جلب كل الجدول)
-app.get('/api/admin/online-users', (req, res) => {
+app.get('/api/admin/online-users', requireAdmin, (req, res) => {
     try {
         const onlineUserIds = Array.from(connectedUsers.keys()).map(id => String(id));
         res.json({ success: true, onlineUserIds });
@@ -1184,7 +1303,7 @@ app.get('/api/admin/online-users', (req, res) => {
 });
 
 // 1-ب. تسجيل خروج فوري لمستخدم محدد من قبل المشرف + إشعاره فوراً
-app.post('/api/admin/users/force-logout', async (req, res) => {
+app.post('/api/admin/users/force-logout', requireAdmin, async (req, res) => {
     const { user_id } = req.body;
 
     if (!user_id) {
@@ -1238,7 +1357,7 @@ app.post('/api/admin/users/force-logout', async (req, res) => {
 });
 
 // 1-ج. تسجيل خروج جماعي لجميع المستخدمين (متصلين وغير متصلين)
-app.post('/api/admin/users/force-logout-all', async (req, res) => {
+app.post('/api/admin/users/force-logout-all', requireAdmin, async (req, res) => {
     const { target_type, user_ids } = req.body; // target_type: 'all', 'online', 'offline', 'selected'
 
     try {
@@ -1335,7 +1454,7 @@ app.post('/api/admin/users/force-logout-all', async (req, res) => {
 });
 
 // 2. تحديث بيانات مستخدم (تفعيل، تغيير الدور، ربط مزود خدمة، تغيير كلمة المرور)
-app.post('/api/admin/users/update', async (req, res) => {
+app.post('/api/admin/users/update', requireAdmin, async (req, res) => {
     const { user_id, role, is_active, service_layer, feature_id, new_password, request_limit, request_limit_period } = req.body;
 
     if (!user_id) {
@@ -1382,10 +1501,11 @@ app.post('/api/admin/users/update', async (req, res) => {
             updateValues.push(feature_id ? parseInt(feature_id) : null);
         }
 
-        // تحديث كلمة المرور
+        // تحديث كلمة المرور (مشفّرة دائماً بـ bcrypt، وليس كنص صريح)
         if (new_password && new_password.trim().length >= 6) {
+            const hashedAdminSetPassword = await bcrypt.hash(new_password.trim(), BCRYPT_SALT_ROUNDS);
             updateFields.push(`password_hash = $${idx++}`);
-            updateValues.push(new_password.trim());
+            updateValues.push(hashedAdminSetPassword);
         }
 
         // تحديث حد الطلبات/الأحداث (اتركه فارغاً = مفتوح بدون حد - وهو الوضع الافتراضي)

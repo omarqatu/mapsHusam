@@ -8,12 +8,15 @@
 // ==========================================
 
 // وضع بيئة التطوير
-const DEBUG_MODE = false; // غيّرها إلى true فقط عندما تريد رؤية السجلات
-
-if (!DEBUG_MODE) {
-    console.log = function() {}; // تعطيل سجلات الكونسول
-    console.error = function() {}; // تعطيل سجلات الأخطاء (اختياري)
-}
+// 🆕 تم إلغاء تعطيل console.log/console.error الشامل لكل الصفحة، لأنه كان
+// يُسكت رسائل التشخيص من كل ملف JS آخر يُحمَّل بعد هذا الملف (تقريباً كل
+// شيء)، ويصعّب اكتشاف الأخطاء الحقيقية بالإنتاج. بدلاً من ذلك، استخدم
+// window.debugLog() في هذا الملف فقط للرسائل التطويرية التي تريد إخفاءها
+// بالإنتاج، مع إبقاء console.error و console.warn فعّالين دائماً في كل مكان.
+const DEBUG_MODE = false; // غيّرها إلى true فقط عندما تريد رؤية سجلات التطوير هنا
+window.debugLog = function (...args) {
+    if (DEBUG_MODE) console.log(...args);
+};
 
 window.changeUserPassword = function (e) {
     if (e) e.preventDefault();

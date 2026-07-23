@@ -1,12 +1,10 @@
 /* features.css - التحكم الحصري والكامل بالأزرار والبحث السريع والـ Modals */
 
-/* تثبيت شريط معلومات المستخدم في أعلى الصفحة وضمان ظهوره بشكل مستقر */
-.user-top-badge-container {
-    position: absolute !important;
-    top: 10px !important;
-    right: 20px !important;
-    z-index: 5000 !important; /* البقاء فوق كل عناصر الخريطة والبحث */
-}
+/* ملاحظة: تم حذف تعريف .user-top-badge-container من هنا لأنه (أ) يستهدف
+   كلاس بينما العنصر الفعلي بالـ HTML هو #user-top-badge-container (id)،
+   و(ب) حتى لو كان يعمل، فهو معكوس تماماً بواسطة التعريف الفعلي والمعتمد
+   الموجود بملف auth-core-functions.css (بوابة جانبية position: fixed).
+   إبقاؤه هنا كان كوداً ميتاً يسبب لبساً فقط. */
 
 /* --- أشرطة البحث السريع والتصنيفات الدائرية المحدثة لمنع التداخل --- */
 .quick-search-wrapper {
@@ -98,16 +96,18 @@
 .close-results-btn { background: none; border: none; color: #ff4d4d; font-size: 18px; cursor: pointer; line-height: 1; }
 
 /* --- النوافذ المنبثقة والجداول الحيوية --- */
-.modal { 
-    display: none; 
-    position: fixed; 
-    z-index: 100000; 
-    left: 0; 
-    top: 0; 
-    width: 100%; 
-    height: 100%; 
-    background-color: rgba(0,0,0,0.5); 
-    overflow-y: auto; 
+.modal {
+    /* ملاحظة: تم حذف background-color من هنا لأن style.css يفرض قيمته
+       الخاصة بـ !important (rgba(0,0,0,0.3)) وهي التي كانت تُطبَّق فعلياً
+       بغض النظر عمّا هنا؛ وجود قيمتين مختلفتين لنفس الخاصية بملفين كان
+       مربكاً بدون أي فرق فعلي بالنتيجة. */
+    position: fixed;
+    z-index: 100000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    overflow-y: auto;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -200,4 +200,3 @@
     max-height: 85vh;
     overflow-y: auto;
 }
-

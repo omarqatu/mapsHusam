@@ -513,16 +513,22 @@ setTimeout(() => {
             window.initializeGlobalSearch(); 
         }
         
-        // [محرك المزامنة التلقائية]: تحديث ذكي كل 15 ثانية لضمان رؤية التغييرات دون إرهاق السيرفر
-        startSmartMapSync(15000);
+        // 🆕 [محرك المزامنة الذكي]: بدل تحديث كل الطبقات الظاهرة كل 15 ثانية بشكل
+        // أعمى لكل مستخدم متصل (ضغط دائم على GeoServer/DB بغض النظر عن الحاجة)،
+        // أصبحنا نحدّث فقط: (أ) بعد أن يحرك المستخدم الخريطة أو يغيّر الزووم فعلياً
+        // (بعد فترة سكون قصيرة لتفادي التحديث أثناء السحب المستمر)، و(ب) كشبكة
+        // أمان احتياطية بفاصل زمني أطول بكثير (كل 90 ثانية) لضمان وصول تحديثات
+        // بيانات غيّرها مستخدم آخر حتى لو لم يحرّك المستخدم الحالي الخريطة إطلاقاً.
+        startSmartMapSync(map, 90000);
         
     }, 1000);
 
     /**
-     * دالة المزامنة الذكية: تقوم بتحديث الطبقات الظاهرة فقط لتوفير موارد السيرفر
+     * دالة المزامنة الذكية: تقوم بتحديث الطبقات الظاهرة فقط، وفقط عند الحاجة
+     * الفعلية (حركة خريطة أو مهلة احتياطية طويلة)، لتوفير موارد السيرفر.
      */
-    function startSmartMapSync(interval) {
-        setInterval(() => {
+    function startSmartMapSync(mapInstanceForSync, fallbackInterval) {
+        function refreshVisibleDataLayers() {
             if (!window.overlayLayersObj) return;
 
             const layersToUpdate = [];
@@ -554,8 +560,18 @@ setTimeout(() => {
                     }
                 }, index * 2000);
             });
+        }
 
-        }, interval);
+        // (أ) تحديث مدفوع بحركة المستخدم الفعلية على الخريطة، مع تهدئة (debounce)
+        // لمنع إطلاق عشرات الطلبات أثناء السحب/الزووم المستمر
+        let moveEndDebounceToken = null;
+        mapInstanceForSync.on('moveend', () => {
+            clearTimeout(moveEndDebounceToken);
+            moveEndDebounceToken = setTimeout(refreshVisibleDataLayers, 1500);
+        });
+
+        // (ب) شبكة أمان احتياطية بفاصل زمني طويل نسبياً
+        setInterval(refreshVisibleDataLayers, fallbackInterval);
     }
 
     // متابعة الإحداثيات وطباعتها في شريط المعلومات السفلي

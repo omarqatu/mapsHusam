@@ -4,21 +4,9 @@
  * تم تنظيف الكود من أي تفاصيل تخص أراضي البيع وحذف حقل الـ fid من عمليات الـ Insert.
  */
 async function sendWFS_T(feature, type) {
-    
-    // 🛠️ دالة محلياً داخل النطاق لمنع التضارب وتحويل الرموز الخاصة في XML
-    function escapeXml(unsafe) {
-        if (unsafe === undefined || unsafe === null) return '';
-        return String(unsafe).replace(/[<>&'"]/g, function (c) {
-            switch (c) {
-                case '<': return '&lt;';
-                case '>': return '&gt;';
-                case '&': return '&amp;';
-                case '\'': return '&apos;';
-                case '"': return '&quot;';
-                default: return c;
-            }
-        });
-    }
+
+    // 🆕 escapeXml أصبحت معرّفة مرة واحدة فقط بملف shared-utils.js (window.escapeXml)
+    const escapeXml = window.escapeXml;
 
     // 🎯 الفحص الديناميكي لضمان دقة التعرف على العقارات (شقق فقط)
     const isRealEstate = (typeof MAP_CONFIG !== 'undefined' && MAP_CONFIG.layers && MAP_CONFIG.layers.realestate)

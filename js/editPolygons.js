@@ -56,20 +56,12 @@ function initializePolygonEditTools(map, overlayLayersObj) {
         { name: 'location', label: 'اسم المنطقة', type: 'text' }
     ];
 
-    // دالة حماية الـ XML داخل النطاق المحلي لمنع التضارب
-    function escapeXml(unsafe) {
-        if (unsafe === null || unsafe === undefined) return '';
-        return String(unsafe).replace(/[<>&"']/g, (ch) => ({
-            '<': '&lt;', '>': '&gt;', '&': '&amp;', '"': '&quot;', "'": '&apos;'
-        }[ch]));
-    }
-
+    // 🆕 escapeXml و toggleDoubleClickZoom أصبحتا معرّفتين مرة واحدة فقط بملف
+    // shared-utils.js (window.escapeXml و window.toggleDoubleClickZoom) بدل
+    // تكرارهما هنا وفي edit-wfs.js/editLines.js/measure.js
+    const escapeXml = window.escapeXml;
     function toggleDoubleClickZoom(active) {
-        map.getInteractions().forEach(interaction => {
-            if (interaction instanceof ol.interaction.DoubleClickZoom) {
-                interaction.setActive(active);
-            }
-        });
+        window.toggleDoubleClickZoom(map, active);
     }
 
     function populatePolygonLayers() {

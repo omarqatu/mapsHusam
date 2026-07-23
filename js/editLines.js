@@ -38,12 +38,8 @@ window.initializeLineEditTools = function (map, overlayLayersObj) {
     const submitBtn        = document.getElementById('lineSubmitAttributes');
     const cancelBtn        = document.getElementById('lineCancelAttributes');
 
-    function escapeXml(unsafe) {
-        if (unsafe === null || unsafe === undefined) return '';
-        return String(unsafe).replace(/[<>&"\']/g, ch => ({
-            '<': '&lt;', '>': '&gt;', '&': '&amp;', '"': '&quot;', "\'": '&apos;'
-        }[ch]));
-    }
+    // 🆕 escapeXml أصبحت معرّفة مرة واحدة فقط بملف shared-utils.js (window.escapeXml)
+    const escapeXml = window.escapeXml;
 
     function getSource() {
         return overlayLayersObj[roadsLayerKey]?.getSource();

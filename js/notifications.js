@@ -127,13 +127,16 @@ class NotificationSystem {
     }
 
     // طلب الإشعارات غير المقروءة
-    getUnreadNotifications() {
+    getUnreadNotifications(userId) {
         if (!this.socket || !this.isConnected) {
             console.warn('غير متصل بالسيرفر');
             return;
         }
 
-        this.socket.emit('get_unread_notifications', this.userId);
+        // 🆕 يقبل الآن userId اختيارياً (تُستدعى من زر "تحديث" في نافذة الإشعارات
+        // بـ index.html و no-map-search.html بالشكل getUnreadNotifications(userId)).
+        // إذا لم يُمرَّر شيء، نستخدم معرف المستخدم المخزَّن أصلاً في النظام.
+        this.socket.emit('get_unread_notifications', userId || this.userId);
     }
 
     // تعليم إشعار كمقروء

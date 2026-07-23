@@ -325,48 +325,15 @@ body {
 
 
 
-/* هذا الكود يضمن أن كل أزرار الإغلاق في كافة اللوحات لها نفس الشكل */
-.panel-close-btn {
-    background: none !important;
-    border: 1px solid #ddd !important;
-    color: #555 !important; /* لون رمادي طبيعي وليس أحمر */
-    cursor: pointer;
-    border-radius: 4px;
-    width: 24px;
-    height: 24px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 14px;
-    font-weight: bold;
-    transition: all 0.2s;
-}
-
-.panel-close-btn:hover {
-    background: #e0e0e0 !important;
-    color: #000 !important;
-}
-
-/* تنظيف تنسيق العنوان ليكون متوافقاً مع باقي اللوحات */
-.panel-header h3 {
-    margin: 0;
-    font-size: 14px;
-    color: #333;
-}
-
-/* تنسيق موحد لكل أزرار الهيدر في كل اللوحات */
-.panel-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 10px 15px;
-    background: #f9f9f9;
-    border-bottom: 1px solid #eee;
-}
-
+/* هذا الكود يضمن أن كل أزرار الإغلاق في كافة اللوحات لها نفس الشكل
+   (تم حذف التعريفات المكررة لـ .panel-header و .panel-header h3 من هنا
+   لأنها كانت مطابقة تماماً للتعريف الموجود بالأعلى بالملف؛ بقي هنا فقط
+   الفروقات الفعلية: ترتيب الأزرار row-reverse وأحجام الأزرار بـ !important) */
 .panel-controls {
-    display: flex;
-    gap: 5px; /* المسافة بين الأزرار */
+    display: flex !important;
+    flex-direction: row-reverse; /* لترتيب الأزرار من اليمين لليسار */
+    gap: 5px;
+    align-items: center;
 }
 
 /* تنسيق الأزرار (إغلاق، تصغير، تحريك) */
@@ -382,21 +349,15 @@ body {
     align-items: center;
     justify-content: center;
     font-size: 16px;
+    font-weight: bold;
     padding: 0 !important;
     margin: 0 !important;
+    transition: all 0.2s;
 }
 
 .panel-close-btn:hover, .panel-minimize-btn:hover {
     background: #eee !important;
     color: #000 !important;
-}
-
-/* تنسيق الحاوية التي تضم الأزرار */
-.panel-controls {
-    display: flex !important;
-    flex-direction: row-reverse; /* لترتيب الأزرار من اليمين لليسار */
-    gap: 5px;
-    align-items: center;
 }
 
 /* توحيد شكل الأزرار */

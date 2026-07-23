@@ -24,12 +24,9 @@ function initializeMeasureTools(map) {
     // نفس النقر المزدوج يُستخدم أيضاً لإنهاء رسم الخط/المضلع، فكان يحصل زووم
     // غير مقصود فور الانتهاء من الرسم. الحل: نعطّل الزووم بالنقر المزدوج فقط
     // أثناء الرسم الفعلي، ونعيد تفعيله فوراً بعد انتهاء أو إلغاء الرسم.
+    // 🆕 أصبحت toggleDoubleClickZoom معرّفة مرة واحدة فقط بملف shared-utils.js
     function toggleDoubleClickZoom(active) {
-        map.getInteractions().forEach(interaction => {
-            if (interaction instanceof ol.interaction.DoubleClickZoom) {
-                interaction.setActive(active);
-            }
-        });
+        window.toggleDoubleClickZoom(map, active);
     }
 
     function addInteraction(type) {
@@ -55,12 +52,12 @@ function initializeMeasureTools(map) {
             let output = "";
 
             if (type === 'Polygon') {
-                const area = geom.getArea();(geom, { projection: 'EPSG:28191' });
+                const area = geom.getArea();
                 // تقريب لـ 3 خانات عشرية
                 output = "📐 المساحة: " + area.toFixed(3) + " متر مربع";
             } 
             else if (type === 'LineString') {
-                const length = geom.getLength();(geom, { projection: 'EPSG:28191' });
+                const length = geom.getLength();
                 // تقريب لـ 3 خانات عشرية
                 output = "📏 المسافة: " + length.toFixed(3) + " متر طولي";
             } 

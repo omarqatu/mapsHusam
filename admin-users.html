@@ -33,7 +33,7 @@
     })();
     </script>
 
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <link rel="stylesheet" href="css/admin-users.css">
 </head>
 <body>
@@ -267,6 +267,23 @@
     let onlineUserIds = new Set(); // 🟢 معرفات المستخدمين المتصلين الآن (يتم تحديثها دورياً)
     let onlineStatusInterval = null;
 
+    // 🆕 [مطلوب بعد تشديد الحماية بالسيرفر]: كل مسارات /api/admin/* أصبحت
+    // تتطلب هيدر x-admin-user-id يحمل معرّف المشرف الحالي، ويتحقق منه السيرفر
+    // فعلياً بقاعدة البيانات (role='admin' + is_active) قبل تنفيذ أي طلب.
+    // هذه الدالة تجلبه من نفس مكان تخزين الجلسة الذي يعتمده حارس الوصول أعلاه.
+    function getAdminAuthHeaders() {
+        try {
+            const raw = localStorage.getItem('map_user') || sessionStorage.getItem('map_user') ||
+                        localStorage.getItem('user') || sessionStorage.getItem('user');
+            if (raw) {
+                const u = JSON.parse(raw);
+                const uid = u.user_id || u.id;
+                if (uid) return { 'x-admin-user-id': String(uid) };
+            }
+        } catch (e) { /* تجاهل */ }
+        return {};
+    }
+
     // 🆕 [إصلاح ثغرة فقدان التحديد]: مجموعة مستقلة تماماً عن الـ DOM تحتفظ
     // بمعرفات المستخدمين المختارين. لا تُفرَّغ أبداً عند إعادة رسم الجدول
     // بسبب الفلترة، وتبقى محفوظة حتى لو اختفى المستخدم من العرض الحالي
@@ -281,7 +298,7 @@
         tbody.innerHTML = '<tr><td colspan="13" class="loading-spinner"><i class="fas fa-spinner"></i> جاري تحميل المستخدمين...</td></tr>';
 
         try {
-            const response = await fetch('/api/admin/users');
+            const response = await fetch('/api/admin/users', { headers: getAdminAuthHeaders() });
             const data = await response.json();
 
             if (data.success) {
@@ -308,7 +325,7 @@
         if (onlineStatusInterval) clearInterval(onlineStatusInterval);
         onlineStatusInterval = setInterval(async () => {
             try {
-                const res = await fetch('/api/admin/online-users');
+                const res = await fetch('/api/admin/online-users', { headers: getAdminAuthHeaders() });
                 const data = await res.json();
                 if (data.success && Array.isArray(data.onlineUserIds)) {
                     onlineUserIds = new Set(data.onlineUserIds.map(String));
@@ -703,7 +720,7 @@
         try {
             const response = await fetch('/api/admin/users/update', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+                headers: { 'Content-Type': 'application/json', 'Accept': 'application/json', ...getAdminAuthHeaders() },
                 body: JSON.stringify(payload)
             });
 
@@ -730,7 +747,7 @@
         try {
             const response = await fetch('/api/admin/users/update', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+                headers: { 'Content-Type': 'application/json', 'Accept': 'application/json', ...getAdminAuthHeaders() },
                 body: JSON.stringify({ user_id: userId, is_active: newStatus })
             });
 
@@ -765,7 +782,7 @@
         try {
             const response = await fetch('/api/admin/users/force-logout', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+                headers: { 'Content-Type': 'application/json', 'Accept': 'application/json', ...getAdminAuthHeaders() },
                 body: JSON.stringify({ user_id: userId })
             });
 
@@ -856,7 +873,7 @@
         try {
             const response = await fetch('/api/admin/users/force-logout-all', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+                headers: { 'Content-Type': 'application/json', 'Accept': 'application/json', ...getAdminAuthHeaders() },
                 body: JSON.stringify({ target_type: targetType })
             });
 
@@ -891,7 +908,7 @@
         try {
             const response = await fetch('/api/admin/users/force-logout-all', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+                headers: { 'Content-Type': 'application/json', 'Accept': 'application/json', ...getAdminAuthHeaders() },
                 body: JSON.stringify({ target_type: 'selected', user_ids: selectedIds })
             });
 

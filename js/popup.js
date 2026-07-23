@@ -1,24 +1,11 @@
 // js/popup.js
 
-// 1. دالة تُستدعى لحظة الإرسال للحصول على user_id الحقيقي دائماً
-function getRealUserId() {
-    try {
-        const saved = localStorage.getItem('map_user');
-        if (saved) {
-            const parsed = JSON.parse(saved);
-            if (parsed && (parsed.user_id || parsed.id)) {
-                return String(parsed.user_id || parsed.id);
-            }
-        }
-    } catch(e) {}
-    // fallback للـ GUID العشوائي إذا لم يكن المستخدم مسجلاً
-    if (!localStorage.getItem('map_user_guid')) {
-        localStorage.setItem('map_user_guid', 'guest_' + Math.random().toString(36).substr(2, 9));
-    }
-    return localStorage.getItem('map_user_guid');
-}
+// 🆕 ملاحظة: getRealUserId() أصبحت معرّفة مرة واحدة فقط بملف shared-utils.js
+// (window.getRealUserId) بدلاً من تكرارها هنا؛ يجب تحميل shared-utils.js قبل
+// هذا الملف. أبقينا اسماً محلياً بنفس التوقيع لتفادي تعديل كل استدعاء بالملف.
+const getRealUserId = window.getRealUserId;
 
-// 2. دالة تسجيل حدث/نقرة على الخريطة أو البحث
+// دالة تسجيل حدث/نقرة على الخريطة أو البحث
 async function logMapEvent(eventType, provider = null, service = null) {
     try {
         const userId = getRealUserId();
@@ -101,30 +88,8 @@ function initializePopup(map) {
     // --- 🆕 فحص حد الطلبات (الأحداث) المُعرّف من المشرف قبل تنفيذ أي اتصال/واتساب ---
     // افتراضياً كل المستخدمين "مفتوحين" بدون أي حد؛ لا يُطبَّق الفحص إلا إذا حدد
     // المشرف رقماً صريحاً لهذا المستخدم من لوحة إدارة المستخدمين.
-    async function checkRequestQuotaOrAlert(userId, popupRef) {
-        try {
-            const serverUrl = window.location.origin + '/api/check-request-limit';
-            const res = await fetch(serverUrl, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ user_id: userId })
-            });
-            const data = await res.json();
-
-            if (data && data.allowed === false) {
-                if (popupRef && !popupRef.closed) popupRef.close();
-                const periodLabels = { daily: 'اليوم', weekly: 'هذا الأسبوع', monthly: 'هذا الشهر' };
-                const periodText = periodLabels[data.period] || 'هذه الفترة';
-                alert(`⛔ لقد تجاوزت الحد المسموح من الطلبات (${data.limit}) ${periodText}. يرجى المحاولة لاحقاً أو التواصل مع الإدارة.`);
-                return { allowed: false };
-            }
-            return { allowed: true };
-        } catch (err) {
-            // فشل الفحص لأي سبب (شبكة/سيرفر) => لا نمنع المستخدم من استخدام الخدمة الأساسية (Fail-open)
-            console.warn('تعذر التحقق من حد الطلبات، سيتم السماح بالطلب:', err.message);
-            return { allowed: true };
-        }
-    }
+    // 🆕 الدالة أصبحت معرّفة مرة واحدة فقط بملف shared-utils.js (window.checkRequestQuotaOrAlert)
+    const checkRequestQuotaOrAlert = window.checkRequestQuotaOrAlert;
 
     // --- تعديل منطق الواتساب (يأخذ القيمة كما هي من الحقل) ---
     window.handlePhoneCall = async function(providerName, localPhone, whatsappNumber, serviceType) {

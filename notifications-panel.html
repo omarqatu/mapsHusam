@@ -1,7 +1,6 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
-    <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>لوحة إرسال الإشعارات</title>
@@ -34,12 +33,8 @@
     })();
     </script>
 
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>لوحة إرسال الإشعارات</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <!-- 🆕 تم توحيد نسخة Font Awesome على 6.5.1 لتطابق باقي صفحات المنصة -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <style>
         * {
             box-sizing: border-box;
@@ -403,6 +398,21 @@
         }
     }
 
+    // 🆕 [مطلوب بعد تشديد الحماية بالسيرفر]: /api/users أصبح محمياً ويتطلب
+    // هيدر x-admin-user-id للتحقق من أن الطالب فعلاً مشرف مُفعّل.
+    function getAdminAuthHeaders() {
+        try {
+            const raw = localStorage.getItem('map_user') || sessionStorage.getItem('map_user') ||
+                        localStorage.getItem('user') || sessionStorage.getItem('user');
+            if (raw) {
+                const u = JSON.parse(raw);
+                const uid = u.user_id || u.id;
+                if (uid) return { 'x-admin-user-id': String(uid) };
+            }
+        } catch (e) { /* تجاهل */ }
+        return {};
+    }
+
     // تحميل قائمة المستخدمين
     async function loadUsers() {
         console.log('🔄 بدء تحميل قائمة المستخدمين...');
@@ -411,7 +421,7 @@
 
         try {
             console.log('📡 جلب المستخدمين من /api/users...');
-            const response = await fetch('/api/users');
+            const response = await fetch('/api/users', { headers: getAdminAuthHeaders() });
             console.log('📡 استجابة السيرفر:', response.status);
 
             const data = await response.json();

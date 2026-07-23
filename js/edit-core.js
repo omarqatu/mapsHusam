@@ -3,7 +3,9 @@
  */
 // متغيرات عالمية للاستخدام في edit-wfs.js
 let realEstateLayers, selectedLayerName, overlayLayersObj;
-let deactivatePointEditTools, escapeXml;
+let deactivatePointEditTools;
+// 🆕 escapeXml أصبحت معرّفة مرة واحدة فقط بملف shared-utils.js (window.escapeXml)
+// بدل تكرارها هنا وفي edit-wfs.js/editPolygons.js/editLines.js
 
 function initializeEditTools(map, overlayLayersObjParam) {
     overlayLayersObj = overlayLayersObjParam;
@@ -57,13 +59,6 @@ function initializeEditTools(map, overlayLayersObjParam) {
     const modalTitle = document.getElementById('modalTitle');
     const submitAttributesBtn = document.getElementById('submitAttributes');
     const cancelAttributesBtn = document.getElementById('cancelAttributes');
-
-    escapeXml = function(unsafe) {
-        if (unsafe === null || unsafe === undefined) return '';
-        return String(unsafe).trim().replace(/[<>&"']/g, (ch) => ({
-            '<': '&lt;', '>': '&gt;', '&': '&amp;', '"': '&quot;', "'": '&apos;'
-        }[ch]));
-    };
 
     function populatePointLayers() {
         if (!editLayerSelect) return;
