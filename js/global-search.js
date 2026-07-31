@@ -49,8 +49,6 @@ const searchConfig = {
     'services': {
         workspace: 'services',
         layers: [
-            // تصفية الطبقات بناءً على الإعدادات العامة
-            ...[
             'electrician', 'ac_technician', 'plumber', 'general_maintenance',
             'painter', 'carpenter', 'blacksmith', 'builder', 'aluminum_tech',  'glass_tech',
             'house_cleaner', 'gardener', 'car_mechanic', 'car_electrician', 
@@ -65,13 +63,17 @@ const searchConfig = {
             'clinics', 'doctors_on_call', 'ambulances_on_call', 'music_training',
             'lawyers', 'land_surveyors', 'real_estate_valuers', 'private_tutors',
             'programmers', 'car_delivery_on_call', 'motorcycle_delivery_on_call',
-            'bicycle_delivery_on_call', 'photographers', 'student_research_assist'].filter(layerName => !MAP_CONFIG.globalExclusions.includes(layerName))
-        ]
+            'bicycle_delivery_on_call', 'photographers', 'student_research_assist'
+        ].filter(layerName => {
+            // التحقق الآمن من وجود المتغير لمنع خطأ Uncaught ReferenceError
+            const exclusions = (typeof MAP_CONFIG !== 'undefined' && MAP_CONFIG.globalExclusions) ? MAP_CONFIG.globalExclusions : [];
+            return !exclusions.includes(layerName);
+        })
     }
 };
 
 // دالة توحيد وتطبيع النصوص لواجهة المستخدم والترتيب اللحظي الفعال
-function normalizeArabic(text) {
+window.normalizeArabic = function(text) {
     if (!text) return "";
     return text.toString()
         .replace(/[أإآا]/g, 'ا')
@@ -79,7 +81,7 @@ function normalizeArabic(text) {
         .replace(/[ىي]/g, 'ي')
         .replace(/[ؤئء]/g, 'ء')
         .trim();
-}
+};
 
 // دالة تحويل الكلمة إلى نمط SQL مرن يتجاوز عيوب الحروف المتشابهة إملائياً في GeoServer
 function buildFlexibleArabicCQL(word) {
@@ -109,7 +111,7 @@ function buildUnifiedCQLFilter(term) {
     return `(${conditions.join(' AND ')})`;
 }
 
-async function fetchGroupWFS(groupKey, term) {
+window.fetchGroupWFS = async function(groupKey, term) {
     const config = searchConfig[groupKey];
     if (!config) return [];
 

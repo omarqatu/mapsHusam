@@ -1,5 +1,58 @@
 # دليل شامل: إضافة وحذف طبقة من الصفر عبر كامل المنصة
 
+## 🚀 الطريقة المبسطة والسريعة (موصى بها)
+
+### الخطوات السريعة لإضافة طبقة خدمة جديدة:
+
+1. **إنشاء الجدول في قاعدة البيانات**
+   ```bash
+   # عدل الملف database/add_service_layer.sql
+   # استبدل layer_name باسم الطبقة (مثال: glass_tech)
+   # نفذ السكربت على قاعدة services_db
+   ```
+
+2. **نشر الطبقة في GeoServer**
+   - ادخل GeoServer admin
+   - Layers → Add a new layer
+   - اختر store الخاص بـ services_db
+   - اختر الجدول الجديد واضغط Publish
+
+3. **تشغيل الأداة التلقائية**
+   ```bash
+   node tools/add-layer.js --type service --name glass_tech --arabic "فني زجاج وسكريت" --icon "🪟"
+   ```
+
+4. **إعادة تشغيل الخادم**
+   ```bash
+   node server.js
+   ```
+
+### الخطوات السريعة لإضافة طبقة عقارات جديدة:
+
+1. **إنشاء الجدول في قاعدة البيانات**
+   ```bash
+   # عدل الملف database/add_realestate_layer.sql
+   # استبدل layer_name باسم الطبقة (مثال: Buildings)
+   # نفذ السكربت على قاعدة realestate
+   ```
+
+2. **نشر الطبقة في GeoServer**
+   - نفس الخطوات السابقة لكن اختر store الخاص بـ realestate
+
+3. **تشغيل الأداة التلقائية**
+   ```bash
+   node tools/add-layer.js --type realestate --name Buildings --arabic "المباني"
+   ```
+
+4. **إعادة تشغيل الخادم**
+   ```bash
+   node server.js
+   ```
+
+---
+
+## 📋 الدليل التفصيلي (للمطورين المتقدمين)
+
 هذا الدليل مبني فعلياً على بنية مشروعك الحالية (PostgreSQL + GeoServer + Node/Express + OpenLayers). فيه مسارين رئيسيين لأن التعامل مختلف حسب نوع الطبقة:
 
 - **النقاط (Point)** — مثل: فني زجاج سكريت، سوبرماركت، محلات تجارية، مطاعم، مدارس ورياض أطفال. هذه كلها بقاعدة `services_db`.
@@ -429,3 +482,93 @@ const typeName = isLand ? 'LandSale' : (isBuildings ? 'Buildings' : 'Location');
 ## نصيحة عملية
 
 قبل ما تسوي أي طبقة جديدة على السيرفر الفعلي (production)، جرب دورة كاملة على نسخة تجريبية محلية أول مرة: جدول واحد بسيط (زي `glass_tech`) → طبّق كل الخطوات بالجزء الأول → تأكد الطبقة شغالة 100% بكل الأماكن → بعدها كرر لباقي الطبقات (سوبرماركت، محلات تجارية، مطاعم، مدارس ورياض أطفال) لأنها نفس النمط بالضبط وبتاخذ وقت أقل بكثير من الأول.
+
+---
+
+## 🔧 الأداة التلقائية (add-layer.js)
+
+### الوصف
+
+الأداة `tools/add-layer.js` تقوم تلقائياً بتعديل جميع ملفات JavaScript المطلوبة لإضافة طبقة جديدة، مما يوفر الوقت والجهد.
+
+### الاستخدام
+
+#### إضافة طبقة خدمة:
+
+```bash
+node tools/add-layer.js --type service --name glass_tech --arabic "فني زجاج وسكريت" --icon "🪟"
+```
+
+#### إضافة طبقة عقارات:
+
+```bash
+node tools/add-layer.js --type realestate --name Buildings --arabic "المباني"
+```
+
+### المعاملات
+
+- `--type`: نوع الطبقة (`service` أو `realestate`)
+- `--name`: اسم الجدول بالإنجليزي (مثال: `glass_tech`, `Buildings`)
+- `--arabic`: الاسم العربي (مثال: `"فني زجاج وسكريت"`, `"المباني"`)
+- `--icon`: الأيقونة (اختياري، للخدمات فقط، مثال: `"🪟"`)
+
+### ما تقوم به الأداة
+
+#### للخدمات:
+- تعديل `server.js` - إضافة لـ `ALLOWED_LAYERS`
+- تعديل `js/layers.js` - إضافة لـ `serviceTranslations`
+- تعديل `js/popup.js` - إضافة لـ `serviceLayerNames`
+- تعديل `js/edit-core.js` - إضافة لـ `servicesMapping`
+- تعديل `js/quick-search.js` - إضافة لـ `iconMap`
+- تعديل `js/no-map-search.js` - إضافة لـ `serviceNames`
+- تعديل `js/global-search.js` - إضافة لـ `layerAliases`
+- تعديل `admin-users.html` - إضافة لـ `serviceLayers`
+
+#### للعقارات:
+- تعديل `server.js` - إضافة لـ `ALLOWED_LAYERS` و `realEstateLayers`
+- تعديل `js/config.js` - إضافة لـ `layers.realestate`
+- تعديل `js/layers.js` - إضافة دالة ستايل
+- تعديل `js/popup.js` - إضافة لـ `realEstateLayerNames`
+- تعديل `js/editPolygons.js` - إضافة حقول التحرير
+
+### ملاحظات هامة
+
+1. **يجب إنشاء الجدول في قاعدة البيانات أولاً** قبل تشغيل الأداة
+2. **يجب نشر الطبقة في GeoServer أولاً** قبل تشغيل الأداة
+3. **يجب مراجعة الملفات المعدلة يدوياً** للتأكد من صحة التعديلات
+4. **قد تحتاج لإضافة كلمات بحث إضافية** في `edit-core.js` يدوياً
+5. **يجب إعادة تشغيل الخادم** بعد التعديلات
+
+### مثال عملي كامل
+
+```bash
+# 1. عدل السكربت SQL
+# افتح database/add_service_layer.sql
+# استبدل layer_name بـ glass_tech في 4 أماكن
+
+# 2. نفذ السكربت على قاعدة البيانات
+psql -U your_user -d services_db -f database/add_service_layer.sql
+
+# 3. انشر الطبقة في GeoServer
+# ادخل GeoServer admin → Layers → Add a new layer
+# اختر store services_db → اختر glass_tech → Publish
+
+# 4. شغّل الأداة التلقائية
+node tools/add-layer.js --type service --name glass_tech --arabic "فني زجاج وسكريت" --icon "🪟"
+
+# 5. أعد تشغيل الخادم
+node server.js
+```
+
+---
+
+## 📁 الملفات الجديدة
+
+### database/add_service_layer.sql
+سكربت SQL لإنشاء طبقة خدمة جديدة مع جميع الحقول المطلوبة والتريجر.
+
+### database/add_realestate_layer.sql
+سكربت SQL لإنشاء طبقة عقارات جديدة مع الحقول الأساسية.
+
+### tools/add-layer.js
+أداة JavaScript لتعديل جميع ملفات المشروع تلقائياً عند إضافة طبقة جديدة.

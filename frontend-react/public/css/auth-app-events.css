@@ -1,0 +1,269 @@
+/* ==========================================================================
+   auth-app-events.css - تصميم نافذة الترحيب والتسجيل
+   ========================================================================== */
+
+/* --- نافذة الترحيب والتسجيل --- */
+.auth-overlay {
+    position: fixed;
+    top: 0; 
+    left: 0; 
+    width: 100%; 
+    height: 100%;
+    background-color: rgba(44, 62, 80, 0.95); 
+    z-index: 999999; 
+    display: flex; 
+    justify-content: center; 
+    align-items: center;
+    direction: rtl; 
+    padding: 20px; 
+    box-sizing: border-box;
+}
+
+.auth-dialog-box {
+    background: #ffffff;
+    padding: 35px;
+    border-radius: 12px;
+    width: 100%;
+    max-width: 520px; 
+    box-shadow: 0 15px 35px rgba(0,0,0,0.35);
+    font-family: system-ui, -apple-system, sans-serif;
+    max-height: 85vh; 
+    overflow-y: auto; 
+}
+
+.auth-title {
+    color: #2c3e50; 
+    margin-top: 0; 
+    font-size: 22px; 
+    font-weight: 700; 
+    text-align: center; 
+    margin-bottom: 15px;
+}
+
+.auth-welcome-text {
+    color: #555; 
+    font-size: 14.5px; 
+    line-height: 1.7; 
+    text-align: justify; 
+    margin-bottom: 15px;
+}
+
+.auth-divider {
+    border: 0; 
+    border-top: 1px solid #e0e0e0; 
+    margin: 20px 0;
+}
+
+.auth-section-title {
+    color: #2c3e50; 
+    margin: 0 0 10px 0; 
+    font-size: 15px; 
+    font-weight: bold;
+}
+
+.auth-terms-container {
+    background: #f8f9fa; 
+    border: 1px solid #e9ecef; 
+    border-radius: 6px;
+    padding: 12px 25px 12px 12px; 
+    max-height: 130px; 
+    overflow-y: auto; 
+    margin-bottom: 20px;
+}
+
+.auth-terms-container ul {
+    margin: 0; 
+    padding: 0; 
+    list-style-type: square;
+}
+
+.auth-terms-container li {
+    font-size: 13.5px; 
+    color: #555; 
+    line-height: 1.6; 
+    margin-bottom: 8px; 
+    text-align: right;
+}
+
+.auth-requirements-container {
+    text-align: right; 
+    margin-bottom: 25px;
+}
+
+.auth-checkbox-label {
+    display: flex; 
+    align-items: flex-start; 
+    gap: 10px; 
+    cursor: pointer; 
+    font-size: 13.5px; 
+    color: #2c3e50; 
+    margin-bottom: 15px; 
+    font-weight: 500;
+}
+
+.auth-checkbox-label input {
+    margin-top: 4px; 
+    width: 16px; 
+    height: 16px; 
+    cursor: pointer;
+}
+
+.facebook-like-section {
+    background: #edf2fa; 
+    border: 1px solid #d3e2f8; 
+    padding: 15px; 
+    border-radius: 6px; 
+    margin-top: 15px;
+}
+
+.facebook-like-section p {
+    margin: 0 0 10px 0; 
+    font-size: 13px; 
+    color: #2c3e50; 
+    font-weight: bold; 
+    text-align: right;
+}
+
+.fb-button {
+    display: inline-block; 
+    width: 100%; 
+    text-align: center; 
+    background: #1877f2; 
+    color: white;
+    text-decoration: none; 
+    padding: 10px; 
+    font-size: 13.5px; 
+    border-radius: 6px; 
+    font-weight: bold; 
+    box-sizing: border-box; 
+    transition: background 0.2s;
+}
+.fb-button:hover { background: #145dbf; }
+
+/* عناصر نموذج التسجيل بالإيميل */
+.auth-form-group {
+    text-align: right; 
+    margin-bottom: 15px;
+}
+
+.auth-form-group label {
+    display: block; 
+    font-size: 13.5px; 
+    font-weight: bold; 
+    color: #2c3e50; 
+    margin-bottom: 6px;
+}
+
+.auth-form-group input, 
+.auth-form-group select {
+    width: 100%; 
+    padding: 11px; 
+    border: 1px solid #ccc; 
+    border-radius: 6px; 
+    font-size: 13.5px; 
+    box-sizing: border-box; 
+    text-align: right; 
+    direction: rtl;
+}
+
+.auth-form-group input:focus, 
+.auth-form-group select:focus {
+    border-color: #3f51b5; 
+    outline: none; 
+    box-shadow: 0 0 5px rgba(63, 81, 181, 0.3);
+}
+
+/* أزرار التحكم بالتسجيل والدخول */
+#auth-buttons-group {
+    display: flex; 
+    flex-direction: column; 
+    gap: 12px; 
+    margin-top: 15px;
+}
+
+.auth-action-hint {
+    font-size: 12.5px; 
+    color: #e74c3c; 
+    margin: 0; 
+    text-align: center; 
+    font-weight: bold;
+}
+
+.auth-buttons-disabled .btn-auth {
+    background: #bdc3c7 !important; 
+    cursor: not-allowed !important; 
+    opacity: 0.6; 
+    box-shadow: none !important;
+}
+.auth-buttons-disabled .auth-action-hint { display: block; }
+.auth-buttons-enabled .auth-action-hint { display: none; }
+
+.btn-auth {
+    padding: 12px; 
+    font-size: 14.5px; 
+    border: none; 
+    border-radius: 6px; 
+    cursor: pointer; 
+    font-weight: bold; 
+    text-align: center; 
+    color: white; 
+    transition: 0.2s; 
+    width: 100%; 
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+}
+.btn-facebook { background: #1877f2; }
+.btn-facebook:hover { background: #145dbf; }
+.btn-email { background: #2c3e50; }
+.btn-email:hover { background: #34495e; }
+.btn-submit-reg { background-color: #2da44e; margin-top: 15px; }
+.btn-submit-reg:hover { background-color: #2c974b; }
+
+.btn-auth-back {
+    background: none; 
+    border: none; 
+    color: #f4f5f1; 
+    cursor: pointer; 
+    font-size: 14.5px; 
+    display: block; 
+    margin: 30px auto 0 auto; 
+    font-weight: bold; 
+    transition: color 0.2s;
+}
+.btn-auth-back:hover { color: #2c3e50; }
+
+/* استجابة الموبايل لنافذة الترحيب */
+@media (max-width: 767px) {
+    .auth-overlay { padding: 10px; }
+    .auth-dialog-box {
+        padding: 18px; 
+        width: 100%;
+        max-width: 100%;
+        max-height: 95vh; 
+        border-radius: 10px;
+    }
+    .auth-title { font-size: 18px; margin-bottom: 10px; }
+    .auth-welcome-text { font-size: 13px; line-height: 1.6; margin-bottom: 10px; }
+    .auth-divider { margin: 12px 0; }
+    .auth-section-title { font-size: 13px; margin-bottom: 6px; }
+    .auth-terms-container {
+        max-height: 100px; 
+        padding: 8px 20px 8px 8px;
+        margin-bottom: 12px;
+    }
+    .auth-terms-container li { font-size: 12px; line-height: 1.5; margin-bottom: 5px; }
+    .auth-requirements-container { margin-bottom: 15px; }
+    .auth-checkbox-label { font-size: 12.5px; margin-bottom: 10px; gap: 8px; }
+    .auth-checkbox-label input { width: 15px; height: 15px; margin-top: 2px; }
+    .facebook-like-section { padding: 10px; margin-top: 8px; }
+    .facebook-like-section p { font-size: 12px; margin-bottom: 8px; }
+    .fb-button { padding: 9px; font-size: 13px; }
+    .auth-form-group { margin-bottom: 10px; }
+    .auth-form-group label { font-size: 12px; margin-bottom: 4px; }
+    .auth-form-group input, 
+    .auth-form-group select { padding: 10px; font-size: 13px; }
+    #auth-buttons-group { gap: 8px; margin-top: 10px; }
+    .auth-action-hint { font-size: 11.5px; }
+    .btn-auth { padding: 12px; font-size: 13.5px; }
+    .btn-submit-reg { margin-top: 10px; }
+    .btn-auth-back { margin: 12px auto 0 auto; font-size: 13px; }
+}

@@ -156,8 +156,8 @@ window.createStyle = function (feature, resolution, options = {}) {
 
 // 3. ستايلات الطبقات المخصصة والمعرفة في النطاق العالمي
 window.roadsStyle = (f, r) => new ol.style.Style({ stroke: new ol.style.Stroke({ color: '#444', width: 2.5 }), text: r < 2 ? new ol.style.Text({ text: f.get('name') || '', font: '12px Arial', fill: new ol.style.Fill({ color: '#000' }), stroke: new ol.style.Stroke({ color: '#fff', width: 8 }), placement: 'line' }) : null });
-window.styleRent = (f, r) => window.createStyle(f, r, { fillColor: 'rgba(255, 102, 0, 1)', iconUrl: 'icons/rent_icon.png', iconScale: 0.12, labelField: 'area', zoomThresholdForLabel: 0.8 });
-window.styleSale = (f, r) => window.createStyle(f, r, { fillColor: 'rgba(0, 128, 0, 1)', iconUrl: 'icons/sale_icon.png', iconScale: 0.18, labelField: 'area', zoomThresholdForLabel: 0.8 });
+window.styleRent = (f, r) => window.createStyle(f, r, { fillColor: 'rgba(255, 102, 0, 1)', iconUrl: '/icons/rent_icon.png', iconScale: 0.12, labelField: 'area', zoomThresholdForLabel: 0.8 });
+window.styleSale = (f, r) => window.createStyle(f, r, { fillColor: 'rgba(0, 128, 0, 1)', iconUrl: '/icons/sale_icon.png', iconScale: 0.18, labelField: 'area', zoomThresholdForLabel: 0.8 });
 window.styleLand = (f, r) => window.createStyle(f, r, { fillColor: 'rgba(255, 0, 0, 1)', strokeColor: 'red', labelField: 'area', zoomThresholdForLabel: 1.2 });
 window.styleLocation = (f, r) => window.createStyle(f, r, { strokeColor: 'red', labelField: 'location', zoomThresholdForLabel: 5 });
 window.styleCity = (f, r) => window.createStyle(f, r, { strokeColor: 'blue', labelField: 'village_a', zoomThresholdForLabel: 30 });

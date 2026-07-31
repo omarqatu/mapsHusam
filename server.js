@@ -2,17 +2,29 @@
  * server.js 
  */
 
+// تحميل متغيرات البيئة من ملف .env.local
+import dotenv from 'dotenv';
+dotenv.config({ path: '.env.local' });
 
-const express = require('express');
-const { createProxyMiddleware } = require('http-proxy-middleware');
-const path = require('path');
-const { Pool } = require('pg');
-const cors = require('cors');
-const http = require('http');
-const { Server } = require('socket.io');
-const bcrypt = require('bcrypt'); // 🆕 لتشفير كلمات المرور - شغّل: npm install bcrypt
+import express from 'express';
+import { createProxyMiddleware } from 'http-proxy-middleware';
+import path from 'path';
+import { fileURLToPath } from 'url';
+import { Pool } from 'pg';
+import cors from 'cors';
+import http from 'http';
+import { Server } from 'socket.io';
+import bcrypt from 'bcrypt';
+import helmet from 'helmet';
+import rateLimit from 'express-rate-limit';
+import xssClean from 'xss-clean';
+
+// تعريف __dirname لـ ES modules
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
 const BCRYPT_SALT_ROUNDS = 10;
-const BCRYPT_HASH_REGEX = /^\$2[aby]\$\d{2}\$/; // نمط تعرف صيغة bcrypt القياسية
+const BCRYPT_HASH_REGEX = /^\$2[aby]\$\d{2}\$/;
 
 // =========================================================================
 // 🆕 [ترحيل آمن لكلمات المرور]: الحسابات القديمة محفوظة بكلمة مرور نصية
@@ -59,6 +71,73 @@ function corsOriginCheck(origin, callback) {
 
 const app = express();
 const server = http.createServer(app);
+
+// 🔒 Security Middleware
+if (process.env.ENABLE_HELMET !== 'false') {
+    app.use(helmet({
+        contentSecurityPolicy: false, // تعطيل CSP مؤقتاً للتوافق مع GeoServer
+        hsts: {
+            maxAge: 31536000,
+            includeSubDomains: true,
+            preload: true
+        }
+    }));
+}
+
+// 🛡️ XSS Protection Middleware (معطل مؤقتاً لتجنب مشاكل البيانات)
+// app.use((req, res, next) => {
+//     // تنظيف البيانات من XSS
+//     const sanitize = (obj) => {
+//         if (typeof obj === 'string') {
+//             return obj.replace(/</g, '&lt;').replace(/>/g, '&gt;');
+//         }
+//         if (Array.isArray(obj)) {
+//             return obj.map(sanitize);
+//         }
+//         if (obj !== null && typeof obj === 'object') {
+//             const sanitized = {};
+//             for (const key in obj) {
+//                 sanitized[key] = sanitize(obj[key]);
+//             }
+//             return sanitized;
+//         }
+//         return obj;
+//     };
+//
+//     if (req.body) {
+//         req.body = sanitize(req.body);
+//     }
+//     if (req.query) {
+//         req.query = sanitize(req.query);
+//     }
+//     if (req.params) {
+//         req.params = sanitize(req.params);
+//     }
+//     next();
+// });
+
+// 🚦 Rate Limiting
+const apiLimiter = rateLimit({
+    windowMs: parseInt(process.env.API_RATE_WINDOW_MS) || 15 * 60 * 1000, // 15 دقيقة افتراضياً
+    max: parseInt(process.env.API_RATE_LIMIT) || 1000, // زيادة الحد إلى 1000 طلب
+    message: { success: false, error: 'طلبات كثيرة جداً، يرجى المحاولة لاحقاً' },
+    standardHeaders: true,
+    legacyHeaders: false
+});
+
+const authLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 دقيقة
+    max: parseInt(process.env.AUTH_RATE_LIMIT) || 10, // زيادة الحد إلى 10
+    message: { success: false, error: 'محاولات تسجيل دخول كثيرة، يرجى المحاولة لاحقاً' }
+});
+
+// تعطيل Rate Limiting العام لتجنب منع الطلبات المهمة
+// سيتم تطبيقه فقط على endpoints حساسة (تسجيل الدخول، التسجيل)
+if (process.env.ENABLE_RATE_LIMITING !== 'false') {
+    // لا نطبق على جميع /api/ لتجنب منع الطلبات المهمة
+    // app.use('/api/', apiLimiter);
+}
+
 const io = new Server(server, {
     cors: {
         origin: ALLOWED_ORIGINS || '*',
@@ -68,14 +147,38 @@ const io = new Server(server, {
 
 app.set('trust proxy', true);
 const PORT = process.env.PORT || 3000;
-const PG_HOST = process.env.POSTGRES_HOST || '144.91.84.168';
+const PG_HOST = process.env.POSTGRES_HOST;
 const PG_PORT = Number(process.env.POSTGRES_PORT || 5432);
-const PG_USER = process.env.POSTGRES_USER || 'Husam';
-const PG_PASSWORD = process.env.POSTGRES_PASSWORD || 'Husam';
+const PG_USER = process.env.POSTGRES_USER;
+const PG_PASSWORD = process.env.POSTGRES_PASSWORD;
 const SERVICES_DB_NAME = process.env.SERVICES_DB_NAME || 'services_db';
 const REAL_ESTATE_DB_NAME = process.env.REAL_ESTATE_DB_NAME || 'realestate';
 // GeoServer يعمل على HTTP، البروكسي سيتولى الاتصال
 const GEOSERVER_TARGET = process.env.GEOSERVER_TARGET || 'http://194.163.174.162:8080/geoserver';
+
+// =========================================================================
+// 🔒 [التحقق من متغيرات البيئة]: التأكد من وجود المتغيرات المطلوبة
+// =========================================================================
+const requiredEnvVars = ['POSTGRES_HOST', 'POSTGRES_USER', 'POSTGRES_PASSWORD'];
+const missingEnvVars = requiredEnvVars.filter(varName => !process.env[varName]);
+
+if (missingEnvVars.length > 0) {
+    console.error('❌ خطأ: متغيرات البيئة المطلوبة مفقودة:');
+    missingEnvVars.forEach(varName => {
+        console.error(`   - ${varName}`);
+    });
+    console.error('\n📝 للحل، قم بإنشاء ملف .env.local في جذر المشروع بالمحتوى التالي:');
+    console.error('   POSTGRES_HOST=144.91.84.168');
+    console.error('   POSTGRES_PORT=5432');
+    console.error('   POSTGRES_USER=Husam');
+    console.error('   POSTGRES_PASSWORD=Husam');
+    console.error('   SERVICES_DB_NAME=services_db');
+    console.error('   REAL_ESTATE_DB_NAME=realestate');
+    console.error('   GEOSERVER_TARGET=http://194.163.174.162:8080/geoserver');
+    console.error('   ALLOWED_ORIGINS=http://localhost:3000,http://localhost:5173');
+    console.error('\n💡 ملف .env.local محمي من الرفع على GitHub عبر .gitignore');
+    process.exit(1);
+}
 
 // 1. إعدادات الاتصال بقواعد البيانات المتعددة 
 
@@ -132,6 +235,47 @@ async function ensureSchemaColumns() {
 }
 ensureSchemaColumns();
 
+// =========================================================================
+// 🆕 [نظام طلب الخدمة + الدردشة + تسجيل عمليات النجاح]
+// جدول service_requests: يمثل كل طلب خدمة من مستخدم إلى مزود خدمة محدد،
+// بحالاته المختلفة (pending -> accepted/rejected -> completed).
+// جدول service_request_messages: رسائل الدردشة المرتبطة بكل طلب.
+// =========================================================================
+async function ensureServiceRequestSchema() {
+    try {
+        await servicesPool.query(`
+            CREATE TABLE IF NOT EXISTS public.service_requests (
+                id SERIAL PRIMARY KEY,
+                user_id INTEGER NOT NULL,
+                provider_user_id INTEGER NOT NULL,
+                service_layer TEXT NOT NULL,
+                feature_id INTEGER,
+                provider_name TEXT,
+                service_type TEXT,
+                status TEXT NOT NULL DEFAULT 'pending',
+                user_confirmed BOOLEAN NOT NULL DEFAULT false,
+                provider_confirmed BOOLEAN NOT NULL DEFAULT false,
+                created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+                updated_at TIMESTAMP NOT NULL DEFAULT NOW()
+            )
+        `);
+        await servicesPool.query(`
+            CREATE TABLE IF NOT EXISTS public.service_request_messages (
+                id SERIAL PRIMARY KEY,
+                request_id INTEGER NOT NULL REFERENCES public.service_requests(id) ON DELETE CASCADE,
+                sender_role TEXT NOT NULL,
+                sender_id INTEGER NOT NULL,
+                message TEXT NOT NULL,
+                created_at TIMESTAMP NOT NULL DEFAULT NOW()
+            )
+        `);
+        console.log('✅ تم التأكد من وجود جداول طلبات الخدمة (service_requests) والدردشة (service_request_messages)');
+    } catch (err) {
+        console.error('⚠️ خطأ أثناء إنشاء جداول طلبات الخدمة:', err.message);
+    }
+}
+ensureServiceRequestSchema();
+
 // دالة مسارة لاختيار الاتصال المناسب حسب الطبقة
 function getPoolForLayer(layerName) {
     const realEstateLayers = ['ApartRent', 'ApartSale', 'LandSale', 'Location', 'RoadsTest'];
@@ -161,6 +305,7 @@ app.use((err, req, res, next) => {
 // [إجراء أمني 1]: قائمة بيضاء للطبقات المسموح بالوصول إليها والتعديل عليها (تشمل كافة الخدمات والعقارات الفعالة)
 const ALLOWED_LAYERS = [
     // --- طبقات الخدمات التفاعلية ---
+    'city_landmarks', 'supermarket', 'commercial_shops', 'restaurants', 'schools_kindergartens', 'job_vacancies', 
     'electrician', 'ac_technician', 'plumber', 'general_maintenance', 'painter', 'carpenter', 
     'blacksmith', 'builder', 'house_cleaner', 'aluminum_tech', 'glass_tech', 'car_mechanic', 'car_electrician', 
     'tire_tech', 'car_wash', 'motorcycle_repair', 'taxi_driver', 'delivery_services', 'tow_truck', 
@@ -196,6 +341,65 @@ const isValidSqlIdentifier = (name) => typeof name === 'string' && SQL_IDENTIFIE
 // أو واتساب) قبل تسجيلها، عبر عمود "user_identifier" في جدول الإحصائيات
 // الذي يخزن رقم المستخدم الحقيقي (user_id) عند تسجيل الدخول.
 // =========================================================================
+
+// =========================================================================
+// 🆕 مسار إحصائيات المنصة العامة (صفحة البحث بدون خريطة + فوتر/تبويب الخريطة)
+// عام بدون حماية (لا يحتاج تسجيل دخول) لأنه عرض أرقام إجمالية فقط بلا تفاصيل حساسة
+// =========================================================================
+let platformStatsCache = { data: null, expiresAt: 0 };
+
+app.get('/api/platform-stats', async (req, res) => {
+    try {
+        // ⚡ كاش بسيط بالذاكرة لمدة 60 ثانية لتفادي ضغط الاستعلامات مع كل زائر
+        if (platformStatsCache.data && Date.now() < platformStatsCache.expiresAt) {
+            return res.json({ success: true, data: platformStatsCache.data });
+        }
+
+        // 1) إحصائيات المستخدمين مجمّعة حسب الدور
+        const usersResult = await servicesPool.query(`
+            SELECT COALESCE(role, 'user') AS role, COUNT(*) AS count
+            FROM public.users
+            GROUP BY COALESCE(role, 'user')
+        `);
+
+        let usersTotal = 0, usersAdmin = 0, usersUser = 0, usersProvider = 0;
+        usersResult.rows.forEach(row => {
+            const count = parseInt(row.count, 10) || 0;
+            usersTotal += count;
+            if (row.role === 'admin') usersAdmin += count;
+            else if (row.role === 'provider') usersProvider += count;
+            else usersUser += count;
+        });
+
+        // 2) عدد المشاهدات = إجمالي الأحداث المسجلة على الخريطة والبحث
+        //    (نقرات، بحث، اتصال/واتساب...) من نفس جدول map_service_stats الموجود أصلاً
+        const viewsResult = await servicesPool.query(`SELECT COUNT(*) FROM "public"."map_service_stats"`);
+        const viewsTotal = parseInt(viewsResult.rows[0].count, 10) || 0;
+
+        // 3) عدد الخدمات (الطبقات) = القائمة البيضاء المعتمدة بالسيرفر بعد استثناء طبقات العقارات/المواقع
+        const realEstateAndLocationLayers = ['ApartRent', 'ApartSale', 'LandSale', 'Location', 'RoadsTest'];
+        const servicesCount = ALLOWED_LAYERS.filter(l => !realEstateAndLocationLayers.includes(l)).length;
+
+        // 4) عدد المعالم = عدد مزودي الخدمة المرتبطين فعلياً بمعلم حقيقي على الخريطة
+        const featuresResult = await servicesPool.query(`
+            SELECT COUNT(*) FROM public.users
+            WHERE role = 'provider' AND is_active = true
+              AND service_layer IS NOT NULL AND feature_id IS NOT NULL
+        `);
+        const featuresCount = parseInt(featuresResult.rows[0].count, 10) || 0;
+
+        const statsData = { usersTotal, usersAdmin, usersUser, usersProvider, viewsTotal, servicesCount, featuresCount };
+
+        platformStatsCache = { data: statsData, expiresAt: Date.now() + 60000 };
+
+        res.json({ success: true, data: statsData });
+    } catch (err) {
+        console.error('❌ خطأ أثناء جلب إحصائيات المنصة:', err.message);
+        res.status(500).json({ success: false, error: 'فشل جلب الإحصائيات', details: err.message });
+    }
+});
+
+
 async function checkUserRequestQuota(userId) {
     // بدون معرف مستخدم (زائر) => لا يوجد حد مطبق إطلاقاً
     if (!userId) {
@@ -679,7 +883,7 @@ app.get('/api/stats-summary', async (req, res) => {
 // ==========================================
 // 1️⃣ مسار تسجيل مستخدم جديد
 // ==========================================
-app.post('/api/auth/register', async (req, res) => {
+app.post('/api/auth/register', authLimiter, async (req, res) => {
     const { name, email, phone, password, role } = req.body;
 
     console.log("📥 محاولة تسجيل حساب جديد تلقائي:", req.body);
@@ -863,7 +1067,7 @@ app.post('/api/auth/verify-session', async (req, res) => {
 });
 
 // مسار تسجيل الدخول المحدث (الفحص الثلاثي المتطابق الشامل بدون أي قيم وهمية)
-app.post('/api/auth/login', async (req, res) => {
+app.post('/api/auth/login', authLimiter, async (req, res) => {
     const requestBody = req.body || {};
     const { email, phone, password } = requestBody;
 
@@ -1080,13 +1284,14 @@ app.get('/api/search-features', async (req, res) => {
             }
         }
 
-        query += ` ORDER BY rating DESC LIMIT 100`;
+        query += ` ORDER BY rating DESC`;
 
         console.log(`Search Query for ${layer}:`, query);
         console.log(`Search Params:`, params);
 
         const result = await targetPool.query(query, params);
 
+        // تحويل النتائج إلى GeoJSON
         // تحويل النتائج إلى GeoJSON
         const features = result.rows.map(row => {
             let geometry;
@@ -1095,13 +1300,31 @@ app.get('/api/search-features', async (req, res) => {
                 // للمضلعات: استخدام geom_json (GeoJSON من PostGIS)
                 geometry = JSON.parse(row.geom_json);
             } else {
-                // للنقاط: استخدام x_coord و y_coord
+                // للنقاط: استخدام x_coord و y_coord أولاً
+                let xVal = row.x_coord;
+                let yVal = row.y_coord;
+
+                // 🆕 [إصلاح]: بعض الطبقات (مثل المُضافة حديثاً عبر استيراد مباشر
+                // لقاعدة البيانات بدل نموذج الإضافة بالتطبيق) قد تملك عمود geom
+                // الحقيقي (PostGIS) معبّأً، لكن عمودي x_coord/y_coord فارغين
+                // (NULL) لأنه لا أحد مرّ بها عبر النموذج الذي يعبّئهما تلقائياً.
+                // في هذه الحالة نستخرج الإحداثيات احتياطياً من geom_json نفسه
+                // بدل إرجاع [null, null] التي تكسر زر "الانتقال إلى الخريطة".
+                if ((xVal === null || xVal === undefined) && row.geom_json) {
+                    try {
+                        const parsedGeom = JSON.parse(row.geom_json);
+                        if (parsedGeom && parsedGeom.type === 'Point' && Array.isArray(parsedGeom.coordinates)) {
+                            xVal = parsedGeom.coordinates[0];
+                            yVal = parsedGeom.coordinates[1];
+                        }
+                    } catch (e) { /* تجاهل خطأ التحليل، ستبقى القيم كما هي */ }
+                }
+
                 geometry = {
                     type: 'Point',
-                    coordinates: [row.x_coord, row.y_coord]
+                    coordinates: [xVal, yVal]
                 };
             }
-
             // إزالة الحقول الهندسية من الخصائص
             const { x_coord, y_coord, geom, geom_json, ...properties } = row;
 
@@ -1572,8 +1795,820 @@ app.post('/api/admin/users/update', requireAdmin, async (req, res) => {
         res.status(500).json({ success: false, error: 'فشل تحديث بيانات المستخدم', details: error.message });
     }
 });
+// =========================================================================
+// 🆕 نظام طلب الخدمة + الدردشة + تسجيل عمليات النجاح (Backend Server)
+// =========================================================================
 
-// 9. إذا لم يُطابق أي مسار API، نرجع JSON بدل HTML لتجنب مشاكل parse في الفرونت إند
+// دالة مساعدة: جلب سوكيت المستخدم المتصل حالياً (إن وجد) من نفس خريطة connectedUsers
+function getSocketIdForUser(userId) {
+    return connectedUsers.get(userId) || connectedUsers.get(String(userId)) || connectedUsers.get(Number(userId));
+}
+
+// 🆕 استخراج رقم محلي من رقم واتساب دولي (00970598512667 -> 0598512667)
+// نفس المنطق المستخدم بالضبط في popup.js و service-chat.js لضمان التطابق
+function deriveLocalPhoneFromWhatsapp(rawWhatsapp) {
+    if (!rawWhatsapp) return null;
+    const digits = String(rawWhatsapp).replace(/\D/g, '');
+    if (digits.length <= 5) return digits || null; // رقم قصير جداً، أعده كما هو تحسباً
+    return '0' + digits.slice(5);
+}
+
+// 🆕 جلب بيانات تواصل مزود الخدمة (هاتف + واتساب) من جدول طبقة الخدمة نفسها
+// (مثلاً public."electrician")، وليس من جدول users نهائياً - لأن جدول users
+// لا يملك عمود whatsapp أصلاً، وبيانات التواصل الحقيقية لمزود الخدمة مخزنة
+// بجدول الطبقة الجغرافية المرتبط بها (service_layer + feature_id).
+async function getProviderContactInfo(serviceLayer, featureId) {
+    if (!serviceLayer || !featureId || !isValidLayer(serviceLayer)) {
+        return { whatsapp: null, phone: null };
+    }
+    try {
+        const targetPool = getPoolForLayer(serviceLayer);
+        const result = await targetPool.query(
+            `SELECT whatsapp FROM public."${serviceLayer}" WHERE id = $1 LIMIT 1`,
+            [featureId]
+        );
+        if (result.rows.length === 0) return { whatsapp: null, phone: null };
+
+        const rawWhatsapp = result.rows[0].whatsapp ? String(result.rows[0].whatsapp).trim() : null;
+        const phone = deriveLocalPhoneFromWhatsapp(rawWhatsapp);
+        return { whatsapp: rawWhatsapp, phone };
+    } catch (err) {
+        console.error(`⚠️ خطأ أثناء جلب بيانات تواصل مزود الخدمة من طبقة [${serviceLayer}]:`, err.message);
+        return { whatsapp: null, phone: null };
+    }
+}
+
+// 1) إنشاء طلب خدمة جديد (المستخدم يضغط "طلب الخدمة" بالبوب أب)
+app.post('/api/service-requests', async (req, res) => {
+    const { user_id, service_layer, feature_id, provider_name, service_type } = req.body;
+
+    if (!user_id || !service_layer || !feature_id) {
+        return res.status(400).json({ success: false, error: 'بيانات الطلب غير مكتملة.' });
+    }
+    if (!isValidLayer(service_layer)) {
+        return res.status(403).json({ success: false, error: 'طبقة خدمة غير صالحة.' });
+    }
+
+    try {
+        const providerResult = await servicesPool.query(
+            `SELECT user_id, full_name, phone
+             FROM public.users
+             WHERE role = 'provider' AND service_layer = $1 AND feature_id = $2 LIMIT 1`,
+            [service_layer, feature_id]
+        );
+
+        if (providerResult.rows.length === 0) {
+            return res.status(404).json({ success: false, error: 'تعذر العثور على حساب مزود الخدمة المرتبط بهذا المعلم.' });
+        }
+
+        const provider = providerResult.rows[0];
+
+        if (Number(provider.user_id) === Number(user_id)) {
+            return res.status(400).json({ success: false, error: 'لا يمكنك إرسال طلب خدمة لنفسك.' });
+        }
+
+        const insertResult = await servicesPool.query(
+            `INSERT INTO public.service_requests (user_id, provider_user_id, service_layer, feature_id, provider_name, service_type)
+             VALUES ($1, $2, $3, $4, $5, $6) RETURNING id, status, created_at`,
+            [user_id, provider.user_id, service_layer, feature_id, provider_name || provider.full_name, service_type || service_layer]
+        );
+
+        const newRequest = insertResult.rows[0];
+
+        await servicesPool.query(
+            `INSERT INTO "public"."notifications" (user_id, title, message, type, is_read, created_at)
+             VALUES ($1, $2, $3, 'info', false, NOW())`,
+            [provider.user_id, '📩 طلب خدمة جديد', `لديك طلب خدمة جديد (${service_type || service_layer}). يرجى فتح التطبيق للرد عليه.`]
+        );
+
+        const providerSocketId = getSocketIdForUser(provider.user_id);
+        console.log('📡 [NEW REQUEST] Provider ID:', provider.user_id, 'Socket ID:', providerSocketId);
+        if (providerSocketId && global.io) {
+            console.log('📡 [NEW REQUEST] Emitting service_request_new to socket:', providerSocketId);
+            global.io.to(providerSocketId).emit('service_request_new', {
+                id: newRequest.id,
+                requestId: newRequest.id,
+                serviceType: service_type || service_layer,
+                createdAt: newRequest.created_at
+            });
+        } else {
+            console.log('⚠️ [NEW REQUEST] Provider not connected via socket');
+        }
+
+        res.json({ success: true, requestId: newRequest.id, status: newRequest.status });
+    } catch (err) {
+        console.error('❌ خطأ أثناء إنشاء طلب الخدمة:', err.message);
+        res.status(500).json({ success: false, error: 'فشل إنشاء طلب الخدمة', details: err.message });
+    }
+});
+
+// 2) جلب الطلبات النشطة (المرسلة أو المستلمة) لمستخدم معين
+app.get('/api/service-requests', async (req, res) => {
+    const { user_id, provider_user_id, status } = req.query;
+
+    if (!user_id && !provider_user_id) {
+        return res.status(400).json({ success: false, error: 'user_id أو provider_user_id مطلوب' });
+    }
+
+    try {
+        let query = `
+            SELECT sr.*, 
+                   ru.full_name AS requester_name, ru.phone AS requester_phone,
+                   pu.full_name AS provider_full_name
+            FROM public.service_requests sr
+            LEFT JOIN public.users ru ON ru.user_id = sr.user_id
+            LEFT JOIN public.users pu ON pu.user_id = sr.provider_user_id
+            WHERE 1=1
+        `;
+        let params = [];
+        let paramIndex = 1;
+
+        if (provider_user_id) {
+            query += ` AND sr.provider_user_id = $${paramIndex++}`;
+            params.push(provider_user_id);
+        } 
+        
+        if (user_id && !provider_user_id) {
+            query += ` AND (sr.user_id = $${paramIndex++} OR sr.provider_user_id = $${paramIndex++})`;
+            params.push(user_id, user_id);
+        }
+
+        if (status) {
+            query += ` AND sr.status = $${paramIndex++}`;
+            params.push(status);
+        } else if (!provider_user_id) {
+            query += ` AND sr.status IN ('pending', 'accepted', 'completed', 'cancelled', 'rejected')`;
+        }
+
+        query += ` ORDER BY sr.created_at DESC`;
+
+        const result = await servicesPool.query(query, params);
+        const requests = result.rows;
+
+        // 🆕 تجهيز أرقام التواصل الصحيحة فقط للطلبات المكتملة (بعد "تم الاتفاق"):
+        // - رقم هاتف المستخدم الطالب: من عمود phone بجدول users كما هو تماماً.
+        // - رقم هاتف وواتساب مزود الخدمة: من جدول طبقة الخدمة نفسها (عمود whatsapp)
+        //   وليس من جدول users، لأن جدول users لا يملك عمود واتساب أصلاً.
+        await Promise.all(requests.map(async (r) => {
+            if (r.status === 'completed') {
+                const providerContact = await getProviderContactInfo(r.service_layer, r.feature_id);
+                r.userPhone = r.requester_phone || null;
+                r.userWhatsapp = r.requester_phone || null;
+                r.providerPhone = providerContact.phone;
+                r.providerWhatsapp = providerContact.whatsapp;
+            }
+            // 🆕 اسم الطرف الآخر بشكل موحّد لواجهة "طلباتي النشطة"
+            r.user_name = r.requester_name;
+        }));
+
+        res.json({ success: true, requests });
+    } catch (err) {
+        console.error('❌ خطأ أثناء جلب طلبات الخدمة:', err.message);
+        res.status(500).json({ success: false, error: 'فشل جلب الطلبات', details: err.message });
+    }
+});
+
+// 3) رد مزود الخدمة على الطلب (قبول / رفض)
+app.post('/api/service-requests/:id/respond', async (req, res) => {
+    const { id } = req.params;
+    const { provider_user_id, action } = req.body;
+
+    if (!provider_user_id || !['accept', 'reject'].includes(action)) {
+        return res.status(400).json({ success: false, error: 'بيانات الرد غير صالحة.' });
+    }
+
+    try {
+        const reqResult = await servicesPool.query('SELECT * FROM public.service_requests WHERE id = $1', [id]);
+        if (reqResult.rows.length === 0) return res.status(404).json({ success: false, error: 'الطلب غير موجود.' });
+
+        const request = reqResult.rows[0];
+        if (Number(request.provider_user_id) !== Number(provider_user_id)) {
+            return res.status(403).json({ success: false, error: 'لا تملك صلاحية الرد على هذا الطلب.' });
+        }
+        if (request.status !== 'pending') {
+            return res.status(400).json({ success: false, error: 'تم الرد على هذا الطلب مسبقاً.' });
+        }
+
+        const newStatus = action === 'accept' ? 'accepted' : 'rejected';
+        await servicesPool.query('UPDATE public.service_requests SET status = $1, updated_at = NOW() WHERE id = $2', [newStatus, id]);
+
+        const title = action === 'accept' ? '✅ تم قبول طلبك' : '❌ تم رفض طلبك';
+        const message = action === 'accept'
+            ? `وافق مزود الخدمة على طلبك (${request.service_type}). يمكنك الآن الدردشة معه.`
+            : `اعتذر مزود الخدمة عن طلبك (${request.service_type}).`;
+
+        await servicesPool.query(
+            `INSERT INTO "public"."notifications" (user_id, title, message, type, is_read, created_at)
+             VALUES ($1, $2, $3, $4, false, NOW())`,
+            [request.user_id, title, message, action === 'accept' ? 'success' : 'error']
+        );
+
+        const userSocketId = getSocketIdForUser(request.user_id);
+        console.log('📡 [RESPONSE] User ID:', request.user_id, 'Socket ID:', userSocketId);
+        if (userSocketId && global.io) {
+            console.log('📡 [RESPONSE] Emitting service_request_response to socket:', userSocketId);
+            global.io.to(userSocketId).emit('service_request_response', {
+                requestId: Number(id),
+                status: newStatus,
+                serviceType: request.service_type,
+                providerName: request.provider_name
+            });
+        } else {
+            console.log('⚠️ [RESPONSE] User not connected via socket');
+        }
+
+        res.json({ success: true, status: newStatus });
+    } catch (err) {
+        console.error('❌ خطأ أثناء الرد على طلب الخدمة:', err.message);
+        res.status(500).json({ success: false, error: 'فشل تنفيذ الرد', details: err.message });
+    }
+});
+
+// 🆕 3 مكرر) إلغاء الطلب من قبل المستخدم أو المزود
+app.post('/api/service-requests/:id/cancel', async (req, res) => {
+    const requestId = req.params.id;
+    const { user_id, cancellation_reason } = req.body; 
+
+    if (!user_id) {
+        return res.status(400).json({ success: false, error: 'معرف المستخدم مطلوب' });
+    }
+
+    try {
+        const reqCheck = await servicesPool.query(
+            `SELECT * FROM public.service_requests WHERE id = $1`,
+            [requestId]
+        );
+
+        if (reqCheck.rows.length === 0) {
+            return res.status(404).json({ success: false, error: 'الطلب غير موجود' });
+        }
+
+        const sRequest = reqCheck.rows[0];
+        const isOwner = String(sRequest.user_id) === String(user_id);
+        const isProvider = String(sRequest.provider_user_id) === String(user_id);
+
+        if (!isOwner && !isProvider) {
+            return res.status(403).json({ success: false, error: 'عذراً، ليس لديك صلاحية إلغاء هذا الطلب.' });
+        }
+
+        const reasonText = cancellation_reason ? String(cancellation_reason).trim() : 'تم الإلغاء بدون ذكر أسباب';
+
+        const updateRes = await servicesPool.query(
+            `UPDATE public.service_requests 
+             SET status = 'cancelled', cancellation_reason = $1, updated_at = NOW() 
+             WHERE id = $2 RETURNING *`,
+            [reasonText, requestId]
+        );
+
+        const targetUserId = isOwner ? sRequest.provider_user_id : sRequest.user_id;
+        await servicesPool.query(
+            `INSERT INTO "public"."notifications" (user_id, title, message, type, is_read, created_at)
+             VALUES ($1, '⚠️ تم إلغاء الطلب', $2, 'error', false, NOW())`,
+            [targetUserId, `تم إلغاء الطلب والسبب: ${reasonText}`]
+        );
+
+        const targetSocketId = getSocketIdForUser(targetUserId);
+        if (targetSocketId && global.io) {
+            global.io.to(targetSocketId).emit('service_request_cancelled', { 
+                requestId: Number(requestId), 
+                reason: reasonText 
+            });
+        }
+
+        res.json({ success: true, request: updateRes.rows[0] });
+    } catch (err) {
+        console.error('❌ خطأ أثناء إلغاء الطلب:', err.message);
+        res.status(500).json({ success: false, error: 'تعذر إلغاء الطلب', details: err.message });
+    }
+});
+
+// مسار جلب كافة السجلات والطلبات بشكل تفصيلي لوحة التحكم
+app.get('/api/admin/all-service-requests-logs', requireAdmin, async (req, res) => {
+    try {
+        const result = await servicesPool.query(`
+            SELECT sr.id, sr.user_id, sr.provider_user_id, sr.service_layer, sr.feature_id, 
+                   sr.service_type, sr.status, sr.cancellation_reason, sr.created_at, sr.updated_at,
+                   ru.full_name AS requester_name, ru.phone AS requester_phone, COALESCE(ru.phone, '') AS requester_whatsapp,
+                   pu.full_name AS provider_name, pu.phone AS provider_phone, COALESCE(pu.phone, '') AS provider_whatsapp
+            FROM public.service_requests sr
+            LEFT JOIN public.users ru ON ru.user_id = sr.user_id
+            LEFT JOIN public.users pu ON pu.user_id = sr.provider_user_id
+            ORDER BY sr.created_at DESC
+        `);
+        res.json({ success: true, logs: result.rows });
+    } catch (err) {
+        console.error('❌ خطأ أثناء جلب سجلات الطلبات التفصيلية:', err.message);
+        res.status(500).json({ success: false, error: 'فشل جلب السجلات', details: err.message });
+    }
+});
+
+// 4) جلب رسائل الدردشة الخاصة بطلب معيّن + بيانات التواصل عند اكتمال الاتفاق
+app.get('/api/service-requests/:id/messages', async (req, res) => {
+    const { id } = req.params;
+    try {
+        const messagesResult = await servicesPool.query(
+            'SELECT * FROM public.service_request_messages WHERE request_id = $1 ORDER BY created_at ASC',
+            [id]
+        );
+
+        const requestResult = await servicesPool.query(
+            'SELECT * FROM public.service_requests WHERE id = $1',
+            [id]
+        );
+
+        if (requestResult.rows.length === 0) {
+            return res.status(404).json({ success: false, error: 'الطلب غير موجود' });
+        }
+
+        const request = requestResult.rows[0];
+        const responsePayload = {
+            success: true,
+            messages: messagesResult.rows,
+            requestStatus: request.status
+        };
+
+        if (request.status === 'completed') {
+            const userPhoneResult = await servicesPool.query(
+                'SELECT phone FROM public.users WHERE user_id = $1',
+                [request.user_id]
+            );
+            const userPhone = userPhoneResult.rows[0]?.phone || null;
+            const providerContact = await getProviderContactInfo(request.service_layer, request.feature_id);
+
+            responsePayload.userPhone = userPhone;
+            responsePayload.userWhatsapp = userPhone;
+            responsePayload.providerPhone = providerContact.phone;
+            responsePayload.providerWhatsapp = providerContact.whatsapp;
+        }
+
+        res.json(responsePayload);
+    } catch (err) {
+        res.status(500).json({ success: false, error: 'فشل جلب الرسائل', details: err.message });
+    }
+});
+// 5) إرسال رسالة دردشة جديدة ضمن طلب مقبول
+app.post('/api/service-requests/:id/message', async (req, res) => {
+    const { id } = req.params;
+    const { sender_role, sender_id, message } = req.body;
+
+    if (!sender_id || !message || !['user', 'provider'].includes(sender_role)) {
+        return res.status(400).json({ success: false, error: 'بيانات الرسالة غير مكتملة.' });
+    }
+
+    const trimmedMsg = String(message).trim();
+    if (trimmedMsg === '') {
+        return res.status(400).json({ success: false, error: 'لا يمكن إرسال رسالة فارغة.' });
+    }
+
+    try {
+        const reqResult = await servicesPool.query('SELECT * FROM public.service_requests WHERE id = $1', [id]);
+        if (reqResult.rows.length === 0) return res.status(404).json({ success: false, error: 'الطلب غير موجود.' });
+        const request = reqResult.rows[0];
+
+        if (request.status !== 'accepted') {
+            return res.status(400).json({ success: false, error: 'الدردشة متاحة فقط بعد قبول الطلب.' });
+        }
+
+        const senderIdInRequest = sender_role === 'user' ? request.user_id : request.provider_user_id;
+        if (Number(senderIdInRequest) !== Number(sender_id)) {
+            return res.status(403).json({ success: false, error: 'لا تملك صلاحية إرسال رسالة بهذه المحادثة.' });
+        }
+
+        const insertResult = await servicesPool.query(
+            `INSERT INTO public.service_request_messages (request_id, sender_role, sender_id, message)
+             VALUES ($1, $2, $3, $4) RETURNING *`,
+            [id, sender_role, sender_id, trimmedMsg.slice(0, 1000)]
+        );
+        const savedMessage = insertResult.rows[0];
+
+        const otherUserId = sender_role === 'user' ? request.provider_user_id : request.user_id;
+        const otherSocketId = getSocketIdForUser(otherUserId);
+        if (otherSocketId && global.io) {
+            global.io.to(otherSocketId).emit('service_request_message', { requestId: Number(id), message: savedMessage });
+        }
+
+        res.json({ success: true, message: savedMessage });
+    } catch (err) {
+        console.error('❌ خطأ أثناء إرسال رسالة الدردشة:', err.message);
+        res.status(500).json({ success: false, error: 'فشل إرسال الرسالة', details: err.message });
+    }
+});
+
+// 6) تأكيد الاتفاق من أحد الطرفين
+app.post('/api/service-requests/:id/confirm', async (req, res) => {
+    const { id } = req.params;
+    const { role, user_id } = req.body;
+
+    if (!user_id || !['user', 'provider'].includes(role)) {
+        return res.status(400).json({ success: false, error: 'بيانات التأكيد غير صالحة.' });
+    }
+
+    const client = await servicesPool.connect();
+    try {
+        await client.query('BEGIN');
+
+        const reqResult = await client.query('SELECT * FROM public.service_requests WHERE id = $1 FOR UPDATE', [id]);
+        if (reqResult.rows.length === 0) {
+            await client.query('ROLLBACK');
+            return res.status(404).json({ success: false, error: 'الطلب غير موجود.' });
+        }
+        const request = reqResult.rows[0];
+
+        if (request.status !== 'accepted' && request.status !== 'completed') {
+            await client.query('ROLLBACK');
+            return res.status(400).json({ success: false, error: 'لا يمكن التأكيد قبل قبول الطلب.' });
+        }
+
+        const expectedId = role === 'user' ? request.user_id : request.provider_user_id;
+        if (Number(expectedId) !== Number(user_id)) {
+            await client.query('ROLLBACK');
+            return res.status(403).json({ success: false, error: 'لا تملك صلاحية التأكيد على هذا الطلب.' });
+        }
+
+        const fieldToUpdate = role === 'user' ? 'user_confirmed' : 'provider_confirmed';
+        await client.query(`UPDATE public.service_requests SET ${fieldToUpdate} = true, updated_at = NOW() WHERE id = $1`, [id]);
+
+        const refreshed = (await client.query('SELECT * FROM public.service_requests WHERE id = $1', [id])).rows[0];
+
+        if (refreshed.user_confirmed && refreshed.provider_confirmed && refreshed.status !== 'completed') {
+            await client.query(`UPDATE public.service_requests SET status = 'completed', updated_at = NOW() WHERE id = $1`, [id]);
+            await client.query('COMMIT');
+
+            // 🆕 هاتف المستخدم الطالب كما هو تماماً من عمود phone بجدول users
+            const userPhoneResult = await servicesPool.query(
+                'SELECT phone FROM public.users WHERE user_id = $1',
+                [refreshed.user_id]
+            );
+            const userPhone = userPhoneResult.rows[0]?.phone || null;
+
+            // 🆕 هاتف وواتساب مزود الخدمة من جدول طبقة الخدمة نفسها (عمود whatsapp)
+            const providerContact = await getProviderContactInfo(refreshed.service_layer, refreshed.feature_id);
+
+            const payloadForUser = { 
+                requestId: Number(id), 
+                providerPhone: providerContact.phone, 
+                providerWhatsapp: providerContact.whatsapp 
+            };
+            const payloadForProvider = { 
+                requestId: Number(id), 
+                userPhone: userPhone,
+                userWhatsapp: userPhone
+            };
+
+            const userSocketId = getSocketIdForUser(refreshed.user_id);
+            if (userSocketId && global.io) global.io.to(userSocketId).emit('service_request_completed', payloadForUser);
+
+            const providerSocketId = getSocketIdForUser(refreshed.provider_user_id);
+            if (providerSocketId && global.io) global.io.to(providerSocketId).emit('service_request_completed', payloadForProvider);
+
+            await servicesPool.query(
+                `INSERT INTO "public"."notifications" (user_id, title, message, type, is_read, created_at)
+                 VALUES ($1, '🎉 تم الاتفاق بنجاح', 'تم تبادل أرقام التواصل، بالتوفيق!', 'success', false, NOW()),
+                       ($2, '🎉 تم الاتفاق بنجاح', 'تم تبادل أرقام التواصل، بالتوفيق!', 'success', false, NOW())`,
+                [refreshed.user_id, refreshed.provider_user_id]
+            );
+
+            return res.json({ 
+                success: true, 
+                status: 'completed', 
+                userPhone: userPhone, 
+                userWhatsapp: userPhone,
+                providerPhone: providerContact.phone,
+                providerWhatsapp: providerContact.whatsapp 
+            });
+        }
+
+        await client.query('COMMIT');
+        res.json({ success: true, status: refreshed.status, waitingOtherSide: true });
+    } catch (err) {
+        await client.query('ROLLBACK');
+        console.error('❌ خطأ أثناء تأكيد طلب الخدمة:', err.message);
+        res.status(500).json({ success: false, error: 'فشل تنفيذ التأكيد', details: err.message });
+    } finally {
+        client.release();
+    }
+});
+
+// 8) إرسال تقييم وتعليق على مزود خدمة بعد اكتمال الاتفاق
+app.post('/api/service-requests/:id/rating', async (req, res) => {
+    const { id } = req.params;
+    const { user_id, rating, comment } = req.body;
+
+    if (!user_id || !rating || rating < 1 || rating > 5) {
+        return res.status(400).json({ success: false, error: 'بيانات التقييم غير صالحة.' });
+    }
+
+    // التعليق اختياري الآن
+    const commentValue = (comment && comment.trim() !== '') ? comment.trim() : null;
+
+    const client = await servicesPool.connect();
+    try {
+        await client.query('BEGIN');
+
+        // التحقق من وجود الطلب وأنه مكتمل
+        const reqResult = await client.query('SELECT * FROM public.service_requests WHERE id = $1', [id]);
+        if (reqResult.rows.length === 0) {
+            await client.query('ROLLBACK');
+            return res.status(404).json({ success: false, error: 'الطلب غير موجود.' });
+        }
+        const request = reqResult.rows[0];
+
+        if (request.status !== 'completed') {
+            await client.query('ROLLBACK');
+            return res.status(400).json({ success: false, error: 'يمكن التقييم فقط بعد اكتمال الاتفاق.' });
+        }
+
+        // التحقق من أن المستخدم هو الطالب (ليس المزود)
+        if (Number(request.user_id) !== Number(user_id)) {
+            await client.query('ROLLBACK');
+            return res.status(403).json({ success: false, error: 'يمكن للمستخدم الطالب فقط تقييم الخدمة.' });
+        }
+
+        // التحقق من عدم وجود تقييم سابق
+        const existingRating = await client.query(
+            'SELECT id FROM public.service_ratings WHERE request_id = $1 AND user_id = $2',
+            [id, user_id]
+        );
+        if (existingRating.rows.length > 0) {
+            await client.query('ROLLBACK');
+            return res.status(400).json({ success: false, error: 'لقد قمت بتقييم هذه الخدمة مسبقاً.' });
+        }
+
+        // إدراج التقييم (التعليق اختياري)
+        await client.query(
+            `INSERT INTO public.service_ratings (request_id, user_id, provider_user_id, service_layer, feature_id, rating, comment, created_at)
+             VALUES ($1, $2, $3, $4, $5, $6, $7, NOW())`,
+            [id, user_id, request.provider_user_id, request.service_layer, request.feature_id, rating, commentValue]
+        );
+
+        await client.query('COMMIT');
+        res.json({ success: true, message: 'تم إرسال التقييم بنجاح.' });
+    } catch (err) {
+        await client.query('ROLLBACK');
+        console.error('❌ خطأ أثناء إرسال التقييم:', err.message);
+        res.status(500).json({ success: false, error: 'فشل إرسال التقييم', details: err.message });
+    } finally {
+        client.release();
+    }
+});
+
+// 9) جلب التقييمات لمزود خدمة معين (معروفاً بـ service_layer و feature_id)
+app.get('/api/service-ratings', async (req, res) => {
+    const { service_layer, feature_id } = req.query;
+
+    if (!service_layer || !feature_id) {
+        return res.status(400).json({ success: false, error: 'يجب تحديد service_layer و feature_id.' });
+    }
+
+    try {
+        const result = await servicesPool.query(
+            `SELECT sr.rating, sr.comment, sr.created_at, u.full_name as user_name
+             FROM public.service_ratings sr
+             LEFT JOIN public.users u ON sr.user_id = u.user_id
+             WHERE sr.service_layer = $1 AND sr.feature_id = $2
+             ORDER BY sr.created_at DESC`,
+            [service_layer, feature_id]
+        );
+
+        // حساب المتوسط
+        const ratings = result.rows;
+        const averageRating = ratings.length > 0 
+            ? (ratings.reduce((sum, r) => sum + r.rating, 0) / ratings.length).toFixed(1)
+            : 0;
+
+        res.json({
+            success: true,
+            ratings: ratings,
+            averageRating: parseFloat(averageRating),
+            totalRatings: ratings.length
+        });
+    } catch (err) {
+        console.error('❌ خطأ أثناء جلب التقييمات:', err.message);
+        res.status(500).json({ success: false, error: 'فشل جلب التقييمات', details: err.message });
+    }
+});
+
+// 10) إضافة تعليق لاحقاً على تقييم موجود
+app.put('/api/service-ratings/:id/comment', async (req, res) => {
+    const { id } = req.params;
+    const { user_id, comment } = req.body;
+
+    if (!user_id) {
+        return res.status(400).json({ success: false, error: 'معرف المستخدم مطلوب.' });
+    }
+
+    if (!comment || comment.trim() === '') {
+        return res.status(400).json({ success: false, error: 'التعليق مطلوب.' });
+    }
+
+    const client = await servicesPool.connect();
+    try {
+        await client.query('BEGIN');
+
+        // التحقق من وجود التقييم وأنه للمستخدم المحدد
+        const ratingResult = await client.query(
+            'SELECT * FROM public.service_ratings WHERE id = $1 AND user_id = $2',
+            [id, user_id]
+        );
+        if (ratingResult.rows.length === 0) {
+            await client.query('ROLLBACK');
+            return res.status(404).json({ success: false, error: 'التقييم غير موجود أو لا تملك صلاحية تعديله.' });
+        }
+
+        const rating = ratingResult.rows[0];
+
+        // التحقق من عدم وجود تعليق مسبقاً
+        if (rating.comment) {
+            await client.query('ROLLBACK');
+            return res.status(400).json({ success: false, error: 'لقد قمت بإضافة تعليق مسبقاً.' });
+        }
+
+        // تحديث التعليق
+        await client.query(
+            'UPDATE public.service_ratings SET comment = $1 WHERE id = $2',
+            [comment.trim(), id]
+        );
+
+        await client.query('COMMIT');
+        res.json({ success: true, message: 'تم إضافة التعليق بنجاح.' });
+    } catch (err) {
+        await client.query('ROLLBACK');
+        console.error('❌ خطأ أثناء إضافة التعليق:', err.message);
+        res.status(500).json({ success: false, error: 'فشل إضافة التعليق', details: err.message });
+    } finally {
+        client.release();
+    }
+});
+
+// 11) التحقق من وجود تقييم سابق لمستخدم على طلب معين
+app.get('/api/service-requests/:id/rating-check', async (req, res) => {
+    const { id } = req.params;
+    const { user_id } = req.query;
+
+    if (!user_id) {
+        return res.status(400).json({ success: false, error: 'يجب تحديد user_id.' });
+    }
+
+    try {
+        const result = await servicesPool.query(
+            'SELECT id, comment FROM public.service_ratings WHERE request_id = $1 AND user_id = $2',
+            [id, user_id]
+        );
+
+        res.json({
+            success: true,
+            hasRated: result.rows.length > 0,
+            hasComment: result.rows.length > 0 && result.rows[0].comment !== null,
+            ratingId: result.rows.length > 0 ? result.rows[0].id : null
+        });
+    } catch (err) {
+        console.error('❌ خطأ أثناء التحقق من التقييم:', err.message);
+        res.status(500).json({ success: false, error: 'فشل التحقق من التقييم', details: err.message });
+    }
+});
+
+// 12) جلب التقييمات التي تنقصها تعليق لمستخدم معين
+app.get('/api/service-ratings/pending-comments', async (req, res) => {
+    const { user_id } = req.query;
+
+    if (!user_id) {
+        return res.status(400).json({ success: false, error: 'يجب تحديد user_id.' });
+    }
+
+    try {
+        const result = await servicesPool.query(
+            `SELECT sr.id, sr.request_id, sr.service_layer, sr.feature_id, sr.rating, sr.created_at,
+                    sr.provider_user_id, u.full_name as provider_name
+             FROM public.service_ratings sr
+             LEFT JOIN public.users u ON sr.provider_user_id = u.user_id
+             WHERE sr.user_id = $1 AND (sr.comment IS NULL OR sr.comment = '')
+             ORDER BY sr.created_at DESC`,
+            [user_id]
+        );
+
+        res.json({
+            success: true,
+            pendingComments: result.rows
+        });
+    } catch (err) {
+        console.error('❌ خطأ أثناء جلب التقييمات التي تنقصها تعليق:', err.message);
+        res.status(500).json({ success: false, error: 'فشل جلب التقييمات', details: err.message });
+    }
+});
+
+// 13) جلب الطلبات المكتملة التي لم يتم تقييمها لمستخدم معين
+app.get('/api/service-requests/pending-ratings', async (req, res) => {
+    const { user_id } = req.query;
+
+    if (!user_id) {
+        return res.status(400).json({ success: false, error: 'يجب تحديد user_id.' });
+    }
+
+    try {
+        const result = await servicesPool.query(
+            `SELECT sr.id, sr.service_type, sr.provider_user_id, u.full_name as provider_name
+             FROM public.service_requests sr
+             LEFT JOIN public.users u ON sr.provider_user_id = u.user_id
+             WHERE sr.user_id = $1 AND sr.status = 'completed'
+             AND sr.id NOT IN (SELECT request_id FROM public.service_ratings WHERE user_id = $1)
+             ORDER BY sr.updated_at DESC`,
+            [user_id]
+        );
+
+        res.json({
+            success: true,
+            pendingRatings: result.rows
+        });
+    } catch (err) {
+        console.error('❌ خطأ أثناء جلب الطلبات المكتملة التي لم يتم تقييمها:', err.message);
+        res.status(500).json({ success: false, error: 'فشل جلب الطلبات', details: err.message });
+    }
+});
+
+// 7) إحصائية عدد عمليات النجاح لكل مزود خدمة
+app.get('/api/admin/provider-success-stats', async (req, res) => {
+    try {
+        const result = await servicesPool.query(`
+            SELECT sr.*, 
+                   ru.full_name AS username, ru.phone AS requester_phone, COALESCE(ru.phone, '') AS requester_whatsapp,
+                   pu.full_name AS provider_name, pu.phone AS provider_phone, COALESCE(pu.phone, '') AS provider_whatsapp
+            FROM public.service_requests sr
+            LEFT JOIN public.users ru ON ru.user_id = sr.user_id
+            LEFT JOIN public.users pu ON pu.user_id = sr.provider_user_id
+            ORDER BY sr.created_at DESC
+        `);
+        res.json({ success: true, stats: result.rows });
+    } catch (err) {
+        console.error('❌ خطأ حرج في الـ API:', err.message);
+        res.status(500).json({ success: false, error: err.message });
+    }
+});
+
+// 7.1) حذف سجل طلب خدمة (للمشرف فقط)
+app.delete('/api/admin/provider-success-stats/:id', async (req, res) => {
+    const { id } = req.params;
+    const adminUserId = req.headers['x-admin-user-id'];
+
+    if (!adminUserId) {
+        return res.status(403).json({ success: false, error: 'يجب تسجيل الدخول كمشرف' });
+    }
+
+    try {
+        // التحقق من أن المستخدم مشرف
+        const userResult = await servicesPool.query(
+            'SELECT role FROM public.users WHERE user_id = $1',
+            [adminUserId]
+        );
+
+        if (userResult.rows.length === 0 || userResult.rows[0].role !== 'admin') {
+            return res.status(403).json({ success: false, error: 'غير مصرح: فقط المشرف يمكنه حذف السجلات' });
+        }
+
+        // حذف السجل
+        await servicesPool.query(
+            'DELETE FROM public.service_requests WHERE id = $1',
+            [id]
+        );
+
+        res.json({ success: true, message: 'تم حذف السجل بنجاح' });
+    } catch (err) {
+        console.error('❌ خطأ في حذف السجل:', err.message);
+        res.status(500).json({ success: false, error: 'فشل حذف السجل' });
+    }
+});
+
+// =========================================================================
+// 🆕 [عرض ذكي لأزرار التواصل]: مسار عام يرجع، لكل طبقة خدمة، قائمة أرقام
+// المعالم (feature_id) المرتبطة فعلياً بحساب مزود خدمة مُفعّل (role='provider'
+// و is_active=true). يُستخدم بالواجهة الأمامية (popup.js، no-map-search.js)
+// لتقرير: هل نعرض زر "طلب الخدمة" (عبر نظام الطلب والدردشة الحقيقي)، أم
+// نعرض اتصال+واتساب مباشرة كما بالعقارات، لأنه عندها لا يوجد حساب حقيقي
+// يستقبل طلبات الدردشة لهذا المعلم تحديداً.
+// =========================================================================
+app.get('/api/provider-linked-features', async (req, res) => {
+    try {
+        const result = await servicesPool.query(
+            `SELECT service_layer, feature_id
+             FROM public.users
+             WHERE role = 'provider' AND is_active = true
+               AND service_layer IS NOT NULL AND feature_id IS NOT NULL`
+        );
+
+        const linked = {};
+        result.rows.forEach(row => {
+            const layer = row.service_layer.trim();
+            if (!linked[layer]) linked[layer] = [];
+            linked[layer].push(row.feature_id);
+        });
+
+        res.json({ success: true, linked });
+    } catch (err) {
+        console.error('❌ خطأ أثناء جلب قائمة مزودي الخدمة المرتبطين:', err.message);
+        res.status(500).json({ success: false, error: 'فشل جلب البيانات', details: err.message });
+    }
+});
+
+// 8. مسار معالجة غير المطابق
 app.use('/api', (req, res) => {
     res.status(404).json({ error: 'API endpoint not found', path: req.path });
 });
@@ -1597,6 +2632,7 @@ app.use((err, req, res, next) => {
     }
     res.status(err.status || 500).json({ error: err.message || 'Unhandled server error' });
 });
+
 
 // ==========================================
 // Socket.io - نظام الإشعارات في الوقت الفعلي

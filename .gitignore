@@ -1,22 +1,11 @@
-temp.txt
-
-# Environment variables
+# Environment variables (CRITICAL - Never commit these)
 .env
 .env.local
 .env.production
+.env.development
 
-# Logs
-logs
-*.log
-npm-debug.log*
-
-# OS files
-.DS_Store
-Thumbs.db
-
-# Node modules
-node_modules/
-
-# IDE
-.vscode/
-.idea/
+# Temporary files
+*.tmp
+*.temp
+temp.txt
+node_modules

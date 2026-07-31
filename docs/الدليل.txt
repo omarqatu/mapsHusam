@@ -1,0 +1,18 @@
+PROJECT_OVERVIEW.md - نظرة عامة شاملة على المشروع
+SYSTEM_ARCHITECTURE.md - بنية النظام
+FRONTEND_GUIDE.md - دليل تطوير الواجهة الأمامية
+BACKEND_GUIDE.md - دليل تطوير الواجهة الخلفية
+API_DOCUMENTATION.md - توثيق واجهات برمجة التطبيقات
+DATABASE_SCHEMA.md - هيكل قاعدة البيانات
+GIS_MODULE.md - وحدة نظم المعلومات الجغرافية
+USER_ROLES.md - أدوار المستخدمين والصلاحيات
+SECURITY_POLICY.md - سياسات الأمان
+CONFIGURATION.md - دليل الإعدادات
+ENVIRONMENT_VARIABLES.md - متغيرات البيئة
+PERFORMANCE.md - دليل الأداء والتحسين
+DEPLOYMENT.md - إجراءات النشر
+LOGGING_MONITORING.md - التسجيل والمراقبة
+ERROR_HANDLING.md - معالجة الأخطاء
+TESTING_GUIDE.md - دليل الاختبار
+CODING_STANDARDS.md - معايير البرمجة
+CHANGELOG.md - سجل التغييرات

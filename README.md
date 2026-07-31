@@ -219,6 +219,28 @@ PSM/
 - PostgreSQL مع قاعدة البيانات المتاحة
 - GeoServer يعمل ويحتوي على الطبقات المطلوبة
 
+### إعداد ملف البيئة المحلي (مهم جداً)
+
+لأسباب أمنية، تم إزالة البيانات الحساسة من الكود المصدري. يجب عليك إنشاء ملف `.env.local` في جذر المشروع:
+
+1. انسخ ملف `.env.local.example` إلى `.env.local`:
+```bash
+copy .env.local.example .env.local
+```
+
+2. أو أنشئ الملف يدوياً بالمحتوى التالي:
+```env
+POSTGRES_HOST=144.91.84.168
+POSTGRES_PORT=5432
+POSTGRES_USER=Husam
+POSTGRES_PASSWORD=Husam
+SERVICES_DB_NAME=services_db
+REAL_ESTATE_DB_NAME=realestate
+GEOSERVER_TARGET=http://194.163.174.162:8080/geoserver
+ALLOWED_ORIGINS=http://localhost:3000,http://localhost:5173
+```
+
+**ملاحظة أمنية**: ملف `.env.local` محمي من الرفع على GitHub عبر `.gitignore` ولا يجب رفعه أبداً.
 
 ### تثبيت التبعيات
 
@@ -231,7 +253,6 @@ npm install
 ```bash
 npm start
 ```
-npm install socket.io
 
 بعد ذلك يمكن الوصول إلى:
 
@@ -253,19 +274,41 @@ npm install socket.io
 - SERVICES_DB_NAME: اسم قاعدة بيانات الخدمات
 - REAL_ESTATE_DB_NAME: اسم قاعدة بيانات العقارات
 - GEOSERVER_TARGET: عنوان GeoServer الهدف
+- ALLOWED_ORIGINS: الدومينات المسموح بها للوصول (مهم للـ CORS)
+- JWT_SECRET: مفتاح JWT لتشفير التوكنات
+- SESSION_SECRET: مفتاح الجلسة
 
-مثال:
+### مثال للبيئة المحلية (Development)
+
+```bash
+PORT=3000
+POSTGRES_HOST=localhost
+POSTGRES_PORT=5432
+POSTGRES_USER=your_db_user
+POSTGRES_PASSWORD=your_db_password
+SERVICES_DB_NAME=services_db
+REAL_ESTATE_DB_NAME=realestate
+GEOSERVER_TARGET=http://194.163.174.162:8080/geoserver
+ALLOWED_ORIGINS=http://localhost:3000
+```
+
+### مثال للبيئة الإنتاجية (Production)
 
 ```bash
 PORT=3000
 POSTGRES_HOST=144.91.84.168
 POSTGRES_PORT=5432
-POSTGRES_USER=Husam
-POSTGRES_PASSWORD=Husam
+POSTGRES_USER=your_db_user
+POSTGRES_PASSWORD=your_db_password
 SERVICES_DB_NAME=services_db
 REAL_ESTATE_DB_NAME=realestate
 GEOSERVER_TARGET=http://194.163.174.162:8080/geoserver
+ALLOWED_ORIGINS=https://psm.alameenapps.com,http://194.163.174.162:3000
+JWT_SECRET=your_jwt_secret_key_change_this_in_production
+SESSION_SECRET=your_super_secret_session_key_change_this_in_production
 ```
+
+**ملاحظة هامة**: يوجد ملف `.env.example` في المشروع كقالب للمتغيرات البيئية. عند النشر، قم بنسخه إلى `.env` وتحديث القيم بالبيانات الحقيقية. ملف `.env` محمي من الرفع على GitHub عبر `.gitignore`.
 
 ---
 

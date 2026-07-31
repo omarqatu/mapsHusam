@@ -1,0 +1,190 @@
+/* ==========================================================================
+   platform-stats.css
+   الأنماط الموحّدة لعرض إحصائيات المنصة (المستخدمين، المشاهدات، الخدمات،
+   ومزودي الخدمات) في ثلاثة أماكن مختلفة:
+   1) صفحة البحث بدون خريطة (.pstats-inline) - داخل قسم الهيرو
+   2) فوتر أسفل شاشة الكمبيوتر بصفحة الخريطة (#platform-stats-footer)
+   3) تبويب "الرئيسية" على الموبايل بصفحة الخريطة (.pstats-mobile-home)
+   ========================================================================== */
+
+.pstats-wrap {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 14px;
+    justify-content: center;
+    direction: rtl;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.pstats-loading,
+.pstats-error {
+    width: 100%;
+    text-align: center;
+    padding: 14px;
+    font-size: 13px;
+    color: #888;
+}
+.pstats-error { color: #c0392b; }
+.pstats-loading i, .pstats-error i { margin-left: 6px; }
+
+.pstats-card {
+    background: #fff;
+    border: 1px solid #e6e9ee;
+    border-radius: 14px;
+    padding: 14px 16px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    box-shadow: 0 3px 10px rgba(0,0,0,0.06);
+    flex: 1 1 200px;
+    min-width: 190px;
+    box-sizing: border-box;
+    transition: transform 0.25s ease, box-shadow 0.25s ease;
+}
+.pstats-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+}
+
+.pstats-icon {
+    flex-shrink: 0;
+    width: 46px;
+    height: 46px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 19px;
+    color: #fff;
+    background: #1a73e8;
+}
+.pstats-card[data-stat="users"] .pstats-icon { background: linear-gradient(135deg, #1a73e8, #6c5ce7); }
+.pstats-card[data-stat="views"] .pstats-icon { background: linear-gradient(135deg, #34a853, #16a085); }
+.pstats-card[data-stat="services"] .pstats-icon { background: linear-gradient(135deg, #fbbc04, #e37400); }
+.pstats-card[data-stat="features"] .pstats-icon { background: linear-gradient(135deg, #ea4335, #c0392b); }
+
+.pstats-info { flex: 1; min-width: 0; }
+.pstats-value {
+    font-size: 21px;
+    font-weight: 800;
+    color: #202124;
+    line-height: 1.2;
+}
+.pstats-label {
+    font-size: 12.5px;
+    color: #666;
+    font-weight: 600;
+    margin-top: 2px;
+}
+.pstats-breakdown {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 6px;
+}
+.pstats-breakdown span {
+    font-size: 10.5px;
+    background: #f1f5fb;
+    color: #444;
+    padding: 2px 7px;
+    border-radius: 10px;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    white-space: nowrap;
+}
+.pstats-breakdown i { font-size: 10px; color: #1a73e8; }
+
+/* ---------- 1) صفحة البحث بدون خريطة (ضمن الهيرو) ---------- */
+.pstats-inline {
+    margin: 18px 0 6px;
+}
+.pstats-inline .pstats-card {
+    background: #f8fbff;
+}
+
+@media (max-width: 767px) {
+    .pstats-inline { gap: 10px; margin: 14px 0 4px; }
+    .pstats-inline .pstats-card { min-width: 140px; padding: 10px 12px; gap: 8px; }
+    .pstats-inline .pstats-icon { width: 38px; height: 38px; font-size: 15px; }
+    .pstats-inline .pstats-value { font-size: 16px; }
+    .pstats-inline .pstats-label { font-size: 11px; }
+    .pstats-inline .pstats-breakdown span { font-size: 9.5px; }
+}
+
+@media (max-width: 479px) {
+    .pstats-inline .pstats-card { flex: 1 1 100%; }
+}
+
+/* ---------- 2) فوتر أسفل شاشة الكمبيوتر (صفحة الخريطة) ---------- */
+#platform-stats-footer {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 1500;
+    background: rgba(255, 255, 255, 0.97);
+    backdrop-filter: blur(3px);
+    border-top: 1px solid #e0e0e0;
+    box-shadow: 0 -4px 18px rgba(0,0,0,0.12);
+    padding: 8px 20px;
+    display: flex;
+    justify-content: center;
+    overflow-x: auto;
+}
+
+.pstats-footer-bar { gap: 10px; flex-wrap: nowrap; }
+.pstats-footer-bar .pstats-card {
+    flex: 0 0 auto;
+    min-width: 170px;
+    padding: 8px 14px;
+    gap: 10px;
+    box-shadow: none;
+    border-color: #eee;
+}
+.pstats-footer-bar .pstats-icon { width: 36px; height: 36px; font-size: 15px; }
+.pstats-footer-bar .pstats-value { font-size: 16px; }
+.pstats-footer-bar .pstats-label { font-size: 11px; }
+.pstats-footer-bar .pstats-breakdown { display: none; }
+.pstats-inline .pstats-breakdown,
+.pstats-mobile-home .pstats-breakdown {display: none;}
+.pstats-footer-bar .pstats-card:hover { transform: none; }
+
+/* إخفاء الفوتر بالكامل في وضع تبويبات الموبايل (الإحصائيات تظهر بدلاً عنه
+   داخل تبويب "الرئيسية")، ودفع مربع الإحداثيات للأعلى قليلاً لإفساح المجال له
+   على شاشات الكمبيوتر فقط */
+body.mobile-tabs-portrait #platform-stats-footer,
+body.mobile-tabs-landscape #platform-stats-footer {
+    display: none !important;
+}
+body:not(.mobile-tabs-portrait):not(.mobile-tabs-landscape) #coordinates {
+    bottom: 58px;
+}
+
+@media (max-width: 992px) {
+    /* الجوال والتابلت يعتمدون على تبويب "الرئيسية" بدلاً من الفوتر */
+    #platform-stats-footer { display: none; }
+    body:not(.mobile-tabs-portrait):not(.mobile-tabs-landscape) #coordinates {
+        bottom: 15px;
+    }
+}
+
+/* ---------- 3) تبويب "الرئيسية" على الموبايل (صفحة الخريطة) ---------- */
+.pstats-mobile-home {
+    gap: 10px;
+    margin-top: 6px;
+}
+.pstats-mobile-home .pstats-card {
+    flex: 1 1 calc(50% - 10px);
+    min-width: 130px;
+    padding: 10px;
+    gap: 8px;
+    flex-direction: column;
+    text-align: center;
+    align-items: center;
+}
+.pstats-mobile-home .pstats-icon { width: 38px; height: 38px; font-size: 15px; }
+.pstats-mobile-home .pstats-value { font-size: 17px; }
+.pstats-mobile-home .pstats-label { font-size: 11px; }
+.pstats-mobile-home .pstats-breakdown { justify-content: center; }

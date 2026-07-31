@@ -14,6 +14,8 @@
 - **XSS Protection**: حماية من هجمات XSS
 - **No Sniff**: منع MIME type sniffing
 - **Referrer Policy**: التحكم في معلومات referrer
+- **X-Frame-Options**: منع clickjacking
+- **X-Content-Type-Options**: منع MIME sniffing
 
 ### 2. **CORS Protection - تقييد المصادر**
 - السماح فقط بالمصادر المحددة في متغير البيئة `ALLOWED_ORIGINS`
@@ -49,6 +51,7 @@
 - التحقق من النطاق (قيم موجبة، 0 أو 1)
 - التحقق من الطبقات المسموح بها (ALLOWED_LAYERS)
 - Sanitization للمدخلات
+- حماية من XSS عبر تنظيف البيانات
 
 ### 8. **Logging & Monitoring**
 - تسجيل جميع الطلبات مع IP ووقت الاستجابة
@@ -217,6 +220,10 @@ snyk test
 
 ## 📝 التغييرات الأخيرة
 
+- **2026-07-29**: إضافة XSS Protection Middleware
+- **2026-07-29**: تحديث Rate Limiting على endpoints المصادقة
+- **2026-07-29**: إضافة JWT Secret للتوثيق
+- **2026-07-29**: تحديث .env.example مع جميع إعدادات الأمان
 - **2026-07-05**: إضافة Helmet.js، Rate Limiting، CORS Protection
 - **2026-07-05**: تأمين GeoServer Proxy
 - **2026-07-05**: إضافة Input Validation

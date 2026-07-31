@@ -24,7 +24,7 @@
 
         var user = getStoredUser();
         if (!user || user.role !== 'admin') {
-            window.location.replace('/index.html');
+            window.location.replace('/original-index.html');
         } else {
             document.addEventListener('DOMContentLoaded', function () {
                 document.documentElement.style.visibility = 'visible';
@@ -34,12 +34,12 @@
     </script>
 
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-    <link rel="stylesheet" href="css/admin-users.css">
+    <link rel="stylesheet" href="/css/admin-users.css">
 </head>
 <body>
 
 <div class="container">
-    <a href="dashboard.html" class="back-link"><i class="fas fa-arrow-right"></i> العودة للوحة التحكم</a>
+    <a href="/dashboard.html" class="back-link"><i class="fas fa-arrow-right"></i> العودة للوحة التحكم</a>
 
     <h1><i class="fas fa-users-cog"></i> إدارة المستخدمين</h1>
     <p class="subtitle">تفعيل الحسابات، تعيين مزودي الخدمة، تغيير كلمات المرور</p>

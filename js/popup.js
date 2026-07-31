@@ -26,6 +26,153 @@ async function logMapEvent(eventType, provider = null, service = null) {
     }
 }
 
+// خريطة تحويل الأسماء العربية إلى الإنجليزية للطبقات
+const arabicToEnglishLayerMap = {
+    'فني كهرباء': 'electrician',
+    'فني تكييف وتبريد': 'ac_technician',
+    'سباك (مواسيرجي)': 'plumber',
+    'صيانة عامة': 'general_maintenance',
+    'دهان/طراشة': 'painter',
+    'فني ديكور': 'Finisher',
+    'نجار': 'carpenter',
+    'حداد': 'blacksmith',
+    'بناء ومعمار': 'builder',
+    'خدمات تنظيف': 'house_cleaner',
+    'فني ألمنيوم': 'aluminum_tech',
+    'فني زجاج وسكريت': 'glass_tech',
+    'ميكانيكي سيارات': 'car_mechanic',
+    'كهربائي سيارات': 'car_electrician',
+    'بنشري / إطارات': 'tire_tech',
+    'غسيل سيارات': 'car_wash',
+    'صيانة دراجات نارية': 'motorcycle_repair',
+    'مكتب تاكسي': 'taxi_driver',
+    'خدمات توصيل': 'delivery_services',
+    'ونش إنقاذ': 'tow_truck',
+    'فني كاميرات مراقبة': 'cctv_installer',
+    'منظم حفلات': 'party_planner',
+    'فرقة زفة': 'zaffa_bands',
+    'فرق موسيقية': 'music_bands',
+    'تأجير مستلزمات حفلات': 'party_rental',
+    'تمريض منزلي': 'home_nursing',
+    'أخصائي مساج': 'massage_therapist',
+    'أخصائي حجامة': 'hijama_specialist',
+    'أخصائي تغذية': 'nutritionist',
+    'سائق شاحنة': 'truck_driver',
+    'شركات أمن وحراسة': 'security_companies',
+    'شراء أثاث مستعمل': 'used_furniture_buyer',
+    'تنسيق حدائق': 'gardener',
+    'رعاية حيوانات أليفة': 'pet_care',
+    'مهرج وعروض أطفال': 'clown_entertainer',
+    'متاجر أون لاين': 'online_stores',
+    'فلل أجار': 'villas_rent',
+    'فنون قتالية وجمباز': 'martial_arts_gymnastics',
+    'حدائق ومناطق ترفيهية': 'public_parks_recreation',
+    'فنادق': 'hotels',
+    'توزيع أغراض مجاناً': 'free_distribution',
+    'حلاقة شباب': 'barber_shop',
+    'مصور فوتوغرافي': 'photographers',
+    'تصميم فيديو إعلاني': 'video_design_ads',
+    'صيدليات مناوبة': 'pharmacies_on_call',
+    'تكاسي نظام مناوبة': 'taxis_on_call',
+    'طوارئ ومستشفيات': 'emergency_hospitals',
+    'عيادات': 'clinics',
+    'دكاترة مناوبة': 'doctors_on_call',
+    'إسعاف مناوبة': 'ambulance_on_call',
+    'تدريب موسيقى ومعاهد': 'music_training',
+    'محاميين': 'lawyers',
+    'مساحين أراضي': 'land_surveyors',
+    'مخمنين عقاريين': 'real_estate_valuers',
+    'أساتذة خصوصي': 'private_tutors',
+    'مبرمجين': 'programmers',
+    'دليفري سيارات (مناوبة)': 'car_delivery_on_call',
+    'دليفري دراجات (مناوبة)': 'motorcycle_delivery_on_call',
+    'دليفري هوائية (مناوبة)': 'bicycle_delivery_on_call',
+    'مساعد أبحاث طلاب': 'student_research_assist'
+};
+
+// دالة جلب التقييمات لمزود خدمة معين
+async function fetchRatingsForFeature(serviceLayer, featureId) {
+    try {
+        // تحويل الاسم العربي إلى الإنجليزي
+        const englishLayerName = arabicToEnglishLayerMap[serviceLayer] || serviceLayer;
+        
+        const response = await fetch(`${window.location.origin}/api/service-ratings?service_layer=${englishLayerName}&feature_id=${featureId}`);
+        const data = await response.json();
+        
+        if (data.success) {
+            const ratingElement = document.getElementById(`rating-text-${serviceLayer}-${featureId}`);
+            const ratingContainer = document.getElementById(`rating-display-${serviceLayer}-${featureId}`);
+            
+            if (ratingElement && ratingContainer) {
+                if (data.totalRatings > 0) {
+                    const stars = '★'.repeat(Math.round(data.averageRating)) + '☆'.repeat(5 - Math.round(data.averageRating));
+                    ratingElement.innerHTML = `<span style="color: #ffc107; font-size: 16px;">${stars}</span> <span style="color: #333; font-weight: bold;">${data.averageRating}</span> <span style="color: #666;">(${data.totalRatings} تقييم)</span>`;
+                    
+                    // التحقق من عدم وجود زر التعليقات مسبقاً
+                    let commentsButton = document.getElementById(`comments-btn-${serviceLayer}-${featureId}`);
+                    if (!commentsButton) {
+                        // إضافة زر لعرض التعليقات
+                        const button = document.createElement('button');
+                        button.id = `comments-btn-${serviceLayer}-${featureId}`;
+                        button.onclick = () => toggleComments(serviceLayer, featureId);
+                        button.style.cssText = 'margin-top: 8px; padding: 4px 8px; background: #1a73e8; color: #fff; border: none; border-radius: 4px; cursor: pointer; font-size: 11px;';
+                        button.innerHTML = `💬 عرض التعليقات (${data.totalRatings})`;
+                        ratingContainer.appendChild(button);
+                        
+                        // إضافة حاوية التعليقات
+                        const commentsDiv = document.createElement('div');
+                        commentsDiv.id = `comments-container-${serviceLayer}-${featureId}`;
+                        commentsDiv.style.cssText = 'display: none; margin-top: 10px; max-height: 200px; overflow-y: auto; border-top: 1px solid #eee; padding-top: 8px;';
+                        ratingContainer.appendChild(commentsDiv);
+                    }
+                    
+                    // تخزين التقييمات لاستخدامها عند فتح التعليقات
+                    window.currentRatings = window.currentRatings || {};
+                    window.currentRatings[`${serviceLayer}-${featureId}`] = data.ratings;
+                } else {
+                    ratingElement.innerHTML = '<span style="color: #999;">لا توجد تقييمات بعد</span>';
+                }
+            }
+        }
+    } catch (err) {
+        console.warn('فشل جلب التقييمات:', err.message);
+    }
+}
+
+// دالة عرض/إخفاء التعليقات
+window.toggleComments = function(serviceLayer, featureId) {
+    const container = document.getElementById(`comments-container-${serviceLayer}-${featureId}`);
+    if (!container) return;
+    
+    if (container.style.display === 'none') {
+        container.style.display = 'block';
+        const ratings = window.currentRatings?.[`${serviceLayer}-${featureId}`] || [];
+        
+        if (ratings.length === 0) {
+            container.innerHTML = '<div style="color: #999; font-size: 12px;">لا توجد تعليقات</div>';
+        } else {
+            container.innerHTML = ratings.map(r => `
+                <div style="padding: 8px; background: #f9f9f9; border-radius: 4px; margin-bottom: 6px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+                        <span style="font-weight: bold; font-size: 12px; color: #333;">${r.user_name || 'مستخدم'}</span>
+                        <span style="color: #ffc107; font-size: 14px;">${'★'.repeat(r.rating)}</span>
+                    </div>
+                    ${r.comment ? `<div style="font-size: 12px; color: #666; line-height: 1.4;">${r.comment}</div>` : ''}
+                    <div style="font-size: 10px; color: #999; margin-top: 4px;">${new Date(r.created_at).toLocaleDateString('ar-EG')}</div>
+                </div>
+            `).join('');
+        }
+    } else {
+        container.style.display = 'none';
+    }
+};
+
+// 🆕 تطهير نص ليكون صالحاً للاستخدام داخل قيمة سمة HTML (data-attr="...")
+function escapeForAttribute(str) {
+    if (str === null || str === undefined) return '';
+    return String(str).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/'/g, '&#39;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
 function initializePopup(map) {
     const container = document.getElementById('popup');
     const content = document.getElementById('popup-content');
@@ -62,7 +209,7 @@ function initializePopup(map) {
          'مساعد أبحاث طلاب'
     ];
 
-    const realEstateLayerNames = ['شقق الإيجار', 'شقق للبيع', 'الأراضي للبيع']; // تم تصحيح المسمى ليطابق config.js
+    const realEstateLayerNames = ['شقق الإيجار', 'شقق للبيع', 'الأراضي للبيع'];
     const areaLayerName = 'المناطق';
 
     function isLayerAllowed(layer) {
@@ -85,13 +232,8 @@ function initializePopup(map) {
         return url;
     }
 
-    // --- 🆕 فحص حد الطلبات (الأحداث) المُعرّف من المشرف قبل تنفيذ أي اتصال/واتساب ---
-    // افتراضياً كل المستخدمين "مفتوحين" بدون أي حد؛ لا يُطبَّق الفحص إلا إذا حدد
-    // المشرف رقماً صريحاً لهذا المستخدم من لوحة إدارة المستخدمين.
-    // 🆕 الدالة أصبحت معرّفة مرة واحدة فقط بملف shared-utils.js (window.checkRequestQuotaOrAlert)
     const checkRequestQuotaOrAlert = window.checkRequestQuotaOrAlert;
 
-    // --- تعديل منطق الواتساب (يأخذ القيمة كما هي من الحقل) ---
     window.handlePhoneCall = async function(providerName, localPhone, whatsappNumber, serviceType) {
         const currentUserId = getRealUserId();
         const quota = await checkRequestQuotaOrAlert(currentUserId, null);
@@ -111,8 +253,6 @@ function initializePopup(map) {
     };
 
     window.handleServiceRequest = async function(providerName, whatsappNumber, serviceType) {
-        // نفتح تبويباً فارغاً فوراً ضمن نفس حركة المستخدم (Click) لتفادي حجب المتصفح
-        // للنوافذ المنبثقة، ثم نوجهه للرابط الصحيح بعد التأكد من عدم تجاوز الحد
         const newTab = window.open('', '_blank');
 
         const currentUserId = getRealUserId();
@@ -131,15 +271,12 @@ function initializePopup(map) {
 
         const message = `مرحباً ${providerName}، أرغب بالاستفسار عن (${serviceType}) من خلال الخريطة.`;
         
-        // تنظيف الرقم من أي رموز أو مسافات (فقط أرقام)
         let cleanNumber = whatsappNumber.toString().replace(/\D/g, '');
 
-        // إذا كان الشخص أدخل الرقم بـ 00 في البداية، نحذفها لأن رابط wa.me لا يقبلها
         if (cleanNumber.startsWith('00')) {
             cleanNumber = cleanNumber.substring(2);
         }
 
-        // ملاحظة: الرابط سيعمل إذا كان الرقم يبدأ بـ 970 أو 972 مباشرة
         const whatsappUrl = `https://api.whatsapp.com/send?phone=${cleanNumber}&text=${encodeURIComponent(message)}`;
         if (newTab) {
             newTab.location.href = whatsappUrl;
@@ -164,9 +301,13 @@ function initializePopup(map) {
                 </div>`;
     }
 
-window.copyLocationLink = function(coordinate) {
+    window.copyLocationLink = function(coordinate) {
         if (!coordinate || coordinate.length < 2) {
-            alert('لا يمكن نسخ الموقع');
+            if (window.toast) {
+                window.toast('لا يمكن نسخ الموقع', 'error');
+            } else {
+                alert('لا يمكن نسخ الموقع');
+            }
             return;
         }
 
@@ -178,16 +319,14 @@ window.copyLocationLink = function(coordinate) {
         const shareLink = `${baseUrl}?${params.toString()}`;
         const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
 
-        // 📱 على الموبايل: استخدام قائمة المشاركة الأصلية لتفادي مشكلة تحويل الرابط لبحث جوجل عند اللصق
         if (isMobile && navigator.share) {
             navigator.share({
                 title: 'موقع على الخريطة',
                 url: shareLink
-            }).catch(() => { /* المستخدم ألغى المشاركة، لا حاجة لفعل شيء */ });
+            }).catch(() => {});
             return;
         }
 
-        // 💻 على الكمبيوتر (أو إذا كانت المشاركة الأصلية غير مدعومة): نسخ تقليدي للحافظة
         const textarea = document.createElement('textarea');
         textarea.value = shareLink;
         textarea.style.position = 'fixed';
@@ -200,51 +339,67 @@ window.copyLocationLink = function(coordinate) {
             document.body.removeChild(textarea);
 
             if (successful) {
-                alert('تم نسخ رابط الموقع بنجاح! يمكنك مشاركته الآن.');
+                if (window.toast) {
+                    window.toast('تم نسخ رابط الموقع بنجاح! يمكنك مشاركته الآن.', 'success');
+                } else {
+                    alert('تم نسخ رابط الموقع بنجاح! يمكنك مشاركته الآن.');
+                }
             } else {
                 if (navigator.clipboard && navigator.clipboard.writeText) {
                     navigator.clipboard.writeText(shareLink).then(() => {
-                        alert('تم نسخ الرابط بنجاح! يمكنك مشاركته الآن.');
+                        if (window.toast) {
+                            window.toast('تم نسخ الرابط بنجاح! يمكنك مشاركته الآن.', 'success');
+                        } else {
+                            alert('تم نسخ الرابط بنجاح! يمكنك مشاركته الآن.');
+                        }
                     }).catch(err => {
                         console.error('فشل نسخ الرابط:', err);
-                        alert('فشل نسخ الرابط. يرجى المحاولة يدوياً.');
+                        if (window.toast) {
+                            window.toast('فشل نسخ الرابط. يرجى المحاولة يدوياً.', 'error');
+                        } else {
+                            alert('فشل نسخ الرابط. يرجى المحاولة يدوياً.');
+                        }
                     });
                 } else {
-                    alert('فشل نسخ الرابط. يرجى المحاولة يدوياً.');
+                    if (window.toast) {
+                        window.toast('فشل نسخ الرابط. يرجى المحاولة يدوياً.', 'error');
+                    } else {
+                        alert('فشل نسخ الرابط. يرجى المحاولة يدوياً.');
+                    }
                 }
             }
         } catch (err) {
             document.body.removeChild(textarea);
             console.error('فشل نسخ الرابط:', err);
-            alert('فشل نسخ الرابط. يرجى المحاولة يدوياً.');
+            if (window.toast) {
+                window.toast('فشل نسخ الرابط. يرجى المحاولة يدوياً.', 'error');
+            } else {
+                alert('فشل نسخ الرابط. يرجى المحاولة يدوياً.');
+            }
         }
     };
     
-    // استبدل تعريف الـ overlay الحالي بهذا التعريف
-        const overlay = new ol.Overlay({
-            element: container,
-            autoPan: {
-                animation: { duration: 250 },
-                margin: 40
-            },
-            // تغيير التموضع إلى 'bottom-center' مع السماح للمكتبة بالتعامل معه
-            positioning: 'bottom-center',
-            stopEvent: true,
-            offset: [0, -15] 
-        });
+    const overlay = new ol.Overlay({
+        element: container,
+        autoPan: {
+            animation: { duration: 250 },
+            margin: 40
+        },
+        positioning: 'bottom-center',
+        stopEvent: true,
+        offset: [0, -15] 
+    });
 
-        // هذا الجزء هو المسؤول عن تحديث الكلاس بناءً على التموضع الفعلي (السر هنا)
-        overlay.on('change:positioning', function(e) {
-            const positioning = overlay.getPositioning();
-            container.classList.remove('ol-position-top', 'ol-position-bottom');
-            
-            // إذا تغير التموضع إلى top-center يعني النافذة أصبحت تحت النقطة
-            if (positioning === 'top-center') {
-                container.classList.add('ol-position-top');
-            } else {
-                container.classList.add('ol-position-bottom');
-            }
-        });
+    overlay.on('change:positioning', function(e) {
+        const positioning = overlay.getPositioning();
+        container.classList.remove('ol-position-top', 'ol-position-bottom');
+        
+        if (positioning === 'top-center') {
+            container.classList.add('ol-position-top');
+        } else {
+            container.classList.add('ol-position-bottom');
+        }
+    });
 
     map.addOverlay(overlay);
     
@@ -302,10 +457,12 @@ window.copyLocationLink = function(coordinate) {
                     <div style="font-size: 12px; color: #444; margin-top: 5px; line-height: 1.4;">${timeText}</div>
                 </div>`;
     }
-            function getCurrencySymbol(code) {
-                    const symbols = { USD: 'دولار', ILS: 'شيقل', JOD: 'دينار' };
-                    return symbols[code] || '';
-                }
+
+    function getCurrencySymbol(code) {
+        const symbols = { USD: 'دولار', ILS: 'شيقل', JOD: 'دينار' };
+        return symbols[code] || '';
+    }
+
     window.generateFeatureHtml = function(feature, layer) {
         const props = feature.getProperties();
         const layerTitle = layer ? (layer.get('title') || 'معلم') : 'معلم';
@@ -314,17 +471,13 @@ window.copyLocationLink = function(coordinate) {
         const isService = serviceLayerNames.includes(layerTitle);
         const isAreaLayer = layerTitle === areaLayerName; 
 
-        // 🆕 استخراج رقم الـ ID المناسب لعرضه بجانب التصنيف:
-        // العقارات (شقق إيجار/بيع، أراضي للبيع) => العمود الرئيسي fid
-        // الخدمات => العمود الرئيسي id
         let displayFeatureId = null;
         if (isRealEstate) {
             displayFeatureId = (props.fid !== undefined && props.fid !== null && props.fid !== '') ? props.fid : null;
         } else if (isService) {
             displayFeatureId = (props.id !== undefined && props.id !== null && props.id !== '') ? props.id : null;
         }
-        // احتياط: إذا الحقل مش موجود كـ property (يصير أحياناً مع WFS من GeoServer)،
-        // نستخرجه من معرف OpenLayers الداخلي للمعلم (شكله مثلاً "ApartRent.123")
+        
         if (displayFeatureId === null && typeof feature.getId === 'function') {
             const olId = feature.getId();
             if (olId) {
@@ -347,6 +500,23 @@ window.copyLocationLink = function(coordinate) {
         let bodyHtml = `<div class="popup-body" style="font-size: 13px; line-height: 1.6;  overflow-y:auto; padding-right:5px; direction: rtl; text-align: right;">`;
         bodyHtml += `<div style="margin-bottom: 8px; border-bottom: 1px solid #eee; padding-bottom: 5px;"><b style="color: #007bff;">🛠️ التصنيف:</b> <b>${layerTitle}</b>${displayFeatureId !== null ? ` <span style="color:#888; font-size:12px;">(رقم: ${window.sanitizeHTML(String(displayFeatureId))})</span>` : ''}</div>`;
         
+        // إضافة عرض النجوم للخدمات فقط
+        if (isService && displayFeatureId) {
+            // استخدام layerTitle مباشرة لأنه هو الاسم المستخدم في قاعدة البيانات
+            const layerDbName = layerTitle;
+            if (layerDbName) {
+                bodyHtml += `<div id="rating-display-${layerDbName}-${displayFeatureId}" style="margin-bottom: 8px; padding: 8px; background: #fff9e6; border-radius: 6px; border: 1px solid #ffe082;">
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <span style="font-size: 14px; color: #f57c00;">⭐</span>
+                        <span id="rating-text-${layerDbName}-${displayFeatureId}" style="font-size: 12px; color: #666;">جاري تحميل التقييم...</span>
+                    </div>
+                </div>`;
+                
+                // جلب التقييم بشكل غير متزامن
+                fetchRatingsForFeature(layerDbName, displayFeatureId);
+            }
+        }
+        
         if (!isAreaLayer) bodyHtml += getStatusHtml(props.auto_status, props.work_hours);
 
         if (isRealEstate || isService) {
@@ -368,26 +538,57 @@ window.copyLocationLink = function(coordinate) {
                 const whatsappNumber = props.whatsapp.toString();
                 const providerName = props.name || (isRealEstate ? "المعلن" : "مزود الخدمة");
 
-                // استخراج رقم الجوال المحلي: حذف أول 5 أرقام واستبدالها بـ 0
-                const cleanDigits = whatsappNumber.replace(/\D/g, '');
-                const localPhone = '0' + cleanDigits.slice(5);
+                // 🆕 [عرض ذكي حسب ارتباط الخدمة بحساب مزود فعلي]: العقارات تبقى
+                // دائماً اتصال+واتساب. أما الخدمات: نتحقق أولاً هل هذا المعلم
+                // مرتبط فعلياً بحساب مزود خدمة مُفعّل (عبر public.users) - إن كان
+                // مرتبطاً نعرض "طلب الخدمة" (نظام الطلب والدردشة الحقيقي)، وإلا
+                // نعرض اتصال+واتساب مباشرة تماماً مثل العقارات، لأنه لا يوجد
+                // حساب حقيقي يستقبل طلب الدردشة لهذا المعلم بالذات.
+                let layerDbName = '';
+                let isLinkedProvider = false;
+                if (isService) {
+                    const layerKeyForRequest = Object.keys(window.overlayLayersObj || {}).find(k => window.overlayLayersObj[k] === layer);
+                    layerDbName = layerKeyForRequest ? layerKeyForRequest.replace(/Layer$/i, '') : '';
+                    isLinkedProvider = typeof window.isFeatureLinkedToProvider === 'function' && window.isFeatureLinkedToProvider(layerDbName, displayFeatureId);
+                }
 
-                bodyHtml += `
-                <div style="margin-top: 15px; border-top: 2px solid #eee; padding-top: 12px;">
-                    <div style="display: flex; gap: 8px; margin-bottom: 8px;">
-                        <button onclick="handlePhoneCall('${providerName}', '${localPhone}', '${whatsappNumber}', '${layerTitle}')"
-                                style="flex: 1; background: #1a73e8; color: white; border: none; padding: 12px 8px; border-radius: 10px; cursor: pointer; font-weight: bold; display: flex; align-items: center; justify-content: center; gap: 6px; font-size: 13px; box-shadow: 0 4px 12px rgba(26,115,232,0.3);">
-                            <i class="fas fa-mobile-alt" style="font-size: 16px;"></i> اتصال
+                if (isService && isLinkedProvider) {
+                    const providerWhatsapp = props.whatsapp ? props.whatsapp.toString() : '';
+                    const providerPhone = props.phone ? props.phone.toString() : '';
+
+                    bodyHtml += `
+                    <div style="margin-top: 15px; border-top: 2px solid #eee; padding-top: 12px;">
+                        <button class="req-svc-btn"
+                                data-provider="${escapeForAttribute(providerName)}"
+                                data-service="${escapeForAttribute(layerTitle)}"
+                                data-layer="${escapeForAttribute(layerDbName)}"
+                                data-feature-id="${escapeForAttribute(displayFeatureId)}"
+                                data-whatsapp="${escapeForAttribute(providerWhatsapp)}"
+                                data-phone="${escapeForAttribute(providerPhone)}"
+                                style="width: 100%; background: linear-gradient(135deg, #1a73e8, #6c5ce7); color: white; border: none; padding: 12px 8px; border-radius: 10px; cursor: pointer; font-weight: bold; display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 13px; box-shadow: 0 4px 12px rgba(26,115,232,0.3);">
+                            <i class="fas fa-paper-plane" style="font-size: 15px;"></i> طلب الخدمة
                         </button>
-                        <button onclick="handleServiceRequest('${providerName}', '${whatsappNumber}', '${layerTitle}')"
-                                style="flex: 1; background: #25d366; color: white; border: none; padding: 12px 8px; border-radius: 10px; cursor: pointer; font-weight: bold; display: flex; align-items: center; justify-content: center; gap: 6px; font-size: 13px; box-shadow: 0 4px 12px rgba(37,211,102,0.3);">
-                            <i class="fab fa-whatsapp" style="font-size: 16px;"></i> واتساب
-                        </button>
-                    </div>
-                </div>`;
+                    </div>`;
+                } else {
+                    const cleanDigits = whatsappNumber.replace(/\D/g, '');
+                    const localPhone = '0' + cleanDigits.slice(5);
+
+                    bodyHtml += `
+                    <div style="margin-top: 15px; border-top: 2px solid #eee; padding-top: 12px;">
+                        <div style="display: flex; gap: 8px; margin-bottom: 8px;">
+                            <button onclick="handlePhoneCall('${providerName}', '${localPhone}', '${whatsappNumber}', '${layerTitle}')"
+                                    style="flex: 1; background: #1a73e8; color: white; border: none; padding: 12px 8px; border-radius: 10px; cursor: pointer; font-weight: bold; display: flex; align-items: center; justify-content: center; gap: 6px; font-size: 13px; box-shadow: 0 4px 12px rgba(26,115,232,0.3);">
+                                <i class="fas fa-mobile-alt" style="font-size: 16px;"></i> اتصال
+                            </button>
+                            <button onclick="handleServiceRequest('${providerName}', '${whatsappNumber}', '${layerTitle}')"
+                                    style="flex: 1; background: #25d366; color: white; border: none; padding: 12px 8px; border-radius: 10px; cursor: pointer; font-weight: bold; display: flex; align-items: center; justify-content: center; gap: 6px; font-size: 13px; box-shadow: 0 4px 12px rgba(37,211,102,0.3);">
+                                <i class="fab fa-whatsapp" style="font-size: 16px;"></i> واتساب
+                            </button>
+                        </div>
+                    </div>`;
+                }
             }
 
-            // زر نسخ رابط الموقع يظهر لجميع المعالم
             bodyHtml += `
             <div style="margin-top: 15px; border-top: 2px solid #eee; padding-top: 12px;">
                 <button onclick="copyLocationLink(window.currentPopupCoordinate)"
@@ -413,7 +614,6 @@ window.copyLocationLink = function(coordinate) {
                 bodyHtml += `<b>${label}:</b> ${props[key]}<br>`;
             });
 
-            // زر نسخ رابط الموقع يظهر للمناطق أيضاً
             bodyHtml += `
             <div style="margin-top: 15px; border-top: 2px solid #eee; padding-top: 12px;">
                 <button onclick="copyLocationLink(window.currentPopupCoordinate)"
@@ -449,7 +649,6 @@ window.copyLocationLink = function(coordinate) {
                 overlay.setPosition(event.coordinate);
                 isPopupPinned = true;
 
-                // تسجيل حدث النقر على الخريطة
                 const layerTitle = layer.get('title') || 'معلم';
                 const props = feature.getProperties();
                 const providerName = props.name || (props.location_name || 'غير معروف');
@@ -481,7 +680,6 @@ window.copyLocationLink = function(coordinate) {
         }
     });
 
-    // قراءة معاملات URL وفتح البوب أب تلقائياً
     function openLocationFromUrl() {
         const urlParams = new URLSearchParams(window.location.search);
         const x = urlParams.get('x');
@@ -493,14 +691,12 @@ window.copyLocationLink = function(coordinate) {
 
         if (isNaN(coordinate[0]) || isNaN(coordinate[1])) return;
 
-        // تحريك الخريطة إلى الموقع
         map.getView().animate({
             center: coordinate,
             zoom: 19,
             duration: 1000
         });
 
-        // إظهار البوب أب في الموقع
         window.currentPopupCoordinate = coordinate;
         content.innerHTML = `<div style="padding:10px; text-align:center;">
             <strong>📍 الموقع المشارك</strong><br>
@@ -510,6 +706,173 @@ window.copyLocationLink = function(coordinate) {
         isPopupPinned = true;
     }
 
-    // استدعاء الدالة بعد تحميل الخريطة
     setTimeout(openLocationFromUrl, 1000);
 }
+// لعرض في صفحه البحث بدون خريطة
+document.addEventListener('DOMContentLoaded', function () {
+    async function loadAllTopRatedAdsFixed() {
+        // 🆕 صفحة البحث بدون خريطة أصبحت تدير إعلاناتها بنفسها (كود موحّد
+        // يشمل العقارات والخدمات معاً) - لا داعي لتشغيل هذه النسخة القديمة
+        // معها لتفادي التعارض المزدوج على نفس عناصر .nms-ad-space
+        if (window.__nmsPageHandlesOwnAds) return;
+
+        const adSpaces = document.querySelectorAll('.nms-ad-space');
+        if (!adSpaces.length) return;
+
+        let allValidCards = [];
+
+        try {
+            const baseUrl = window.MAP_CONFIG?.server?.proxyUrl || (window.location.origin + "/");
+            let allTargets = [];
+
+            // 1. جمع طبقات العقارات مع تسميات واضحة بناءً على MAP_CONFIG
+            if (window.MAP_CONFIG && window.MAP_CONFIG.layers && window.MAP_CONFIG.layers.realestate) {
+                window.MAP_CONFIG.layers.realestate.forEach(l => {
+                    // التحقق من الاستثناءات العالمية لتخطي الطبقات المستبعدة
+                    if (window.MAP_CONFIG.globalExclusions && window.MAP_CONFIG.globalExclusions.includes(l.id)) return;
+                    
+                    let displayName = l.title || l.name;
+                    if (l.name === 'ApartSale') displayName = 'شقق للبيع';
+                    else if (l.name === 'ApartRent') displayName = 'شقق للإيجار';
+                    else if (l.name === 'LandSale') displayName = 'أراضي للبيع';
+                    
+                    allTargets.push({ layer: l.name, workspace: l.workspace || 'realestate', label: displayName });
+                });
+            } else {
+                allTargets.push(
+                    { layer: 'ApartSale', workspace: 'realestate', label: 'شقق للبيع' },
+                    { layer: 'ApartRent', workspace: 'realestate', label: 'شقق للإيجار' },
+                    { layer: 'LandSale', workspace: 'realestate', label: 'أراضي للبيع' }
+                );
+            }
+
+            // 2. جمع طبقات الخدمات الـ 59 مع استثناء الغير محددة في globalExclusions
+            if (window.serviceTranslations) {
+                Object.keys(window.serviceTranslations).forEach(serviceKey => {
+                    if (window.MAP_CONFIG && window.MAP_CONFIG.globalExclusions && window.MAP_CONFIG.globalExclusions.includes(serviceKey)) return;
+
+                    const sObj = window.serviceTranslations[serviceKey];
+                    const translatedLabel = (typeof sObj === 'object' && sObj !== null) ? (sObj.name || serviceKey) : sObj;
+                    
+                    allTargets.push({ layer: serviceKey, workspace: 'services', label: translatedLabel });
+                });
+            }
+
+            // 3. جلب البيانات على دفعات لتحسين الأداء
+            const batchSize = 10;
+            for (let i = 0; i < allTargets.length; i += batchSize) {
+                const batch = allTargets.slice(i, i + batchSize);
+                
+                const promises = batch.map(async (item) => {
+                    try {
+                        const params = new URLSearchParams({
+                            layer: item.layer,
+                            workspace: item.workspace,
+                            field_0: 'rating',
+                            operator_0: '=',
+                            value_0: '10',
+                            conditions_count: '1'
+                        });
+
+                        const response = await fetch(`${baseUrl}api/search-features?${params.toString()}`);
+                        if (!response.ok) return [];
+                        
+                        const data = await response.json();
+                        const features = data.features || (Array.isArray(data) ? data : []);
+                        
+                        return features.map(rawFeat => {
+                            const props = rawFeat.properties || rawFeat;
+                            const titleText = props.name || props.title || props.service_name || '';
+                            const locationText = props.location || props.village_a || props.address || '';
+                            
+                            return `
+                                <div style="background: #fff; border: 2px solid #fbc02d; border-radius: 8px; padding: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); box-sizing: border-box; text-align: right; direction: rtl; width: 100%;">
+                                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                                        <span style="background: #fbc02d; color: #000; font-size: 9px; padding: 2px 5px; border-radius: 4px; font-weight: bold;">
+                                            ⭐ مميز
+                                        </span>
+                                        <span style="background: #e8f0fe; color: #1a73e8; font-size: 10px; padding: 2px 6px; border-radius: 4px; font-weight: bold;">
+                                            📌 ${item.label}
+                                        </span>
+                                    </div>
+                                    ${titleText ? `<div style="font-weight: bold; color: #202124; font-size: 12px; margin-bottom: 4px; word-break: break-word;">${titleText}</div>` : ''}
+                                    ${locationText ? `<div style="color: #555; font-size: 11px; margin-bottom: 3px; word-break: break-word;">📍 ${locationText}</div>` : ''}
+                                    ${props.price ? `<div style="color: #2e7d32; font-weight: bold; font-size: 11px; margin-bottom: 3px;">💰 ${Number(props.price).toLocaleString()} ${props.currency || ''}</div>` : ''}
+                                    ${props.phone || props.whatsapp ? `<div style="color: #d32f2f; font-weight: bold; font-size: 11px; margin-bottom: 3px;">📞 ${props.phone || props.whatsapp}</div>` : ''}
+                                    ${props.area ? `<div style="color: #666; font-size: 10px;">📐 ${props.area} م²</div>` : ''}
+                                </div>
+                            `;
+                        });
+                    } catch (err) {
+                        return [];
+                    }
+                });
+
+                const results = await Promise.all(promises);
+                results.forEach(cards => {
+                    if (cards && cards.length > 0) {
+                        allValidCards.push(...cards);
+                    }
+                });
+            }
+
+        } catch (e) {
+            console.error('خطأ عام في جلب الإعلانات:', e);
+        }
+
+        // دالة خلط المصفوفة عشوائياً
+        function shuffleArray(array) {
+            let arr = [...array];
+            for (let i = arr.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [arr[i], arr[j]] = [arr[j], arr[i]];
+            }
+            return arr;
+        }
+
+        // توزيع الإعلانات بمسافات متساوية وتعبئة كامل الفراغات (جانبية وسفلية)
+        adSpaces.forEach((space) => {
+            space.innerHTML = '';
+
+            if (allValidCards.length === 0) {
+                space.innerHTML = `<div style="padding: 10px; text-align: center; font-size: 11px; color: #777;">لا توجد إعلانات مميزة</div>`;
+                return;
+            }
+
+            const randomizedCards = shuffleArray(allValidCards);
+            const selectedCards = randomizedCards.slice(0, 4); // 4 إعلانات لكل جهة
+
+            if (space.classList.contains('nms-ad-bottom')) {
+                // المساحة السفلية (أفقية)
+                space.style.cssText += `
+                    display: flex;
+                    flex-direction: row;
+                    justify-content: space-between;
+                    gap: 15px;
+                    overflow-x: auto;
+                    overflow-y: hidden;
+                    padding: 10px;
+                    box-sizing: border-box;
+                    width: 100%;
+                `;
+                const styledCards = selectedCards.map(card => card.replace('width: 100%;', 'width: 24%; min-width: 240px;'));
+                space.innerHTML = styledCards.join('');
+            } else {
+                // المساحات الجانبية (يمين ويسار): عمودية مع تباعد باستخدام gap لضمان المسافات
+                space.style.cssText += `
+                    display: flex;
+                    flex-direction: column;
+                    justify-content: flex-start;
+                    gap: 12px;
+                    height: 100%;
+                    min-height: 100%;
+                    box-sizing: border-box;
+                    padding: 10px 0;
+                `;
+                space.innerHTML = selectedCards.join('');
+            }
+        });
+    }
+
+    setTimeout(loadAllTopRatedAdsFixed, 1000);
+});

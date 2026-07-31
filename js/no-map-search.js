@@ -1,12 +1,8 @@
 /**
  * js/no-map-search.js
- * صفحة "البحث بدون خريطة" - بديل خفيف وسريع عن الخريطة التفاعلية.
- *
- * التزامن مع search.js:
- * هذا الملف يقرأ حقول الفلترة من window.searchFieldsConfig (المُصدَّرة من js/search.js).
- * أي تعديل مستقبلي على الحقول داخل search.js (إضافة/حذف/تغيير تسمية) ينعكس هنا تلقائياً
- * بدون الحاجة لتعديل هذا الملف، طالما تم تحميل js/search.js قبل هذا السكربت في الصفحة.
  */
+
+window.__nmsPageHandlesOwnAds = true;
 
 (function () {
     
@@ -24,6 +20,40 @@
         // ==========================================================================
         const getRealUserId = window.getRealUserId;
         const checkRequestQuotaOrAlert = window.checkRequestQuotaOrAlert;
+
+        // ==========================================================================
+        // 🆕 توحيد الملف الشخصي مع صفحة الخريطة: هذه الصفحة لا تحتوي على
+        // #auth-splash-overlay ولا خريطة لتهيئتها، لذلك لم تكن enterPlatform()
+        // (بملف auth-core-functions.js) تُستدعى هنا إطلاقاً - وبالتالي كان شريط
+        // الملف الشخصي (#user-top-badge-container) يبقى فارغاً بلا اسم/رتبة حقيقية
+        // ("---")، ولا تُفعَّل الإشعارات، ولا يظهر زر "لوحة التحكم" للمشرف، بعكس
+        // صفحة الخريطة تماماً. هذا الجزء يكرر فقط الأجزاء غير المرتبطة بالخريطة
+        // من enterPlatform() ليصبح الملف الشخصي مطابقاً تماماً لما يظهر بصفحة الخريطة.
+        // ==========================================================================
+        (function initTopUserBadgeForNoMapPage() {
+            const authenticatedUser = window.__nmsAuthenticatedUser;
+            if (!authenticatedUser) return;
+
+            window.currentAppUser = authenticatedUser;
+
+            // showTopUserBadge معرّفة عالمياً بملف auth-core-functions.js (يُحمَّل
+            // قبل هذا الملف بالصفحة) - تملأ الاسم والرتبة وتُظهر زر لوحة التحكم للمشرف
+            if (typeof showTopUserBadge === 'function') {
+                showTopUserBadge(authenticatedUser);
+            }
+
+            const userId = authenticatedUser.user_id || authenticatedUser.id;
+            if (window.notificationSystem && userId) {
+                window.notificationSystem.init(userId);
+            }
+
+            const notificationBtn = document.getElementById('notification-toggle-btn');
+            if (notificationBtn) notificationBtn.style.display = 'flex';
+
+            // نفس الحدث الذي تُطلقه enterPlatform() بعد الدخول الفعلي بصفحة الخريطة،
+            // ليبقى سلوك بقية الملفات (مثل ui-collapse.js وبوابة الملف الشخصي) متطابقاً
+            document.dispatchEvent(new CustomEvent('userLoggedIn', { detail: authenticatedUser }));
+        })();
 
         // ==========================================================================
         // 0-أ) مودال "من نحن"
@@ -57,8 +87,8 @@
             if (!slideshow) return;
 
             const images = [
-                'pic/Picture2.jpg', 'pic/Picture5.jpg', 'pic/Picture8.jpg',
-                'pic/Picture11.jpg', 'pic/Picture14.jpg', 'pic/غلاف1.png'
+                '/pic/Picture2.jpg', '/pic/Picture5.jpg', '/pic/Picture8.jpg',
+                '/pic/Picture11.jpg', '/pic/Picture14.jpg', '/pic/غلاف1.png'
             ];
 
             images.forEach((src, index) => {
@@ -141,14 +171,14 @@
         // العرض الافتراضي "الكل" يبقى يعرض كافة الـ 62 فئة كما هو معتاد.
         // ==========================================================================
         const groupDefs = [
-            { id: 'all',           title: 'الكل',                    icon: 'fa-border-all' },
-            { id: 'realestate',    title: 'العقارات',                icon: 'fa-building' },
-            { id: 'technicians',   title: 'الفنيين والصيانة',        icon: 'fa-tools' },
-            { id: 'health',        title: 'الصحة والرعاية',          icon: 'fa-briefcase-medical' },
-            { id: 'vehicles',      title: 'المركبات والتوصيل',       icon: 'fa-car' },
-            { id: 'professional',  title: 'المهن الحرة والخصوصي',    icon: 'fa-user-tie' },
-            { id: 'events',        title: 'مناسبات وضيافة وترفيه',   icon: 'fa-champagne-glasses' },
-            { id: 'misc',          title: 'متفرقات',                 icon: 'fa-ellipsis' }
+            { id: 'all',        title: 'الكل',                    icon: 'fa-border-all' },
+            { id: 'realestate',   title: 'العقارات',                icon: 'fa-building' },
+            { id: 'technicians',  title: 'الفنيين والصيانة',        icon: 'fa-tools' },
+            { id: 'health',       title: 'الصحة والرعاية',          icon: 'fa-briefcase-medical' },
+            { id: 'vehicles',     title: 'المركبات والتوصيل',      icon: 'fa-car' },
+            { id: 'professional', title: 'المهن الحرة والخصوصي',    icon: 'fa-user-tie' },
+            { id: 'events',       title: 'مناسبات وضيافة وترفيه',   icon: 'fa-champagne-glasses' },
+            { id: 'misc',         title: 'متفرقات',                icon: 'fa-ellipsis' }
         ];
 
         // خريطة تصنيف كل خدمة (المفتاح البرمجي كما في serviceNames) إلى الفرع المناسب
@@ -274,6 +304,206 @@
 
         renderGroupsTabs();
         renderCategoriesGrid(activeGroup); // العرض الافتراضي: الكل (62 فئة)
+
+        // ==========================================================================
+        // 🆕 الإعلانات المميزة (يمين/يسار/أسفل) - نسخة موحّدة تجلب عقارات وخدمات معاً
+        // وتحل مشكلتي: (أ) ظهور العقارات فقط، (ب) الفراغ الكبير أسفل الإعلانات
+        // ==========================================================================
+        function escapeAdAttr(str) {
+            if (str === null || str === undefined) return '';
+            return String(str).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/'/g, '&#39;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+        }
+
+        function buildAdCardHtml(props, item) {
+            const isRealEstate = item.isRealEstate;
+            const name = sanitize(props.name || props.location_name || props.location || '');
+            const location = sanitize(props.location_name || props.location || '');
+
+            let statusHtml = '';
+            if (!isRealEstate) {
+                const isAvailable = parseInt(props.auto_status) === 0;
+                const color = isAvailable ? '#28a745' : '#dc3545';
+                const text = isAvailable ? 'متاح الآن' : 'مغلق حالياً';
+                statusHtml = `<div style="font-size:10px; font-weight:bold; color:${color}; border:1px dashed ${color}; border-radius:6px; padding:3px 6px; display:inline-block; margin-bottom:4px;">${isAvailable ? '🟢' : '🔴'} ${text}</div>`;
+            }
+
+            let detailsHtml = '';
+            if (isRealEstate) {
+                if (props.price) {
+                    const symbols = { USD: 'دولار', ILS: 'شيكل', JOD: 'دينار' };
+                    detailsHtml += `<div style="color:#2e7d32; font-weight:bold; font-size:11px; margin-bottom:2px;">💰 ${Number(props.price).toLocaleString()} ${symbols[props.currency] || ''}</div>`;
+                }
+                if (props.area) detailsHtml += `<div style="color:#666; font-size:10px; margin-bottom:2px;">📐 ${props.area} م²</div>`;
+                if (props.village_a) detailsHtml += `<div style="color:#555; font-size:10px; margin-bottom:2px;">🏘️ ${sanitize(props.village_a)}</div>`;
+            }
+            if (props.des) {
+                detailsHtml += `<div style="background:#f9f9f9; padding:4px 6px; border-radius:5px; color:#555; font-size:10px; margin-bottom:2px; word-wrap: break-word; white-space: normal;">📝 ${sanitize(props.des)}</div>`;
+            }
+
+            let actionHtml = '';
+            if (props.whatsapp) {
+                const providerName = name || (isRealEstate ? 'المعلن' : 'مزود الخدمة');
+                const whatsappNumber = props.whatsapp.toString();
+                if (isRealEstate) {
+                    const cleanDigits = whatsappNumber.replace(/\D/g, '');
+                    const localPhone = '0' + cleanDigits.slice(5);
+                    actionHtml = `
+                        <div style="display:flex; gap:5px; margin-top:6px;">
+                            <button class="ad-call-btn" data-phone="${localPhone}" data-whatsapp="${whatsappNumber}" data-provider="${escapeAdAttr(providerName)}" data-service="${escapeAdAttr(item.label)}" style="flex:1; background:#1a73e8; color:#fff; border:none; padding:6px 4px; border-radius:6px; font-size:10px; font-weight:bold; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:4px;"><i class="fas fa-mobile-alt"></i> اتصال</button>
+                            <button class="ad-whatsapp-btn" data-whatsapp="${whatsappNumber}" data-provider="${escapeAdAttr(providerName)}" data-service="${escapeAdAttr(item.label)}" style="flex:1; background:#25d366; color:#fff; border:none; padding:6px 4px; border-radius:6px; font-size:10px; font-weight:bold; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:4px;"><i class="fab fa-whatsapp"></i> واتساب</button>
+                        </div>`;
+                } else {
+                    const layerDbName = item.layer;
+                    const featureId = (props.id !== undefined && props.id !== null) ? props.id : '';
+                    actionHtml = `
+                        <div style="margin-top:6px;">
+                            <button class="req-svc-btn" data-provider="${escapeAdAttr(providerName)}" data-service="${escapeAdAttr(item.label)}" data-layer="${layerDbName}" data-feature-id="${featureId}" style="width:100%; background:linear-gradient(135deg,#1a73e8,#6c5ce7); color:#fff; border:none; padding:6px 4px; border-radius:6px; font-size:10px; font-weight:bold; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:4px;">
+                                <i class="fas fa-paper-plane"></i> طلب الخدمة
+                            </button>
+                        </div>`;
+                }
+            }
+
+            return `
+                <div style="background:#fff; border:2px solid #fbc02d; border-radius:8px; padding:10px; box-shadow:0 2px 5px rgba(0,0,0,0.1); box-sizing:border-box; text-align:right; direction:rtl; width:100%;">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+                        <span style="background:#fbc02d; color:#000; font-size:9px; padding:2px 5px; border-radius:4px; font-weight:bold;">⭐ مميز</span>
+                        <span style="background:#e8f0fe; color:#1a73e8; font-size:10px; padding:2px 6px; border-radius:4px; font-weight:bold;">📌 ${item.label}</span>
+                    </div>
+                    ${statusHtml}
+                    ${name ? `<div style="font-weight:bold; color:#202124; font-size:12px; margin-bottom:4px;"><i class="fas fa-user" style="color:#1a73e8;"></i> ${name}</div>` : ''}
+                    ${location ? `<div style="color:#555; font-size:11px; margin-bottom:3px;"><i class="fas fa-map-marker-alt" style="color:#e74c3c;"></i> ${location}</div>` : ''}
+                    ${detailsHtml}
+                    ${actionHtml}
+                </div>
+            `;
+        }
+
+        async function loadFeaturedAds() {
+            const adSpaces = document.querySelectorAll('.nms-ad-space');
+            if (!adSpaces.length) return;
+
+            let allValidCards = [];
+
+            // 🆕 نبني قائمة الأهداف من نفس مصفوفة categories الموجودة أصلاً بالملف
+            // (62 فئة: عقارات + كل الخدمات)، بدل الاعتماد على MAP_CONFIG/serviceTranslations
+            // غير الموجودين أصلاً بهذه الصفحة
+            const allTargets = categories.map(cat => {
+                const { workspace, layerName, isRealEstate } = getWorkspaceAndName(cat.key);
+                return { layer: layerName, workspace, label: cat.title, isRealEstate };
+            });
+
+            const batchSize = 10;
+            for (let i = 0; i < allTargets.length; i += batchSize) {
+                const batch = allTargets.slice(i, i + batchSize);
+                const promises = batch.map(async (item) => {
+                    try {
+                        const params = new URLSearchParams({
+                            layer: item.layer,
+                            workspace: item.workspace,
+                            field_0: 'rating',
+                            operator_0: '=',
+                            value_0: '10',
+                            conditions_count: '1'
+                        });
+                        const response = await fetch(`${baseUrl}api/search-features?${params.toString()}`);
+                        if (!response.ok) return [];
+                        const data = await response.json();
+                        const features = data.features || [];
+                        return features.map(f => buildAdCardHtml(f.properties || {}, item));
+                    } catch (err) {
+                        return [];
+                    }
+                });
+                const results = await Promise.all(promises);
+                results.forEach(cards => { if (cards.length) allValidCards.push(...cards); });
+            }
+
+            function shuffleArray(array) {
+                let arr = [...array];
+                for (let i = arr.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [arr[i], arr[j]] = [arr[j], arr[i]];
+                }
+                return arr;
+            }
+
+            adSpaces.forEach((space) => {
+                space.innerHTML = '';
+
+                if (allValidCards.length === 0) {
+                    space.innerHTML = `<div style="padding:10px; text-align:center; font-size:11px; color:#777;">لا توجد إعلانات مميزة</div>`;
+                    return;
+                }
+
+                const randomizedCards = shuffleArray(allValidCards);
+                const selectedCards = randomizedCards.slice(0, 4);
+
+                if (space.classList.contains('nms-ad-bottom')) {
+                    space.style.cssText += `
+                        display: flex;
+                        flex-direction: row;
+                        justify-content: flex-start;
+                        gap: 15px;
+                        overflow-x: auto;
+                        overflow-y: hidden;
+                        padding: 10px;
+                        box-sizing: border-box;
+                        width: 100%;
+                    `;
+                    const styledCards = selectedCards.map(card => card.replace('width: 100%;', 'width: 24%; min-width: 240px;'));
+                    space.innerHTML = styledCards.join('');
+                } else {
+                    // 🆕 الإصلاح الأساسي للفراغ: تباعد ثابت بسيط (gap) بدل
+                    // justify-content:space-between المرتبط بطول main، و
+                    // align-self:flex-start عشان لا تتمدد الحاوية لطول الصفحة كاملة
+                    space.style.cssText += `
+                        display: flex;
+                        flex-direction: column;
+                        justify-content: flex-start;
+                        align-self: flex-start;
+                        gap: 15px;
+                        padding: 10px 0;
+                        box-sizing: border-box;
+                        height: auto;
+                        min-height: 0;
+                    `;
+                    space.innerHTML = selectedCards.join('');
+                }
+            });
+        }
+
+        // تفعيل أزرار الاتصال/واتساب الخاصة بكروت الإعلانات (تسجيل تتبع + فحص حد الطلبات)
+        document.addEventListener('click', async (e) => {
+            const callBtn = e.target.closest('.ad-call-btn');
+            if (callBtn) {
+                const phone = callBtn.dataset.phone;
+                const provider = callBtn.dataset.provider;
+                const service = callBtn.dataset.service;
+                const quota = await checkRequestQuotaOrAlert(getRealUserId(), null);
+                if (!quota.allowed) return;
+                trackRequest(provider, `(${service}) اتصال مباشر`);
+                window.location.href = 'tel:' + phone;
+                return;
+            }
+            const waBtn = e.target.closest('.ad-whatsapp-btn');
+            if (waBtn) {
+                const whatsappNumber = waBtn.dataset.whatsapp;
+                const provider = waBtn.dataset.provider;
+                const service = waBtn.dataset.service;
+                const newTab = window.open('', '_blank');
+                const quota = await checkRequestQuotaOrAlert(getRealUserId(), newTab);
+                if (!quota.allowed) return;
+                trackRequest(provider, `(${service}) واتساب`);
+                const message = `مرحباً ${provider}، أرغب بالاستفسار عن (${service}) من خلال منصة الخدمات.`;
+                let cleanNumber = whatsappNumber.replace(/\D/g, '');
+                if (cleanNumber.startsWith('00')) cleanNumber = cleanNumber.substring(2);
+                const whatsappUrl = `https://api.whatsapp.com/send?phone=${cleanNumber}&text=${encodeURIComponent(message)}`;
+                if (newTab) newTab.location.href = whatsappUrl; else window.open(whatsappUrl, '_blank');
+            }
+        });
+
+        setTimeout(loadFeaturedAds, 1000);
 
         backBtn.onclick = () => {
             resultsView.classList.add('hidden');
@@ -547,6 +777,22 @@
                 if (p.name) html += `<div class="nms-r-name"><i class="fas fa-user"></i> ${sanitize(p.name)}</div>`;
                 if (p.location_name || p.location) html += `<div class="nms-r-loc"><i class="fas fa-map-marker-alt"></i> ${sanitize(p.location_name || p.location)}</div>`;
 
+                // إضافة عرض النجوم للخدمات فقط
+                if (!isRealEstate) {
+                    // استخدام layerTitle مباشرة لأنه هو الاسم المستخدم في قاعدة البيانات
+                    const layerDbName = layerTitle;
+                    const featureId = (p.id !== undefined && p.id !== null) ? p.id : '';
+                    if (layerDbName && featureId) {
+                        html += `<div id="rating-display-${layerDbName}-${featureId}" class="nms-rating-display">
+                            <span style="color: #f57c00;">⭐</span>
+                            <span id="rating-text-${layerDbName}-${featureId}" style="color: #666; font-size: 12px;">جاري تحميل التقييم...</span>
+                        </div>`;
+                        
+                        // جلب التقييم بشكل غير متزامن
+                        setTimeout(() => fetchRatingsForFeature(layerDbName, featureId), index * 100);
+                    }
+                }
+
                 if (isRealEstate) {
                     if (p.price) {
                         const symbols = { USD: 'دولار', ILS: 'شيقل', JOD: 'دينار' };
@@ -568,36 +814,54 @@
                     const localPhone = '0' + cleanDigits.slice(5);
                     const providerName = p.name || (isRealEstate ? 'المعلن' : 'مزود الخدمة');
 
-                    const actions = document.createElement('div');
-                    actions.className = 'nms-r-actions';
-                    actions.innerHTML = `
-                        <button class="nms-call-btn"><i class="fas fa-mobile-alt"></i> اتصال</button>
-                        <button class="nms-whatsapp-btn"><i class="fab fa-whatsapp"></i> واتساب</button>
-                    `;
-                    actions.querySelector('.nms-call-btn').onclick = async () => {
-                        const quota = await checkRequestQuotaOrAlert(getRealUserId(), null);
-                        if (!quota.allowed) return;
-                        trackRequest(providerName, `(${layerTitle}) اتصال مباشر`);
-                        window.location.href = 'tel:' + localPhone;
-                    };
-                    actions.querySelector('.nms-whatsapp-btn').onclick = async () => {
-                        // نفتح تبويباً فارغاً فوراً ضمن نفس حركة النقر لتفادي حجب المتصفح
-                        // للنوافذ المنبثقة، ثم نوجهه للرابط الصحيح بعد التأكد من عدم تجاوز الحد
-                        const newTab = window.open('', '_blank');
-                        const quota = await checkRequestQuotaOrAlert(getRealUserId(), newTab);
-                        if (!quota.allowed) return;
-                        trackRequest(providerName, `(${layerTitle}) واتساب`);
-                        const message = `مرحباً ${providerName}، أرغب بالاستفسار عن (${layerTitle}) من خلال منصة الخدمات.`;
-                        let cleanNumber = whatsappNumber.replace(/\D/g, '');
-                        if (cleanNumber.startsWith('00')) cleanNumber = cleanNumber.substring(2);
-                        const whatsappUrl = `https://api.whatsapp.com/send?phone=${cleanNumber}&text=${encodeURIComponent(message)}`;
-                        if (newTab) {
-                            newTab.location.href = whatsappUrl;
-                        } else {
-                            window.open(whatsappUrl, '_blank');
-                        }
-                    };
-                    card.appendChild(actions);
+                    // 🆕 [عرض ذكي حسب ارتباط الخدمة بحساب مزود فعلي]: العقارات دائماً
+                    // اتصال+واتساب. الخدمات: "طلب الخدمة" فقط إذا كان المعلم مرتبطاً
+                    // فعلياً بحساب مزود مُفعّل، وإلا اتصال+واتساب مباشرة مثل العقارات.
+                    const layerDbName = (currentCategory.key || '').replace(/Layer$/i, '');
+                    const featureIdForRequest = (p.id !== undefined && p.id !== null) ? p.id : '';
+                    const isLinkedProvider = !isRealEstate && typeof window.isFeatureLinkedToProvider === 'function' && window.isFeatureLinkedToProvider(layerDbName, featureIdForRequest);
+
+                    if (isLinkedProvider) {
+                        // 🆕 [نظام طلب الخدمة]: بديل موحّد عن الاتصال/الواتساب المباشرين -
+                        // زر واحد يرسل طلباً حقيقياً لحساب مزود الخدمة (راجع service-chat.js)
+                        const actions = document.createElement('div');
+                        actions.className = 'nms-r-actions';
+                        actions.innerHTML = `
+                            <button class="req-svc-btn" style="flex:1;" data-provider="${providerName.replace(/"/g, '&quot;')}" data-service="${layerTitle.replace(/"/g, '&quot;')}" data-layer="${layerDbName}" data-feature-id="${featureIdForRequest}">
+                                <i class="fas fa-paper-plane"></i> طلب الخدمة
+                            </button>
+                        `;
+                        card.appendChild(actions);
+                    } else {
+                        const actions = document.createElement('div');
+                        actions.className = 'nms-r-actions';
+                        actions.innerHTML = `
+                            <button class="nms-call-btn"><i class="fas fa-mobile-alt"></i> اتصال</button>
+                            <button class="nms-whatsapp-btn"><i class="fab fa-whatsapp"></i> واتساب</button>
+                        `;
+                        actions.querySelector('.nms-call-btn').onclick = async () => {
+                            const quota = await checkRequestQuotaOrAlert(getRealUserId(), null);
+                            if (!quota.allowed) return;
+                            trackRequest(providerName, `(${layerTitle}) اتصال مباشر`);
+                            window.location.href = 'tel:' + localPhone;
+                        };
+                        actions.querySelector('.nms-whatsapp-btn').onclick = async () => {
+                            const newTab = window.open('', '_blank');
+                            const quota = await checkRequestQuotaOrAlert(getRealUserId(), newTab);
+                            if (!quota.allowed) return;
+                            trackRequest(providerName, `(${layerTitle}) واتساب`);
+                            const message = `مرحباً ${providerName}، أرغب بالاستفسار عن (${layerTitle}) من خلال منصة الخدمات.`;
+                            let cleanNumber = whatsappNumber.replace(/\D/g, '');
+                            if (cleanNumber.startsWith('00')) cleanNumber = cleanNumber.substring(2);
+                            const whatsappUrl = `https://api.whatsapp.com/send?phone=${cleanNumber}&text=${encodeURIComponent(message)}`;
+                            if (newTab) {
+                                newTab.location.href = whatsappUrl;
+                            } else {
+                                window.open(whatsappUrl, '_blank');
+                            }
+                        };
+                        card.appendChild(actions);
+                    }
                 }
 
                 if (coords) {
@@ -606,7 +870,7 @@
                     goBtn.innerHTML = '<i class="fas fa-map-location-dot"></i> الانتقال إلى الخريطة';
                     goBtn.onclick = () => {
                         // فتح الخريطة في تبويب جديد
-                        window.open(`index.html?x=${coords[0].toFixed(3)}&y=${coords[1].toFixed(3)}`, '_blank');
+                        window.open(`/original-index.html?x=${coords[0].toFixed(3)}&y=${coords[1].toFixed(3)}`, '_blank');
                     };
                     card.appendChild(goBtn);
                 }
@@ -624,5 +888,162 @@
                 fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: payload, keepalive: true }).catch(() => {});
             }
         }
+
+        // خريطة تحويل الأسماء العربية إلى الإنجليزية للطبقات
+        const arabicToEnglishLayerMap = {
+            'فني كهرباء': 'electrician',
+            'فني تكييف وتبريد': 'ac_technician',
+            'سباك (مواسيرجي)': 'plumber',
+            'صيانة عامة': 'general_maintenance',
+            'دهان/طراشة': 'painter',
+            'فني ديكور': 'Finisher',
+            'نجار': 'carpenter',
+            'حداد': 'blacksmith',
+            'بناء ومعمار': 'builder',
+            'خدمات تنظيف': 'house_cleaner',
+            'فني ألمنيوم': 'aluminum_tech',
+            'فني زجاج وسكريت': 'glass_tech',
+            'ميكانيكي سيارات': 'car_mechanic',
+            'كهربائي سيارات': 'car_electrician',
+            'بنشري / إطارات': 'tire_tech',
+            'غسيل سيارات': 'car_wash',
+            'صيانة دراجات نارية': 'motorcycle_repair',
+            'مكتب تاكسي': 'taxi_driver',
+            'خدمات توصيل': 'delivery_services',
+            'ونش إنقاذ': 'tow_truck',
+            'فني كاميرات مراقبة': 'cctv_installer',
+            'منظم حفلات': 'party_planner',
+            'فرقة زفة': 'zaffa_bands',
+            'فرق موسيقية': 'music_bands',
+            'تأجير مستلزمات حفلات': 'party_rental',
+            'تمريض منزلي': 'home_nursing',
+            'أخصائي مساج': 'massage_therapist',
+            'أخصائي حجامة': 'hijama_specialist',
+            'أخصائي تغذية': 'nutritionist',
+            'سائق شاحنة': 'truck_driver',
+            'شركات أمن وحراسة': 'security_companies',
+            'شراء أثاث مستعمل': 'used_furniture_buyer',
+            'تنسيق حدائق': 'gardener',
+            'رعاية حيوانات أليفة': 'pet_care',
+            'مهرج وعروض أطفال': 'clown_entertainer',
+            'متاجر أون لاين': 'online_stores',
+            'فلل أجار': 'villas_rent',
+            'فنون قتالية وجمباز': 'martial_arts_gymnastics',
+            'حدائق ومناطق ترفيهية': 'public_parks_recreation',
+            'فنادق': 'hotels',
+            'توزيع أغراض مجاناً': 'free_distribution',
+            'حلاقة شباب': 'barber_shop',
+            'مصور فوتوغرافي': 'photographers',
+            'تصميم فيديو إعلاني': 'video_design_ads',
+            'صيدليات مناوبة': 'pharmacies_on_call',
+            'تكاسي نظام مناوبة': 'taxis_on_call',
+            'طوارئ ومستشفيات': 'emergency_hospitals',
+            'عيادات': 'clinics',
+            'دكاترة مناوبة': 'doctors_on_call',
+            'إسعاف مناوبة': 'ambulance_on_call',
+            'تدريب موسيقى ومعاهد': 'music_training',
+            'محاميين': 'lawyers',
+            'مساحين أراضي': 'land_surveyors',
+            'مخمنين عقاريين': 'real_estate_valuers',
+            'أساتذة خصوصي': 'private_tutors',
+            'مبرمجين': 'programmers',
+            'دليفري سيارات (مناوبة)': 'car_delivery_on_call',
+            'دليفري دراجات (مناوبة)': 'motorcycle_delivery_on_call',
+            'دليفري هوائية (مناوبة)': 'bicycle_delivery_on_call',
+            'مساعد أبحاث طلاب': 'student_research_assist'
+        };
+
+        // دالة جلب التقييمات لمزود خدمة معين
+        async function fetchRatingsForFeature(serviceLayer, featureId) {
+            try {
+                // تحويل الاسم العربي إلى الإنجليزي
+                const englishLayerName = arabicToEnglishLayerMap[serviceLayer] || serviceLayer;
+                
+                const response = await fetch(`${window.location.origin}/api/service-ratings?service_layer=${englishLayerName}&feature_id=${featureId}`);
+                const data = await response.json();
+                
+                if (data.success) {
+                    const ratingElement = document.getElementById(`rating-text-${serviceLayer}-${featureId}`);
+                    const ratingContainer = document.getElementById(`rating-display-${serviceLayer}-${featureId}`);
+                    
+                    if (ratingElement && ratingContainer) {
+                        if (data.totalRatings > 0) {
+                            const stars = '★'.repeat(Math.round(data.averageRating)) + '☆'.repeat(5 - Math.round(data.averageRating));
+                            ratingElement.innerHTML = `<span style="color: #ffc107; font-size: 14px;">${stars}</span> <span style="color: #333; font-weight: bold;">${data.averageRating}</span> <span style="color: #666;">(${data.totalRatings} تقييم)</span>`;
+                            
+                            // التحقق من عدم وجود زر التعليقات مسبقاً
+                            let commentsButton = document.getElementById(`comments-btn-${serviceLayer}-${featureId}`);
+                            if (!commentsButton) {
+                                // إضافة زر لعرض التعليقات
+                                const button = document.createElement('button');
+                                button.id = `comments-btn-${serviceLayer}-${featureId}`;
+                                button.onclick = () => toggleComments(serviceLayer, featureId);
+                                button.style.cssText = 'margin-top: 6px; padding: 4px 8px; background: #1a73e8; color: #fff; border: none; border-radius: 4px; cursor: pointer; font-size: 11px;';
+                                button.innerHTML = `💬 عرض التعليقات (${data.totalRatings})`;
+                                ratingContainer.appendChild(button);
+                                
+                                // إضافة حاوية التعليقات
+                                const commentsDiv = document.createElement('div');
+                                commentsDiv.id = `comments-container-${serviceLayer}-${featureId}`;
+                                commentsDiv.style.cssText = 'display: none; margin-top: 8px; max-height: 180px; overflow-y: auto; border-top: 1px solid #eee; padding-top: 6px;';
+                                ratingContainer.appendChild(commentsDiv);
+                            }
+                            
+                            // تخزين التقييمات لاستخدامها عند فتح التعليقات
+                            window.currentRatings = window.currentRatings || {};
+                            window.currentRatings[`${serviceLayer}-${featureId}`] = data.ratings;
+                        } else {
+                            ratingElement.innerHTML = '<span style="color: #999;">لا توجد تقييمات بعد</span>';
+                        }
+                    }
+                }
+            } catch (err) {
+                console.warn('فشل جلب التقييمات:', err.message);
+            }
+        }
+
+        // دالة عرض/إخفاء التعليقات
+        window.toggleComments = function(serviceLayer, featureId) {
+            const container = document.getElementById(`comments-container-${serviceLayer}-${featureId}`);
+            if (!container) return;
+            
+            if (container.style.display === 'none') {
+                container.style.display = 'block';
+                const ratings = window.currentRatings?.[`${serviceLayer}-${featureId}`] || [];
+                
+                if (ratings.length === 0) {
+                    container.innerHTML = '<div style="color: #999; font-size: 12px;">لا توجد تعليقات</div>';
+                } else {
+                    container.innerHTML = ratings.map(r => `
+                        <div style="padding: 6px; background: #f9f9f9; border-radius: 4px; margin-bottom: 6px;">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+                                <span style="font-weight: bold; font-size: 12px; color: #333;">${r.user_name || 'مستخدم'}</span>
+                                <span style="color: #ffc107; font-size: 13px;">${'★'.repeat(r.rating)}</span>
+                            </div>
+                            ${r.comment ? `<div style="font-size: 12px; color: #666; line-height: 1.4;">${r.comment}</div>` : ''}
+                            <div style="font-size: 10px; color: #999; margin-top: 4px;">${new Date(r.created_at).toLocaleDateString('ar-EG')}</div>
+                        </div>
+                    `).join('');
+                }
+            } else {
+                container.style.display = 'none';
+            }
+        };
     });
 })();
+
+// قراءة معامل group من رابط الصفحة وتفعيل الفلتر تلقائياً
+    const urlParams = new URLSearchParams(window.location.search);
+    const targetGroup = urlParams.get('group');
+    if (targetGroup) {
+        // العثور على زر التبويب المطابق وتفعيل الضغط عليه برمجياً
+        setTimeout(() => {
+            const groupTabBtn = document.querySelector(`.nms-group-tab[data-group="${targetGroup}"]`) || 
+                                   document.querySelector(`#nms-groups-tabs [data-group="${targetGroup}"]`);
+            if (groupTabBtn) {
+                groupTabBtn.click();
+            } else if (typeof filterByCategoryGroup === 'function') {
+                filterByCategoryGroup(targetGroup);
+            }
+        }, 300);
+    }
