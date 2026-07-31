@@ -6,8 +6,8 @@
 
 ## الرابط الأساسي (Base URL)
 
-- **التطوير**: `http://localhost:3000`
-- **الإنتاج**: `https://yourdomain.com`
+- **التطوير**: `http://localhost:3000`, `http://localhost:5173`
+- **الإنتاج**: `https://psm.alameenapps.com/`, `http://194.163.174.162:3000/`
 
 ## المصادقة (Authentication)
 
