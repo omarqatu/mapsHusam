@@ -126,6 +126,15 @@ class NotificationSystem {
             console.error('❌ خطأ في الاتصال:', error);
             this.isConnected = false;
             this.updateConnectionStatus(false);
+            
+            // إضافة retry mechanism للاتصال
+            if (!this.retryTimeout) {
+                this.retryTimeout = setTimeout(() => {
+                    console.log('🔄 إعادة محاولة الاتصال...');
+                    this.socket.connect();
+                    this.retryTimeout = null;
+                }, 5000); // إعادة المحاولة بعد 5 ثواني
+            }
         });
     }
 

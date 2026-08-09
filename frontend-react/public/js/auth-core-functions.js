@@ -1,11 +1,5 @@
 /**
  * auth-core-functions.js
- * يحتوي على الدوال الأساسية ومنطق التحكم في الواجهة للمستخدمين (مستخدم عادي، مزود خدمة، مشرف)
- *
- * 🆕 تعديل عزل الخريطة: أضيفت window.__platformEntered و showPlatformShell().
- * الخريطة (#app-shell كاملاً) تبقى display:none من الـ HTML مباشرة، ولا تظهر
- * ولا تتم تهيئتها (initMapPlatform) إلا من داخل enterPlatform() هنا - أي فقط
- * بعد اكتمال تسجيل الدخول أو التسجيل فعلياً (أو التحقق من جلسة محفوظة صحيحة).
  */
 
 window.currentAppUser = null;

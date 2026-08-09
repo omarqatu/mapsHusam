@@ -1,9 +1,5 @@
 /**
- * main.js - 
- * 🆕 تعديل عزل الخريطة: كامل كود التهيئة أصبح داخل window.initMapPlatform()
- * ولا يتم استدعاؤه تلقائياً عند تحميل الصفحة (DOMContentLoaded). يتم استدعاؤه
- * فقط مرة واحدة من enterPlatform() في auth-core-functions.js بعد اكتمال
- * تسجيل الدخول/التسجيل فعلياً، لمنع أي init أو ظهور مبكر للخريطة وطبقاتها.
+ * main.js
  */
 
 if (typeof proj4 !== 'undefined') {
@@ -226,15 +222,25 @@ window.initMapPlatform = function () {
         'beitunia': { name: '5. الانتقال مباشرة مدينة إلى بيتونيا', coords: [165995.512, 144049.217] }
     };
 
-    // --- 2. إنشاء الخريطة ---
+    // --- 2. إنشاء الخريطة مع تحسينات الأداء ---
     const map = new ol.Map({
         target: 'map',
         layers: mapLayersArray,
         view: new ol.View({
             projection: 'EPSG:28191',
             center: defaultCenter,
-            zoom: defaultZoom
-        })
+            zoom: defaultZoom,
+            // تحسينات الأداء للعرض
+            minZoom: 1,
+            maxZoom: 22,
+            constrainResolution: true, // تحسين الأداء بتقييد مستويات الزووم
+            smoothResolutionConstraint: true, // تحسين جودة العرض
+            enableRotation: false // تعطيل الدوران لتحسين الأداء
+        }),
+        // تحسينات الأداء العامة
+        loadTilesWhileAnimating: false, // تحسين الأداء أثناء الحركة
+        loadTilesWhileInteracting: false, // تحسين الأداء أثناء التفاعل
+        pixelRatio: Math.min(window.devicePixelRatio, 2) // تحسين الأداء بتقييد pixel ratio
     });
     window.map = map;
 

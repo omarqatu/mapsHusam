@@ -617,7 +617,7 @@ function initProviderPanelEvents() {
             }
         } catch (err) { /* تجاهل */ }
         
-        console.log("✅ تم تهيئة لوحة التحكم بنجاح.");
+        
     }
 
     // الانتظار حتى يكتمل تحميل الصفحة

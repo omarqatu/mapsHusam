@@ -133,8 +133,6 @@ function initializeQuickSearch(map, overlayLayersObj) {
         const layerNameMap = { 'rentLayer': 'ApartRent', 'saleLayer': 'ApartSale', 'landLayer': 'LandSale' };
         const layerName = layerNameMap[layerKey] || layerKey.replace('Layer', '');
 
-        console.log(`Quick Search: layerKey=${layerKey}, layerName=${layerName}, workspace=${workspace}`);
-
         // الحصول على المدى المرئي الحالي (BBOX)
         const extent = map.getView().calculateExtent(map.getSize());
         const bbox = extent.join(',');
@@ -228,6 +226,14 @@ function initializeQuickSearch(map, overlayLayersObj) {
         const countSpan = document.getElementById('results-count-span');
 
         if (!resultsPanel || !resultsTableBody) return;
+
+        // تخزين الاسم الإنجليزي في الطبقة لاستخدامه في generateFeatureHtml
+        const layerTitle = layer.get('title');
+        const layerKey = Object.keys(overlayLayersObj).find(key => overlayLayersObj[key] === layer);
+        if (layerKey) {
+            const englishName = layerKey.replace('Layer', '');
+            layer.set('englishName', englishName);
+        }
 
         // الترتيب حسب الـ rating تنازلياً
         features.sort((a, b) => {

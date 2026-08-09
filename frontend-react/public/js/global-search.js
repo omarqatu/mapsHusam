@@ -1,8 +1,5 @@
 /**
- * global-search.js - النسخة الاحترافية الشاملة والمعدلة بالكامل 2026
- * تشمل كافة الطبقات الـ 59 (عقارات + خدمات قديمة + خدمات جديدة)
- * معالجة مرنة ومستقرة للبحث المتعدد الكلمات والفراغات عبر فلاتر CQL موحدة
- * تدعم التطبيع الكامل والشامل لعيوب الإملاء باللغة العربية (الهمزات، الياء، التاء المربوطة)
+ * global-search.js
  */
 
 const layerAliases = {
@@ -38,13 +35,7 @@ const layerAliases = {
     'private_tutors': 'أساتذة خصوصي', 'programmers': 'مبرمجين', 
     'car_delivery_on_call': 'دليفري سيارات (مناوبة)', 'motorcycle_delivery_on_call': 'دليفري دراجات (مناوبة)', 
     'bicycle_delivery_on_call': 'دليفري هوائية (مناوبة)',  
-    'student_research_assist': 'مساعد أبحاث طلاب',
-    'supermarket': 'سوبرماركت',
-    'commercial_shops': 'محلات تجارية',
-    'restaurants': 'مطاعم',
-    'schools_kindergartens': 'مدارس ورياض أطفال',
-    'job_vacancies': 'الوظائف الشاغرة',
-    'city_landmarks': 'معالم المدينة'
+    'student_research_assist': 'مساعد أبحاث طلاب'
 };
 
 const searchConfig = {
@@ -69,9 +60,7 @@ const searchConfig = {
             'clinics', 'doctors_on_call', 'ambulances_on_call', 'music_training',
             'lawyers', 'land_surveyors', 'real_estate_valuers', 'private_tutors',
             'programmers', 'car_delivery_on_call', 'motorcycle_delivery_on_call',
-            'bicycle_delivery_on_call', 'photographers', 'student_research_assist',
-            'supermarket', 'commercial_shops', 'restaurants', 
-            'schools_kindergartens', 'job_vacancies', 'city_landmarks'
+            'bicycle_delivery_on_call', 'photographers', 'student_research_assist'
         ].filter(layerName => {
             // التحقق الآمن من وجود المتغير لمنع خطأ Uncaught ReferenceError
             const exclusions = (typeof MAP_CONFIG !== 'undefined' && MAP_CONFIG.globalExclusions) ? MAP_CONFIG.globalExclusions : [];

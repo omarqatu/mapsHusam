@@ -70,13 +70,7 @@ function initializeQuickSearch(map, overlayLayersObj) {
         'real_estate_valuers': 'fa-calculator', 'private_tutors': 'fa-chalkboard-teacher', 'programmers': 'fa-code',
         'car_delivery_on_call': 'fa-car', 'motorcycle_delivery_on_call': 'fa-motorcycle',
         'bicycle_delivery_on_call': 'fa-bicycle', 
-        'student_research_assist': 'fa-book',
-        'supermarket': 'fa-store',
-        'commercial_shops': 'fa-shopping-bag',
-        'restaurants': 'fa-utensils',
-        'schools_kindergartens': 'fa-school',
-        'job_vacancies': 'fa-briefcase',
-        'city_landmarks': 'fa-landmark'
+        'student_research_assist': 'fa-book'
     };
 
     if (MAP_CONFIG.layers.realestate) {
@@ -138,8 +132,6 @@ function initializeQuickSearch(map, overlayLayersObj) {
         const workspace = isRealEstate ? 'realestate' : 'services';
         const layerNameMap = { 'rentLayer': 'ApartRent', 'saleLayer': 'ApartSale', 'landLayer': 'LandSale' };
         const layerName = layerNameMap[layerKey] || layerKey.replace('Layer', '');
-
-        console.log(`Quick Search: layerKey=${layerKey}, layerName=${layerName}, workspace=${workspace}`);
 
         // الحصول على المدى المرئي الحالي (BBOX)
         const extent = map.getView().calculateExtent(map.getSize());
@@ -234,6 +226,14 @@ function initializeQuickSearch(map, overlayLayersObj) {
         const countSpan = document.getElementById('results-count-span');
 
         if (!resultsPanel || !resultsTableBody) return;
+
+        // تخزين الاسم الإنجليزي في الطبقة لاستخدامه في generateFeatureHtml
+        const layerTitle = layer.get('title');
+        const layerKey = Object.keys(overlayLayersObj).find(key => overlayLayersObj[key] === layer);
+        if (layerKey) {
+            const englishName = layerKey.replace('Layer', '');
+            layer.set('englishName', englishName);
+        }
 
         // الترتيب حسب الـ rating تنازلياً
         features.sort((a, b) => {

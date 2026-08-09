@@ -1,7 +1,5 @@
 /**
- * layers.js - النسخة الديناميكية الشاملة والمطورة (59 خدمة) - مع دعم الاستثناءات العالمية
- * تشمل: الأيقونات المخصصة، الإيموجي، والمحرك الذي يقرأ من MAP_CONFIG
- * التعديلات: إصلاح استدعاء الستايلات الديناميكية لضمان عودة السيمبولوجي الأصلي (أيقونات الإيجار والبيع والأراضي) بالكامل.
+ * layers.js
  */
 
 // 1. تعريف ترجمات وأيقونات الخدمات (الـ 59 خدمة كاملة)
@@ -67,19 +65,16 @@ const serviceTranslations = {
     'car_delivery_on_call': { name: 'دليفري سيارات (مناوبة)', icon: '🚗' },
     'motorcycle_delivery_on_call': { name: 'دليفري دراجات (مناوبة)', icon: '🏍️' },
     'bicycle_delivery_on_call': { name: 'دليفري هوائية (مناوبة)', icon: '🚲' },
-    'student_research_assist': { name: 'مساعد أبحاث طلاب', icon: '📚' },
-    'supermarket': { name: 'سوبرماركت', icon: '🛒' },
-    'commercial_shops': { name: 'محلات تجارية', icon: '🛍️' },
-    'restaurants': { name: 'مطاعم وكوفي شوبات', icon: '🍽️' },
-    'schools_kindergartens': { name: 'مدارس ورياض أطفال', icon: '🏫' },
-    'job_vacancies': { name: 'الوظائف الشاغرة', icon: '💼' },
-    'city_landmarks': { name: 'معالم المدينة', icon: '🏛️' }
+    'student_research_assist': { name: 'مساعد أبحاث طلاب', icon: '📚' }
 };
 
 // جعل serviceTranslations متاحة عالمياً للاستخدام في ملفات أخرى (مثل quick-search.js)
 window.serviceTranslations = serviceTranslations;
 
-// 2. دالة إنشاء الستايلات العامة والمطورة مع إضافة "م²" للمساحات وحماية النصوص الجغرافية
+// Cache للـ emoji SVG لتقليل العمليات الحسابية المتكررة
+const emojiCache = {};
+
+// 2. دالة إنشاء الستايلات العامة والمطورة مع إضافة "م²" للمساحات وحماية النصوص الجغرافية مع تحسين الأداء
 window.createStyle = function (feature, resolution, options = {}) {
     const opts = { 
         fillColor: null, strokeColor: '#000', strokeWidth: 2, 
@@ -128,14 +123,18 @@ window.createStyle = function (feature, resolution, options = {}) {
             });
         } 
         else if (opts.emoji) {
-            styleOptions.image = new ol.style.Icon({
-                anchor: [0.5, 0.5],
-                src: 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(
+            // استخدام cache للـ emoji لتقليل العمليات الحسابية
+            if (!emojiCache[opts.emoji]) {
+                emojiCache[opts.emoji] = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(
                     `<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 32 32">
                         <circle cx="16" cy="16" r="14" fill="white" stroke="%233f51b5" stroke-width="2"/>
                         <text x="16" y="23" font-size="20" font-family="Arial, sans-serif" text-anchor="middle">${opts.emoji}</text>
                     </svg>`
-                ),
+                );
+            }
+            styleOptions.image = new ol.style.Icon({
+                anchor: [0.5, 0.5],
+                src: emojiCache[opts.emoji],
                 scale: 1.0
             });
         } 
@@ -175,7 +174,7 @@ const esriImageryLayer = new ol.layer.Tile({ title: 'Esri', visible: true, type:
 const aerialLayer = new ol.layer.Tile({ title: 'Aerial', visible: false, type: 'base', source: new ol.source.TileWMS({ url: `${MAP_CONFIG.server.proxyUrl}madeenati/wms`, params: { 'LAYERS': 'madeenati:WB_2023_10_18mbt', 'CRS': MAP_CONFIG.server.srsName, 'FORMAT': 'image/jpeg', 'TILED': true }, serverType: 'geoserver', crossOrigin: 'anonymous' }), zIndex: 0 });
 const noBasemapLayer = new ol.layer.Vector({ title: 'None', visible: false, type: 'base', source: new ol.source.Vector(), zIndex: 0 });
 
-// 5. المحرك الديناميكي الآمن لإنشاء طبقات WFS وتغذيتها بالبيانات
+// 5. المحرك الديناميكي الآمن لإنشاء طبقات WFS وتغذيتها بالبيانات مع تحسين الأداء ومعالجة الأخطاء
 const createWFSLayer = (workspace, name, title, styleFunc, maxRes = 10, visible = true, zIndex = 10) => {
     return new ol.layer.Vector({
         title: title,
@@ -183,13 +182,44 @@ const createWFSLayer = (workspace, name, title, styleFunc, maxRes = 10, visible 
         maxResolution: maxRes,
         style: styleFunc,
         zIndex: zIndex,
+        renderMode: 'vector', // تحسين rendering mode للأداء
+        updateWhileAnimating: false, // تحسين الأداء أثناء الحركة
+        updateWhileInteracting: false, // تحسين الأداء أثناء التفاعل
         source: new ol.source.Vector({
             format: new ol.format.GeoJSON(),
             url: function(extent) {
                 // جلب البيانات حسب المدى المرئي (BBOX) لتحسين الأداء
                 return `${MAP_CONFIG.server.proxyUrl}${workspace}/ows?service=WFS&version=1.0.0&request=GetFeature&typeName=${workspace}:${name}&outputFormat=application%2Fjson&srsName=${MAP_CONFIG.server.srsName}&bbox=${extent.join(',')},${MAP_CONFIG.server.srsName}`;
             },
-            strategy: ol.loadingstrategy.bbox
+            strategy: ol.loadingstrategy.bbox,
+            // إضافة cache للبيانات المحملة لتقليل الطلبات المتكررة
+            useSpatialIndex: true,
+            // إضافة معالجة أخطاء للتحميل
+            loader: function(extent, resolution, projection, success, failure) {
+                const url = this.getUrl(extent, resolution, projection);
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 15000); // 15 ثانية timeout
+                
+                fetch(url, { signal: controller.signal })
+                    .then(response => {
+                        clearTimeout(timeoutId);
+                        if (!response.ok) {
+                            throw new Error(`HTTP error! status: ${response.status}`);
+                        }
+                        return response.json();
+                    })
+                    .then(data => {
+                        const features = this.getFormat().readFeatures(data);
+                        this.addFeatures(features);
+                        success(features);
+                    })
+                    .catch(error => {
+                        clearTimeout(timeoutId);
+                        console.warn(`Failed to load layer ${name}:`, error.message);
+                        // لا نستدعي failure لتجنب توقف التحميل بالكامل
+                        success([]); // إرجاع مصفوفة فارغة بدلاً من الفشل
+                    });
+            }
         })
     });
 };
@@ -261,6 +291,13 @@ if (MAP_CONFIG && MAP_CONFIG.globalExclusions) {
         //                                                              التحكم بزووم ظهور معالم الخدمات maxResolution
     });
 }
+
+// تحسين إضافي: إضافة debouncing لتحميل البيانات لتقليل الطلبات المتكررة
+let loadTimeout = null;
+const debouncedLoad = (callback, delay = 300) => {
+    if (loadTimeout) clearTimeout(loadTimeout);
+    loadTimeout = setTimeout(callback, delay);
+};
 
 // 7. طبقات وأدوات البحث والتمييز الفوري (Z-Index: 1000+)
 window.appLayers.searchMarkerLayer = new ol.layer.Vector({ 

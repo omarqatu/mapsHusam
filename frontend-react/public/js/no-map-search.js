@@ -138,13 +138,7 @@ window.__nmsPageHandlesOwnAds = true;
             'real_estate_valuers': 'fa-calculator', 'private_tutors': 'fa-chalkboard-teacher', 'programmers': 'fa-code',
             'car_delivery_on_call': 'fa-car', 'motorcycle_delivery_on_call': 'fa-motorcycle',
             'bicycle_delivery_on_call': 'fa-bicycle', 
-            'student_research_assist': 'fa-book',
-            'supermarket': 'fa-store',
-            'commercial_shops': 'fa-shopping-bag',
-            'restaurants': 'fa-utensils',
-            'schools_kindergartens': 'fa-school',
-            'job_vacancies': 'fa-briefcase',
-            'city_landmarks': 'fa-landmark'
+            'student_research_assist': 'fa-book'
         };
 
         const serviceNames = {
@@ -167,13 +161,7 @@ window.__nmsPageHandlesOwnAds = true;
             'lawyers': 'محاميين', 'land_surveyors': 'مساحين أراضي', 'real_estate_valuers': 'مخمنين عقاريين',
             'private_tutors': 'أساتذة خصوصي', 'programmers': 'مبرمجين', 'car_delivery_on_call': 'دليفري سيارات (مناوبة)',
             'motorcycle_delivery_on_call': 'دليفري دراجات (مناوبة)', 'bicycle_delivery_on_call': 'دليفري هوائية (مناوبة)',
-            'student_research_assist': 'مساعد أبحاث طلاب',
-            'supermarket': 'سوبرماركت',
-            'commercial_shops': 'محلات تجارية',
-            'restaurants': 'مطاعم وكوفي شوبات',
-            'schools_kindergartens': 'مدارس ورياض أطفال',
-            'job_vacancies': 'الوظائف الشاغرة',
-            'city_landmarks': 'معالم المدينة'
+            'student_research_assist': 'مساعد أبحاث طلاب'
         };
 
         const globalExclusions = [];
@@ -228,9 +216,7 @@ window.__nmsPageHandlesOwnAds = true;
             photographers: 'events',
 
             // 📦 متفرقات
-            online_stores: 'misc', free_distribution: 'misc',
-            supermarket: 'misc', commercial_shops: 'misc', restaurants: 'misc',
-            schools_kindergartens: 'misc', job_vacancies: 'misc', city_landmarks: 'misc'
+            online_stores: 'misc', free_distribution: 'misc'
         };
 
         const categories = [
@@ -358,15 +344,7 @@ window.__nmsPageHandlesOwnAds = true;
             if (props.whatsapp) {
                 const providerName = name || (isRealEstate ? 'المعلن' : 'مزود الخدمة');
                 const whatsappNumber = props.whatsapp.toString();
-
-                // 🆕 [إصلاح]: نفس فحص الربط الفعلي بحساب مزود خدمة مُفعّل المستخدم
-                // في renderResults() - كان مفقوداً هنا بالكامل، فكانت كل خدمة
-                // عندها واتساب تظهر "طلب الخدمة" حتى لو غير مرتبطة بأي حساب.
-                const layerDbName = item.layer;
-                const featureId = (props.id !== undefined && props.id !== null) ? props.id : '';
-                const isLinkedProvider = !isRealEstate && typeof window.isFeatureLinkedToProvider === 'function' && window.isFeatureLinkedToProvider(layerDbName, featureId);
-
-                if (isRealEstate || !isLinkedProvider) {
+                if (isRealEstate) {
                     const cleanDigits = whatsappNumber.replace(/\D/g, '');
                     const localPhone = '0' + cleanDigits.slice(5);
                     actionHtml = `
@@ -375,6 +353,8 @@ window.__nmsPageHandlesOwnAds = true;
                             <button class="ad-whatsapp-btn" data-whatsapp="${whatsappNumber}" data-provider="${escapeAdAttr(providerName)}" data-service="${escapeAdAttr(item.label)}" style="flex:1; background:#25d366; color:#fff; border:none; padding:6px 4px; border-radius:6px; font-size:10px; font-weight:bold; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:4px;"><i class="fab fa-whatsapp"></i> واتساب</button>
                         </div>`;
                 } else {
+                    const layerDbName = item.layer;
+                    const featureId = (props.id !== undefined && props.id !== null) ? props.id : '';
                     actionHtml = `
                         <div style="margin-top:6px;">
                             <button class="req-svc-btn" data-provider="${escapeAdAttr(providerName)}" data-service="${escapeAdAttr(item.label)}" data-layer="${layerDbName}" data-feature-id="${featureId}" style="width:100%; background:linear-gradient(135deg,#1a73e8,#6c5ce7); color:#fff; border:none; padding:6px 4px; border-radius:6px; font-size:10px; font-weight:bold; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:4px;">
@@ -762,19 +742,12 @@ window.__nmsPageHandlesOwnAds = true;
         function getFeatureCoords(feature) {
             const geom = feature.geometry;
             if (!geom) return null;
-            if (geom.type === 'Point') {
-                const c = geom.coordinates;
-                if (!c) return null;
-                // 🆕 تحويل صريح لأرقام حتى لو أرجعتها قاعدة البيانات كنصوص (numeric columns)
-                const x = Number(c[0]);
-                const y = Number(c[1]);
-                if (isNaN(x) || isNaN(y)) return null;
-                return [x, y];
-            }
+            if (geom.type === 'Point') return geom.coordinates;
             if (geom.type === 'Polygon') return polygonCentroid(geom.coordinates[0]);
             if (geom.type === 'MultiPolygon') return polygonCentroid(geom.coordinates[0][0]);
             return null;
         }
+
         function sanitize(str) {
             if (!str) return '';
             const div = document.createElement('div');
@@ -896,11 +869,8 @@ window.__nmsPageHandlesOwnAds = true;
                     goBtn.className = 'nms-goto-map-btn';
                     goBtn.innerHTML = '<i class="fas fa-map-location-dot"></i> الانتقال إلى الخريطة';
                     goBtn.onclick = () => {
-                        // 🆕 تحويل صريح لرقم: PostgreSQL/node-pg قد يرجع أعمدة numeric
-                        // كنصوص (strings)، وقيمة نصية لا تملك دالة toFixed فتكسر الزر
-                        const xNum = Number(coords[0]);
-                        const yNum = Number(coords[1]);
-                        window.open(`/original-index.html?x=${xNum.toFixed(3)}&y=${yNum.toFixed(3)}`, '_blank');
+                        // فتح الخريطة في تبويب جديد
+                        window.open(`/original-index.html?x=${coords[0].toFixed(3)}&y=${coords[1].toFixed(3)}`, '_blank');
                     };
                     card.appendChild(goBtn);
                 }
@@ -980,13 +950,7 @@ window.__nmsPageHandlesOwnAds = true;
             'دليفري سيارات (مناوبة)': 'car_delivery_on_call',
             'دليفري دراجات (مناوبة)': 'motorcycle_delivery_on_call',
             'دليفري هوائية (مناوبة)': 'bicycle_delivery_on_call',
-            'مساعد أبحاث طلاب': 'student_research_assist',
-            'سوبرماركت': 'supermarket',
-            'محلات تجارية': 'commercial_shops',
-            'مطاعم وكوفي شوبات': 'restaurants',
-            'مدارس ورياض أطفال': 'schools_kindergartens',
-            'الوظائف الشاغرة': 'job_vacancies',
-            'معالم المدينة': 'city_landmarks'
+            'مساعد أبحاث طلاب': 'student_research_assist'
         };
 
         // دالة جلب التقييمات لمزود خدمة معين

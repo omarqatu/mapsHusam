@@ -1,22 +1,5 @@
 /**
  * js/platform-stats.js
- * ------------------------------------------------------------------
- * ملف موحّد لجلب إحصائيات المنصة (عدد المستخدمين + التصنيف، عدد المشاهدات،
- * عدد الخدمات/الطبقات، عدد المعالم/مزودي الخدمات) وعرضها في أي عدد من
- * الحاويات بالصفحة دفعة واحدة.
- *
- * طريقة الاستخدام: ضع أي عنصر (div) بالصفحة يحمل الخاصية data-platform-stats-target
- * وسيتم تعبئته تلقائياً بمجرد تحميل الصفحة. مثال:
- *   <div class="pstats-wrap pstats-inline" data-platform-stats-target></div>
- *
- * نقطة النهاية المتوقعة من السيرفر:
- *   GET /api/platform-stats
- *   { success: true, data: { usersTotal, usersAdmin, usersUser, usersProvider,
- *                             viewsTotal, servicesCount, featuresCount } }
- *
- * إذا تعذر الوصول للسيرفر أو لم تكن نقطة النهاية جاهزة بعد، تُعرض رسالة
- * "تعذر تحميل الإحصائيات" بدلاً من كسر الصفحة.
- * ------------------------------------------------------------------
  */
 (function () {
     'use strict';
@@ -29,19 +12,34 @@
         if (!forceRefresh && fetchPromise) return fetchPromise;
 
         fetchPromise = (async () => {
-            try {
-                const res = await fetch(window.location.origin + '/api/platform-stats');
-                const json = await res.json();
-                if (json && json.success && json.data) {
-                    cachedStats = json.data;
-                    return cachedStats;
+            const maxRetries = 3;
+            let retryCount = 0;
+            
+            while (retryCount < maxRetries) {
+                try {
+                    const res = await fetch(window.location.origin + '/api/platform-stats');
+                    if (!res.ok) {
+                        throw new Error(`HTTP error! status: ${res.status}`);
+                    }
+                    const json = await res.json();
+                    if (json && json.success && json.data) {
+                        cachedStats = json.data;
+                        return cachedStats;
+                    }
+                    return null;
+                } catch (err) {
+                    retryCount++;
+                    if (retryCount < maxRetries) {
+                        await new Promise(resolve => setTimeout(resolve, 1000 * retryCount)); // تأخير متزايد
+                    } else {
+                        console.warn('تعذر جلب إحصائيات المنصة بعد عدة محاولات:', err.message);
+                        return null;
+                    }
+                } finally {
+                    if (retryCount >= maxRetries) {
+                        fetchPromise = null;
+                    }
                 }
-                return null;
-            } catch (err) {
-                console.warn('تعذر جلب إحصائيات المنصة:', err.message);
-                return null;
-            } finally {
-                fetchPromise = null;
             }
         })();
 

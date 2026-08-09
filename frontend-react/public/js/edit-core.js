@@ -1,5 +1,5 @@
 /**
- * edit-core.js - الكود الأساسي لأدوات تحرير النقاط (UI, interactions, modal)
+ * edit-core.js 
  */
 // متغيرات عالمية للاستخدام في edit-wfs.js
 let realEstateLayers, selectedLayerName, overlayLayersObj;
@@ -253,7 +253,6 @@ function initializeEditTools(map, overlayLayersObjParam) {
             .trim();
 
         const servicesMapping = {
-            'supermarket': 'سوبرماركت', 'commercial_shops': 'محلات تجارية', 'restaurants': 'مطاعم وكوفي شوبات', 'schools_kindergartens': 'مدارس ورياض أطفال', 'job_vacancies': 'الوظائف الشاغرة', 'city_landmarks': 'معالم المدينة',
             'electrician': 'فني كهرباء', 'ac_technician': 'فني تكييف وتبريد', 'plumber': 'سباك مواسيرجي',
             'general_maintenance': 'صيانة عامة', 'painter': 'دهان/طراشة', 'Finisher': 'فني ديكور', 'carpenter': 'نجار',
             'blacksmith': 'حداد', 'builder': 'بناء ومعمار', 'house_cleaner': 'خدمات تنظيف',
@@ -274,16 +273,9 @@ function initializeEditTools(map, overlayLayersObjParam) {
             'land_surveyors': 'مساحين أراضي', 'real_estate_valuers': 'مخمنين عقاريين', 'private_tutors': 'أساتذة خصوصي',
             'programmers': 'مبرمجين', 'car_delivery_on_call': 'دليفري سيارات مناوبة', 'motorcycle_delivery_on_call': 'دليفري دراجات مناوبة',
             'bicycle_delivery_on_call': 'دليفري هوائية مناوبة', 'photographers': 'مصور فوتوغرافي', 'student_research_assist': 'مساعد أبحاث طلاب'
-            
         };
 
         const customTagsMapping = {
-            'supermarket': 'سوبرماركت، ماركت، بقالة، مواد غذائية، خضار، لحوم، تسوق، احتياجات المنزل، اسعار',
-            'commercial_shops': 'محلات تجارية، دكان، تجارة، ملابس، أحذية، عطور، هدايا، إكسسوارات، تسوق',
-            'restaurants': 'مطعم، أكل، وجبات سريعة، مشاوي، شاورما، برجر، فطور، غداء، عشاء، مقاهي، طعام',
-            'schools_kindergartens': 'مدارس، روضة، حضانة، تعليم، تدريس، أطفال، طلاب، صفوف، إدارة تعليمية، مدرسة',
-            'job_vacancies': 'وظائف، شاغرة، فرص عمل، توظيف، شواغر، للتعيين، مطلوب، عمل، سير ذاتية',
-            'city_landmarks': 'معلم بارز، ميدان، دوار، مركز شرطة، دفاع مدني، وزارة، مؤسسة حكومية، شركة رئيسية، معالم المدينة',
             'electrician': 'تمديدات كهربائية، صيانة كهرباء، شورت، قواطع، إنارة، تمديد شبكات، بروجكترات، صيانة منزلية',
             'ac_technician': 'تكييف، تبريد، غاز فريون، تصليح مكيفات، مكيف، سنترال، غسالات، ثلاجات، فك وتركيب',
             'plumber': 'مواسير، حنفيات، تسريب مياه، تصريف، مضخات، فلاتر مياه، جيزر، حمامات، صيانة سباكة',

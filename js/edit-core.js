@@ -1,5 +1,5 @@
 /**
- * edit-core.js - الكود الأساسي لأدوات تحرير النقاط (UI, interactions, modal)
+ * edit-core.js 
  */
 // متغيرات عالمية للاستخدام في edit-wfs.js
 let realEstateLayers, selectedLayerName, overlayLayersObj;

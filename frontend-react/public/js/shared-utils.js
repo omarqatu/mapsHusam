@@ -105,18 +105,32 @@ window.toggleDoubleClickZoom = function (map, active) {
 window.providerLinkedFeaturesCache = {};
 
 window.refreshProviderLinkedFeatures = async function () {
-    try {
-        const res = await fetch(window.location.origin + '/api/provider-linked-features');
-        const data = await res.json();
-        if (data && data.success && data.linked) {
-            const newCache = {};
-            Object.keys(data.linked).forEach(layer => {
-                newCache[layer] = new Set((data.linked[layer] || []).map(id => String(id)));
-            });
-            window.providerLinkedFeaturesCache = newCache;
+    const maxRetries = 3;
+    let retryCount = 0;
+    
+    while (retryCount < maxRetries) {
+        try {
+            const res = await fetch(window.location.origin + '/api/provider-linked-features');
+            if (!res.ok) {
+                throw new Error(`HTTP error! status: ${res.status}`);
+            }
+            const data = await res.json();
+            if (data && data.success && data.linked) {
+                const newCache = {};
+                Object.keys(data.linked).forEach(layer => {
+                    newCache[layer] = new Set((data.linked[layer] || []).map(id => String(id)));
+                });
+                window.providerLinkedFeaturesCache = newCache;
+                return; // نجاح
+            }
+        } catch (e) {
+            retryCount++;
+            if (retryCount < maxRetries) {
+                await new Promise(resolve => setTimeout(resolve, 1000 * retryCount)); // تأخير متزايد
+            } else {
+                console.warn('تعذر تحديث قائمة مزودي الخدمة المرتبطين بعد عدة محاولات:', e.message);
+            }
         }
-    } catch (e) {
-        console.warn('تعذر تحديث قائمة مزودي الخدمة المرتبطين:', e.message);
     }
 };
 

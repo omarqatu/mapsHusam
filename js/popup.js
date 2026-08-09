@@ -96,7 +96,33 @@ async function fetchRatingsForFeature(serviceLayer, featureId) {
         // تحويل الاسم العربي إلى الإنجليزي
         const englishLayerName = arabicToEnglishLayerMap[serviceLayer] || serviceLayer;
         
-        const response = await fetch(`${window.location.origin}/api/service-ratings?service_layer=${englishLayerName}&feature_id=${featureId}`);
+        // إضافة retry mechanism للطلبات الفاشلة
+        const maxRetries = 3;
+        let retryCount = 0;
+        let response;
+        
+        while (retryCount < maxRetries) {
+            try {
+                response = await fetch(`${window.location.origin}/api/service-ratings?service_layer=${englishLayerName}&feature_id=${featureId}`);
+                if (response.ok) break;
+                retryCount++;
+                if (retryCount < maxRetries) {
+                    await new Promise(resolve => setTimeout(resolve, 1000 * retryCount)); // تأخير متزايد
+                }
+            } catch (error) {
+                retryCount++;
+                if (retryCount < maxRetries) {
+                    await new Promise(resolve => setTimeout(resolve, 1000 * retryCount));
+                } else {
+                    throw error;
+                }
+            }
+        }
+        
+        if (!response || !response.ok) {
+            throw new Error(`Server error: ${response ? response.status : 'Network error'}`);
+        }
+        
         const data = await response.json();
         
         if (data.success) {
@@ -466,6 +492,8 @@ function initializePopup(map) {
     window.generateFeatureHtml = function(feature, layer) {
         const props = feature.getProperties();
         const layerTitle = layer ? (layer.get('title') || 'معلم') : 'معلم';
+        // استخدام الاسم الإنجليزي من layer إذا كان موجوداً، وإلا استخدام الاسم العربي
+        const layerEnglishName = layer ? (layer.get('englishName') || layer.get('name') || arabicToEnglishLayerMap[layerTitle] || layerTitle) : layerTitle;
         
         const isRealEstate = realEstateLayerNames.includes(layerTitle);
         const isService = serviceLayerNames.includes(layerTitle);
@@ -475,7 +503,14 @@ function initializePopup(map) {
         if (isRealEstate) {
             displayFeatureId = (props.fid !== undefined && props.fid !== null && props.fid !== '') ? props.fid : null;
         } else if (isService) {
+            // محاولة عدة حقول للمعرف
             displayFeatureId = (props.id !== undefined && props.id !== null && props.id !== '') ? props.id : null;
+            if (!displayFeatureId) {
+                displayFeatureId = (props.fid !== undefined && props.fid !== null && props.fid !== '') ? props.fid : null;
+            }
+            if (!displayFeatureId) {
+                displayFeatureId = (props.feature_id !== undefined && props.feature_id !== null && props.feature_id !== '') ? props.feature_id : null;
+            }
         }
         
         if (displayFeatureId === null && typeof feature.getId === 'function') {
@@ -502,8 +537,8 @@ function initializePopup(map) {
         
         // إضافة عرض النجوم للخدمات فقط
         if (isService && displayFeatureId) {
-            // استخدام layerTitle مباشرة لأنه هو الاسم المستخدم في قاعدة البيانات
-            const layerDbName = layerTitle;
+            // استخدام الاسم الإنجليزي من layer مباشرة لقاعدة البيانات
+            const layerDbName = layerEnglishName;
             if (layerDbName) {
                 bodyHtml += `<div id="rating-display-${layerDbName}-${displayFeatureId}" style="margin-bottom: 8px; padding: 8px; background: #fff9e6; border-radius: 6px; border: 1px solid #ffe082;">
                     <div style="display: flex; align-items: center; gap: 8px;">

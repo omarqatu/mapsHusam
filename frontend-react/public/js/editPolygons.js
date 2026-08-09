@@ -1,6 +1,5 @@
 /**
- * editPolygons.js - النسخة الهندسية المتقدمة والمحدثة 2026 لترابط واجهات المضلعات
- * مطابقة تماماً لمنهجية حماية حقول الجيوسيرفر، التوثيق الآمن، وحل مشكلة انهيار إحداثيات المضلع.
+ * editPolygons.js 
  */
 function initializePolygonEditTools(map, overlayLayersObj) {
     let draw, modify, snap, select, reshapeDraw;
