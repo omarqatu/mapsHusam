@@ -228,12 +228,30 @@ realestatePool.connect((err, client, release) => {
 async function ensureSchemaColumns() {
     try {
         await servicesPool.query(`ALTER TABLE public.users ADD COLUMN IF NOT EXISTS force_logout_flag BOOLEAN DEFAULT false`);
-        console.log('✅ تم التأكد من وجود عمود force_logout_flag في جدول users');
+        await servicesPool.query(`ALTER TABLE public.users ADD COLUMN IF NOT EXISTS whatsapp_number TEXT`);
+        console.log('✅ تم التأكد من وجود أعمدة force_logout_flag و whatsapp_number في جدول users');
     } catch (err) {
-        console.error('⚠️ خطأ أثناء التأكد من مخطط قاعدة البيانات (force_logout_flag):', err.message);
+        console.error('⚠️ خطأ أثناء التأكد من مخطط قاعدة البيانات:', err.message);
     }
 }
 ensureSchemaColumns();
+
+function normalizeWhatsappNumber(rawNumber) {
+    if (rawNumber === undefined || rawNumber === null) return null;
+    const trimmed = String(rawNumber).trim();
+    if (!trimmed) return null;
+
+    let digits = trimmed.replace(/\D/g, '');
+    if (!digits) return null;
+    if (digits.startsWith('00')) digits = digits.substring(2);
+    if (digits.startsWith('0') && digits.length === 10) {
+        digits = '970' + digits.substring(1);
+    } else if (digits.length === 9 && digits.startsWith('5')) {
+        digits = '970' + digits;
+    }
+
+    return '+' + digits;
+}
 
 // =========================================================================
 // 🆕 [نظام طلب الخدمة + الدردشة + تسجيل عمليات النجاح]
@@ -884,12 +902,17 @@ app.get('/api/stats-summary', async (req, res) => {
 // 1️⃣ مسار تسجيل مستخدم جديد
 // ==========================================
 app.post('/api/auth/register', authLimiter, async (req, res) => {
-    const { name, email, phone, password, role } = req.body;
+    const { name, email = '', phone, password, role, whatsapp_number = '' } = req.body;
+    const normalizedEmail = (email || '').toLowerCase().trim();
+    const normalizedWhatsapp = whatsapp_number ? normalizeWhatsappNumber(whatsapp_number) : null;
 
     console.log("📥 محاولة تسجيل حساب جديد تلقائي:", req.body);
 
-    if (!name || !email || !phone || !password || !role) {
+    if (!name || !phone || !password || !role) {
         return res.status(400).json({ error: 'الرجاء تعبئة جميع الحقول المطلوبة بما فيها رقم الجوال' });
+    }
+    if (whatsapp_number && !normalizedWhatsapp) {
+        return res.status(400).json({ error: 'رقم واتساب غير صالح، يرجى إدخال رقم صحيح مع رمز الدولة.' });
     }
 
     const phoneRegex = /^05\d{8}$/;
@@ -898,11 +921,13 @@ app.post('/api/auth/register', authLimiter, async (req, res) => {
     }
 
     try {
-        const checkEmailQuery = 'SELECT email FROM public.users WHERE email = $1';
-        const emailCheckResult = await servicesPool.query(checkEmailQuery, [email.toLowerCase().trim()]);
+        if (normalizedEmail) {
+            const checkEmailQuery = 'SELECT email FROM public.users WHERE email = $1';
+            const emailCheckResult = await servicesPool.query(checkEmailQuery, [normalizedEmail]);
 
-        if (emailCheckResult.rows.length > 0) {
-            return res.status(400).json({ error: 'هذا البريد الإلكتروني مسجل بالفعل!' });
+            if (emailCheckResult.rows.length > 0) {
+                return res.status(400).json({ error: 'هذا البريد الإلكتروني مسجل بالفعل!' });
+            }
         }
 
         const checkPhoneQuery = 'SELECT phone FROM public.users WHERE phone = $1';
@@ -918,17 +943,18 @@ app.post('/api/auth/register', authLimiter, async (req, res) => {
         const hashedPassword = await bcrypt.hash(password, BCRYPT_SALT_ROUNDS);
 
         const insertUserQuery = `
-            INSERT INTO public.users (full_name, email, phone, password_hash, role, status, is_active)
-            VALUES ($1, $2, $3, $4, $5, 0, false)
-            RETURNING user_id, full_name, email, phone, role
+            INSERT INTO public.users (full_name, email, phone, password_hash, role, status, is_active, whatsapp_number)
+            VALUES ($1, $2, $3, $4, $5, 0, false, $6)
+            RETURNING user_id, full_name, email, phone, role, whatsapp_number
         `;
 
         const result = await servicesPool.query(insertUserQuery, [
             name.trim(),
-            email.toLowerCase().trim(),
+            normalizedEmail,
             phone.trim(),
             hashedPassword,
-            role
+            role,
+            normalizedWhatsapp
         ]);
 
         const newUser = result.rows[0];
@@ -1069,20 +1095,26 @@ app.post('/api/auth/verify-session', async (req, res) => {
 // مسار تسجيل الدخول المحدث (الفحص الثلاثي المتطابق الشامل بدون أي قيم وهمية)
 app.post('/api/auth/login', authLimiter, async (req, res) => {
     const requestBody = req.body || {};
-    const { email, phone, password } = requestBody;
+    const { email = '', phone, password } = requestBody;
+    const normalizedEmail = (email || '').toLowerCase().trim();
+    const normalizedPhone = phone ? phone.trim() : '';
 
-    if (!email || !phone || !password) {
-        console.warn('[LOGIN] missing fields', { email, phone, password, body: requestBody });
-        return res.status(400).json({ message: 'الرجاء إدخال البريد الإلكتروني، رقم الجوال وكلمة المرور معاً.' });
+    if (!normalizedPhone || !password) {
+        console.warn('[LOGIN] missing fields', { email: normalizedEmail, phone: normalizedPhone, password: !!password, body: requestBody });
+        return res.status(400).json({ message: 'الرجاء إدخال رقم الجوال وكلمة المرور.' });
     }
 
     try {
-        const userQuery = 'SELECT * FROM public.users WHERE email = $1 AND phone = $2';
-        console.log('[LOGIN] query params', { email: email.toLowerCase().trim(), phone: phone.trim() });
-        const result = await servicesPool.query(userQuery, [
-            email.toLowerCase().trim(),
-            phone.trim()
-        ]);
+        let userQuery = 'SELECT * FROM public.users WHERE phone = $1';
+        let queryParams = [normalizedPhone];
+
+        if (normalizedEmail) {
+            userQuery = 'SELECT * FROM public.users WHERE email = $1 AND phone = $2';
+            queryParams = [normalizedEmail, normalizedPhone];
+        }
+
+        console.log('[LOGIN] query params', { email: normalizedEmail, phone: normalizedPhone });
+        const result = await servicesPool.query(userQuery, queryParams);
 
         if (result.rows.length === 0) {
             return res.status(401).json({ message: 'البيانات المدخلة غير صحيحة، يرجى التأكد من البريد الإلكتروني ورقم الجوال.' });
@@ -1125,11 +1157,12 @@ app.post('/api/auth/login', authLimiter, async (req, res) => {
                 id: user.user_id,
                 full_name: user.full_name,
                 email: user.email,
-                phone: user.phone, 
+                phone: user.phone,
+                whatsapp_number: user.whatsapp_number || null,
                 role: user.role,
                 status: user.status !== null ? parseInt(user.status) : 0,
-                target_layer: finalLayer, 
-                targetId: finalId, 
+                target_layer: finalLayer,
+                targetId: finalId,
                 target_id: finalId,
                 x_coord: user.x_coord,
                 y_coord: user.y_coord
@@ -1953,7 +1986,7 @@ app.get('/api/service-requests', async (req, res) => {
             if (r.status === 'completed') {
                 const providerContact = await getProviderContactInfo(r.service_layer, r.feature_id);
                 r.userPhone = r.requester_phone || null;
-                r.userWhatsapp = r.requester_phone || null;
+                r.userWhatsapp = r.requester_whatsapp || r.requester_phone || null;
                 r.providerPhone = providerContact.phone;
                 r.providerWhatsapp = providerContact.whatsapp;
             }

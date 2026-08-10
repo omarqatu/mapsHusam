@@ -8,22 +8,34 @@ window.debugLog = function (...args) {
     if (DEBUG_MODE) console.log(...args);
 };
 
+window.showAuthMessage = function(message, type = 'info', duration = 5000) {
+    if (window.toast) {
+        window.toast(message, type, duration);
+    } else {
+        alert(message);
+    }
+};
+
+let authSubmissionCooldown = false;
+function activateAuthCooldown(seconds) {
+    authSubmissionCooldown = true;
+    setTimeout(() => { authSubmissionCooldown = false; }, seconds * 1000);
+}
+
 window.changeUserPassword = function (e) {
     if (e) e.preventDefault();
 
     // 1. جلب بيانات المستخدم لمعرفة معرفه (ID)
     const savedUser = localStorage.getItem('map_user');
     if (!savedUser) {
-        alert("يرجى تسجيل الدخول أولاً لتتمكن من تغيير كلمة المرور.");
-        return;
+            window.showAuthMessage("يرجى تسجيل الدخول أولاً لتتمكن من تغيير كلمة المرور.", 'warning');
     }
     
     let parsedUser;
     try {
         parsedUser = JSON.parse(savedUser);
     } catch(err) {
-        alert("خطأ في قراءة بيانات المستخدم الحالي.");
-        return;
+            window.showAuthMessage("خطأ في قراءة بيانات المستخدم الحالي.", 'error');
     }
     
     const userId = parsedUser.user_id || parsedUser.id;
@@ -87,11 +99,11 @@ window.changeUserPassword = function (e) {
         const submitBtn = document.getElementById('modal-submit-btn');
 
         if (!currentPassword.trim()) {
-            alert("خطأ: لا يمكن ترك حقل كلمة المرور الحالية فارغاً.");
+            window.showAuthMessage("خطأ: لا يمكن ترك حقل كلمة المرور الحالية فارغاً.", 'warning');
             return;
         }
         if (newPassword.trim().length < 6) {
-            alert("خطأ: يجب أن تتكون كلمة المرور الجديدة من 6 خانات أو أكثر.");
+            window.showAuthMessage("خطأ: يجب أن تتكون كلمة المرور الجديدة من 6 خانات أو أكثر.", 'warning');
             return;
         }
 
@@ -118,17 +130,17 @@ window.changeUserPassword = function (e) {
             }
 
             if (response.ok && data.status === 'success') {
-                alert("🎉 تم تغيير كلمة المرور بنجاح!");
+                window.showAuthMessage("🎉 تم تغيير كلمة المرور بنجاح!", 'success');
                 modal.remove(); 
             } else {
-                alert("❌ فشل التعديل: " + (data.error || data.message || "حدث خطأ غير متوقع"));
+                window.showAuthMessage("❌ فشل التعديل: " + (data.error || data.message || "حدث خطأ غير متوقع"), 'error');
                 submitBtn.disabled = false;
                 submitBtn.innerText = "تحديث";
             }
 
         } catch (error) {
             console.error('❌ خطأ أثناء الاتصال بالسيرفر لتغيير كلمة المرور:', error);
-            alert(error.message || 'حدث خطأ أثناء الاتصال بالسيرفر، يرجى المحاولة لاحقاً.');
+            window.showAuthMessage(error.message || 'حدث خطأ أثناء الاتصال بالسيرفر، يرجى المحاولة لاحقاً.', 'error');
             submitBtn.disabled = false;
             submitBtn.innerText = "تحديث";
         }
@@ -168,15 +180,12 @@ function verifySavedSessionThenEnter(parsedUser) {
             clearSavedSessionCompletely();
 
             if (data.reason === 'force_logout') {
-                alert('🚨 تم تسجيل خروجك من قبل الإدارة. يرجى التواصل مع الإدارة عبر صفحة الفيسبوك قبل محاولة الدخول مجدداً.');
+                window.showAuthMessage('🚨 تم تسجيل خروجك من قبل الإدارة. يرجى التواصل مع الإدارة عبر صفحة الفيسبوك قبل محاولة الدخول مجدداً.', 'warning');
             } else if (data.reason === 'inactive') {
-                alert('⚠️ حسابك معطل حالياً. يرجى التواصل مع الإدارة عبر صفحة الفيسبوك.');
+                window.showAuthMessage('⚠️ حسابك معطل حالياً. يرجى التواصل مع الإدارة عبر صفحة الفيسبوك.', 'warning');
             } else if (data.reason === 'not_found') {
-                alert('⚠️ لم يتم العثور على هذا الحساب، يرجى تسجيل الدخول من جديد.');
+                window.showAuthMessage('⚠️ لم يتم العثور على هذا الحساب، يرجى تسجيل الدخول من جديد.', 'warning');
             }
-
-            window.location.reload();
-            return;
         }
 
         enterPlatform(parsedUser, true);
@@ -187,7 +196,7 @@ function verifySavedSessionThenEnter(parsedUser) {
     });
 }
 
-document.addEventListener("DOMContentLoaded", function () {
+function initAuthAppEvents() {
     // جلب عناصر شاشة الترحيب والتسجيل
     const authOverlay = document.getElementById("auth-splash-overlay");
     const welcomeSection = document.getElementById("auth-welcome-section");
@@ -247,7 +256,7 @@ document.addEventListener("DOMContentLoaded", function () {
         btnGoToRegisterEmail.addEventListener("click", function(e) {
             e.preventDefault();
             if (buttonsGroup && buttonsGroup.classList.contains("auth-buttons-disabled")) {
-                alert("يرجى الموافقة على الشروط أولاً وعمل لايك لصفحتنا المعتمدة.");
+                window.showAuthMessage("يرجى الموافقة على الشروط أولاً وعمل لايك لصفحتنا المعتمدة.", 'warning');
                 return;
             }
             if (welcomeSection) welcomeSection.classList.add("hidden");
@@ -259,29 +268,38 @@ document.addEventListener("DOMContentLoaded", function () {
         registerForm.addEventListener("submit", async function (e) {
             e.preventDefault(); 
 
-            const nameValue = document.getElementById("reg-name").value;
-            const emailValue = document.getElementById("reg-email").value.trim().toLowerCase();
+            const nameValue = document.getElementById("reg-name").value.trim();
+            const prefixValue = document.getElementById("reg-whatsapp-prefix").value;
             const phoneValue = document.getElementById("reg-phone").value.trim();
             const passwordValue = document.getElementById("reg-password").value;
 
             const phoneRegex = /^05\d{8}$/;
             if (!phoneRegex.test(phoneValue)) {
-                alert("خطأ: يجب أن يتكون رقم الجوال من 10 أرقام ويبدأ بـ 05 (مثال: 0599123456)");
+                window.showAuthMessage("خطأ: يجب أن يتكون رقم الموبايل من 10 أرقام ويبدأ بـ 05 (مثال: 0598512667)", 'warning');
                 return;
             }
 
+            const whatsappNumber = `+${prefixValue}${phoneValue.substring(1)}`;
             const roleValue = "user"; 
             const submitButton = document.getElementById("btn-submit-register");
             if (submitButton) submitButton.disabled = true; 
 
+            if (authSubmissionCooldown) {
+                window.showAuthMessage('يرجى الانتظار قليلاً قبل إعادة المحاولة.', 'warning');
+                if (submitButton) submitButton.disabled = false;
+                return;
+            }
+
             try {
+                activateAuthCooldown(3);
                 const response = await fetch('/api/auth/register', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
                     body: JSON.stringify({
                         name: nameValue,
-                        email: emailValue,
+                        email: '',
                         phone: phoneValue,
+                        whatsapp_number: whatsappNumber,
                         password: passwordValue,
                         role: roleValue
                     })
@@ -300,15 +318,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 }
 
                 if (registerData.status === 'success') {
-                    const userConfirmed = confirm(
-                        "🎉 تم تسجيل حسابك بنجاح!\n\n" +
-                        "لتفعيل الحساب والتمكن من الدخول للمنصة، يرجى التواصل معنا عبر رسائل صفحتنا على الفيس بوك وإرسال الاسم الكامل ورقم جوالك.\n\n" +
-                        "اضغط على (موافق) لفتح صفحة الفيس بوك ومراسلتنا الآن للتفعيل 👇"
-                    );
-                    
-                    if (userConfirmed) {
-                        window.open("https://www.facebook.com/MapServesPalestine", "_blank");
-                    }
+                    window.showAuthMessage("🎉 تم تسجيل حسابك بنجاح! يرجى التواصل معنا عبر رسائل فيسبوك لتفعيل الحساب.", 'success', 7000);
 
                     if (emailFormSection) emailFormSection.classList.add("hidden");
                     if (authLoginSection) authLoginSection.classList.remove("hidden");
@@ -321,7 +331,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
             } catch (error) {
                 console.error('❌ خطأ في عملية التسجيل:', error);
-                alert(error.message || 'حدث خطأ أثناء التسجيل، يرجى المحاولة لاحقاً.');
+                window.showAuthMessage(error.message || 'حدث خطأ أثناء التسجيل، يرجى المحاولة لاحقاً.', 'error');
                 if (submitButton) submitButton.disabled = false;
             }
         });
@@ -384,14 +394,18 @@ document.addEventListener("DOMContentLoaded", function () {
         loginForm.addEventListener('submit', async function(e) {
             e.preventDefault();
 
-            const email = document.getElementById('login-email').value.trim();
+            if (authSubmissionCooldown) {
+                window.showAuthMessage('يرجى الانتظار قليلاً قبل إعادة المحاولة.', 'warning');
+                return;
+            }
+
             const phone = document.getElementById('login-phone').value.trim();
             const password = document.getElementById('login-password').value;
             const submitBtn = document.getElementById('btn-submit-login');
 
             const phoneRegex = /^05\d{8}$/;
             if (!phoneRegex.test(phone)) {
-                alert("صيغة رقم الجوال غير صحيحة، يجب أن يتكون من 10 أرقام ويبدأ بـ 05.");
+                window.showAuthMessage("صيغة رقم الموبايل غير صحيحة، يجب أن تتكون من 10 أرقام وتبدأ بـ 05.", 'warning');
                 return;
             }
 
@@ -404,7 +418,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 const response = await fetch('/api/auth/login', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
-                    body: JSON.stringify({ email, phone, password })
+                    body: JSON.stringify({ email: '', phone, password })
                 });
 
                 const loginText = await response.text();
@@ -416,15 +430,18 @@ document.addEventListener("DOMContentLoaded", function () {
                 }
 
                 if (response.ok && data.user) {
-                    alert(`مرحباً بك مجدداً: ${data.user.full_name}`);
+                    window.showAuthMessage(`مرحباً بك مجدداً: ${data.user.full_name}`, 'success');
+                    activateAuthCooldown(3);
 
                     let finalUserData = {
                         id: parseInt(data.user.user_id),
                         user_id: parseInt(data.user.user_id),
                         name: data.user.full_name,
                         full_name: data.user.full_name,
-                        email: data.user.email,
-                        phone: data.user.phone,
+                        email: data.user.email || '',
+                        phone: data.user.phone || phone,
+                        whatsapp_number: data.user.whatsapp_number || '',
+                        whatsappNumber: data.user.whatsapp_number || '',
                         role: data.user.role,
                         service_layer: data.user.target_layer || null,
                         feature_id: data.user.target_id ? parseInt(data.user.target_id) : null,
@@ -446,11 +463,11 @@ document.addEventListener("DOMContentLoaded", function () {
                     }
 
                 } else {
-                    alert(`خطأ في الدخول: ${data.message || data.error || 'بيانات الاعتماد غير صحيحة'}`);
+                    window.showAuthMessage(`خطأ في الدخول: ${data.message || data.error || 'بيانات الاعتماد غير صحيحة'}`, 'error');
                 }
             } catch (error) {
                 console.error('❌ خطأ في الاتصال بسيرفر التحقق:', error);
-                alert(error.message || 'حدث خطأ أثناء الاتصال بالسيرفر، يرجى المحاولة لاحقاً.');
+                window.showAuthMessage(error.message || 'حدث خطأ أثناء الاتصال بالسيرفر، يرجى المحاولة لاحقاً.', 'error');
             } finally {
                 if (submitBtn) {
                     submitBtn.disabled = false;
@@ -459,4 +476,10 @@ document.addEventListener("DOMContentLoaded", function () {
             }
         });
     }
-});
+}
+
+if (document.readyState === 'loading') {
+    document.addEventListener("DOMContentLoaded", initAuthAppEvents);
+} else {
+    initAuthAppEvents();
+}

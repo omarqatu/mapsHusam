@@ -587,13 +587,12 @@
         <div id="auth-buttons-group" class="auth-buttons-disabled">
             <p class="auth-action-hint">الرجاء الموافقة على الشروط والإعجاب بالصفحة لتفعيل التسجيل:</p>
             <button class="btn-auth" id="btn-go-to-register-email" style="background-color: #2980b9; width: 100%; color: white; padding: 12px; border: none; border-radius: 5px; cursor: pointer; font-size: 16px;">
-                📧 التسجيل عبر البريد الإلكتروني
+                📱 التسجيل عبر رقم واتساب
+            </button>
+            <button type="button" class="btn-auth" id="btn-welcome-back-to-login" style="background-color: #27ae60; width: 100%; margin-top: 15px; color: white; padding: 12px; border: none; border-radius: 5px; cursor: pointer; font-size: 16px;">
+                ⬅️ إذا كنت مسجلاً مسبقاً، انقر هنا لتسجيل الدخول
             </button>
         </div>
-
-        <button type="button" class="btn-auth" id="btn-welcome-back-to-login" style="background-color: #27ae60; width: 100%; margin-top: 15px; color: white; padding: 12px; border: none; border-radius: 5px; cursor: pointer; font-size: 16px;">
-            ⬅️ إذا كنت مسجلاً مسبقاً، انقر هنا لتسجيل الدخول
-        </button>
     </div>
 
     <div id="auth-login-form-section" class="auth-dialog-box hidden">
@@ -602,13 +601,9 @@
 
         <form id="login-form">
             <div class="auth-form-group">
-                <label>البريد الإلكتروني:</label>
-                <input type="email" id="login-email" placeholder="example@mail.com" required>
-            </div>
-
-            <div class="auth-form-group">
-                <label>رقم الجوال:</label>
-                <input type="text" id="login-phone" placeholder="05xxxxxxxx" required>
+                <label>رقم الموبايل:</label>
+                <input type="text" id="login-phone" placeholder="0598512667" required>
+                <small style="color: #7f8c8d; display: block; margin-top: 4px;">استخدم رقم الموبايل نفسه الذي سجّلت به حساب واتساب.</small>
             </div>
 
             <div class="auth-form-group">
@@ -629,8 +624,8 @@
             ⬅️ إذا كنت مسجلاً مسبقاً (مستخدم / مزود خدمة)، انقر هنا لإدخال بياناتك السابقة والدخول
         </button>
 
-        <h3 class="auth-title">إنشاء حساب جديد بالبريد</h3>
-        <p class="auth-welcome-text" style="text-align: center;">يرجى ملء البيانات التالية للانضمام إلى الخريطة</p>
+        <h3 class="auth-title">إنشاء حساب جديد برقم واتساب</h3>
+        <p class="auth-welcome-text" style="text-align: center;">سجل حسابك عبر WhatsApp برقم موبايل فلسطيني لتفعيل سريع وآمن</p>
 
         <form id="register-form">
             <div class="auth-form-group">
@@ -639,19 +634,23 @@
             </div>
 
             <div class="auth-form-group">
-                <label>البريد الإلكتروني:</label>
-                <input type="email" id="reg-email" placeholder="example@mail.com" required>
+                <label>مقدمة واتساب:</label>
+                <select id="reg-whatsapp-prefix" required>
+                    <option value="970">+970</option>
+                    <option value="972">+972</option>
+                </select>
+                <small style="color: #7f8c8d; display: block; margin-top: 4px;">اختر مقدمة الدولة لرقم واتسابك.</small>
+            </div>
+
+            <div class="auth-form-group">
+               <label for="reg-phone">رقم الموبايل المحلي:</label>
+               <input type="text" id="reg-phone" required pattern="^05\d{8}$" maxlength="10" placeholder="0598512667">
+               <small style="color: #7f8c8d; display: block; margin-top: 4px;">أدخل رقم الموبايل كاملاً مع الصفر الأول. سيُحوّل تلقائياً إلى WhatsApp بصيغة +970... أو +972...</small>
             </div>
 
             <div class="auth-form-group">
                 <label>كلمة المرور:</label>
                 <input type="password" id="reg-password" placeholder="••••••••" required>
-            </div>
-
-            <div class="auth-form-group">
-               <label for="reg-phone">رقم الجوال أو الموبايل (0599123456):</label>
-               <input type="text" id="reg-phone" required pattern="^05\d{8}$" maxlength="10" placeholder="0598512667">
-               <small style="color: #7f8c8d; display: block; margin-top: 4px;">يجب إدخال 10 أرقام تبدأ بـ 05</small>
             </div>
 
             <div class="auth-form-group">

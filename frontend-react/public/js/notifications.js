@@ -1,4 +1,4 @@
-// js/notifications.js - نظام الإشعارات في الوقت الفعلي
+﻿// js/notifications.js - نظام الإشعارات في الوقت الفعلي
 
 class NotificationSystem {
     constructor() {
@@ -18,7 +18,6 @@ class NotificationSystem {
     // الاتصال بـ Socket.io
     connect() {
         if (this.socket) {
-            console.log('🔌 Socket متصل بالفعل');
             return;
         }
 
@@ -43,7 +42,6 @@ class NotificationSystem {
 
         // استقبال إشعار جديد
         this.socket.on('new_notification', (notification) => {
-            console.log('📨 إشعار جديد:', notification);
             this.notifications.unshift(notification);
             this.notificationCount++;
             this.showNotification(notification);
@@ -52,17 +50,14 @@ class NotificationSystem {
 
         // استقبال الإشعارات غير المقروءة
         this.socket.on('unread_notifications', (notifications) => {
-            console.log('📋 الإشعارات غير المقروءة:', notifications);
             this.notifications = notifications;
             this.notificationCount = notifications.length;
             this.updateNotificationBadge();
             this.renderNotificationDropdown(notifications);
-            console.log('✅ تم عرض الإشعارات في القائمة');
         });
 
         // تأكيد إرسال الإشعار
         this.socket.on('notification_sent', (data) => {
-            console.log('✅ تم إرسال الإشعار:', data);
             if (data.success) {
                 alert('تم إرسال الإشعار بنجاح!');
             }
@@ -70,13 +65,11 @@ class NotificationSystem {
 
         // خطأ في الإشعارات
         this.socket.on('notification_error', (error) => {
-            console.error('❌ خطأ في الإشعارات:', error);
             alert('خطأ: ' + (error.error || 'حدث خطأ غير معروف'));
         });
 
         // استقبال أمر إعادة تسجيل الدخول من المشرف (force_relogin)
         this.socket.on('force_relogin', (data) => {
-            console.log('🚨 أمر إعادة تسجيل الدخول من الإدارة:', data);
             const message = data.message || 'تم تحديث حسابك من قبل الإدارة. يرجى تسجيل الدخول مرة أخرى.';
             alert('🚨 ' + message);
             // مسح الجلسة المحفوظة
@@ -107,7 +100,6 @@ class NotificationSystem {
 
         // تأكيد تعليم الإشعار كمقروء
         this.socket.on('notification_marked_read', (data) => {
-            console.log('✅ تم تعليم الإشعار كمقروء:', data);
             if (data.success) {
                 this.notificationCount--;
                 this.updateNotificationBadge();
@@ -116,21 +108,18 @@ class NotificationSystem {
 
         // عند انقطاع الاتصال
         this.socket.on('disconnect', () => {
-            console.log('🔌 انقطع الاتصال بـ Socket.io');
             this.isConnected = false;
             this.updateConnectionStatus(false);
         });
 
         // خطأ في الاتصال
         this.socket.on('connect_error', (error) => {
-            console.error('❌ خطأ في الاتصال:', error);
             this.isConnected = false;
             this.updateConnectionStatus(false);
             
             // إضافة retry mechanism للاتصال
             if (!this.retryTimeout) {
                 this.retryTimeout = setTimeout(() => {
-                    console.log('🔄 إعادة محاولة الاتصال...');
                     this.socket.connect();
                     this.retryTimeout = null;
                 }, 5000); // إعادة المحاولة بعد 5 ثواني
@@ -156,7 +145,6 @@ class NotificationSystem {
     // طلب الإشعارات غير المقروءة
     getUnreadNotifications(userId) {
         if (!this.socket || !this.isConnected) {
-            console.warn('غير متصل بالسيرفر');
             return;
         }
 
@@ -169,7 +157,6 @@ class NotificationSystem {
     // تعليم إشعار كمقروء
     markAsRead(notificationId) {
         if (!this.socket || !this.isConnected) {
-            console.warn('غير متصل بالسيرفر');
             return;
         }
 
@@ -201,7 +188,6 @@ class NotificationSystem {
     showCustomNotification(notification) {
         const container = document.getElementById('notification-container');
         if (!container) {
-            console.warn('حاوية الإشعارات غير موجودة');
             return;
         }
 
@@ -264,18 +250,14 @@ class NotificationSystem {
 
     // عرض الإشعارات في القائمة المنبثقة
     renderNotificationDropdown(notifications) {
-        console.log('🎨 بدء عرض الإشعارات في القائمة...');
         const list = document.getElementById('notification-list');
         if (!list) {
-            console.error('❌ عنصر notification-list غير موجود');
             return;
         }
 
-        console.log('📊 عدد الإشعارات:', notifications.length);
 
         if (notifications.length === 0) {
             list.innerHTML = '<p style="text-align: center; color: #999; padding: 20px;">لا توجد إشعارات</p>';
-            console.log('✅ لا توجد إشعارات للعرض');
             return;
         }
 
@@ -301,13 +283,11 @@ class NotificationSystem {
             list.appendChild(item);
         });
 
-        console.log('✅ تم عرض', notifications.length, 'إشعار في القائمة');
     }
 
     // تعليم جميع الإشعارات كمقروء
     markAllNotificationsAsRead() {
         if (!this.socket || !this.isConnected) {
-            console.warn('غير متصل بالسيرفر');
             return;
         }
 
@@ -350,9 +330,6 @@ window.addEventListener('DOMContentLoaded', () => {
         notificationBtn.addEventListener('click', (e) => {
             e.stopPropagation();
 
-            console.log('🔔 تم النقر على زر الإشعارات');
-            console.log('📊 Socket متصل:', window.notificationSystem?.isConnected);
-            console.log('👤 userId:', window.notificationSystem?.userId);
 
             // عرض مؤشر التحميل
             const dropdownBody = notificationDropdown.querySelector('.notification-dropdown-body');
@@ -365,14 +342,10 @@ window.addEventListener('DOMContentLoaded', () => {
 
             // طلب الإشعارات من السيرفر
             if (window.notificationSystem.socket && window.notificationSystem.userId) {
-                console.log('🔄 طلب الإشعارات من السيرفر للمستخدم:', window.notificationSystem.userId);
                 window.notificationSystem.socket.emit('get_unread_notifications', {
                     user_id: window.notificationSystem.userId
                 });
             } else {
-                console.warn('⚠️ Socket أو userId غير متاح');
-                console.warn('Socket:', window.notificationSystem?.socket);
-                console.warn('UserId:', window.notificationSystem?.userId);
                 if (dropdownBody) {
                     dropdownBody.innerHTML = '<p style="text-align: center; color: #ea4335; padding: 20px;">لم يتم الاتصال بالسيرفر</p>';
                 }

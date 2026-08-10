@@ -244,22 +244,35 @@ const createWFSLayer = (workspace, name, title, styleFunc, maxRes = 10, visible 
 
                 const tryLoad = async () => {
                     const firstUrl = buildUrl(workspaceUrl);
-                    console.debug(`Loading layer ${name} using workspace-specific endpoint:`, firstUrl);
                     try {
                         await loaderFetch(firstUrl);
+                        return;
                     } catch (error) {
+                        if (error.name === 'AbortError') {
+                            // تحميل تم إلغاؤه بسبب انتهاء مهلة الطلب، هذا يحدث أحياناً
+                            // عند توقف الخريطة أو الشبكة، ولا نحتاج إلى تحذير مزعج.
+                            return;
+                        }
                         console.warn(`Failed to load layer ${name} from ${firstUrl}:`, error.message);
                         if (!triedFallback) {
                             triedFallback = true;
                             const fallbackUrl = buildUrl(commonUrl);
-                            console.debug(`Retrying layer ${name} using common WFS endpoint:`, fallbackUrl);
-                            await loaderFetch(fallbackUrl);
+                            try {
+                                await loaderFetch(fallbackUrl);
+                            } catch (fallbackError) {
+                                if (fallbackError.name === 'AbortError') {
+                                    return;
+                                }
+                                throw fallbackError;
+                            }
                         }
                     }
                 };
 
                 tryLoad().catch(error => {
-                    console.warn(`Final failure loading layer ${name}:`, error.message);
+                    if (error.name !== 'AbortError') {
+                        console.warn(`Final failure loading layer ${name}:`, error.message);
+                    }
                 });
             }
         })
