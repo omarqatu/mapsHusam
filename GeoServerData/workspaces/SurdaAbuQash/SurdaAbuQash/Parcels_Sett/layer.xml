@@ -1,0 +1,17 @@
+<layer>
+  <name>Parcels_Sett</name>
+  <id>LayerInfoImpl-2147202f:191f1b1f0ff:-7ecb</id>
+  <type>VECTOR</type>
+  <defaultStyle>
+    <id>StyleInfoImpl--7d77be0e:18fca97b9ad:-7ff3</id>
+  </defaultStyle>
+  <resource class="featureType">
+    <id>FeatureTypeInfoImpl-2147202f:191f1b1f0ff:-7ecc</id>
+  </resource>
+  <attribution>
+    <logoWidth>0</logoWidth>
+    <logoHeight>0</logoHeight>
+  </attribution>
+  <dateCreated>2024-09-15 18:58:31.233 UTC</dateCreated>
+  <dateModified>2024-09-16 20:06:30.125 UTC</dateModified>
+</layer>

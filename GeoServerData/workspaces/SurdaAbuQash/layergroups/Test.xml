@@ -1,0 +1,40 @@
+<layerGroup>
+  <id>LayerGroupInfoImpl--7a3e4111:1905b397b0f:-7a0b</id>
+  <name>Test</name>
+  <mode>SINGLE</mode>
+  <title>Test</title>
+  <workspace>
+    <id>WorkspaceInfoImpl--7d77be0e:18fca97b9ad:-8000</id>
+  </workspace>
+  <publishables>
+    <published type="layer">
+      <id>LayerInfoImpl--7a3e4111:1905b397b0f:-7ffe</id>
+    </published>
+    <published type="layer">
+      <id>LayerInfoImpl--10f0e3da:19046706e6f:-7ff8</id>
+    </published>
+    <published type="layer">
+      <id>LayerInfoImpl--10f0e3da:19046706e6f:-7ff4</id>
+    </published>
+  </publishables>
+  <styles>
+    <style>
+      <id>StyleInfoImpl--570ae188:124761b8d78:-7fe2</id>
+    </style>
+    <style>
+      <id>StyleInfoImpl--7a3e4111:1905b397b0f:-7a12</id>
+    </style>
+    <style>
+      <id>StyleInfoImpl--7a3e4111:1905b397b0f:-7a14</id>
+    </style>
+  </styles>
+  <bounds>
+    <minx>138262.125</minx>
+    <maxx>204547.109375</maxx>
+    <miny>82792.125</miny>
+    <maxy>218237.328125</maxy>
+    <crs class="projected">EPSG:28191</crs>
+  </bounds>
+  <dateCreated>2024-06-27 21:14:41.152 UTC</dateCreated>
+  <dateModified>2024-09-26 17:59:53.892 UTC</dateModified>
+</layerGroup>

@@ -1,0 +1,16 @@
+<layer>
+  <name>RamallahDEM</name>
+  <id>LayerInfoImpl--7a3e4111:1905b397b0f:-7ff6</id>
+  <type>RASTER</type>
+  <defaultStyle>
+    <id>StyleInfoImpl--570ae188:124761b8d78:-7fe2</id>
+  </defaultStyle>
+  <resource class="coverage">
+    <id>CoverageInfoImpl--7a3e4111:1905b397b0f:-7ff7</id>
+  </resource>
+  <attribution>
+    <logoWidth>0</logoWidth>
+    <logoHeight>0</logoHeight>
+  </attribution>
+  <dateCreated>2024-06-27 19:44:51.908 UTC</dateCreated>
+</layer>

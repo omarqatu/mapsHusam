@@ -1,0 +1,17 @@
+<layer>
+  <name>Community</name>
+  <id>LayerInfoImpl-2147202f:191f1b1f0ff:-7ecf</id>
+  <type>VECTOR</type>
+  <defaultStyle>
+    <id>StyleInfoImpl--570ae188:124761b8d78:-7fe0</id>
+  </defaultStyle>
+  <resource class="featureType">
+    <id>FeatureTypeInfoImpl-2147202f:191f1b1f0ff:-7ed0</id>
+  </resource>
+  <attribution>
+    <logoWidth>0</logoWidth>
+    <logoHeight>0</logoHeight>
+  </attribution>
+  <dateCreated>2024-09-15 18:58:09.350 UTC</dateCreated>
+  <dateModified>2025-07-26 16:20:20.662 UTC</dateModified>
+</layer>

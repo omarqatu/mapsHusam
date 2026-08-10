@@ -1,0 +1,49 @@
+<layerGroup>
+  <id>LayerGroupInfoImpl--215cd709:191767f80d4:-75c3</id>
+  <name>Industry Workers Group</name>
+  <mode>SINGLE</mode>
+  <title>Industry Workers Group</title>
+  <workspace>
+    <id>WorkspaceInfoImpl--215cd709:191767f80d4:-75da</id>
+  </workspace>
+  <internationalTitle/>
+  <internationalAbstract/>
+  <publishables>
+    <published type="layer">
+      <id>LayerInfoImpl--215cd709:191767f80d4:-75c4</id>
+    </published>
+    <published type="layer">
+      <id>LayerInfoImpl--215cd709:191767f80d4:-75cc</id>
+    </published>
+    <published type="layer">
+      <id>LayerInfoImpl--215cd709:191767f80d4:-75be</id>
+    </published>
+  </publishables>
+  <styles>
+    <style>
+      <id>StyleInfoImpl--215cd709:191767f80d4:-75d6</id>
+    </style>
+    <style>
+      <id>StyleInfoImpl--215cd709:191767f80d4:-75d7</id>
+    </style>
+    <style>
+      <id>StyleInfoImpl--215cd709:191767f80d4:-75c2</id>
+    </style>
+  </styles>
+  <bounds>
+    <minx>164680.671875</minx>
+    <maxx>169436.71875</maxx>
+    <miny>143088.1875</miny>
+    <maxy>147052.359375</maxy>
+    <crs class="projected">EPSG:28191</crs>
+  </bounds>
+  <metadata>
+    <entry key="cachingEnabled">false</entry>
+  </metadata>
+  <attribution>
+    <logoWidth>0</logoWidth>
+    <logoHeight>0</logoHeight>
+  </attribution>
+  <dateCreated>2024-09-01 20:47:46.357 UTC</dateCreated>
+  <dateModified>2024-09-09 18:41:47.279 UTC</dateModified>
+</layerGroup>

@@ -1,0 +1,22 @@
+<layer>
+  <name>Blocks_Sectors</name>
+  <id>LayerInfoImpl-19869616:198417eae03:-6cfd</id>
+  <type>VECTOR</type>
+  <defaultStyle>
+    <id>StyleInfoImpl-19869616:198417eae03:-60d6</id>
+  </defaultStyle>
+  <styles class="linked-hash-set">
+    <style>
+      <id>StyleInfoImpl-19869616:198417eae03:-60d6</id>
+    </style>
+  </styles>
+  <resource class="featureType">
+    <id>FeatureTypeInfoImpl-19869616:198417eae03:-6cfe</id>
+  </resource>
+  <attribution>
+    <logoWidth>0</logoWidth>
+    <logoHeight>0</logoHeight>
+  </attribution>
+  <dateCreated>2025-07-25 21:10:33.182 UTC</dateCreated>
+  <dateModified>2025-08-04 18:23:20.606 UTC</dateModified>
+</layer>

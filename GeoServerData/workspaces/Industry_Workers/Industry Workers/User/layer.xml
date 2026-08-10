@@ -1,0 +1,17 @@
+<layer>
+  <name>User</name>
+  <id>LayerInfoImpl--215cd709:191767f80d4:-75c4</id>
+  <type>VECTOR</type>
+  <defaultStyle>
+    <id>StyleInfoImpl--215cd709:191767f80d4:-75d6</id>
+  </defaultStyle>
+  <resource class="featureType">
+    <id>FeatureTypeInfoImpl--215cd709:191767f80d4:-75c5</id>
+  </resource>
+  <attribution>
+    <logoWidth>0</logoWidth>
+    <logoHeight>0</logoHeight>
+  </attribution>
+  <dateCreated>2024-09-01 20:45:01.8 UTC</dateCreated>
+  <dateModified>2024-09-04 19:23:25.8 UTC</dateModified>
+</layer>

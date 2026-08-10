@@ -1,0 +1,17 @@
+<layer>
+  <name>Building_WestBank</name>
+  <id>LayerInfoImpl--10f0e3da:19046706e6f:-7ff8</id>
+  <type>VECTOR</type>
+  <defaultStyle>
+    <id>StyleInfoImpl--7a3e4111:1905b397b0f:-7a12</id>
+  </defaultStyle>
+  <resource class="featureType">
+    <id>FeatureTypeInfoImpl--10f0e3da:19046706e6f:-7ff9</id>
+  </resource>
+  <attribution>
+    <logoWidth>0</logoWidth>
+    <logoHeight>0</logoHeight>
+  </attribution>
+  <dateCreated>2024-06-23 19:42:29.298 UTC</dateCreated>
+  <dateModified>2024-09-09 18:38:31.249 UTC</dateModified>
+</layer>

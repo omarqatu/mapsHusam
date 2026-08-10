@@ -1,0 +1,40 @@
+<settings>
+  <id>SettingsInfoImpl--10f0e3da:19046706e6f:-8000</id>
+  <workspace>
+    <id>WorkspaceInfoImpl--7d77be0e:18fca97b9ad:-8000</id>
+    <name>SurdaAbuQash</name>
+    <isolated>false</isolated>
+    <dateCreated>2024-05-30 17:41:32.188 UTC</dateCreated>
+    <dateModified>2024-06-23 18:51:31.692 UTC</dateModified>
+  </workspace>
+  <contact>
+    <id>contact</id>
+    <addressCity>Alexandria</addressCity>
+    <addressCountry>Roman Empire</addressCountry>
+    <addressState>Egypt</addressState>
+    <addressType>Work</addressType>
+    <contactEmail>claudius.ptolomaeus@mercury.olympus.gov</contactEmail>
+    <contactOrganization>OSGeo</contactOrganization>
+    <contactPerson>Claudius Ptolomaeus</contactPerson>
+    <contactPosition>Chief Geographer</contactPosition>
+    <onlineResource>https://www.osgeo.org/</onlineResource>
+    <welcome>Designed for interoperability, GeoServer publishes data from any major spatial data source using open standards.</welcome>
+  </contact>
+  <charset>UTF-8</charset>
+  <numDecimals>8</numDecimals>
+  <onlineResource>http://geoserver.org</onlineResource>
+  <verbose>false</verbose>
+  <verboseExceptions>false</verboseExceptions>
+  <metadata>
+    <map>
+      <entry>
+        <string>quietOnNotFound</string>
+        <boolean>false</boolean>
+      </entry>
+    </map>
+  </metadata>
+  <localWorkspaceIncludesPrefix>false</localWorkspaceIncludesPrefix>
+  <showCreatedTimeColumnsInAdminList>false</showCreatedTimeColumnsInAdminList>
+  <showModifiedTimeColumnsInAdminList>false</showModifiedTimeColumnsInAdminList>
+  <useHeadersProxyURL>false</useHeadersProxyURL>
+</settings>
