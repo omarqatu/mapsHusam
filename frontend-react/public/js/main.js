@@ -183,6 +183,13 @@ window.initMapPlatform = function () {
     const baseKeys = ['aerialLayer', 'osmBaseLayer', 'esriImageryLayer', 'noBasemapLayer'];
     const mapLayersArray = [];
 
+    // ضمان أن طبقات التمييز والحركة الحية تم تضمينها في object التطبيق العام
+    if (window.appLayers) {
+        window.appLayers.searchResultsHighlightLayer = window.searchResultsHighlightLayer;
+        window.appLayers.providerFlyToLayer = window.providerFlyToLayer;
+        window.appLayers.userLiveLocationLayer = window.userLiveLocationLayer;
+    }
+
     // --- 1. إعداد الطبقات وتصنيفها ---
     Object.keys(layers).forEach(key => {
         const lyr = layers[key];
@@ -205,11 +212,6 @@ window.initMapPlatform = function () {
             mapLayersArray.push(lyr);
         }
     });
-
-    // إضافة طبقة التمييز لمصفوفة الطبقات قبل إنشاء الخريطة
-    mapLayersArray.push(window.searchResultsHighlightLayer);
-    mapLayersArray.push(window.providerFlyToLayer);
-    mapLayersArray.push(window.userLiveLocationLayer);
 
     // الإحداثيات الافتراضية للموقع الرئيسي للمنصة (المركز والزووم الافتراضي)
     let defaultCenter = [169463.41, 145767.99];
