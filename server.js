@@ -17,7 +17,6 @@ import { Server } from 'socket.io';
 import bcrypt from 'bcrypt';
 import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
-import xssClean from 'xss-clean';
 
 // تعريف __dirname لـ ES modules
 const __filename = fileURLToPath(import.meta.url);
@@ -25,6 +24,7 @@ const __dirname = path.dirname(__filename);
 
 const BCRYPT_SALT_ROUNDS = 10;
 const BCRYPT_HASH_REGEX = /^\$2[aby]\$\d{2}\$/;
+const REAL_ESTATE_LAYERS = ['ApartRent', 'ApartSale', 'LandSale', 'Location', 'RoadsTest'];
 
 // =========================================================================
 // 🆕 [ترحيل آمن لكلمات المرور]: الحسابات القديمة محفوظة بكلمة مرور نصية
@@ -296,8 +296,7 @@ ensureServiceRequestSchema();
 
 // دالة مسارة لاختيار الاتصال المناسب حسب الطبقة
 function getPoolForLayer(layerName) {
-    const realEstateLayers = ['ApartRent', 'ApartSale', 'LandSale', 'Location', 'RoadsTest'];
-    if (realEstateLayers.includes(layerName)) {
+    if (REAL_ESTATE_LAYERS.includes(layerName)) {
         return realestatePool;
     }
     return servicesPool;
@@ -308,8 +307,9 @@ app.use(cors({
     origin: corsOriginCheck,
     credentials: true
 }));
-app.use(express.json()); 
+app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+app.use(express.text({ type: ['application/xml', 'text/xml', 'application/vnd.ogc.wfs-transaction+xml'], limit: '10mb' }));
 
 // ميدل وير لمصادفة أخطاء JSON: يرجع استجابة JSON بدلاً من صفحة HTML إذا كان جسم الطلب غير صالح
 app.use((err, req, res, next) => {
@@ -605,8 +605,7 @@ app.post('/api/update-service-status', async (req, res) => {
     const parsedYCoord = y_coord ? Number(y_coord) : null;
 
     // مصفوفة طبقات العقارات لتحديد السلوك برمجياً
-    const realEstateLayers = ['ApartRent', 'ApartSale', 'LandSale', 'Location', 'RoadsTest'];
-    const isRealEstate = realEstateLayers.includes(layerName);
+    const isRealEstate = REAL_ESTATE_LAYERS.includes(layerName);
 
     try {
         const targetPool = getPoolForLayer(layerName);
@@ -1236,7 +1235,7 @@ app.get('/api/search-features', async (req, res) => {
         }
 
         const targetPool = workspace === 'realestate' ? realestatePool : servicesPool;
-        const isRealEstate = ['ApartRent', 'ApartSale', 'LandSale', 'Location', 'RoadsTest'].includes(layer);
+        const isRealEstate = REAL_ESTATE_LAYERS.includes(layer);
         const isPolygonLayer = layer === 'LandSale'; // الأراضي هي مضلعات
 
         // بناء استعلام البحث مع فلترة status = 0 AND auto_status = 0
@@ -2559,7 +2558,7 @@ app.get('/api/service-requests/pending-ratings', async (req, res) => {
 });
 
 // 7) إحصائية عدد عمليات النجاح لكل مزود خدمة
-app.get('/api/admin/provider-success-stats', async (req, res) => {
+app.get('/api/admin/provider-success-stats', requireAdmin, async (req, res) => {
     try {
         const result = await servicesPool.query(`
             SELECT sr.*, 
@@ -2578,26 +2577,10 @@ app.get('/api/admin/provider-success-stats', async (req, res) => {
 });
 
 // 7.1) حذف سجل طلب خدمة (للمشرف فقط)
-app.delete('/api/admin/provider-success-stats/:id', async (req, res) => {
+app.delete('/api/admin/provider-success-stats/:id', requireAdmin, async (req, res) => {
     const { id } = req.params;
-    const adminUserId = req.headers['x-admin-user-id'];
-
-    if (!adminUserId) {
-        return res.status(403).json({ success: false, error: 'يجب تسجيل الدخول كمشرف' });
-    }
 
     try {
-        // التحقق من أن المستخدم مشرف
-        const userResult = await servicesPool.query(
-            'SELECT role FROM public.users WHERE user_id = $1',
-            [adminUserId]
-        );
-
-        if (userResult.rows.length === 0 || userResult.rows[0].role !== 'admin') {
-            return res.status(403).json({ success: false, error: 'غير مصرح: فقط المشرف يمكنه حذف السجلات' });
-        }
-
-        // حذف السجل
         await servicesPool.query(
             'DELETE FROM public.service_requests WHERE id = $1',
             [id]
@@ -2647,7 +2630,24 @@ app.use('/api', (req, res) => {
 });
 
 // 9. تقديم الملفات الثابتة
-app.use(express.static(path.join(__dirname)));
+app.use((req, res, next) => {
+    const forbiddenPatterns = [
+        /^\/server\.js$/i,
+        /^\/package(?:-lock)?\.json$/i,
+        /^\/\.env/i,
+        /^\/\.git(?:\/|$)/i,
+        /^\/node_modules(?:\/|$)/i,
+        /^\/database(?:\/|$)/i,
+        /^\/docs(?:\/|$)/i,
+        /^\/GeoServerData(?:\/|$)/i,
+        /^\/tools(?:\/|$)/i
+    ];
+    if (forbiddenPatterns.some((re) => re.test(req.path))) {
+        return res.status(404).end();
+    }
+    next();
+});
+app.use(express.static(path.join(__dirname), { dotfiles: 'ignore', index: false, redirect: false }));
 
 app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'index.html'));
