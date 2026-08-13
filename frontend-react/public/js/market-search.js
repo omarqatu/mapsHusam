@@ -85,7 +85,14 @@ document.addEventListener('DOMContentLoaded', () => {
                 'motorcycle_delivery_on_call': 'دليفري دراجات (مناوبة)',
                 'bicycle_delivery_on_call': 'دليفري هوائية (مناوبة)',
                 'photographers': 'مصور فوتوغرافي',
-                'student_research_assist': 'مساعد أبحاث طلاب'
+                'student_research_assist': 'مساعد أبحاث طلاب',
+
+                'supermarket': 'سوبرماركت',
+                'commercial_shops': 'محلات تجارية',
+                'restaurants': 'مطاعم',
+                'schools_kindergartens': 'مدارس ورياض أطفال',
+                'job_vacancies': 'وظائف شاغرة',
+                'city_landmarks': 'معالم المدينة'
             }
         }
     };
@@ -442,7 +449,14 @@ if (typeof window.englishToArabicLayerMap !== 'object') {
         'car_delivery_on_call': 'دليفري سيارات (مناوبة)',
         'motorcycle_delivery_on_call': 'دليفري دراجات (مناوبة)',
         'bicycle_delivery_on_call': 'دليفري هوائية (مناوبة)',
-        'student_research_assist': 'مساعد أبحاث طلاب'
+        'student_research_assist': 'مساعد أبحاث طلاب',
+
+        'supermarket': 'سوبرماركت',
+        'commercial_shops': 'محلات تجارية',
+        'restaurants': 'مطاعم',
+        'schools_kindergartens': 'مدارس ورياض أطفال',
+        'job_vacancies': 'وظائف شاغرة',
+        'city_landmarks': 'معالم المدينة'
     };
 }
 

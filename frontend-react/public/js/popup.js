@@ -87,7 +87,15 @@ const arabicToEnglishLayerMap = {
     'دليفري سيارات (مناوبة)': 'car_delivery_on_call',
     'دليفري دراجات (مناوبة)': 'motorcycle_delivery_on_call',
     'دليفري هوائية (مناوبة)': 'bicycle_delivery_on_call',
-    'مساعد أبحاث طلاب': 'student_research_assist'
+    'مساعد أبحاث طلاب': 'student_research_assist',
+
+    'سوبرماركت': 'supermarket',
+    'محلات تجارية': 'commercial_shops',
+    'مطاعم': 'restaurants',
+    'مدارس ورياض أطفال': 'schools_kindergartens',
+    'وظائف شاغرة': 'job_vacancies',
+    'معالم المدينة': 'city_landmarks'
+    
 };
 
 // دالة جلب التقييمات لمزود خدمة معين
@@ -231,8 +239,10 @@ function initializePopup(map) {
         'صيدليات مناوبة', 'تكاسي نظام مناوبة', 'طوارئ ومستشفيات', 'عيادات', 
         'دكاترة مناوبة', 'إسعاف مناوبة', 'تدريب موسيقى ومعاهد', 'محاميين', 
         'مساحين أراضي', 'مخمنين عقاريين', 'أساتذة خصوصي', 'مبرمجين', 
-        'دليفري سيارات (مناوبة)', 'دليفري دراجات (مناوبة)', 'دليفري هوائية (مناوبة)', 
-         'مساعد أبحاث طلاب'
+        'دليفري سيارات (مناوبة)', 'دليفري دراجات (مناوبة)', 'دليفري هوائية (مناوبة)',
+         'مساعد أبحاث طلاب',
+         
+        'سوبرماركت', 'محلات تجارية', 'مطاعم', 'مدارس ورياض أطفال', 'وظائف شاغرة', 'معالم المدينة'
     ];
 
     const realEstateLayerNames = ['شقق الإيجار', 'شقق للبيع', 'الأراضي للبيع'];
@@ -760,38 +770,16 @@ document.addEventListener('DOMContentLoaded', function () {
             const baseUrl = window.MAP_CONFIG?.server?.proxyUrl || (window.location.origin + "/");
             let allTargets = [];
 
-            // 1. جمع طبقات العقارات مع تسميات واضحة بناءً على MAP_CONFIG
-            if (window.MAP_CONFIG && window.MAP_CONFIG.layers && window.MAP_CONFIG.layers.realestate) {
-                window.MAP_CONFIG.layers.realestate.forEach(l => {
-                    // التحقق من الاستثناءات العالمية لتخطي الطبقات المستبعدة
-                    if (window.MAP_CONFIG.globalExclusions && window.MAP_CONFIG.globalExclusions.includes(l.id)) return;
-                    
-                    let displayName = l.title || l.name;
-                    if (l.name === 'ApartSale') displayName = 'شقق للبيع';
-                    else if (l.name === 'ApartRent') displayName = 'شقق للإيجار';
-                    else if (l.name === 'LandSale') displayName = 'أراضي للبيع';
-                    
-                    allTargets.push({ layer: l.name, workspace: l.workspace || 'realestate', label: displayName });
-                });
-            } else {
-                allTargets.push(
-                    { layer: 'ApartSale', workspace: 'realestate', label: 'شقق للبيع' },
-                    { layer: 'ApartRent', workspace: 'realestate', label: 'شقق للإيجار' },
-                    { layer: 'LandSale', workspace: 'realestate', label: 'أراضي للبيع' }
-                );
-            }
-
-            // 2. جمع طبقات الخدمات الـ 59 مع استثناء الغير محددة في globalExclusions
-            if (window.serviceTranslations) {
-                Object.keys(window.serviceTranslations).forEach(serviceKey => {
-                    if (window.MAP_CONFIG && window.MAP_CONFIG.globalExclusions && window.MAP_CONFIG.globalExclusions.includes(serviceKey)) return;
-
-                    const sObj = window.serviceTranslations[serviceKey];
-                    const translatedLabel = (typeof sObj === 'object' && sObj !== null) ? (sObj.name || serviceKey) : sObj;
-                    
-                    allTargets.push({ layer: serviceKey, workspace: 'services', label: translatedLabel });
-                });
-            }
+            // 1. استخدام الطبقات الجديدة الستة فقط في البوب أب
+            const newLayers = [
+                { layer: 'supermarket', workspace: 'services', label: 'سوبرماركت' },
+                { layer: 'commercial_shops', workspace: 'services', label: 'محلات تجارية' },
+                { layer: 'restaurants', workspace: 'services', label: 'مطاعم' },
+                { layer: 'schools_kindergartens', workspace: 'services', label: 'مدارس ورياض أطفال' },
+                { layer: 'job_vacancies', workspace: 'services', label: 'وظائف شاغرة' },
+                { layer: 'city_landmarks', workspace: 'services', label: 'معالم المدينة' }
+            ];
+            allTargets.push(...newLayers);
 
             // 3. جلب البيانات على دفعات لتحسين الأداء
             const batchSize = 10;
@@ -817,25 +805,18 @@ document.addEventListener('DOMContentLoaded', function () {
                         
                         return features.map(rawFeat => {
                             const props = rawFeat.properties || rawFeat;
-                            const titleText = props.name || props.title || props.service_name || '';
-                            const locationText = props.location || props.village_a || props.address || '';
+                            const titleText = props.name || props.title || '';
+                            const locationText = props.city || props.location || '';
                             
                             return `
-                                <div style="background: #fff; border: 2px solid #fbc02d; border-radius: 8px; padding: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); box-sizing: border-box; text-align: right; direction: rtl; width: 100%;">
-                                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
-                                        <span style="background: #fbc02d; color: #000; font-size: 9px; padding: 2px 5px; border-radius: 4px; font-weight: bold;">
-                                            ⭐ مميز
-                                        </span>
-                                        <span style="background: #e8f0fe; color: #1a73e8; font-size: 10px; padding: 2px 6px; border-radius: 4px; font-weight: bold;">
+                                <div style="background: #fff; border: 1px solid #e0e0e0; border-radius: 8px; padding: 10px; margin-bottom: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+                                    <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">
+                                        <span style="background: #e3f2fd; color: #1976d2; padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: bold;">
                                             📌 ${item.label}
                                         </span>
                                     </div>
                                     ${titleText ? `<div style="font-weight: bold; color: #202124; font-size: 12px; margin-bottom: 4px; word-break: break-word;">${titleText}</div>` : ''}
                                     ${locationText ? `<div style="color: #555; font-size: 11px; margin-bottom: 3px; word-break: break-word;">📍 ${locationText}</div>` : ''}
-                                    ${props.price ? `<div style="color: #2e7d32; font-weight: bold; font-size: 11px; margin-bottom: 3px;">💰 ${Number(props.price).toLocaleString()} ${props.currency || ''}</div>` : ''}
-                                    ${props.phone || props.whatsapp ? `<div style="color: #d32f2f; font-weight: bold; font-size: 11px; margin-bottom: 3px;">📞 ${props.phone || props.whatsapp}</div>` : ''}
-                                    ${props.area ? `<div style="color: #666; font-size: 10px;">📐 ${props.area} م²</div>` : ''}
-                                </div>
                             `;
                         });
                     } catch (err) {
@@ -879,31 +860,25 @@ document.addEventListener('DOMContentLoaded', function () {
 
             if (space.classList.contains('nms-ad-bottom')) {
                 // المساحة السفلية (أفقية)
-                space.style.cssText += `
-                    display: flex;
-                    flex-direction: row;
-                    justify-content: space-between;
-                    gap: 15px;
-                    overflow-x: auto;
-                    overflow-y: hidden;
-                    padding: 10px;
-                    box-sizing: border-box;
-                    width: 100%;
-                `;
+                space.style.display = 'flex';
+                space.style.flexWrap = 'wrap';
+                space.style.gap = '10px';
+                space.style.justifyContent = 'center';
+                space.style.alignItems = 'stretch';
+                space.style.width = '100%';
+                space.style.minHeight = '100%';
+                space.style.boxSizing = 'border-box';
                 const styledCards = selectedCards.map(card => card.replace('width: 100%;', 'width: 24%; min-width: 240px;'));
                 space.innerHTML = styledCards.join('');
             } else {
                 // المساحات الجانبية (يمين ويسار): عمودية مع تباعد باستخدام gap لضمان المسافات
-                space.style.cssText += `
-                    display: flex;
-                    flex-direction: column;
-                    justify-content: flex-start;
-                    gap: 12px;
-                    height: 100%;
-                    min-height: 100%;
-                    box-sizing: border-box;
-                    padding: 10px 0;
-                `;
+                space.style.display = 'flex';
+                space.style.flexDirection = 'column';
+                space.style.gap = '10px';
+                space.style.width = '100%';
+                space.style.minHeight = '100%';
+                space.style.boxSizing = 'border-box';
+                space.style.padding = '10px 0';
                 space.innerHTML = selectedCards.join('');
             }
         });

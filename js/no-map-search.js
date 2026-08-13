@@ -137,8 +137,11 @@ window.__nmsPageHandlesOwnAds = true;
             'music_training': 'fa-music', 'lawyers': 'fa-gavel', 'land_surveyors': 'fa-ruler-combined',
             'real_estate_valuers': 'fa-calculator', 'private_tutors': 'fa-chalkboard-teacher', 'programmers': 'fa-code',
             'car_delivery_on_call': 'fa-car', 'motorcycle_delivery_on_call': 'fa-motorcycle',
-            'bicycle_delivery_on_call': 'fa-bicycle', 
-            'student_research_assist': 'fa-book'
+            'bicycle_delivery_on_call': 'fa-bicycle',
+            'student_research_assist': 'fa-book',
+            // --- الطبقات الجديدة (6) ---
+            'supermarket': 'fa-store', 'commercial_shops': 'fa-shop', 'restaurants': 'fa-utensils',
+            'schools_kindergartens': 'fa-school', 'job_vacancies': 'fa-briefcase', 'city_landmarks': 'fa-landmark'
         };
 
         const serviceNames = {
@@ -161,7 +164,10 @@ window.__nmsPageHandlesOwnAds = true;
             'lawyers': 'محاميين', 'land_surveyors': 'مساحين أراضي', 'real_estate_valuers': 'مخمنين عقاريين',
             'private_tutors': 'أساتذة خصوصي', 'programmers': 'مبرمجين', 'car_delivery_on_call': 'دليفري سيارات (مناوبة)',
             'motorcycle_delivery_on_call': 'دليفري دراجات (مناوبة)', 'bicycle_delivery_on_call': 'دليفري هوائية (مناوبة)',
-            'student_research_assist': 'مساعد أبحاث طلاب'
+            'student_research_assist': 'مساعد أبحاث طلاب',
+            // --- الطبقات الجديدة (6) ---
+            'supermarket': 'سوبرماركت', 'commercial_shops': 'محلات تجارية', 'restaurants': 'مطاعم',
+            'schools_kindergartens': 'مدارس ورياض أطفال', 'job_vacancies': 'وظائف شاغرة', 'city_landmarks': 'معالم المدينة'
         };
 
         const globalExclusions = [];
@@ -178,7 +184,12 @@ window.__nmsPageHandlesOwnAds = true;
             { id: 'vehicles',     title: 'المركبات والتوصيل',      icon: 'fa-car' },
             { id: 'professional', title: 'المهن الحرة والخصوصي',    icon: 'fa-user-tie' },
             { id: 'events',       title: 'مناسبات وضيافة وترفيه',   icon: 'fa-champagne-glasses' },
-            { id: 'misc',         title: 'متفرقات',                icon: 'fa-ellipsis' }
+            { id: 'misc',         title: 'متفرقات',                icon: 'fa-ellipsis' },
+            // --- الفروع الجديدة (4) ---
+            { id: 'landmarks',    title: 'معالم المدينة',          icon: 'fa-landmark' },
+            { id: 'commercial',    title: 'محلات تجارية ومطاعم',    icon: 'fa-store' },
+            { id: 'education',    title: 'مدارس ورياض أطفال',      icon: 'fa-school' },
+            { id: 'jobs',         title: 'وظائف شاغرة',            icon: 'fa-briefcase' }
         ];
 
         // خريطة تصنيف كل خدمة (المفتاح البرمجي كما في serviceNames) إلى الفرع المناسب
@@ -216,7 +227,11 @@ window.__nmsPageHandlesOwnAds = true;
             photographers: 'events',
 
             // 📦 متفرقات
-            online_stores: 'misc', free_distribution: 'misc'
+            online_stores: 'misc', free_distribution: 'misc',
+
+            // --- الطبقات الجديدة (6) ---
+            supermarket: 'commercial', commercial_shops: 'commercial', restaurants: 'commercial',
+            schools_kindergartens: 'education', job_vacancies: 'jobs', city_landmarks: 'landmarks'
         };
 
         const categories = [
@@ -295,8 +310,19 @@ window.__nmsPageHandlesOwnAds = true;
                     activeGroup = g.id;
                     groupsTabsEl.querySelectorAll('.nms-group-tab').forEach(t => t.classList.remove('active'));
                     tab.classList.add('active');
-                    renderCategoriesGrid(activeGroup);
-                    categoriesGrid.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+
+                    // التحقق من عدد الطبقات في الفرع
+                    const categoriesInGroup = categories.filter(c => c.group === g.id);
+
+                    // إذا كان الفرع يحتوي على طبقة واحدة فقط، عرض المعالم مباشرة
+                    if (categoriesInGroup.length === 1 && g.id !== 'all') {
+                        const singleCategory = categoriesInGroup[0];
+                        openCategory(singleCategory);
+                    } else {
+                        // عرض الفئات الفرعية للفروع التي تحتوي على أكثر من طبقة
+                        renderCategoriesGrid(activeGroup);
+                        categoriesGrid.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                    }
                 };
                 groupsTabsEl.appendChild(tab);
             });
@@ -515,169 +541,317 @@ window.__nmsPageHandlesOwnAds = true;
         // 3) الفلاتر
         // ==========================================================================
         let currentCategory = null;
-        let conditions = [];
+        let allFieldValues = {}; // تخزين جميع القيم لكل حقل للفلترة المحلية
 
         const fallbackFieldsConfig = {
             realEstate: [
-                { id: 'village_a', name: 'المدينة/القرية', type: 'dropdown' },
                 { id: 'gov_a', name: 'المحافظة', type: 'dropdown' },
-                { id: 'location', name: 'الموقع', type: 'text' },
+                { id: 'village_a', name: 'المدينة/القرية', type: 'dropdown' },
+                { id: 'location', name: 'الموقع', type: 'dropdown' },
                 { id: 'price', name: 'السعر', type: 'number' },
                 { id: 'area', name: 'المساحة', type: 'number' }
             ],
             services: [
-                { id: 'village_a', name: 'المدينة/القرية', type: 'dropdown' },
                 { id: 'gov_a', name: 'المحافظة', type: 'dropdown' },
-                { id: 'location_name', name: 'الموقع', type: 'text' },
-                { id: 'name', name: 'الاسم', type: 'text' }
+                { id: 'village_a', name: 'المدينة/القرية', type: 'dropdown' },
+                { id: 'location_name', name: 'الموقع', type: 'dropdown' },
+                { id: 'name', name: 'الاسم', type: 'dropdown' }
             ]
         };
 
         const fieldsConfig = window.searchFieldsConfig || fallbackFieldsConfig;
 
-        const fieldSelect = document.getElementById('nms-field-select');
-        const operatorSelect = document.getElementById('nms-operator-select');
-        const valueContainer = document.getElementById('nms-value-container');
-        const addConditionBtn = document.getElementById('nms-add-condition');
-        const conditionsList = document.getElementById('nms-conditions-list');
-        const runSearchBtn = document.getElementById('nms-run-search');
+        const filtersGrid = document.getElementById('nms-filters-grid');
         const clearSearchBtn = document.getElementById('nms-clear-search');
         const resultsCountEl = document.getElementById('nms-results-count');
         const resultsListEl = document.getElementById('nms-results-list');
 
         function openCategory(cat) {
             currentCategory = cat;
-            conditions = [];
+            allFieldValues = {}; // إعادة تعيين القيم المخزنة
             categoriesView.classList.add('hidden');
             resultsView.classList.remove('hidden');
             categoryTitleEl.innerHTML = `<i class="fas ${cat.icon}"></i> ${cat.title}`;
 
             const fields = cat.isRealEstate ? fieldsConfig.realEstate : fieldsConfig.services;
-            fieldSelect.innerHTML = fields.map(f => `<option value="${f.id}">${f.name}</option>`).join('');
-            renderConditions();
-            updateValueUI();
+            renderFiltersGrid(fields);
             executeSearch();
             window.scrollTo({ top: 0, behavior: 'smooth' });
         }
 
-        fieldSelect.onchange = updateValueUI;
-
-        function updateValueUI() {
-            valueContainer.innerHTML = '<div class="nms-value-loading">جاري تحميل القيم...</div>';
-            const fieldId = fieldSelect.value;
+        function renderFiltersGrid(fields) {
+            filtersGrid.innerHTML = '';
             const { workspace, layerName } = getWorkspaceAndName(currentCategory.key);
 
-            fetch(`${baseUrl}api/get-unique-values?${new URLSearchParams({ layer: layerName, workspace, field: fieldId })}`)
-                .then(res => res.json())
-                .then(data => renderValueSelect((data.success && data.values) ? data.values.sort() : []))
-                .catch(() => renderValueSelect([]));
-        }
+            fields.forEach((field, index) => {
+                const filterItem = document.createElement('div');
+                filterItem.className = 'nms-filter-item';
 
-        // 🆕 دالة موحّدة لإضافة قائمة اختيار العملة بجانب حقل قيمة السعر
-        function appendCurrencySelector(container) {
-            const wrap = document.createElement('div');
-            wrap.style.marginTop = '8px';
+                const label = document.createElement('label');
+                label.textContent = field.name;
+                filterItem.appendChild(label);
 
-            const label = document.createElement('div');
-            label.textContent = 'العملة:';
-            label.style.cssText = 'font-size:12px; font-weight:bold; color:#555; margin-bottom:4px;';
+                if (field.type === 'dropdown') {
+                    const select = document.createElement('select');
+                    select.dataset.fieldId = field.id;
+                    select.dataset.fieldIndex = index;
+                    select.innerHTML = '<option value="">الكل</option>';
 
-            const currencySelect = document.createElement('select');
-            currencySelect.id = 'nms-price-currency-select';
-            Object.assign(currencySelect.style, {
-                width: "100%", padding: "10px", border: "1px solid #ccc",
-                borderRadius: "4px", backgroundColor: "#fff", fontSize: "14px"
-            });
-            currencySelect.innerHTML = `
-                <option value="">كل العملات</option>
-                <option value="USD">دولار $</option>
-                <option value="ILS">شيكل ₪</option>
-                <option value="JOD">دينار د.أ</option>
-            `;
+                    // جلب القيم المتاحة مع الفلاتر الحالية
+                    updateDropdownValues(select, field.id, layerName, workspace);
 
-            wrap.appendChild(label);
-            wrap.appendChild(currencySelect);
-            container.appendChild(wrap);
-        }
+                    // عند تغيير القيمة، تحديث القوائم التالية وتنفيذ البحث
+                    select.addEventListener('change', () => {
+                        updateDependentDropdowns(index);
+                        executeSearch();
+                    });
 
-        function renderValueSelect(values) {
-            valueContainer.innerHTML = '';
-            const select = document.createElement('select');
-            select.id = 'nms-value-select';
-            select.innerHTML = '<option value="">-- اختر قيمة --</option>' +
-                '<option value="__custom__">✏️ قيمة مخصصة (اكتب)</option>' +
-                values.map(v => `<option value="${v}">${v}</option>`).join('');
-            select.onchange = () => {
-                if (select.value === '__custom__') {
-                    valueContainer.innerHTML = '';
+                    filterItem.appendChild(select);
+                } else if (field.id === 'price') {
+                    // حقل السعر مع اختيار العملة والمقارنة
+                    const priceContainer = document.createElement('div');
+                    priceContainer.style.display = 'flex';
+                    priceContainer.style.gap = '5px';
+                    priceContainer.style.flexWrap = 'wrap';
+
+                    const currencySelect = document.createElement('select');
+                    currencySelect.dataset.fieldId = 'currency';
+                    currencySelect.innerHTML = `
+                        <option value="">العملة</option>
+                        <option value="USD">دولار ($)</option>
+                        <option value="ILS">شيكل (₪)</option>
+                        <option value="JOD">دينار (د.أ)</option>
+                    `;
+                    currencySelect.style.flex = '1';
+                    currencySelect.addEventListener('change', debounce(() => executeSearch(), 300));
+
+                    const operatorSelect = document.createElement('select');
+                    operatorSelect.dataset.fieldId = `${field.id}_operator`;
+                    operatorSelect.innerHTML = `
+                        <option value="<">أقل من أو يساوي</option>
+                        <option value=">">أكبر من أو يساوي</option>
+                    `;
+                    operatorSelect.style.flex = '1';
+                    operatorSelect.addEventListener('change', debounce(() => executeSearch(), 300));
+
+                    const priceInput = document.createElement('input');
+                    priceInput.type = 'number';
+                    priceInput.dataset.fieldId = field.id;
+                    priceInput.placeholder = 'القيمة';
+                    priceInput.style.flex = '1';
+                    priceInput.addEventListener('input', debounce(() => executeSearch(), 300));
+
+                    priceContainer.appendChild(currencySelect);
+                    priceContainer.appendChild(operatorSelect);
+                    priceContainer.appendChild(priceInput);
+                    filterItem.appendChild(priceContainer);
+                } else if (field.id === 'area') {
+                    // حقل المساحة بالمتر المربع مع خيار المقارنة
+                    const areaContainer = document.createElement('div');
+                    areaContainer.style.display = 'flex';
+                    areaContainer.style.gap = '5px';
+
+                    const operatorSelect = document.createElement('select');
+                    operatorSelect.dataset.fieldId = `${field.id}_operator`;
+                    operatorSelect.innerHTML = `
+                        <option value="<">أقل من أو يساوي</option>
+                        <option value=">">أكبر من أو يساوي</option>
+                    `;
+                    operatorSelect.style.flex = '1';
+                    operatorSelect.addEventListener('change', debounce(() => executeSearch(), 300));
+
+                    const areaInput = document.createElement('input');
+                    areaInput.type = 'number';
+                    areaInput.dataset.fieldId = field.id;
+                    areaInput.placeholder = 'المساحة (م²)';
+                    areaInput.min = '0';
+                    areaInput.step = '1';
+                    areaInput.style.flex = '2';
+                    areaInput.addEventListener('input', debounce(() => executeSearch(), 300));
+
+                    areaContainer.appendChild(operatorSelect);
+                    areaContainer.appendChild(areaInput);
+                    filterItem.appendChild(areaContainer);
+                } else if (field.type === 'text') {
                     const input = document.createElement('input');
                     input.type = 'text';
-                    input.id = 'nms-value-select';
-                    input.placeholder = 'اكتب القيمة هنا...';
-                    valueContainer.appendChild(input);
+                    input.dataset.fieldId = field.id;
+                    input.placeholder = field.name;
+                    input.addEventListener('input', debounce(() => executeSearch(), 300));
+                    filterItem.appendChild(input);
+                } else if (field.type === 'number') {
+                    const input = document.createElement('input');
+                    input.type = 'number';
+                    input.dataset.fieldId = field.id;
+                    input.placeholder = field.name;
+                    input.addEventListener('input', debounce(() => executeSearch(), 300));
+                    filterItem.appendChild(input);
+                }
 
-                    if (fieldSelect && fieldSelect.value === 'price') {
-                        appendCurrencySelector(valueContainer);
+                filtersGrid.appendChild(filterItem);
+            });
+        }
+
+        function updateDropdownValues(select, fieldId, layerName, workspace) {
+            // للمواقع والأسماء: استخدام الفلترة المحلية
+            if (fieldId === 'location' || fieldId === 'location_name' || fieldId === 'name') {
+                filterDropdownLocally(select, fieldId);
+                return;
+            }
+
+            // للمحافظة والمدن: استخدام السيرفر
+            const params = new URLSearchParams({ layer: layerName, workspace, field: fieldId });
+
+            // إضافة الفلاتر فقط من القوائم السابقة التي تم اختيارها (ليست فارغة)
+            const filterItems = filtersGrid.querySelectorAll('.nms-filter-item');
+            filterItems.forEach(item => {
+                const currentSelect = item.querySelector('select');
+                if (currentSelect && currentSelect.value && currentSelect.dataset.fieldId !== fieldId) {
+                    params.append(`filter_${currentSelect.dataset.fieldId}`, currentSelect.value);
+                }
+            });
+
+            fetch(`${baseUrl}api/get-unique-values?${params.toString()}`)
+                .then(res => res.json())
+                .then(data => {
+                    const currentValue = select.value;
+                    select.innerHTML = '<option value="">الكل</option>';
+
+                    if (data.success && data.values && data.values.length > 0) {
+                        data.values.sort().forEach(value => {
+                            const option = document.createElement('option');
+                            option.value = value;
+                            option.textContent = value;
+                            select.appendChild(option);
+                        });
+                        select.value = currentValue;
+
+                        // تخزين القيم للفلترة المحلية
+                        allFieldValues[fieldId] = data.values;
+                    } else {
+                        const option = document.createElement('option');
+                        option.value = '';
+                        option.textContent = 'لا توجد قيم';
+                        option.disabled = true;
+                        select.appendChild(option);
+                    }
+                })
+                .catch(() => {
+                    const option = document.createElement('option');
+                    option.value = '';
+                    option.textContent = 'خطأ في جلب البيانات';
+                    option.disabled = true;
+                    select.appendChild(option);
+                });
+        }
+
+        function filterDropdownLocally(select, fieldId) {
+            const currentValue = select.value;
+            select.innerHTML = '<option value="">الكل</option>';
+
+            // جلب القيم المخزنة أو جلبها من السيرفر إذا لم تكن موجودة
+            if (!allFieldValues[fieldId]) {
+                const { workspace, layerName } = getWorkspaceAndName(currentCategory.key);
+                fetch(`${baseUrl}api/get-unique-values?layer=${layerName}&workspace=${workspace}&field=${fieldId}`)
+                    .then(res => res.json())
+                    .then(data => {
+                        if (data.success && data.values) {
+                            allFieldValues[fieldId] = data.values;
+                            filterDropdownLocally(select, fieldId);
+                        }
+                    });
+                return;
+            }
+
+            const values = allFieldValues[fieldId];
+            const govValue = getFilterValue('gov_a');
+            const villageValue = getFilterValue('village_a');
+
+            // فلترة القيم بناءً على المحافظة والمدينة
+            const filteredValues = values.filter(value => {
+                // إذا لم يتم اختيار محافظة أو مدينة، عرض كل القيم
+                if (!govValue && !villageValue) return true;
+
+                // فلترة بناءً على المحافظة
+                if (govValue && value.includes(govValue.replace('محافظة ', ''))) return true;
+
+                // فلترة بناءً على المدينة
+                if (villageValue && value.includes(villageValue)) return true;
+
+                return false;
+            });
+
+            filteredValues.sort().forEach(value => {
+                const option = document.createElement('option');
+                option.value = value;
+                option.textContent = value;
+                select.appendChild(option);
+            });
+
+            select.value = currentValue;
+        }
+
+        function getFilterValue(fieldId) {
+            const filterItems = filtersGrid.querySelectorAll('.nms-filter-item');
+            for (const item of filterItems) {
+                const select = item.querySelector('select');
+                const input = item.querySelector('input');
+
+                if (fieldId === 'currency') {
+                    // البحث عن select العملة
+                    const currencySelect = item.querySelector('select[data-field-id="currency"]');
+                    if (currencySelect && currencySelect.value) {
+                        return currencySelect.value;
+                    }
+                } else if (select && select.dataset.fieldId === fieldId && select.value) {
+                    return select.value;
+                } else if (input && input.dataset.fieldId === fieldId && input.value) {
+                    return input.value;
+                }
+            }
+            return null;
+        }
+
+        function updateDependentDropdowns(changedIndex) {
+            const filterItems = filtersGrid.querySelectorAll('.nms-filter-item');
+            const { workspace, layerName } = getWorkspaceAndName(currentCategory.key);
+
+            filterItems.forEach((item, index) => {
+                if (index > changedIndex) {
+                    const select = item.querySelector('select');
+                    if (select) {
+                        select.value = ''; // إعادة تعيين القيمة
+                        updateDropdownValues(select, select.dataset.fieldId, layerName, workspace);
                     }
                 }
+            });
+        }
+
+        function debounce(func, wait) {
+            let timeout;
+            return function executedFunction(...args) {
+                const later = () => {
+                    clearTimeout(timeout);
+                    func(...args);
+                };
+                clearTimeout(timeout);
+                timeout = setTimeout(later, wait);
             };
-            valueContainer.appendChild(select);
-
-            // 🆕 إذا كان الحقل المختار هو السعر، أضف قائمة اختيار العملة
-            if (fieldSelect && fieldSelect.value === 'price') {
-                appendCurrencySelector(valueContainer);
-            }
         }
 
-        const operatorLabels = { '=': 'يساوي', 'contains': 'يحتوي على', '>': '≥', '<': '≤' };
-
-        function renderConditions() {
-            conditionsList.innerHTML = '';
-            conditions.forEach((c, i) => {
-                const tag = document.createElement('span');
-                tag.className = 'nms-condition-tag';
-                tag.innerHTML = `${c.fieldName} ${c.operatorLabel} <b>${c.value}</b> <i class="fas fa-times"></i>`;
-                tag.querySelector('i').onclick = () => { conditions.splice(i, 1); renderConditions(); };
-                conditionsList.appendChild(tag);
-            });
-        }
-
-        addConditionBtn.onclick = () => {
-            const valEl = document.getElementById('nms-value-select');
-            const val = valEl ? valEl.value.trim() : '';
-            if (!val || val === '__custom__') return;
-            conditions.push({
-                field: fieldSelect.value,
-                fieldName: fieldSelect.options[fieldSelect.selectedIndex].text,
-                operator: operatorSelect.value,
-                operatorLabel: operatorLabels[operatorSelect.value],
-                value: val
-            });
-
-            // 🆕 إضافة شرط العملة تلقائياً إذا كان الحقل هو السعر وتم اختيار عملة محددة
-            if (fieldSelect.value === 'price') {
-                const currencySelect = document.getElementById('nms-price-currency-select');
-                if (currencySelect && currencySelect.value) {
-                    conditions.push({
-                        field: 'currency',
-                        fieldName: 'العملة',
-                        operator: '=',
-                        operatorLabel: operatorLabels['='],
-                        value: currencySelect.value
-                    });
-                }
-            }
-
-            renderConditions();
-        };
+        // إزالة الكود القديم غير المستخدم
 
         clearSearchBtn.onclick = () => {
-            conditions = [];
-            renderConditions();
+            const filterItems = filtersGrid.querySelectorAll('.nms-filter-item');
+            filterItems.forEach(filterItem => {
+                const select = filterItem.querySelector('select');
+                const input = filterItem.querySelector('input');
+
+                if (select) select.value = '';
+                if (input) input.value = '';
+            });
             executeSearch();
         };
-
-        runSearchBtn.onclick = () => executeSearch();
 
         async function executeSearch() {
             resultsListEl.innerHTML = '<div class="nms-loading"><i class="fas fa-spinner fa-spin"></i> جاري البحث...</div>';
@@ -696,12 +870,58 @@ window.__nmsPageHandlesOwnAds = true;
             const { workspace, layerName, isRealEstate } = getWorkspaceAndName(currentCategory.key);
             const params = new URLSearchParams({ layer: layerName, workspace });
 
-            conditions.forEach((c, i) => {
-                params.append(`field_${i}`, c.field);
-                params.append(`operator_${i}`, c.operator);
-                params.append(`value_${i}`, c.value);
+            // قراءة القيم من الفلاتر الجديدة
+            const filterItems = filtersGrid.querySelectorAll('.nms-filter-item');
+            let conditionIndex = 0;
+
+            filterItems.forEach(filterItem => {
+                const selects = filterItem.querySelectorAll('select');
+                const input = filterItem.querySelector('input');
+
+                // معالجة select العادية (المحافظة، المدينة، إلخ)
+                selects.forEach(select => {
+                    if (select.value && !select.dataset.fieldId.includes('_operator') && select.dataset.fieldId !== 'currency') {
+                        params.append(`field_${conditionIndex}`, select.dataset.fieldId);
+                        params.append(`operator_${conditionIndex}`, '=');
+                        params.append(`value_${conditionIndex}`, select.value);
+                        conditionIndex++;
+                    }
+                });
+
+                // معالجة العملة
+                const currencySelect = filterItem.querySelector('select[data-field-id="currency"]');
+                if (currencySelect && currencySelect.value) {
+                    params.append(`field_${conditionIndex}`, 'currency');
+                    params.append(`operator_${conditionIndex}`, '=');
+                    params.append(`value_${conditionIndex}`, currencySelect.value);
+                    conditionIndex++;
+                }
+
+                // معالجة حقول السعر والمساحة
+                if (input && input.value) {
+                    const fieldId = input.dataset.fieldId;
+                    const value = input.value;
+
+                    if (fieldId === 'price' || fieldId === 'area') {
+                        // جلب operator المختار
+                        const operatorSelect = filterItem.querySelector(`select[data-field-id="${fieldId}_operator"]`);
+                        const operator = operatorSelect ? operatorSelect.value : '<';
+
+                        params.append(`field_${conditionIndex}`, fieldId);
+                        params.append(`operator_${conditionIndex}`, operator);
+                        params.append(`value_${conditionIndex}`, value);
+                        conditionIndex++;
+                    } else {
+                        // للحقول النصية الأخرى
+                        params.append(`field_${conditionIndex}`, fieldId);
+                        params.append(`operator_${conditionIndex}`, 'contains');
+                        params.append(`value_${conditionIndex}`, value);
+                        conditionIndex++;
+                    }
+                }
             });
-            if (conditions.length > 0) params.append('conditions_count', conditions.length);
+
+            if (conditionIndex > 0) params.append('conditions_count', conditionIndex);
 
             try {
                 const res = await fetch(`${baseUrl}api/search-features?${params.toString()}`);

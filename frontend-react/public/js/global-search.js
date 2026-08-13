@@ -60,7 +60,9 @@ const searchConfig = {
             'clinics', 'doctors_on_call', 'ambulances_on_call', 'music_training',
             'lawyers', 'land_surveyors', 'real_estate_valuers', 'private_tutors',
             'programmers', 'car_delivery_on_call', 'motorcycle_delivery_on_call',
-            'bicycle_delivery_on_call', 'photographers', 'student_research_assist'
+            'bicycle_delivery_on_call', 'photographers', 'student_research_assist',
+            'supermarket', 'commercial_shops', 'restaurants', 'schools_kindergartens',
+            'job_vacancies', 'city_landmarks'
         ].filter(layerName => {
             // التحقق الآمن من وجود المتغير لمنع خطأ Uncaught ReferenceError
             const exclusions = (typeof MAP_CONFIG !== 'undefined' && MAP_CONFIG.globalExclusions) ? MAP_CONFIG.globalExclusions : [];

@@ -79,28 +79,29 @@
 
     const fieldsConfig = {
         realEstate: [
-            { id: 'village_a', name: 'المدينة/القرية', type: 'dropdown' },
             { id: 'gov_a', name: 'المحافظة', type: 'dropdown' },
-            { id: 'location', name: 'الموقع', type: 'text' },
+            { id: 'village_a', name: 'المدينة/القرية', type: 'dropdown' },
+            { id: 'location', name: 'الموقع', type: 'dropdown' },
             { id: 'price', name: 'السعر', type: 'number' },
             { id: 'area', name: 'المساحة', type: 'number' }
         ],
         locationLayer: [
-            { id: 'village_a', name: 'المدينة/القرية', type: 'dropdown' },
             { id: 'gov_a', name: 'المحافظة', type: 'dropdown' },
-            { id: 'location', name: 'الموقع', type: 'text' }
+            { id: 'village_a', name: 'المدينة/القرية', type: 'dropdown' },
+            { id: 'location', name: 'الموقع', type: 'dropdown' }
         ],
         services: [
-            { id: 'village_a', name: 'المدينة/القرية', type: 'dropdown' },
             { id: 'gov_a', name: 'المحافظة', type: 'dropdown' },
-            { id: 'location_name', name: 'الموقع', type: 'text' },
-            { id: 'name', name: 'الاسم', type: 'text' }
+            { id: 'village_a', name: 'المدينة/القرية', type: 'dropdown' },
+            { id: 'location_name', name: 'الموقع', type: 'dropdown' },
+            { id: 'name', name: 'الاسم', type: 'dropdown' }
         ]
     };
 
     window.searchFieldsConfig = fieldsConfig;
 
     let fieldSelect, operatorSelect, valueInputContainer, layerSelect, conditionsContainer;
+    let allFieldValues = {}; // تخزين جميع القيم لكل حقل للفلترة المحلية
 
     async function getUniqueValues(layerKey, fieldId) {
         const layer = currentOverlayLayers[layerKey];
@@ -112,7 +113,12 @@
         const layerNameMap = { 'rentLayer': 'ApartRent', 'saleLayer': 'ApartSale', 'landLayer': 'LandSale' };
         const layerName = layerNameMap[layerKey] || layerKey.replace('Layer', '');
 
-        // جلب القيم من PostgreSQL مباشرة عبر API الجديد (أسرع من GeoServer)
+        // للمواقع والأسماء: استخدام الفلترة المحلية الخفيفة
+        if (fieldId === 'location' || fieldId === 'location_name' || fieldId === 'name') {
+            return getUniqueValuesWithLightFiltering(layerKey, fieldId, layerName, workspace);
+        }
+
+        // للمحافظة والمدن: استخدام السيرفر
         try {
             const baseUrl = window.MAP_CONFIG?.server?.proxyUrl || (window.location.origin + "/");
             const params = new URLSearchParams({
@@ -126,6 +132,9 @@
 
             if (data.success && data.values) {
                 const uniqueValues = data.values.sort();
+
+                // تخزين القيم للفلترة المحلية
+                allFieldValues[fieldId] = uniqueValues;
 
                 // تحديث UI بالقيم الجديدة
                 updateValueUIWithData(uniqueValues);
@@ -143,6 +152,59 @@
         const localValues = getUniqueValuesLocal(layer, fieldId);
         updateValueUIWithData(localValues);
         return localValues;
+    }
+
+    async function getUniqueValuesWithLightFiltering(layerKey, fieldId, layerName, workspace) {
+        // جلب القيم المخزنة أو جلبها من السيرفر إذا لم تكن موجودة
+        if (!allFieldValues[fieldId]) {
+            try {
+                const baseUrl = window.MAP_CONFIG?.server?.proxyUrl || (window.location.origin + "/");
+                const params = new URLSearchParams({
+                    layer: layerName,
+                    workspace: workspace,
+                    field: fieldId
+                });
+
+                const response = await fetch(`${baseUrl}api/get-unique-values?${params.toString()}`);
+                const data = await response.json();
+
+                if (data.success && data.values) {
+                    allFieldValues[fieldId] = data.values;
+                }
+            } catch (err) {
+                console.error('Error fetching unique values:', err);
+            }
+        }
+
+        if (!allFieldValues[fieldId]) {
+            const layer = currentOverlayLayers[layerKey];
+            const localValues = getUniqueValuesLocal(layer, fieldId);
+            allFieldValues[fieldId] = localValues;
+        }
+
+        const values = allFieldValues[fieldId];
+        const villageValue = getFilterValueFromConditions('village_a');
+
+        // فلترة خفيفة بناءً على المدينة فقط
+        const filteredValues = values.filter(value => {
+            // إذا لم يتم اختيار مدينة، عرض كل القيم
+            if (!villageValue) return true;
+
+            // فلترة بناءً على المدينة
+            if (villageValue && value.includes(villageValue)) return true;
+
+            return false;
+        });
+
+        updateValueUIWithData(filteredValues.sort());
+        return filteredValues;
+    }
+
+    function getFilterValueFromConditions(fieldId) {
+        for (const c of conditions) {
+            if (c.field === fieldId) return c.value;
+        }
+        return null;
     }
 
     function getUniqueValuesLocal(layer, fieldId) {
@@ -274,6 +336,14 @@
                              <span style="color:red; cursor:pointer;" onclick="removeSearchCondition(${index})">×</span>`;
             conditionsContainer.appendChild(tag);
         });
+
+        // تحديث القوائم عند تغيير conditions (للمواقع والأسماء)
+        if (fieldSelect && fieldSelect.value) {
+            const fieldId = fieldSelect.value;
+            if (fieldId === 'location' || fieldId === 'location_name' || fieldId === 'name') {
+                updateValueUI();
+            }
+        }
     }
 
     window.removeSearchCondition = function(index) {

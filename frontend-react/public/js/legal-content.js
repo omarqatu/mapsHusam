@@ -10,14 +10,19 @@
     window.APP_LEGAL_CONTENT = {
 
         guide: {
-            title: 'دليل استخدام المنصة',
+            title: 'دليل استخدام منصة خريطة الخدمات الفلسطينية',
             icon: 'fa-book-open',
             html: `
                 <p style="font-size:14px; color:#555; line-height:1.8; margin-bottom:18px;">
-                    مرحباً بك في <strong>خريطة الخدمات الفلسطينية</strong>. هذا الدليل الموحّد
-                    يشرح كل أدوات المنصة سواء كنت تتصفح عبر الخريطة التفاعلية أو عبر صفحة
-                    البحث بدون خريطة.
+                    مرحباً بك في <strong>خريطة الخدمات الفلسطينية</strong>. هذا الدليل الموحّد يشرح كل أدوات المنصة سواء كنت تتصفح عبر الخريطة التفاعلية أو عبر صفحة البحث بدون خريطة.
                 </p>
+
+                <div style="background:#f0f7ff; border-radius:10px; padding:15px; margin-bottom:20px; border:1px solid #b3d7ff;">
+                    <p style="margin:0; font-size:13px; color:#1a73e8; text-align:center;">
+                        <i class="fas fa-info-circle"></i> <strong>المنصة توفر طريقتين للبحث:</strong> الخريطة التفاعلية (للبحث الجغرافي) والبحث السريع (للبحث السريع بدون خريطة)
+                    </p>
+                </div>
+
                 <div style="display:flex; flex-direction:column; gap:16px;">
 
                     <div style="background:#fff; border-right:5px solid #34a853; padding:16px; border-radius:12px; box-shadow:0 3px 8px rgba(0,0,0,0.06);">
@@ -55,10 +60,296 @@
                         <p style="margin:0; font-size:13.5px; color:#555; line-height:1.7;">تحكم في نمط الخريطة (صورة فضائية، صورة جوية، أو خريطة أساس)، وأغلق لوحات البحث لتستمتع بعرض كامل ومريح للنتائج.</p>
                     </div>
 
+                    <div style="background:#fff; border-right:5px solid #e91e63; padding:16px; border-radius:12px; box-shadow:0 3px 8px rgba(0,0,0,0.06);">
+                        <strong style="color:#e91e63; font-size:15px; display:block; margin-bottom:6px;">🗺️ ٨. الخريطة التفاعلية - الأداة الجغرافية</strong>
+                        <p style="margin:0; font-size:13.5px; color:#555; line-height:1.7;">الخريطة التفاعلية هي خريطة جغرافية ذكية تعرض جميع الخدمات والعقارات في فلسطين على خريطة حقيقية. يمكنك التكبير والتصغير، التحريك، والتفاعل مع المعالم مباشرة. استخدم "البحث الذكي" لإضافة شروط متعددة، و"الاستعلام" لاستكشاف الخدمات في منطقة معينة، و"ظهور/إخفاء الخدمات" للتحكم بـ 62 فئة مختلفة.</p>
+                    </div>
+
+                    <div style="background:#fff; border-right:5px solid #00bcd4; padding:16px; border-radius:12px; box-shadow:0 3px 8px rgba(0,0,0,0.06);">
+                        <strong style="color:#00bcd4; font-size:15px; display:block; margin-bottom:6px;">⚡ ٩. البحث السريع - الأداة السريعة</strong>
+                        <p style="margin:0; font-size:13.5px; color:#555; line-height:1.7;">في صفحة البحث بدون خريطة، اكتب أي كلمة أو جملة دلالية في مربع البحث أعلى الصفحة (مثل: "شقة للإيجار"، "فني كهرباء") وستظهر النتائج فوراً. نفس الميزة متوفرة أيضاً في الخريطة التفاعلية. استخدم كلمات مفتاحية واضحة للحصول على نتائج أفضل.</p>
+                    </div>
+
+                    <div style="background:#fff; border-right:5px solid #ff9800; padding:16px; border-radius:12px; box-shadow:0 3px 8px rgba(0,0,0,0.06);">
+                        <strong style="color:#ff9800; font-size:15px; display:block; margin-bottom:6px;">⭐ ١٠. التقييمات والتعليقات</strong>
+                        <p style="margin:0; font-size:13.5px; color:#555; line-height:1.7;">يمكنك تقييم الخدمات التي استخدمتها وترك تعليقات. هذه التقييمات تساعد المستخدمين الآخرين في اختيار أفضل مزودي الخدمات وتساعد المزودين في تحسين خدماتهم.</p>
+                    </div>
+
                 </div>
 
                 <div style="background:#e8f0fe; border-radius:10px; padding:15px; margin-top:20px; text-align:center;">
                     <p style="margin:0; font-size:13px; color:#1a73e8;">
+                        <i class="fas fa-external-link-alt"></i> <strong>للانتقال إلى الخريطة التفاعلية:</strong>
+                        <a href="/original-index.html" target="_blank" style="color:#1a73e8; text-decoration:underline; margin-right:8px;">اضغط هنا</a>
+                        <span style="margin:0 10px;">|</span>
+                        <i class="fas fa-list"></i> <strong>للانتقال إلى صفحة البحث السريع:</strong>
+                        <a href="/no-map-search.html" target="_blank" style="color:#1a73e8; text-decoration:underline; margin-right:8px;">اضغط هنا</a>
+                    </p>
+                </div>
+
+                <div style="background:#fff3cd; border-radius:10px; padding:15px; margin-top:15px; text-align:center;">
+                    <p style="margin:0; font-size:13px; color:#856404;">
+                        <i class="fas fa-video"></i> <strong>قريباً:</strong> فيديوهات تعليمية وصور توضيحية خطوة بخطوة
+                    </p>
+                </div>
+            `
+        },
+
+        guideSearch: {
+            title: 'البحث السريع',
+            icon: 'fa-search',
+            html: `
+                <p style="font-size:14px; color:#555; line-height:1.8; margin-bottom:18px;">
+                    البحث السريع هو أسرع وأسهل طريقة للعثور على الخدمات والعقارات التي تحتاجها دون الحاجة لفتح الخريطة التفاعلية.
+                </p>
+                <div style="display:flex; flex-direction:column; gap:16px;">
+
+                    <div style="background:#fff; border-right:5px solid #34a853; padding:16px; border-radius:12px; box-shadow:0 3px 8px rgba(0,0,0,0.06);">
+                        <strong style="color:#34a853; font-size:15px; display:block; margin-bottom:6px;">🔍 كيفية البحث السريع</strong>
+                        <p style="margin:0; font-size:13.5px; color:#555; line-height:1.7;">في صفحة البحث بدون خريطة، ستجد مربع بحث في أعلى الصفحة. اكتب أي كلمة أو جملة دلالية عن الخدمة أو العقار الذي تريده، مثل: "شقة للإيجار"، "فني كهرباء"، "طبيب"، "مطعم"، إلخ.</p>
+                    </div>
+
+                    <div style="background:#fff; border-right:5px solid #fbbc04; padding:16px; border-radius:12px; box-shadow:0 3px 8px rgba(0,0,0,0.06);">
+                        <strong style="color:#e37400; font-size:15px; display:block; margin-bottom:6px;">📋 ظهور النتائج</strong>
+                        <p style="margin:0; font-size:13.5px; color:#555; line-height:1.7;">بمجرد كتابة الكلمات والضغط على زر البحث، ستظهر لك جميع النتائج التي تطابق كلمات البحث. النتائج تتضمن تفاصيل كاملة مع أزرار للتواصل المباشر.</p>
+                    </div>
+
+                    <div style="background:#fff; border-right:5px solid #ea4335; padding:16px; border-radius:12px; box-shadow:0 3px 8px rgba(0,0,0,0.06);">
+                        <strong style="color:#ea4335; font-size:15px; display:block; margin-bottom:6px;">🗺️ البحث السريع في الخريطة</strong>
+                        <p style="margin:0; font-size:13.5px; color:#555; line-height:1.7;">نفس ميزة البحث السريع متوفرة أيضاً في الخريطة التفاعلية. ستجد مربع بحث في أعلى الخريطة يمكنك استخدامه للبحث عن أي خدمة أو عقار بسرعة.</p>
+                    </div>
+
+                    <div style="background:#fff; border-right:5px solid #7c3aed; padding:16px; border-radius:12px; box-shadow:0 3px 8px rgba(0,0,0,0.06);">
+                        <strong style="color:#7c3aed; font-size:15px; display:block; margin-bottom:6px;">� نصائح للبحث</strong>
+                        <p style="margin:0; font-size:13.5px; color:#555; line-height:1.7;">استخدم كلمات مفتاحية واضحة ومحددة للحصول على نتائج أفضل. يمكنك أيضاً استخدام الفلاتر المتاحة لتضييق النتائج حسب المنطقة، السعر، أو أي تفاصيل أخرى.</p>
+                    </div>
+
+                    <div style="background:#e8f0fe; border-radius:10px; padding:15px; margin-top:20px; text-align:center;">
+                        <p style="margin:0; font-size:13px; color:#1a73e8;">
+                            <i class="fas fa-external-link-alt"></i> <strong>للانتقال إلى صفحة البحث السريع:</strong>
+                            <a href="/no-map-search.html" target="_blank" style="color:#1a73e8; text-decoration:underline; margin-right:8px;">اضغط هنا</a>
+                        </p>
+                    </div>
+
+                </div>
+            `
+        },
+
+        guideProvider: {
+            title: 'حساب مزود الخدمة',
+            icon: 'fa-user-tie',
+            html: `
+                <p style="font-size:14px; color:#555; line-height:1.8; margin-bottom:18px;">
+                    تعرف على مزايا حساب مزود الخدمة وكيفية الاستفادة من جميع الميزات المتاحة.
+                </p>
+                <div style="display:flex; flex-direction:column; gap:16px;">
+
+                    <div style="background:#fff; border-right:5px solid #34a853; padding:16px; border-radius:12px; box-shadow:0 3px 8px rgba(0,0,0,0.06);">
+                        <strong style="color:#34a853; font-size:15px; display:block; margin-bottom:6px;">🔄 التحويل إلى مزود خدمة</strong>
+                        <p style="margin:0; font-size:13.5px; color:#555; line-height:1.7;">تواصل معنا عبر صفحة الفيسبوك وفريق الدعم الفني لتحويل اشتراكك إلى مزود خدمة. يمكنك ربط خدمتك بحيث تقدر تعمل متوفر وغير متوفر لتظهر على الخريطة.</p>
+                    </div>
+
+                    <div style="background:#fff; border-right:5px solid #fbbc04; padding:16px; border-radius:12px; box-shadow:0 3px 8px rgba(0,0,0,0.06);">
+                        <strong style="color:#e37400; font-size:15px; display:block; margin-bottom:6px;">💬 خاصية الدردشة</strong>
+                        <p style="margin:0; font-size:13.5px; color:#555; line-height:1.7;">بمجرد تفعيل حساب مزود الخدمة، يمكنك تفعيل خاصية الدردشة بحيث يتواصل معك أي مستخدم يريد الخدمة منك. ستتمكنون من التحدث والاتفاق على التفاصيل مباشرة عبر المنصة.</p>
+                    </div>
+
+                    <div style="background:#fff; border-right:5px solid #ea4335; padding:16px; border-radius:12px; box-shadow:0 3px 8px rgba(0,0,0,0.06);">
+                        <strong style="color:#ea4335; font-size:15px; display:block; margin-bottom:6px;">🟢 التحكم في الحالة</strong>
+                        <p style="margin:0; font-size:13.5px; color:#555; line-height:1.7;">يمكنك التبديل بين "متوفر" و"غير متوفر" في أي وقت. عندما تكون متوفر، سيظهر موقعك على الخريطة ويمكن للمستخدمين التواصل معك مباشرة.</p>
+                    </div>
+
+                    <div style="background:#fff; border-right:5px solid #7c3aed; padding:16px; border-radius:12px; box-shadow:0 3px 8px rgba(0,0,0,0.06);">
+                        <strong style="color:#7c3aed; font-size:15px; display:block; margin-bottom:6px;">⭐ التقييمات والتعليقات</strong>
+                        <p style="margin:0; font-size:13.5px; color:#555; line-height:1.7;">يمكن للمستخدمين تقييم خدماتك وترك تعليقات. هذه التقييمات تساعدك في بناء سمعة جيدة وجذب المزيد من العملاء.</p>
+                    </div>
+
+                    <div style="background:#e8f0fe; border-radius:10px; padding:15px; margin-top:20px; text-align:center;">
+                        <p style="margin:0; font-size:13px; color:#1a73e8;">
+                            <i class="fab fa-facebook-f"></i> <strong>للتحويل إلى مزود خدمة:</strong> تواصل معنا عبر صفحة الفيسبوك
+                            <a href="https://www.facebook.com/MapServesPalestine" target="_blank" style="color:#1a73e8; text-decoration:underline;">MapServesPalestine</a>
+                        </p>
+                    </div>
+
+                </div>
+            `
+        },
+
+        guideSubscription: {
+            title: 'كيف تشترك معنا',
+            icon: 'fa-user-plus',
+            html: `
+                <p style="font-size:14px; color:#555; line-height:1.8; margin-bottom:18px;">
+                    تعرف على كيفية الاشتراك في المنصة والاستفادة من جميع الخدمات المتاحة.
+                </p>
+                <div style="display:flex; flex-direction:column; gap:16px;">
+
+                    <div style="background:#fff; border-right:5px solid #34a853; padding:16px; border-radius:12px; box-shadow:0 3px 8px rgba(0,0,0,0.06);">
+                        <strong style="color:#34a853; font-size:15px; display:block; margin-bottom:6px;">👤 التسجيل كمستخدم عادي</strong>
+                        <p style="margin:0; font-size:13.5px; color:#555; line-height:1.7;">عندما تسجل معنا، تحصل على حساب مستخدم عادي يمكنك من خلاله البحث عن الخدمات، التواصل مع مزودي الخدمة، وتقييم الخدمات التي استخدمتها.</p>
+                    </div>
+
+                    <div style="background:#fff; border-right:5px solid #fbbc04; padding:16px; border-radius:12px; box-shadow:0 3px 8px rgba(0,0,0,0.06);">
+                        <strong style="color:#e37400; font-size:15px; display:block; margin-bottom:6px;">🔄 التحويل إلى مزود خدمة</strong>
+                        <p style="margin:0; font-size:13.5px; color:#555; line-height:1.7;">يمكنك تحويل حسابك من مستخدم عادي إلى مزود خدمة. هذا يتيح لك إضافة خدماتك إلى الخريطة، التحكم في حالتك (متوفر/غير متوفر)، والتواصل مع العملاء عبر الدردشة.</p>
+                    </div>
+
+                    <div style="background:#fff; border-right:5px solid #ea4335; padding:16px; border-radius:12px; box-shadow:0 3px 8px rgba(0,0,0,0.06);">
+                        <strong style="color:#ea4335; font-size:15px; display:block; margin-bottom:6px;">📞 التواصل معنا</strong>
+                        <p style="margin:0; font-size:13.5px; color:#555; line-height:1.7;">لأي استفسار حول التسجيل أو التحويل إلى مزود خدمة، تواصل معنا عبر صفحة الفيسبوك الرسمية. فريق الدعم الفني سيجيب على جميع استفساراتك.</p>
+                    </div>
+
+                    <div style="background:#fff; border-right:5px solid #7c3aed; padding:16px; border-radius:12px; box-shadow:0 3px 8px rgba(0,0,0,0.06);">
+                        <strong style="color:#7c3aed; font-size:15px; display:block; margin-bottom:6px;">🎯 المزايا</strong>
+                        <p style="margin:0; font-size:13.5px; color:#555; line-height:1.7;">بصفتك مزود خدمة، ستحصل على: ظهور على الخريطة التفاعلية، إمكانية التحكم في حالتك، نظام دردشة للتواصل مع العملاء، وتقييمات من المستخدمين.</p>
+                    </div>
+
+                    <div style="background:#e8f0fe; border-radius:10px; padding:15px; margin-top:20px; text-align:center;">
+                        <p style="margin:0; font-size:13px; color:#1a73e8;">
+                            <i class="fab fa-facebook-f"></i> <strong>للاستفسار والتسجيل:</strong> تواصل معنا عبر صفحة الفيسبوك
+                            <a href="https://www.facebook.com/MapServesPalestine" target="_blank" style="color:#1a73e8; text-decoration:underline;">MapServesPalestine</a>
+                        </p>
+                    </div>
+
+                </div>
+            `
+        },
+
+        guideMapInteractive: {
+            title: 'الخريطة التفاعلية',
+            icon: 'fa-map-marked-alt',
+            html: `
+                <p style="font-size:14px; color:#555; line-height:1.8; margin-bottom:18px;">
+                    الخريطة التفاعلية هي الأداة الرئيسية للبحث عن الخدمات والعقارات في فلسطين بدقة عالية باستخدام تقنية الخرائط الجغرافية.
+                </p>
+                <div style="display:flex; flex-direction:column; gap:16px;">
+
+                    <div style="background:#fff; border-right:5px solid #34a853; padding:16px; border-radius:12px; box-shadow:0 3px 8px rgba(0,0,0,0.06);">
+                        <strong style="color:#34a853; font-size:15px; display:block; margin-bottom:6px;">🗺️ ما هي الخريطة التفاعلية؟</strong>
+                        <p style="margin:0; font-size:13.5px; color:#555; line-height:1.7;">الخريطة التفاعلية هي خريطة جغرافية ذكية تعرض جميع الخدمات والعقارات في فلسطين على خريطة حقيقية. يمكنك التكبير والتصغير، التحريك، والتفاعل مع المعالم مباشرة.</p>
+                    </div>
+
+                    <div style="background:#fff; border-right:5px solid #fbbc04; padding:16px; border-radius:12px; box-shadow:0 3px 8px rgba(0,0,0,0.06);">
+                        <strong style="color:#e37400; font-size:15px; display:block; margin-bottom:6px;">🔍 البحث الذكي</strong>
+                        <p style="margin:0; font-size:13.5px; color:#555; line-height:1.7;">استخدم زر "البحث الذكي" لإضافة شروط متعددة للبحث. اختر الطبقة، الحقل، والشرط، ثم أضف أكثر من شرط دفعة واحدة للحصول على نتائج دقيقة.</p>
+                    </div>
+
+                    <div style="background:#fff; border-right:5px solid #ea4335; padding:16px; border-radius:12px; box-shadow:0 3px 8px rgba(0,0,0,0.06);">
+                        <strong style="color:#ea4335; font-size:15px; display:block; margin-bottom:6px;">ℹ️ الاستعلام</strong>
+                        <p style="margin:0; font-size:13.5px; color:#555; line-height:1.7;">فعّل خيار "استعلام" ثم مرر أو انقر على أي معلم بالخريطة لتظهر لك تفاصيله فوراً. هذه الميزة مفيدة لاستكشاف الخدمات المتاحة في منطقة معينة.</p>
+                    </div>
+
+                    <div style="background:#fff; border-right:5px solid #7c3aed; padding:16px; border-radius:12px; box-shadow:0 3px 8px rgba(0,0,0,0.06);">
+                        <strong style="color:#7c3aed; font-size:15px; display:block; margin-bottom:6px;">📍 البحث حسب الموقع</strong>
+                        <p style="margin:0; font-size:13.5px; color:#555; line-height:1.7;">حدد موقعك بدقة أو استخدم الـ GPS، واضبط مسافة البحث بالمتر لتجد أقرب الخدمات المتاحة حولك. هذه الميزة مثالية للخدمات العاجلة.</p>
+                    </div>
+
+                    <div style="background:#fff; border-right:5px solid #1a73e8; padding:16px; border-radius:12px; box-shadow:0 3px 8px rgba(0,0,0,0.06);">
+                        <strong style="color:#1a73e8; font-size:15px; display:block; margin-bottom:6px;">📚 ظهور/إخفاء الخدمات</strong>
+                        <p style="margin:0; font-size:13.5px; color:#555; line-height:1.7;">استخدم زر "ظهور/إخفاء الخدمات" للتحكم بالطبقات التي تظهر لك على الخريطة. يمكنك اختيار من أصل 62 فئة مختلفة حسب احتياجاتك.</p>
+                    </div>
+
+                    <div style="background:#fff; border-right:5px solid #16a085; padding:16px; border-radius:12px; box-shadow:0 3px 8px rgba(0,0,0,0.06);">
+                        <strong style="color:#16a085; font-size:15px; display:block; margin-bottom:6px;">📏 أدوات القياس</strong>
+                        <p style="margin:0; font-size:13.5px; color:#555; line-height:1.7;">استخدم أدوات القياس لحساب المسافات، المساحات، أو رسم نقطة بإحداثيات دقيقة. هذه الميزات مفيدة للمهندسين والمساحين.</p>
+                    </div>
+
+                    <div style="background:#fff; border-right:5px solid #495057; padding:16px; border-radius:12px; box-shadow:0 3px 8px rgba(0,0,0,0.06);">
+                        <strong style="color:#495057; font-size:15px; display:block; margin-bottom:6px;">🔗 مشاركة الموقع</strong>
+                        <p style="margin:0; font-size:13.5px; color:#555; line-height:1.7;">حدد أي نقطة على الخريطة واحصل على رابط مباشر لها بإحداثيات فلسطينية وعالمية. يمكنك مشاركة هذا الرابط مع أصدقائك أو استخدامه للتنقل.</p>
+                    </div>
+
+                    <div style="background:#e8f0fe; border-radius:10px; padding:15px; margin-top:20px; text-align:center;">
+                        <p style="margin:0; font-size:13px; color:#1a73e8;">
+                            <i class="fas fa-external-link-alt"></i> <strong>للانتقال إلى الخريطة التفاعلية:</strong>
+                            <a href="/original-index.html" target="_blank" style="color:#1a73e8; text-decoration:underline; margin-right:8px;">اضغط هنا</a>
+                        </p>
+                    </div>
+
+                </div>
+            `
+        },
+
+        guideMap: {
+            title: 'دليل استخدام منصة خريطة الخدمات الفلسطينية',
+            icon: 'fa-book-open',
+            html: `
+                <p style="font-size:14px; color:#555; line-height:1.8; margin-bottom:18px;">
+                    مرحباً بك في <strong>خريطة الخدمات الفلسطينية</strong>. هذا الدليل الموحّد يشرح كل أدوات المنصة سواء كنت تتصفح عبر الخريطة التفاعلية أو عبر صفحة البحث بدون خريطة.
+                </p>
+
+                <div style="background:#f0f7ff; border-radius:10px; padding:15px; margin-bottom:20px; border:1px solid #b3d7ff;">
+                    <p style="margin:0; font-size:13px; color:#1a73e8; text-align:center;">
+                        <i class="fas fa-info-circle"></i> <strong>المنصة توفر طريقتين للبحث:</strong> الخريطة التفاعلية (للبحث الجغرافي) والبحث السريع (للبحث السريع بدون خريطة)
+                    </p>
+                </div>
+
+                <div style="display:flex; flex-direction:column; gap:16px;">
+
+                    <div style="background:#fff; border-right:5px solid #34a853; padding:16px; border-radius:12px; box-shadow:0 3px 8px rgba(0,0,0,0.06);">
+                        <strong style="color:#34a853; font-size:15px; display:block; margin-bottom:6px;">🔍 ١. البحث الذكي (خريطة وقائمة)</strong>
+                        <p style="margin:0; font-size:13.5px; color:#555; line-height:1.7;">ابحث باسم الخدمة عبر شريط البحث أعلى الصفحة. استخدم زر "تحديث البيانات" لضمان ظهور أحدث النتائج، وبدّل بسهولة بين عرض "الخريطة" أو "البحث بدون خريطة" من خلال الروابط المتوفرة بأعلى كل صفحة.</p>
+                    </div>
+
+                    <div style="background:#fff; border-right:5px solid #fbbc04; padding:16px; border-radius:12px; box-shadow:0 3px 8px rgba(0,0,0,0.06);">
+                        <strong style="color:#e37400; font-size:15px; display:block; margin-bottom:6px;">📍 ٢. تحديد النطاق والمسافة</strong>
+                        <p style="margin:0; font-size:13.5px; color:#555; line-height:1.7;">حدد موقعك بدقة أو استخدم الـ GPS، واضبط مسافة البحث بالمتر لتجد أقرب مزودي الخدمة المتاحين حالياً حولك بكل سهولة (متاح من داخل الخريطة التفاعلية).</p>
+                    </div>
+
+                    <div style="background:#fff; border-right:5px solid #ea4335; padding:16px; border-radius:12px; box-shadow:0 3px 8px rgba(0,0,0,0.06);">
+                        <strong style="color:#ea4335; font-size:15px; display:block; margin-bottom:6px;">📞 ٣. تواصل مباشر وسريع</strong>
+                        <p style="margin:0; font-size:13.5px; color:#555; line-height:1.7;">اضغط على أي خدمة لتفتح نافذة معلوماتها، واستخدم أزرار "اتصال" أو "واتساب" للتحدث مباشرة مع المزود. للخدمات المرتبطة بحساب مزوّد مُفعّل، يظهر بدلاً منها زر "طلب الخدمة" الذي يفتح دردشة حقيقية داخل المنصة حتى الاتفاق وتبادل أرقام التواصل.</p>
+                    </div>
+
+                    <div style="background:#fff; border-right:5px solid #7c3aed; padding:16px; border-radius:12px; box-shadow:0 3px 8px rgba(0,0,0,0.06);">
+                        <strong style="color:#7c3aed; font-size:15px; display:block; margin-bottom:6px;">📏 ٤. أدوات القياس ومشاركة الموقع</strong>
+                        <p style="margin:0; font-size:13.5px; color:#555; line-height:1.7;">استفد من أدوات القياس لحساب المساحات والأطوال بدقة، وشارك مواقع الخدمات مع أصدقائك عبر رابط مباشر أو خرائط جوجل (متاح من داخل الخريطة التفاعلية).</p>
+                    </div>
+
+                    <div style="background:#fff; border-right:5px solid #1a73e8; padding:16px; border-radius:12px; box-shadow:0 3px 8px rgba(0,0,0,0.06);">
+                        <strong style="color:#1a73e8; font-size:15px; display:block; margin-bottom:6px;">📋 ٥. البحث بدون خريطة</strong>
+                        <p style="margin:0; font-size:13.5px; color:#555; line-height:1.7;">بديل أخف وأسرع لمن لا يريد تحميل الخريطة: اختر الفرع والفئة، طبّق فلاتر اختيارية (المنطقة، السعر، الاسم...)، واحصل على نتائج فورية مع نفس أزرار التواصل وطلب الخدمة.</p>
+                    </div>
+
+                    <div style="background:#fff; border-right:5px solid #16a085; padding:16px; border-radius:12px; box-shadow:0 3px 8px rgba(0,0,0,0.06);">
+                        <strong style="color:#16a085; font-size:15px; display:block; margin-bottom:6px;">👤 ٦. الملف الشخصي</strong>
+                        <p style="margin:0; font-size:13.5px; color:#555; line-height:1.7;">من أيقونة الملف الشخصي أعلى الصفحة يمكنك تغيير كلمة المرور، متابعة "طلباتي" (طلبات الخدمة والدردشات النشطة)، الاطلاع على الإشعارات، والوصول لدليل الاستخدام هذا وصفحة التواصل معنا في أي وقت.</p>
+                    </div>
+
+                    <div style="background:#fff; border-right:5px solid #495057; padding:16px; border-radius:12px; box-shadow:0 3px 8px rgba(0,0,0,0.06);">
+                        <strong style="color:#495057; font-size:15px; display:block; margin-bottom:6px;">⚙️ ٧. تخصيص الخريطة</strong>
+                        <p style="margin:0; font-size:13.5px; color:#555; line-height:1.7;">تحكم في نمط الخريطة (صورة فضائية، صورة جوية، أو خريطة أساس)، وأغلق لوحات البحث لتستمتع بعرض كامل ومريح للنتائج.</p>
+                    </div>
+
+                    <div style="background:#fff; border-right:5px solid #e91e63; padding:16px; border-radius:12px; box-shadow:0 3px 8px rgba(0,0,0,0.06);">
+                        <strong style="color:#e91e63; font-size:15px; display:block; margin-bottom:6px;">🗺️ ٨. الخريطة التفاعلية - الأداة الجغرافية</strong>
+                        <p style="margin:0; font-size:13.5px; color:#555; line-height:1.7;">الخريطة التفاعلية هي خريطة جغرافية ذكية تعرض جميع الخدمات والعقارات في فلسطين على خريطة حقيقية. يمكنك التكبير والتصغير، التحريك، والتفاعل مع المعالم مباشرة. استخدم "البحث الذكي" لإضافة شروط متعددة، و"الاستعلام" لاستكشاف الخدمات في منطقة معينة، و"ظهور/إخفاء الخدمات" للتحكم بـ 62 فئة مختلفة.</p>
+                    </div>
+
+                    <div style="background:#fff; border-right:5px solid #00bcd4; padding:16px; border-radius:12px; box-shadow:0 3px 8px rgba(0,0,0,0.06);">
+                        <strong style="color:#00bcd4; font-size:15px; display:block; margin-bottom:6px;">⚡ ٩. البحث السريع - الأداة السريعة</strong>
+                        <p style="margin:0; font-size:13.5px; color:#555; line-height:1.7;">في صفحة البحث بدون خريطة، اكتب أي كلمة أو جملة دلالية في مربع البحث أعلى الصفحة (مثل: "شقة للإيجار"، "فني كهرباء") وستظهر النتائج فوراً. نفس الميزة متوفرة أيضاً في الخريطة التفاعلية. استخدم كلمات مفتاحية واضحة للحصول على نتائج أفضل.</p>
+                    </div>
+
+                    <div style="background:#fff; border-right:5px solid #ff9800; padding:16px; border-radius:12px; box-shadow:0 3px 8px rgba(0,0,0,0.06);">
+                        <strong style="color:#ff9800; font-size:15px; display:block; margin-bottom:6px;">⭐ ١٠. التقييمات والتعليقات</strong>
+                        <p style="margin:0; font-size:13.5px; color:#555; line-height:1.7;">يمكنك تقييم الخدمات التي استخدمتها وترك تعليقات. هذه التقييمات تساعد المستخدمين الآخرين في اختيار أفضل مزودي الخدمات وتساعد المزودين في تحسين خدماتهم.</p>
+                    </div>
+
+                </div>
+
+                <div style="background:#e8f0fe; border-radius:10px; padding:15px; margin-top:20px; text-align:center;">
+                    <p style="margin:0; font-size:13px; color:#1a73e8;">
+                        <i class="fas fa-external-link-alt"></i> <strong>للانتقال إلى الخريطة التفاعلية:</strong>
+                        <a href="/original-index.html" target="_blank" style="color:#1a73e8; text-decoration:underline; margin-right:8px;">اضغط هنا</a>
+                        <span style="margin:0 10px;">|</span>
+                        <i class="fas fa-list"></i> <strong>للانتقال إلى صفحة البحث السريع:</strong>
+                        <a href="/no-map-search.html" target="_blank" style="color:#1a73e8; text-decoration:underline; margin-right:8px;">اضغط هنا</a>
+                    </p>
+                </div>
+
+                <div style="background:#fff3cd; border-radius:10px; padding:15px; margin-top:15px; text-align:center;">
+                    <p style="margin:0; font-size:13px; color:#856404;">
                         <i class="fas fa-video"></i> <strong>قريباً:</strong> فيديوهات تعليمية وصور توضيحية خطوة بخطوة
                     </p>
                 </div>
@@ -203,7 +494,12 @@
     // يُربط تلقائياً بدون أي كود إضافي مطلوب بالصفحة نفسها.
     // ==========================================================================
     const idMap = {
-        guide: ['btn-user-guide', 'footer-guide-search', 'footer-guide-provider', 'welcome-guide-link'],
+        guide: ['btn-user-guide', 'welcome-guide-link'],
+        guideSearch: ['footer-guide-search'],
+        guideProvider: ['footer-guide-provider'],
+        guideSubscription: ['footer-guide-subscription'],
+        guideMap: ['footer-guide-map'],
+        guideMapInteractive: ['footer-guide-map-interactive'],
         terms: ['footer-terms-btn', 'promo-terms-link', 'welcome-terms-link'],
         privacy: ['footer-privacy-btn', 'promo-privacy-link', 'welcome-privacy-link']
     };

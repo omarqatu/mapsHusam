@@ -65,7 +65,15 @@ const serviceTranslations = {
     'car_delivery_on_call': { name: 'دليفري سيارات (مناوبة)', icon: '🚗' },
     'motorcycle_delivery_on_call': { name: 'دليفري دراجات (مناوبة)', icon: '🏍️' },
     'bicycle_delivery_on_call': { name: 'دليفري هوائية (مناوبة)', icon: '🚲' },
-    'student_research_assist': { name: 'مساعد أبحاث طلاب', icon: '📚' }
+    'student_research_assist': { name: 'مساعد أبحاث طلاب', icon: '📚' },
+
+    // --- الطبقات الجديدة (6) ---
+    'supermarket': { name: 'سوبرماركت', icon: '🏪' },
+    'commercial_shops': { name: 'محلات تجارية', icon: '🏬' },
+    'restaurants': { name: 'مطاعم', icon: '🍽️' },
+    'schools_kindergartens': { name: 'مدارس ورياض أطفال', icon: '🏫' },
+    'job_vacancies': { name: 'وظائف شاغرة', icon: '💼' },
+    'city_landmarks': { name: 'معالم المدينة', icon: '🏛️' }
 };
 
 // جعل serviceTranslations متاحة عالمياً للاستخدام في ملفات أخرى (مثل quick-search.js)

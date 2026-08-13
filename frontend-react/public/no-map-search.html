@@ -53,9 +53,9 @@
         .market-top-strip {
             background: #f8f9fa;
             border-bottom: 1px solid #eaeaea;
-            font-size: 13px;
+            font-size: 15px;
             color: #555;
-            padding: 6px 20px;
+            padding: 10px 20px;
             display: flex;
             justify-content: space-between;
             align-items: center;
@@ -65,9 +65,10 @@
             text-decoration: none;
             margin-left: 15px;
             transition: color 0.2s;
+            font-weight: 500;
         }
         .market-top-strip a:hover {
-            color: #007bff;
+            color: #ff9800;
         }
         .market-main-header {
             max-width: 1300px;
@@ -85,12 +86,12 @@
             gap: 10px;
             text-decoration: none;
             font-weight: bold;
-            font-size: 20px;
+            font-size: 22px;
             color: #2c3e50;
         }
         .market-logo-area i {
-            color: #007bff;
-            font-size: 24px;
+            color: #ff9800;
+            font-size: 26px;
         }
         .market-search-box {
             flex: 1;
@@ -183,6 +184,36 @@
             margin: 20px auto;
             padding: 0 15px;
         }
+        /* شبكة الفلاتر الجديدة */
+        .nms-filters-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+        .nms-filter-item {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+        .nms-filter-item label {
+            font-size: 13px;
+            font-weight: 500;
+            color: #333;
+        }
+        .nms-filter-item select,
+        .nms-filter-item input {
+            padding: 8px 12px;
+            border: 1px solid #ced4da;
+            border-radius: 6px;
+            font-size: 14px;
+            transition: border-color 0.2s;
+        }
+        .nms-filter-item select:focus,
+        .nms-filter-item input:focus {
+            outline: none;
+            border-color: #007bff;
+        }
     </style>
 </head>
 <body>
@@ -202,9 +233,17 @@
             <div style="display: flex; align-items: center; gap: 10px;">
                 <span><i class="fas fa-map-marker-alt text-primary"></i> فلسطين - مدينة رام الله</span>
             </div>
-            <div>
-                <a href="https://www.facebook.com/MapServesPalestine" target="_blank" rel="noopener"><i class="fas fa-headset"></i> إتصل بنا</a>
+            <div style="display: flex; align-items: center; gap: 15px; flex-wrap: wrap;">
+                <a href="#" id="footer-guide-map-interactive"><i class="fas fa-map-marked-alt"></i> الخريطة التفاعلية</a>
+                <a href="#" id="footer-guide-search"><i class="fas fa-search"></i> البحث السريع</a>
+                <a href="#" id="footer-guide-search"><i class="fas fa-list"></i> البحث عن الخدمات</a>
+                <a href="#" id="footer-guide-provider"><i class="fas fa-user-tie"></i> حساب مزود الخدمة</a>
+                <a href="#" id="footer-guide-subscription"><i class="fas fa-user-plus"></i> كيف تشترك معنا</a>
+                <a href="#" id="footer-guide-map"><i class="fas fa-book-open"></i> دليل استخدام المنصة</a>
                 <a href="#" id="nms-about-btn"><i class="fas fa-circle-info"></i> من نحن</a>
+                <a href="#" id="footer-terms-btn"><i class="fas fa-file-contract"></i> شروط الاستخدام</a>
+                <a href="#" id="footer-privacy-btn"><i class="fas fa-user-shield"></i> سياسة الخصوصية</a>
+                <a href="https://www.facebook.com/MapServesPalestine" target="_blank" rel="noopener"><i class="fas fa-headset"></i> إتصل بنا</a>
             </div>
         </div>
 
@@ -256,6 +295,10 @@
                 <a href="/no-map-search.html?group=professional"><i class="fas fa-user-tie"></i> المهن الحرة</a>
                 <a href="/no-map-search.html?group=events"><i class="fas fa-glass-cheers"></i> مناسبات وترفيه</a>
                 <a href="/no-map-search.html?group=misc"><i class="fas fa-box-open"></i> متفرقات</a>
+                <a href="/no-map-search.html?group=landmarks"><i class="fas fa-landmark"></i> معالم المدينة</a>
+                <a href="/no-map-search.html?group=commercial"><i class="fas fa-store"></i> محلات تجارية ومطاعم</a>
+                <a href="/no-map-search.html?group=education"><i class="fas fa-school"></i> مدارس ورياض أطفال</a>
+                <a href="/no-map-search.html?group=jobs"><i class="fas fa-briefcase"></i> وظائف شاغرة</a>
             </div>
         </nav>
     </header>
@@ -323,26 +366,9 @@
 
                 <div class="nms-filters-box">
                     <p class="nms-filters-hint"><i class="fas fa-filter"></i> فلترة النتائج (اختياري):</p>
-                    <div class="nms-filter-row">
-                        <select id="nms-field-select" class="nms-select"></select>
-                        <select id="nms-operator-select" class="nms-select">
-                            <option value="=">يساوي</option>
-                            <option value="contains">يحتوي على</option>
-                            <option value=">">أكبر من أو يساوي</option>
-                            <option value="<">أصغر من أو يساوي</option>
-                        </select>
-                        <div id="nms-value-container" class="nms-value-container"></div>
-                        <button id="nms-add-condition" class="nms-btn nms-btn-secondary">
-                            <i class="fas fa-plus"></i> إضافة شرط
-                        </button>
-                    </div>
-
-                    <div id="nms-conditions-list" class="nms-conditions-list"></div>
+                    <div id="nms-filters-grid" class="nms-filters-grid"></div>
 
                     <div class="nms-filter-actions">
-                        <button id="nms-run-search" class="nms-btn nms-btn-primary">
-                            <i class="fas fa-search"></i> تنفيذ البحث
-                        </button>
                         <button id="nms-clear-search" class="nms-btn nms-btn-muted">
                             <i class="fas fa-broom"></i> إعادة تعيين
                         </button>
@@ -468,8 +494,8 @@
         <div class="nms-footer-col">
             <h3>مساعدة ودعم</h3>
             <ul>
-                <li><a href="/original-index.html"><i class="fas fa-angle-left"></i> الخريطة التفاعلية</a></li>
-                <li><a href="/no-map-search.html"><i class="fas fa-angle-left"></i> البحث السريع</a></li>
+                <li><a href="#" id="footer-guide-map-interactive"><i class="fas fa-angle-left"></i> الخريطة التفاعلية</a></li>
+                <li><a href="#" id="footer-guide-search"><i class="fas fa-angle-left"></i> البحث السريع</a></li>
                 <li><a href="#" onclick="document.getElementById('nms-about-btn').click(); return false;"><i class="fas fa-angle-left"></i> من نحن</a></li>
                 <li><a href="#" id="footer-terms-btn"><i class="fas fa-angle-left"></i> شروط الاستخدام</a></li>
                 <li><a href="#" id="footer-privacy-btn"><i class="fas fa-angle-left"></i> سياسة الخصوصية</a></li>
@@ -481,8 +507,8 @@
             <ul>
                 <li><a href="#" id="footer-guide-search"><i class="fas fa-angle-left"></i> البحث عن الخدمات</a></li>
                 <li><a href="#" id="footer-guide-provider"><i class="fas fa-angle-left"></i> حساب مزود الخدمة</a></li>
-                <li><a href="https://www.facebook.com/MapServesPalestine" target="_blank"><i class="fas fa-angle-left"></i> كيف تشترك معنا</a></li>
-                <li><a href="/original-index.html"><i class="fas fa-angle-left"></i> دليل الخريطة التفاعلية</a></li>
+                <li><a href="#" id="footer-guide-subscription"><i class="fas fa-angle-left"></i> كيف تشترك معنا</a></li>
+                <li><a href="#" id="footer-guide-map"><i class="fas fa-angle-left"></i> دليل استخدام منصة خريطة الخدمات الفلسطينية</a></li>
             </ul>
         </div>
 
@@ -496,6 +522,10 @@
                 <li><a href="no-map-search.html?group=professional"><i class="fas fa-angle-left"></i> المهن الحرة والخصوصي</a></li>
                 <li><a href="no-map-search.html?group=events"><i class="fas fa-angle-left"></i> مناسبات وضيافة وترفيه</a></li>
                 <li><a href="no-map-search.html?group=misc"><i class="fas fa-angle-left"></i> متفرقات وخدمات عامة</a></li>
+                <li><a href="no-map-search.html?group=landmarks"><i class="fas fa-angle-left"></i> معالم المدينة</a></li>
+                <li><a href="no-map-search.html?group=commercial"><i class="fas fa-angle-left"></i> محلات تجارية ومطاعم</a></li>
+                <li><a href="no-map-search.html?group=education"><i class="fas fa-angle-left"></i> مدارس ورياض أطفال</a></li>
+                <li><a href="no-map-search.html?group=jobs"><i class="fas fa-angle-left"></i> وظائف شاغرة</a></li>
             </ul>
         </div>
     </div>

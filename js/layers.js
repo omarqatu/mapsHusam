@@ -65,7 +65,15 @@ const serviceTranslations = {
     'car_delivery_on_call': { name: 'دليفري سيارات (مناوبة)', icon: '🚗' },
     'motorcycle_delivery_on_call': { name: 'دليفري دراجات (مناوبة)', icon: '🏍️' },
     'bicycle_delivery_on_call': { name: 'دليفري هوائية (مناوبة)', icon: '🚲' },
-    'student_research_assist': { name: 'مساعد أبحاث طلاب', icon: '📚' }
+    'student_research_assist': { name: 'مساعد أبحاث طلاب', icon: '📚' },
+
+    // --- الطبقات الجديدة (6) ---
+    'supermarket': { name: 'سوبرماركت', icon: '🏪' },
+    'commercial_shops': { name: 'محلات تجارية', icon: '🏬' },
+    'restaurants': { name: 'مطاعم', icon: '🍽️' },
+    'schools_kindergartens': { name: 'مدارس ورياض أطفال', icon: '🏫' },
+    'job_vacancies': { name: 'وظائف شاغرة', icon: '💼' },
+    'city_landmarks': { name: 'معالم المدينة', icon: '🏛️' }
 };
 
 // جعل serviceTranslations متاحة عالمياً للاستخدام في ملفات أخرى (مثل quick-search.js)
@@ -188,37 +196,92 @@ const createWFSLayer = (workspace, name, title, styleFunc, maxRes = 10, visible 
         source: new ol.source.Vector({
             format: new ol.format.GeoJSON(),
             url: function(extent) {
-                // جلب البيانات حسب المدى المرئي (BBOX) لتحسين الأداء
-                return `${MAP_CONFIG.server.proxyUrl}${workspace}/ows?service=WFS&version=1.0.0&request=GetFeature&typeName=${workspace}:${name}&outputFormat=application%2Fjson&srsName=${MAP_CONFIG.server.srsName}&bbox=${extent.join(',')},${MAP_CONFIG.server.srsName}`;
+                const params = new URLSearchParams({
+                    service: 'WFS',
+                    version: '1.0.0',
+                    request: 'GetFeature',
+                    typeName: `${workspace}:${name}`,
+                    outputFormat: 'application/json',
+                    srsName: MAP_CONFIG.server.srsName,
+                    bbox: `${extent.join(',')},${MAP_CONFIG.server.srsName}`
+                });
+                return `${MAP_CONFIG.server.proxyUrl}${workspace}/ows?${params.toString()}`;
             },
             strategy: ol.loadingstrategy.bbox,
             // إضافة cache للبيانات المحملة لتقليل الطلبات المتكررة
             useSpatialIndex: true,
             // إضافة معالجة أخطاء للتحميل
-            loader: function(extent, resolution, projection, success, failure) {
-                const url = this.getUrl(extent, resolution, projection);
-                const controller = new AbortController();
-                const timeoutId = setTimeout(() => controller.abort(), 15000); // 15 ثانية timeout
-                
-                fetch(url, { signal: controller.signal })
-                    .then(response => {
-                        clearTimeout(timeoutId);
-                        if (!response.ok) {
-                            throw new Error(`HTTP error! status: ${response.status}`);
-                        }
-                        return response.json();
-                    })
-                    .then(data => {
-                        const features = this.getFormat().readFeatures(data);
-                        this.addFeatures(features);
-                        success(features);
-                    })
-                    .catch(error => {
-                        clearTimeout(timeoutId);
-                        console.warn(`Failed to load layer ${name}:`, error.message);
-                        // لا نستدعي failure لتجنب توقف التحميل بالكامل
-                        success([]); // إرجاع مصفوفة فارغة بدلاً من الفشل
+            loader: function(extent, resolution, projection) {
+                const buildUrl = (basePath) => {
+                    const params = new URLSearchParams({
+                        service: 'WFS',
+                        version: '1.0.0',
+                        request: 'GetFeature',
+                        typeName: `${workspace}:${name}`,
+                        outputFormat: 'application/json',
+                        srsName: MAP_CONFIG.server.srsName,
+                        bbox: `${extent.join(',')},${MAP_CONFIG.server.srsName}`
                     });
+                    return `${basePath}?${params.toString()}`;
+                };
+
+                const workspaceUrl = `${MAP_CONFIG.server.proxyUrl}${workspace}/ows`;
+                const commonUrl = `${MAP_CONFIG.server.proxyUrl}ows`;
+                let triedFallback = false;
+
+                const loaderFetch = async (url) => {
+                    const controller = new AbortController();
+                    const timeoutId = setTimeout(() => controller.abort(), 15000);
+                    try {
+                        const response = await fetch(url, { signal: controller.signal, credentials: 'same-origin', headers: { 'Accept': 'application/json' } });
+                        const text = await response.text().catch(() => '');
+                        if (!response.ok) {
+                            throw new Error(`HTTP ${response.status} for ${url}: ${text.substring(0, 200)}`);
+                        }
+                        try {
+                            const data = JSON.parse(text);
+                            const features = this.getFormat().readFeatures(data);
+                            this.addFeatures(features);
+                        } catch (parseError) {
+                            throw new Error(`JSON parse failed for ${url}: ${parseError.message}. Response: ${text.substring(0, 400)}`);
+                        }
+                    } finally {
+                        clearTimeout(timeoutId);
+                    }
+                };
+
+                const tryLoad = async () => {
+                    const firstUrl = buildUrl(workspaceUrl);
+                    try {
+                        await loaderFetch(firstUrl);
+                        return;
+                    } catch (error) {
+                        if (error.name === 'AbortError') {
+                            // تحميل تم إلغاؤه بسبب انتهاء مهلة الطلب، هذا يحدث أحياناً
+                            // عند توقف الخريطة أو الشبكة، ولا نحتاج إلى تحذير مزعج.
+                            return;
+                        }
+                        console.warn(`Failed to load layer ${name} from ${firstUrl}:`, error.message);
+                        if (!triedFallback) {
+                            triedFallback = true;
+                            const fallbackUrl = buildUrl(commonUrl);
+                            try {
+                                await loaderFetch(fallbackUrl);
+                            } catch (fallbackError) {
+                                if (fallbackError.name === 'AbortError') {
+                                    return;
+                                }
+                                throw fallbackError;
+                            }
+                        }
+                    }
+                };
+
+                tryLoad().catch(error => {
+                    if (error.name !== 'AbortError') {
+                        console.warn(`Final failure loading layer ${name}:`, error.message);
+                    }
+                });
             }
         })
     });
@@ -310,18 +373,4 @@ window.appLayers.searchMarkerLayer = new ol.layer.Vector({
         })
     }), 
     zIndex: 1000 
-});
-
-window.appLayers.searchResultsHighlightLayer = new ol.layer.Vector({ 
-    source: new ol.source.Vector(), 
-    style: new ol.style.Style({
-        image: new ol.style.Circle({
-            radius: 10, 
-            fill: new ol.style.Fill({ color: '#ffff00' }), // اللون الأصفر للبحث
-            stroke: new ol.style.Stroke({ color: '#000000', width: 2 })
-        }),
-        stroke: new ol.style.Stroke({ color: '#ffff00', width: 4 }),
-        fill: new ol.style.Fill({ color: 'rgba(255, 255, 0, 0.3)' })
-    }), 
-    zIndex: 1001 
 });

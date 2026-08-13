@@ -272,7 +272,9 @@ function initializeEditTools(map, overlayLayersObjParam) {
             'ambulances_on_call': 'إسعاف مناوبة', 'music_training': 'تدريب موسيقى ومعاهد', 'lawyers': 'محاميين',
             'land_surveyors': 'مساحين أراضي', 'real_estate_valuers': 'مخمنين عقاريين', 'private_tutors': 'أساتذة خصوصي',
             'programmers': 'مبرمجين', 'car_delivery_on_call': 'دليفري سيارات مناوبة', 'motorcycle_delivery_on_call': 'دليفري دراجات مناوبة',
-            'bicycle_delivery_on_call': 'دليفري هوائية مناوبة', 'photographers': 'مصور فوتوغرافي', 'student_research_assist': 'مساعد أبحاث طلاب'
+            'bicycle_delivery_on_call': 'دليفري هوائية مناوبة', 'photographers': 'مصور فوتوغرافي', 'student_research_assist': 'مساعد أبحاث طلاب',
+            'supermarket': 'سوبرماركت', 'commercial_shops': 'محلات تجارية', 'restaurants': 'مطاعم',
+            'schools_kindergartens': 'مدارس ورياض أطفال', 'job_vacancies': 'وظائف شاغرة', 'city_landmarks': 'معالم المدينة'
         };
 
         const customTagsMapping = {
@@ -335,7 +337,14 @@ function initializeEditTools(map, overlayLayersObjParam) {
             'motorcycle_delivery_on_call': 'دليفري دراجات، توصيل اكل سريع، طلبات موتور، دليفري ليلي مناوب',
             'bicycle_delivery_on_call': 'توصيل بايسكل، دليفري دراجة هوائية، توصيل قريب، صديق للبيئة',
             'photographers': 'مصورين، جلسات تصوير خارجية، تصوير مناسبات، تصوير احترافي، كاميرات ريج',
-            'student_research_assist': 'مشاريع تخرج، ابحاث طلابية، تنسيق رسائل، مساعدة جامعية، كتابة تقارير، تحليل إحصائي'
+            'student_research_assist': 'مشاريع تخرج، ابحاث طلابية، تنسيق رسائل، مساعدة جامعية، كتابة تقارير، تحليل إحصائي',
+            
+            'supermarket': 'بقالة، خضار وفواكه، سوبرماركت صغير، مواد غذائية، مشتريات منزلية، تسوق يومي',
+            'commercial_shops': 'محلات تجارية، بيع وشراء، محلات ملابس، محلات أدوات منزلية، محلات إلكترونيات',
+            'restaurants': 'مطاعم، أكل جاهز، وجبات سريعة، توصيل طعام، مطاعم محلية، مأكولات شعبية',
+            'schools_kindergartens': 'مدارس، روضة أطفال، تعليم ابتدائي، تعليم ثانوي، حضانة، معاهد تعليمية',
+            'job_vacancies': 'وظائف شاغرة، فرص عمل، توظيف، إعلانات وظائف، وظائف حكومية، وظائف خاصة',
+            'city_landmarks': 'معالم المدينة، أماكن سياحية، مواقع تاريخية، معالم أثرية، مناطق جذب سياحي'
         };
 
         if (cleanLayerKey === 'rentlayer' || cleanLayerKey === 'apartrent') {
