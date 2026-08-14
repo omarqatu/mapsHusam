@@ -70,7 +70,9 @@ function initializeQuickSearch(map, overlayLayersObj) {
         'real_estate_valuers': 'fa-calculator', 'private_tutors': 'fa-chalkboard-teacher', 'programmers': 'fa-code',
         'car_delivery_on_call': 'fa-car', 'motorcycle_delivery_on_call': 'fa-motorcycle',
         'bicycle_delivery_on_call': 'fa-bicycle', 
-        'student_research_assist': 'fa-book'
+        'student_research_assist': 'fa-book',
+        'supermarket': 'fa-cart-shopping', 'commercial_shops': 'fa-store', 'restaurants': 'fa-utensils',
+        'schools_kindergartens': 'fa-school', 'job_vacancies': 'fa-briefcase', 'city_landmarks': 'fa-landmark'
     };
 
     if (MAP_CONFIG.layers.realestate) {

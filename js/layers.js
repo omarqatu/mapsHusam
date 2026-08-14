@@ -70,7 +70,7 @@ const serviceTranslations = {
     // --- الطبقات الجديدة (6) ---
     'supermarket': { name: 'سوبرماركت', icon: '🏪' },
     'commercial_shops': { name: 'محلات تجارية', icon: '🏬' },
-    'restaurants': { name: 'مطاعم', icon: '🍽️' },
+    'restaurants': { name: 'مطاعم وكوفي شوبات', icon: '🍽️' },
     'schools_kindergartens': { name: 'مدارس ورياض أطفال', icon: '🏫' },
     'job_vacancies': { name: 'وظائف شاغرة', icon: '💼' },
     'city_landmarks': { name: 'معالم المدينة', icon: '🏛️' }

@@ -89,7 +89,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 'supermarket': 'سوبرماركت',
                 'commercial_shops': 'محلات تجارية',
-                'restaurants': 'مطاعم',
+                'restaurants': 'مطاعم وكوفي شوبات',
                 'schools_kindergartens': 'مدارس ورياض أطفال',
                 'job_vacancies': 'وظائف شاغرة',
                 'city_landmarks': 'معالم المدينة'
@@ -453,7 +453,7 @@ if (typeof window.englishToArabicLayerMap !== 'object') {
 
         'supermarket': 'سوبرماركت',
         'commercial_shops': 'محلات تجارية',
-        'restaurants': 'مطاعم',
+        'restaurants': 'مطاعم وكوفي شوبات',
         'schools_kindergartens': 'مدارس ورياض أطفال',
         'job_vacancies': 'وظائف شاغرة',
         'city_landmarks': 'معالم المدينة'
@@ -605,9 +605,9 @@ if (typeof window.renderMarketSearchResults !== 'function') {
             card.innerHTML = html;
 
             if (p.whatsapp || p.phone) {
-                const rawPhone = (p.whatsapp || p.phone).toString();
-                const cleanDigits = rawPhone.replace(/\D/g, '');
-                const localPhone = cleanDigits.length > 5 ? '0' + cleanDigits.slice(5) : cleanDigits;
+                // 🆕 استخدام قيمة phone مباشرة إذا كانت موجودة، وإلا التحويل من whatsapp
+                const localPhone = p.phone ? p.phone.toString() : ('0' + (p.whatsapp || '').toString().replace(/\D/g, '').slice(5));
+                const cleanDigits = (p.whatsapp || p.phone || '').toString().replace(/\D/g, '');
                 const providerName = p.name || (isRealEstate ? 'المعلن' : 'مزود الخدمة');
 
                 const layerDbName = (f.layerId || '').replace(/Layer$/i, '');
@@ -624,17 +624,21 @@ if (typeof window.renderMarketSearchResults !== 'function') {
                         </button>
                     `;
                 } else {
+                    // 🆕 زر الاتصال يظهر فقط إذا كان هناك phone
+                    const hasPhone = p.phone !== undefined && p.phone !== null && p.phone !== '' && String(p.phone).trim() !== '';
                     actions.innerHTML = `
-                        <button class="nms-call-btn"><i class="fas fa-mobile-alt"></i> اتصال</button>
+                        ${hasPhone ? `<button class="nms-call-btn"><i class="fas fa-mobile-alt"></i> اتصال</button>` : ''}
                         <button class="nms-whatsapp-btn"><i class="fab fa-whatsapp"></i> واتساب</button>
                     `;
 
-                    actions.querySelector('.nms-call-btn').onclick = async () => {
-                        const quota = await window.checkRequestQuotaOrAlert(window.getRealUserId(), null);
-                        if (!quota.allowed) return;
-                        window.trackRequest(providerName, `(${layerTitle}) اتصال مباشر`);
-                        window.location.href = 'tel:' + localPhone;
-                    };
+                    if (hasPhone) {
+                        actions.querySelector('.nms-call-btn').onclick = async () => {
+                            const quota = await window.checkRequestQuotaOrAlert(window.getRealUserId(), null);
+                            if (!quota.allowed) return;
+                            window.trackRequest(providerName, `(${layerTitle}) اتصال مباشر`);
+                            window.location.href = 'tel:' + localPhone;
+                        };
+                    }
 
                     actions.querySelector('.nms-whatsapp-btn').onclick = async () => {
                         const newTab = window.open('', '_blank');

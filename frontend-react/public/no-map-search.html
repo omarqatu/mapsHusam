@@ -234,15 +234,15 @@
                 <span><i class="fas fa-map-marker-alt text-primary"></i> فلسطين - مدينة رام الله</span>
             </div>
             <div style="display: flex; align-items: center; gap: 15px; flex-wrap: wrap;">
-                <a href="#" id="footer-guide-map-interactive"><i class="fas fa-map-marked-alt"></i> الخريطة التفاعلية</a>
-                <a href="#" id="footer-guide-search"><i class="fas fa-search"></i> البحث السريع</a>
-                <a href="#" id="footer-guide-search"><i class="fas fa-list"></i> البحث عن الخدمات</a>
-                <a href="#" id="footer-guide-provider"><i class="fas fa-user-tie"></i> حساب مزود الخدمة</a>
-                <a href="#" id="footer-guide-subscription"><i class="fas fa-user-plus"></i> كيف تشترك معنا</a>
-                <a href="#" id="footer-guide-map"><i class="fas fa-book-open"></i> دليل استخدام المنصة</a>
+                <a href="#" id="header-guide-map-interactive"><i class="fas fa-map-marked-alt"></i> الخريطة التفاعلية</a>
+                <a href="#" id="header-guide-search"><i class="fas fa-search"></i> البحث السريع</a>
+                <a href="#" id="header-guide-search-services"><i class="fas fa-list"></i> البحث عن الخدمات</a>
+                <a href="#" id="header-guide-provider"><i class="fas fa-user-tie"></i> حساب مزود الخدمة</a>
+                <a href="#" id="header-guide-subscription"><i class="fas fa-user-plus"></i> كيف تشترك معنا</a>
+                <a href="#" id="header-guide-map"><i class="fas fa-book-open"></i> دليل استخدام المنصة</a>
                 <a href="#" id="nms-about-btn"><i class="fas fa-circle-info"></i> من نحن</a>
-                <a href="#" id="footer-terms-btn"><i class="fas fa-file-contract"></i> شروط الاستخدام</a>
-                <a href="#" id="footer-privacy-btn"><i class="fas fa-user-shield"></i> سياسة الخصوصية</a>
+                <a href="#" id="header-terms-btn"><i class="fas fa-file-contract"></i> شروط الاستخدام</a>
+                <a href="#" id="header-privacy-btn"><i class="fas fa-user-shield"></i> سياسة الخصوصية</a>
                 <a href="https://www.facebook.com/MapServesPalestine" target="_blank" rel="noopener"><i class="fas fa-headset"></i> إتصل بنا</a>
             </div>
         </div>
@@ -390,54 +390,6 @@
     </div>
 </div>
 
-<!-- مودال "من نحن" -->
-<div id="nms-about-modal" class="nms-modal-overlay hidden">
-    <div class="nms-modal-box">
-        <button type="button" id="nms-about-close" class="nms-modal-close" aria-label="إغلاق">✕</button>
-
-        <h2 class="nms-modal-title"><i class="fas fa-circle-info"></i> من نحن</h2>
-
-        <p class="nms-modal-lead">
-            <strong>خريطة الخدمات الفلسطينية</strong> منصة رقمية مجانية هدفها الأول ربط أي شخص في فلسطين
-            بأقرب وأنسب خدمة أو عقار يحتاجه، بأقل وقت ممكن ودون وسطاء — سواء كنت تبحث عن فني، طبيب،
-            محامٍ، شقة للإيجار، أو أرض للبيع. كل هذا عبر خريطة تفاعلية ذكية أو عبر بحث نصّي بسيط بدون
-            الحاجة لفتح الخريطة إطلاقاً.
-        </p>
-
-        <div class="nms-modal-section">
-            <h3><i class="fas fa-map-marked-alt"></i> البحث من خلال الخريطة التفاعلية</h3>
-            <p>الخريطة الرئيسية تضم مجموعة أزرار جاهزة أعلى الشاشة:</p>
-            <ul class="nms-modal-list">
-                <li><b>🔍 البحث الذكي:</b> بحث بالسمات (اختر طبقة، حقل، وشرط) مع إمكانية إضافة أكثر من شرط دفعة واحدة.</li>
-                <li><b>ℹ️ استعلام:</b> فعّله ثم مرر أو انقر على أي معلم بالخريطة لتظهر لك تفاصيله فوراً.</li>
-                <li><b>📍 البحث من خلال الموقع:</b> حدد موقعك وابحث عن أقرب الخدمات ضمن مسافة تحددها.</li>
-                <li><b>📚 ظهور / إخفاء الخدمات:</b> تحكم بالطبقات التي تظهر لك على الخريطة من أصل 62 فئة.</li>
-                <li><b>📏 أدوات القياس:</b> قياس مسافة، مساحة، أو رسم نقطة بإحداثيات دقيقة.</li>
-                <li><b>🔗 مشاركة موقع:</b> حدد أي نقطة واحصل على رابط مباشر لها بإحداثيات فلسطينية وعالمية لمشاركتها.</li>
-            </ul>
-        </div>
-
-        <div class="nms-modal-section">
-            <h3><i class="fas fa-list-check"></i> البحث بدون خريطة (هذه الصفحة)</h3>
-            <p>
-                بديل أخف وأسرع لمن لا يريد تحميل الخريطة: فروع مصنّفة، فلاتر اختيارية لتضييق النتائج،
-                ونتائج مباشرة تتضمن تفاصيل كاملة مع أزرار اتصال وواتساب فورية.
-            </p>
-        </div>
-
-        <!-- 🆕 رابط لدليل الاستخدام الموحّد الكامل (نفس المحتوى المستخدم بصفحة الخريطة) -->
-        <p style="text-align:center; margin:15px 0;">
-            <a href="#" data-legal="guide" style="color:#1a73e8; font-weight:bold; text-decoration:underline;">
-                <i class="fas fa-book-open"></i> الاطلاع على دليل الاستخدام الكامل خطوة بخطوة
-            </a>
-        </p>
-
-        <a href="https://www.facebook.com/MapServesPalestine" target="_blank" rel="noopener" class="nms-modal-fb-link">
-            <i class="fab fa-facebook-f"></i> تواصل معنا عبر صفحة الفيسبوك
-        </a>
-    </div>
-</div>
-
 <!-- ====== دليل الاستخدام - زر عائم يُنقَل تلقائياً إلى داخل بوابة الملف
      الشخصي (ui-collapse.js) بنفس آلية وشكل صفحة الخريطة تماماً ====== -->
 <div id="guide-contact-floating-buttons" style="display:none;">
@@ -448,7 +400,6 @@
 
 <!-- ملفات البرمجيات والنصوص الأساسية -->
 <script src="/js/auth-core-functions.js"></script>
-<script src="/js/legal-content.js"></script>
 <script src="/js/auth-app-events.js"></script>
 <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
 <script src="/js/notifications.js"></script>
@@ -496,7 +447,7 @@
             <ul>
                 <li><a href="#" id="footer-guide-map-interactive"><i class="fas fa-angle-left"></i> الخريطة التفاعلية</a></li>
                 <li><a href="#" id="footer-guide-search"><i class="fas fa-angle-left"></i> البحث السريع</a></li>
-                <li><a href="#" onclick="document.getElementById('nms-about-btn').click(); return false;"><i class="fas fa-angle-left"></i> من نحن</a></li>
+                <li><a href="#" id="footer-about-btn"><i class="fas fa-angle-left"></i> من نحن</a></li>
                 <li><a href="#" id="footer-terms-btn"><i class="fas fa-angle-left"></i> شروط الاستخدام</a></li>
                 <li><a href="#" id="footer-privacy-btn"><i class="fas fa-angle-left"></i> سياسة الخصوصية</a></li>
             </ul>
@@ -535,6 +486,9 @@
      بالكامل من المصدر الموحّد js/legal-content.js (تُنشئ مودالها الخاص تلقائياً
      وتربط بنفسها بأزرار footer-terms-btn و footer-privacy-btn و footer-guide-*
      أعلاه) - بدل تكرار نفس المحتوى والمودال محلياً بكل صفحة على حدة. -->
+
+<!-- ملف المحتوى القانوني الموحّد - يتم تحميله بعد الفوتر لضمان ربط جميع الأزرار -->
+<script src="/js/legal-content.js"></script>
 
 </body>
 </html>

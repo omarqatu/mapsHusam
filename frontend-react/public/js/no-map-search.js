@@ -166,7 +166,7 @@ window.__nmsPageHandlesOwnAds = true;
             'motorcycle_delivery_on_call': 'دليفري دراجات (مناوبة)', 'bicycle_delivery_on_call': 'دليفري هوائية (مناوبة)',
             'student_research_assist': 'مساعد أبحاث طلاب',
             // --- الطبقات الجديدة (6) ---
-            'supermarket': 'سوبرماركت', 'commercial_shops': 'محلات تجارية', 'restaurants': 'مطاعم',
+            'supermarket': 'سوبرماركت', 'commercial_shops': 'محلات تجارية', 'restaurants': 'مطاعم وكوفي شوبات',
             'schools_kindergartens': 'مدارس ورياض أطفال', 'job_vacancies': 'وظائف شاغرة', 'city_landmarks': 'معالم المدينة'
         };
 
@@ -371,12 +371,13 @@ window.__nmsPageHandlesOwnAds = true;
                 const providerName = name || (isRealEstate ? 'المعلن' : 'مزود الخدمة');
                 const whatsappNumber = props.whatsapp.toString();
                 if (isRealEstate) {
-                    const cleanDigits = whatsappNumber.replace(/\D/g, '');
-                    const localPhone = '0' + cleanDigits.slice(5);
+                    // 🆕 زر الاتصال يظهر فقط إذا كان هناك phone
+                    const hasPhone = props.phone !== undefined && props.phone !== null && props.phone !== '' && String(props.phone).trim() !== '';
+                    const localPhone = hasPhone ? String(props.phone) : ('0' + whatsappNumber.replace(/\D/g, '').slice(5));
                     actionHtml = `
                         <div style="display:flex; gap:5px; margin-top:6px;">
-                            <button class="ad-call-btn" data-phone="${localPhone}" data-whatsapp="${whatsappNumber}" data-provider="${escapeAdAttr(providerName)}" data-service="${escapeAdAttr(item.label)}" style="flex:1; background:#1a73e8; color:#fff; border:none; padding:6px 4px; border-radius:6px; font-size:10px; font-weight:bold; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:4px;"><i class="fas fa-mobile-alt"></i> اتصال</button>
-                            <button class="ad-whatsapp-btn" data-whatsapp="${whatsappNumber}" data-provider="${escapeAdAttr(providerName)}" data-service="${escapeAdAttr(item.label)}" style="flex:1; background:#25d366; color:#fff; border:none; padding:6px 4px; border-radius:6px; font-size:10px; font-weight:bold; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:4px;"><i class="fab fa-whatsapp"></i> واتساب</button>
+                            ${hasPhone ? `<button class="ad-call-btn" data-phone="${localPhone}" data-whatsapp="${whatsappNumber}" data-provider="${escapeAdAttr(providerName)}" data-service="${escapeAdAttr(item.label)}" style="flex:1; background:#1a73e8; color:#fff; border:none; padding:6px 4px; border-radius:6px; font-size:10px; font-weight:bold; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:4px;"><i class="fas fa-mobile-alt"></i> اتصال</button>` : ''}
+                            <button class="ad-whatsapp-btn" data-whatsapp="${whatsappNumber}" data-provider="${escapeAdAttr(providerName)}" data-service="${escapeAdAttr(item.label)}" style="flex:${hasPhone ? '1' : '1'}; background:#25d366; color:#fff; border:none; padding:6px 4px; border-radius:6px; font-size:10px; font-weight:bold; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:4px;"><i class="fab fa-whatsapp"></i> واتساب</button>
                         </div>`;
                 } else {
                     const layerDbName = item.layer;
@@ -1030,8 +1031,8 @@ window.__nmsPageHandlesOwnAds = true;
 
                 if (p.whatsapp) {
                     const whatsappNumber = p.whatsapp.toString();
-                    const cleanDigits = whatsappNumber.replace(/\D/g, '');
-                    const localPhone = '0' + cleanDigits.slice(5);
+                    // 🆕 استخدام قيمة phone مباشرة إذا كانت موجودة، وإلا التحويل من whatsapp
+                    const localPhone = p.phone ? p.phone.toString() : ('0' + whatsappNumber.replace(/\D/g, '').slice(5));
                     const providerName = p.name || (isRealEstate ? 'المعلن' : 'مزود الخدمة');
 
                     // 🆕 [عرض ذكي حسب ارتباط الخدمة بحساب مزود فعلي]: العقارات دائماً
@@ -1053,18 +1054,22 @@ window.__nmsPageHandlesOwnAds = true;
                         `;
                         card.appendChild(actions);
                     } else {
+                        // 🆕 زر الاتصال يظهر فقط إذا كان هناك phone
+                        const hasPhone = p.phone !== undefined && p.phone !== null && p.phone !== '' && String(p.phone).trim() !== '';
                         const actions = document.createElement('div');
                         actions.className = 'nms-r-actions';
                         actions.innerHTML = `
-                            <button class="nms-call-btn"><i class="fas fa-mobile-alt"></i> اتصال</button>
+                            ${hasPhone ? `<button class="nms-call-btn"><i class="fas fa-mobile-alt"></i> اتصال</button>` : ''}
                             <button class="nms-whatsapp-btn"><i class="fab fa-whatsapp"></i> واتساب</button>
                         `;
-                        actions.querySelector('.nms-call-btn').onclick = async () => {
-                            const quota = await checkRequestQuotaOrAlert(getRealUserId(), null);
-                            if (!quota.allowed) return;
-                            trackRequest(providerName, `(${layerTitle}) اتصال مباشر`);
-                            window.location.href = 'tel:' + localPhone;
-                        };
+                        if (hasPhone) {
+                            actions.querySelector('.nms-call-btn').onclick = async () => {
+                                const quota = await checkRequestQuotaOrAlert(getRealUserId(), null);
+                                if (!quota.allowed) return;
+                                trackRequest(providerName, `(${layerTitle}) اتصال مباشر`);
+                                window.location.href = 'tel:' + localPhone;
+                            };
+                        }
                         actions.querySelector('.nms-whatsapp-btn').onclick = async () => {
                             const newTab = window.open('', '_blank');
                             const quota = await checkRequestQuotaOrAlert(getRealUserId(), newTab);

@@ -543,8 +543,9 @@
         if (!targetUserObj) {
             return '<b>تم الاتفاق بنجاح!</b> أرقام التواصل: غير متوفرة حالياً';
         }
-        let rawWhatsapp = targetUserObj.whatsapp || targetUserObj.providerWhatsapp || targetUserObj.userWhatsapp || targetUserObj.provider_whatsapp || targetUserObj.user_whatsapp || '';
-        let rawPhone = targetUserObj.phone || targetUserObj.userPhone || targetUserObj.providerPhone || targetUserObj.provider_phone || targetUserObj.user_phone || '';
+        // 🆕 استخدام phone و whatsapp_number من جدول users فقط
+        let rawWhatsapp = targetUserObj.whatsapp_number || targetUserObj.whatsapp || '';
+        let rawPhone = targetUserObj.phone || '';
 
         if (typeof targetUserObj === 'string' || typeof targetUserObj === 'number') {
             rawWhatsapp = String(targetUserObj);
@@ -553,7 +554,8 @@
 
         const cleanWhatsapp = rawWhatsapp ? String(rawWhatsapp).trim() : '';
         const normalizedWhatsappDigits = cleanWhatsapp ? normalizeWhatsappNumber(cleanWhatsapp) : '';
-        const phoneVal = rawPhone ? String(rawPhone).trim() : deriveLocalPhoneFromWhatsapp(cleanWhatsapp);
+        // 🆕 استخدام phone مباشرة من جدول users
+        const phoneVal = rawPhone && String(rawPhone).trim() !== '' ? String(rawPhone).trim() : deriveLocalPhoneFromWhatsapp(cleanWhatsapp);
 
         if (!normalizedWhatsappDigits && !phoneVal) {
             return '<b>تم الاتفاق بنجاح!</b> أرقام التواصل: غير متوفرة';
@@ -737,9 +739,10 @@
                     chatBtn.style.cssText = isCompleted ? 'background:#6c757d; color:#fff; border:none; padding:8px; border-radius:6px; cursor:pointer; font-size:12px; margin-top:4px; font-weight:bold;' : 'background:#1a73e8; color:#fff; border:none; padding:8px; border-radius:6px; cursor:pointer; font-size:12px; margin-top:4px; font-weight:bold;';
                     chatBtn.onclick = () => {
                         modalWrapper.remove();
+                        // 🆕 استخدام phone و whatsapp_number من جدول users فقط
                         const contactObj = {
-                            phone: chatRole === 'user' ? (r.providerPhone || r.phone) : (r.userPhone || r.phone),
-                            whatsapp: chatRole === 'user' ? (r.providerWhatsapp || r.providerPhone || r.phone) : (r.userWhatsapp || r.userPhone || r.phone)
+                            phone: chatRole === 'user' ? (r.provider_phone || r.providerPhone || r.phone) : (r.requester_phone || r.user_phone || r.userPhone || r.phone),
+                            whatsapp: chatRole === 'user' ? (r.provider_whatsapp || r.provider_whatsapp_number || r.providerPhone || r.phone) : (r.requester_whatsapp || r.user_whatsapp || r.user_whatsapp_number || r.userPhone || r.phone)
                         };
                         openChatModal(r.id, chatRole, otherPartyName, isCompleted, contactObj, r.service_type);
                     };
@@ -1050,9 +1053,10 @@
             if (data.success) {
                 renderMessages(data.messages);
                 if (data.requestStatus === 'completed') {
+                    // 🆕 استخدام phone و whatsapp_number من جدول users فقط
                     const contactObj = {
-                        phone: currentUserRoleInChat === 'user' ? (data.providerPhone || data.phone) : (data.userPhone || data.phone),
-                        whatsapp: currentUserRoleInChat === 'user' ? (data.providerWhatsapp || data.providerPhone || data.phone) : (data.userWhatsapp || data.userPhone || data.phone)
+                        phone: currentUserRoleInChat === 'user' ? (data.provider_phone || data.providerPhone || data.phone) : (data.user_phone || data.userPhone || data.phone),
+                        whatsapp: currentUserRoleInChat === 'user' ? (data.provider_whatsapp || data.provider_whatsapp_number || data.providerPhone || data.phone) : (data.user_whatsapp || data.user_whatsapp_number || data.userPhone || data.phone)
                     };
                     chatStatusLine.innerHTML = renderContactDetailsBox(contactObj, currentOtherPartyName, currentServiceTypeLabel);
                     chatConfirmBtn.disabled = true;
@@ -1145,9 +1149,10 @@
             const data = await res.json();
             if (data.success) {
                 if (data.status === 'completed') {
+                    // 🆕 استخدام phone و whatsapp_number من جدول users فقط
                     const contactObj = {
-                        phone: currentUserRoleInChat === 'user' ? (data.providerPhone || data.phone) : (data.userPhone || data.phone),
-                        whatsapp: currentUserRoleInChat === 'user' ? (data.providerWhatsapp || data.providerPhone || data.phone) : (data.userWhatsapp || data.userPhone || data.phone)
+                        phone: currentUserRoleInChat === 'user' ? (data.provider_phone || data.providerPhone || data.phone) : (data.user_phone || data.userPhone || data.phone),
+                        whatsapp: currentUserRoleInChat === 'user' ? (data.provider_whatsapp || data.provider_whatsapp_number || data.providerPhone || data.phone) : (data.user_whatsapp || data.user_whatsapp_number || data.userPhone || data.phone)
                     };
                     chatStatusLine.innerHTML = renderContactDetailsBox(contactObj, currentOtherPartyName, currentServiceTypeLabel);
                     chatConfirmBtn.disabled = true;
@@ -1488,9 +1493,10 @@
         removePulseEffect(data.requestId);
         
         if (data.requestId === currentOpenRequestId && chatModal && chatModal.style.display === 'flex') {
+            // 🆕 استخدام phone و whatsapp_number من جدول users فقط
             const contactObj = {
-                phone: currentUserRoleInChat === 'user' ? (data.providerPhone || data.phone) : (data.userPhone || data.phone),
-                whatsapp: currentUserRoleInChat === 'user' ? (data.providerWhatsapp || data.providerPhone || data.phone) : (data.userWhatsapp || data.userPhone || data.phone)
+                phone: currentUserRoleInChat === 'user' ? (data.provider_phone || data.providerPhone || data.phone) : (data.user_phone || data.userPhone || data.phone),
+                whatsapp: currentUserRoleInChat === 'user' ? (data.provider_whatsapp || data.provider_whatsapp_number || data.providerPhone || data.phone) : (data.user_whatsapp || data.user_whatsapp_number || data.userPhone || data.phone)
             };
             chatStatusLine.innerHTML = renderContactDetailsBox(contactObj, currentOtherPartyName, currentServiceTypeLabel);
             chatConfirmBtn.disabled = true;

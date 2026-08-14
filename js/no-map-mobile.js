@@ -30,6 +30,72 @@
             body.nms-mobile .market-actions-area { order: 3 !important; justify-content: center !important; }
             body.nms-mobile .market-nav-container { justify-content: flex-start !important; }
 
+            /* 🆕 جعل شريط الخيارات في رأس الصفحة قابلاً للتمرير على الموبايل والتابلت */
+            body.nms-mobile .market-top-strip > div:last-child {
+                display: flex !important;
+                flex-wrap: nowrap !important;
+                overflow-x: auto !important;
+                overflow-y: hidden !important;
+                gap: 8px !important;
+                padding: 4px 8px !important;
+                -webkit-overflow-scrolling: touch !important;
+                scrollbar-width: thin !important;
+                scrollbar-color: #007bff #f0f0f0 !important;
+            }
+            body.nms-mobile .market-top-strip > div:last-child::-webkit-scrollbar {
+                height: 4px !important;
+            }
+            body.nms-mobile .market-top-strip > div:last-child::-webkit-scrollbar-track {
+                background: #f0f0f0 !important;
+                border-radius: 2px !important;
+            }
+            body.nms-mobile .market-top-strip > div:last-child::-webkit-scrollbar-thumb {
+                background: #007bff !important;
+                border-radius: 2px !important;
+            }
+            body.nms-mobile .market-top-strip > div:last-child a {
+                white-space: nowrap !important;
+                flex-shrink: 0 !important;
+                font-size: 12px !important;
+                padding: 6px 10px !important;
+                background: #f8f9fa !important;
+                border-radius: 6px !important;
+                border: 1px solid #dee2e6 !important;
+            }
+            body.nms-mobile .market-top-strip > div:last-child a:hover {
+                background: #e9ecef !important;
+            }
+
+            /* 🆕 تحسين عرض الفلاتر على الموبايل لتكون مثل شاشة الكمبيوتر */
+            body.nms-mobile .nms-filters-box {
+                position: relative !important;
+                z-index: auto !important;
+                background: #fff !important;
+                box-shadow: 0 2px 8px rgba(0,0,0,0.1) !important;
+                overflow: visible !important;
+                margin: 15px 0 !important;
+                border-radius: 8px !important;
+            }
+            body.nms-mobile .nms-filters-row {
+                flex-direction: column !important;
+                gap: 10px !important;
+            }
+            body.nms-mobile .nms-filter-group {
+                width: 100% !important;
+                min-width: 0 !important;
+            }
+            body.nms-mobile .nms-select, body.nms-mobile .nms-value-container {
+                width: 100% !important;
+                min-width: 0 !important;
+            }
+            body.nms-mobile .nms-price-inputs {
+                flex-direction: column !important;
+                gap: 8px !important;
+            }
+            body.nms-mobile .nms-price-inputs > div {
+                width: 100% !important;
+            }
+
             body.nms-mobile-sm .nms-topbar-action-btn span { display: none !important; }
             body.nms-mobile-sm .nms-topbar-action-btn { padding: 8px 10px !important; }
             body.nms-mobile-sm .nms-back-home { padding: 8px 10px !important; }
@@ -49,7 +115,7 @@
                 left: 0 !important; right: 0 !important; bottom: 0 !important; top: auto !important;
                 width: 100% !important;
                 border-radius: 16px 16px 0 0 !important;
-                height: var(--nms-sheet-size, 12vh) !important;
+                height: var(--nms-sheet-size, 35vh) !important;
                 max-height: 88vh !important;
             }
             body.nms-mobile-landscape .nms-filters-box.nms-sheet {
@@ -132,7 +198,7 @@
         const isPortrait = document.body.classList.contains('nms-mobile-portrait');
         const raw = document.body.style.getPropertyValue('--nms-sheet-size');
         const parsed = parseFloat(raw);
-        return isNaN(parsed) ? (isPortrait ? 12 : 14) : parsed;
+        return isNaN(parsed) ? (isPortrait ? 35 : 14) : parsed;
     }
 
     function setSizeVal(num) {
@@ -183,7 +249,7 @@
             pendingSize = null;
             const cur = currentSizeVal();
             const isPortrait = document.body.classList.contains('nms-mobile-portrait');
-            const snaps = isPortrait ? [12, 45, 80] : [14, 40, 70];
+            const snaps = isPortrait ? [35, 50, 80] : [14, 40, 70];
             let nearest = snaps[0];
             snaps.forEach(function (s) { if (Math.abs(s - cur) < Math.abs(nearest - cur)) nearest = s; });
 
@@ -232,19 +298,20 @@
 
         if (resultsObserver) resultsObserver.disconnect();
 
-        if (isMobile && resultsVisible) {
-            filtersBox.classList.add('nms-sheet');
-            resultsViewEl.classList.add('nms-has-sheet-space');
-            ensureSheetHandle(filtersBox);
-            if (!sheetInitialized) {
-                sheetInitialized = true;
-                const isPortrait = document.body.classList.contains('nms-mobile-portrait');
-                setSizeVal(isPortrait ? 12 : 14);
-            }
-        } else {
-            filtersBox.classList.remove('nms-sheet');
-            resultsViewEl.classList.remove('nms-has-sheet-space');
-        }
+        // 🆕 تعطيل نظام الـ sheet على الموبايل - الفلاتر تظهر بشكل طبيعي مثل الكمبيوتر
+        // if (isMobile && resultsVisible) {
+        //     filtersBox.classList.add('nms-sheet');
+        //     resultsViewEl.classList.add('nms-has-sheet-space');
+        //     ensureSheetHandle(filtersBox);
+        //     if (!sheetInitialized) {
+        //         sheetInitialized = true;
+        //         const isPortrait = document.body.classList.contains('nms-mobile-portrait');
+        //         setSizeVal(isPortrait ? 35 : 14);
+        //     }
+        // } else {
+        //     filtersBox.classList.remove('nms-sheet');
+        //     resultsViewEl.classList.remove('nms-has-sheet-space');
+        // }
 
         if (resultsObserver) resultsObserver.observe(resultsViewEl, { attributes: true, attributeFilter: ['class'] });
     }
@@ -282,6 +349,48 @@
 
         observeResultsView();
         applyBodyClasses();
+
+        // 🆕 التمرير التلقائي إلى النتائج عند البحث على الموبايل
+        setupSearchScroll();
+
+        // 🆕 إعادة تعيين التمرير إلى الأعلى عند تحميل الصفحة على الموبايل
+        resetScrollOnLoad();
+    }
+
+    // 🆕 إعادة تعيين التمرير إلى الأعلى عند تحميل الصفحة
+    function resetScrollOnLoad() {
+        if (window.innerWidth <= 768) {
+            window.scrollTo(0, 0);
+            document.documentElement.scrollTop = 0;
+            document.body.scrollTop = 0;
+        }
+    }
+
+    // 🆕 إعداد التمرير التلقائي عند البحث
+    function setupSearchScroll() {
+        const searchInput = document.getElementById('market-search-input');
+        const searchBtn = document.getElementById('market-search-btn');
+        const resultsView = document.getElementById('nms-results-view');
+
+        if (!searchInput || !resultsView) return;
+
+        function scrollToResults() {
+            if (!document.body.classList.contains('nms-mobile')) return;
+
+            setTimeout(function () {
+                resultsView.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }, 300);
+        }
+
+        searchInput.addEventListener('input', function () {
+            if (searchInput.value.length >= 2) {
+                scrollToResults();
+            }
+        });
+
+        if (searchBtn) {
+            searchBtn.addEventListener('click', scrollToResults);
+        }
     }
 
     if (document.readyState === 'loading') {

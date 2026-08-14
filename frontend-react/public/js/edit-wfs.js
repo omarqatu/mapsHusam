@@ -75,13 +75,13 @@ async function sendWFS_T(feature, type) {
 
     // عزل حقول المدخلات اليدوية لكل بيئة بشكل مستقل ومضمون (شقق عقارات مقابل خدمات نقاط)
     const allowedPropsAdd = isRealEstate ?
-        ['price', 'currency', 'des', 'pic', 'video', 'area', 'whatsapp', 'end_date', 'work_hours', 'rating', 'location'] :
-        ['name', 'whatsapp', 'des', 'pic', 'rating', 'details_link_1', 'details_link_2', 'end_date', 'work_hours'];
+        ['price', 'currency', 'des', 'pic', 'video', 'area', 'whatsapp', 'phone', 'end_date', 'work_hours', 'rating', 'location'] :
+        ['name', 'whatsapp', 'phone', 'des', 'pic', 'rating', 'details_link_1', 'details_link_2', 'end_date', 'work_hours'];
 
     // إضافة search_tags وغيرها لضمان تحديثها عند التعديل
     const allowedPropsUpdate = isRealEstate ?
-        ['price', 'currency', 'des', 'pic', 'video', 'area', 'end_date', 'work_hours', 'whatsapp', 'rating', 'location', 'search_tags'] :
-        ['name', 'whatsapp', 'pic', 'rating', 'details_link_1', 'details_link_2', 'end_date', 'work_hours', 'des', 'search_tags'];
+        ['price', 'currency', 'des', 'pic', 'video', 'area', 'end_date', 'work_hours', 'whatsapp', 'phone', 'rating', 'location', 'search_tags'] :
+        ['name', 'whatsapp', 'phone', 'pic', 'rating', 'details_link_1', 'details_link_2', 'end_date', 'work_hours', 'des', 'search_tags'];
 
     let payload = '';
     if (type === 'insert') {

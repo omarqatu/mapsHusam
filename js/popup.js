@@ -91,11 +91,10 @@ const arabicToEnglishLayerMap = {
 
     'سوبرماركت': 'supermarket',
     'محلات تجارية': 'commercial_shops',
-    'مطاعم': 'restaurants',
+    'مطاعم وكوفي شوبات': 'restaurants',
     'مدارس ورياض أطفال': 'schools_kindergartens',
     'وظائف شاغرة': 'job_vacancies',
     'معالم المدينة': 'city_landmarks'
-    
     
 };
 
@@ -242,7 +241,8 @@ function initializePopup(map) {
         'مساحين أراضي', 'مخمنين عقاريين', 'أساتذة خصوصي', 'مبرمجين', 
         'دليفري سيارات (مناوبة)', 'دليفري دراجات (مناوبة)', 'دليفري هوائية (مناوبة)',
          'مساعد أبحاث طلاب',
-        'سوبرماركت', 'محلات تجارية', 'مطاعم', 'مدارس ورياض أطفال', 'وظائف شاغرة', 'معالم المدينة'
+         
+        'سوبرماركت', 'محلات تجارية', 'مطاعم وكوفي شوبات', 'مدارس ورياض أطفال', 'وظائف شاغرة', 'معالم المدينة'
     ];
 
     const realEstateLayerNames = ['شقق الإيجار', 'شقق للبيع', 'الأراضي للبيع'];
@@ -615,18 +615,20 @@ function initializePopup(map) {
                         </button>
                     </div>`;
                 } else {
-                    const cleanDigits = whatsappNumber.replace(/\D/g, '');
-                    const localPhone = '0' + cleanDigits.slice(5);
+                    // 🆕 زر الاتصال يظهر فقط إذا كان هناك phone
+                    const hasPhone = props.phone !== undefined && props.phone !== null && props.phone !== '' && String(props.phone).trim() !== '';
+                    const localPhone = hasPhone ? String(props.phone) : ('0' + whatsappNumber.replace(/\D/g, '').slice(5));
 
                     bodyHtml += `
                     <div style="margin-top: 15px; border-top: 2px solid #eee; padding-top: 12px;">
                         <div style="display: flex; gap: 8px; margin-bottom: 8px;">
+                            ${hasPhone ? `
                             <button onclick="handlePhoneCall('${providerName}', '${localPhone}', '${whatsappNumber}', '${layerTitle}')"
                                     style="flex: 1; background: #1a73e8; color: white; border: none; padding: 12px 8px; border-radius: 10px; cursor: pointer; font-weight: bold; display: flex; align-items: center; justify-content: center; gap: 6px; font-size: 13px; box-shadow: 0 4px 12px rgba(26,115,232,0.3);">
                                 <i class="fas fa-mobile-alt" style="font-size: 16px;"></i> اتصال
-                            </button>
+                            </button>` : ''}
                             <button onclick="handleServiceRequest('${providerName}', '${whatsappNumber}', '${layerTitle}')"
-                                    style="flex: 1; background: #25d366; color: white; border: none; padding: 12px 8px; border-radius: 10px; cursor: pointer; font-weight: bold; display: flex; align-items: center; justify-content: center; gap: 6px; font-size: 13px; box-shadow: 0 4px 12px rgba(37,211,102,0.3);">
+                                    style="flex: ${hasPhone ? '1' : '1'}; background: #25d366; color: white; border: none; padding: 12px 8px; border-radius: 10px; cursor: pointer; font-weight: bold; display: flex; align-items: center; justify-content: center; gap: 6px; font-size: 13px; box-shadow: 0 4px 12px rgba(37,211,102,0.3);">
                                 <i class="fab fa-whatsapp" style="font-size: 16px;"></i> واتساب
                             </button>
                         </div>
@@ -774,7 +776,7 @@ document.addEventListener('DOMContentLoaded', function () {
             const newLayers = [
                 { layer: 'supermarket', workspace: 'services', label: 'سوبرماركت' },
                 { layer: 'commercial_shops', workspace: 'services', label: 'محلات تجارية' },
-                { layer: 'restaurants', workspace: 'services', label: 'مطاعم' },
+                { layer: 'restaurants', workspace: 'services', label: 'مطاعم وكوفي شوبات' },
                 { layer: 'schools_kindergartens', workspace: 'services', label: 'مدارس ورياض أطفال' },
                 { layer: 'job_vacancies', workspace: 'services', label: 'وظائف شاغرة' },
                 { layer: 'city_landmarks', workspace: 'services', label: 'معالم المدينة' }

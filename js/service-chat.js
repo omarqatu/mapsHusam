@@ -1,4 +1,4 @@
-/**
+﻿/**
  * js/service-chat.js
  */
 (function () {
@@ -34,14 +34,11 @@
             
             if (playPromise !== undefined) {
                 playPromise.then(() => {
-                    console.log('تم تشغيل الصوت بنجاح');
                 }).catch(err => {
-                    console.log('تعذر تشغيل الصوت المحلي، جاري استخدام البديل...');
                     // استخدام رنين من الإنترنت كبديل
                     requestRingAudio = new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3');
                     requestRingAudio.loop = true;
                     requestRingAudio.volume = 0.5;
-                    requestRingAudio.play().catch(err => console.log('تعذر تشغيل الصوت:', err));
                 });
             }
 
@@ -50,7 +47,6 @@
                 stopRequestRing();
             }, 5000);
         } catch (err) {
-            console.log('خطأ في إنشاء الصوت:', err);
         }
     }
 
@@ -79,6 +75,40 @@
     function getCurrentUserId() {
         const u = getCurrentUser();
         return u ? (u.user_id || u.id) : (window.getRealUserId ? window.getRealUserId() : null);
+    }
+
+    function normalizeWhatsappNumber(rawWhatsapp) {
+        if (!rawWhatsapp) return '';
+        let digits = String(rawWhatsapp).replace(/\D/g, '');
+        if (!digits) return '';
+        if (digits.startsWith('00')) {
+            digits = digits.substring(2);
+        }
+        if ((digits.startsWith('970') || digits.startsWith('972')) && digits.length >= 12) {
+            return digits.slice(0, 12);
+        }
+        if (digits.length === 10 && digits.startsWith('0')) {
+            return '970' + digits.substring(1);
+        }
+        if (digits.length === 9 && digits.startsWith('5')) {
+            return '970' + digits;
+        }
+        return digits;
+    }
+
+    function deriveLocalPhoneFromWhatsapp(rawWhatsapp) {
+        const normalized = normalizeWhatsappNumber(rawWhatsapp);
+        if (!normalized) return '';
+        if ((normalized.startsWith('970') || normalized.startsWith('972')) && normalized.length === 12 && normalized[3] === '5') {
+            return '0' + normalized.substring(3);
+        }
+        if (normalized.length === 10 && normalized.startsWith('0')) {
+            return normalized;
+        }
+        if (normalized.length === 9 && normalized.startsWith('5')) {
+            return '0' + normalized;
+        }
+        return normalized;
     }
 
     // ==========================================================================
@@ -155,7 +185,7 @@
         toastContainer.id = 'svc-toast-container';
         toastContainer.style.cssText = `
             position: fixed; top: 20px; left: 50%; transform: translateX(-50%);
-            z-index: 300000; display: flex; flex-direction: column; gap: 10px;
+            z-index: 2147483647; display: flex; flex-direction: column; gap: 10px;
             align-items: center; width: 100%; max-width: 380px; padding: 0 15px;
             box-sizing: border-box; pointer-events: none;
         `;
@@ -513,24 +543,25 @@
         if (!targetUserObj) {
             return '<b>تم الاتفاق بنجاح!</b> أرقام التواصل: غير متوفرة حالياً';
         }
-        let rawWhatsapp = targetUserObj.whatsapp || targetUserObj.providerWhatsapp || targetUserObj.userWhatsapp || targetUserObj.provider_whatsapp || targetUserObj.user_whatsapp || '';
-        let rawPhone = targetUserObj.phone || targetUserObj.userPhone || targetUserObj.providerPhone || targetUserObj.provider_phone || targetUserObj.user_phone || '';
+        // 🆕 استخدام phone و whatsapp_number من جدول users فقط
+        let rawWhatsapp = targetUserObj.whatsapp_number || targetUserObj.whatsapp || '';
+        let rawPhone = targetUserObj.phone || '';
 
         if (typeof targetUserObj === 'string' || typeof targetUserObj === 'number') {
             rawWhatsapp = String(targetUserObj);
+            rawPhone = '';
         }
 
         const cleanWhatsapp = rawWhatsapp ? String(rawWhatsapp).trim() : '';
-        const phoneVal = rawPhone ? String(rawPhone).trim() : cleanWhatsapp;
+        const normalizedWhatsappDigits = cleanWhatsapp ? normalizeWhatsappNumber(cleanWhatsapp) : '';
+        // 🆕 استخدام phone مباشرة من جدول users
+        const phoneVal = rawPhone && String(rawPhone).trim() !== '' ? String(rawPhone).trim() : deriveLocalPhoneFromWhatsapp(cleanWhatsapp);
 
-        if (!cleanWhatsapp && !phoneVal) {
+        if (!normalizedWhatsappDigits && !phoneVal) {
             return '<b>تم الاتفاق بنجاح!</b> أرقام التواصل: غير متوفرة';
         }
 
-        let waLinkNumber = cleanWhatsapp.replace(/\D/g, '');
-        if (waLinkNumber.startsWith('00')) {
-            waLinkNumber = waLinkNumber.substring(2);
-        }
+        const waLinkNumber = normalizedWhatsappDigits;
 
         const greetName = (otherPartyName && otherPartyName.trim()) ? otherPartyName.trim() : 'الطرف الآخر';
         const greetService = (serviceType && serviceType.trim()) ? serviceType.trim() : 'الخدمة';
@@ -708,9 +739,10 @@
                     chatBtn.style.cssText = isCompleted ? 'background:#6c757d; color:#fff; border:none; padding:8px; border-radius:6px; cursor:pointer; font-size:12px; margin-top:4px; font-weight:bold;' : 'background:#1a73e8; color:#fff; border:none; padding:8px; border-radius:6px; cursor:pointer; font-size:12px; margin-top:4px; font-weight:bold;';
                     chatBtn.onclick = () => {
                         modalWrapper.remove();
+                        // 🆕 استخدام phone و whatsapp_number من جدول users فقط
                         const contactObj = {
-                            phone: chatRole === 'user' ? (r.providerPhone || r.phone) : (r.userPhone || r.phone),
-                            whatsapp: chatRole === 'user' ? (r.providerWhatsapp || r.providerPhone || r.phone) : (r.userWhatsapp || r.userPhone || r.phone)
+                            phone: chatRole === 'user' ? (r.provider_phone || r.providerPhone || r.phone) : (r.requester_phone || r.user_phone || r.userPhone || r.phone),
+                            whatsapp: chatRole === 'user' ? (r.provider_whatsapp || r.provider_whatsapp_number || r.providerPhone || r.phone) : (r.requester_whatsapp || r.user_whatsapp || r.user_whatsapp_number || r.userPhone || r.phone)
                         };
                         openChatModal(r.id, chatRole, otherPartyName, isCompleted, contactObj, r.service_type);
                     };
@@ -872,7 +904,6 @@
             // إذا كان polling معطل، لا نفعل شيئاً
             const now = Date.now();
             if (now < pollingDisabledUntil) {
-                console.log('Polling disabled until:', new Date(pollingDisabledUntil));
                 return;
             }
 
@@ -884,17 +915,14 @@
                 
                 if (dataProvider.success && dataProvider.requests && dataProvider.requests.length > 0) {
                     const req = dataProvider.requests[0];
-                    console.log('Found pending request:', req.id, 'Last handled:', lastHandledPendingReqId);
                     // فقط إذا لم يكن البانر معروضاً بالفعل والطلب لم يتم معالجته
                     if (incomingBanner && lastHandledPendingReqId !== req.id) {
-                        console.log('✅ Showing banner for request:', req.id);
                         showIncomingRequestBanner(req);
                         triggerPulseEffect(req.id);
                         // تشغيل الرنة من polling فقط إذا لم يكن socket متصل
                         playRequestRing();
                         lastHandledPendingReqId = req.id;
                     } else {
-                        console.log('❌ Request already handled or banner not ready');
                     }
                 }
             } catch (e) {}
@@ -905,28 +933,19 @@
     }
 
     function showIncomingRequestBanner(req) {
-        console.log('=== showIncomingRequestBanner START ===');
-        console.log('Request ID:', req.id);
-        console.log('incomingBanner exists:', !!incomingBanner);
-        console.log('incomingBanner display:', incomingBanner ? incomingBanner.style.display : 'N/A');
-        console.log('handledRequests has request:', handledRequests.has(req.id));
-        console.log('lastHandledPendingReqId:', lastHandledPendingReqId);
         
         buildUI();
         if (!incomingBanner) {
-            console.log('ERROR: incomingBanner is null after buildUI');
             return;
         }
         
         // تجنب عرض نفس الطلب مرتين
         if (handledRequests.has(req.id)) {
-            console.log('❌ الطلب معالج بالفعل في handledRequests:', req.id);
             return;
         }
         
         // إذا كان البانر معروضاً بالفعل، لا تعرضه مرة أخرى
         if (incomingBanner.style.display === 'block') {
-            console.log('❌ Banner already displayed, ignoring request:', req.id);
             return;
         }
         
@@ -960,21 +979,15 @@
     }
 
     document.addEventListener('serviceRequestNew', (e) => {
-        console.log('🔌 === SOCKET EVENT ===');
-        console.log('Socket event received for request:', e.detail);
-        console.log('Request ID:', e.detail.id || e.detail.requestId);
         
         const requestId = e.detail.id || e.detail.requestId;
         if (!requestId) {
-            console.error('❌ No request ID in event data');
             return;
         }
         
-        console.log('Current lastHandledPendingReqId:', lastHandledPendingReqId);
         
         // منع التكرار: إذا تم معالجة هذا الطلب بالفعل، لا تفعل شيئاً
         if (lastHandledPendingReqId === requestId) {
-            console.log('❌ Request already handled via socket, ignoring');
             return;
         }
         
@@ -990,11 +1003,9 @@
         // تعطيل polling لمدة 30 ثانية عند استقبال إشعار من socket
         pollingDisabledUntil = Date.now() + 30000;
         lastHandledPendingReqId = requestId;
-        console.log('✅ Socket event processed, lastHandledPendingReqId set to:', requestId);
     });
 
     async function respondToRequest(requestId, action, serviceType) {
-        console.log('🔧 [RESPOND TO REQUEST] requestId:', requestId, 'action:', action, 'serviceType:', serviceType);
         const userId = getCurrentUserId();
         try {
             const res = await fetch(`${window.location.origin}/api/service-requests/${requestId}/respond`, {
@@ -1022,16 +1033,13 @@
     }
 
     document.addEventListener('serviceRequestResponse', (e) => {
-        console.log('🔌 [RESPONSE EVENT] Received serviceRequestResponse:', e.detail);
         const data = e.detail;
         if (data.status === 'accepted') {
-            console.log('✅ [RESPONSE] Request accepted, opening chat for requestId:', data.requestId);
             toast('✅ وافق مزود الخدمة على طلبك! يتم الآن فتح الدردشة.', 'success');
             // التأكد من بناء UI قبل فتح الدردشة
             buildUI();
             openChatModal(data.requestId, 'user', data.providerName || 'مزود الخدمة', false, null, data.serviceType);
         } else if (data.status === 'rejected') {
-            console.log('❌ [RESPONSE] Request rejected');
             toast('❌ اعتذر مزود الخدمة عن طلبك.', 'error');
             removePulseEffect(data.requestId);
         }
@@ -1045,9 +1053,10 @@
             if (data.success) {
                 renderMessages(data.messages);
                 if (data.requestStatus === 'completed') {
+                    // 🆕 استخدام phone و whatsapp_number من جدول users فقط
                     const contactObj = {
-                        phone: currentUserRoleInChat === 'user' ? (data.providerPhone || data.phone) : (data.userPhone || data.phone),
-                        whatsapp: currentUserRoleInChat === 'user' ? (data.providerWhatsapp || data.providerPhone || data.phone) : (data.userWhatsapp || data.userPhone || data.phone)
+                        phone: currentUserRoleInChat === 'user' ? (data.provider_phone || data.providerPhone || data.phone) : (data.user_phone || data.userPhone || data.phone),
+                        whatsapp: currentUserRoleInChat === 'user' ? (data.provider_whatsapp || data.provider_whatsapp_number || data.providerPhone || data.phone) : (data.user_whatsapp || data.user_whatsapp_number || data.userPhone || data.phone)
                     };
                     chatStatusLine.innerHTML = renderContactDetailsBox(contactObj, currentOtherPartyName, currentServiceTypeLabel);
                     chatConfirmBtn.disabled = true;
@@ -1140,9 +1149,10 @@
             const data = await res.json();
             if (data.success) {
                 if (data.status === 'completed') {
+                    // 🆕 استخدام phone و whatsapp_number من جدول users فقط
                     const contactObj = {
-                        phone: currentUserRoleInChat === 'user' ? (data.providerPhone || data.phone) : (data.userPhone || data.phone),
-                        whatsapp: currentUserRoleInChat === 'user' ? (data.providerWhatsapp || data.providerPhone || data.phone) : (data.userWhatsapp || data.userPhone || data.phone)
+                        phone: currentUserRoleInChat === 'user' ? (data.provider_phone || data.providerPhone || data.phone) : (data.user_phone || data.userPhone || data.phone),
+                        whatsapp: currentUserRoleInChat === 'user' ? (data.provider_whatsapp || data.provider_whatsapp_number || data.providerPhone || data.phone) : (data.user_whatsapp || data.user_whatsapp_number || data.userPhone || data.phone)
                     };
                     chatStatusLine.innerHTML = renderContactDetailsBox(contactObj, currentOtherPartyName, currentServiceTypeLabel);
                     chatConfirmBtn.disabled = true;
@@ -1195,7 +1205,6 @@
                 card.style.borderColor = '#ffc107';
             }
         } catch (err) {
-            console.warn('فشل التحقق من التعليق:', err.message);
         }
     }
 
@@ -1219,7 +1228,6 @@
                 card.style.borderColor = '#1a73e8';
             }
         } catch (err) {
-            console.warn('فشل التحقق من التقييم:', err.message);
         }
     }
 
@@ -1257,10 +1265,8 @@
                     }
                 }
             } catch (err) {
-                console.warn('فشل التحقق من التقييمات المعلقة:', err.message);
             }
         } catch (err) {
-            console.warn('فشل التحقق من التعليقات أو التقييمات المعلقة:', err.message);
         }
     }
 
@@ -1481,16 +1487,16 @@
     }
 
     document.addEventListener('serviceRequestCompleted', (e) => {
-        console.log('🔌 [COMPLETED EVENT] Received serviceRequestCompleted:', e.detail);
         const data = e.detail;
         
         // دائماً إزالة التوهج عند إتمام الطلب، بغض النظر عن ما إذا كان مفتوحاً أم لا
         removePulseEffect(data.requestId);
         
         if (data.requestId === currentOpenRequestId && chatModal && chatModal.style.display === 'flex') {
+            // 🆕 استخدام phone و whatsapp_number من جدول users فقط
             const contactObj = {
-                phone: currentUserRoleInChat === 'user' ? (data.providerPhone || data.phone) : (data.userPhone || data.phone),
-                whatsapp: currentUserRoleInChat === 'user' ? (data.providerWhatsapp || data.providerPhone || data.phone) : (data.userWhatsapp || data.userPhone || data.phone)
+                phone: currentUserRoleInChat === 'user' ? (data.provider_phone || data.providerPhone || data.phone) : (data.user_phone || data.userPhone || data.phone),
+                whatsapp: currentUserRoleInChat === 'user' ? (data.provider_whatsapp || data.provider_whatsapp_number || data.providerPhone || data.phone) : (data.user_whatsapp || data.user_whatsapp_number || data.userPhone || data.phone)
             };
             chatStatusLine.innerHTML = renderContactDetailsBox(contactObj, currentOtherPartyName, currentServiceTypeLabel);
             chatConfirmBtn.disabled = true;

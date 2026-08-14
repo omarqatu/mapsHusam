@@ -199,20 +199,6 @@
 }
 .btn-guide-top:hover { background-color: #12876f; }
 
-/* 🆕 زر "طلباتي" داخل البوابة */
-.btn-requests-top {
-    background-color: #f39c12;
-    color: #ffffff;
-    border: none;
-    cursor: pointer;
-    font-weight: bold;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    transition: background 0.3s;
-}
-.btn-requests-top:hover { background-color: #d68910; }
-
 /* 🆕 زر "تواصل معنا عبر فيسبوك" داخل البوابة */
 .btn-fb-top {
     background-color: #1877f2;

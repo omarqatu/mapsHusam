@@ -1944,9 +1944,9 @@ app.get('/api/service-requests', async (req, res) => {
 
     try {
         let query = `
-            SELECT sr.*, 
-                   ru.full_name AS requester_name, ru.phone AS requester_phone,
-                   pu.full_name AS provider_full_name
+            SELECT sr.*,
+                   ru.full_name AS requester_name, ru.phone AS requester_phone, ru.whatsapp_number AS requester_whatsapp,
+                   pu.full_name AS provider_full_name, pu.phone AS provider_phone, pu.whatsapp_number AS provider_whatsapp
             FROM public.service_requests sr
             LEFT JOIN public.users ru ON ru.user_id = sr.user_id
             LEFT JOIN public.users pu ON pu.user_id = sr.provider_user_id
@@ -1979,15 +1979,15 @@ app.get('/api/service-requests', async (req, res) => {
 
         // 🆕 تجهيز أرقام التواصل الصحيحة فقط للطلبات المكتملة (بعد "تم الاتفاق"):
         // - رقم هاتف المستخدم الطالب: من عمود phone بجدول users كما هو تماماً.
+        // - رقم واتساب المستخدم الطالب: من عمود whatsapp_number بجدول users.
         // - رقم هاتف وواتساب مزود الخدمة: من جدول طبقة الخدمة نفسها (عمود whatsapp)
-        //   وليس من جدول users، لأن جدول users لا يملك عمود واتساب أصلاً.
         await Promise.all(requests.map(async (r) => {
             if (r.status === 'completed') {
                 const providerContact = await getProviderContactInfo(r.service_layer, r.feature_id);
                 r.userPhone = r.requester_phone || null;
                 r.userWhatsapp = r.requester_whatsapp || r.requester_phone || null;
-                r.providerPhone = providerContact.phone;
-                r.providerWhatsapp = providerContact.whatsapp;
+                r.providerPhone = r.provider_phone || providerContact.phone;
+                r.providerWhatsapp = r.provider_whatsapp || providerContact.whatsapp;
             }
             // 🆕 اسم الطرف الآخر بشكل موحّد لواجهة "طلباتي النشطة"
             r.user_name = r.requester_name;
@@ -2118,10 +2118,10 @@ app.post('/api/service-requests/:id/cancel', async (req, res) => {
 app.get('/api/admin/all-service-requests-logs', requireAdmin, async (req, res) => {
     try {
         const result = await servicesPool.query(`
-            SELECT sr.id, sr.user_id, sr.provider_user_id, sr.service_layer, sr.feature_id, 
+            SELECT sr.id, sr.user_id, sr.provider_user_id, sr.service_layer, sr.feature_id,
                    sr.service_type, sr.status, sr.cancellation_reason, sr.created_at, sr.updated_at,
-                   ru.full_name AS requester_name, ru.phone AS requester_phone, COALESCE(ru.phone, '') AS requester_whatsapp,
-                   pu.full_name AS provider_name, pu.phone AS provider_phone, COALESCE(pu.phone, '') AS provider_whatsapp
+                   ru.full_name AS requester_name, ru.phone AS requester_phone, ru.whatsapp_number AS requester_whatsapp,
+                   pu.full_name AS provider_name, pu.phone AS provider_phone, pu.whatsapp_number AS provider_whatsapp
             FROM public.service_requests sr
             LEFT JOIN public.users ru ON ru.user_id = sr.user_id
             LEFT JOIN public.users pu ON pu.user_id = sr.provider_user_id
@@ -2160,15 +2160,17 @@ app.get('/api/service-requests/:id/messages', async (req, res) => {
         };
 
         if (request.status === 'completed') {
-            const userPhoneResult = await servicesPool.query(
-                'SELECT phone FROM public.users WHERE user_id = $1',
+            // 🆕 استخدام phone و whatsapp_number من جدول users
+            const userContactResult = await servicesPool.query(
+                'SELECT phone, whatsapp_number FROM public.users WHERE user_id = $1',
                 [request.user_id]
             );
-            const userPhone = userPhoneResult.rows[0]?.phone || null;
+            const userPhone = userContactResult.rows[0]?.phone || null;
+            const userWhatsapp = userContactResult.rows[0]?.whatsapp_number || null;
             const providerContact = await getProviderContactInfo(request.service_layer, request.feature_id);
 
             responsePayload.userPhone = userPhone;
-            responsePayload.userWhatsapp = userPhone;
+            responsePayload.userWhatsapp = userWhatsapp;
             responsePayload.providerPhone = providerContact.phone;
             responsePayload.providerWhatsapp = providerContact.whatsapp;
         }
@@ -2266,25 +2268,28 @@ app.post('/api/service-requests/:id/confirm', async (req, res) => {
             await client.query(`UPDATE public.service_requests SET status = 'completed', updated_at = NOW() WHERE id = $1`, [id]);
             await client.query('COMMIT');
 
-            // 🆕 هاتف المستخدم الطالب كما هو تماماً من عمود phone بجدول users
-            const userPhoneResult = await servicesPool.query(
-                'SELECT phone FROM public.users WHERE user_id = $1',
+            // 🆕 هاتف المستخدم الطالب من عمود phone بجدول users
+            const userContactResult = await servicesPool.query(
+                'SELECT phone, whatsapp_number FROM public.users WHERE user_id = $1',
                 [refreshed.user_id]
             );
-            const userPhone = userPhoneResult.rows[0]?.phone || null;
+            const userPhone = userContactResult.rows[0]?.phone || null;
+            const userWhatsapp = userContactResult.rows[0]?.whatsapp_number || null;
 
             // 🆕 هاتف وواتساب مزود الخدمة من جدول طبقة الخدمة نفسها (عمود whatsapp)
             const providerContact = await getProviderContactInfo(refreshed.service_layer, refreshed.feature_id);
 
-            const payloadForUser = { 
-                requestId: Number(id), 
-                providerPhone: providerContact.phone, 
+            const payloadForUser = {
+                requestId: Number(id),
+                userPhone: userPhone,
+                userWhatsapp: userWhatsapp,
+                providerPhone: providerContact.phone,
                 providerWhatsapp: providerContact.whatsapp 
             };
-            const payloadForProvider = { 
-                requestId: Number(id), 
+            const payloadForProvider = {
+                requestId: Number(id),
                 userPhone: userPhone,
-                userWhatsapp: userPhone
+                userWhatsapp: userWhatsapp
             };
 
             const userSocketId = getSocketIdForUser(refreshed.user_id);

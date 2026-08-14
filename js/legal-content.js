@@ -270,6 +270,83 @@
             `
         },
 
+        about: {
+            title: 'من نحن',
+            icon: 'fa-circle-info',
+            html: `
+                <div style="text-align:center; margin-bottom:25px;">
+                    <h2 style="color:#1a73e8; font-size:24px; margin:0 0 10px 0;">🗺️ خريطة الخدمات الفلسطينية</h2>
+                    <p style="color:#666; font-size:15px; margin:0;">منصة شاملة للخدمات والعقارات في فلسطين</p>
+                </div>
+
+                <div style="background:#f8f9fa; border-radius:12px; padding:20px; margin-bottom:20px; border:1px solid #e9ecef;">
+                    <h3 style="color:#2c3e50; font-size:18px; margin:0 0 15px 0; border-bottom:2px solid #3498db; padding-bottom:10px;">📋 نبذة عن المنصة</h3>
+                    <p style="font-size:14px; color:#555; line-height:1.8; margin:0;">
+                        خريطة الخدمات الفلسطينية منصة رقمية مجانية هدفها الأول ربط أي شخص في فلسطين بأقرب وأنسب خدمة أو عقار يحتاجه، بأقل وقت ممكن ودون وسطاء — سواء كنت تبحث عن فني، طبيب، محامٍ، شقة للإيجار، أو أرض للبيع. كل هذا عبر خريطة تفاعلية ذكية أو عبر بحث نصّي بسيط بدون الحاجة لفتح الخريطة إطلاقاً.
+                    </p>
+                </div>
+
+                <div style="background:#e8f4fd; border-radius:12px; padding:20px; margin-bottom:20px; border:1px solid #b3d7ff;">
+                    <h3 style="color:#1a73e8; font-size:18px; margin:0 0 15px 0; border-bottom:2px solid #1a73e8; padding-bottom:10px;">🗺️ البحث من خلال الخريطة التفاعلية</h3>
+                    <p style="font-size:14px; color:#555; line-height:1.8; margin:0 0 15px 0;">
+                        الخريطة الرئيسية تضم مجموعة أزرار جاهزة أعلى الشاشة:
+                    </p>
+                    <ul style="padding-right:20px; margin:0; font-size:13.5px; color:#555; line-height:1.9;">
+                        <li><strong>🔍 البحث الذكي:</strong> بحث بالسمات (اختر طبقة، حقل، وشرط) مع إمكانية إضافة أكثر من شرط دفعة واحدة.</li>
+                        <li><strong>ℹ️ استعلام:</strong> فعّله ثم مرر أو انقر على أي معلم بالخريطة لتظهر لك تفاصيله فوراً.</li>
+                        <li><strong>📍 البحث من خلال الموقع:</strong> حدد موقعك وابحث عن أقرب الخدمات ضمن مسافة تحددها.</li>
+                        <li><strong>📚 ظهور / إخفاء الخدمات:</strong> تحكم بالطبقات التي تظهر لك على الخريطة من أصل 62 فئة.</li>
+                        <li><strong>📏 أدوات القياس:</strong> قياس مسافة، مساحة، أو رسم نقطة بإحداثيات دقيقة.</li>
+                        <li><strong>🔗 مشاركة موقع:</strong> حدد أي نقطة واحصل على رابط مباشر لها بإحداثيات فلسطينية وعالمية لمشاركتها.</li>
+                    </ul>
+                </div>
+
+                <div style="background:#fff3cd; border-radius:12px; padding:20px; margin-bottom:20px; border:1px solid #ffc107;">
+                    <h3 style="color:#856404; font-size:18px; margin:0 0 15px 0; border-bottom:2px solid #ffc107; padding-bottom:10px;">📋 البحث بدون خريطة (هذه الصفحة)</h3>
+                    <p style="font-size:14px; color:#856404; line-height:1.8; margin:0;">
+                        بديل أخف وأسرع لمن لا يريد تحميل الخريطة: فروع مصنّفة، فلاتر اختيارية لتضييق النتائج، ونتائج مباشرة تتضمن تفاصيل كاملة مع أزرار اتصال وواتساب فورية.
+                    </p>
+                </div>
+
+                <div style="background:#e8f4fd; border-radius:12px; padding:20px; margin-bottom:20px; border:1px solid #b3d7ff;">
+                    <h3 style="color:#1a73e8; font-size:18px; margin:0 0 15px 0; border-bottom:2px solid #1a73e8; padding-bottom:10px;">📊 إحصائيات المنصة</h3>
+                    <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap:15px;">
+                        <div style="text-align:center; padding:10px; background:#fff; border-radius:8px;">
+                            <div style="font-size:24px; font-weight:bold; color:#3498db;">62+</div>
+                            <div style="font-size:13px; color:#666;">فئة خدمة</div>
+                        </div>
+                        <div style="text-align:center; padding:10px; background:#fff; border-radius:8px;">
+                            <div style="font-size:24px; font-weight:bold; color:#e74c3c;">آلاف</div>
+                            <div style="font-size:13px; color:#666;">خدمة وعقار</div>
+                        </div>
+                        <div style="text-align:center; padding:10px; background:#fff; border-radius:8px;">
+                            <div style="font-size:24px; font-weight:bold; color:#2ecc71;">مجاني</div>
+                            <div style="font-size:13px; color:#666;">للمستخدمين</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div style="background:#d4edda; border-radius:12px; padding:20px; margin-bottom:20px; border:1px solid #28a745;">
+                    <h3 style="color:#155724; font-size:18px; margin:0 0 15px 0; border-bottom:2px solid #28a745; padding-bottom:10px;">📞 تواصل معنا</h3>
+                    <p style="font-size:14px; color:#155724; line-height:1.8; margin:0 0 10px 0;">
+                        نحن هنا لمساعدتك! لأي استفسار أو اقتراح، تواصل معنا عبر:
+                    </p>
+                    <div style="text-align:center;">
+                        <a href="https://www.facebook.com/MapServesPalestine" target="_blank" style="display:inline-block; background:#1877f2; color:#fff; padding:10px 20px; border-radius:8px; text-decoration:none; font-size:14px; margin:5px;">
+                            <i class="fab fa-facebook-f"></i> فيسبوك
+                        </a>
+                    </div>
+                </div>
+
+                <div style="background:#f8f9fa; border-radius:12px; padding:20px; border:1px solid #e9ecef;">
+                    <h3 style="color:#6c757d; font-size:18px; margin:0 0 15px 0; border-bottom:2px solid #6c757d; padding-bottom:10px;">🙏 شكراً لاستخدامك منصتنا</h3>
+                    <p style="font-size:14px; color:#555; line-height:1.8; margin:0;">
+                        نقدر ثقتك بمنصة خريطة الخدمات الفلسطينية ونسعى دائماً لتحسين خدماتنا وتقديم أفضل تجربة مستخدم ممكنة. شكراً لكونك جزءاً من مجتمعنا.
+                    </p>
+                </div>
+            `
+        },
+
         guideMap: {
             title: 'دليل استخدام منصة خريطة الخدمات الفلسطينية',
             icon: 'fa-book-open',
@@ -360,13 +437,56 @@
             title: 'شروط الاستخدام وإخلاء المسؤولية',
             icon: 'fa-file-contract',
             html: `
-                <ul style="padding-right:20px; margin:0; font-size:13.5px; color:#444; line-height:1.9;">
-                    <li>المنصة عبارة عن وسيط جيو-رقمي يربط المستخدم بمزود الخدمة عبر الواتساب أو نظام طلب الخدمة الداخلي فقط.</li>
-                    <li>الاتفاق على الأسعار، المواعيد، أو تفاصيل الخدمة يتم بين الطرفين مباشرة دون أي تدخل من إدارة المنصة.</li>
-                    <li>المنصة تخلي مسؤوليتها بالكامل عن أي خلاف، سوء معاملة، أو إخلال بالاتفاق بين الأطراف.</li>
-                    <li>في حال وجود شكاوى، يتم مراسلتنا عبر صفحة الفيسبوك لاتخاذ الإجراءات الإدارية اللازمة (كالحظر أو التعطيل).</li>
-                    <li>يلتزم المستخدم بتقديم بيانات صحيحة عند التسجيل، وبعدم استخدام المنصة لأي غرض مخالف للقانون أو مضلل للمستخدمين الآخرين.</li>
-                </ul>
+                <div style="background:#fff3cd; border-radius:12px; padding:20px; margin-bottom:20px; border:1px solid #ffc107;">
+                    <h3 style="color:#856404; font-size:18px; margin:0 0 15px 0; border-bottom:2px solid #ffc107; padding-bottom:10px;">⚠️ إخلاء المسؤولية المهم</h3>
+                    <p style="font-size:14px; color:#856404; line-height:1.8; margin:0;">
+                        باستخدامك لمنصة خريطة الخدمات الفلسطينية، أنت توافق على الشروط التالية وتقر بأنك قرأت وفهمت إخلاء المسؤولية هذا.
+                    </p>
+                </div>
+
+                <div style="display:flex; flex-direction:column; gap:15px; margin-bottom:20px;">
+                    <div style="background:#fff; border-right:5px solid #dc3545; padding:15px; border-radius:10px; box-shadow:0 2px 6px rgba(0,0,0,0.08);">
+                        <strong style="color:#dc3545; font-size:15px; display:block; margin-bottom:5px;">🔗 طبيعة المنصة</strong>
+                        <p style="margin:0; font-size:13.5px; color:#555; line-height:1.7;">المنصة عبارة عن وسيط جيو-رقمي يربط المستخدم بمزود الخدمة عبر الواتساب أو نظام طلب الخدمة الداخلي فقط. المنصة ليست طرفاً في أي اتفاقية بين المستخدم ومزود الخدمة.</p>
+                    </div>
+
+                    <div style="background:#fff; border-right:5px solid #ffc107; padding:15px; border-radius:10px; box-shadow:0 2px 6px rgba(0,0,0,0.08);">
+                        <strong style="color:#e67e22; font-size:15px; display:block; margin-bottom:5px;">💰 الاتفاق المباشر</strong>
+                        <p style="margin:0; font-size:13.5px; color:#555; line-height:1.7;">الاتفاق على الأسعار، المواعيد، أو تفاصيل الخدمة يتم بين الطرفين مباشرة دون أي تدخل من إدارة المنصة. المنصة لا تضمن جودة الخدمة أو التزام مزود الخدمة بالاتفاق.</p>
+                    </div>
+
+                    <div style="background:#fff; border-right:5px solid #6c757d; padding:15px; border-radius:10px; box-shadow:0 2px 6px rgba(0,0,0,0.08);">
+                        <strong style="color:#6c757d; font-size:15px; display:block; margin-bottom:5px;">⚖️ إخلاء المسؤولية</strong>
+                        <p style="margin:0; font-size:13.5px; color:#555; line-height:1.7;">المنصة تخلي مسؤوليتها بالكامل عن أي خلاف، سوء معاملة، أو إخلال بالاتفاق بين الأطراف. المنصة ليست مسؤولة عن أي خسائر مادية أو معنوية ناتجة عن استخدام الخدمات المعروضة.</p>
+                    </div>
+
+                    <div style="background:#fff; border-right:5px solid #17a2b8; padding:15px; border-radius:10px; box-shadow:0 2px 6px rgba(0,0,0,0.08);">
+                        <strong style="color:#17a2b8; font-size:15px; display:block; margin-bottom:5px;">📝 الشكاوى والإجراءات</strong>
+                        <p style="margin:0; font-size:13.5px; color:#555; line-height:1.7;">في حال وجود شكاوى، يتم مراسلتنا عبر صفحة الفيسبوك لاتخاذ الإجراءات الإدارية اللازمة (كالحظر أو التعطيل). المنصة تحتفظ بالحق في حظر أي مستخدم يخالف الشروط.</p>
+                    </div>
+
+                    <div style="background:#fff; border-right:5px solid #28a745; padding:15px; border-radius:10px; box-shadow:0 2px 6px rgba(0,0,0,0.08);">
+                        <strong style="color:#28a745; font-size:15px; display:block; margin-bottom:5px;">✅ البيانات والمصداقية</strong>
+                        <p style="margin:0; font-size:13.5px; color:#555; line-height:1.7;">يلتزم المستخدم بتقديم بيانات صحيحة عند التسجيل، وبعدم استخدام المنصة لأي غرض مخالف للقانون أو مضلل للمستخدمين الآخرين. أي بيانات مزيفة قد تؤدي إلى حظر الحساب.</p>
+                    </div>
+
+                    <div style="background:#fff; border-right:5px solid #6610f2; padding:15px; border-radius:10px; box-shadow:0 2px 6px rgba(0,0,0,0.08);">
+                        <strong style="color:#6610f2; font-size:15px; display:block; margin-bottom:5px;">🚫 الاستخدام الممنوع</strong>
+                        <p style="margin:0; font-size:13.5px; color:#555; line-height:1.7;">يمنع استخدام المنصة لأغراض غير قانونية، الاحتيال، التشهير، أو أي نشاط يضر بمصالح المستخدمين الآخرين أو سمعة المنصة.</p>
+                    </div>
+                </div>
+
+                <div style="background:#f8f9fa; border-radius:12px; padding:20px; border:1px solid #e9ecef;">
+                    <h3 style="color:#6c757d; font-size:18px; margin:0 0 15px 0; border-bottom:2px solid #6c757d; padding-bottom:10px;">📞 للشكاوى والاستفسارات</h3>
+                    <p style="font-size:14px; color:#555; line-height:1.8; margin:0 0 10px 0;">
+                        لأي شكوى أو استفسار، تواصل معنا عبر صفحة الفيسبوك الرسمية:
+                    </p>
+                    <div style="text-align:center;">
+                        <a href="https://www.facebook.com/MapServesPalestine" target="_blank" style="display:inline-block; background:#1877f2; color:#fff; padding:10px 20px; border-radius:8px; text-decoration:none; font-size:14px;">
+                            <i class="fab fa-facebook-f"></i> فيسبوك
+                        </a>
+                    </div>
+                </div>
             `
         },
 
@@ -374,16 +494,66 @@
             title: 'سياسة الخصوصية وحماية البيانات',
             icon: 'fa-user-shield',
             html: `
-                <p style="margin-bottom:12px; font-size:13.5px; color:#444; line-height:1.8;">نحن في منصة خريطة الخدمات الفلسطينية نولي اهتماماً بالغاً لخصوصية زوارنا ومستخدمينا، ونلتزم بما يلي:</p>
-                <ul style="padding-right:20px; margin:0; font-size:13.5px; color:#444; line-height:1.9;">
-                    <li><strong>البيانات الأساسية:</strong> نجمع فقط الاسم، البريد الإلكتروني، ورقم الجوال عند التسجيل، وتُستخدم حصراً لتشغيل حسابك والتحقق من هويتك.</li>
-                    <li><strong>الموقع الجغرافي:</strong> تُستخدم إحداثيات الخريطة (GPS أو التحديد اليدوي) فقط لعرض الخدمات والعقارات القريبة بدقة، ولا تُخزَّن أو تُشارَك خارج نطاق تشغيل الخريطة.</li>
-                    <li><strong>كلمة المرور:</strong> تُخزَّن كلمة المرور مشفّرة بالكامل، ولا يستطيع أي موظف بالمنصة الاطلاع عليها كنص صريح.</li>
-                    <li><strong>أرقام التواصل:</strong> رقم الهاتف/الواتساب الخاص بك لا يظهر لمزود الخدمة إلا بعد أن تبدأ أنت التواصل معه (اتصال، واتساب، أو بعد إتمام الاتفاق عبر نظام طلب الخدمة).</li>
-                    <li><strong>عدم البيع أو المشاركة:</strong> لا نبيع ولا نشارك بياناتك مع أي طرف ثالث لأغراض تسويقية.</li>
-                    <li><strong>التخزين المحلي (Local Storage):</strong> يُستخدم فقط لحفظ جلسة الدخول وتفضيلات العرض على جهازك، ويمكنك مسحه في أي وقت من إعدادات المتصفح.</li>
-                    <li><strong>طلب حذف الحساب أو البيانات:</strong> يمكنك التواصل معنا في أي وقت عبر صفحة الفيسبوك الرسمية لطلب حذف حسابك وبياناتك بالكامل.</li>
-                </ul>
+                <div style="background:#d1ecf1; border-radius:12px; padding:20px; margin-bottom:20px; border:1px solid #17a2b8;">
+                    <h3 style="color:#0c5460; font-size:18px; margin:0 0 15px 0; border-bottom:2px solid #17a2b8; padding-bottom:10px;">🔒 التزامنا بخصوصيتك</h3>
+                    <p style="font-size:14px; color:#0c5460; line-height:1.8; margin:0;">
+                        نحن في منصة خريطة الخدمات الفلسطينية نولي اهتماماً بالغاً لخصوصية زوارنا ومستخدمينا، ونلتزم بأعلى معايير حماية البيانات.
+                    </p>
+                </div>
+
+                <div style="display:flex; flex-direction:column; gap:15px; margin-bottom:20px;">
+                    <div style="background:#fff; border-right:5px solid #3498db; padding:15px; border-radius:10px; box-shadow:0 2px 6px rgba(0,0,0,0.08);">
+                        <strong style="color:#3498db; font-size:15px; display:block; margin-bottom:5px;">👤 البيانات الأساسية</strong>
+                        <p style="margin:0; font-size:13.5px; color:#555; line-height:1.7;">نجمع فقط الاسم، البريد الإلكتروني، ورقم الجوال عند التسجيل، وتُستخدم حصراً لتشغيل حسابك والتحقق من هويتك. لا نطلب أي بيانات غير ضرورية.</p>
+                    </div>
+
+                    <div style="background:#fff; border-right:5px solid #e74c3c; padding:15px; border-radius:10px; box-shadow:0 2px 6px rgba(0,0,0,0.08);">
+                        <strong style="color:#e74c3c; font-size:15px; display:block; margin-bottom:5px;">📍 الموقع الجغرافي</strong>
+                        <p style="margin:0; font-size:13.5px; color:#555; line-height:1.7;">تُستخدم إحداثيات الخريطة (GPS أو التحديد اليدوي) فقط لعرض الخدمات والعقارات القريبة بدقة، ولا تُخزَّن أو تُشارَك خارج نطاق تشغيل الخريطة.</p>
+                    </div>
+
+                    <div style="background:#fff; border-right:5px solid #f39c12; padding:15px; border-radius:10px; box-shadow:0 2px 6px rgba(0,0,0,0.08);">
+                        <strong style="color:#f39c12; font-size:15px; display:block; margin-bottom:5px;">🔐 كلمة المرور</strong>
+                        <p style="margin:0; font-size:13.5px; color:#555; line-height:1.7;">تُخزَّن كلمة المرور مشفّرة بالكامل باستخدام تقنيات التشفير المتقدمة، ولا يستطيع أي موظف بالمنصة الاطلاع عليها كنص صريح.</p>
+                    </div>
+
+                    <div style="background:#fff; border-right:5px solid #27ae60; padding:15px; border-radius:10px; box-shadow:0 2px 6px rgba(0,0,0,0.08);">
+                        <strong style="color:#27ae60; font-size:15px; display:block; margin-bottom:5px;">📞 أرقام التواصل</strong>
+                        <p style="margin:0; font-size:13.5px; color:#555; line-height:1.7;">رقم الهاتف/الواتساب الخاص بك لا يظهر لمزود الخدمة إلا بعد أن تبدأ أنت التواصل معه (اتصال، واتساب، أو بعد إتمام الاتفاق عبر نظام طلب الخدمة).</p>
+                    </div>
+
+                    <div style="background:#fff; border-right:5px solid #9b59b6; padding:15px; border-radius:10px; box-shadow:0 2px 6px rgba(0,0,0,0.08);">
+                        <strong style="color:#9b59b6; font-size:15px; display:block; margin-bottom:5px;">🚫 عدم البيع أو المشاركة</strong>
+                        <p style="margin:0; font-size:13.5px; color:#555; line-height:1.7;">لا نبيع ولا نشارك بياناتك مع أي طرف ثالث لأغراض تسويقية أو تجارية. بياناتك تظل ملكك حصرياً.</p>
+                    </div>
+
+                    <div style="background:#fff; border-right:5px solid #1abc9c; padding:15px; border-radius:10px; box-shadow:0 2px 6px rgba(0,0,0,0.08);">
+                        <strong style="color:#1abc9c; font-size:15px; display:block; margin-bottom:5px;">💾 التخزين المحلي (Local Storage)</strong>
+                        <p style="margin:0; font-size:13.5px; color:#555; line-height:1.7;">يُستخدم فقط لحفظ جلسة الدخول وتفضيلات العرض على جهازك، ويمكنك مسحه في أي وقت من إعدادات المتصفح دون التأثير على حسابك.</p>
+                    </div>
+
+                    <div style="background:#fff; border-right:5px solid #e67e22; padding:15px; border-radius:10px; box-shadow:0 2px 6px rgba(0,0,0,0.08);">
+                        <strong style="color:#e67e22; font-size:15px; display:block; margin-bottom:5px;">🗑️ حق الحذف</strong>
+                        <p style="margin:0; font-size:13.5px; color:#555; line-height:1.7;">يمكنك التواصل معنا في أي وقت عبر صفحة الفيسبوك الرسمية لطلب حذف حسابك وبياناتك بالكامل من قاعدة البيانات.</p>
+                    </div>
+
+                    <div style="background:#fff; border-right:5px solid #34495e; padding:15px; border-radius:10px; box-shadow:0 2px 6px rgba(0,0,0,0.08);">
+                        <strong style="color:#34495e; font-size:15px; display:block; margin-bottom:5px;">🛡️ الأمان والشفافية</strong>
+                        <p style="margin:0; font-size:13.5px; color:#555; line-height:1.7;">نستخدم بروتوكولات تشفير آمنة (HTTPS) لحماية البيانات أثناء النقل، ونقوم بتحديث أنظمة الأمان بانتظام للحفاظ على سلامة بياناتك.</p>
+                    </div>
+                </div>
+
+                <div style="background:#f8f9fa; border-radius:12px; padding:20px; border:1px solid #e9ecef;">
+                    <h3 style="color:#6c757d; font-size:18px; margin:0 0 15px 0; border-bottom:2px solid #6c757d; padding-bottom:10px;">📞 للاستفسارات وحذف البيانات</h3>
+                    <p style="font-size:14px; color:#555; line-height:1.8; margin:0 0 10px 0;">
+                        لأي استفسار حول سياسة الخصوصية أو لطلب حذف بياناتك، تواصل معنا عبر صفحة الفيسبوك الرسمية:
+                    </p>
+                    <div style="text-align:center;">
+                        <a href="https://www.facebook.com/MapServesPalestine" target="_blank" style="display:inline-block; background:#1877f2; color:#fff; padding:10px 20px; border-radius:8px; text-decoration:none; font-size:14px;">
+                            <i class="fab fa-facebook-f"></i> فيسبوك
+                        </a>
+                    </div>
+                </div>
             `
         }
     };
@@ -462,7 +632,9 @@
 
     window.openAppLegalModal = function (key) {
         const content = window.APP_LEGAL_CONTENT[key];
-        if (!content) return;
+        if (!content) {
+            return;
+        }
         ensureModal();
 
         // 🆕 نعيد إلحاق المودال كآخر عنصر مباشرة داخل body في كل مرة يُفتح فيها،
@@ -495,13 +667,14 @@
     // ==========================================================================
     const idMap = {
         guide: ['btn-user-guide', 'welcome-guide-link'],
-        guideSearch: ['footer-guide-search'],
-        guideProvider: ['footer-guide-provider'],
-        guideSubscription: ['footer-guide-subscription'],
-        guideMap: ['footer-guide-map'],
-        guideMapInteractive: ['footer-guide-map-interactive'],
-        terms: ['footer-terms-btn', 'promo-terms-link', 'welcome-terms-link'],
-        privacy: ['footer-privacy-btn', 'promo-privacy-link', 'welcome-privacy-link']
+        guideSearch: ['footer-guide-search', 'header-guide-search', 'header-guide-search-services', 'profile-guide-search'],
+        guideProvider: ['footer-guide-provider', 'header-guide-provider', 'profile-guide-provider'],
+        guideSubscription: ['footer-guide-subscription', 'header-guide-subscription', 'profile-guide-subscription'],
+        guideMap: ['footer-guide-map', 'header-guide-map'],
+        guideMapInteractive: ['footer-guide-map-interactive', 'header-guide-map-interactive', 'profile-guide-map-interactive'],
+        about: ['nms-about-btn', 'footer-about-btn', 'promo-about-link', 'profile-about-btn'],
+        terms: ['footer-terms-btn', 'header-terms-btn', 'profile-terms-btn', 'promo-terms-link', 'welcome-terms-link'],
+        privacy: ['footer-privacy-btn', 'header-privacy-btn', 'profile-privacy-btn', 'promo-privacy-link', 'welcome-privacy-link']
     };
 
     function wireTriggers() {
@@ -520,7 +693,10 @@
         Object.keys(idMap).forEach(function (key) {
             idMap[key].forEach(function (id) {
                 const el = document.getElementById(id);
-                if (!el || el.dataset.legalWired) return;
+                if (!el) {
+                    return;
+                }
+                if (el.dataset.legalWired) return;
                 el.dataset.legalWired = '1';
                 el.addEventListener('click', function (e) {
                     e.preventDefault();
@@ -531,9 +707,14 @@
         });
     }
 
-    if (document.readyState !== 'loading') {
+    if (document.readyState === 'complete') {
+        // الصفحة محملة بالكامل، استدع wireTriggers فوراً
         wireTriggers();
+    } else if (document.readyState !== 'loading') {
+        // الصفحة في حالة interactive، انتظر حتى complete
+        window.addEventListener('load', wireTriggers);
     } else {
+        // الصفحة لا تزال في حالة loading، انتظر DOMContentLoaded
         document.addEventListener('DOMContentLoaded', wireTriggers);
     }
 

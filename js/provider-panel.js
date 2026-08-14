@@ -180,7 +180,6 @@ function checkProviderStatusAndShowPanel(directUserObj = null) {
                 currentUser.feature_id = data.service.feature_id;
                 localStorage.setItem('map_user', JSON.stringify(currentUser));
 
-                console.log(`✅ تم تحديث بيانات مزود الخدمة: status=${fetchedStatus}, x=${window.currentProviderService.x_coord}, y=${window.currentProviderService.y_coord}`);
 
                 // [إصلاح الحسم]: لا نحدث الـ UI أو نفك الأزرار إن كان هناك عد تنازلي نشط
                 if (!window.isCoolingDown) {
@@ -188,7 +187,6 @@ function checkProviderStatusAndShowPanel(directUserObj = null) {
                     updateProviderPanelUI(fetchedStatus);
                 }
             } else {
-                console.warn("⚠️ بيانات غير مكتملة من الـ API");
                 if (!window.isCoolingDown) {
                     forceUnlockButtons();
                     updateProviderPanelUI(parseInt(currentUser.status));
@@ -196,7 +194,6 @@ function checkProviderStatusAndShowPanel(directUserObj = null) {
             }
         })
         .catch(error => {
-            console.error("⚠️ تعذر الاتصال بالسيرفر، الاعتماد على الكاش:", error.message);
             if (!window.isCoolingDown) {
                 forceUnlockButtons();
                 updateProviderPanelUI(parseInt(currentUser.status));
@@ -254,10 +251,8 @@ function updateProviderPanelUI(status) {
     const btnBusy = document.getElementById('btn-prov-busy');
     const statusIndicator = document.getElementById('provider-status-indicator');
 
-    console.log(`🔄 تحديث الواجهة: status=${status}, btnAvailCurrent=${!!btnAvailCurrent}, btnAvailPrev=${!!btnAvailPrev}, btnBusy=${!!btnBusy}, statusIndicator=${!!statusIndicator}`);
 
     if (!statusIndicator) {
-        console.warn("⚠️ statusIndicator غير موجود");
         return;
     }
 
@@ -266,34 +261,26 @@ function updateProviderPanelUI(status) {
     if (currentStatus === 0) {
         statusIndicator.innerText = "حالتك الحالية: متوفر الآن على الخريطة للجمهور 🟢";
         statusIndicator.style.setProperty("color", "#27ae60", "important");
-        console.log("✅ تعيين الحالة: متوفر");
         if (btnAvailCurrent) {
             btnAvailCurrent.classList.add('active');
-            console.log("✅ btnAvailCurrent تم تفعيله");
         }
         if (btnAvailPrev) {
             btnAvailPrev.classList.add('active');
-            console.log("✅ btnAvailPrev تم تفعيله");
         }
         if (btnBusy) {
             btnBusy.classList.remove('active');
-            console.log("✅ btnBusy تم إلغاء تفعيله");
         }
     } else {
         statusIndicator.innerText = "حالتك الحالية: غير متوفر (مخفي حالياً) 🔴";
         statusIndicator.style.setProperty("color", "#c0392b", "important");
-        console.log("✅ تعيين الحالة: غير متوفر");
         if (btnBusy) {
             btnBusy.classList.add('active');
-            console.log("✅ btnBusy تم تفعيله");
         }
         if (btnAvailCurrent) {
             btnAvailCurrent.classList.remove('active');
-            console.log("✅ btnAvailCurrent تم إلغاء تفعيله");
         }
         if (btnAvailPrev) {
             btnAvailPrev.classList.remove('active');
-            console.log("✅ btnAvailPrev تم إلغاء تفعيله");
         }
     }
 
@@ -332,7 +319,6 @@ function handleStatusChangeRequest(statusValue, updateGPS = false) {
     let yPal = window.currentProviderService.y_coord;
 
     if (parsedStatus === 0 && updateGPS) {
-        console.log("📍 طلب إحداثيات GPS...");
         window.requestGeolocationPosition(
             (position) => {
                 const latGlobal = position.coords.latitude;
@@ -342,11 +328,9 @@ function handleStatusChangeRequest(statusValue, updateGPS = false) {
                 const newX = Number(parseFloat(palCoords[0]).toFixed(2));
                 const newY = Number(parseFloat(palCoords[1]).toFixed(2));
 
-                console.log(`✅ تم الحصول على إحداثيات جديدة: E:${newX}, N:${newY}`);
                 sendDataToServer(parsedStatus, latGlobal, lonGlobal, newX, newY);
             },
             (error) => {
-                console.warn("⚠️ الـ GPS غير متاح، سيتم استخدام الموقع السابق.", error);
                 let errorMsg = 'فشل الوصول للموقع. سيتم استخدام الموقع السابق.';
                 if (error.code === 1) errorMsg = 'تم رفض إذن الموقع. سيتم استخدام الموقع السابق.';
                 else if (error.code === 2) errorMsg = 'إشارة GPS ضعيفة أو غير متوفرة. سيتم استخدام الموقع السابق.';
@@ -406,7 +390,6 @@ function sendDataToServer(status, lat, lon, xPal, yPal) {
     })
     .then(response => response.json())
     .then(data => {
-        console.log("✅ استجابة السيرفر:", data);
 
         if(currentUser) {
             currentUser.status = parsedStatus;
@@ -418,7 +401,6 @@ function sendDataToServer(status, lat, lon, xPal, yPal) {
         // تحديث حالة مزود الخدمة في الذاكرة
         if (window.currentProviderService) {
             window.currentProviderService.status = parsedStatus;
-            console.log("✅ تم تحديث الحالة في الذاكرة:", parsedStatus);
         }
 
         // تحديث الواجهة فوراً قبل تشغيل Cooldown
@@ -442,7 +424,6 @@ function sendDataToServer(status, lat, lon, xPal, yPal) {
         startCoolDownTimer();
     })
     .catch(error => {
-        console.error("❌ خطأ أثناء التحديث عبر الـ API:", error.message);
         window.isCoolingDown = false;
         if (window.currentProviderService) {
             updateProviderPanelUI(window.currentProviderService.status);
@@ -451,9 +432,7 @@ function sendDataToServer(status, lat, lon, xPal, yPal) {
 }
 
 function flyToServiceLocation() {
-    console.log("📍 تم النقر على زر الانتقال إلى موقعي");
-    console.log("📍 بيانات مزود الخدمة الحالية:", window.currentProviderService);
-    console.log("📍 الخريطة موجودة:", !!window.map);
+  
 
     if (!window.map || !window.currentProviderService || !window.currentProviderService.feature_id) {
         console.warn("⚠️ لا يمكن الانتقال: بيانات غير مكتملة", window.currentProviderService);
@@ -651,7 +630,6 @@ function toggleLiveGpsTracking() {
 
     // تكرار كل 10 ثوانٍ
     window.liveGpsInterval = setInterval(() => {
-        console.log("🔄 تحديث تلقائي للموقع...");
         handleStatusChangeRequest(0, true);
     }, 10000);
 }
