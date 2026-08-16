@@ -447,11 +447,11 @@ setTimeout(() => {
             const panelId = this.getAttribute('data-panel');
             const editType = this.getAttribute('data-edit-type');
             const panel = document.getElementById(panelId);
-            
+
             if (!panel) return;
 
             const isCurrentlyHidden = panel.classList.contains('hidden');
-            
+
             window.closeAllPanels();
 
             if (isCurrentlyHidden) {
@@ -468,10 +468,10 @@ setTimeout(() => {
                 if (window.map && window.overlayLayersObj) {
                     if (editType === 'point' && typeof initializeEditTools === 'function') {
                         initializeEditTools(window.map, window.overlayLayersObj);
-                    } 
+                    }
                     else if (editType === 'polygon' && typeof initializePolygonEditTools === 'function') {
                         initializePolygonEditTools(window.map, window.overlayLayersObj);
-                    } 
+                    }
                     else if (editType === 'line' && typeof initializeLineEditTools === 'function') {
                         initializeLineEditTools(window.map, window.overlayLayersObj);
                     }
@@ -484,6 +484,9 @@ setTimeout(() => {
                 if (panelId === 'nearby-apartments-panel' && typeof window.populateSearchLayerSelect === 'function') {
                     window.populateSearchLayerSelect();
                 }
+            } else {
+                // إذا كانت اللوحة مفتوحة، أغلقها
+                panel.classList.add('hidden');
             }
         };
     });
@@ -516,13 +519,9 @@ setTimeout(() => {
             window.initializeGlobalSearch(); 
         }
         
-        // 🆕 [محرك المزامنة الذكي]: بدل تحديث كل الطبقات الظاهرة كل 15 ثانية بشكل
-        // أعمى لكل مستخدم متصل (ضغط دائم على GeoServer/DB بغض النظر عن الحاجة)،
-        // أصبحنا نحدّث فقط: (أ) بعد أن يحرك المستخدم الخريطة أو يغيّر الزووم فعلياً
-        // (بعد فترة سكون قصيرة لتفادي التحديث أثناء السحب المستمر)، و(ب) كشبكة
-        // أمان احتياطية بفاصل زمني أطول بكثير (كل 90 ثانية) لضمان وصول تحديثات
-        // بيانات غيّرها مستخدم آخر حتى لو لم يحرّك المستخدم الحالي الخريطة إطلاقاً.
-        startSmartMapSync(map, 90000);
+        // 🆕 [محرك المزامنة الذكي]: تحديث المعالم كل دقيقة بدلاً من التحديث المستمر
+        // لتجنب الحركة المزعجة للمعالم على الخريطة
+        startSmartMapSync(map, 60000);
         
     }, 1000);
 
@@ -554,26 +553,16 @@ setTimeout(() => {
                 }
             });
 
-            // تحديث كل طبقة بتأخير ثانيتين عن السابقة لمنع الاختفاء الجماعي
-            layersToUpdate.forEach((layer, index) => {
-                setTimeout(() => {
-                    const source = layer.getSource();
-                    if (source && typeof source.refresh === 'function') {
-                        source.refresh();
-                    }
-                }, index * 2000);
+            // تحديث جميع الطبقات دفعة واحدة بدون تأخير لتجنب الحركة المزعجة
+            layersToUpdate.forEach((layer) => {
+                const source = layer.getSource();
+                if (source && typeof source.refresh === 'function') {
+                    source.refresh();
+                }
             });
         }
 
-        // (أ) تحديث مدفوع بحركة المستخدم الفعلية على الخريطة، مع تهدئة (debounce)
-        // لمنع إطلاق عشرات الطلبات أثناء السحب/الزووم المستمر
-        let moveEndDebounceToken = null;
-        mapInstanceForSync.on('moveend', () => {
-            clearTimeout(moveEndDebounceToken);
-            moveEndDebounceToken = setTimeout(refreshVisibleDataLayers, 1500);
-        });
-
-        // (ب) شبكة أمان احتياطية بفاصل زمني طويل نسبياً
+        // تحديث دوري فقط بدون تحديث عند الحركة لتجنب الحركة المزعجة
         setInterval(refreshVisibleDataLayers, fallbackInterval);
     }
 

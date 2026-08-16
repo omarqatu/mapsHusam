@@ -5,8 +5,8 @@
     'use strict';
 
     const PANELS = [
-        { id: 'search-panel', group: 'action', label: '🔎 البحث الذكي', closeSel: '#close-search-panel' },
-        { id: 'nearby-apartments-panel', group: 'action', label: '📍 بحث الموقع', closeSel: '#close-nearby-panel' },
+        { id: 'search-panel', group: 'search', label: '🔎 البحث الذكي', closeSel: '#close-search-panel' },
+        { id: 'nearby-apartments-panel', group: 'location', label: '📍 بحث الموقع', closeSel: '#close-nearby-panel' },
         { id: 'layerPanel', group: 'action', label: '📚 الطبقات', closeSel: '#close-layer-panel' },
         { id: 'measurePanel', group: 'action', label: '📏 القياس', closeSel: '#close-measure-panel' },
         { id: 'shareLocationPanel', group: 'action', label: '🔗 مشاركة الموقع', closeSel: '#close-share-panel' },
@@ -24,9 +24,9 @@
         { id: 'service-incoming-banner', group: 'requests', label: '📩 طلب خدمة جديد', closeSel: null }
     ];
 
-    const GROUP_ORDER = ['results', 'action', 'edit', 'provider', 'requests'];
+    const GROUP_ORDER = ['search', 'location', 'results', 'action', 'edit', 'provider', 'requests'];
     const GROUP_FALLBACK_LABEL = {
-        results: '📋 النتائج', action: '🧰 أدوات', edit: '✏️ التحرير', provider: '🛠️ إدارة الخدمة', requests: '💬 طلبات الخدمة'
+        search: '🔎 البحث الذكي', location: '📍 بحث الموقع', results: '📋 النتائج', action: '🧰 أدوات', edit: '✏️ التحرير', provider: '🛠️ إدارة الخدمة', requests: '💬 طلبات الخدمة'
     };
 
     const SNAP_PORTRAIT = [8, 34, 82];   // vh
@@ -445,6 +445,21 @@
             startSystem();
         }
     }), 1000);
+
+    // 🆕 بدء فوري للنظام إذا كانت الصفحة محملة بالفعل (للتجربة أو للصفحات التي لا تستخدم auth)
+    if (document.readyState === 'complete' || document.readyState === 'interactive') {
+        setTimeout(function () {
+            if (!systemStarted) {
+                const shell = document.getElementById('app-shell');
+                if (shell && getComputedStyle(shell).display !== 'none') {
+                    startSystem();
+                } else if (document.getElementById('map')) {
+                    // إذا لم يكن هناك app-shell ولكن هناك خريطة، ابدأ النظام
+                    startSystem();
+                }
+            }
+        }, 500);
+    }
 
     // 🆕 إصلاح دقة الارتفاع الحقيقي للشاشة على الموبايل (مشكلة 100vh
     // المعروفة بالمتصفحات، خصوصاً Safari، بسبب اختفاء/ظهور شريط العنوان).

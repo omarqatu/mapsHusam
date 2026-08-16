@@ -301,62 +301,54 @@
                 if (fieldSelect && fieldSelect.value === 'price') {
                     appendCurrencySelector(valueInputContainer);
                 }
-                input.focus();
-                input.focus();
             }
         };
 
         valueInputContainer.appendChild(select);
+
+        // 🆕 إضافة قائمة العملة إذا كان الحقل هو السعر
         if (fieldSelect && fieldSelect.value === 'price') {
             appendCurrencySelector(valueInputContainer);
         }
     }
-    
 
     function updateValueUI() {
-        const layerKey = layerSelect.value;
         const fieldId = fieldSelect.value;
-        if (!layerKey || !fieldId || !valueInputContainer) return;
-        valueInputContainer.innerHTML = '';
-
-        // عرض مؤشر تحميل
-        valueInputContainer.innerHTML = '<div style="padding: 10px; color: #666; font-size: 14px;">جاري جلب القيم...</div>';
-
-        // جلب القيم من السيرفر
+        const layerKey = layerSelect.value;
+        if (!fieldId || !layerKey) {
+            if (valueInputContainer) valueInputContainer.innerHTML = '';
+            return;
+        }
         getUniqueValues(layerKey, fieldId);
     }
 
     function renderConditions() {
         if (!conditionsContainer) return;
         conditionsContainer.innerHTML = '';
-        conditions.forEach((c, index) => {
-            const tag = document.createElement('div');
-            tag.style = "background:#f1f3f4; border:1px solid #ddd; padding:5px 10px; margin:4px 0; border-radius:4px; display:flex; justify-content:space-between; font-size:12px;";
-            tag.innerHTML = `<span><b>${c.fieldName}</b> ${c.operator} <b>${c.value}</b></span>
-                             <span style="color:red; cursor:pointer;" onclick="removeSearchCondition(${index})">×</span>`;
-            conditionsContainer.appendChild(tag);
+        conditions.forEach((c, idx) => {
+            const div = document.createElement('div');
+            div.style.cssText = 'display:flex; align-items:center; gap:5px; margin-bottom:5px; padding:8px; background:#f9f9f9; border-radius:4px; border:1px solid #eee;';
+            div.innerHTML = `
+                <span style="flex:1; font-size:13px;">
+                    <strong>${c.fieldName}</strong> ${c.operator} "${c.value}"
+                </span>
+                <button type="button" data-idx="${idx}" style="padding:4px 8px; background:#dc3545; color:white; border:none; border-radius:3px; cursor:pointer;">×</button>
+            `;
+            div.querySelector('button').onclick = () => {
+                conditions.splice(idx, 1);
+                renderConditions();
+            };
+            conditionsContainer.appendChild(div);
         });
-
-        // تحديث القوائم عند تغيير conditions (للمواقع والأسماء)
-        if (fieldSelect && fieldSelect.value) {
-            const fieldId = fieldSelect.value;
-            if (fieldId === 'location' || fieldId === 'location_name' || fieldId === 'name') {
-                updateValueUI();
-            }
-        }
     }
-
-    window.removeSearchCondition = function(index) {
-        conditions.splice(index, 1);
-        renderConditions();
-    };
 
     function displaySearchResults(features, layerKey) {
         const tbody = document.querySelector('#results-table tbody');
-        const countSpan = document.getElementById('results-count-span'); 
+        const countSpan = document.getElementById('results-count-span');
         const resultsPanel = document.getElementById('results-panel');
+
         if (tbody) tbody.innerHTML = '';
-        if (countSpan) countSpan.innerText = features.length; 
+        if (countSpan) countSpan.innerText = features.length;
         if (highlightLayer) highlightLayer.getSource().clear();
 
         if (features.length === 0) {
@@ -627,5 +619,3 @@
         if (layerSelect?.options.length > 0) layerSelect.dispatchEvent(new Event('change'));
     };
 })();
-
-

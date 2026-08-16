@@ -555,6 +555,72 @@
                     </div>
                 </div>
             `
+        },
+
+        contact: {
+            title: 'اتصل بنا',
+            icon: 'fa-envelope',
+            html: `
+                <div style="text-align:center; margin-bottom:25px;">
+                    <h2 style="color:#1a73e8; font-size:24px; margin:0 0 10px 0;">📞 تواصل معنا</h2>
+                    <p style="color:#666; font-size:15px; margin:0;">نحن هنا لمساعدتك والإجابة على جميع استفساراتك</p>
+                </div>
+
+                <div style="background:#e8f4fd; border-radius:12px; padding:20px; margin-bottom:20px; border:1px solid #b3d7ff;">
+                    <h3 style="color:#1a73e8; font-size:18px; margin:0 0 15px 0; border-bottom:2px solid #1a73e8; padding-bottom:10px;">📱 قنوات التواصل</h3>
+                    <p style="font-size:14px; color:#555; line-height:1.8; margin:0;">
+                        يمكنك التواصل معنا عبر عدة قنوات مختلفة. نحن نحرص على الرد على جميع استفساراتكم في أسرع وقت ممكن.
+                    </p>
+                </div>
+
+                <div style="display:flex; flex-direction:column; gap:15px; margin-bottom:20px;">
+                    <div style="background:#fff; border-right:5px solid #1877f2; padding:15px; border-radius:10px; box-shadow:0 2px 6px rgba(0,0,0,0.08);">
+                        <strong style="color:#1877f2; font-size:15px; display:block; margin-bottom:5px;">📘 فيسبوك</strong>
+                        <p style="margin:0; font-size:13.5px; color:#555; line-height:1.7;">تواصل معنا عبر صفحة الفيسبوك الرسمية. هذا هو أسرع طريقة للحصول على رد.</p>
+                        <div style="margin-top:10px;">
+                            <a href="https://www.facebook.com/MapServesPalestine" target="_blank" style="display:inline-block; background:#1877f2; color:#fff; padding:8px 16px; border-radius:6px; text-decoration:none; font-size:13px;">
+                                <i class="fab fa-facebook-f"></i> MapServesPalestine
+                            </a>
+                        </div>
+                    </div>
+
+                    <div style="background:#fff; border-right:5px solid #25d366; padding:15px; border-radius:10px; box-shadow:0 2px 6px rgba(0,0,0,0.08);">
+                        <strong style="color:#25d366; font-size:15px; display:block; margin-bottom:5px;">💬 واتساب</strong>
+                        <p style="margin:0; font-size:13.5px; color:#555; line-height:1.7;">يمكنك التواصل معنا عبر واتساب للاستفسارات السريعة والدعم الفني.</p>
+                    </div>
+
+                    <div style="background:#fff; border-right:5px solid #ea4335; padding:15px; border-radius:10px; box-shadow:0 2px 6px rgba(0,0,0,0.08);">
+                        <strong style="color:#ea4335; font-size:15px; display:block; margin-bottom:5px;">📧 البريد الإلكتروني</strong>
+                        <p style="margin:0; font-size:13.5px; color:#555; line-height:1.7;">للاستفسارات الرسمية والاقتراحات، يمكنك مراسلتنا عبر البريد الإلكتروني.</p>
+                    </div>
+                </div>
+
+                <div style="background:#fff3cd; border-radius:12px; padding:20px; margin-bottom:20px; border:1px solid #ffc107;">
+                    <h3 style="color:#856404; font-size:18px; margin:0 0 15px 0; border-bottom:2px solid #ffc107; padding-bottom:10px;">⏰ أوقات العمل</h3>
+                    <p style="font-size:14px; color:#856404; line-height:1.8; margin:0;">
+                        نحن نعمل على الرد على استفساراتكم على مدار الساعة. قد يستغرق الرد بعض الوقت حسب حجم الاستفسارات، لكننا نسعى دائماً لتقديم أفضل خدمة ممكنة.
+                    </p>
+                </div>
+
+                <div style="background:#d4edda; border-radius:12px; padding:20px; margin-bottom:20px; border:1px solid #28a745;">
+                    <h3 style="color:#155724; font-size:18px; margin:0 0 15px 0; border-bottom:2px solid #28a745; padding-bottom:10px;">💡 كيف يمكننا مساعدتك؟</h3>
+                    <ul style="padding-right:20px; margin:0; font-size:13.5px; color:#155724; line-height:1.9;">
+                        <li>استفسارات حول استخدام المنصة</li>
+                        <li>مشاكل تقنية أو تقارير عن أخطاء</li>
+                        <li>اقتراحات لتحسين الخدمات</li>
+                        <li>الشكاوى والملاحظات</li>
+                        <li>طلب التحويل إلى مزود خدمة</li>
+                        <li>استفسارات حول سياسة الخصوصية</li>
+                    </ul>
+                </div>
+
+                <div style="background:#f8f9fa; border-radius:12px; padding:20px; border:1px solid #e9ecef;">
+                    <h3 style="color:#6c757d; font-size:18px; margin:0 0 15px 0; border-bottom:2px solid #6c757d; padding-bottom:10px;">🙏 شكراً لتواصلكم</h3>
+                    <p style="font-size:14px; color:#555; line-height:1.8; margin:0;">
+                        نقدر تواصلكم معنا ونسعى دائماً لتحسين خدماتنا. كل استفسار واقتراح يساعدنا على تقديم تجربة أفضل لجميع المستخدمين.
+                    </p>
+                </div>
+            `
         }
     };
 
@@ -674,7 +740,8 @@
         guideMapInteractive: ['footer-guide-map-interactive', 'header-guide-map-interactive', 'profile-guide-map-interactive'],
         about: ['nms-about-btn', 'footer-about-btn', 'promo-about-link', 'profile-about-btn'],
         terms: ['footer-terms-btn', 'header-terms-btn', 'profile-terms-btn', 'promo-terms-link', 'welcome-terms-link'],
-        privacy: ['footer-privacy-btn', 'header-privacy-btn', 'profile-privacy-btn', 'promo-privacy-link', 'welcome-privacy-link']
+        privacy: ['footer-privacy-btn', 'header-privacy-btn', 'profile-privacy-btn', 'promo-privacy-link', 'welcome-privacy-link'],
+        contact: ['footer-contact-btn', 'header-contact-btn', 'profile-contact-btn', 'promo-contact-link', 'welcome-contact-link']
     };
 
     function wireTriggers() {

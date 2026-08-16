@@ -13,6 +13,138 @@ body {
     box-sizing: border-box;
 }
 
+/* إخفاء زر البحث بدون خريطة في الزاوية الشمالية على الموبايل والتابلت */
+.desktop-only-search-btn {
+    display: none;
+}
+
+/* إظهار الزر فقط على الشاشات الكبيرة (الكمبيوتر) */
+@media (min-width: 768px) {
+    .desktop-only-search-btn {
+        display: block;
+    }
+
+    /* إظهار اللوحات الأصلية في مواقع ثابتة للكمبيوتر */
+    #search-panel {
+        display: block !important;
+        position: fixed !important;
+        top: 80px !important;
+        right: 20px !important;
+        z-index: 1000 !important;
+        width: 300px !important;
+        max-height: 300px !important;
+        overflow-y: auto !important;
+    }
+
+    #nearby-apartments-panel {
+        display: block !important;
+        position: fixed !important;
+        top: 400px !important;
+        right: 20px !important;
+        z-index: 1000 !important;
+        width: 300px !important;
+        max-height: 300px !important;
+        overflow-y: auto !important;
+    }
+
+    /* إظهار لوحة النتائج الأصلية في موقع مختلف للكمبيوتر - شمال وأسفل أزرار التكبير */
+    #results-panel {
+        display: block !important;
+        position: fixed !important;
+        top: 80px !important;
+        left: 20px !important;
+        z-index: 1001 !important;
+        width: 350px !important;
+        max-height: calc(100vh - 120px) !important;
+        overflow-y: auto !important;
+    }
+
+    /* إظهار الأزرار الجديدة للكمبيوتر */
+    .desktop-only {
+        display: inline-flex !important;
+    }
+
+    /* إخفاء الأزرار المحذوفة للكمبيوتر */
+    #search-btn, #activate-location-btn {
+        display: none !important;
+    }
+}
+
+/* قواعد نهائية للكمبيوتر لتجاوز جميع القيود الأخرى */
+@media (min-width: 768px) {
+    #search-panel {
+        position: fixed !important;
+        top: 80px !important;
+        right: 20px !important;
+        left: auto !important;
+        bottom: auto !important;
+        width: 300px !important;
+        height: auto !important;
+        max-height: 300px !important;
+        min-width: 0 !important;
+        min-height: 0 !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        border: 1px solid #ccc !important;
+        border-radius: 8px !important;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.15) !important;
+        transform: none !important;
+        transition: none !important;
+        overflow-y: auto !important;
+        z-index: 1000 !important;
+        background: #fff !important;
+        cursor: move !important;
+    }
+
+    #nearby-apartments-panel {
+        position: fixed !important;
+        top: 400px !important;
+        right: 20px !important;
+        left: auto !important;
+        bottom: auto !important;
+        width: 300px !important;
+        height: auto !important;
+        max-height: 300px !important;
+        min-width: 0 !important;
+        min-height: 0 !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        border: 1px solid #ccc !important;
+        border-radius: 8px !important;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.15) !important;
+        transform: none !important;
+        transition: none !important;
+        overflow-y: auto !important;
+        z-index: 1000 !important;
+        background: #fff !important;
+        cursor: move !important;
+    }
+
+    #results-panel {
+        position: fixed !important;
+        top: 80px !important;
+        left: 20px !important;
+        right: auto !important;
+        bottom: auto !important;
+        width: 350px !important;
+        height: auto !important;
+        max-height: calc(100vh - 120px) !important;
+        min-width: 0 !important;
+        min-height: 0 !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        border: 1px solid #ccc !important;
+        border-radius: 8px !important;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.15) !important;
+        transform: none !important;
+        transition: none !important;
+        overflow-y: auto !important;
+        z-index: 1001 !important;
+        background: #fff !important;
+        cursor: move !important;
+    }
+}
+
 /* --- تعديل شريط الهيدر الرئيسي --- */
 #map-header {
     position: absolute;
@@ -86,12 +218,34 @@ body {
     font-size: 14px;
     box-shadow: 0 4px 10px rgba(0,0,0,0.15);
     direction: rtl;
-    top: 150px !important;
+    top: 150px;
     max-height: calc(100vh - 170px);
-    transform: none !important;
+    transform: none;
     overflow-y: auto;
-    transition: none !important;
+    transition: none;
     touch-action: manipulation;
+}
+
+/* استثناء للوحات الرئيسية للسماح بالتحريك على الكمبيوتر */
+@media (min-width: 768px) {
+    #search-panel,
+    #nearby-apartments-panel,
+    #results-panel {
+        position: fixed !important;
+        top: auto !important;
+        right: auto !important;
+        left: auto !important;
+        bottom: auto !important;
+        transform: none !important;
+        transition: none !important;
+        width: auto !important;
+        height: auto !important;
+        max-width: none !important;
+        max-height: none !important;
+        min-width: 0 !important;
+        min-height: 0 !important;
+        margin: 0 !important;
+    }
 }
 
 .panel-right.dragging {

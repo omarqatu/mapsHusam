@@ -1856,14 +1856,14 @@ async function getProviderContactInfo(serviceLayer, featureId) {
     try {
         const targetPool = getPoolForLayer(serviceLayer);
         const result = await targetPool.query(
-            `SELECT whatsapp FROM public."${serviceLayer}" WHERE id = $1 LIMIT 1`,
+            `SELECT whatsapp, phone FROM public."${serviceLayer}" WHERE id = $1 LIMIT 1`,
             [featureId]
         );
         if (result.rows.length === 0) return { whatsapp: null, phone: null };
 
         const rawWhatsapp = result.rows[0].whatsapp ? String(result.rows[0].whatsapp).trim() : null;
-        const phone = deriveLocalPhoneFromWhatsapp(rawWhatsapp);
-        return { whatsapp: rawWhatsapp, phone };
+        const rawPhone = result.rows[0].phone ? String(result.rows[0].phone).trim() : null;
+        return { whatsapp: rawWhatsapp, phone: rawPhone };
     } catch (err) {
         console.error(`⚠️ خطأ أثناء جلب بيانات تواصل مزود الخدمة من طبقة [${serviceLayer}]:`, err.message);
         return { whatsapp: null, phone: null };
@@ -1985,9 +1985,9 @@ app.get('/api/service-requests', async (req, res) => {
             if (r.status === 'completed') {
                 const providerContact = await getProviderContactInfo(r.service_layer, r.feature_id);
                 r.userPhone = r.requester_phone || null;
-                r.userWhatsapp = r.requester_whatsapp || r.requester_phone || null;
-                r.providerPhone = r.provider_phone || providerContact.phone;
-                r.providerWhatsapp = r.provider_whatsapp || providerContact.whatsapp;
+                r.userWhatsapp = r.requester_whatsapp || null;
+                r.providerPhone = providerContact.phone;
+                r.providerWhatsapp = providerContact.whatsapp;
             }
             // 🆕 اسم الطرف الآخر بشكل موحّد لواجهة "طلباتي النشطة"
             r.user_name = r.requester_name;

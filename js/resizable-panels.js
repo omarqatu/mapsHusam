@@ -50,7 +50,7 @@
     }
     
     function init() {
-    document.querySelectorAll('.panel-right:not(#provider-mini-panel)').forEach(function (panel) {
+    document.querySelectorAll('.panel-right:not(#provider-mini-panel):not(#search-panel):not(#nearby-apartments-panel):not(#results-panel)').forEach(function (panel) {
         restoreSize(panel);
         watchResize(panel);
     });

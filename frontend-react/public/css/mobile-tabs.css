@@ -14,6 +14,7 @@ body.mobile-tabs-landscape {
     --mt-header-height: 58px;
 }
 
+
 /* ------------------ 1) تصغير الخريطة وحجز مكان صندوق التبويبات ------------------ */
 body.mobile-tabs-portrait #map {
     height: calc(100vh - var(--mt-size)) !important;

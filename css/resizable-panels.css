@@ -12,7 +12,7 @@
    1) تفعيل السحب لتغيير الحجم على كل لوحة من نوع .panel-right
    -------------------------------------------------------------------------- */
 /* 1) تفعيل السحب لتغيير الحجم */
-.panel-right:not(#provider-mini-panel) {
+.panel-right:not(#provider-mini-panel):not(#search-panel):not(#nearby-apartments-panel):not(#results-panel) {
     resize: both;
     overflow: auto;
     min-width: 360px;
@@ -22,7 +22,7 @@
 }
 
 /* 2) تكبير الحجم الافتراضي */
-.panel-right:not(#provider-mini-panel) {
+.panel-right:not(#provider-mini-panel):not(#search-panel):not(#nearby-apartments-panel):not(#results-panel) {
     width: 420px;
     min-height: 380px;
     max-width: min(95vw, 750px);
@@ -36,16 +36,6 @@
    وتظهر فعلياً على الشاشة. التعديل المطلوب لحجم أي لوحة لازم يصير هون، وليس
    بملف style.css، وإلا رح ينكتب فوقه تلقائياً.
    -------------------------------------------------------------------------- */
-
-/* لوحة البحث بالسمات */
-#search-panel {
-    width: 420px;
-}
-
-/* لوحة البحث من خلال الموقع */
-#nearby-apartments-panel {
-    width: 420px;
-}
 
 /* لوحة مشاركة الموقع */
 #shareLocationPanel {
@@ -67,16 +57,6 @@
 #polygonEditPanel,
 #lineEditPanel {
     width: 380px; /* كانت 310px */
-}
-
-/* 🆕 لوحة عرض نتائج البحث: عندها قيود ارتفاع خاصة معرّفة بملف style.css
-   (max-height: 60vh) لازم نتجاوزها هون بالتحديد عشان تنعكس فعلياً */
-#results-panel {
-    width: 500px;
-    max-height: 75vh;
-}
-#results-panel .results-table-container {
-    max-height: 60vh; /* كانت 45vh */
 }
 
 /* --------------------------------------------------------------------------

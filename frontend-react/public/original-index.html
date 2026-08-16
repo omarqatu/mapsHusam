@@ -28,9 +28,9 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
 
     <!-- 2. التصميم الأساسي (Global Styles) -->
-    <link rel="stylesheet" href="/css/resizable-panels.css">
     <link rel="stylesheet" href="/css/no-map-search.css">
     <link rel="stylesheet" href="/css/style.css">
+    <link rel="stylesheet" href="/css/resizable-panels.css">
 
     <!-- 3. المكونات الأساسية (Layout & Features) -->
     <link rel="stylesheet" href="/css/buttons.css">
@@ -230,27 +230,40 @@
     </div>
 </div>
 
+<!-- زر الانتقال إلى البحث بدون خريطة في الشمال للكمبيوتر فقط -->
+<div class="desktop-only-search-btn" style="position: fixed; top: 20px; left: 20px; z-index: 2000;">
+    <a href="/no-map-search.html" target="_blank"
+       style="display: inline-block; background: linear-gradient(135deg, #28a745, #20c997); color: white;
+              padding: 12px 20px; border-radius: 25px; text-decoration: none; font-size: 14px; font-weight: 600;
+              box-shadow: 0 4px 15px rgba(40, 167, 69, 0.3); transition: all 0.3s ease;
+              border: 2px solid #fff; white-space: nowrap;"
+       onmouseover="this.style.transform='scale(1.05)'; this.style.boxShadow='0 6px 20px rgba(40, 167, 69, 0.4)';"
+       onmouseout="this.style.transform='scale(1)'; this.style.boxShadow='0 4px 15px rgba(40, 167, 69, 0.3)';">
+        <i class="fas fa-list"></i> الانتقال إلى البحث بدون خريطة
+    </a>
+</div>
+
 <div id="map-header">
     <div class="global-search-wrapper">
         <i class="fas fa-search"></i>
         <input type="text" id="global-search-input" placeholder="ابحث عن عقار، مطعم، فني...">
-        
+
         <!-- زر التحديث -->
         <button id="global-refresh-btn" class="global-refresh-btn" title="تحديث الخريطة">
             <i class="fas fa-sync-alt"></i>
         </button>
 
         <!-- زر البحث بدون خريطة الجديد -->
-             <a href="no-map-search.html" target="_blank" rel="noopener noreferrer" 
-                class="global-refresh-btn" 
-                title="بحث في القائمة" 
-                style="display: inline-flex; align-items: center; justify-content: center; 
-                        background-color: #28a745; color: white; width: 40px; height: 40px; 
-                        border-radius: 8px; text-decoration: none; box-shadow: 0 4px 8px rgba(40, 167, 69, 0.4); 
+             <a href="no-map-search.html" target="_blank" rel="noopener noreferrer"
+                class="global-refresh-btn"
+                title="بحث في القائمة"
+                style="display: inline-flex; align-items: center; justify-content: center;
+                        background-color: #28a745; color: white; width: 40px; height: 40px;
+                        border-radius: 8px; text-decoration: none; box-shadow: 0 4px 8px rgba(40, 167, 69, 0.4);
                         transition: transform 0.2s, background-color 0.2s;">
                     <i class="fas fa-list" style="font-size: 20px;"></i>
                 </a>
-        
+
         <div id="search-suggestions"></div>
     </div>
 
@@ -275,33 +288,32 @@
 
 <div id="map-controls">
     <div id="top-buttons-container" class="hidden-buttons-container">
-                    <!-- استخدم هذا التنسيق الموحد لكل الأزرار الستة -->
-                <button id="search-btn" class="top-button" data-panel="search-panel" 
-                    style="height: 42px; padding: 0 16px; font-size: 14px; font-weight: 500; border-radius: 20px; border: 1px solid #ddd; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; color: #444; background-color: #f8f9fa; margin: 2px; transition: 0.2s;">
-                    <i class="fas fa-search" style="font-size: 16px;"></i> <span>البحث الذكي</span>
-                </button>
-
-                <button id="togglePopupBtn" class="top-button" 
+                <button id="togglePopupBtn" class="top-button"
                     style="height: 42px; padding: 0 16px; font-size: 14px; font-weight: 500; border-radius: 20px; border: 1px solid #ddd; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; color: #444; background-color: #f8f9fa; margin: 2px; transition: 0.2s;">
                     <i class="fas fa-info-circle" style="font-size: 16px;"></i> <span>استعلام</span>
                 </button>
 
-                <button id="activate-location-btn" class="top-button" data-panel="nearby-apartments-panel" 
-                    style="height: 42px; padding: 0 16px; font-size: 14px; font-weight: 500; border-radius: 20px; border: 1px solid #ddd; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; color: #444; background-color: #f8f9fa; margin: 2px; transition: 0.2s;">
+                <button id="open-search-panel-desktop" class="top-button desktop-only"
+                    style="height: 42px; padding: 0 16px; font-size: 14px; font-weight: 500; border-radius: 20px; border: 1px solid #ddd; cursor: pointer; display: none; align-items: center; gap: 8px; color: #444; background-color: #f8f9fa; margin: 2px; transition: 0.2s;">
+                    <i class="fas fa-search" style="font-size: 16px;"></i> <span>البحث الذكي</span>
+                </button>
+
+                <button id="open-nearby-panel-desktop" class="top-button desktop-only"
+                    style="height: 42px; padding: 0 16px; font-size: 14px; font-weight: 500; border-radius: 20px; border: 1px solid #ddd; cursor: pointer; display: none; align-items: center; gap: 8px; color: #444; background-color: #f8f9fa; margin: 2px; transition: 0.2s;">
                     <i class="fas fa-map-marker-alt" style="font-size: 16px;"></i> <span>البحث من خلال الموقع</span>
                 </button>
 
-                <button id="toggleLayerPanel" class="top-button" data-panel="layerPanel" 
+                <button id="toggleLayerPanel" class="top-button" data-panel="layerPanel"
                     style="height: 42px; padding: 0 16px; font-size: 14px; font-weight: 500; border-radius: 20px; border: 1px solid #ddd; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; color: #444; background-color: #f8f9fa; margin: 2px; transition: 0.2s;">
                     <i class="fas fa-layer-group" style="font-size: 16px;"></i> <span>ظهور /اخفاء الخدمات</span>
                 </button>
 
-                <button id="measure-tools-toggle-btn" class="top-button" data-panel="measurePanel" 
+                <button id="measure-tools-toggle-btn" class="top-button" data-panel="measurePanel"
                     style="padding: 0 16px; height: 42px; font-size: 14px; font-weight: 500; border-radius: 20px; border: 1px solid #ddd; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; color: #444; background-color: #f8f9fa; margin: 2px; transition: 0.2s;">
                     <i class="fas fa-ruler" style="font-size: 16px;"></i> <span>أدوات القياس</span>
                 </button>
 
-                <button id="share-location-btn" class="top-button" data-panel="shareLocationPanel" 
+                <button id="share-location-btn" class="top-button" data-panel="shareLocationPanel"
                     style="height: 42px; padding: 0 16px; font-size: 14px; font-weight: 500; border-radius: 20px; border: 1px solid #ddd; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; color: #444; background-color: #f8f9fa; margin: 2px; transition: 0.2s;">
                     <i class="fas fa-share-alt" style="font-size: 16px;"></i> <span>مشاركة موقع</span>
                 </button>
@@ -310,6 +322,7 @@
         <button id="lineEditBtn" class="top-button" data-panel="lineEditPanel" data-edit-type="line" title="تحرير خطوط"><i class="fas fa-route"></i></button>
     </div>
 </div>
+
 
 <div id="map" class="map"></div>
 
@@ -1049,6 +1062,9 @@ document.addEventListener('DOMContentLoaded', checkBannerStatus);
 <script src="/js/provider-panel.js"></script>
 <script src="/js/no-map-search.js"></script>
 <script src="/js/ui-collapse.js"></script>
+
+<!-- لوحات البحث للكمبيوتر -->
+<script src="/js/desktop-panels.js"></script>
 <script src="/js/resizable-panels.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>

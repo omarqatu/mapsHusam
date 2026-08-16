@@ -543,8 +543,10 @@
         if (!targetUserObj) {
             return '<b>تم الاتفاق بنجاح!</b> أرقام التواصل: غير متوفرة حالياً';
         }
-        // 🆕 استخدام phone و whatsapp_number من جدول users فقط
-        let rawWhatsapp = targetUserObj.whatsapp_number || targetUserObj.whatsapp || '';
+        // 🆕 استخدام البيانات الصحيحة:
+        // - مزود الخدمة: من المعلم (feature) - providerPhone و providerWhatsapp
+        // - المستخدم: من جدول users - userPhone و userWhatsapp
+        let rawWhatsapp = targetUserObj.whatsapp || targetUserObj.whatsapp_number || '';
         let rawPhone = targetUserObj.phone || '';
 
         if (typeof targetUserObj === 'string' || typeof targetUserObj === 'number') {
@@ -554,7 +556,7 @@
 
         const cleanWhatsapp = rawWhatsapp ? String(rawWhatsapp).trim() : '';
         const normalizedWhatsappDigits = cleanWhatsapp ? normalizeWhatsappNumber(cleanWhatsapp) : '';
-        // 🆕 استخدام phone مباشرة من جدول users
+        // 🆕 استخدام phone مباشرة
         const phoneVal = rawPhone && String(rawPhone).trim() !== '' ? String(rawPhone).trim() : deriveLocalPhoneFromWhatsapp(cleanWhatsapp);
 
         if (!normalizedWhatsappDigits && !phoneVal) {
@@ -739,10 +741,12 @@
                     chatBtn.style.cssText = isCompleted ? 'background:#6c757d; color:#fff; border:none; padding:8px; border-radius:6px; cursor:pointer; font-size:12px; margin-top:4px; font-weight:bold;' : 'background:#1a73e8; color:#fff; border:none; padding:8px; border-radius:6px; cursor:pointer; font-size:12px; margin-top:4px; font-weight:bold;';
                     chatBtn.onclick = () => {
                         modalWrapper.remove();
-                        // 🆕 استخدام phone و whatsapp_number من جدول users فقط
+                        // 🆕 استخدام البيانات الصحيحة:
+                        // - مزود الخدمة: من المعلم (feature) - providerPhone و providerWhatsapp
+                        // - المستخدم: من جدول users - requester_phone و requester_whatsapp
                         const contactObj = {
-                            phone: chatRole === 'user' ? (r.provider_phone || r.providerPhone || r.phone) : (r.requester_phone || r.user_phone || r.userPhone || r.phone),
-                            whatsapp: chatRole === 'user' ? (r.provider_whatsapp || r.provider_whatsapp_number || r.providerPhone || r.phone) : (r.requester_whatsapp || r.user_whatsapp || r.user_whatsapp_number || r.userPhone || r.phone)
+                            phone: chatRole === 'user' ? (r.providerPhone || r.provider_phone || r.phone) : (r.requester_phone || r.user_phone || r.userPhone || r.phone),
+                            whatsapp: chatRole === 'user' ? (r.providerWhatsapp || r.provider_whatsapp || r.providerPhone || r.phone) : (r.requester_whatsapp || r.user_whatsapp || r.userPhone || r.phone)
                         };
                         openChatModal(r.id, chatRole, otherPartyName, isCompleted, contactObj, r.service_type);
                     };
@@ -1053,10 +1057,12 @@
             if (data.success) {
                 renderMessages(data.messages);
                 if (data.requestStatus === 'completed') {
-                    // 🆕 استخدام phone و whatsapp_number من جدول users فقط
+                    // 🆕 استخدام البيانات الصحيحة:
+                    // - مزود الخدمة: من المعلم (feature) - providerPhone و providerWhatsapp
+                    // - المستخدم: من جدول users - userPhone و userWhatsapp
                     const contactObj = {
-                        phone: currentUserRoleInChat === 'user' ? (data.provider_phone || data.providerPhone || data.phone) : (data.user_phone || data.userPhone || data.phone),
-                        whatsapp: currentUserRoleInChat === 'user' ? (data.provider_whatsapp || data.provider_whatsapp_number || data.providerPhone || data.phone) : (data.user_whatsapp || data.user_whatsapp_number || data.userPhone || data.phone)
+                        phone: currentUserRoleInChat === 'user' ? (data.providerPhone || data.provider_phone || data.phone) : (data.userPhone || data.user_phone || data.phone),
+                        whatsapp: currentUserRoleInChat === 'user' ? (data.providerWhatsapp || data.provider_whatsapp || data.providerPhone || data.phone) : (data.userWhatsapp || data.user_whatsapp || data.userPhone || data.phone)
                     };
                     chatStatusLine.innerHTML = renderContactDetailsBox(contactObj, currentOtherPartyName, currentServiceTypeLabel);
                     chatConfirmBtn.disabled = true;
@@ -1149,10 +1155,12 @@
             const data = await res.json();
             if (data.success) {
                 if (data.status === 'completed') {
-                    // 🆕 استخدام phone و whatsapp_number من جدول users فقط
+                    // 🆕 استخدام البيانات الصحيحة:
+                    // - مزود الخدمة: من المعلم (feature) - providerPhone و providerWhatsapp
+                    // - المستخدم: من جدول users - userPhone و userWhatsapp
                     const contactObj = {
-                        phone: currentUserRoleInChat === 'user' ? (data.provider_phone || data.providerPhone || data.phone) : (data.user_phone || data.userPhone || data.phone),
-                        whatsapp: currentUserRoleInChat === 'user' ? (data.provider_whatsapp || data.provider_whatsapp_number || data.providerPhone || data.phone) : (data.user_whatsapp || data.user_whatsapp_number || data.userPhone || data.phone)
+                        phone: currentUserRoleInChat === 'user' ? (data.providerPhone || data.provider_phone || data.phone) : (data.userPhone || data.user_phone || data.phone),
+                        whatsapp: currentUserRoleInChat === 'user' ? (data.providerWhatsapp || data.provider_whatsapp || data.providerPhone || data.phone) : (data.userWhatsapp || data.user_whatsapp || data.userPhone || data.phone)
                     };
                     chatStatusLine.innerHTML = renderContactDetailsBox(contactObj, currentOtherPartyName, currentServiceTypeLabel);
                     chatConfirmBtn.disabled = true;
@@ -1493,10 +1501,12 @@
         removePulseEffect(data.requestId);
         
         if (data.requestId === currentOpenRequestId && chatModal && chatModal.style.display === 'flex') {
-            // 🆕 استخدام phone و whatsapp_number من جدول users فقط
+            // 🆕 استخدام البيانات الصحيحة:
+            // - مزود الخدمة: من المعلم (feature) - providerPhone و providerWhatsapp
+            // - المستخدم: من جدول users - userPhone و userWhatsapp
             const contactObj = {
-                phone: currentUserRoleInChat === 'user' ? (data.provider_phone || data.providerPhone || data.phone) : (data.user_phone || data.userPhone || data.phone),
-                whatsapp: currentUserRoleInChat === 'user' ? (data.provider_whatsapp || data.provider_whatsapp_number || data.providerPhone || data.phone) : (data.user_whatsapp || data.user_whatsapp_number || data.userPhone || data.phone)
+                phone: currentUserRoleInChat === 'user' ? (data.providerPhone || data.provider_phone || data.phone) : (data.userPhone || data.user_phone || data.phone),
+                whatsapp: currentUserRoleInChat === 'user' ? (data.providerWhatsapp || data.provider_whatsapp || data.providerPhone || data.phone) : (data.userWhatsapp || data.user_whatsapp || data.userPhone || data.phone)
             };
             chatStatusLine.innerHTML = renderContactDetailsBox(contactObj, currentOtherPartyName, currentServiceTypeLabel);
             chatConfirmBtn.disabled = true;

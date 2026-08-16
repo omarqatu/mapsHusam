@@ -38,8 +38,9 @@ function initializePanelControls() {
                 if (minimizeBtn) {
                     minimizeBtn.textContent = '−'; // إعادة زر التصغير للحالة الافتراضية
                 }
-                // إعادة تعيين الموقع عند الإغلاق (لللوحات العادية فقط)
-                if (!panel.id.includes('provider')) {
+                // عدم إعادة تعيين الموقع عند الإغلاق للكمبيوتر - تبقى اللوحات في مواقعها
+                // فقط إعادة تعيين الموقع للموبايل
+                if (window.innerWidth < 768 && !panel.id.includes('provider')) {
                     panel.style.top = '';
                     panel.style.left = '';
                     panel.style.right = '';
