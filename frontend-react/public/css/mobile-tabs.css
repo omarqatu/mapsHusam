@@ -389,6 +389,20 @@ body.mobile-tabs-landscape .feedback-banner-wrapper {
     
 }
 
+/* ------------------ 9) إخفاء أزرار "البحث الذكي" و"البحث من خلال الموقع" من
+   قائمة أزرار عمليات الخريطة على الموبايل والتابلت - الوصول لهما أصبح فقط
+   عبر تبويبتين ثابتتين بجانب "الرئيسية"، فلا داعي لتكرارهما هنا ------------------ */
+body.mobile-tabs-portrait #search-btn,
+body.mobile-tabs-portrait #activate-location-btn,
+body.mobile-tabs-portrait #close-search-panel,
+body.mobile-tabs-portrait #close-nearby-panel,
+body.mobile-tabs-landscape #search-btn,
+body.mobile-tabs-landscape #activate-location-btn,
+body.mobile-tabs-landscape #close-search-panel,
+body.mobile-tabs-landscape #close-nearby-panel {
+    display: none !important;
+}
+
 /* ==========================================================================
    🆕 إصلاح موقع مربع الإحداثيات (#coordinates) على الموبايل: نفرض
    position:fixed بدل absolute (الموروثة من style.css) لضمان ارتباطه

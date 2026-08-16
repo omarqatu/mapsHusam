@@ -352,11 +352,28 @@ body {
 }
 
 /* --- اللوحات الخاصة --- */
-#search-panel, #nearby-apartments-panel, #results-panel, #layerPanel,
+#search-panel, #layerPanel,
 #measurePanel, #shareLocationPanel, #editPanel, #polygonEditPanel, #lineEditPanel {
     top: 200px !important;
     transform: none !important;
     right: 50px !important;
+}
+
+/* 🆕 لوحة "البحث من خلال الموقع": أسفل لوحة "البحث الذكي" مباشرة وبنفس
+   المحاذاة اليمينية ونفس الحجم الافتراضي (420px من resizable-panels.css) */
+#nearby-apartments-panel {
+    top: 610px !important;
+    transform: none !important;
+    right: 50px !important;
+}
+
+/* 🆕 لوحة النتائج: موقعها الافتراضي بالجهة اليسرى (الشمال) من الشاشة، بمعزل
+   تماماً عن عمود لوحتَي البحث الذكي وبحث الموقع باليمين */
+#results-panel {
+    top: 200px !important;
+    transform: none !important;
+    left: 90px !important;
+    right: auto !important;
 }
 
 #layerPanel { width: 250px; }

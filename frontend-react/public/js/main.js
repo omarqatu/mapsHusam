@@ -447,12 +447,21 @@ setTimeout(() => {
             const panelId = this.getAttribute('data-panel');
             const editType = this.getAttribute('data-edit-type');
             const panel = document.getElementById(panelId);
-
+            
             if (!panel) return;
 
             const isCurrentlyHidden = panel.classList.contains('hidden');
 
-            window.closeAllPanels();
+            // 🆕 لوحتا "البحث الذكي" و"البحث من خلال الموقع" أصبحتا مستقلتين عن
+            // بعضهما تماماً (يمكن فتحهما معاً لأنهما مرصوفتان فوق بعض)، فلا
+            // نغلق إحداهما عند فتح الأخرى، ولا نغلق أي منهما عند فتح لوحة أخرى
+            const isIndependentSearchPanel = (panelId === 'search-panel' || panelId === 'nearby-apartments-panel');
+
+            if (isIndependentSearchPanel) {
+                window.closeSinglePanel(panel);
+            } else {
+                window.closeAllPanels();
+            }
 
             if (isCurrentlyHidden) {
                 // الفحص الآمن لدور المستخدم لتفادي انقطاع الكود إذا لم يكن معرّفاً
@@ -491,9 +500,40 @@ setTimeout(() => {
         };
     });
 
-    // إغلاق اللوحات عند الضغط على زر X
+    // إغلاق اللوحات عند الضغط على زر X (يبقى القديم احتياطاً لأي عنصر قديم يحمل هذا الكلاس)
     document.querySelectorAll('.close-btn').forEach(btn => {
         btn.onclick = () => window.closeAllPanels();
+    });
+
+    // 🆕 إغلاق فردي حقيقي لكل لوحة عبر زر (✕) الخاص بها فقط (بدون التأثير على
+    // باقي اللوحات المفتوحة) - كانت أزرار panel-close-btn غير مربوطة بأي كود إطلاقاً
+    window.closeSinglePanel = function(panel) {
+        if (!panel) return;
+        panel.classList.add('hidden');
+        panel.classList.remove('minimized');
+        panel.style.removeProperty('display');
+        const minimizeBtn = panel.querySelector('.panel-minimize-btn');
+        if (minimizeBtn) minimizeBtn.textContent = '−';
+
+        if (panel.id === 'editPanel' && typeof window.deactivatePointEditTools === 'function') {
+            window.deactivatePointEditTools();
+        } else if (panel.id === 'polygonEditPanel' && typeof window.deactivatePolygonEditTools === 'function') {
+            window.deactivatePolygonEditTools();
+        } else if (panel.id === 'lineEditPanel' && typeof window.deactivateLineEditTools === 'function') {
+            window.deactivateLineEditTools();
+        } else if (panel.id === 'shareLocationPanel' && typeof window.toggleShareLocationTool === 'function') {
+            window.toggleShareLocationTool(false);
+        }
+    };
+
+    document.querySelectorAll('.panel-close-btn').forEach(btn => {
+        // لوحة النتائج لها منطق إغلاق خاص مُعرَّف مسبقاً بملف quick-search.js
+        // (يشمل تفريغ طبقة التمييز الصفراء)، فلا نستبدله هنا لتفادي التعارض
+        if (btn.id === 'close-results-panel') return;
+        btn.onclick = (e) => {
+            e.preventDefault();
+            window.closeSinglePanel(btn.closest('.panel-right'));
+        };
     });
 
     // زر القائمة العلوية للهواتف المحمولة
