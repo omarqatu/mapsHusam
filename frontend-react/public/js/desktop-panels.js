@@ -18,7 +18,7 @@
             closeSearchBtn.addEventListener('click', function (e) {
                 e.stopPropagation();
                 searchPanel.classList.add('hidden');
-                searchPanel.style.display = 'none';
+                searchPanel.style.removeProperty('display');
             });
         }
 
@@ -39,10 +39,9 @@
             closeNearbyBtn.addEventListener('click', function (e) {
                 e.stopPropagation();
                 nearbyPanel.classList.add('hidden');
-                nearbyPanel.style.display = 'none';
+                nearbyPanel.style.removeProperty('display');
             });
         }
-
         if (openNearbyBtn && nearbyPanel) {
             openNearbyBtn.addEventListener('click', function (e) {
                 e.stopPropagation();
@@ -59,7 +58,7 @@
             closeResultsBtn.addEventListener('click', function (e) {
                 e.stopPropagation();
                 resultsPanel.classList.add('hidden');
-                resultsPanel.style.display = 'none';
+                resultsPanel.style.removeProperty('display');
             });
         }
     }

@@ -783,3 +783,12 @@ body {
 }
 
 .modal { z-index: 100000 !important; background-color: rgba(0,0,0,0.3) !important; }
+
+/* 🆕 إصلاح: السماح لزر الإغلاق (✕) بإخفاء لوحات البحث الذكي/بحث الموقع/النتائج فعلياً على الكمبيوتر */
+@media (min-width: 768px) {
+    #search-panel.hidden,
+    #nearby-apartments-panel.hidden,
+    #results-panel.hidden {
+        display: none !important;
+    }
+}

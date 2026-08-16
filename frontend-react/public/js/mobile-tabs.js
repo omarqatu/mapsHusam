@@ -115,7 +115,8 @@
         tabHome.innerHTML =
             '<div class="mth-icon">📊</div>' +
             '<div class="mth-title">إحصائيات المنصة</div>' +
-            '<div class="pstats-wrap pstats-mobile-home" data-platform-stats-target></div>';
+            '<div class="pstats-wrap pstats-mobile-home" data-platform-stats-target></div>' +
+            '<a href="/no-map-search.html" target="_blank" style="display:inline-flex; align-items:center; gap:8px; margin-top:16px; background:linear-gradient(135deg,#28a745,#20c997); color:#fff; padding:12px 20px; border-radius:25px; text-decoration:none; font-size:14px; font-weight:600; box-shadow:0 4px 15px rgba(40,167,69,0.3); border:2px solid #fff; white-space:nowrap;"><i class="fas fa-list"></i> الانتقال إلى البحث بدون خريطة</a>';
 
         tabContent.appendChild(tabHome);
 
@@ -258,7 +259,12 @@
         let nextGroup = activeGroup;
         if (newlyOpenedGroup) {
             nextGroup = newlyOpenedGroup;
-        } else if (activeGroup !== 'home' && !groupIsOpenInMap(newMap, activeGroup)) {
+        } else if (
+            activeGroup !== 'home' &&
+            activeGroup !== 'smartsearch' &&
+            activeGroup !== 'locationsearch' &&
+            !groupIsOpenInMap(newMap, activeGroup)
+        ) {
             nextGroup = 'home';
             for (let i = 0; i < GROUP_ORDER.length; i++) {
                 if (groupIsOpenInMap(newMap, GROUP_ORDER[i])) { nextGroup = GROUP_ORDER[i]; break; }
