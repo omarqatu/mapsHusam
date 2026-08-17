@@ -402,6 +402,7 @@
         });
 
         if (resultsPanel) resultsPanel.classList.remove('hidden');
+        if (typeof window.mobileTabsShowResults === 'function') window.mobileTabsShowResults();
         mapInstance.getView().fit(extent, { duration: 1000, padding: [50, 50, 50, 50], maxZoom: 19 });
     }
 

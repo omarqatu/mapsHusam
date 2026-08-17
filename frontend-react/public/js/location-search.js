@@ -240,6 +240,7 @@ function initializeLocationSearch(map, overlayLayersObj) {
 
         tbody.innerHTML = '';
         resultsPanel?.classList.remove('hidden');
+        if (typeof window.mobileTabsShowResults === 'function') window.mobileTabsShowResults();
         if (countSpan) countSpan.textContent = features.length;
 
         features.forEach((f, i) => {

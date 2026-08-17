@@ -237,6 +237,14 @@
         resumeObserving(); // 🆕
     }
 
+    // 🆕 يُستدعى من دوال عرض نتائج البحث (quick-search.js, search.js, location-search.js)
+    // فور ظهور جدول النتائج فعلياً، لضمان انتقال تلقائي فوري لتبويبة النتائج
+    // على الموبايل/التابلت دون انتظار المراقب السلبي (MutationObserver).
+    window.mobileTabsShowResults = safe(function () {
+        if (!isMobileNow() || !systemStarted) return;
+        setActiveGroup('results');
+    });
+
     function recomputeState() {
         pauseObserving(); // 🆕 إيقاف المراقبة مؤقتاً قبل أي تعديل نقوم به نحن
 

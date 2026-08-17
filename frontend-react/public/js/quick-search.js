@@ -279,5 +279,7 @@ function initializeQuickSearch(map, overlayLayersObj) {
         });
 
         resultsPanel.classList.remove('hidden');
+
+        if (typeof window.mobileTabsShowResults === 'function') window.mobileTabsShowResults();
     }
 }

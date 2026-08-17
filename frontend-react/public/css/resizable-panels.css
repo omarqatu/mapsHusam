@@ -63,8 +63,29 @@
    3) على الموبايل: تعطيل السحب اليدوي (لأن اللمس مع resize غير مريح)،
       ونُبقي الأحجام المتجاوبة الجاهزة أصلاً في style.css (80vw ... إلخ)
    -------------------------------------------------------------------------- */
-@media (max-width: 768px) {
-    .panel-right:not(#provider-mini-panel) {
-        resize: none;
+@media (min-width: 768px) {
+    #search-panel#search-panel,
+    #nearby-apartments-panel#nearby-apartments-panel {
+        width: 300px;
+        height: 300px;
+        max-width: min(95vw, 650px) !important;
+        max-height: calc(100vh - 40px) !important;
+        min-width: 280px !important;
+        min-height: 200px !important;
+        resize: both !important;
+        overflow: auto !important;
+    }
+    #nearby-apartments-panel#nearby-apartments-panel {
+        top: 520px !important;
+    }
+    #search-panel#search-panel.minimized,
+    #nearby-apartments-panel#nearby-apartments-panel.minimized {
+        width: 250px !important;
+        height: 50px !important;
+        max-height: 50px !important;
+        min-width: 0 !important;
+        min-height: 0 !important;
+        resize: none !important;
+        overflow: hidden !important;
     }
 }

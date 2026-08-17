@@ -422,24 +422,21 @@ setTimeout(() => {
         };
 
     // --- 5. محرك اللوحات الموحد والمعدل للصلاحيات ---
-    window.closeAllPanels = () => {
-        document.querySelectorAll('.panel-right').forEach(p => {
-            // استثناء لوحة مزود الخدمة من الإغلاق
-            if (p.id !== 'provider-mini-panel') {
-                p.classList.add('hidden');
-                // تأمين الإغلاق وإلغاء القفل الخاص بـ display الحماية للمشرف
-                p.style.removeProperty("display");
-            }
-        });
+    window.closeAllPanels = (exceptIds = []) => {
+    document.querySelectorAll('.panel-right').forEach(p => {
+        if (p.id !== 'provider-mini-panel' && !exceptIds.includes(p.id)) {
+            p.classList.add('hidden');
+            p.style.removeProperty("display");
+        }
+    });
 
-        if (window.searchResultsHighlightLayer) window.searchResultsHighlightLayer.getSource().clear();
+    if (window.searchResultsHighlightLayer) window.searchResultsHighlightLayer.getSource().clear();
 
-        // تعطيل كافة الأدوات الوظيفية لتجنب التعارض
-        if (typeof window.toggleShareLocationTool === 'function') window.toggleShareLocationTool(false);
-        if (typeof window.deactivatePointEditTools === 'function') window.deactivatePointEditTools();
-        if (typeof window.deactivatePolygonEditTools === 'function') window.deactivatePolygonEditTools();
-        if (typeof window.deactivateLineEditTools === 'function') window.deactivateLineEditTools();
-    };
+    if (typeof window.toggleShareLocationTool === 'function') window.toggleShareLocationTool(false);
+    if (typeof window.deactivatePointEditTools === 'function') window.deactivatePointEditTools();
+    if (typeof window.deactivatePolygonEditTools === 'function') window.deactivatePolygonEditTools();
+    if (typeof window.deactivateLineEditTools === 'function') window.deactivateLineEditTools();
+};
 
     // الربط الذكي الموحد للأزرار (تم التخلص من التكرار القديم وحل مشكلة العرض للمشرف)
     document.querySelectorAll('[data-panel]').forEach(btn => {
@@ -458,7 +455,8 @@ setTimeout(() => {
             const isIndependentSearchPanel = (panelId === 'search-panel' || panelId === 'nearby-apartments-panel');
 
             if (isIndependentSearchPanel) {
-                window.closeSinglePanel(panel);
+                // إغلاق كل اللوحات الأخرى، لكن مع إبقاء البحث الذكي وبحث الموقع كما هما (لا تُغلق إحداهما بسبب الأخرى)
+                window.closeAllPanels(['search-panel', 'nearby-apartments-panel']);
             } else {
                 window.closeAllPanels();
             }
@@ -499,6 +497,29 @@ setTimeout(() => {
             }
         };
     });
+
+    // 🆕 فتح لوحتي "البحث الذكي" و"البحث من خلال الموقع" تلقائياً عند دخول المنصة (كمبيوتر فقط)
+    (function autoOpenSearchPanels() {
+        const isMobileDevice = window.matchMedia('(max-width: 767px) and (orientation: portrait)').matches ||
+                                window.matchMedia('(max-width: 900px) and (orientation: landscape)').matches;
+        if (isMobileDevice) return;
+
+        ['search-panel', 'nearby-apartments-panel'].forEach(function (panelId) {
+            const panel = document.getElementById(panelId);
+            if (!panel || !panel.classList.contains('hidden')) return;
+
+            panel.classList.remove('hidden');
+            const currentRole = window.currentUserRole || (typeof currentUserRole !== 'undefined' ? currentUserRole : null);
+            if (currentRole === 'admin') {
+                panel.style.setProperty("display", "block", "important");
+            }
+            populateEditSelects();
+
+            if (panelId === 'nearby-apartments-panel' && typeof window.populateSearchLayerSelect === 'function') {
+                window.populateSearchLayerSelect();
+            }
+        });
+    })();
 
     // إغلاق اللوحات عند الضغط على زر X (يبقى القديم احتياطاً لأي عنصر قديم يحمل هذا الكلاس)
     document.querySelectorAll('.close-btn').forEach(btn => {

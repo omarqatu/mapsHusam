@@ -450,4 +450,4 @@ window.URLUtils = window.URLUtils || null;
 window.DeviceUtils = window.DeviceUtils || null;
 window.MobileService = window.MobileService || null;
 
-console.log('✅ Services Bridge loaded successfully');
+
