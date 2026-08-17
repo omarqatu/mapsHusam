@@ -589,4 +589,5 @@ setTimeout(() => {
             });
         };
     }
+
 }; // 🆕 نهاية window.initMapPlatform

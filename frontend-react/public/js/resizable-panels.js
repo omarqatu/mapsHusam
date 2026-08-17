@@ -4,6 +4,13 @@
 (function () {
     'use strict';
 
+    // هاتان اللوحتان قابلتان لتغيير الحجم خلال الجلسة، لكن المطلوب أن تعودا
+    // دائماً لحجمهما الافتراضي عند تحديث الخريطة؛ لذلك لا نحفظ أبعادهما.
+    const RESET_SIZE_ON_RELOAD = new Set([
+        'search-panel',
+        'nearby-apartments-panel'
+    ]);
+
     function safeClamp(panel) {
         if (typeof window.clampElementToViewport === 'function') {
             window.clampElementToViewport(panel);
@@ -50,11 +57,17 @@
     }
     
     function init() {
-    document.querySelectorAll('.panel-right:not(#provider-mini-panel):not(#results-panel)').forEach(function (panel) {
-        restoreSize(panel);
-        watchResize(panel);
-    });
-}
+        document.querySelectorAll('.panel-right:not(#provider-mini-panel):not(#results-panel)').forEach(function (panel) {
+            if (RESET_SIZE_ON_RELOAD.has(panel.id)) {
+                // تنظيف أي أحجام حُفظت قبل هذا الإصلاح.
+                try { localStorage.removeItem('panel_size_' + panel.id); } catch (err) { /* تجاهل */ }
+                return;
+            }
+
+            restoreSize(panel);
+            watchResize(panel);
+        });
+    }
 
     document.addEventListener('DOMContentLoaded', init);
 })();
