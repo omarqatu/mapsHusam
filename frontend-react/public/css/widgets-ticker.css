@@ -539,8 +539,8 @@ body.no-map-page .widgets-ticker-container {
 /* ============================================
    إخفاء الشريط في وضع التبويبات للموبايل
    ============================================ */
-body.mobile-tabs-portrait .widgets-ticker-container,
-body.mobile-tabs-landscape .widgets-ticker-container {
+body.mobile-tabs-portrait .widgets-ticker-container:not(#widgets-content .widgets-ticker-container),
+body.mobile-tabs-landscape .widgets-ticker-container:not(#widgets-content .widgets-ticker-container) {
     display: none;
 }
 

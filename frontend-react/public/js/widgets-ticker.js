@@ -2,6 +2,10 @@
  * widgets-ticker.js
  * نظام العناصر الحيوية - إدارة البيانات والتحديثات
  * يدعم أسعار العملات، الذهب، الطقس، المحروقات، الصلاة، التقويم، الطرق، الأسواق
+ *
+ * 🆕 تعديل: حل مشكلة عدم ظهور البيانات داخل تبويبة "معلومات حية" على
+ * الموبايل/التابلت، وتوحيد العنوان، وحذف زر الإغلاق غير اللازم لأنها
+ * تبويبة ثابتة دائمة (راجع mobile-tabs.js).
  */
 
 (function () {
@@ -77,9 +81,24 @@
     };
 
     // ============================================
+    // 🆕 دالة موحّدة لتحديث القيمة في كل نسخ العنصر الموجودة بالصفحة
+    // (النسخة الأصلية بالفوتر + نسخة تبويبة الموبايل التي تحمل بادئة mobile-)
+    // ============================================
+    function setTickerValue(id, value) {
+    ['', 'mobile-', 'portal-', 'mobile-portal-'].forEach(function (prefix) {
+        const element = document.getElementById(prefix + id);
+        if (element) {
+            element.textContent = value;
+            element.classList.add('updated');
+            setTimeout(function () { element.classList.remove('updated'); }, 1000);
+        }
+    });
+}
+
+    // ============================================
     // دوال تحديث العناصر
     // ============================================
-    
+
     // تحديث أسعار العملات
     function updateCurrencyRates() {
         fetchCurrencyData().then(data => {
@@ -108,21 +127,10 @@
     }
 
     function updateCurrencyUI() {
-        const elements = {
-            'usd-ils': localData.currency.usd_ils,
-            'jod-ils': localData.currency.jod_ils,
-            'eur-ils': localData.currency.eur_ils,
-            'gbp-ils': localData.currency.gbp_ils
-        };
-
-        for (const [id, value] of Object.entries(elements)) {
-            const element = document.getElementById(id);
-            if (element) {
-                element.textContent = value;
-                element.classList.add('updated');
-                setTimeout(() => element.classList.remove('updated'), 1000);
-            }
-        }
+        setTickerValue('usd-ils', localData.currency.usd_ils);
+        setTickerValue('jod-ils', localData.currency.jod_ils);
+        setTickerValue('eur-ils', localData.currency.eur_ils);
+        setTickerValue('gbp-ils', localData.currency.gbp_ils);
     }
 
     // تحديث أسعار الذهب
@@ -152,21 +160,12 @@
     }
 
     function updateGoldUI() {
-        const elements = {
-            'gold-24': localData.gold.gold_24,
-            'gold-21': localData.gold.gold_21,
-            'gold-18': localData.gold.gold_18
-        };
+    setTickerValue('gold-24', localData.gold.gold_24 + ' شيكل');
+    setTickerValue('gold-21', localData.gold.gold_21 + ' شيكل');
+    setTickerValue('gold-18', localData.gold.gold_18 + ' شيكل');
+    setTickerValue('gold-ounce', '$' + localData.gold.gold_ounce);
+}
 
-        for (const [id, value] of Object.entries(elements)) {
-            const element = document.getElementById(id);
-            if (element) {
-                element.textContent = value + ' شيكل';
-                element.classList.add('updated');
-                setTimeout(() => element.classList.remove('updated'), 1000);
-            }
-        }
-    }
 
     // تحديث الطقس
     function updateWeather() {
@@ -194,20 +193,9 @@
     }
 
     function updateWeatherUI() {
-        const elements = {
-            'weather-ramallah': localData.weather.ramallah.temp + '°C',
-            'weather-gaza': localData.weather.gaza.temp + '°C',
-            'weather-jerusalem': localData.weather.jerusalem.temp + '°C'
-        };
-
-        for (const [id, value] of Object.entries(elements)) {
-            const element = document.getElementById(id);
-            if (element) {
-                element.textContent = value;
-                element.classList.add('updated');
-                setTimeout(() => element.classList.remove('updated'), 1000);
-            }
-        }
+        setTickerValue('weather-ramallah', localData.weather.ramallah.temp + '°C');
+        setTickerValue('weather-gaza', localData.weather.gaza.temp + '°C');
+        setTickerValue('weather-jerusalem', localData.weather.jerusalem.temp + '°C');
     }
 
     // تحديث أسعار المحروقات
@@ -237,21 +225,11 @@
     }
 
     function updateFuelUI() {
-        const elements = {
-            'fuel-95': localData.fuel.benzine_95 + ' شيكل',
-            'fuel-98': localData.fuel.benzine_98 + ' شيكل',
-            'fuel-diesel': localData.fuel.diesel + ' شيكل'
-        };
-
-        for (const [id, value] of Object.entries(elements)) {
-            const element = document.getElementById(id);
-            if (element) {
-                element.textContent = value;
-                element.classList.add('updated');
-                setTimeout(() => element.classList.remove('updated'), 1000);
-            }
-        }
-    }
+    setTickerValue('fuel-95', localData.fuel.benzine_95 + ' شيكل');
+    setTickerValue('fuel-98', localData.fuel.benzine_98 + ' شيكل');
+    setTickerValue('fuel-diesel', localData.fuel.diesel + ' شيكل');
+    setTickerValue('fuel-gas', localData.fuel.gas + ' شيكل');
+}
 
     // تحديث مواقيت الصلاة
     function updatePrayerTimes() {
@@ -281,20 +259,12 @@
     }
 
     function updatePrayerUI() {
-        const elements = {
-            'prayer-dhuhr': localData.prayer.dhuhr,
-            'prayer-maghrib': localData.prayer.maghrib
-        };
-
-        for (const [id, value] of Object.entries(elements)) {
-            const element = document.getElementById(id);
-            if (element) {
-                element.textContent = value;
-                element.classList.add('updated');
-                setTimeout(() => element.classList.remove('updated'), 1000);
-            }
-        }
-    }
+    setTickerValue('prayer-fajr', localData.prayer.fajr);
+    setTickerValue('prayer-dhuhr', localData.prayer.dhuhr);
+    setTickerValue('prayer-asr', localData.prayer.asr);
+    setTickerValue('prayer-maghrib', localData.prayer.maghrib);
+    setTickerValue('prayer-isha', localData.prayer.isha);
+}
 
     // تحديث التقويم
     function updateCalendar() {
@@ -323,19 +293,8 @@
     }
 
     function updateCalendarUI() {
-        const elements = {
-            'hijri-date': localData.calendar.hijri,
-            'gregorian-date': localData.calendar.gregorian
-        };
-
-        for (const [id, value] of Object.entries(elements)) {
-            const element = document.getElementById(id);
-            if (element) {
-                element.textContent = value;
-                element.classList.add('updated');
-                setTimeout(() => element.classList.remove('updated'), 1000);
-            }
-        }
+        setTickerValue('hijri-date', localData.calendar.hijri);
+        setTickerValue('gregorian-date', localData.calendar.gregorian);
     }
 
     // تحديث حالة الطرق
@@ -365,19 +324,8 @@
     }
 
     function updateTrafficUI() {
-        const elements = {
-            'traffic-qalandia': localData.traffic.qalandia.status,
-            'traffic-road60': localData.traffic.road60.status
-        };
-
-        for (const [id, value] of Object.entries(elements)) {
-            const element = document.getElementById(id);
-            if (element) {
-                element.textContent = value;
-                element.classList.add('updated');
-                setTimeout(() => element.classList.remove('updated'), 1000);
-            }
-        }
+        setTickerValue('traffic-qalandia', localData.traffic.qalandia.status);
+        setTickerValue('traffic-road60', localData.traffic.road60.status);
     }
 
     // تحديث الأسواق
@@ -406,19 +354,8 @@
     }
 
     function updateMarketUI() {
-        const elements = {
-            'market-telaviv': localData.market.telaviv.change,
-            'market-gold': '$' + localData.market.gold.value
-        };
-
-        for (const [id, value] of Object.entries(elements)) {
-            const element = document.getElementById(id);
-            if (element) {
-                element.textContent = value;
-                element.classList.add('updated');
-                setTimeout(() => element.classList.remove('updated'), 1000);
-            }
-        }
+        setTickerValue('market-telaviv', localData.market.telaviv.change);
+        setTickerValue('market-gold', '$' + localData.market.gold.value);
     }
 
     // ============================================
@@ -618,9 +555,14 @@
                     document.body.appendChild(container.firstElementChild);
                 }
                 
-                // إنشاء محتوى التبويب للموبايل باستخدام HTML المستلم مباشرة
-                createMobileTabContent(html);
+                // 🆕 بناء تبويبة "معلومات حية" من البوابة الكاملة (كل المجموعات الثمانية كاملة)
+                buildMobileInfoTab();
                 
+                // تحديث فوري للنسخة المستنسخة داخل التبويبة بالبيانات الحالية
+                // (لأن updateAllData() بالتهيئة الأولى قد يكون نُفّذ قبل أن
+                // تُبنى نسخة الموبايل، فتفوتها أول جولة تحديث)
+                updateAllData();
+
                 // تأخير بسيط لضمان تحميل DOM
                 setTimeout(() => {
                     setupPortalModal();
@@ -631,78 +573,67 @@
             });
     }
 
-    function createMobileTabContent(html) {
-        // إنشاء محتوى التبويب للموبايل
-        let tabContent = document.getElementById('widgets-content');
-        if (!tabContent) {
-            tabContent = document.createElement('div');
-            tabContent.id = 'widgets-content';
-            tabContent.className = 'panel-right panel-content';
-            tabContent.style.display = 'none';
-            document.body.appendChild(tabContent);
-            console.log('Created widgets-content div');
-        }
-        
-        // استخدام HTML المستلم مباشرة
-        if (html && tabContent) {
+    function loadTickerHTML() {
+    fetch('/widgets-ticker.html')
+        .then(response => response.text())
+        .then(html => {
+            const footerWrapper = document.getElementById('widgets-ticker-wrapper');
+            if (footerWrapper) {
+                footerWrapper.innerHTML = html;
+            } else {
+                const container = document.createElement('div');
+                container.innerHTML = html;
+                document.body.appendChild(container.firstElementChild);
+            }
+
+            // 🆕 تبويبة "معلومات حية" تُبنى من البوابة الكاملة (كل 8 المجموعات كاملة)
+            buildMobileInfoTab();
+
+            updateAllData();
+            setTimeout(() => { setupPortalModal(); }, 100);
+        })
+        .catch(err => console.error('خطأ في تحميل الشريط المتحرك:', err));
+}
+
+function buildMobileInfoTab() {
+    let tabContent = document.getElementById('widgets-content');
+    if (!tabContent) {
+        tabContent = document.createElement('div');
+        tabContent.id = 'widgets-content';
+        tabContent.className = 'panel-right panel-content';
+        tabContent.style.display = 'none';
+        document.body.appendChild(tabContent);
+    }
+
+    fetch('/widgets-portal.html')
+        .then(response => response.text())
+        .then(html => {
             const container = document.createElement('div');
             container.innerHTML = html;
-            
-            // البحث عن الحاوية بالـ ID أو الكلاس
-            const tickerContainer = container.querySelector('#widgets-ticker-container') || container.querySelector('.widgets-ticker-container');
-            if (tickerContainer) {
-                const tickerScroll = tickerContainer.querySelector('.ticker-scroll');
-                const tickerHeader = tickerContainer.querySelector('.ticker-header');
-                
-                console.log('Creating mobile tab content with:', { tickerHeader: !!tickerHeader, tickerScroll: !!tickerScroll });
-                
-                // إنشاء محتوى التبويب
-                let tickerItemsHTML = '';
-                if (tickerScroll) {
-                    const items = tickerScroll.querySelectorAll('.ticker-item');
-                    console.log('Found', items.length, 'ticker items');
-                    items.forEach(item => {
-                        tickerItemsHTML += item.outerHTML;
-                    });
-                }
-                
-                tabContent.innerHTML = `
-                    <div class="panel-header" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: #fff; padding: 15px 20px; display: flex; justify-content: space-between; align-items: center;">
-                        <h3 style="margin: 0; font-size: 18px;"><i class="fas fa-chart-line"></i> التحديثات الفورية</h3>
-                        <button class="panel-close-btn" id="close-widgets-panel" style="background: none; border: none; font-size: 24px; cursor: pointer; color: #fff;">×</button>
-                    </div>
-                    <div class="panel-body widgets-tab-body" style="padding: 15px;">
-                        <div class="widgets-ticker-container" style="position: relative;">
-                            ${tickerHeader ? tickerHeader.outerHTML : ''}
-                            <div class="ticker-content">
-                                <div class="ticker-scroll" style="animation: none; overflow-y: auto; max-height: 400px; display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px;">
-                                    ${tickerItemsHTML}
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                `;
-                
-                console.log('Mobile tab content created successfully with,', tickerItemsHTML.length, 'characters');
-                console.log('Tab content HTML length:', tabContent.innerHTML.length);
-                
-                // إضافة زر إغلاق
-                const closeBtn = document.getElementById('close-widgets-panel');
-                if (closeBtn) {
-                    closeBtn.addEventListener('click', function() {
-                        tabContent.style.display = 'none';
-                        if (window.mobileTabsSystem && typeof window.mobileTabsSystem.setActiveTab === 'function') {
-                            window.mobileTabsSystem.setActiveTab('home');
-                        }
-                    });
-                }
-            } else {
-                console.error('Ticker container not found in HTML');
-            }
-        } else {
-            console.error('HTML or tabContent is missing');
-        }
-    }
+
+            const grid = container.querySelector('.widgets-portal-grid');
+            if (!grid) return;
+
+            const clonedGrid = grid.cloneNode(true);
+            // تسمية كل id بادئة mobile- لعزلها عن نسخة المودال الأصلية تماماً
+            clonedGrid.querySelectorAll('[id]').forEach(function (el) {
+                el.id = 'mobile-' + el.id;
+            });
+            // عمود واحد فقط داخل مساحة التبويبة الضيقة (بدون لمس CSS العام)
+            clonedGrid.style.gridTemplateColumns = '1fr';
+            clonedGrid.style.padding = '10px';
+            clonedGrid.style.gap = '12px';
+
+            tabContent.innerHTML = `
+                <div class="panel-header" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: #fff; padding: 15px 20px; display: flex; justify-content: space-between; align-items: center;">
+                    <h3 style="margin: 0; font-size: 18px;"><i class="fas fa-chart-line"></i> معلومات حية</h3>
+                </div>
+                <div class="panel-body widgets-tab-body" style="padding: 0;"></div>
+            `;
+            tabContent.querySelector('.widgets-tab-body').appendChild(clonedGrid);
+        })
+        .catch(err => console.error('خطأ في تحميل تفاصيل معلومات حية:', err));
+}
 
     // ============================================
     // بدء النظام عند تحميل الصفحة
