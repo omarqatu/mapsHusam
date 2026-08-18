@@ -29,6 +29,43 @@
         palestinianCities: ['رام الله', 'غزة', 'القدس', 'نابلس', 'بيت لحم', 'الخليل']
     };
 
+
+    // ============================================================
+// 🟢 [هون بس تعدل] — القسم اليدوي بالكامل: محروقات + طرق + مناسبات
+// أضف سطر جديد بنفس الشكل وبيظهر تلقائياً بالشريط + البوابة + تبويبة الموبايل
+// ============================================================
+const MANUAL_DATA = {
+
+    // --- المحروقات والغاز ---
+    // كل سطر: id فريد (بالإنجليزي بدون مسافات) + label الاسم بالعربي + value الرقم + unit الوحدة + icon إيموجي
+    fuel: [
+        { id: 'benzine_95', label: 'بنزين 95',    value: '6.85',  unit: 'شيكل/لتر', icon: '⛽' },
+        { id: 'benzine_98', label: 'بنزين 98',    value: '7.05',  unit: 'شيكل/لتر', icon: '⛽' },
+        { id: 'diesel',     label: 'سولار',       value: '8.56',  unit: 'شيكل/لتر', icon: '🛢️' },
+        { id: 'gas',        label: 'أسطوانة غاز', value: '35.00', unit: 'شيكل',      icon: '🔥' }
+        // مثال إضافة مستقبلية — فك التعليق وعدّل:
+        // , { id: 'gas_large', label: 'غاز حجم كبير', value: '55.00', unit: 'شيكل', icon: '🔥' }
+    ],
+
+    // --- حالة الطرق ---
+    // status لازم يكون بالضبط واحدة من: 'closed' (مغلق/أحمر) | 'open' (مفتوح/أخضر) | 'congestion' (أزمة خفيفة/أصفر)
+    traffic: [
+        { id: 'beit_el',      label: 'بيت إيل',            status: 'closed' },
+        { id: 'jaba',         label: 'جبع - القدس',         status: 'open' },
+        { id: 'farsh_alhawa', label: 'فرش الهوا - الخليل',   status: 'congestion' }
+        // مثال إضافة مستقبلية:
+        // , { id: 'road_x', label: 'اسم الطريق الجديد', status: 'open' }
+    ],
+
+    // --- المناسبات القادمة (تحت التقويم الهجري) ---
+    calendarEvents: [
+        { date: '15 شعبان 1446', name: 'بداية شهر شعبان' },
+        { date: '1 رمضان 1446',  name: 'بداية شهر رمضان المبارك' }
+        // ضيف سطر جديد هيك:
+        // , { date: '...', name: '...' }
+    ]
+};
+
     // ============================================
     // البيانات المحلية (للتجربة)
     // ============================================
@@ -53,7 +90,7 @@
         fuel: {
             benzine_95: 6.85,
             benzine_98: 7.05,
-            diesel: 8.25,
+            diesel: 8.56,
             gas: 35.00
         },
         prayer: {
@@ -93,6 +130,84 @@
             setTimeout(function () { element.classList.remove('updated'); }, 1000);
         }
     });
+        }
+
+
+        const TRAFFIC_LABELS = { closed: 'مغلق', open: 'مفتوح', congestion: 'أزمة خفيفة' };
+
+function renderFuelTicker() {
+    return MANUAL_DATA.fuel.map(f => `
+        <div class="ticker-item fuel-item" data-type="fuel">
+            <i class="fas fa-gas-pump"></i>
+            <span class="ticker-label">${f.label}</span>
+            <span class="ticker-value">${f.value}</span>
+        </div>
+    `).join('');
+}
+
+function renderFuelDetail() {
+    return MANUAL_DATA.fuel.map(f => `
+        <div class="fuel-item">
+            <div class="fuel-icon">${f.icon}</div>
+            <div class="fuel-info">
+                <span class="fuel-name">${f.label}</span>
+                <span class="fuel-unit">${f.unit}</span>
+            </div>
+            <div class="fuel-value">${f.value}</div>
+        </div>
+    `).join('');
+}
+
+function renderTrafficTicker() {
+    return MANUAL_DATA.traffic.map(t => `
+        <div class="ticker-item traffic-item" data-type="traffic">
+            <i class="fas fa-road"></i>
+            <span class="ticker-label">${t.label}</span>
+            <span class="ticker-value traffic-status" data-traffic-status="${t.status}">${TRAFFIC_LABELS[t.status]}</span>
+        </div>
+    `).join('');
+}
+
+function renderTrafficDetail() {
+    return MANUAL_DATA.traffic.map(t => `
+        <div class="traffic-item">
+            <div class="traffic-location">${t.label}</div>
+            <div class="traffic-status" data-traffic-status="${t.status}">${TRAFFIC_LABELS[t.status]}</div>
+        </div>
+    `).join('');
+}
+
+function renderCalendarEvents() {
+    return MANUAL_DATA.calendarEvents.map(e => `
+        <div class="event-item">
+            <span class="event-date">${e.date}</span>
+            <span class="event-name">${e.name}</span>
+        </div>
+    `).join('');
+}
+
+function injectManualSections() {
+    // الشريط (فوتر الخريطة + فوتر بدون خريطة، نفس العنصر بالاثنين)
+    const fuelTickerEl = document.getElementById('ticker-fuel-container');
+    if (fuelTickerEl) fuelTickerEl.innerHTML = renderFuelTicker();
+    const trafficTickerEl = document.getElementById('ticker-traffic-container');
+    if (trafficTickerEl) trafficTickerEl.innerHTML = renderTrafficTicker();
+
+    // البوابة التفصيلية (المودال)
+    const fuelDetailEl = document.getElementById('portal-fuel-grid');
+    if (fuelDetailEl) fuelDetailEl.innerHTML = renderFuelDetail();
+    const trafficDetailEl = document.getElementById('portal-traffic-list');
+    if (trafficDetailEl) trafficDetailEl.innerHTML = renderTrafficDetail();
+    const eventsEl = document.getElementById('portal-calendar-events-list');
+    if (eventsEl) eventsEl.innerHTML = renderCalendarEvents();
+
+    // تبويبة الموبايل (نسخة منفصلة مبنية بنفس الفنكشنز)
+    const mobileFuelEl = document.getElementById('mobile-portal-fuel-grid');
+    if (mobileFuelEl) mobileFuelEl.innerHTML = renderFuelDetail();
+    const mobileTrafficEl = document.getElementById('mobile-portal-traffic-list');
+    if (mobileTrafficEl) mobileTrafficEl.innerHTML = renderTrafficDetail();
+    const mobileEventsEl = document.getElementById('mobile-portal-calendar-events-list');
+    if (mobileEventsEl) mobileEventsEl.innerHTML = renderCalendarEvents();
 }
 
     // ============================================

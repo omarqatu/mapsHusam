@@ -217,13 +217,9 @@ body.no-map-page .widgets-ticker-container {
     font-size: 11px;
 }
 
-.traffic-status:contains("ازدحام") {
-    background: #e74c3c;
-}
-
-.traffic-status:contains("سلس") {
-    background: #2ecc71;
-}
+.traffic-status[data-traffic-status="closed"] { background:#f8d7da; color:#721c24; }
+.traffic-status[data-traffic-status="open"] { background:#d4edda; color:#155724; }
+.traffic-status[data-traffic-status="congestion"] { background:#fff3cd; color:#856404; }
 
 /* ============================================
    مؤشرات الشريط
