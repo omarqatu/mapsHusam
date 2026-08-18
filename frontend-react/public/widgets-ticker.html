@@ -1,0 +1,171 @@
+<!-- widgets-ticker.html - الشريط المتحرك للعناصر الحيوية -->
+<div id="widgets-ticker-container" class="widgets-ticker-container">
+    <div class="ticker-header">
+        <span class="ticker-title"><i class="fas fa-bolt"></i> تحديثات فورية</span>
+        <button class="ticker-expand-btn" id="ticker-expand-btn" title="عرض التفاصيل">
+            <i class="fas fa-expand-alt"></i>
+        </button>
+    </div>
+    
+    <div class="ticker-content">
+        <div class="ticker-scroll" id="ticker-scroll">
+            <!-- أسعار العملات -->
+            <div class="ticker-item currency-item" data-type="currency">
+                <i class="fas fa-dollar-sign"></i>
+                <span class="ticker-label">USD/ILS</span>
+                <span class="ticker-value" id="usd-ils">3.45</span>
+            </div>
+            
+            <div class="ticker-item currency-item" data-type="currency">
+                <i class="fas fa-coins"></i>
+                <span class="ticker-label">JOD/ILS</span>
+                <span class="ticker-value" id="jod-ils">4.86</span>
+            </div>
+            
+            <div class="ticker-item currency-item" data-type="currency">
+                <i class="fas fa-euro-sign"></i>
+                <span class="ticker-label">EUR/ILS</span>
+                <span class="ticker-value" id="eur-ils">3.72</span>
+            </div>
+            
+            <div class="ticker-item currency-item" data-type="currency">
+                <i class="fas fa-pound-sign"></i>
+                <span class="ticker-label">GBP/ILS</span>
+                <span class="ticker-value" id="gbp-ils">4.38</span>
+            </div>
+            
+            <!-- أسعار الذهب -->
+            <div class="ticker-item gold-item" data-type="gold">
+                <i class="fas fa-gem"></i>
+                <span class="ticker-label">ذهب 24</span>
+                <span class="ticker-value" id="gold-24">215.5</span>
+            </div>
+            
+            <div class="ticker-item gold-item" data-type="gold">
+                <i class="fas fa-gem"></i>
+                <span class="ticker-label">ذهب 21</span>
+                <span class="ticker-value" id="gold-21">188.5</span>
+            </div>
+            
+            <div class="ticker-item gold-item" data-type="gold">
+                <i class="fas fa-gem"></i>
+                <span class="ticker-label">ذهب 18</span>
+                <span class="ticker-value" id="gold-18">161.5</span>
+            </div>
+            
+            <!-- الطقس -->
+            <div class="ticker-item weather-item" data-type="weather">
+                <i class="fas fa-cloud-sun"></i>
+                <span class="ticker-label">رام الله</span>
+                <span class="ticker-value" id="weather-ramallah">28°C</span>
+            </div>
+            
+            <div class="ticker-item weather-item" data-type="weather">
+                <i class="fas fa-sun"></i>
+                <span class="ticker-label">غزة</span>
+                <span class="ticker-value" id="weather-gaza">32°C</span>
+            </div>
+            
+            <div class="ticker-item weather-item" data-type="weather">
+                <i class="fas fa-cloud"></i>
+                <span class="ticker-label">القدس</span>
+                <span class="ticker-value" id="weather-jerusalem">26°C</span>
+            </div>
+            
+            <!-- المحروقات -->
+            <div class="ticker-item fuel-item" data-type="fuel">
+                <i class="fas fa-gas-pump"></i>
+                <span class="ticker-label">بنزين 95</span>
+                <span class="ticker-value" id="fuel-95">6.85</span>
+            </div>
+            
+            <div class="ticker-item fuel-item" data-type="fuel">
+                <i class="fas fa-gas-pump"></i>
+                <span class="ticker-label">بنزين 98</span>
+                <span class="ticker-value" id="fuel-98">7.05</span>
+            </div>
+            
+            <div class="ticker-item fuel-item" data-type="fuel">
+                <i class="fas fa-gas-pump"></i>
+                <span class="ticker-label">سولار</span>
+                <span class="ticker-value" id="fuel-diesel">6.25</span>
+            </div>
+            
+            <!-- مواقيت الصلاة -->
+            <div class="ticker-item prayer-item" data-type="prayer">
+                <i class="fas fa-mosque"></i>
+                <span class="ticker-label">الظهر</span>
+                <span class="ticker-value" id="prayer-dhuhr">12:30</span>
+            </div>
+            
+            <div class="ticker-item prayer-item" data-type="prayer">
+                <i class="fas fa-moon"></i>
+                <span class="ticker-label">المغرب</span>
+                <span class="ticker-value" id="prayer-maghrib">18:45</span>
+            </div>
+            
+            <!-- التقويم -->
+            <div class="ticker-item calendar-item" data-type="calendar">
+                <i class="fas fa-calendar-alt"></i>
+                <span class="ticker-label">هجري</span>
+                <span class="ticker-value" id="hijri-date">12 رجب 1446</span>
+            </div>
+            
+            <div class="ticker-item calendar-item" data-type="calendar">
+                <i class="fas fa-calendar"></i>
+                <span class="ticker-label">ميلادي</span>
+                <span class="ticker-value" id="gregorian-date">2026-08-17</span>
+            </div>
+            
+            <!-- الطرق -->
+            <div class="ticker-item traffic-item" data-type="traffic">
+                <i class="fas fa-road"></i>
+                <span class="ticker-label">حاجز قلنديا</span>
+                <span class="ticker-value traffic-status" id="traffic-qalandia">ازدحام</span>
+            </div>
+            
+            <div class="ticker-item traffic-item" data-type="traffic">
+                <i class="fas fa-car"></i>
+                <span class="ticker-label">طريق 60</span>
+                <span class="ticker-value traffic-status" id="traffic-road60">سلس</span>
+            </div>
+            
+            <!-- الأسواق -->
+            <div class="ticker-item market-item" data-type="market">
+                <i class="fas fa-chart-line"></i>
+                <span class="ticker-label">تل أبيب</span>
+                <span class="ticker-value" id="market-telaviv">+1.2%</span>
+            </div>
+            
+            <div class="ticker-item market-item" data-type="market">
+                <i class="fas fa-chart-bar"></i>
+                <span class="ticker-label">الذهب عالمي</span>
+                <span class="ticker-value" id="market-gold">$2,450</span>
+            </div>
+        </div>
+    </div>
+    
+    <div class="ticker-indicators">
+        <span class="ticker-indicator active"></span>
+        <span class="ticker-indicator"></span>
+        <span class="ticker-indicator"></span>
+    </div>
+</div>
+
+<!-- البوابة التفصيلية (مخفية افتراضياً) -->
+<div id="widgets-portal-overlay" class="widgets-portal-overlay"></div>
+<div id="widgets-portal-modal" class="widgets-portal-modal">
+    <div class="portal-content">
+        <div class="portal-header">
+            <h2><i class="fas fa-th-large"></i> مركز المعلومات الحية</h2>
+            <button class="portal-close-btn" id="portal-close-btn">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        
+        <div class="portal-body">
+            <!-- سيتم تحميل المحتوى من widgets-portal.html -->
+            <div id="portal-content-area"></div>
+        </div>
+    </div>
+</div>

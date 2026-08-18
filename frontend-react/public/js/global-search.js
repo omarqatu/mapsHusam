@@ -35,7 +35,10 @@ const layerAliases = {
     'private_tutors': 'أساتذة خصوصي', 'programmers': 'مبرمجين', 
     'car_delivery_on_call': 'دليفري سيارات (مناوبة)', 'motorcycle_delivery_on_call': 'دليفري دراجات (مناوبة)', 
     'bicycle_delivery_on_call': 'دليفري هوائية (مناوبة)',  
-    'student_research_assist': 'مساعد أبحاث طلاب'
+    'student_research_assist': 'مساعد أبحاث طلاب',
+    'supermarket': 'سوبرماركت', 'commercial_shops': 'محلات تجارية',
+    'restaurants': 'مطاعم', 'schools_kindergartens': 'مدارس ورياض أطفال',
+    'job_vacancies': 'وظائف شاغرة', 'city_landmarks': 'معالم المدينة'
 };
 
 const searchConfig = {
@@ -260,7 +263,7 @@ window.initializeGlobalSearch = function() {
         clearTimeout(timeout);
         timeout = setTimeout(async () => {
             // تنظيف اللوحة وإظهار حالة التحميل
-            suggestionsPanel.innerHTML = '<div class="suggestion-item" style="padding:10px;">جاري البحث...</div>';
+            suggestionsPanel.innerHTML = '<div class="suggestion-item" style="padding:10px;">جاري البحث انتظر بضع ثواني ...</div>';
             suggestionsPanel.style.display = 'block';
 
             // 🆕 فحص حد الطلبات وتسجيله قبل تنفيذ البحث العالمي - يمنع التنفيذ فوراً عند التجاوز

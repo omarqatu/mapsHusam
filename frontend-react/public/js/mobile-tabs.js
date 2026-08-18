@@ -7,6 +7,7 @@
     const PANELS = [
         { id: 'search-panel', group: 'smartsearch', label: '🔎 البحث الذكي', closeSel: '#close-search-panel' },
         { id: 'nearby-apartments-panel', group: 'locationsearch', label: '📍 بحث الموقع', closeSel: '#close-nearby-panel' },
+        { id: 'widgets-content', group: 'widgets', label: '📊 معلومات حية', closeSel: '#close-widgets-panel' },
         { id: 'layerPanel', group: 'action', label: '📚 الطبقات', closeSel: '#close-layer-panel' },
         { id: 'measurePanel', group: 'action', label: '📏 القياس', closeSel: '#close-measure-panel' },
         { id: 'shareLocationPanel', group: 'action', label: '🔗 مشاركة الموقع', closeSel: '#close-share-panel' },
@@ -21,9 +22,10 @@
 
     // 🆕 تبويبتا "البحث الذكي" و"بحث الموقع" أصبحتا ثابتتين دائمتي الظهور
     // (مثل الرئيسية وإدارة الخدمة) لا يمكن إغلاقهما، وتظهران مباشرة بجانب "الرئيسية"
-    const GROUP_ORDER = ['smartsearch', 'locationsearch', 'results', 'action', 'edit', 'provider', 'requests'];
+    // 🆕 تبويب "معلومات حية" (التحديثات الفورية) أصبح ثابتاً دائماً أيضاً
+    const GROUP_ORDER = ['smartsearch', 'locationsearch', 'widgets', 'results', 'action', 'edit', 'provider', 'requests'];
     const GROUP_FALLBACK_LABEL = {
-        smartsearch: '🔎 البحث الذكي', locationsearch: '📍 بحث الموقع',
+        smartsearch: '🔎 البحث الذكي', locationsearch: '📍 بحث الموقع', widgets: '📊 معلومات حية',
         results: '📋 النتائج', action: '🧰 أدوات', edit: '✏️ التحرير', provider: '🛠️ إدارة الخدمة', requests: '💬 طلبات الخدمة'
     };
 
@@ -153,6 +155,8 @@
         // تفرض إظهارهما فعلياً عبر mobile-tab-target بغض النظر عن حالة الإخفاء
         if (group === 'smartsearch') return document.getElementById('search-panel');
         if (group === 'locationsearch') return document.getElementById('nearby-apartments-panel');
+        // 🆕 تبويب معلومات حية ثابت دائماً
+        if (group === 'widgets') return document.getElementById('widgets-content');
         for (let i = 0; i < PANELS.length; i++) {
             if (PANELS[i].group !== group) continue;
             const el = document.getElementById(PANELS[i].id);
@@ -185,7 +189,7 @@
 
         GROUP_ORDER.forEach(function (group) {
             const shouldShow = (group === 'provider') ? isProviderRoleUser()
-                : (group === 'smartsearch' || group === 'locationsearch') ? true
+                : (group === 'smartsearch' || group === 'locationsearch' || group === 'widgets') ? true
                 : groupIsOpenInMap(currentMap, group);
             if (!shouldShow) return;
 
@@ -201,7 +205,8 @@
             // 🆕 مجموعة "requests" لا تملك زر إغلاق موحّد ثابتاً كباقي المجموعات
             // (بانر الطلب الوارد بلا زر إغلاق مستقل)، لذلك نعرض علامة × فقط
             // إن كانت اللوحة النشطة الحالية بالمجموعة تملك closeSel فعلياً
-            if (group !== 'provider' && group !== 'smartsearch' && group !== 'locationsearch') {
+            // 🆕 تبويب "معلومات حية" (widgets) ثابت دائماً ولا يُغلق
+            if (group !== 'provider' && group !== 'smartsearch' && group !== 'locationsearch' && group !== 'widgets') {
                 const activePanelDef = PANELS.find(function (p) {
                     return p.group === group && isPanelVisible(document.getElementById(p.id));
                 });
@@ -254,8 +259,8 @@
         for (let i = 0; i < GROUP_ORDER.length; i++) {
             const group = GROUP_ORDER[i];
             // 🆕 لا نبدّل التبويب النشط تلقائياً بسبب ظهور تبويبات ثابتة دائمة
-            // (مزود الخدمة، البحث الذكي، بحث الموقع) - لا تسرق التركيز من المستخدم
-            if (group === 'provider' || group === 'smartsearch' || group === 'locationsearch') continue;
+            // (مزود الخدمة، البحث الذكي، بحث الموقع، معلومات حية) - لا تسرق التركيز من المستخدم
+            if (group === 'provider' || group === 'smartsearch' || group === 'locationsearch' || group === 'widgets') continue;
             const justOpened = PANELS.some(function (p) {
                 return p.group === group && newMap[p.id] && !lastVisibility[p.id];
             });
@@ -271,6 +276,7 @@
             activeGroup !== 'home' &&
             activeGroup !== 'smartsearch' &&
             activeGroup !== 'locationsearch' &&
+            activeGroup !== 'widgets' &&
             !groupIsOpenInMap(newMap, activeGroup)
         ) {
             nextGroup = 'home';

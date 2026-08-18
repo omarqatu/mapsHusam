@@ -5,8 +5,9 @@
     'use strict';
 
     const PANELS = [
-        { id: 'search-panel', group: 'search', label: '🔎 البحث الذكي', closeSel: '#close-search-panel' },
-        { id: 'nearby-apartments-panel', group: 'location', label: '📍 بحث الموقع', closeSel: '#close-nearby-panel' },
+        { id: 'search-panel', group: 'smartsearch', label: '🔎 البحث الذكي', closeSel: '#close-search-panel' },
+        { id: 'nearby-apartments-panel', group: 'locationsearch', label: '📍 بحث الموقع', closeSel: '#close-nearby-panel' },
+        { id: 'widgets-content', group: 'widgets', label: '📊 معلومات حية', closeSel: '#close-widgets-panel' },
         { id: 'layerPanel', group: 'action', label: '📚 الطبقات', closeSel: '#close-layer-panel' },
         { id: 'measurePanel', group: 'action', label: '📏 القياس', closeSel: '#close-measure-panel' },
         { id: 'shareLocationPanel', group: 'action', label: '🔗 مشاركة الموقع', closeSel: '#close-share-panel' },
@@ -15,18 +16,17 @@
         { id: 'lineEditPanel', group: 'edit', label: '🛣️ تحرير خطوط', closeSel: '#close-line-edit-panel' },
         { id: 'results-panel', group: 'results', label: '📋 النتائج', closeSel: '#close-results-panel' },
         { id: 'provider-mini-panel', group: 'provider', label: '🛠️ إدارة الخدمة', closeSel: null },
-        // 🆕 نافذة دردشة طلب الخدمة - تُفتح/تُغلق عبر style.display مثل باقي
-        // العناصر، وتُغلق فعلياً بزر الإغلاق service-chat-close-btn المعرَّف
-        // داخل service-chat.js
         { id: 'service-chat-modal', group: 'requests', label: '💬 دردشة الطلب', closeSel: '#service-chat-close-btn' },
-        // 🆕 بانر تنبيه "طلب خدمة جديد" الوارد لمزود الخدمة - لا يملك زر إغلاق
-        // مستقل (فقط قبول/رفض)، لذلك بلا closeSel مثل لوحة إدارة الخدمة
         { id: 'service-incoming-banner', group: 'requests', label: '📩 طلب خدمة جديد', closeSel: null }
     ];
 
-    const GROUP_ORDER = ['search', 'location', 'results', 'action', 'edit', 'provider', 'requests'];
+    // 🆕 تبويبتا "البحث الذكي" و"بحث الموقع" أصبحتا ثابتتين دائمتي الظهور
+    // (مثل الرئيسية وإدارة الخدمة) لا يمكن إغلاقهما، وتظهران مباشرة بجانب "الرئيسية"
+    // 🆕 تبويب "معلومات حية" (التحديثات الفورية) أصبح ثابتاً دائماً أيضاً
+    const GROUP_ORDER = ['smartsearch', 'locationsearch', 'widgets', 'results', 'action', 'edit', 'provider', 'requests'];
     const GROUP_FALLBACK_LABEL = {
-        search: '🔎 البحث الذكي', location: '📍 بحث الموقع', results: '📋 النتائج', action: '🧰 أدوات', edit: '✏️ التحرير', provider: '🛠️ إدارة الخدمة', requests: '💬 طلبات الخدمة'
+        smartsearch: '🔎 البحث الذكي', locationsearch: '📍 بحث الموقع', widgets: '📊 معلومات حية',
+        results: '📋 النتائج', action: '🧰 أدوات', edit: '✏️ التحرير', provider: '🛠️ إدارة الخدمة', requests: '💬 طلبات الخدمة'
     };
 
     const SNAP_PORTRAIT = [8, 34, 82];   // vh
@@ -117,7 +117,8 @@
         tabHome.innerHTML =
             '<div class="mth-icon">📊</div>' +
             '<div class="mth-title">إحصائيات المنصة</div>' +
-            '<div class="pstats-wrap pstats-mobile-home" data-platform-stats-target></div>';
+            '<div class="pstats-wrap pstats-mobile-home" data-platform-stats-target></div>' +
+            '<a href="/no-map-search.html" target="_blank" style="display:inline-flex; align-items:center; gap:8px; margin-top:16px; background:linear-gradient(135deg,#28a745,#20c997); color:#fff; padding:12px 20px; border-radius:25px; text-decoration:none; font-size:14px; font-weight:600; box-shadow:0 4px 15px rgba(40,167,69,0.3); border:2px solid #fff; white-space:nowrap;"><i class="fas fa-list"></i> الانتقال إلى البحث بدون خريطة</a>';
 
         tabContent.appendChild(tabHome);
 
@@ -146,12 +147,16 @@
         return PANELS.some(function (p) { return p.group === group && map[p.id]; });
     }
     function getVisiblePanelForGroup(group) {
-        // 🆕 تبويبة مزود الخدمة: تُحدَّد فقط بدور المستخدم، بمعزل عن أي
-        // حالة CSS متغيرة، لضمان ثباتها دائماً كتبويبة الرئيسية
         if (group === 'provider') {
             const el = document.getElementById('provider-mini-panel');
             return (el && isProviderRoleUser()) ? el : null;
         }
+        // 🆕 ثابتتان دائماً بمعزل عن كلاس hidden - قواعد CSS بملف mobile-tabs.css
+        // تفرض إظهارهما فعلياً عبر mobile-tab-target بغض النظر عن حالة الإخفاء
+        if (group === 'smartsearch') return document.getElementById('search-panel');
+        if (group === 'locationsearch') return document.getElementById('nearby-apartments-panel');
+        // 🆕 تبويب معلومات حية ثابت دائماً
+        if (group === 'widgets') return document.getElementById('widgets-content');
         for (let i = 0; i < PANELS.length; i++) {
             if (PANELS[i].group !== group) continue;
             const el = document.getElementById(PANELS[i].id);
@@ -160,6 +165,7 @@
         return null;
     }
     function getGroupLabel(group) {
+        if (group === 'smartsearch' || group === 'locationsearch') return GROUP_FALLBACK_LABEL[group];
         const p = PANELS.find(function (p) { return p.group === group && isPanelVisible(document.getElementById(p.id)); });
         return p ? p.label : (GROUP_FALLBACK_LABEL[group] || group);
     }
@@ -182,7 +188,9 @@
         tabBar.appendChild(homeBtn);
 
         GROUP_ORDER.forEach(function (group) {
-            const shouldShow = (group === 'provider') ? isProviderRoleUser() : groupIsOpenInMap(currentMap, group);
+            const shouldShow = (group === 'provider') ? isProviderRoleUser()
+                : (group === 'smartsearch' || group === 'locationsearch' || group === 'widgets') ? true
+                : groupIsOpenInMap(currentMap, group);
             if (!shouldShow) return;
 
             const btn = document.createElement('button');
@@ -197,7 +205,8 @@
             // 🆕 مجموعة "requests" لا تملك زر إغلاق موحّد ثابتاً كباقي المجموعات
             // (بانر الطلب الوارد بلا زر إغلاق مستقل)، لذلك نعرض علامة × فقط
             // إن كانت اللوحة النشطة الحالية بالمجموعة تملك closeSel فعلياً
-            if (group !== 'provider') {
+            // 🆕 تبويب "معلومات حية" (widgets) ثابت دائماً ولا يُغلق
+            if (group !== 'provider' && group !== 'smartsearch' && group !== 'locationsearch' && group !== 'widgets') {
                 const activePanelDef = PANELS.find(function (p) {
                     return p.group === group && isPanelVisible(document.getElementById(p.id));
                 });
@@ -233,6 +242,14 @@
         resumeObserving(); // 🆕
     }
 
+    // 🆕 يُستدعى من دوال عرض نتائج البحث (quick-search.js, search.js, location-search.js)
+    // فور ظهور جدول النتائج فعلياً، لضمان انتقال تلقائي فوري لتبويبة النتائج
+    // على الموبايل/التابلت دون انتظار المراقب السلبي (MutationObserver).
+    window.mobileTabsShowResults = safe(function () {
+        if (!isMobileNow() || !systemStarted) return;
+        setActiveGroup('results');
+    });
+
     function recomputeState() {
         pauseObserving(); // 🆕 إيقاف المراقبة مؤقتاً قبل أي تعديل نقوم به نحن
 
@@ -241,9 +258,9 @@
         let newlyOpenedGroup = null;
         for (let i = 0; i < GROUP_ORDER.length; i++) {
             const group = GROUP_ORDER[i];
-            // 🆕 لا نبدّل التبويب النشط تلقائياً بسبب ظهور تبويبة مزود الخدمة -
-            // فهي تبويبة ثابتة دائمة مثل الرئيسية، لا تسرق التركيز من المستخدم
-            if (group === 'provider') continue;
+            // 🆕 لا نبدّل التبويب النشط تلقائياً بسبب ظهور تبويبات ثابتة دائمة
+            // (مزود الخدمة، البحث الذكي، بحث الموقع، معلومات حية) - لا تسرق التركيز من المستخدم
+            if (group === 'provider' || group === 'smartsearch' || group === 'locationsearch' || group === 'widgets') continue;
             const justOpened = PANELS.some(function (p) {
                 return p.group === group && newMap[p.id] && !lastVisibility[p.id];
             });
@@ -255,7 +272,13 @@
         let nextGroup = activeGroup;
         if (newlyOpenedGroup) {
             nextGroup = newlyOpenedGroup;
-        } else if (activeGroup !== 'home' && !groupIsOpenInMap(newMap, activeGroup)) {
+        } else if (
+            activeGroup !== 'home' &&
+            activeGroup !== 'smartsearch' &&
+            activeGroup !== 'locationsearch' &&
+            activeGroup !== 'widgets' &&
+            !groupIsOpenInMap(newMap, activeGroup)
+        ) {
             nextGroup = 'home';
             for (let i = 0; i < GROUP_ORDER.length; i++) {
                 if (groupIsOpenInMap(newMap, GROUP_ORDER[i])) { nextGroup = GROUP_ORDER[i]; break; }

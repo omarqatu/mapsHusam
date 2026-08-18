@@ -1,0 +1,411 @@
+<!-- widgets-portal.html - البوابة التفصيلية للعناصر الحيوية -->
+<div class="widgets-portal-grid">
+    
+    <!-- 1. أسعار العملات المباشرة -->
+    <div class="widget-card currency-card">
+        <div class="widget-header">
+            <h3><i class="fas fa-dollar-sign"></i> أسعار العملات المباشرة</h3>
+            <span class="widget-update-time">آخر تحديث: <span id="currency-update-time">--:--</span></span>
+        </div>
+        <div class="widget-body">
+            <div class="currency-grid">
+                <div class="currency-item">
+                    <div class="currency-flag">🇺🇸</div>
+                    <div class="currency-info">
+                        <span class="currency-name">دولار أمريكي</span>
+                        <span class="currency-code">USD/ILS</span>
+                    </div>
+                    <div class="currency-value" id="portal-usd-ils">3.45</div>
+                    <div class="currency-change positive">+0.02%</div>
+                </div>
+                
+                <div class="currency-item">
+                    <div class="currency-flag">🇯🇴</div>
+                    <div class="currency-info">
+                        <span class="currency-name">دينار أردني</span>
+                        <span class="currency-code">JOD/ILS</span>
+                    </div>
+                    <div class="currency-value" id="portal-jod-ils">4.86</div>
+                    <div class="currency-change negative">-0.01%</div>
+                </div>
+                
+                <div class="currency-item">
+                    <div class="currency-flag">🇪🇺</div>
+                    <div class="currency-info">
+                        <span class="currency-name">يورو</span>
+                        <span class="currency-code">EUR/ILS</span>
+                    </div>
+                    <div class="currency-value" id="portal-eur-ils">3.72</div>
+                    <div class="currency-change positive">+0.05%</div>
+                </div>
+                
+                <div class="currency-item">
+                    <div class="currency-flag">🇬🇧</div>
+                    <div class="currency-info">
+                        <span class="currency-name">جنيه إسترليني</span>
+                        <span class="currency-code">GBP/ILS</span>
+                    </div>
+                    <div class="currency-value" id="portal-gbp-ils">4.38</div>
+                    <div class="currency-change positive">+0.03%</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 2. أسعار الذهب والمعادن النفيسة -->
+    <div class="widget-card gold-card">
+        <div class="widget-header">
+            <h3><i class="fas fa-gem"></i> أسعار الذهب والمعادن النفيسة</h3>
+            <span class="widget-update-time">آخر تحديث: <span id="gold-update-time">--:--</span></span>
+        </div>
+        <div class="widget-body">
+            <div class="gold-grid">
+                <div class="gold-item">
+                    <div class="gold-icon">🥇</div>
+                    <div class="gold-info">
+                        <span class="gold-name">ذهب عيار 24</span>
+                        <span class="gold-unit">شيكل/غرام</span>
+                    </div>
+                    <div class="gold-value" id="portal-gold-24">215.5</div>
+                </div>
+                
+                <div class="gold-item">
+                    <div class="gold-icon">🥈</div>
+                    <div class="gold-info">
+                        <span class="gold-name">ذهب عيار 21</span>
+                        <span class="gold-unit">شيكل/غرام</span>
+                    </div>
+                    <div class="gold-value" id="portal-gold-21">188.5</div>
+                </div>
+                
+                <div class="gold-item">
+                    <div class="gold-icon">🥉</div>
+                    <div class="gold-info">
+                        <span class="gold-name">ذهب عيار 18</span>
+                        <span class="gold-unit">شيكل/غرام</span>
+                    </div>
+                    <div class="gold-value" id="portal-gold-18">161.5</div>
+                </div>
+                
+                <div class="gold-item">
+                    <div class="gold-icon">💎</div>
+                    <div class="gold-info">
+                        <span class="gold-name">أونصة الذهب عالمياً</span>
+                        <span class="gold-unit">دولار/أونصة</span>
+                    </div>
+                    <div class="gold-value" id="portal-gold-ounce">$2,450</div>
+                </div>
+                
+                <div class="gold-item">
+                    <div class="gold-icon">⚪</div>
+                    <div class="gold-info">
+                        <span class="gold-name">الفضة</span>
+                        <span class="gold-unit">دولار/أونصة</span>
+                    </div>
+                    <div class="gold-value" id="portal-silver">$28.50</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 3. حالة الطقس المحدثة -->
+    <div class="widget-card weather-card">
+        <div class="widget-header">
+            <h3><i class="fas fa-cloud-sun"></i> حالة الطقس المحدثة</h3>
+            <span class="widget-update-time">آخر تحديث: <span id="weather-update-time">--:--</span></span>
+        </div>
+        <div class="widget-body">
+            <div class="weather-grid">
+                <div class="weather-city">
+                    <div class="weather-icon">🌤️</div>
+                    <div class="weather-info">
+                        <span class="weather-city-name">رام الله</span>
+                        <span class="weather-temp" id="portal-weather-ramallah">28°C</span>
+                    </div>
+                    <div class="weather-details">
+                        <span>رطوبة: 65%</span>
+                        <span>رياح: 12 كم/س</span>
+                    </div>
+                </div>
+                
+                <div class="weather-city">
+                    <div class="weather-icon">☀️</div>
+                    <div class="weather-info">
+                        <span class="weather-city-name">غزة</span>
+                        <span class="weather-temp" id="portal-weather-gaza">32°C</span>
+                    </div>
+                    <div class="weather-details">
+                        <span>رطوبة: 70%</span>
+                        <span>رياح: 15 كم/س</span>
+                    </div>
+                </div>
+                
+                <div class="weather-city">
+                    <div class="weather-icon">☁️</div>
+                    <div class="weather-info">
+                        <span class="weather-city-name">القدس</span>
+                        <span class="weather-temp" id="portal-weather-jerusalem">26°C</span>
+                    </div>
+                    <div class="weather-details">
+                        <span>رطوبة: 60%</span>
+                        <span>رياح: 10 كم/س</span>
+                    </div>
+                </div>
+                
+                <div class="weather-city">
+                    <div class="weather-icon">🌤️</div>
+                    <div class="weather-info">
+                        <span class="weather-city-name">نابلس</span>
+                        <span class="weather-temp">27°C</span>
+                    </div>
+                    <div class="weather-details">
+                        <span>رطوبة: 62%</span>
+                        <span>رياح: 11 كم/س</span>
+                    </div>
+                </div>
+                
+                <div class="weather-city">
+                    <div class="weather-icon">🌤️</div>
+                    <div class="weather-info">
+                        <span class="weather-city-name">بيت لحم</span>
+                        <span class="weather-temp">25°C</span>
+                    </div>
+                    <div class="weather-details">
+                        <span>رطوبة: 58%</span>
+                        <span>رياح: 9 كم/س</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 4. أسعار المحروقات والغاز -->
+    <div class="widget-card fuel-card">
+        <div class="widget-header">
+            <h3><i class="fas fa-gas-pump"></i> أسعار المحروقات والغاز</h3>
+            <span class="widget-update-time">آخر تحديث: <span id="fuel-update-time">--:--</span></span>
+        </div>
+        <div class="widget-body">
+            <div class="fuel-grid">
+                <div class="fuel-item">
+                    <div class="fuel-icon">⛽</div>
+                    <div class="fuel-info">
+                        <span class="fuel-name">بنزين 95</span>
+                        <span class="fuel-unit">شيكل/لتر</span>
+                    </div>
+                    <div class="fuel-value" id="portal-fuel-95">6.85</div>
+                </div>
+                
+                <div class="fuel-item">
+                    <div class="fuel-icon">⛽</div>
+                    <div class="fuel-info">
+                        <span class="fuel-name">بنزين 98</span>
+                        <span class="fuel-unit">شيكل/لتر</span>
+                    </div>
+                    <div class="fuel-value" id="portal-fuel-98">7.05</div>
+                </div>
+                
+                <div class="fuel-item">
+                    <div class="fuel-icon">🛢️</div>
+                    <div class="fuel-info">
+                        <span class="fuel-name">سولار</span>
+                        <span class="fuel-unit">شيكل/لتر</span>
+                    </div>
+                    <div class="fuel-value" id="portal-fuel-diesel">6.25</div>
+                </div>
+                
+                <div class="fuel-item">
+                    <div class="fuel-icon">🔥</div>
+                    <div class="fuel-info">
+                        <span class="fuel-name">أسطوانة غاز</span>
+                        <span class="fuel-unit">شيكل</span>
+                    </div>
+                    <div class="fuel-value" id="portal-fuel-gas">35.00</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 5. مواقيت الصلاة -->
+    <div class="widget-card prayer-card">
+        <div class="widget-header">
+            <h3><i class="fas fa-mosque"></i> مواقيت الصلاة</h3>
+            <span class="widget-update-time">اليوم: <span id="prayer-date">--</span></span>
+        </div>
+        <div class="widget-body">
+            <div class="prayer-times">
+                <div class="prayer-time">
+                    <div class="prayer-icon">🌅</div>
+                    <div class="prayer-info">
+                        <span class="prayer-name">الفجر</span>
+                        <span class="prayer-value" id="portal-prayer-fajr">04:45</span>
+                    </div>
+                </div>
+                
+                <div class="prayer-time">
+                    <div class="prayer-icon">☀️</div>
+                    <div class="prayer-info">
+                        <span class="prayer-name">الظهر</span>
+                        <span class="prayer-value" id="portal-prayer-dhuhr">12:30</span>
+                    </div>
+                </div>
+                
+                <div class="prayer-time">
+                    <div class="prayer-icon">🌤️</div>
+                    <div class="prayer-info">
+                        <span class="prayer-name">العصر</span>
+                        <span class="prayer-value" id="portal-prayer-asr">15:45</span>
+                    </div>
+                </div>
+                
+                <div class="prayer-time">
+                    <div class="prayer-icon">🌅</div>
+                    <div class="prayer-info">
+                        <span class="prayer-name">المغرب</span>
+                        <span class="prayer-value" id="portal-prayer-maghrib">18:45</span>
+                    </div>
+                </div>
+                
+                <div class="prayer-time">
+                    <div class="prayer-icon">🌙</div>
+                    <div class="prayer-info">
+                        <span class="prayer-name">العشاء</span>
+                        <span class="prayer-value" id="portal-prayer-isha">20:15</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 6. التقويم الهجري والميلادي -->
+    <div class="widget-card calendar-card">
+        <div class="widget-header">
+            <h3><i class="fas fa-calendar-alt"></i> التقويم الهجري والميلادي</h3>
+            <span class="widget-update-time">اليوم: <span id="calendar-today">--</span></span>
+        </div>
+        <div class="widget-body">
+            <div class="calendar-display">
+                <div class="calendar-item hijri">
+                    <div class="calendar-icon">🌙</div>
+                    <div class="calendar-info">
+                        <span class="calendar-label">التاريخ الهجري</span>
+                        <span class="calendar-value" id="portal-hijri-date">12 رجب 1446</span>
+                    </div>
+                </div>
+                
+                <div class="calendar-item gregorian">
+                    <div class="calendar-icon">📅</div>
+                    <div class="calendar-info">
+                        <span class="calendar-label">التاريخ الميلادي</span>
+                        <span class="calendar-value" id="portal-gregorian-date">2026-08-17</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="calendar-events">
+                <h4>المناسبات القادمة</h4>
+                <div class="event-item">
+                    <span class="event-date">15 شعبان</span>
+                    <span class="event-name">بداية شهر شعبان</span>
+                </div>
+                <div class="event-item">
+                    <span class="event-date">1 رمضان</span>
+                    <span class="event-name">بداية شهر رمضان المبارك</span>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 7. حالة الطرق والحركة المرورية -->
+    <div class="widget-card traffic-card">
+        <div class="widget-header">
+            <h3><i class="fas fa-road"></i> حالة الطرق والحركة المرورية</h3>
+            <span class="widget-update-time">آخر تحديث: <span id="traffic-update-time">--:--</span></span>
+        </div>
+        <div class="widget-body">
+            <div class="traffic-list">
+                <div class="traffic-item">
+                    <div class="traffic-location">حاجز قلنديا</div>
+                    <div class="traffic-status" id="portal-traffic-qalandia">ازدحام</div>
+                    <div class="traffic-delay">تأثير: 15 دقيقة</div>
+                </div>
+                
+                <div class="traffic-item">
+                    <div class="traffic-location">طريق 60</div>
+                    <div class="traffic-status" id="portal-traffic-road60">سلس</div>
+                    <div class="traffic-delay">تأثير: طبيعي</div>
+                </div>
+                
+                <div class="traffic-item">
+                    <div class="traffic-location">حاجز حوارة</div>
+                    <div class="traffic-status">طبيعي</div>
+                    <div class="traffic-delay">تأثير: 5 دقائق</div>
+                </div>
+                
+                <div class="traffic-item">
+                    <div class="traffic-location">معبر رفح</div>
+                    <div class="traffic-status">مغلق جزئياً</div>
+                    <div class="traffic-delay">تأثير: غير متاح</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 8. مؤشرات الأسواق المالية والاقتصادية -->
+    <div class="widget-card market-card">
+        <div class="widget-header">
+            <h3><i class="fas fa-chart-line"></i> مؤشرات الأسواق المالية</h3>
+            <span class="widget-update-time">آخر تحديث: <span id="market-update-time">--:--</span></span>
+        </div>
+        <div class="widget-body">
+            <div class="market-grid">
+                <div class="market-item">
+                    <div class="market-icon">📈</div>
+                    <div class="market-info">
+                        <span class="market-name">مؤشر تل أبيب</span>
+                        <span class="market-value" id="portal-market-telaviv">1,850</span>
+                    </div>
+                    <div class="market-change positive">+1.2%</div>
+                </div>
+                
+                <div class="market-item">
+                    <div class="market-icon">💰</div>
+                    <div class="market-info">
+                        <span class="market-name">الذهب عالمياً</span>
+                        <span class="market-value" id="portal-market-gold">$2,450</span>
+                    </div>
+                    <div class="market-change positive">+0.5%</div>
+                </div>
+                
+                <div class="market-item">
+                    <div class="market-icon">🛢️</div>
+                    <div class="market-info">
+                        <span class="market-name">النفط الخام</span>
+                        <span class="market-value">$78.50</span>
+                    </div>
+                    <div class="market-change negative">-0.3%</div>
+                </div>
+                
+                <div class="market-item">
+                    <div class="market-icon">💵</div>
+                    <div class="market-info">
+                        <span class="market-name">الدولار/شيكل</span>
+                        <span class="market-value">3.45</span>
+                    </div>
+                    <div class="market-change positive">+0.02%</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+</div>
+
+<!-- أزرار التحكم -->
+<div class="portal-controls">
+    <button class="portal-refresh-btn" id="portal-refresh-btn">
+        <i class="fas fa-sync-alt"></i> تحديث الكل
+    </button>
+    <button class="portal-close-btn" id="portal-close-btn">
+        <i class="fas fa-times"></i> إغلاق
+    </button>
+</div>

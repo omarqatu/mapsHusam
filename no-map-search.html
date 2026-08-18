@@ -32,6 +32,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>البحث بدون خريطة - خريطة الخدمات الفلسطينية</title>
     <meta name="description" content="ابحث عن أي خدمة أو عقار في فلسطين بدون الحاجة لفتح الخريطة التفاعلية - أسرع وأخف على جميع الأجهزة">
+    <script>
+        // تحديد الصفحة كصفحة بدون خريطة
+        document.body.classList.add('no-map-page');
+    </script>
 
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <link rel="stylesheet" href="/css/ui-collapse.css">
@@ -39,6 +43,8 @@
     <link rel="stylesheet" href="/css/platform-stats.css">
     <link rel="stylesheet" href="/css/auth-core-functions.css">
     <link rel="stylesheet" href="/css/notifications.css">
+    <link rel="stylesheet" href="/css/widgets-ticker.css">
+    <link rel="stylesheet" href="/css/widgets-portal.css">
     
     <style>
         /* تنسيقات الهيدر الجديد المستوحى من السوق المفتوح */
@@ -326,7 +332,7 @@
 
     <div class="nms-layout" style="margin-top: 20px;">
         <aside class="nms-ad-space nms-ad-side" aria-hidden="true">
-            <span>مساحة إعلانية</span>
+            <span></span>
         </aside>
 
         <main class="nms-main">
@@ -381,12 +387,12 @@
         </main>
 
         <aside class="nms-ad-space nms-ad-side" aria-hidden="true">
-            <span>مساحة إعلانية</span>
+            <span></span>
         </aside>
     </div>
 
     <div class="nms-ad-space nms-ad-bottom" aria-hidden="true">
-        <span>مساحة إعلانية</span>
+        <span></span>
     </div>
 </div>
 
@@ -489,6 +495,14 @@
 
 <!-- ملف المحتوى القانوني الموحّد - يتم تحميله بعد الفوتر لضمان ربط جميع الأزرار -->
 <script src="/js/legal-content.js"></script>
+
+<!-- نظام العناصر الحيوية -->
+<script src="/js/widgets-ticker.js"></script>
+
+<!-- فوتر الشريط المتحرك للعناصر الحيوية -->
+<footer class="widgets-ticker-footer">
+    <div id="widgets-ticker-wrapper"></div>
+</footer>
 
 </body>
 </html>
