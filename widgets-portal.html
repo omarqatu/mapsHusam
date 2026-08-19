@@ -15,8 +15,7 @@
                         <span class="currency-name">دولار أمريكي</span>
                         <span class="currency-code">USD/ILS</span>
                     </div>
-                    <div class="currency-value" id="portal-usd-ils">3.45</div>
-                    <div class="currency-change positive">+0.02%</div>
+                    <div class="currency-value" id="portal-currency-usd-ils">3.45</div>
                 </div>
                 
                 <div class="currency-item">
@@ -25,8 +24,7 @@
                         <span class="currency-name">دينار أردني</span>
                         <span class="currency-code">JOD/ILS</span>
                     </div>
-                    <div class="currency-value" id="portal-jod-ils">4.86</div>
-                    <div class="currency-change negative">-0.01%</div>
+                    <div class="currency-value" id="portal-currency-jod-ils">4.86</div>
                 </div>
                 
                 <div class="currency-item">
@@ -35,18 +33,7 @@
                         <span class="currency-name">يورو</span>
                         <span class="currency-code">EUR/ILS</span>
                     </div>
-                    <div class="currency-value" id="portal-eur-ils">3.72</div>
-                    <div class="currency-change positive">+0.05%</div>
-                </div>
-                
-                <div class="currency-item">
-                    <div class="currency-flag">🇬🇧</div>
-                    <div class="currency-info">
-                        <span class="currency-name">جنيه إسترليني</span>
-                        <span class="currency-code">GBP/ILS</span>
-                    </div>
-                    <div class="currency-value" id="portal-gbp-ils">4.38</div>
-                    <div class="currency-change positive">+0.03%</div>
+                    <div class="currency-value" id="portal-currency-eur-ils">3.72</div>
                 </div>
             </div>
         </div>
@@ -93,7 +80,7 @@
                         <span class="gold-name">أونصة الذهب عالمياً</span>
                         <span class="gold-unit">دولار/أونصة</span>
                     </div>
-                    <div class="gold-value" id="portal-gold-ounce">$2,450</div>
+                    <div class="gold-value" id="portal-gold-ounce">2450</div>
                 </div>
                 
                 <div class="gold-item">
@@ -102,7 +89,7 @@
                         <span class="gold-name">الفضة</span>
                         <span class="gold-unit">دولار/أونصة</span>
                     </div>
-                    <div class="gold-value" id="portal-silver">$28.50</div>
+                    <div class="gold-value" id="portal-silver">28.50</div>
                 </div>
             </div>
         </div>
@@ -186,7 +173,7 @@
             <span class="widget-update-time">آخر تحديث: <span id="fuel-update-time">--:--</span></span>
         </div>
         <div class="widget-body">
-            <div class="fuel-grid">
+            <div class="fuel-grid" id="portal-fuel-grid">
                 <div class="fuel-item">
                     <div class="fuel-icon">⛽</div>
                     <div class="fuel-info">
@@ -211,7 +198,7 @@
                         <span class="fuel-name">سولار</span>
                         <span class="fuel-unit">شيكل/لتر</span>
                     </div>
-                    <div class="fuel-value" id="portal-fuel-diesel">6.25</div>
+                    <div class="fuel-value" id="portal-fuel-diesel">8.56</div>
                 </div>
                 
                 <div class="fuel-item">
@@ -220,7 +207,119 @@
                         <span class="fuel-name">أسطوانة غاز</span>
                         <span class="fuel-unit">شيكل</span>
                     </div>
-                    <div class="fuel-value" id="portal-fuel-gas">35.00</div>
+                    <div class="fuel-value" id="portal-fuel-gas-cylinder">35.00</div>
+                </div>
+                
+                <div class="fuel-item">
+                    <div class="fuel-icon">🔥</div>
+                    <div class="fuel-info">
+                        <span class="fuel-name">غاز حجم كبير</span>
+                        <span class="fuel-unit">شيكل</span>
+                    </div>
+                    <div class="fuel-value" id="portal-fuel-gas-large">85.00</div>
+                </div>
+                
+                <div class="fuel-item">
+                    <div class="fuel-icon">🔥</div>
+                    <div class="fuel-info">
+                        <span class="fuel-name">غاز حجم صغير</span>
+                        <span class="fuel-unit">شيكل</span>
+                    </div>
+                    <div class="fuel-value" id="portal-fuel-gas-small">45.00</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 4.5. أجرة النقل بين المدن -->
+    <div class="widget-card transport-card">
+        <div class="widget-header">
+            <h3><i class="fas fa-bus"></i> أجرة النقل بين المدن</h3>
+            <span class="widget-update-time">آخر تحديث: <span id="transport-inter-city-update-time">--:--</span></span>
+        </div>
+        <div class="widget-body">
+            <div class="transport-grid" id="portal-transport-inter-city-grid">
+                <div class="transport-item">
+                    <div class="transport-icon">�</div>
+                    <div class="transport-info">
+                        <span class="transport-name">رام الله - الخليل</span>
+                        <span class="transport-unit">شيكل</span>
+                    </div>
+                    <div class="transport-value" id="portal-transport-ramallah-hebron">30</div>
+                </div>
+                
+                <div class="transport-item">
+                    <div class="transport-icon">�</div>
+                    <div class="transport-info">
+                        <span class="transport-name">رام الله - بيت لحم</span>
+                        <span class="transport-unit">شيكل</span>
+                    </div>
+                    <div class="transport-value" id="portal-transport-ramallah-bethlehem">22</div>
+                </div>
+                
+                <div class="transport-item">
+                    <div class="transport-icon">🚌</div>
+                    <div class="transport-info">
+                        <span class="transport-name">رام الله - أريحا</span>
+                        <span class="transport-unit">شيكل</span>
+                    </div>
+                    <div class="transport-value" id="portal-transport-ramallah-jericho">15</div>
+                </div>
+                
+                <div class="transport-item">
+                    <div class="transport-icon">🚌</div>
+                    <div class="transport-info">
+                        <span class="transport-name">رام الله - نابلس</span>
+                        <span class="transport-unit">شيكل</span>
+                    </div>
+                    <div class="transport-value" id="portal-transport-ramallah-nablus">18</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 4.6. أجرة النقل الداخلي -->
+    <div class="widget-card transport-card">
+        <div class="widget-header">
+            <h3><i class="fas fa-bus"></i> أجرة النقل الداخلي (البيرة)</h3>
+            <span class="widget-update-time">آخر تحديث: <span id="transport-intra-city-update-time">--:--</span></span>
+        </div>
+        <div class="widget-body">
+            <div class="transport-grid" id="portal-transport-intra-city-grid">
+                <div class="transport-item">
+                    <div class="transport-icon">🚌</div>
+                    <div class="transport-info">
+                        <span class="transport-name">البيرة - قلنديا</span>
+                        <span class="transport-unit">شيكل</span>
+                    </div>
+                    <div class="transport-value" id="portal-transport-bireh-qalandia">4.5</div>
+                </div>
+                
+                <div class="transport-item">
+                    <div class="transport-icon">🚌</div>
+                    <div class="transport-info">
+                        <span class="transport-name">البيرة - البالوع</span>
+                        <span class="transport-unit">شيكل</span>
+                    </div>
+                    <div class="transport-value" id="portal-transport-bireh-albalou">3.5</div>
+                </div>
+                
+                <div class="transport-item">
+                    <div class="transport-icon">🚌</div>
+                    <div class="transport-info">
+                        <span class="transport-name">البيرة - بيتونيا</span>
+                        <span class="transport-unit">شيكل</span>
+                    </div>
+                    <div class="transport-value" id="portal-transport-bireh-bitunia">5</div>
+                </div>
+                
+                <div class="transport-item">
+                    <div class="transport-icon">🚌</div>
+                    <div class="transport-info">
+                        <span class="transport-name">البيرة - أم الشرايط</span>
+                        <span class="transport-unit">شيكل</span>
+                    </div>
+                    <div class="transport-value" id="portal-transport-bireh-umsharayet">3.5</div>
                 </div>
             </div>
         </div>
@@ -303,15 +402,17 @@
             </div>
             
             <div class="calendar-events">
-                <h4>المناسبات القادمة</h4>
-                <div class="event-item">
-                    <span class="event-date">15 شعبان</span>
-                    <span class="event-name">بداية شهر شعبان</span>
+    <h4>المناسبات القادمة</h4>
+    <div id="portal-calendar-events-list">
+        <div class="event-item">
+            <span class="event-date">15 شعبان</span>
+            <span class="event-name">بداية شهر شعبان</span>
+              </div>
+                     <div class="event-item">
+                   <span class="event-date">1 رمضان</span>
+                   <span class="event-name">بداية شهر رمضان المبارك</span>
                 </div>
-                <div class="event-item">
-                    <span class="event-date">1 رمضان</span>
-                    <span class="event-name">بداية شهر رمضان المبارك</span>
-                </div>
+             </div>
             </div>
         </div>
     </div>
@@ -323,76 +424,29 @@
             <span class="widget-update-time">آخر تحديث: <span id="traffic-update-time">--:--</span></span>
         </div>
         <div class="widget-body">
-            <div class="traffic-list">
+            <div class="traffic-list" id="portal-traffic-list">
                 <div class="traffic-item">
-                    <div class="traffic-location">حاجز قلنديا</div>
-                    <div class="traffic-status" id="portal-traffic-qalandia">ازدحام</div>
-                    <div class="traffic-delay">تأثير: 15 دقيقة</div>
-                </div>
-                
-                <div class="traffic-item">
-                    <div class="traffic-location">طريق 60</div>
-                    <div class="traffic-status" id="portal-traffic-road60">سلس</div>
-                    <div class="traffic-delay">تأثير: طبيعي</div>
+                    <div class="traffic-location">بيت إيل - رام الله</div>
+                    <div class="traffic-status" id="portal-traffic-betunia-ramallah">مغلق</div>
+                    <div class="traffic-delay">رمز أحمر</div>
                 </div>
                 
                 <div class="traffic-item">
-                    <div class="traffic-location">حاجز حوارة</div>
-                    <div class="traffic-status">طبيعي</div>
-                    <div class="traffic-delay">تأثير: 5 دقائق</div>
+                    <div class="traffic-location">جبع القدس</div>
+                    <div class="traffic-status" id="portal-traffic-jaba-jerusalem">مفتوح</div>
+                    <div class="traffic-delay">رمز أخضر</div>
                 </div>
                 
                 <div class="traffic-item">
-                    <div class="traffic-location">معبر رفح</div>
-                    <div class="traffic-status">مغلق جزئياً</div>
-                    <div class="traffic-delay">تأثير: غير متاح</div>
-                </div>
-            </div>
-        </div>
-    </div>
-    
-    <!-- 8. مؤشرات الأسواق المالية والاقتصادية -->
-    <div class="widget-card market-card">
-        <div class="widget-header">
-            <h3><i class="fas fa-chart-line"></i> مؤشرات الأسواق المالية</h3>
-            <span class="widget-update-time">آخر تحديث: <span id="market-update-time">--:--</span></span>
-        </div>
-        <div class="widget-body">
-            <div class="market-grid">
-                <div class="market-item">
-                    <div class="market-icon">📈</div>
-                    <div class="market-info">
-                        <span class="market-name">مؤشر تل أبيب</span>
-                        <span class="market-value" id="portal-market-telaviv">1,850</span>
-                    </div>
-                    <div class="market-change positive">+1.2%</div>
+                    <div class="traffic-location">فرش الهوا الخليل</div>
+                    <div class="traffic-status" id="portal-traffic-farsha-hebron">أزمة وتفتيش</div>
+                    <div class="traffic-delay">رمز برتقالي</div>
                 </div>
                 
-                <div class="market-item">
-                    <div class="market-icon">💰</div>
-                    <div class="market-info">
-                        <span class="market-name">الذهب عالمياً</span>
-                        <span class="market-value" id="portal-market-gold">$2,450</span>
-                    </div>
-                    <div class="market-change positive">+0.5%</div>
-                </div>
-                
-                <div class="market-item">
-                    <div class="market-icon">🛢️</div>
-                    <div class="market-info">
-                        <span class="market-name">النفط الخام</span>
-                        <span class="market-value">$78.50</span>
-                    </div>
-                    <div class="market-change negative">-0.3%</div>
-                </div>
-                
-                <div class="market-item">
-                    <div class="market-icon">💵</div>
-                    <div class="market-info">
-                        <span class="market-name">الدولار/شيكل</span>
-                        <span class="market-value">3.45</span>
-                    </div>
-                    <div class="market-change positive">+0.02%</div>
+                <div class="traffic-item">
+                    <div class="traffic-location">عش الغراب - بيت لحم</div>
+                    <div class="traffic-status" id="portal-traffic-ashgharab-bethlehem">أزمة ماشية</div>
+                    <div class="traffic-delay">رمز أصفر</div>
                 </div>
             </div>
         </div>

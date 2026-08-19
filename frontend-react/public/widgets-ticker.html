@@ -12,26 +12,20 @@
             <!-- أسعار العملات -->
             <div class="ticker-item currency-item" data-type="currency">
                 <i class="fas fa-dollar-sign"></i>
-                <span class="ticker-label">USD/ILS</span>
-                <span class="ticker-value" id="usd-ils">3.45</span>
+                <span class="ticker-label">دولار أمريكي</span>
+                <span class="ticker-value" id="currency-usd-ils">3.45</span>
             </div>
             
             <div class="ticker-item currency-item" data-type="currency">
                 <i class="fas fa-coins"></i>
-                <span class="ticker-label">JOD/ILS</span>
-                <span class="ticker-value" id="jod-ils">4.86</span>
+                <span class="ticker-label">دينار أردني</span>
+                <span class="ticker-value" id="currency-jod-ils">4.86</span>
             </div>
             
             <div class="ticker-item currency-item" data-type="currency">
                 <i class="fas fa-euro-sign"></i>
-                <span class="ticker-label">EUR/ILS</span>
-                <span class="ticker-value" id="eur-ils">3.72</span>
-            </div>
-            
-            <div class="ticker-item currency-item" data-type="currency">
-                <i class="fas fa-pound-sign"></i>
-                <span class="ticker-label">GBP/ILS</span>
-                <span class="ticker-value" id="gbp-ils">4.38</span>
+                <span class="ticker-label">يورو</span>
+                <span class="ticker-value" id="currency-eur-ils">3.72</span>
             </div>
             
             <!-- أسعار الذهب -->
@@ -39,18 +33,21 @@
                 <i class="fas fa-gem"></i>
                 <span class="ticker-label">ذهب 24</span>
                 <span class="ticker-value" id="gold-24">215.5</span>
+                <span class="ticker-unit">شيكل/غرام</span>
             </div>
             
             <div class="ticker-item gold-item" data-type="gold">
                 <i class="fas fa-gem"></i>
                 <span class="ticker-label">ذهب 21</span>
                 <span class="ticker-value" id="gold-21">188.5</span>
+                <span class="ticker-unit">شيكل/غرام</span>
             </div>
             
             <div class="ticker-item gold-item" data-type="gold">
                 <i class="fas fa-gem"></i>
                 <span class="ticker-label">ذهب 18</span>
                 <span class="ticker-value" id="gold-18">161.5</span>
+                <span class="ticker-unit">شيكل/غرام</span>
             </div>
             
             <!-- الطقس -->
@@ -72,8 +69,101 @@
                 <span class="ticker-value" id="weather-jerusalem">26°C</span>
             </div>
             
-            <!-- المحروقات -->
-            <div id="ticker-fuel-container" style="display:contents;"></div>
+            <!-- المحروقات والغاز -->
+            <div id="ticker-fuel-container" style="display:contents;">
+                <div class="ticker-item fuel-item" data-type="fuel">
+                    <i class="fas fa-gas-pump"></i>
+                    <span class="ticker-label">بنزين 95</span>
+                    <span class="ticker-value" id="fuel-95">6.85</span>
+                    <span class="ticker-unit">شيكل/لتر</span>
+                </div>
+                <div class="ticker-item fuel-item" data-type="fuel">
+                    <i class="fas fa-gas-pump"></i>
+                    <span class="ticker-label">بنزين 98</span>
+                    <span class="ticker-value" id="fuel-98">7.05</span>
+                    <span class="ticker-unit">شيكل/لتر</span>
+                </div>
+                <div class="ticker-item fuel-item" data-type="fuel">
+                    <i class="fas fa-gas-pump"></i>
+                    <span class="ticker-label">سولار</span>
+                    <span class="ticker-value" id="fuel-diesel">8.56</span>
+                    <span class="ticker-unit">شيكل/لتر</span>
+                </div>
+                <div class="ticker-item fuel-item" data-type="fuel">
+                    <i class="fas fa-fire"></i>
+                    <span class="ticker-label">أسطوانة غاز</span>
+                    <span class="ticker-value" id="fuel-gas-cylinder">35.00</span>
+                    <span class="ticker-unit">شيكل</span>
+                </div>
+                <div class="ticker-item fuel-item" data-type="fuel">
+                    <i class="fas fa-fire"></i>
+                    <span class="ticker-label">غاز حجم كبير</span>
+                    <span class="ticker-value" id="fuel-gas-large">85.00</span>
+                    <span class="ticker-unit">شيكل</span>
+                </div>
+                <div class="ticker-item fuel-item" data-type="fuel">
+                    <i class="fas fa-fire"></i>
+                    <span class="ticker-label">غاز حجم صغير</span>
+                    <span class="ticker-value" id="fuel-gas-small">45.00</span>
+                    <span class="ticker-unit">شيكل</span>
+                </div>
+            </div>
+
+            <!-- النقل بين المدن -->
+            <div id="ticker-transport-inter-city-container" style="display:contents;">
+                <div class="ticker-item transport-item" data-type="transport">
+                    <i class="fas fa-bus"></i>
+                    <span class="ticker-label">رام الله - الخليل</span>
+                    <span class="ticker-value" id="transport-ramallah-hebron">30</span>
+                    <span class="ticker-unit">شيكل</span>
+                </div>
+                <div class="ticker-item transport-item" data-type="transport">
+                    <i class="fas fa-bus"></i>
+                    <span class="ticker-label">رام الله - بيت لحم</span>
+                    <span class="ticker-value" id="transport-ramallah-bethlehem">22</span>
+                    <span class="ticker-unit">شيكل</span>
+                </div>
+                <div class="ticker-item transport-item" data-type="transport">
+                    <i class="fas fa-bus"></i>
+                    <span class="ticker-label">رام الله - أريحا</span>
+                    <span class="ticker-value" id="transport-ramallah-jericho">15</span>
+                    <span class="ticker-unit">شيكل</span>
+                </div>
+                <div class="ticker-item transport-item" data-type="transport">
+                    <i class="fas fa-bus"></i>
+                    <span class="ticker-label">رام الله - نابلس</span>
+                    <span class="ticker-value" id="transport-ramallah-nablus">18</span>
+                    <span class="ticker-unit">شيكل</span>
+                </div>
+            </div>
+
+            <!-- النقل الداخلي -->
+            <div id="ticker-transport-intra-city-container" style="display:contents;">
+                <div class="ticker-item transport-item" data-type="transport">
+                    <i class="fas fa-bus"></i>
+                    <span class="ticker-label">البيرة - قلنديا</span>
+                    <span class="ticker-value" id="transport-bireh-qalandia">4.5</span>
+                    <span class="ticker-unit">شيكل</span>
+                </div>
+                <div class="ticker-item transport-item" data-type="transport">
+                    <i class="fas fa-bus"></i>
+                    <span class="ticker-label">البيرة - البالوع</span>
+                    <span class="ticker-value" id="transport-bireh-albalou">3.5</span>
+                    <span class="ticker-unit">شيكل</span>
+                </div>
+                <div class="ticker-item transport-item" data-type="transport">
+                    <i class="fas fa-bus"></i>
+                    <span class="ticker-label">البيرة - بيتونيا</span>
+                    <span class="ticker-value" id="transport-bireh-bitunia">5</span>
+                    <span class="ticker-unit">شيكل</span>
+                </div>
+                <div class="ticker-item transport-item" data-type="transport">
+                    <i class="fas fa-bus"></i>
+                    <span class="ticker-label">البيرة - أم الشرايط</span>
+                    <span class="ticker-value" id="transport-bireh-umsharayet">3.5</span>
+                    <span class="ticker-unit">شيكل</span>
+                </div>
+            </div>
 
             
             <!-- مواقيت الصلاة -->
