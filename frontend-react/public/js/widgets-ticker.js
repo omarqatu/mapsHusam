@@ -103,6 +103,39 @@
         }
     };
 
+        // ============================================
+    // 🆕 بيانات حيّة (Live) من طبقات الخريطة مباشرة - المصدر الوحيد للتعديل
+    // هو قاعدة البيانات/GeoServer نفسها، وليس أي ملف كود
+    // ============================================
+    let liveRoadBarriers = [];
+    let liveFuelStations = [];
+
+    async function fetchLiveLayerFeatures(layerName) {
+        try {
+            const params = new URLSearchParams({ layer: layerName, workspace: 'services' });
+            const res = await fetch('/api/search-features?' + params.toString());
+            const data = await res.json();
+            return (data && data.features) ? data.features : [];
+        } catch (err) {
+            console.error('خطأ في جلب بيانات الطبقة ' + layerName + ':', err);
+            return [];
+        }
+    }
+
+    async function refreshLiveRoadBarriers() {
+        liveRoadBarriers = await fetchLiveLayerFeatures('road_barriers');
+        updateTickerHTML();
+        updatePortalTrafficList();
+        updateMobilePortalTrafficList();
+    }
+
+    async function refreshLiveFuelStations() {
+        liveFuelStations = await fetchLiveLayerFeatures('fuel_stations');
+        updateTickerHTML();
+        updatePortalFuelStatusList();
+        updateMobilePortalFuelStatusList();
+    }
+
     // ============================================
     // دوال العرض للبيانات اليدوية (القسم الثاني)
     // ============================================
@@ -121,16 +154,87 @@
         `).join('');
     }
 
+        // 🆕 حواجز الطرق: عرض كل المعالم مباشرة من الطبقة الحية (عمود stop)
     function renderTrafficTicker() {
-        return MANUAL_DATA.traffic.map(t => `
-            <div class="ticker-item traffic-item" data-type="traffic">
-                <i class="fas ${t.icon || 'fa-road'}"></i>
-                <span class="ticker-label">${t.label}</span>
-                <span class="ticker-value traffic-status" id="${t.id}" style="color: ${TRAFFIC_COLORS[t.status]}">
-                    <i class="fas ${TRAFFIC_ICONS[t.status]}"></i> ${TRAFFIC_LABELS[t.status]}
+        if (!liveRoadBarriers.length) {
+            return '<div class="ticker-item traffic-item" data-type="traffic"><i class="fas fa-road"></i><span class="ticker-label">حالة الطرق</span><span class="ticker-value">جاري التحميل...</span></div>';
+        }
+        return liveRoadBarriers.map(f => {
+            const props = f.properties || {};
+            const stopInfo = window.getRoadBarrierStopInfo(window.getCaseInsensitiveProp(props, 'stop'));
+            const name = props.name || 'حاجز';
+            return `<div class="ticker-item traffic-item" data-type="traffic">
+                <i class="fas fa-road"></i>
+                <span class="ticker-label">${name}</span>
+                <span class="ticker-value" style="color:${stopInfo.color};">${stopInfo.icon} ${stopInfo.label}</span>
+            </div>`;
+        }).join('');
+    }
+
+    // 🆕 محطات الوقود: عرض كل المعالم مباشرة من الطبقة الحية (ديزل/بنزين95/بنزين98)
+    function renderFuelStationsStatusTicker() {
+        if (!liveFuelStations.length) {
+            return '<div class="ticker-item fuel-item" data-type="fuel-status"><i class="fas fa-gas-pump"></i><span class="ticker-label">محطات الوقود</span><span class="ticker-value">جاري التحميل...</span></div>';
+        }
+        return liveFuelStations.map(f => {
+            const props = f.properties || {};
+            const name = props.name || 'محطة وقود';
+            const diesel = window.getFuelAvailabilityInfo(window.getCaseInsensitiveProp(props, 'diesel'));
+            const b95 = window.getFuelAvailabilityInfo(window.getCaseInsensitiveProp(props, 'banzen95'));
+            const b98 = window.getFuelAvailabilityInfo(window.getCaseInsensitiveProp(props, 'banzen98'));
+            return `<div class="ticker-item fuel-item" data-type="fuel-status">
+                <i class="fas fa-gas-pump"></i>
+                <span class="ticker-label">${name}</span>
+                <span class="ticker-value">
+                    <span style="color:${diesel.color};">${diesel.icon} ديزل</span>
+                    <span style="color:${b95.color}; margin-right:6px;">${b95.icon} 95</span>
+                    <span style="color:${b98.color}; margin-right:6px;">${b98.icon} 98</span>
                 </span>
-            </div>
-        `).join('');
+            </div>`;
+        }).join('');
+    }
+
+    // 🆕 بناء قوائم البوابة التفصيلية (Portal) لحواجز الطرق ومحطات الوقود
+    function buildPortalTrafficItemsHtml() {
+        if (!liveRoadBarriers.length) return '<div style="padding:10px; text-align:center; color:#999;">لا توجد بيانات حالياً</div>';
+        return liveRoadBarriers.map(f => {
+            const props = f.properties || {};
+            const stopInfo = window.getRoadBarrierStopInfo(window.getCaseInsensitiveProp(props, 'stop'));
+            const name = props.name || 'حاجز';
+            return `<div class="traffic-item">
+                <div class="traffic-location">${name}</div>
+                <div class="traffic-status" style="color:${stopInfo.color};">${stopInfo.icon} ${stopInfo.label}</div>
+            </div>`;
+        }).join('');
+    }
+
+    function buildPortalFuelStatusItemsHtml() {
+        if (!liveFuelStations.length) return '<div style="padding:10px; text-align:center; color:#999;">لا توجد بيانات حالياً</div>';
+        return liveFuelStations.map(f => {
+            const props = f.properties || {};
+            const name = props.name || 'محطة وقود';
+            return `<div class="traffic-item">
+                <div class="traffic-location">${name}</div>
+                <div class="traffic-status">${window.buildFuelAvailabilityHtml(props)}</div>
+            </div>`;
+        }).join('');
+    }
+
+    function updatePortalTrafficList() {
+        const el = document.getElementById('portal-traffic-list');
+        if (el) el.innerHTML = buildPortalTrafficItemsHtml();
+    }
+    function updateMobilePortalTrafficList() {
+        const el = document.getElementById('mobile-portal-traffic-list');
+        if (el) el.innerHTML = buildPortalTrafficItemsHtml();
+    }
+    function updatePortalFuelStatusList() {
+        const el = document.getElementById('portal-fuel-status-list');
+        if (el) el.innerHTML = buildPortalFuelStatusItemsHtml();
+    }
+    function updateMobilePortalFuelStatusList() {
+        const el = document.getElementById('mobile-portal-fuel-status-list');
+        if (el) el.innerHTML = buildPortalFuelStatusItemsHtml();
     }
 
     function renderTransportInterCityTicker() {
@@ -307,7 +411,7 @@
         const tickerScroll = document.getElementById('ticker-scroll');
         if (!tickerScroll) return;
 
-        const html = [
+            const html = [
             renderCurrencyTicker(),
             renderGoldTicker(),
             renderWeatherTicker(),
@@ -315,6 +419,7 @@
             renderPrayerTicker(),
             renderCalendarTicker(),
             renderTrafficTicker(),
+            renderFuelStationsStatusTicker(),
             renderTransportInterCityTicker(),
             renderTransportIntraCityTicker(),
             renderEventsTicker()
@@ -326,7 +431,7 @@
     // ============================================
     // دالة تحميل HTML الشريط المتحرك
     // ============================================
-    function loadTickerHTML() {
+        function loadTickerHTML() {
         fetch('/widgets-ticker.html')
             .then(response => response.text())
             .then(html => {
@@ -341,6 +446,10 @@
                 
                 // إنشاء تبويب الموبايل
                 createMobileTabContent(html);
+
+                // 🆕 إعادة رسم الشريط بالكامل الآن بعد ضمان وجود #ticker-scroll
+                // فعلياً بالـ DOM (يحل مشكلة توقيت السباق مع أول استدعاء مبكر)
+                updateTickerHTML();
             })
             .catch(err => {
                 console.error('خطأ في تحميل الشريط المتحرك:', err);
@@ -383,10 +492,12 @@
                     </div>
                     <div class="panel-body widgets-tab-body" style="padding: 10px;"></div>
                 `;
-                tabContent.querySelector('.widgets-tab-body').appendChild(clonedGrid);
+                                tabContent.querySelector('.widgets-tab-body').appendChild(clonedGrid);
                 
                 // تحديث البيانات في تبويب الموبايل
                 updateMobilePortalData();
+                updateMobilePortalTrafficList();
+                updateMobilePortalFuelStatusList();
             })
             .catch(err => console.error('خطأ في تحميل محتوى البوابة للموبايل:', err));
     }
@@ -531,7 +642,7 @@
     // ============================================
     // دالة تحميل محتوى البوابة
     // ============================================
-    function loadPortalContent() {
+        function loadPortalContent() {
         const contentArea = document.getElementById('portal-content-area');
         if (!contentArea) return;
 
@@ -540,6 +651,8 @@
             .then(html => {
                 contentArea.innerHTML = html;
                 updatePortalData();
+                updatePortalTrafficList();
+                updatePortalFuelStatusList();
             })
             .catch(err => {
                 console.error('خطأ في تحميل محتوى البوابة:', err);
@@ -621,7 +734,7 @@
     // ============================================
     // دالة بدء النظام
     // ============================================
-    function init() {
+        function init() {
         loadTickerHTML();
         
         // تحديث البيانات فوراً
@@ -634,6 +747,13 @@
         setTimeout(() => {
             setupPortalModal();
         }, 200);
+
+        // 🆕 جلب حواجز الطرق ومحطات الوقود من الطبقات الحية أول مرة، ثم كل
+        // دقيقة تلقائياً - هذا المصدر الوحيد الآن، لا حاجة لأي تعديل يدوي
+        refreshLiveRoadBarriers();
+        refreshLiveFuelStations();
+        setInterval(refreshLiveRoadBarriers, 60000);
+        setInterval(refreshLiveFuelStations, 60000);
         
         // بدء التحديث التلقائي من APIs
         if (DISPLAY_CONFIG.autoUpdate) {

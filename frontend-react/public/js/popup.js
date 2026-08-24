@@ -28,6 +28,8 @@ async function logMapEvent(eventType, provider = null, service = null) {
 
 // خريطة تحويل الأسماء العربية إلى الإنجليزية للطبقات
 const arabicToEnglishLayerMap = {
+    'حواجز الطرق': 'road_barriers',
+    'محطات الوقود': 'fuel_stations',
     'فني كهرباء': 'electrician',
     'فني تكييف وتبريد': 'ac_technician',
     'سباك (مواسيرجي)': 'plumber',
@@ -95,6 +97,8 @@ const arabicToEnglishLayerMap = {
     'مدارس ورياض أطفال': 'schools_kindergartens',
     'وظائف شاغرة': 'job_vacancies',
     'معالم المدينة': 'city_landmarks'
+    
+
     
 };
 
@@ -227,6 +231,7 @@ function initializePopup(map) {
 
     // مصفوفة الخدمات الشاملة
     const serviceLayerNames = [
+        'حواجز الطرق', 'محطات الوقود',
         'فني كهرباء', 'فني تكييف وتبريد', 'سباك (مواسيرجي)', 'صيانة عامة', 'دهان/طراشة', 'فني ديكور',
         'نجار', 'حداد', 'بناء ومعمار', 'خدمات تنظيف', 'فني ألمنيوم', 'فني زجاج وسكريت', 'ميكانيكي سيارات',
         'كهربائي سيارات', 'بنشري / إطارات', 'غسيل سيارات', 'صيانة دراجات نارية', 
@@ -243,6 +248,7 @@ function initializePopup(map) {
          'مساعد أبحاث طلاب',
          
         'سوبرماركت', 'محلات تجارية', 'مطاعم وكوفي شوبات', 'مدارس ورياض أطفال', 'وظائف شاغرة', 'معالم المدينة'
+        
     ];
 
     const realEstateLayerNames = ['شقق الإيجار', 'شقق للبيع', 'الأراضي للبيع'];
@@ -508,6 +514,7 @@ function initializePopup(map) {
         const isRealEstate = realEstateLayerNames.includes(layerTitle);
         const isService = serviceLayerNames.includes(layerTitle);
         const isAreaLayer = layerTitle === areaLayerName; 
+        const isRoadBarriers = layerTitle === 'حواجز الطرق';
 
         let displayFeatureId = null;
         if (isRealEstate) {
@@ -545,8 +552,8 @@ function initializePopup(map) {
         let bodyHtml = `<div class="popup-body" style="font-size: 13px; line-height: 1.6;  overflow-y:auto; padding-right:5px; direction: rtl; text-align: right;">`;
         bodyHtml += `<div style="margin-bottom: 8px; border-bottom: 1px solid #eee; padding-bottom: 5px;"><b style="color: #007bff;">🛠️ التصنيف:</b> <b>${layerTitle}</b>${displayFeatureId !== null ? ` <span style="color:#888; font-size:12px;">(رقم: ${window.sanitizeHTML(String(displayFeatureId))})</span>` : ''}</div>`;
         
-        // إضافة عرض النجوم للخدمات فقط
-        if (isService && displayFeatureId) {
+        // إضافة عرض النجوم للخدمات فقط (باستثناء حواجز الطرق - لا تقييمات لها)
+        if (isService && displayFeatureId && !isRoadBarriers) {
             // استخدام الاسم الإنجليزي من layer مباشرة لقاعدة البيانات
             const layerDbName = layerEnglishName;
             if (layerDbName) {
@@ -562,12 +569,30 @@ function initializePopup(map) {
             }
         }
         
-        if (!isAreaLayer) bodyHtml += getStatusHtml(props.auto_status, props.work_hours);
+                if (!isAreaLayer && !isRoadBarriers) bodyHtml += getStatusHtml(props.auto_status, props.work_hours);
 
-        if (isRealEstate || isService) {
+        if (isRoadBarriers) {
+            const stopInfo = window.getRoadBarrierStopInfo(window.getCaseInsensitiveProp(props, 'stop'));
+            bodyHtml += `<div style="margin: 10px 0; padding: 10px; border-radius: 8px; background: ${stopInfo.color}15; border: 1px dashed ${stopInfo.color}; text-align: center;">
+                <span style="color: ${stopInfo.color}; font-weight: bold; font-size: 15px;">${stopInfo.icon} ${stopInfo.label}</span>
+            </div>`;
+            if (props.name) bodyHtml += `<b>📍 الاسم:</b> ${window.sanitizeHTML(props.name)}<br>`;
+
+            bodyHtml += `
+            <div style="margin-top: 15px; border-top: 2px solid #eee; padding-top: 12px;">
+                <button onclick="copyLocationLink(window.currentPopupCoordinate)"
+                        style="width: 100%; background: #6c757d; color: white; border: none; padding: 10px; border-radius: 10px; cursor: pointer; font-weight: bold; display: flex; align-items: center; justify-content: center; gap: 6px; font-size: 12px; box-shadow: 0 4px 12px rgba(108,117,125,0.3);">
+                    <i class="fas fa-link" style="font-size: 14px;"></i> نسخ رابط الموقع
+                </button>
+            </div>`;
+                } else if (isRealEstate || isService) {
             if (props.name) bodyHtml += `<b>👤 الاسم:</b> ${window.sanitizeHTML(props.name)}<br>`;
             if (props.location_name || props.location) bodyHtml += `<b>📍 الموقع:</b> ${window.sanitizeHTML(props.location_name || props.location)}<br>`;
-            
+
+            if (layerTitle === 'محطات الوقود') {
+                bodyHtml += window.buildFuelAvailabilityHtml(props);
+            }
+
             if (isRealEstate) {
                 if (props.price) bodyHtml += `<b>💰 السعر:</b> ${Number(props.price).toLocaleString()} ${getCurrencySymbol(props.currency)}<br>`;
                 if (props.area) bodyHtml += `<b>📐 المساحة:</b> ${props.area} م²<br>`;

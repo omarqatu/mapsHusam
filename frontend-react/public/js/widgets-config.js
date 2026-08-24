@@ -12,7 +12,7 @@ const WIDGETS_MANUAL_DATA = {
     
     // أسعار العملات (يدوي)
     currency: [
-        { id: 'currency-usd-ils', label: 'دولار أمريكي', code: 'USD/ILS', value: '3.45' },
+        { id: 'currency-usd-ils', label: 'دولار أمريكي', code: 'USD/ILS', value: '3.01' },
         { id: 'currency-jod-ils', label: 'دينار أردني', code: 'JOD/ILS', value: '4.86' },
         { id: 'currency-eur-ils', label: 'يورو', code: 'EUR/ILS', value: '3.72' }
         // يمكنك إضافة عملات جديدة هنا:
@@ -41,15 +41,10 @@ const WIDGETS_MANUAL_DATA = {
         // { id: 'fuel-kerosene', label: 'كيروسين', value: '5.50', unit: 'شيكل/لتر' }
     ],
     
-    // حالة الطرق (يدوي)
-    traffic: [
-        { id: 'traffic-betunia-ramallah', label: 'بيت إيل - رام الله', status: 'closed', icon: 'fa-road' },
-        { id: 'traffic-jaba-jerusalem', label: 'جبع القدس', status: 'open', icon: 'fa-car' },
-        { id: 'traffic-farsha-hebron', label: 'فرش الهوا الخليل', status: 'warning', icon: 'fa-road' },
-        { id: 'traffic-ashgharab-bethlehem', label: 'عش الغراب - بيت لحم', status: 'light', icon: 'fa-road' }
-        // يمكنك إضافة طرق جديدة هنا:
-        // { id: 'traffic-checkpoint', label: 'اسم الحاجز', status: 'open', icon: 'fa-road' }
-    ],
+        // 🆕 حالة الطرق: أصبحت تُجلب حياً وتلقائياً من طبقة road_barriers نفسها
+    // (كل معالمها) عبر widgets-ticker.js، ولم تعد تُدار يدوياً من هنا إطلاقاً.
+    // أي تعديل مطلوب يتم من قاعدة البيانات/GeoServer مباشرة، وليس من هذا الملف.
+    traffic: [],
     
     // أجرة النقل بين المدن
     transport_inter_city: [

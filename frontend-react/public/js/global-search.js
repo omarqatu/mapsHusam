@@ -8,7 +8,8 @@ const layerAliases = {
     'ApartSale': 'شقة للبيع', 
     'LandSale': 'أرض للبيع',
     
-    // --- الخدمات القديمة (34) ---
+    // --- الخدمات ---
+    'road_barriers': 'حواجز الطرق', 'fuel_stations': 'محطات الوقود',
     'electrician': 'فني كهرباء', 'ac_technician': 'فني تكييف وتبريد', 'plumber': 'سباك (مواسيرجي)',
     'general_maintenance': 'صيانة عامة', 'painter': 'دهان/طراشة', 'Finisher': 'فني ديكور', 'carpenter': 'نجار',
     'blacksmith': 'حداد', 'builder': 'بناء ومعمار', 'aluminum_tech': 'فني ألمنيوم', 'glass_tech': 'فني زجاج وسكريت',
@@ -22,7 +23,7 @@ const layerAliases = {
     'nutritionist': 'أخصائي تغذية', 'pet_care': 'رعاية حيوانات أليفة', 'cctv_installer': 'فني كاميرات مراقبة',
     'security_firms': 'شركات أمن وحراسة', 'furniture_buyer': 'شراء أثاث مستعمل',
 
-    // --- الخدمات الجديدة (25) ---
+    
     'online_stores': 'متاجر أون لاين', 'villas_rent': 'فلل أجار', 
     'martial_arts_gymnastics': 'فنون قتالية وجمباز', 'public_parks_recreation': 'حدائق ومناطق ترفيهية',
     'hotels': 'فنادق', 'free_distribution': 'توزيع أغراض مجاناً', 
@@ -39,6 +40,7 @@ const layerAliases = {
     'supermarket': 'سوبرماركت', 'commercial_shops': 'محلات تجارية',
     'restaurants': 'مطاعم', 'schools_kindergartens': 'مدارس ورياض أطفال',
     'job_vacancies': 'وظائف شاغرة', 'city_landmarks': 'معالم المدينة'
+    
 };
 
 const searchConfig = {
@@ -49,6 +51,7 @@ const searchConfig = {
     'services': {
         workspace: 'services',
         layers: [
+            'road_barriers', 'fuel_stations',
             'electrician', 'ac_technician', 'plumber', 'general_maintenance',
             'painter', 'carpenter', 'blacksmith', 'builder', 'aluminum_tech',  'glass_tech',
             'house_cleaner', 'gardener', 'car_mechanic', 'car_electrician', 

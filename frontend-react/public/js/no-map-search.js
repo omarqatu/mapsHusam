@@ -118,6 +118,7 @@ window.__nmsPageHandlesOwnAds = true;
         // ==========================================================================
         const iconMap = {
             'rentLayer': 'fa-home', 'saleLayer': 'fa-key', 'landLayer': 'fa-map',
+            'fuel_stations': 'fa-gas-pump', 'road_barriers': 'fa-signs-post',
             'electrician': 'fa-bolt', 'ac_technician': 'fa-snowflake', 'plumber': 'fa-faucet',
             'general_maintenance': 'fa-tools', 'painter': 'fa-paint-roller', 'carpenter': 'fa-hammer', 'Finisher': 'fa-palette',
             'blacksmith': 'fa-industry', 'builder': 'fa-hard-hat', 'house_cleaner': 'fa-broom',
@@ -142,9 +143,11 @@ window.__nmsPageHandlesOwnAds = true;
             // --- الطبقات الجديدة (6) ---
             'supermarket': 'fa-store', 'commercial_shops': 'fa-shop', 'restaurants': 'fa-utensils',
             'schools_kindergartens': 'fa-school', 'job_vacancies': 'fa-briefcase', 'city_landmarks': 'fa-landmark'
+            
         };
 
         const serviceNames = {
+            'road_barriers': 'حواجز الطرق', 'fuel_stations': 'محطات الوقود',
             'electrician': 'فني كهرباء', 'ac_technician': 'فني تكييف وتبريد', 'plumber': 'سباك (مواسيرجي)',
             'general_maintenance': 'صيانة عامة', 'painter': 'دهان/طراشة', 'Finisher': 'فني ديكور', 'carpenter': 'نجار',
             'blacksmith': 'حداد', 'builder': 'بناء ومعمار', 'house_cleaner': 'خدمات تنظيف', 'aluminum_tech': 'فني ألمنيوم', 'glass_tech': 'فني زجاج وسكريت',
@@ -168,6 +171,7 @@ window.__nmsPageHandlesOwnAds = true;
             // --- الطبقات الجديدة (6) ---
             'supermarket': 'سوبرماركت', 'commercial_shops': 'محلات تجارية', 'restaurants': 'مطاعم وكوفي شوبات',
             'schools_kindergartens': 'مدارس ورياض أطفال', 'job_vacancies': 'وظائف شاغرة', 'city_landmarks': 'معالم المدينة'
+            
         };
 
         const globalExclusions = [];
@@ -227,11 +231,12 @@ window.__nmsPageHandlesOwnAds = true;
             photographers: 'events',
 
             // 📦 متفرقات
-            online_stores: 'misc', free_distribution: 'misc',
+            online_stores: 'misc', free_distribution: 'misc', 'fuel_stations': 'misc', 'road_barriers': 'misc',
 
             // --- الطبقات الجديدة (6) ---
             supermarket: 'commercial', commercial_shops: 'commercial', restaurants: 'commercial',
-            schools_kindergartens: 'education', job_vacancies: 'jobs', city_landmarks: 'landmarks'
+            schools_kindergartens: 'education', job_vacancies: 'jobs', city_landmarks: 'landmarks',
+            fuel_stations: 'misc', road_barriers: 'misc',
         };
 
         const categories = [
@@ -985,7 +990,9 @@ window.__nmsPageHandlesOwnAds = true;
 
             features = features.slice().sort((a, b) => (parseFloat(b.properties.rating) || 0) - (parseFloat(a.properties.rating) || 0));
 
-            resultsListEl.innerHTML = '';
+                        resultsListEl.innerHTML = '';
+            const isRoadBarriers = currentCategory && currentCategory.key === 'road_barriersLayer';
+
             features.forEach((f, index) => {
                 const p = f.properties;
                 const coords = getFeatureCoords(f);
@@ -993,10 +1000,35 @@ window.__nmsPageHandlesOwnAds = true;
                 card.className = 'nms-result-card';
                 card.style.setProperty('--i', Math.min(index, 20));
 
+                // 🆕 حواجز الطرق: قالب مستقل بالكامل (حالة Stop + الاسم + زر الانتقال فقط)
+                if (isRoadBarriers) {
+                    const stopInfo = window.getRoadBarrierStopInfo(p.stop !== undefined ? p.stop : p.stop);
+                    let barrierHtml = `<div style="text-align:center; font-weight:bold; font-size:14px; color:${stopInfo.color}; border:1px dashed ${stopInfo.color}; border-radius:8px; padding:8px; margin-bottom:8px; background:${stopInfo.color}15;">${stopInfo.icon} ${stopInfo.label}</div>`;
+                    if (p.name) barrierHtml += `<div class="nms-r-name"><i class="fas fa-map-marker-alt"></i> ${sanitize(p.name)}</div>`;
+                    card.innerHTML = barrierHtml;
+
+                    if (coords) {
+                        const goBtn = document.createElement('button');
+                        goBtn.className = 'nms-goto-map-btn';
+                        goBtn.innerHTML = '<i class="fas fa-map-location-dot"></i> الانتقال إلى الخريطة';
+                        goBtn.onclick = () => {
+                            window.open(`/original-index.html?x=${coords[0].toFixed(3)}&y=${coords[1].toFixed(3)}`, '_blank');
+                        };
+                        card.appendChild(goBtn);
+                    }
+
+                    resultsListEl.appendChild(card);
+                    return; // تخطي بقية منطق الكرت القياسي (تقييم، وصف، اتصال...)
+                }
+
                 let html = '';
                 if (!isRealEstate) html += getStatusBadge(p.auto_status, p.work_hours);
                 if (p.name) html += `<div class="nms-r-name"><i class="fas fa-user"></i> ${sanitize(p.name)}</div>`;
                 if (p.location_name || p.location) html += `<div class="nms-r-loc"><i class="fas fa-map-marker-alt"></i> ${sanitize(p.location_name || p.location)}</div>`;
+
+                if (layerTitle === 'محطات الوقود') {
+                    html += window.buildFuelAvailabilityHtml(p);
+                }
 
                 // إضافة عرض النجوم للخدمات فقط
                 if (!isRealEstate) {
@@ -1175,7 +1207,9 @@ window.__nmsPageHandlesOwnAds = true;
             'دليفري سيارات (مناوبة)': 'car_delivery_on_call',
             'دليفري دراجات (مناوبة)': 'motorcycle_delivery_on_call',
             'دليفري هوائية (مناوبة)': 'bicycle_delivery_on_call',
-            'مساعد أبحاث طلاب': 'student_research_assist'
+            'مساعد أبحاث طلاب': 'student_research_assist',
+            'محطات الوقود': 'fuel_stations',
+            'حواجز الطرق': 'road_barriers'
         };
 
         // دالة جلب التقييمات لمزود خدمة معين

@@ -149,6 +149,18 @@ END;
 $$ LANGUAGE plpgsql;
 
 ثالثاً: تفعيل التريجر
+ربط اي طبقة جديدة مثل تريجرز طبقة الزجاج وسكريت
+CREATE TRIGGER trg_fuel_stations_auto 
+    BEFORE INSERT OR UPDATE ON public.fuel_stations 
+    FOR EACH ROW 
+    EXECUTE FUNCTION public.fn_process_glass_tech();
+
+مثال آخر
+CREATE TRIGGER trg_road_barriers_auto 
+    BEFORE INSERT OR UPDATE ON public.road_barriers 
+    FOR EACH ROW 
+    EXECUTE FUNCTION public.fn_process_glass_tech();
+
 نربط الدالة بالجدول لتعمل عند كل إدخال أو تحديث:
 CREATE TRIGGER trg_glass_tech_auto
 BEFORE INSERT OR UPDATE ON glass_tech

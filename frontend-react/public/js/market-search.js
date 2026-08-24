@@ -26,6 +26,8 @@ document.addEventListener('DOMContentLoaded', () => {
         'services': {
             workspace: 'services',
             layersMap: {
+                'fuel_stations': 'محطات الوقود',
+                'road_barriers': 'حواجز الطرق',
                 'electrician': 'فني كهرباء',
                 'ac_technician': 'فني تكييف وتبريد',
                 'plumber': 'سباك (مواسيرجي)',
@@ -390,6 +392,8 @@ if (typeof window.trackRequest !== 'function') {
 // خريطة تحويل الأسماء الإنجليزية للطبقات (لأن market-search يستخدم الأسماء الإنجليزية)
 if (typeof window.englishToArabicLayerMap !== 'object') {
     window.englishToArabicLayerMap = {
+        'fuel_stations': 'محطات الوقود',
+        'road_barriers': 'حواجز الطرق',
         'electrician': 'فني كهرباء',
         'ac_technician': 'فني تكييف وتبريد',
         'plumber': 'سباك (مواسيرجي)',

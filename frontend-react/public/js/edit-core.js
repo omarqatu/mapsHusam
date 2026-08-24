@@ -255,6 +255,7 @@ function initializeEditTools(map, overlayLayersObjParam) {
             .trim();
 
         const servicesMapping = {
+            'road_barriers': 'حواجز الطرق', 'fuel_stations': 'محطات الوقود',
             'electrician': 'فني كهرباء', 'ac_technician': 'فني تكييف وتبريد', 'plumber': 'سباك مواسيرجي',
             'general_maintenance': 'صيانة عامة', 'painter': 'دهان/طراشة', 'Finisher': 'فني ديكور', 'carpenter': 'نجار',
             'blacksmith': 'حداد', 'builder': 'بناء ومعمار', 'house_cleaner': 'خدمات تنظيف',
@@ -277,9 +278,12 @@ function initializeEditTools(map, overlayLayersObjParam) {
             'bicycle_delivery_on_call': 'دليفري هوائية مناوبة', 'photographers': 'مصور فوتوغرافي', 'student_research_assist': 'مساعد أبحاث طلاب',
             'supermarket': 'سوبرماركت', 'commercial_shops': 'محلات تجارية', 'restaurants': 'مطاعم وكوفي شوبات',
             'schools_kindergartens': 'مدارس ورياض أطفال', 'job_vacancies': 'وظائف شاغرة', 'city_landmarks': 'معالم المدينة'
+            
         };
 
         const customTagsMapping = {
+            'road_barriers': 'حواجز عسكرية، بوابات إسرائيلية، حاجز، بوابة، إغلاق، تفتيش، أزمة مرورية، أزمة، صف السيارات، حركة المرور، فتح الحاجز، حاجز مغلق، حاجز مفتوح، تدقيق، عسكر، معبر، حاجز طائر، طرق مغلقة، تحويلة، أمن، جندي، حواجز وطرق',
+            'fuel_stations': 'محطات وقود، بنزين، ديزل، غاز، محطات شحن سيارات، ,محطات الوقود, محطات خدمة',
             'electrician': 'تمديدات كهربائية، صيانة كهرباء، شورت، قواطع، إنارة، تمديد شبكات، بروجكترات، صيانة منزلية',
             'ac_technician': 'تكييف، تبريد، غاز فريون، تصليح مكيفات، مكيف، سنترال، غسالات، ثلاجات، فك وتركيب',
             'plumber': 'مواسير، حنفيات، تسريب مياه، تصريف، مضخات، فلاتر مياه، جيزر، حمامات، صيانة سباكة',
@@ -347,6 +351,7 @@ function initializeEditTools(map, overlayLayersObjParam) {
             'schools_kindergartens': 'مدارس، روضة أطفال، تعليم ابتدائي، تعليم ثانوي، حضانة، معاهد تعليمية',
             'job_vacancies': 'وظائف شاغرة، فرص عمل، توظيف، إعلانات وظائف، وظائف حكومية، وظائف خاصة',
             'city_landmarks': 'معالم المدينة، أماكن سياحية، مواقع تاريخية، معالم أثرية، مناطق جذب سياحي'
+            
         };
 
         if (cleanLayerKey === 'rentlayer' || cleanLayerKey === 'apartrent') {

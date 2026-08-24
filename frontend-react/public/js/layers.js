@@ -5,6 +5,8 @@
 // 1. تعريف ترجمات وأيقونات الخدمات (الـ 59 خدمة كاملة)
 const serviceTranslations = {
     // --- الخدمات القديمة (34) ---
+    'road_barriers': { name: 'حواجز الطرق', icon: '🚧' },
+    'fuel_stations': { name: 'محطات الوقود', icon: '⛽' },
     'electrician': { name: 'فني كهرباء', icon: '⚡' },
     'ac_technician': { name: 'فني تكييف وتبريد', icon: '❄️' },
     'plumber': { name: 'سباك (مواسيرجي)', icon: '🔧' },
@@ -67,13 +69,13 @@ const serviceTranslations = {
     'bicycle_delivery_on_call': { name: 'دليفري هوائية (مناوبة)', icon: '🚲' },
     'student_research_assist': { name: 'مساعد أبحاث طلاب', icon: '📚' },
 
-    // --- الطبقات الجديدة (6) ---
     'supermarket': { name: 'سوبرماركت', icon: '🏪' },
     'commercial_shops': { name: 'محلات تجارية', icon: '🏬' },
     'restaurants': { name: 'مطاعم وكوفي شوبات', icon: '🍽️' },
     'schools_kindergartens': { name: 'مدارس ورياض أطفال', icon: '🏫' },
     'job_vacancies': { name: 'وظائف شاغرة', icon: '💼' },
     'city_landmarks': { name: 'معالم المدينة', icon: '🏛️' }
+
 };
 
 // جعل serviceTranslations متاحة عالمياً للاستخدام في ملفات أخرى (مثل quick-search.js)
@@ -349,9 +351,28 @@ if (MAP_CONFIG && MAP_CONFIG.globalExclusions) {
             labelField: 'name', 
             zoomThresholdForLabel: 0.7 
         });
-        window.appLayers[key + 'Layer'] = createWFSLayer('services', key, info.name, sStyle, 1, true, 30); 
-        //                                                                              ↑
-        //                                                              التحكم بزووم ظهور معالم الخدمات maxResolution
+
+        // 1. المجموعات الأولى: تظهر على طول الخريطة (بدون قيود زووم)
+        const alwaysVisibleLayers = [
+            'road_barriers', 'fuel_stations', 'job_vacancies'
+        ];
+
+        // 2. المجموعات الثانية: تظهر عند مقياس متوسط (5)
+        const mediumZoomLayers = [
+             'schools_kindergartens' , 'city_landmarks'
+        ];
+
+        // 3. تحديد قيمة مقياس الظهور (maxResolution) حسب القائمة
+        let layerMaxRes = 1; // القيمة الافتراضية لباقي الخدمات القديمة
+        
+        if (alwaysVisibleLayers.includes(key)) {
+            layerMaxRes = 5000; // ظهور دائم على كل المقاييس
+        } else if (mediumZoomLayers.includes(key)) {
+            layerMaxRes = 5;    // ظهور عند مقياس 5
+        }
+
+        // تمرير القيمة المحسوبة للدالة
+        window.appLayers[key + 'Layer'] = createWFSLayer('services', key, info.name, sStyle, layerMaxRes, true, 30); 
     });
 }
 

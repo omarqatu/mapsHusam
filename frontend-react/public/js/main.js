@@ -202,7 +202,7 @@ window.initMapPlatform = function () {
                 const isRoad = key.toLowerCase().includes('road') || title.includes('طرق') || title.includes('شوارع');
                 const isInternalSearch = key.toLowerCase().includes('search') || key.toLowerCase().includes('highlight');
 
-                if (isRoad) lyr.setVisible(false);
+                if (isRoad) lyr.setVisible(true);
                 else if (isInternalSearch) lyr.setVisible(true);
                 else lyr.setVisible(true);
 

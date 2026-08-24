@@ -153,3 +153,59 @@ window.isFeatureLinkedToProvider = function (layerDbName, featureId) {
         document.addEventListener('DOMContentLoaded', startProviderLinksPolling);
     }
 })();
+
+// ==========================================================================
+// 6) [حواجز الطرق]: ترجمة قيمة عمود Stop الرقمية إلى نص ولون موحّد، تُستخدم
+//    من popup.js (البوب أب بالخريطة) و no-map-search.js (صفحة البحث بدون خريطة)
+//    حتى لا يتكرر نفس المنطق بمكانين. القيم: 0 مفتوح، 1 مغلق، 2 أزمة خفيفة،
+//    3 أزمة خانقة، 4 تفتيش.
+// ==========================================================================
+window.getCaseInsensitiveProp = function (obj, keyName) {
+    if (!obj) return undefined;
+    if (obj[keyName] !== undefined) return obj[keyName];
+    const foundKey = Object.keys(obj).find(k => k.toLowerCase() === keyName.toLowerCase());
+    return foundKey !== undefined ? obj[foundKey] : undefined;
+};
+
+window.getRoadBarrierStopInfo = function (rawStopValue) {
+    const val = parseInt(rawStopValue, 10);
+    const map = {
+        0: { label: 'مفتوح',      color: '#28a745', icon: '🟢' }, // أخضر
+        1: { label: 'مغلق',       color: '#dc3545', icon: '🔴' }, // أحمر
+        2: { label: 'أزمة خفيفة', color: '#f39c12', icon: '🟠' }, // برتقالي
+        3: { label: 'أزمة خانقة', color: '#8b0000', icon: '🟤' }, // أحمر داكن
+        4: { label: 'تفتيش',      color: '#6f42c1', icon: '🟣' }  // بنفسجي
+    };
+    return map[val] || { label: 'غير معروف', color: '#6c757d', icon: '⚪' };
+};
+
+// ==========================================================================
+// 7) [محطات الوقود]: عرض توفر ديزل/بنزين95/بنزين98 كصفوف ملوّنة تحت الاسم.
+//    القيمة 0 = متوفر (أخضر ✔️)، أي قيمة غير 0 (عادة 1) = غير متوفر (أحمر ❌).
+//    تُستخدم من popup.js (البوب أب بالخريطة) و no-map-search.js.
+// ==========================================================================
+window.getFuelAvailabilityInfo = function (rawValue) {
+    const val = parseInt(rawValue, 10);
+    if (val === 0) {
+        return { color: '#28a745', icon: '✔️' }; // أخضر
+    }
+    return { color: '#dc3545', icon: '❌' }; // أحمر
+};
+
+window.buildFuelAvailabilityHtml = function (props) {
+    const fuels = [
+        { key: 'diesel',   label: 'ديزل' },
+        { key: 'banzen95', label: 'بنزين 95' },
+        { key: 'banzen98', label: 'بنزين 98' }
+    ];
+    let html = '<div style="display:flex; flex-direction:column; gap:5px; margin:8px 0;">';
+    fuels.forEach(f => {
+        const rawVal = window.getCaseInsensitiveProp(props, f.key);
+        const info = window.getFuelAvailabilityInfo(rawVal);
+        html += `<div style="display:flex; align-items:center; gap:8px; font-size:13px; font-weight:bold; color:${info.color};">
+            <span>${info.icon}</span><span>${f.label}</span>
+        </div>`;
+    });
+    html += '</div>';
+    return html;
+};

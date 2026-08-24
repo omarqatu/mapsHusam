@@ -323,6 +323,7 @@ app.use((err, req, res, next) => {
 // [إجراء أمني 1]: قائمة بيضاء للطبقات المسموح بالوصول إليها والتعديل عليها (تشمل كافة الخدمات والعقارات الفعالة)
 const ALLOWED_LAYERS = [
     // --- طبقات الخدمات التفاعلية ---
+    'road_barriers', 'fuel_stations',
     'city_landmarks', 'supermarket', 'commercial_shops', 'restaurants', 'schools_kindergartens', 'job_vacancies', 
     'electrician', 'ac_technician', 'plumber', 'general_maintenance', 'painter', 'carpenter', 
     'blacksmith', 'builder', 'house_cleaner', 'aluminum_tech', 'glass_tech', 'car_mechanic', 'car_electrician', 
@@ -335,6 +336,7 @@ const ALLOWED_LAYERS = [
     'doctors_on_call', 'ambulances_on_call', 'music_training', 'lawyers', 'land_surveyors', 
     'real_estate_valuers', 'private_tutors', 'programmers', 'car_delivery_on_call', 
     'motorcycle_delivery_on_call', 'bicycle_delivery_on_call', 'photographers', 'student_research_assist',
+     
 
     // --- طبقات العقارات والمواقع الفعالة ---
     'ApartRent', 'ApartSale', 'LandSale', 'Location', 'RoadsTest'
@@ -1333,8 +1335,8 @@ app.get('/api/search-features', async (req, res) => {
                 geometry = JSON.parse(row.geom_json);
             } else {
                 // للنقاط: استخدام x_coord و y_coord أولاً
-                let xVal = row.x_coord;
-                let yVal = row.y_coord;
+                let xVal = (row.x_coord !== null && row.x_coord !== undefined) ? Number(row.x_coord) : null;
+                let yVal = (row.y_coord !== null && row.y_coord !== undefined) ? Number(row.y_coord) : null;
 
                 // 🆕 [إصلاح]: بعض الطبقات (مثل المُضافة حديثاً عبر استيراد مباشر
                 // لقاعدة البيانات بدل نموذج الإضافة بالتطبيق) قد تملك عمود geom
