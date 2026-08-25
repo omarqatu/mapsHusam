@@ -231,9 +231,11 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         try {
-            const promises = Object.keys(searchConfig).map(group => fetchGroupWFSForPage(group, term));
+            const promises = Object.keys(searchConfig).map(group => fetchGroupWFS(group, term));
+            // 🆕 دمج نتائج البحث بالكلمات الدلالية الخاصة (حالة الحاجز / توفر الوقود)
+            promises.push(window.fetchSpecialStatusMatches(term));
             const resultsArray = await Promise.all(promises);
-            let allResults = resultsArray.flat();
+            const allResults = resultsArray.flat();
 
             const uniqueMap = new Map();
             allResults.forEach(item => {

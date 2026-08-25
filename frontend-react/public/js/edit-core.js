@@ -194,8 +194,31 @@ function initializeEditTools(map, overlayLayersObjParam) {
         attributeModal.style.padding = '20px';
         attributeModal.style.boxShadow = '0 4px 20px rgba(0,0,0,0.4)';
         
-        const isRealEstate = realEstateLayers.some(layer => selectedLayerName.includes(layer));
-        const activeFields = isRealEstate ? fieldsRealEstate : fieldsServices;
+                const isRealEstate = realEstateLayers.some(layer => selectedLayerName.includes(layer));
+        let activeFields = isRealEstate ? fieldsRealEstate : fieldsServices;
+
+        // 🆕 حقول إضافية حسب الطبقة: حالة الحاجز لحواجز الطرق، وتوفر الوقود لمحطات الوقود
+        if (selectedLayerName === 'road_barriersLayer') {
+            activeFields = activeFields.concat([
+                { name: 'stop', label: 'حالة الحاجز', type: 'select', options: [
+                    { value: '0', label: '🟢 مفتوح' },
+                    { value: '1', label: '🔴 مغلق' },
+                    { value: '2', label: '🟠 أزمة خفيفة' },
+                    { value: '3', label: '🟤 أزمة خانقة' },
+                    { value: '4', label: '🟣 تفتيش وأزمة خانقة' }
+                ]}
+            ]);
+        } else if (selectedLayerName === 'fuel_stationsLayer') {
+            const fuelOptions = [
+                { value: '0', label: '✔️ متوفر' },
+                { value: '1', label: '❌ غير متوفر' }
+            ];
+            activeFields = activeFields.concat([
+                { name: 'diesel', label: 'ديزل (سولار)', type: 'select', options: fuelOptions },
+                { name: 'banzen95', label: 'بنزين 95', type: 'select', options: fuelOptions },
+                { name: 'banzen98', label: 'بنزين 98', type: 'select', options: fuelOptions }
+            ]);
+        }
 
         activeFields.forEach(f => {
             const div = document.createElement('div');
@@ -239,8 +262,19 @@ function initializeEditTools(map, overlayLayersObjParam) {
         if (!currentFeature) return;
 
         const formData = new FormData(attributeForm);
-        const isRealEstate = realEstateLayers.some(layer => selectedLayerName.includes(layer));
-        const activeFields = isRealEstate ? fieldsRealEstate : fieldsServices;
+                const isRealEstate = realEstateLayers.some(layer => selectedLayerName.includes(layer));
+        let activeFields = isRealEstate ? fieldsRealEstate : fieldsServices;
+
+        if (selectedLayerName === 'road_barriersLayer') {
+            activeFields = activeFields.concat([{ name: 'stop', label: 'حالة الحاجز', type: 'select' }]);
+        } else if (selectedLayerName === 'fuel_stationsLayer') {
+            activeFields = activeFields.concat([
+                { name: 'diesel', label: 'ديزل (سولار)', type: 'select' },
+                { name: 'banzen95', label: 'بنزين 95', type: 'select' },
+                { name: 'banzen98', label: 'بنزين 98', type: 'select' }
+            ]);
+        }
+
         featureProperties = {};
 
         activeFields.forEach(f => {

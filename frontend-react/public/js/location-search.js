@@ -12,6 +12,85 @@ function initializeLocationSearch(map, overlayLayersObj) {
     
     const printResultsBtn = document.getElementById('print-location-results');
 
+    // 🆕 حاوية فلتر إضافي تظهر فقط لطبقتي حواجز الطرق ومحطات الوقود
+    // (حالة الحاجز / توفر الوقود)، تُبنى ديناميكياً بعد قائمة اختيار الطبقة
+    let extraFilterContainer = document.getElementById('location-extra-filter-container');
+    if (!extraFilterContainer && searchLayerSelect && searchLayerSelect.parentElement) {
+        extraFilterContainer = document.createElement('div');
+        extraFilterContainer.id = 'location-extra-filter-container';
+        extraFilterContainer.style.display = 'none';
+        extraFilterContainer.style.marginTop = '8px';
+        searchLayerSelect.parentElement.insertBefore(extraFilterContainer, searchLayerSelect.nextSibling);
+    }
+
+    const ROAD_STOP_OPTIONS = [
+        { value: '0', label: '🟢 مفتوح' },
+        { value: '1', label: '🔴 مغلق' },
+        { value: '2', label: '🟠 أزمة خفيفة' },
+        { value: '3', label: '🟤 أزمة خانقة' },
+        { value: '4', label: '🟣 تفتيش وأزمة خانقة' }
+    ];
+    const FUEL_AVAILABILITY_OPTIONS = [
+        { value: '0', label: '✔️ متوفر' },
+        { value: '1', label: '❌ غير متوفر' }
+    ];
+
+    function renderExtraFilterUI() {
+        if (!extraFilterContainer) return;
+        const layerKey = searchLayerSelect.value;
+        extraFilterContainer.innerHTML = '';
+
+        if (layerKey === 'road_barriersLayer') {
+            extraFilterContainer.style.display = 'block';
+            const label = document.createElement('label');
+            label.textContent = 'حالة الحاجز (اختياري):';
+            const select = document.createElement('select');
+            select.id = 'location-stop-filter';
+            select.innerHTML = '<option value="">-- كل الحالات --</option>' +
+                ROAD_STOP_OPTIONS.map(o => `<option value="${o.value}">${o.label}</option>`).join('');
+            extraFilterContainer.appendChild(label);
+            extraFilterContainer.appendChild(select);
+        } else if (layerKey === 'fuel_stationsLayer') {
+            extraFilterContainer.style.display = 'block';
+            [
+                { id: 'diesel', name: 'ديزل (سولار)' },
+                { id: 'banzen95', name: 'بنزين 95' },
+                { id: 'banzen98', name: 'بنزين 98' }
+            ].forEach(f => {
+                const label = document.createElement('label');
+                label.textContent = `${f.name} (اختياري):`;
+                label.style.marginTop = '6px';
+                const select = document.createElement('select');
+                select.id = 'location-fuel-filter-' + f.id;
+                select.innerHTML = '<option value="">-- بدون شرط --</option>' +
+                    FUEL_AVAILABILITY_OPTIONS.map(o => `<option value="${o.value}">${o.label}</option>`).join('');
+                extraFilterContainer.appendChild(label);
+                extraFilterContainer.appendChild(select);
+            });
+        } else {
+            extraFilterContainer.style.display = 'none';
+        }
+    }
+
+    if (searchLayerSelect) searchLayerSelect.addEventListener('change', renderExtraFilterUI);
+
+    function applyExtraFilters(features, layerKey) {
+        if (layerKey === 'road_barriersLayer') {
+            const sel = document.getElementById('location-stop-filter');
+            const val = sel ? sel.value : '';
+            if (val !== '') return features.filter(f => String(f.get('stop')) === val);
+        } else if (layerKey === 'fuel_stationsLayer') {
+            let filtered = features;
+            ['diesel', 'banzen95', 'banzen98'].forEach(fid => {
+                const sel = document.getElementById('location-fuel-filter-' + fid);
+                const val = sel ? sel.value : '';
+                if (val !== '') filtered = filtered.filter(f => String(f.get(fid)) === val);
+            });
+            return filtered;
+        }
+        return features;
+    }
+
     let searchCenterLocation = null;
     let mapClickListenerKey = null;
 
@@ -24,16 +103,18 @@ function initializeLocationSearch(map, overlayLayersObj) {
         return Math.sqrt(dx * dx + dy * dy);
     }
 
-    window.populateSearchLayerSelect = function() {
+        window.populateSearchLayerSelect = function() {
         if (!searchLayerSelect) return;
         searchLayerSelect.innerHTML = '<option value="">-- اختر الخدمة أو العقار --</option>';
-        const excluded = ['المدن', 'المحافظات', 'الطرق', 'المناطق', 'city', 'gov', 'road', 'locationLayer'];
+        // 🆕 مطابقة دقيقة (Exact) وليس substring، لنفس سبب مشكلة "حواجز الطرق" بملف search.js
+        const excludedTitles = ['المدن', 'المحافظات', 'الطرق', 'المناطق'];
+        const excludedKeys = ['cityLayer', 'governorateLayer', 'roadsLayer', 'locationLayer'];
         const globalExcludedKeys = MAP_CONFIG.globalExclusions || [];
 
         Object.keys(overlayLayersObj).forEach(key => {
             const lyr = overlayLayersObj[key];
             const title = lyr.get('title') || '';
-            const isExcluded = excluded.some(word => title.includes(word)) || globalExcludedKeys.includes(key.replace('Layer', ''));
+            const isExcluded = excludedTitles.includes(title) || excludedKeys.includes(key) || globalExcludedKeys.includes(key.replace('Layer', ''));
 
             if (title && !key.toLowerCase().includes('search') && !isExcluded) { // تم دمج شرط الاستثناءات
                 const option = document.createElement('option');
@@ -76,7 +157,7 @@ function initializeLocationSearch(map, overlayLayersObj) {
         });
     });
 
-    clearLocationSearchBtn?.addEventListener('click', () => {
+        clearLocationSearchBtn?.addEventListener('click', () => {
         searchCenterLocation = null;
         searchMarkerSource?.clear();
         searchResultsHighlightSource?.clear();
@@ -84,6 +165,7 @@ function initializeLocationSearch(map, overlayLayersObj) {
         selectedLocationDisplay.style.color = "gray";
         searchRadiusInput.value = "500";
         searchLayerSelect.value = "";
+        renderExtraFilterUI();
         resultsPanel?.classList.add('hidden');
         if (mapClickListenerKey) ol.Observable.unByKey(mapClickListenerKey);
         
@@ -169,6 +251,9 @@ function initializeLocationSearch(map, overlayLayersObj) {
                 }
             }
 
+                        // 🆕 تطبيق فلتر حالة الحاجز / توفر الوقود (إن وُجد) فوق نتائج البحث المكاني
+            nearby = applyExtraFilters(nearby, selectedLayerKey);
+
             if (nearby.length > 0) {
                 searchResultsHighlightSource?.addFeatures(nearby);
                 displayResults(nearby, overlayLayersObj[selectedLayerKey]);
@@ -216,6 +301,9 @@ function initializeLocationSearch(map, overlayLayersObj) {
                     });
                 }
             }
+
+            // 🆕 تطبيق فلتر حالة الحاجز / توفر الوقود أيضاً في مسار البحث المحلي الاحتياطي
+            nearby = applyExtraFilters(nearby, selectedLayerKey);
 
             if (nearby.length > 0) {
                 searchResultsHighlightSource?.addFeatures(nearby);

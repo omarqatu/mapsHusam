@@ -586,7 +586,7 @@
 
         console.log('Setting up portal modal:', { expandBtn, modal, overlay, closeBtn, refreshBtn });
 
-        if (expandBtn && modal && overlay) {
+                if (expandBtn && modal && overlay) {
             expandBtn.addEventListener('click', function(e) {
                 e.preventDefault();
                 e.stopPropagation();
@@ -597,6 +597,38 @@
             });
         } else {
             console.error('Missing elements:', { expandBtn, modal, overlay });
+        }
+
+        // 🆕 فتح البوابة مباشرة عند بطاقة معينة (لزري "حالة الطرق" و"حالة
+        // محطات الوقود" أعلى الخريطة، وأيضاً من تبويبة الرئيسية بالموبايل)
+        window.openWidgetsPortalToCard = function (targetCardId) {
+            if (modal && overlay) {
+                modal.classList.add('active');
+                overlay.classList.add('active');
+            }
+            loadPortalContent();
+            setTimeout(function () {
+                const targetEl = document.getElementById(targetCardId);
+                if (targetEl && typeof targetEl.scrollIntoView === 'function') {
+                    targetEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }
+            }, 400);
+        };
+
+        const roadStatusBtn = document.getElementById('btn-open-road-status');
+        if (roadStatusBtn) {
+            roadStatusBtn.addEventListener('click', function (e) {
+                e.preventDefault();
+                window.openWidgetsPortalToCard('portal-road-status-card');
+            });
+        }
+
+        const fuelStatusBtn = document.getElementById('btn-open-fuel-status');
+        if (fuelStatusBtn) {
+            fuelStatusBtn.addEventListener('click', function (e) {
+                e.preventDefault();
+                window.openWidgetsPortalToCard('portal-fuel-status-card');
+            });
         }
 
         if (closeBtn && modal && overlay) {

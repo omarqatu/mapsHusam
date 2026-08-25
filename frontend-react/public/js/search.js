@@ -77,7 +77,7 @@
         container.appendChild(wrap);
     }
 
-    const fieldsConfig = {
+        const fieldsConfig = {
         realEstate: [
             { id: 'gov_a', name: 'المحافظة', type: 'dropdown' },
             { id: 'village_a', name: 'المدينة/القرية', type: 'dropdown' },
@@ -95,6 +95,39 @@
             { id: 'village_a', name: 'المدينة/القرية', type: 'dropdown' },
             { id: 'location_name', name: 'الموقع', type: 'dropdown' },
             { id: 'name', name: 'الاسم', type: 'dropdown' }
+        ],
+        // 🆕 حقول خاصة بطبقة حواجز الطرق: بحث حسب حالة الحاجز (عمود stop)
+        roadBarriers: [
+            { id: 'gov_a', name: 'المحافظة', type: 'dropdown' },
+            { id: 'village_a', name: 'المدينة/القرية', type: 'dropdown' },
+            { id: 'location_name', name: 'الموقع', type: 'dropdown' },
+            { id: 'name', name: 'اسم الحاجز', type: 'dropdown' },
+            { id: 'stop', name: 'حالة الحاجز', type: 'fixedSelect', options: [
+                { value: '0', label: '🟢 مفتوح' },
+                { value: '1', label: '🔴 مغلق' },
+                { value: '2', label: '🟠 أزمة خفيفة' },
+                { value: '3', label: '🟤 أزمة خانقة' },
+                { value: '4', label: '🟣 تفتيش وأزمة خانقة' }
+            ]}
+        ],
+        // 🆕 حقول خاصة بطبقة محطات الوقود: بحث حسب توفر كل نوع وقود
+        fuelStations: [
+            { id: 'gov_a', name: 'المحافظة', type: 'dropdown' },
+            { id: 'village_a', name: 'المدينة/القرية', type: 'dropdown' },
+            { id: 'location_name', name: 'الموقع', type: 'dropdown' },
+            { id: 'name', name: 'اسم المحطة', type: 'dropdown' },
+            { id: 'diesel', name: 'ديزل (سولار)', type: 'fixedSelect', options: [
+                { value: '0', label: '✔️ متوفر' },
+                { value: '1', label: '❌ غير متوفر' }
+            ]},
+            { id: 'banzen95', name: 'بنزين 95', type: 'fixedSelect', options: [
+                { value: '0', label: '✔️ متوفر' },
+                { value: '1', label: '❌ غير متوفر' }
+            ]},
+            { id: 'banzen98', name: 'بنزين 98', type: 'fixedSelect', options: [
+                { value: '0', label: '✔️ متوفر' },
+                { value: '1', label: '❌ غير متوفر' }
+            ]}
         ]
     };
 
@@ -312,11 +345,53 @@
         }
     }
 
+    
+
+        // 🆕 بناء قائمة اختيار ثابتة (بدون استعلام سيرفر) لحقول مثل حالة الحاجز
+    // أو توفر الوقود، لأن القيم معروفة ومحدودة سلفاً
+    function buildFixedSelectUI(fieldDef) {
+        if (!valueInputContainer) return;
+        valueInputContainer.innerHTML = '';
+        const select = document.createElement('select');
+        select.id = 'value-input';
+        select.className = 'search-input-field';
+        Object.assign(select.style, {
+            width: "100%", padding: "10px", border: "1px solid #ccc",
+            borderRadius: "4px", backgroundColor: "#fff", fontSize: "14px", minHeight: "40px"
+        });
+        const defaultOpt = document.createElement('option');
+        defaultOpt.value = '';
+        defaultOpt.textContent = '-- اختر قيمة --';
+        select.appendChild(defaultOpt);
+        (fieldDef.options || []).forEach(opt => {
+            const o = document.createElement('option');
+            o.value = opt.value;
+            o.textContent = opt.label;
+            select.appendChild(o);
+        });
+        valueInputContainer.appendChild(select);
+    }
+
+    function findFieldDefinition(layerKey, fieldId) {
+        let fields;
+        if (['rentLayer', 'saleLayer', 'landLayer'].includes(layerKey)) fields = fieldsConfig.realEstate;
+        else if (layerKey === 'locationLayer') fields = fieldsConfig.locationLayer;
+        else if (layerKey === 'road_barriersLayer') fields = fieldsConfig.roadBarriers;
+        else if (layerKey === 'fuel_stationsLayer') fields = fieldsConfig.fuelStations;
+        else fields = fieldsConfig.services;
+        return (fields || []).find(f => f.id === fieldId);
+    }
+
     function updateValueUI() {
         const fieldId = fieldSelect.value;
         const layerKey = layerSelect.value;
         if (!fieldId || !layerKey) {
             if (valueInputContainer) valueInputContainer.innerHTML = '';
+            return;
+        }
+        const fieldDef = findFieldDefinition(layerKey, fieldId);
+        if (fieldDef && fieldDef.type === 'fixedSelect') {
+            buildFixedSelectUI(fieldDef);
             return;
         }
         getUniqueValues(layerKey, fieldId);
@@ -416,9 +491,12 @@
         conditionsContainer = document.getElementById('search-conditions'); 
         highlightLayer = overlayLayersObj.searchResultsHighlightLayer;
 
-        if (layerSelect) {
+                if (layerSelect) {
             layerSelect.innerHTML = '<option value="">-- اختر الطبقة للبحث --</option>';
-            const excluded = ['المدن', 'المحافظات', 'الطرق', 'المناطق', 'city', 'gov', 'road', 'locationLayer'];
+            // 🆕 مطابقة دقيقة (Exact) وليس substring، لأن "حواجز الطرق" كانت تُستبعد
+            // بالخطأ بسبب احتوائها على كلمة "الطرق" المخصصة لاستبعاد طبقة roadsLayer فقط
+            const excludedTitles = ['المدن', 'المحافظات', 'الطرق', 'المناطق'];
+            const excludedKeys = ['cityLayer', 'governorateLayer', 'roadsLayer', 'locationLayer'];
             const globalExcludedKeys = MAP_CONFIG.globalExclusions || [];
 
             Object.keys(overlayLayersObj).forEach(key => {
@@ -426,11 +504,11 @@
                 const title = lyr?.get('title') || '';
 
                 // التحقق من الاستثناءات باستخدام المفتاح الأساسي للطبقة (مثل 'rentLayer' أو 'electrician')
-                if (title && !key.toLowerCase().includes('search') && !excluded.some(word => title.includes(word)) && !globalExcludedKeys.includes(key.replace('Layer', ''))) {
+                if (title && !key.toLowerCase().includes('search') && !excludedTitles.includes(title) && !excludedKeys.includes(key) && !globalExcludedKeys.includes(key.replace('Layer', ''))) {
                     layerSelect.innerHTML += `<option value="${key}">${title}</option>`;
                 }
             });
-            layerSelect.onchange = () => {
+                        layerSelect.onchange = () => {
                 const layerKey = layerSelect.value;
                 if (!layerKey) {
                     fieldSelect.innerHTML = '<option value="">-- اختر الحقل --</option>';
@@ -439,8 +517,19 @@
                     renderConditions();
                     return;
                 }
-                let fields = ['rentLayer', 'saleLayer', 'landLayer'].includes(layerKey) ? fieldsConfig.realEstate : 
-                             (layerKey === 'locationLayer' ? fieldsConfig.locationLayer : fieldsConfig.services);
+                // 🆕 حقول مخصصة لطبقتي حواجز الطرق ومحطات الوقود
+                let fields;
+                if (['rentLayer', 'saleLayer', 'landLayer'].includes(layerKey)) {
+                    fields = fieldsConfig.realEstate;
+                } else if (layerKey === 'locationLayer') {
+                    fields = fieldsConfig.locationLayer;
+                } else if (layerKey === 'road_barriersLayer') {
+                    fields = fieldsConfig.roadBarriers;
+                } else if (layerKey === 'fuel_stationsLayer') {
+                    fields = fieldsConfig.fuelStations;
+                } else {
+                    fields = fieldsConfig.services;
+                }
                 fieldSelect.innerHTML = fields.map(f => `<option value="${f.id}">${f.name}</option>`).join('');
                 conditions = []; 
                 renderConditions();

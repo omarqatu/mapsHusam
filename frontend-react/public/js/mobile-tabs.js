@@ -112,15 +112,39 @@
         tabContent = document.createElement('div');
         tabContent.id = 'mobile-tab-content';
 
-        tabHome = document.createElement('div');
+                tabHome = document.createElement('div');
         tabHome.id = 'mobile-tab-home';
         tabHome.innerHTML =
             '<div class="mth-icon">📊</div>' +
             '<div class="mth-title">إحصائيات المنصة</div>' +
             '<div class="pstats-wrap pstats-mobile-home" data-platform-stats-target></div>' +
-            '<a href="/no-map-search.html" target="_blank" style="display:inline-flex; align-items:center; gap:8px; margin-top:16px; background:linear-gradient(135deg,#28a745,#20c997); color:#fff; padding:12px 20px; border-radius:25px; text-decoration:none; font-size:14px; font-weight:600; box-shadow:0 4px 15px rgba(40,167,69,0.3); border:2px solid #fff; white-space:nowrap;"><i class="fas fa-list"></i> الانتقال إلى البحث بدون خريطة</a>';
+            '<a href="/no-map-search.html" target="_blank" style="display:inline-flex; align-items:center; gap:8px; margin-top:16px; background:linear-gradient(135deg,#28a745,#20c997); color:#fff; padding:12px 20px; border-radius:25px; text-decoration:none; font-size:14px; font-weight:600; box-shadow:0 4px 15px rgba(40,167,69,0.3); border:2px solid #fff; white-space:nowrap;"><i class="fas fa-list"></i> الانتقال إلى البحث بدون خريطة</a>' +
+            // 🆕 زرا حالة الطرق وحالة محطات الوقود - نسخة الموبايل/التابلت
+            '<button type="button" id="mobile-btn-open-road-status" style="display:inline-flex; align-items:center; justify-content:center; gap:8px; margin-top:10px; background:linear-gradient(135deg,#e67e22,#d35400); color:#fff; padding:12px 20px; border-radius:25px; font-size:14px; font-weight:600; box-shadow:0 4px 15px rgba(230,126,34,0.3); border:2px solid #fff; white-space:nowrap; cursor:pointer;"><i class="fas fa-road"></i> حالة الطرق</button>' +
+            '<button type="button" id="mobile-btn-open-fuel-status" style="display:inline-flex; align-items:center; justify-content:center; gap:8px; margin-top:10px; background:linear-gradient(135deg,#2980b9,#1a5276); color:#fff; padding:12px 20px; border-radius:25px; font-size:14px; font-weight:600; box-shadow:0 4px 15px rgba(41,128,185,0.3); border:2px solid #fff; white-space:nowrap; cursor:pointer;"><i class="fas fa-gas-pump"></i> حالة محطات الوقود</button>';
 
         tabContent.appendChild(tabHome);
+
+                // 🆕 ربط الزرّين بفتح البوابة التفصيلية مباشرة عند البطاقة المطلوبة
+        // ⚠️ إصلاح: tabHome لم يُلحق بعد فعلياً بـ document بهذه المرحلة، لذلك
+        // document.getElementById كان يرجع null دائماً. نستخدم tabHome.querySelector
+        // لأنه يعمل حتى على شجرة DOM منفصلة (detached) لم تُلحق بالمستند بعد
+        const mobileRoadBtn = tabHome.querySelector('#mobile-btn-open-road-status');
+        if (mobileRoadBtn) {
+            mobileRoadBtn.addEventListener('click', safe(function () {
+                if (typeof window.openWidgetsPortalToCard === 'function') {
+                    window.openWidgetsPortalToCard('portal-road-status-card');
+                }
+            }));
+        }
+        const mobileFuelBtn = tabHome.querySelector('#mobile-btn-open-fuel-status');
+        if (mobileFuelBtn) {
+            mobileFuelBtn.addEventListener('click', safe(function () {
+                if (typeof window.openWidgetsPortalToCard === 'function') {
+                    window.openWidgetsPortalToCard('portal-fuel-status-card');
+                }
+            }));
+        }
 
         tabArea.appendChild(header);
         tabArea.appendChild(tabContent);

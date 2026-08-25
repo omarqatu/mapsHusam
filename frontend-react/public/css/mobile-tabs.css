@@ -411,6 +411,13 @@ body.mobile-tabs-landscape #close-nearby-panel {
     display: none !important;
 }
 
+/* 🆕 إخفاء أزرار "البحث بدون خريطة" و"حالة الطرق" و"حالة محطات الوقود" فوق
+   الخريطة على الموبايل والتابلت فقط - النسخة الفعّالة أصبحت داخل تبويبة الرئيسية */
+body.mobile-tabs-portrait .desktop-only-search-btn,
+body.mobile-tabs-landscape .desktop-only-search-btn {
+    display: none !important;
+}
+
 /* ==========================================================================
    🆕 إصلاح موقع مربع الإحداثيات (#coordinates) على الموبايل: نفرض
    position:fixed بدل absolute (الموروثة من style.css) لضمان ارتباطه

@@ -226,6 +226,84 @@ window.fetchGroupWFS = async function(groupKey, term) {
     return allFeatures;
 }
 
+// ==========================================================================
+// 🆕 بحث بالكلمات الدلالية الخاصة بحالة حواجز الطرق وتوفر أنواع الوقود
+// ==========================================================================
+const ROAD_BARRIER_STATUS_KEYWORDS = {
+    'مفتوح': ['0'],
+    'مغلق': ['1'],
+    'ازمة خفيفة': ['2'], 'أزمة خفيفة': ['2'],
+    'ازمة خانقة': ['3'], 'أزمة خانقة': ['3'],
+    'تفتيش': ['4'],
+    'ازمة': ['2', '3', '4'], 'أزمة': ['2', '3', '4'],
+    'حاجز': ['0', '1', '2', '3', '4'], 'حواجز': ['0', '1', '2', '3', '4']
+};
+
+const FUEL_AVAILABILITY_KEYWORDS = {
+    'ديزل': 'diesel', 'سولار': 'diesel',
+    'بنزين 95': 'banzen95', 'بنزين95': 'banzen95',
+    'بنزين 98': 'banzen98', 'بنزين98': 'banzen98'
+};
+
+window.fetchSpecialStatusMatches = async function(term) {
+    const results = [];
+    if (!term || term.trim() === '') return results;
+    const normalized = normalizeArabic(term.trim());
+    const baseUrl = window.MAP_CONFIG?.server?.proxyUrl || (window.location.origin + "/");
+
+    let matchedStops = null;
+    Object.keys(ROAD_BARRIER_STATUS_KEYWORDS).forEach(keyword => {
+        if (normalized.includes(normalizeArabic(keyword))) matchedStops = ROAD_BARRIER_STATUS_KEYWORDS[keyword];
+    });
+
+    if (matchedStops) {
+        for (const stopVal of matchedStops) {
+            try {
+                const params = new URLSearchParams({
+                    layer: 'road_barriers', workspace: 'services',
+                    field_0: 'stop', operator_0: '=', value_0: stopVal, conditions_count: '1'
+                });
+                const response = await fetch(`${baseUrl}api/search-features?${params.toString()}`);
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data && data.features) {
+                        const stopInfo = window.getRoadBarrierStopInfo ? window.getRoadBarrierStopInfo(stopVal) : { label: 'حاجز طرق' };
+                        data.features.forEach(f => {
+                            results.push({ ...f, customTitle: `حواجز الطرق - ${stopInfo.label}`, layerId: 'road_barriers', workspace: 'services' });
+                        });
+                    }
+                }
+            } catch (err) { /* تجاهل */ }
+        }
+    }
+
+    let matchedFuelField = null;
+    Object.keys(FUEL_AVAILABILITY_KEYWORDS).forEach(keyword => {
+        if (normalized.includes(normalizeArabic(keyword))) matchedFuelField = FUEL_AVAILABILITY_KEYWORDS[keyword];
+    });
+
+    if (matchedFuelField) {
+        try {
+            const params = new URLSearchParams({
+                layer: 'fuel_stations', workspace: 'services',
+                field_0: matchedFuelField, operator_0: '=', value_0: '0', conditions_count: '1'
+            });
+            const response = await fetch(`${baseUrl}api/search-features?${params.toString()}`);
+            if (response.ok) {
+                const data = await response.json();
+                if (data && data.features) {
+                    const fuelLabels = { diesel: 'ديزل', banzen95: 'بنزين 95', banzen98: 'بنزين 98' };
+                    data.features.forEach(f => {
+                        results.push({ ...f, customTitle: `محطات الوقود - متوفر ${fuelLabels[matchedFuelField]}`, layerId: 'fuel_stations', workspace: 'services' });
+                    });
+                }
+            }
+        } catch (err) { /* تجاهل */ }
+    }
+
+    return results;
+};
+
 window.initializeGlobalSearch = function() {
     const searchInput = document.getElementById('global-search-input');
     const suggestionsPanel = document.getElementById('search-suggestions');
@@ -279,6 +357,8 @@ window.initializeGlobalSearch = function() {
             }
 
             const promises = Object.keys(searchConfig).map(group => fetchGroupWFS(group, term));
+            // 🆕 دمج نتائج البحث بالكلمات الدلالية الخاصة (حالة الحاجز / توفر الوقود)
+            promises.push(window.fetchSpecialStatusMatches(term));
             const resultsArray = await Promise.all(promises);
             const allResults = resultsArray.flat();
 

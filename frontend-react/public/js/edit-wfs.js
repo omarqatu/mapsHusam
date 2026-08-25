@@ -73,7 +73,7 @@ async function sendWFS_T(feature, type) {
     const rawId = rawIdCandidate ? (String(rawIdCandidate).includes('.') ? String(rawIdCandidate).split('.').pop() : rawIdCandidate) : '';
     const fidValue = rawId ? `${typeName}.${rawId}` : "";
 
-    // عزل حقول المدخلات اليدوية لكل بيئة بشكل مستقل ومضمون (شقق عقارات مقابل خدمات نقاط)
+        // عزل حقول المدخلات اليدوية لكل بيئة بشكل مستقل ومضمون (شقق عقارات مقابل خدمات نقاط)
     const allowedPropsAdd = isRealEstate ?
         ['price', 'currency', 'des', 'pic', 'video', 'area', 'whatsapp', 'phone', 'end_date', 'work_hours', 'rating', 'location'] :
         ['name', 'whatsapp', 'phone', 'des', 'pic', 'rating', 'details_link_1', 'details_link_2', 'end_date', 'work_hours'];
@@ -82,6 +82,19 @@ async function sendWFS_T(feature, type) {
     const allowedPropsUpdate = isRealEstate ?
         ['price', 'currency', 'des', 'pic', 'video', 'area', 'end_date', 'work_hours', 'whatsapp', 'phone', 'rating', 'location', 'search_tags'] :
         ['name', 'whatsapp', 'phone', 'pic', 'rating', 'details_link_1', 'details_link_2', 'end_date', 'work_hours', 'des', 'search_tags'];
+
+    // 🆕 عمود "stop" الخاص بحالة حاجز الطرق (0=مفتوح، 1=مغلق، 2=أزمة خفيفة،
+    // 3=أزمة خانقة، 4=تفتيش) - يُضاف فقط عند تحرير طبقة حواجز الطرق
+    if (selectedLayerName === 'road_barriersLayer') {
+        allowedPropsAdd.push('stop');
+        allowedPropsUpdate.push('stop');
+    }
+
+    // 🆕 أعمدة توفر الوقود الخاصة بطبقة محطات الوقود (0=متوفر، 1=غير متوفر)
+    if (selectedLayerName === 'fuel_stationsLayer') {
+        allowedPropsAdd.push('diesel', 'banzen95', 'banzen98');
+        allowedPropsUpdate.push('diesel', 'banzen95', 'banzen98');
+    }
 
     let payload = '';
     if (type === 'insert') {

@@ -571,12 +571,16 @@ function initializePopup(map) {
         
                 if (!isAreaLayer && !isRoadBarriers) bodyHtml += getStatusHtml(props.auto_status, props.work_hours);
 
-        if (isRoadBarriers) {
+                if (isRoadBarriers) {
             const stopInfo = window.getRoadBarrierStopInfo(window.getCaseInsensitiveProp(props, 'stop'));
             bodyHtml += `<div style="margin: 10px 0; padding: 10px; border-radius: 8px; background: ${stopInfo.color}15; border: 1px dashed ${stopInfo.color}; text-align: center;">
                 <span style="color: ${stopInfo.color}; font-weight: bold; font-size: 15px;">${stopInfo.icon} ${stopInfo.label}</span>
             </div>`;
             if (props.name) bodyHtml += `<b>📍 الاسم:</b> ${window.sanitizeHTML(props.name)}<br>`;
+            // 🆕 عرض المحافظة والمدينة والموقع
+            if (props.gov_a) bodyHtml += `<b>🌍 المحافظة:</b> ${window.sanitizeHTML(props.gov_a)}<br>`;
+            if (props.village_a) bodyHtml += `<b>🏘️ المدينة:</b> ${window.sanitizeHTML(props.village_a)}<br>`;
+            if (props.location_name || props.location) bodyHtml += `<b>📍 الموقع:</b> ${window.sanitizeHTML(props.location_name || props.location)}<br>`;
 
             bodyHtml += `
             <div style="margin-top: 15px; border-top: 2px solid #eee; padding-top: 12px;">

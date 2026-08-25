@@ -174,7 +174,7 @@ window.getRoadBarrierStopInfo = function (rawStopValue) {
         1: { label: 'مغلق',       color: '#dc3545', icon: '🔴' }, // أحمر
         2: { label: 'أزمة خفيفة', color: '#f39c12', icon: '🟠' }, // برتقالي
         3: { label: 'أزمة خانقة', color: '#8b0000', icon: '🟤' }, // أحمر داكن
-        4: { label: 'تفتيش',      color: '#6f42c1', icon: '🟣' }  // بنفسجي
+        4: { label: 'تفتيش وأزمة خانقة',      color: '#6f42c1', icon: '🟣' }  // بنفسجي
     };
     return map[val] || { label: 'غير معروف', color: '#6c757d', icon: '⚪' };
 };

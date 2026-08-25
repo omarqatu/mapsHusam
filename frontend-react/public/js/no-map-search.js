@@ -572,14 +572,25 @@ window.__nmsPageHandlesOwnAds = true;
         const resultsCountEl = document.getElementById('nms-results-count');
         const resultsListEl = document.getElementById('nms-results-list');
 
-        function openCategory(cat) {
+                function openCategory(cat) {
             currentCategory = cat;
             allFieldValues = {}; // إعادة تعيين القيم المخزنة
             categoriesView.classList.add('hidden');
             resultsView.classList.remove('hidden');
             categoryTitleEl.innerHTML = `<i class="fas ${cat.icon}"></i> ${cat.title}`;
 
-            const fields = cat.isRealEstate ? fieldsConfig.realEstate : fieldsConfig.services;
+            // 🆕 نفس منطق حقول البحث الذكي (search.js): حقل stop لحواجز الطرق،
+            // وحقول ديزل/بنزين95/بنزين98 لمحطات الوقود، بدل الحقول العامة فقط
+            let fields;
+            if (cat.isRealEstate) {
+                fields = fieldsConfig.realEstate;
+            } else if (cat.key === 'road_barriersLayer' && fieldsConfig.roadBarriers) {
+                fields = fieldsConfig.roadBarriers;
+            } else if (cat.key === 'fuel_stationsLayer' && fieldsConfig.fuelStations) {
+                fields = fieldsConfig.fuelStations;
+            } else {
+                fields = fieldsConfig.services;
+            }
             renderFiltersGrid(fields);
             executeSearch();
             window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -597,7 +608,7 @@ window.__nmsPageHandlesOwnAds = true;
                 label.textContent = field.name;
                 filterItem.appendChild(label);
 
-                if (field.type === 'dropdown') {
+                                if (field.type === 'dropdown') {
                     const select = document.createElement('select');
                     select.dataset.fieldId = field.id;
                     select.dataset.fieldIndex = index;
@@ -609,6 +620,20 @@ window.__nmsPageHandlesOwnAds = true;
                     // عند تغيير القيمة، تحديث القوائم التالية وتنفيذ البحث
                     select.addEventListener('change', () => {
                         updateDependentDropdowns(index);
+                        executeSearch();
+                    });
+
+                    filterItem.appendChild(select);
+                } else if (field.type === 'fixedSelect') {
+                    // 🆕 قائمة ثابتة بخيارات جاهزة (بدون استعلام سيرفر) - تُستخدم
+                    // لحالة الحاجز (stop) وتوفر الوقود (diesel/banzen95/banzen98)
+                    const select = document.createElement('select');
+                    select.dataset.fieldId = field.id;
+                    select.dataset.fieldIndex = index;
+                    select.innerHTML = '<option value="">الكل</option>' +
+                        (field.options || []).map(opt => `<option value="${opt.value}">${opt.label}</option>`).join('');
+
+                    select.addEventListener('change', () => {
                         executeSearch();
                     });
 
@@ -1000,11 +1025,14 @@ window.__nmsPageHandlesOwnAds = true;
                 card.className = 'nms-result-card';
                 card.style.setProperty('--i', Math.min(index, 20));
 
-                // 🆕 حواجز الطرق: قالب مستقل بالكامل (حالة Stop + الاسم + زر الانتقال فقط)
+                                // 🆕 حواجز الطرق: قالب مستقل بالكامل (حالة Stop + الاسم + المحافظة/المدينة/الموقع + زر الانتقال)
                 if (isRoadBarriers) {
                     const stopInfo = window.getRoadBarrierStopInfo(p.stop !== undefined ? p.stop : p.stop);
                     let barrierHtml = `<div style="text-align:center; font-weight:bold; font-size:14px; color:${stopInfo.color}; border:1px dashed ${stopInfo.color}; border-radius:8px; padding:8px; margin-bottom:8px; background:${stopInfo.color}15;">${stopInfo.icon} ${stopInfo.label}</div>`;
                     if (p.name) barrierHtml += `<div class="nms-r-name"><i class="fas fa-map-marker-alt"></i> ${sanitize(p.name)}</div>`;
+                    if (p.gov_a) barrierHtml += `<div class="nms-r-line"><b>🌍 المحافظة:</b> ${sanitize(p.gov_a)}</div>`;
+                    if (p.village_a) barrierHtml += `<div class="nms-r-line"><b>🏘️ المدينة:</b> ${sanitize(p.village_a)}</div>`;
+                    if (p.location_name || p.location) barrierHtml += `<div class="nms-r-line"><b>📍 الموقع:</b> ${sanitize(p.location_name || p.location)}</div>`;
                     card.innerHTML = barrierHtml;
 
                     if (coords) {

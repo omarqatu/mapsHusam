@@ -232,8 +232,10 @@
     </div>
 </div>
 
-<!-- زر الانتقال إلى البحث بدون خريطة في الشمال للكمبيوتر فقط -->
-<div class="desktop-only-search-btn" style="position: fixed; top: 20px; left: 20px; z-index: 2000;">
+<!-- الأزرار بجانب بعضها أفقياً - للكمبيوتر فقط -->
+<div class="desktop-only-search-btn" style="position: fixed; top: 20px; left: 20px; z-index: 2000; display: flex; flex-direction: row; align-items: center; gap: 10px;">
+    
+    <!-- زر الانتقال إلى البحث بدون خريطة (سيكون على أقصى اليسار) -->
     <a href="/no-map-search.html" target="_blank"
        style="display: inline-block; background: linear-gradient(135deg, #28a745, #20c997); color: white;
               padding: 12px 20px; border-radius: 25px; text-decoration: none; font-size: 14px; font-weight: 600;
@@ -243,6 +245,23 @@
        onmouseout="this.style.transform='scale(1)'; this.style.boxShadow='0 4px 15px rgba(40, 167, 69, 0.3)';">
         <i class="fas fa-list"></i> الانتقال إلى البحث بدون خريطة
     </a>
+
+    <!-- زر حالة الطرق (سيكون في الوسط) -->
+    <button type="button" id="btn-open-road-status"
+       style="display: inline-flex; align-items:center; justify-content:center; gap:8px; background: linear-gradient(135deg, #e67e22, #d35400); color: white;
+              padding: 12px 20px; border-radius: 25px; font-size: 14px; font-weight: 600;
+              box-shadow: 0 4px 15px rgba(230, 126, 34, 0.3); border: 2px solid #fff; white-space: nowrap; cursor:pointer;">
+        <i class="fas fa-road"></i> حالة الطرق
+    </button>
+
+    <!-- زر حالة محطات الوقود (سيكون على اليمين) -->
+    <button type="button" id="btn-open-fuel-status"
+       style="display: inline-flex; align-items:center; justify-content:center; gap:8px; background: linear-gradient(135deg, #2980b9, #1a5276); color: white;
+              padding: 12px 20px; border-radius: 25px; font-size: 14px; font-weight: 600;
+              box-shadow: 0 4px 15px rgba(41, 128, 185, 0.3); border: 2px solid #fff; white-space: nowrap; cursor:pointer;">
+        <i class="fas fa-gas-pump"></i> حالة محطات الوقود
+    </button>
+
 </div>
 
 <div id="map-header">
