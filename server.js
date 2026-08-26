@@ -2,9 +2,9 @@
  * server.js 
  */
 
-// تحميل متغيرات البيئة من ملف .env.local
+// تحميل متغيرات البيئة من ملف .env
 import dotenv from 'dotenv';
-dotenv.config({ path: '.env.local' });
+dotenv.config();
 
 import express from 'express';
 import { createProxyMiddleware } from 'http-proxy-middleware';
