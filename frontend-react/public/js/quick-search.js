@@ -76,9 +76,9 @@ function initializeQuickSearch(map, overlayLayersObj) {
         'schools_kindergartens': 'fa-school', 'job_vacancies': 'fa-briefcase', 'city_landmarks': 'fa-landmark'
     };
 
-    if (MAP_CONFIG.layers.realestate) {
+        if (MAP_CONFIG.layers.realestate) {
         MAP_CONFIG.layers.realestate.forEach(l => {
-            if (!globalExcludedKeys.includes(l.id)) {
+            if (!window.isLayerGloballyExcluded(l.id)) {
                 dynamicQuickLayers.push({
                     key: l.id,
                     title: l.title,
@@ -90,7 +90,7 @@ function initializeQuickSearch(map, overlayLayersObj) {
 
     if (window.serviceTranslations) {
         Object.keys(window.serviceTranslations).forEach(serviceKey => {
-            if (!globalExcludedKeys.includes(serviceKey)) {
+            if (!window.isLayerGloballyExcluded(serviceKey)) {
                 const info = window.serviceTranslations[serviceKey];
                 dynamicQuickLayers.push({
                     key: serviceKey + 'Layer',

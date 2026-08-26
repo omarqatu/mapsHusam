@@ -209,3 +209,35 @@ window.buildFuelAvailabilityHtml = function (props) {
     html += '</div>';
     return html;
 };
+
+// ==========================================================================
+// 8) [استثناء الطبقات المركزي]: نقطة واحدة موحّدة للتحقق مما إذا كانت أي طبقة
+//    مستثناة عبر MAP_CONFIG.globalExclusions، تفهم كل الصيغ الشائعة لاسم نفس
+//    الطبقة (المفتاح الداخلي 'rentLayer'، اسمها بقاعدة البيانات 'ApartRent'،
+//    أو بدون كلمة Layer 'rent')، حتى يكفي كتابة أي صيغة واحدة في config.js
+//    لتختفي الطبقة تلقائياً من كل الصفحات وطرق البحث (الخريطة، البحث السريع،
+//    البحث الذكي، بحث الموقع، البحث بدون خريطة، البحث العالمي بالكلمات).
+// ==========================================================================
+window.isLayerGloballyExcluded = function (layerIdentifier) {
+    if (!layerIdentifier) return false;
+    const config = (typeof MAP_CONFIG !== 'undefined' && MAP_CONFIG) || window.MAP_CONFIG;
+    if (!config || !Array.isArray(config.globalExclusions) || config.globalExclusions.length === 0) return false;
+
+    const exclusions = config.globalExclusions;
+    const raw = String(layerIdentifier).trim();
+    const withoutLayerSuffix = raw.replace(/Layer$/i, '');
+
+    // خريطة الأسماء البديلة لطبقات العقارات (المفتاح الداخلي <-> الاسم الفعلي بقاعدة البيانات)
+    const realEstateAliasMap = { rentLayer: 'ApartRent', saleLayer: 'ApartSale', landLayer: 'LandSale' };
+
+    const candidates = new Set([raw, withoutLayerSuffix]);
+    if (realEstateAliasMap[raw]) candidates.add(realEstateAliasMap[raw]);
+    Object.keys(realEstateAliasMap).forEach(function (internalKey) {
+        if (realEstateAliasMap[internalKey] === raw) candidates.add(internalKey);
+    });
+
+    for (const candidate of candidates) {
+        if (exclusions.includes(candidate)) return true;
+    }
+    return false;
+};

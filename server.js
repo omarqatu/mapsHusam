@@ -1260,63 +1260,86 @@ app.get('/api/search-features', async (req, res) => {
             }
         }
 
-        // معالجة الشروط المتعددة
+                // 🆕 معالجة الشروط المتعددة بمنطق منطقي حقيقي: نجمع الشروط في "مجموعات" -
+        // داخل نفس المجموعة يتم الربط بـ OR، وبين المجموعات المختلفة يتم الربط بـ AND.
+        // حقول توفر الوقود الثلاثة (ديزل/بنزين95/بنزين98) تُعامل كمجموعة واحدة رغم
+        // اختلاف أسمائها، حتى يعمل "ديزل غير متوفر أو بنزين95 غير متوفر" كما هو متوقع.
+        // حقل حالة الحاجز (stop) يُجمَّع تلقائياً مع نفسه (نفس الحقل) فتصبح عدة قيم
+        // مختارة له (مفتوح/مغلق/أزمة...) بمنطق OR أيضاً. باقي الحقول (السعر، المنطقة،
+        // الاسم...) تبقى AND تماماً كما كانت، لأنها مجموعات منفصلة عن بعضها.
+        const FUEL_AVAILABILITY_FIELDS = ['diesel', 'banzen95', 'banzen98'];
+        function getConditionGroupKey(fieldName) {
+            if (FUEL_AVAILABILITY_FIELDS.includes(fieldName)) return '__fuel_availability_group__';
+            return fieldName;
+        }
+
         const count = parseInt(conditions_count) || 0;
+        const rawConditions = [];
         if (count > 0) {
             for (let i = 0; i < count; i++) {
                 const condField = req.query[`field_${i}`];
                 const condOperator = req.query[`operator_${i}`];
                 const condValue = req.query[`value_${i}`];
-
-                // 🛡️ تجاهل أي شرط لا يطابق اسم حقل SQL صالح بدل تنفيذه كما هو
                 if (!isValidSqlIdentifier(condField)) continue;
-
-                if (condField && condValue) {
-                    const valStr = String(condValue).trim();
-                    if (condOperator === '=') {
-                        query += ` AND ${condField} = $${params.length + 1}`;
-                        params.push(valStr);
-                    } else if (condOperator === 'contains') {
-                        // البحث في حقلين: search_tags واسم الطبقة بالعربي
-                        if (layerNameAr && condField === 'search_tags') {
-                            query += ` AND (${condField} ILIKE $${params.length + 1} OR $${params.length + 2} ILIKE $${params.length + 3})`;
-                            params.push(`%${valStr}%`, layerNameAr, `%${valStr}%`);
-                        } else {
-                            query += ` AND ${condField} ILIKE $${params.length + 1}`;
-                            params.push(`%${valStr}%`);
-                        }
-                    } else if (condOperator === '>') {
-                        query += ` AND CAST(${condField} AS NUMERIC) >= $${params.length + 1}`;
-                        params.push(parseFloat(valStr));
-                    } else if (condOperator === '<') {
-                        query += ` AND CAST(${condField} AS NUMERIC) <= $${params.length + 1}`;
-                        params.push(parseFloat(valStr));
-                    }
+                if (condField && condValue !== undefined && condValue !== '') {
+                    rawConditions.push({ field: condField, operator: condOperator, value: String(condValue).trim() });
                 }
             }
         } else if (field && value && isValidSqlIdentifier(field)) {
-            // للتوافق مع الكود القديم (شرط واحد)
-            const valStr = String(value).trim();
-            if (operator === '=') {
-                query += ` AND ${field} = $${params.length + 1}`;
-                params.push(valStr);
-            } else if (operator === 'contains') {
-                // البحث في حقلين: search_tags واسم الطبقة بالعربي
-                if (layerNameAr) {
-                    query += ` AND (${field} ILIKE $${params.length + 1} OR $${params.length + 2} ILIKE $${params.length + 3})`;
-                    params.push(`%${valStr}%`, layerNameAr, `%${valStr}%`);
-                } else {
-                    query += ` AND ${field} ILIKE $${params.length + 1}`;
-                    params.push(`%${valStr}%`);
-                }
-            } else if (operator === '>') {
-                query += ` AND CAST(${field} AS NUMERIC) >= $${params.length + 1}`;
-                params.push(parseFloat(valStr));
-            } else if (operator === '<') {
-                query += ` AND CAST(${field} AS NUMERIC) <= $${params.length + 1}`;
-                params.push(parseFloat(valStr));
-            }
+            rawConditions.push({ field, operator, value: String(value).trim() });
         }
+
+        const groupedConditions = {};
+        rawConditions.forEach(c => {
+            const groupKey = getConditionGroupKey(c.field);
+            if (!groupedConditions[groupKey]) groupedConditions[groupKey] = [];
+            groupedConditions[groupKey].push(c);
+        });
+
+        Object.keys(groupedConditions).forEach(groupKey => {
+            const orParts = [];
+            groupedConditions[groupKey].forEach(c => {
+                const fieldName = c.field;
+                if (c.operator === '=') {
+                    orParts.push(`${fieldName} = $${params.length + 1}`);
+                    params.push(c.value);
+                } else if (c.operator === 'contains') {
+                    if (fieldName === 'search_tags') {
+                        // 🆕 بحث ذكي بمنطق OR على مستوى الكلمات: يطابق إذا وُجدت أي كلمة
+                        // من كلمات البحث (مفصولة بمسافات) داخل الكلمات الدلالية أو الوصف
+                        // أو الاسم (للخدمات فقط) أو اسم الطبقة بالعربي - بدل شرط AND
+                        // الصارم القديم الذي كان يتطلب تطابق الجملة كاملة كنص واحد.
+                        const searchColumns = isRealEstate ? ['search_tags', 'des'] : ['search_tags', 'des', 'name'];
+                        const words = c.value.split(/\s+/).filter(w => w.length > 0);
+                        const wordGroups = words.map(word => {
+                            const colParts = searchColumns.map(col => {
+                                params.push(`%${word}%`);
+                                return `${col} ILIKE $${params.length}`;
+                            });
+                            if (layerNameAr) {
+                                params.push(layerNameAr);
+                                params.push(`%${word}%`);
+                                colParts.push(`$${params.length - 1} ILIKE $${params.length}`);
+                            }
+                            return `(${colParts.join(' OR ')})`;
+                        });
+                        if (wordGroups.length > 0) orParts.push(`(${wordGroups.join(' OR ')})`);
+                    } else {
+                        orParts.push(`${fieldName} ILIKE $${params.length + 1}`);
+                        params.push(`%${c.value}%`);
+                    }
+                } else if (c.operator === '>') {
+                    orParts.push(`CAST(${fieldName} AS NUMERIC) >= $${params.length + 1}`);
+                    params.push(parseFloat(c.value));
+                } else if (c.operator === '<') {
+                    orParts.push(`CAST(${fieldName} AS NUMERIC) <= $${params.length + 1}`);
+                    params.push(parseFloat(c.value));
+                }
+            });
+            if (orParts.length > 0) {
+                query += ` AND (${orParts.join(' OR ')})`;
+            }
+        });
 
         query += ` ORDER BY rating DESC`;
 

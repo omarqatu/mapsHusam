@@ -8,9 +8,33 @@ window.__nmsPageHandlesOwnAds = true;
     
     'use strict';
 
-    document.addEventListener('DOMContentLoaded', () => {
+        document.addEventListener('DOMContentLoaded', () => {
 
         const baseUrl = window.location.origin + '/';
+
+        // 🆕 ربط زرّي "حالة الطرق" و"حالة محطات الوقود" بجانب زر "الخريطة التفاعلية"
+        // بفتح نفس بوابة التحديثات الفورية المستخدمة بصفحة الخريطة، مباشرة عند البطاقة
+        // المطلوبة (window.openWidgetsPortalToCard متوفرة بعد تحميل widgets-ticker.js
+        // الموجود أصلاً بأسفل هذه الصفحة، ونفس التصميم المتجاوب لباقي الأزرار المجاورة
+        // فلا يوجد أي تعارض إضافي بين عرض الكمبيوتر والموبايل/التابلت)
+        (function bindRoadFuelStatusButtons() {
+            const roadBtn = document.getElementById('nms-btn-road-status');
+            const fuelBtn = document.getElementById('nms-btn-fuel-status');
+            if (roadBtn) {
+                roadBtn.addEventListener('click', () => {
+                    if (typeof window.openWidgetsPortalToCard === 'function') {
+                        window.openWidgetsPortalToCard('portal-road-status-card');
+                    }
+                });
+            }
+            if (fuelBtn) {
+                fuelBtn.addEventListener('click', () => {
+                    if (typeof window.openWidgetsPortalToCard === 'function') {
+                        window.openWidgetsPortalToCard('portal-fuel-status-card');
+                    }
+                });
+            }
+        })();
 
         // ==========================================================================
         // 🆕 مساعدات مشتركة: هوية المستخدم الحالي + فحص حد الطلبات، أصبحتا معرّفتين
@@ -174,7 +198,9 @@ window.__nmsPageHandlesOwnAds = true;
             
         };
 
-        const globalExclusions = [];
+                // 🆕 قراءة الاستثناءات من ملف التكوين المركزي (config.js) بدل مصفوفة فارغة
+        // محلية كانت تمنع أي استثناء من الانعكاس على صفحة البحث بدون خريطة إطلاقاً
+        const globalExclusions = (typeof MAP_CONFIG !== 'undefined' && MAP_CONFIG.globalExclusions) || [];
 
         // ==========================================================================
         // تصنيف الفروع (التبويبات): كل خدمة أو عقار يتبع فرعاً واحداً لتسهيل الفلترة.
@@ -239,14 +265,14 @@ window.__nmsPageHandlesOwnAds = true;
             fuel_stations: 'misc', road_barriers: 'misc',
         };
 
-        const categories = [
+                const categories = [
             { key: 'rentLayer', title: 'شقق الإيجار', icon: iconMap['rentLayer'], isRealEstate: true, group: 'realestate' },
             { key: 'saleLayer', title: 'شقق للبيع', icon: iconMap['saleLayer'], isRealEstate: true, group: 'realestate' },
             { key: 'landLayer', title: 'الأراضي للبيع', icon: iconMap['landLayer'], isRealEstate: true, group: 'realestate' }
-        ];
+        ].filter(c => !window.isLayerGloballyExcluded(c.key));
 
         Object.keys(serviceNames).forEach(key => {
-            if (globalExclusions.includes(key)) return;
+            if (window.isLayerGloballyExcluded(key)) return;
             categories.push({
                 key: key + 'Layer',
                 title: serviceNames[key],
@@ -1025,7 +1051,7 @@ window.__nmsPageHandlesOwnAds = true;
                 card.className = 'nms-result-card';
                 card.style.setProperty('--i', Math.min(index, 20));
 
-                                // 🆕 حواجز الطرق: قالب مستقل بالكامل (حالة Stop + الاسم + المحافظة/المدينة/الموقع + زر الانتقال)
+                // 🆕 حواجز الطرق: قالب مستقل بالكامل (حالة Stop + الاسم + المحافظة/المدينة/الموقع + زر الانتقال)
                 if (isRoadBarriers) {
                     const stopInfo = window.getRoadBarrierStopInfo(p.stop !== undefined ? p.stop : p.stop);
                     let barrierHtml = `<div style="text-align:center; font-weight:bold; font-size:14px; color:${stopInfo.color}; border:1px dashed ${stopInfo.color}; border-radius:8px; padding:8px; margin-bottom:8px; background:${stopInfo.color}15;">${stopInfo.icon} ${stopInfo.label}</div>`;

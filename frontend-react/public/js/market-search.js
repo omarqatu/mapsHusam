@@ -235,7 +235,11 @@ document.addEventListener('DOMContentLoaded', () => {
             // 🆕 دمج نتائج البحث بالكلمات الدلالية الخاصة (حالة الحاجز / توفر الوقود)
             promises.push(window.fetchSpecialStatusMatches(term));
             const resultsArray = await Promise.all(promises);
-            const allResults = resultsArray.flat();
+            // 🆕 إصلاح جذري: كانت معرّفة بـ const ثم يُعاد إسنادها بالسطر التالي، وهذا
+            // كان يرمي TypeError ("Assignment to constant variable") مع كل بحث، ويجعل
+            // الكود يدخل دائماً إلى catch أدناه - هذا بالضبط سبب ظهور رسالة "حدث خطأ
+            // أثناء البحث" مع كل عملية بحث بصفحة البحث بدون خريطة
+            let allResults = resultsArray.flat();
 
             const uniqueMap = new Map();
             allResults.forEach(item => {

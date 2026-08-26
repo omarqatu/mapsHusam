@@ -397,15 +397,17 @@
         getUniqueValues(layerKey, fieldId);
     }
 
-    function renderConditions() {
+        function renderConditions() {
         if (!conditionsContainer) return;
         conditionsContainer.innerHTML = '';
         conditions.forEach((c, idx) => {
             const div = document.createElement('div');
             div.style.cssText = 'display:flex; align-items:center; gap:5px; margin-bottom:5px; padding:8px; background:#f9f9f9; border-radius:4px; border:1px solid #eee;';
+            // 🆕 عرض displayValue (النص المقروء) إن وُجد، وإلا القيمة كما كانت
+            const shownValue = c.displayValue !== undefined ? c.displayValue : c.value;
             div.innerHTML = `
                 <span style="flex:1; font-size:13px;">
-                    <strong>${c.fieldName}</strong> ${c.operator} "${c.value}"
+                    <strong>${c.fieldName}</strong> ${c.operator} "${shownValue}"
                 </span>
                 <button type="button" data-idx="${idx}" style="padding:4px 8px; background:#dc3545; color:white; border:none; border-radius:3px; cursor:pointer;">×</button>
             `;
@@ -491,20 +493,19 @@
         conditionsContainer = document.getElementById('search-conditions'); 
         highlightLayer = overlayLayersObj.searchResultsHighlightLayer;
 
-                if (layerSelect) {
+                        if (layerSelect) {
             layerSelect.innerHTML = '<option value="">-- اختر الطبقة للبحث --</option>';
             // 🆕 مطابقة دقيقة (Exact) وليس substring، لأن "حواجز الطرق" كانت تُستبعد
             // بالخطأ بسبب احتوائها على كلمة "الطرق" المخصصة لاستبعاد طبقة roadsLayer فقط
             const excludedTitles = ['المدن', 'المحافظات', 'الطرق', 'المناطق'];
             const excludedKeys = ['cityLayer', 'governorateLayer', 'roadsLayer', 'locationLayer'];
-            const globalExcludedKeys = MAP_CONFIG.globalExclusions || [];
 
             Object.keys(overlayLayersObj).forEach(key => {
                 const lyr = overlayLayersObj[key];
                 const title = lyr?.get('title') || '';
 
-                // التحقق من الاستثناءات باستخدام المفتاح الأساسي للطبقة (مثل 'rentLayer' أو 'electrician')
-                if (title && !key.toLowerCase().includes('search') && !excludedTitles.includes(title) && !excludedKeys.includes(key) && !globalExcludedKeys.includes(key.replace('Layer', ''))) {
+                // 🆕 التحقق من الاستثناءات العامة عبر الدالة الموحّدة (shared-utils.js)
+                if (title && !key.toLowerCase().includes('search') && !excludedTitles.includes(title) && !excludedKeys.includes(key) && !window.isLayerGloballyExcluded(key)) {
                     layerSelect.innerHTML += `<option value="${key}">${title}</option>`;
                 }
             });
@@ -649,10 +650,17 @@
             }
         };
 
-        document.getElementById('add-condition').onclick = () => {
-            const val = document.getElementById('value-input')?.value.trim();
+                document.getElementById('add-condition').onclick = () => {
+            const inputEl = document.getElementById('value-input');
+            const val = inputEl?.value.trim();
             if (!val) return;
-            conditions.push({ field: fieldSelect.value, fieldName: fieldSelect.options[fieldSelect.selectedIndex].text, operator: operatorSelect.value, value: val });
+            // 🆕 إذا كان الحقل عبارة عن قائمة اختيار (select)، نعرض نص الخيار المختار
+            // (مثل "🟢 مفتوح") بدل القيمة الرقمية الخام (مثل "0") في شارة الشرط،
+            // بينما تبقى القيمة الخام هي المُرسَلة فعلياً للبحث بالسيرفر كما هي
+            const displayVal = (inputEl && inputEl.tagName === 'SELECT' && inputEl.selectedIndex >= 0)
+                ? inputEl.options[inputEl.selectedIndex].text
+                : val;
+            conditions.push({ field: fieldSelect.value, fieldName: fieldSelect.options[fieldSelect.selectedIndex].text, operator: operatorSelect.value, value: val, displayValue: displayVal });
 
             // 🆕 إضافة شرط العملة تلقائياً إذا كان الحقل هو السعر وتم اختيار عملة محددة
             if (fieldSelect.value === 'price') {
@@ -665,9 +673,8 @@
             renderConditions();
             
             // تهيئة الحقل بعد الإضافة حسب نوعه (تفادياً لمشاكل الخيار الفارغ في الـ select)
-            const inputElem = document.getElementById('value-input');
-            if (inputElem) {
-                inputElem.value = '';
+            if (inputEl) {
+                inputEl.value = '';
             }
         };
         document.getElementById('clear-search').onclick = () => {

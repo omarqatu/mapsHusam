@@ -5,8 +5,8 @@
 // 1. تعريف ترجمات وأيقونات الخدمات (الـ 59 خدمة كاملة)
 const serviceTranslations = {
     // --- الخدمات القديمة (34) ---
-    'road_barriers': { name: 'حواجز الطرق', icon: '🚧' },
     'fuel_stations': { name: 'محطات الوقود', icon: '⛽' },
+    'road_barriers': { name: 'حواجز الطرق', icon: '🚧' },
     'electrician': { name: 'فني كهرباء', icon: '⚡' },
     'ac_technician': { name: 'فني تكييف وتبريد', icon: '❄️' },
     'plumber': { name: 'سباك (مواسيرجي)', icon: '🔧' },
@@ -319,10 +319,24 @@ window.appLayers = {
 if (MAP_CONFIG && MAP_CONFIG.layers && MAP_CONFIG.layers.helper) {
     MAP_CONFIG.layers.helper.forEach(l => {
         // [إضافة]: التحقق من الاستثناءات العالمية لطبقات المساعدة
-        if (MAP_CONFIG.globalExclusions && MAP_CONFIG.globalExclusions.includes(l.id)) return;
+        if (window.isLayerGloballyExcluded(l.id)) return;
 
         const targetStyle = getLayerStyle(l.style, '#ccc');
         window.appLayers[l.id] = createWFSLayer(l.workspace, l.name, l.title, targetStyle, l.maxRes, l.visible !== false, 5);
+    });
+}
+
+// ب) توليد طبقات العقارات والأراضي آلياً (الأراضي Z-Index: 10، الشقق والعروض Z-Index: 20)
+if (MAP_CONFIG && MAP_CONFIG.layers && MAP_CONFIG.layers.realestate) {
+    MAP_CONFIG.layers.realestate.forEach(l => {
+        // [إضافة]: التحقق من الاستثناءات العالمية لطبقات العقارات (تفهم rentLayer وApartRent معاً)
+        if (window.isLayerGloballyExcluded(l.id) || window.isLayerGloballyExcluded(l.name)) return;
+
+        let zIndex = 20; 
+        if (l.id.includes('land') || l.name.includes('land')) zIndex = 10;
+        
+        const targetStyle = getLayerStyle(l.style, '#ff5722');
+        window.appLayers[l.id] = createWFSLayer(l.workspace, l.name, l.title, targetStyle, l.maxRes || 10, true, zIndex);
     });
 }
 
@@ -343,14 +357,42 @@ if (MAP_CONFIG && MAP_CONFIG.layers && MAP_CONFIG.layers.realestate) {
 // ج) توليد كافة طبقات الخدمات الـ 59 آلياً وحقنها في أعلى الخريطة (Z-Index: 30)
 if (MAP_CONFIG && MAP_CONFIG.globalExclusions) {
     Object.keys(serviceTranslations).forEach(key => {
-        if (MAP_CONFIG.globalExclusions.includes(key)) return;
+        if (window.isLayerGloballyExcluded(key)) return;
 
         const info = serviceTranslations[key];
-        const sStyle = (f, r) => window.createStyle(f, r, { 
-            emoji: info.icon, 
-            labelField: 'name', 
-            zoomThresholdForLabel: 0.7 
-        });
+        
+        // إعداد الستايل مع تخصيص مقياس ظهور الليبل حسب نوع الطبقة
+        const sStyle = (f, r) => {
+            let currentIcon = info.icon;
+            let labelFieldName = 'name'; 
+
+            if (key === 'road_barriers') {
+                const rawStop = f.get('stop');
+                const statusInfo = window.getRoadBarrierStopInfo(rawStop);
+                currentIcon = statusInfo.icon; 
+                
+                const featureName = f.get('name') || '';
+                if (featureName) {
+                    f.set('display_label', `${featureName} (${statusInfo.label})`);
+                    labelFieldName = 'display_label';
+                } else {
+                    f.set('display_label', statusInfo.label);
+                    labelFieldName = 'display_label';
+                }
+            }
+
+            // تحديد مقياس الليبل: الحواجز والمحطات تأخذ رقماً أكبر (مثل 2) لتظهر من مسافة أبعد
+            let zoomThreshold = 0.7; // القيمة الافتراضية لباقي الخدمات
+            if (key === 'road_barriers' || key === 'fuel_stations') {
+                zoomThreshold = 8; // ظهور أسرع وأوضح عند تصغير الخريطة
+            }
+
+            return window.createStyle(f, r, { 
+                emoji: currentIcon, 
+                labelField: labelFieldName, 
+                zoomThresholdForLabel: zoomThreshold 
+            });
+        };
 
         // 1. المجموعات الأولى: تظهر على طول الخريطة (بدون قيود زووم)
         const alwaysVisibleLayers = [
@@ -359,16 +401,16 @@ if (MAP_CONFIG && MAP_CONFIG.globalExclusions) {
 
         // 2. المجموعات الثانية: تظهر عند مقياس متوسط (5)
         const mediumZoomLayers = [
-             'schools_kindergartens' , 'city_landmarks'
+             'schools_kindergartens', 'city_landmarks'
         ];
 
         // 3. تحديد قيمة مقياس الظهور (maxResolution) حسب القائمة
-        let layerMaxRes = 1; // القيمة الافتراضية لباقي الخدمات القديمة
+        let layerMaxRes = 1; 
         
         if (alwaysVisibleLayers.includes(key)) {
-            layerMaxRes = 5000; // ظهور دائم على كل المقاييس
+            layerMaxRes = 5000; 
         } else if (mediumZoomLayers.includes(key)) {
-            layerMaxRes = 5;    // ظهور عند مقياس 5
+            layerMaxRes = 5;    
         }
 
         // تمرير القيمة المحسوبة للدالة

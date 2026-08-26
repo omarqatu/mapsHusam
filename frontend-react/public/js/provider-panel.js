@@ -520,7 +520,13 @@ function initProviderPanelEvents() {
         let isDragging = false;
         let offset = { x: 0, y: 0 };
 
-        function startDrag(e) {
+                function startDrag(e) {
+            // 🆕 تعطيل السحب اليدوي كلياً أثناء وضع تبويبات الموبايل/التابلت، لأن موقع
+            // اللوحة هناك محكوم بالكامل عبر mobile-tabs.css (محصور داخل تبويبة "إدارة
+            // الخدمة")؛ أي سحب أو موضع محفوظ سابقاً من الكمبيوتر كان يجعلها تظهر عائمة
+            // خارج حدود التبويبة على الموبايل والتابلت فقط
+            if (document.body.classList.contains('mobile-tabs-portrait') || document.body.classList.contains('mobile-tabs-landscape')) return;
+
             isDragging = true;
             // دعم الماوس (clientX) واللمس (touches[0].clientX)
             const clientX = e.touches ? e.touches[0].clientX : e.clientX;
@@ -577,8 +583,11 @@ function initProviderPanelEvents() {
         document.addEventListener('touchend', endDrag);
 
         // 3. استعادة آخر موضع محفوظ (إن وجد) مع ضمان بقائه داخل حدود الشاشة الحالية
+        // 🆕 لا نستعيد أي موضع محفوظ إن كان وضع تبويبات الموبايل/التابلت نشطاً، لنفس
+        // سبب تعطيل السحب أعلاه - الموضع هناك محكوم بالكامل عبر mobile-tabs.css
         try {
-            const savedPos = localStorage.getItem('provider_panel_pos');
+            const isMobileTabsActive = document.body.classList.contains('mobile-tabs-portrait') || document.body.classList.contains('mobile-tabs-landscape');
+            const savedPos = isMobileTabsActive ? null : localStorage.getItem('provider_panel_pos');
             if (savedPos) {
                 const pos = JSON.parse(savedPos);
                 if (pos && pos.left && pos.top) {

@@ -46,7 +46,9 @@ const layerAliases = {
 const searchConfig = {
     'realestate': {
         workspace: 'realestate',
-        layers: ['ApartRent', 'ApartSale', 'LandSale']
+        // 🆕 استبعاد الطبقات المضافة إلى globalExclusions بـ config.js (يفهم
+        // 'ApartRent' أو 'rentLayer' أو 'rent' - أي صيغة مكتوبة هناك)
+        layers: ['ApartRent', 'ApartSale', 'LandSale'].filter(layerName => !window.isLayerGloballyExcluded(layerName))
     },
     'services': {
         workspace: 'services',
@@ -69,11 +71,7 @@ const searchConfig = {
             'bicycle_delivery_on_call', 'photographers', 'student_research_assist',
             'supermarket', 'commercial_shops', 'restaurants', 'schools_kindergartens',
             'job_vacancies', 'city_landmarks'
-        ].filter(layerName => {
-            // التحقق الآمن من وجود المتغير لمنع خطأ Uncaught ReferenceError
-            const exclusions = (typeof MAP_CONFIG !== 'undefined' && MAP_CONFIG.globalExclusions) ? MAP_CONFIG.globalExclusions : [];
-            return !exclusions.includes(layerName);
-        })
+        ].filter(layerName => !window.isLayerGloballyExcluded(layerName))
     }
 };
 
@@ -124,8 +122,6 @@ window.fetchGroupWFS = async function(groupKey, term) {
     const layers = config.layers;
     const unifiedFilter = buildUnifiedCQLFilter(term);
 
-    console.log(`Global Search group: ${groupKey}, layers: ${layers.join(', ')}, term: ${term}`);
-
     // البحث في جميع الطبقات في المجموعة
     const allFeatures = [];
 
@@ -134,9 +130,8 @@ window.fetchGroupWFS = async function(groupKey, term) {
         const layerKey = layer.replace('Layer', '').toLowerCase();
         const layerNameAr = window.serviceTranslations && window.serviceTranslations[layerKey] ? window.serviceTranslations[layerKey].name : null;
 
-        console.log(`Searching in layer: ${layer}, layerNameAr: ${layerNameAr}`);
-
-        // استخدام endpoint السيرفر للبحث
+        // استخدام endpoint السيرفر للبحث (يدعم الآن OR بين كلمات الجملة وأعمدة
+        // search_tags/des/name بشكل مركزي من داخل السيرفر نفسه)
         try {
             const baseUrl = window.MAP_CONFIG?.server?.proxyUrl || (window.location.origin + "/");
             const params = new URLSearchParams({
@@ -147,12 +142,9 @@ window.fetchGroupWFS = async function(groupKey, term) {
                 value: term
             });
 
-            // إضافة الاسم العربي إذا وجد
             if (layerNameAr) {
                 params.append('layerNameAr', layerNameAr);
             }
-
-            console.log(`Search params for ${layer}:`, params.toString());
 
             const response = await fetch(`${baseUrl}api/search-features?${params.toString()}`);
             const data = await response.json();
@@ -168,16 +160,14 @@ window.fetchGroupWFS = async function(groupKey, term) {
                     };
                 });
                 allFeatures.push(...features);
-                console.log(`Found ${features.length} features in ${layer}`);
             }
         } catch (err) {
-            console.error(`Error searching in layer ${layer}:`, err);
+            // تجاهل خطأ طبقة واحدة ومتابعة باقي الطبقات
         }
     }
 
     // Fallback للبحث المباشر من GeoServer إذا لم توجد نتائج
     if (allFeatures.length === 0) {
-        console.log('No results from server, trying GeoServer fallback');
         const typeNames = layers.map(l => `${workspace}:${l}`).join(',');
 
         const params = new URLSearchParams({
@@ -210,11 +200,9 @@ window.fetchGroupWFS = async function(groupKey, term) {
                 }
             }
         } catch (fallbackErr) {
-            console.error(`Fallback error in group ${groupKey}:`, fallbackErr);
+            // تجاهل فشل المسار الاحتياطي
         }
     }
-
-    console.log(`Total features found: ${allFeatures.length}`);
 
     // ترتيب النتائج حسب rating تنازلياً
     allFeatures.sort((a, b) => {

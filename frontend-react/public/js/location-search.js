@@ -74,19 +74,20 @@ function initializeLocationSearch(map, overlayLayersObj) {
 
     if (searchLayerSelect) searchLayerSelect.addEventListener('change', renderExtraFilterUI);
 
-    function applyExtraFilters(features, layerKey) {
+        function applyExtraFilters(features, layerKey) {
         if (layerKey === 'road_barriersLayer') {
             const sel = document.getElementById('location-stop-filter');
             const val = sel ? sel.value : '';
             if (val !== '') return features.filter(f => String(f.get('stop')) === val);
         } else if (layerKey === 'fuel_stationsLayer') {
-            let filtered = features;
-            ['diesel', 'banzen95', 'banzen98'].forEach(fid => {
-                const sel = document.getElementById('location-fuel-filter-' + fid);
-                const val = sel ? sel.value : '';
-                if (val !== '') filtered = filtered.filter(f => String(f.get(fid)) === val);
-            });
-            return filtered;
+            // 🆕 منطق OR: إذا اختار المستخدم أكثر من نوع وقود (مثلاً ديزل غير متوفر
+            // وبنزين95 غير متوفر معاً)، تُعرض المحطة إن حقّقت أياً من الشروط المختارة،
+            // وليس بالضرورة كل الشروط معاً كما كان سابقاً (AND متسلسل)
+            const activeSelections = ['diesel', 'banzen95', 'banzen98']
+                .map(fid => ({ fid, val: document.getElementById('location-fuel-filter-' + fid)?.value || '' }))
+                .filter(s => s.val !== '');
+            if (activeSelections.length === 0) return features;
+            return features.filter(f => activeSelections.some(s => String(f.get(s.fid)) === s.val));
         }
         return features;
     }
@@ -103,18 +104,18 @@ function initializeLocationSearch(map, overlayLayersObj) {
         return Math.sqrt(dx * dx + dy * dy);
     }
 
-        window.populateSearchLayerSelect = function() {
+            window.populateSearchLayerSelect = function() {
         if (!searchLayerSelect) return;
         searchLayerSelect.innerHTML = '<option value="">-- اختر الخدمة أو العقار --</option>';
         // 🆕 مطابقة دقيقة (Exact) وليس substring، لنفس سبب مشكلة "حواجز الطرق" بملف search.js
         const excludedTitles = ['المدن', 'المحافظات', 'الطرق', 'المناطق'];
         const excludedKeys = ['cityLayer', 'governorateLayer', 'roadsLayer', 'locationLayer'];
-        const globalExcludedKeys = MAP_CONFIG.globalExclusions || [];
 
         Object.keys(overlayLayersObj).forEach(key => {
             const lyr = overlayLayersObj[key];
             const title = lyr.get('title') || '';
-            const isExcluded = excludedTitles.includes(title) || excludedKeys.includes(key) || globalExcludedKeys.includes(key.replace('Layer', ''));
+            // 🆕 التحقق من الاستثناءات العامة عبر الدالة الموحّدة (shared-utils.js)
+            const isExcluded = excludedTitles.includes(title) || excludedKeys.includes(key) || window.isLayerGloballyExcluded(key);
 
             if (title && !key.toLowerCase().includes('search') && !isExcluded) { // تم دمج شرط الاستثناءات
                 const option = document.createElement('option');
@@ -177,7 +178,7 @@ function initializeLocationSearch(map, overlayLayersObj) {
         });
     });
 
-    executeLocationSearchBtn?.addEventListener('click', async () => {
+        executeLocationSearchBtn?.addEventListener('click', async () => {
         if (!searchCenterLocation) return alert("الرجاء تحديد موقع البحث أولاً.");
         const selectedLayerKey = searchLayerSelect.value;
         if (!selectedLayerKey) return alert("الرجاء اختيار نوع العقار أو الخدمة.");
@@ -196,6 +197,41 @@ function initializeLocationSearch(map, overlayLayersObj) {
         const workspace = isRealEstate ? 'realestate' : 'services';
         const layerNameMap = { 'rentLayer': 'ApartRent', 'saleLayer': 'ApartSale', 'landLayer': 'LandSale' };
         const layerName = layerNameMap[selectedLayerKey] || selectedLayerKey.replace('Layer', '');
+
+        // 🆕 دالة موحّدة: تطبّق فلتر حالة الحاجز/توفر الوقود أولاً (إن وُجد)، ثم تحسب
+        // الأقرب أو ما ضمن نطاق المسافة من بين المعالم المطابقة للشرط فقط - وليس أقرب
+        // معلم على الإطلاق ثم فحص الشرط لاحقاً (وهذا كان يُسقط أقرب حاجز "مغلق" فعلياً
+        // إن لم يكن هو الأقرب مسافةً، حتى لو وُجد حاجز مغلق آخر على بعد 60 كم مثلاً)
+        function findMatchingNearby(allFeatures) {
+            const filtered = applyExtraFilters(allFeatures, selectedLayerKey);
+            const radius = parseFloat(radiusStr) || 0;
+
+            if (radius > 0) {
+                const circleFeature = new ol.Feature(new ol.geom.Circle(searchCenterLocation, radius));
+                circleFeature.setStyle(new ol.style.Style({
+                    stroke: new ol.style.Stroke({ color: 'rgba(0, 123, 255, 0.5)', width: 2, lineDash: [5, 5] }),
+                    fill: new ol.style.Fill({ color: 'rgba(0, 123, 255, 0.1)' })
+                }));
+                searchResultsHighlightSource?.addFeature(circleFeature);
+            }
+
+            if (radiusStr === "") {
+                let minDistance = Infinity;
+                let closestFeature = null;
+                filtered.forEach(f => {
+                    const dist = getDistanceInMeters(searchCenterLocation, f.getGeometry().getClosestPoint(searchCenterLocation));
+                    if (dist < minDistance) { minDistance = dist; closestFeature = f; }
+                });
+                return closestFeature ? [closestFeature] : [];
+            }
+            if (radius === 0) {
+                return filtered.filter(f => f.getGeometry().intersectsCoordinate(searchCenterLocation));
+            }
+            return filtered.filter(f => {
+                const dist = getDistanceInMeters(searchCenterLocation, f.getGeometry().getClosestPoint(searchCenterLocation));
+                return dist <= radius;
+            });
+        }
 
         // استخدام البحث من السيرفر بدون BBOX للحصول على جميع النتائج
         try {
@@ -218,41 +254,8 @@ function initializeLocationSearch(map, overlayLayersObj) {
             const format = new ol.format.GeoJSON();
             const features = data.features.map(f => format.readFeature(f));
 
-            // فلترة حسب المسافة
-            let nearby = [];
             searchResultsHighlightSource?.clear();
-
-            const radius = parseFloat(radiusStr) || 0;
-            if (radius > 0) {
-                const circleFeature = new ol.Feature(new ol.geom.Circle(searchCenterLocation, radius));
-                circleFeature.setStyle(new ol.style.Style({
-                    stroke: new ol.style.Stroke({ color: 'rgba(0, 123, 255, 0.5)', width: 2, lineDash: [5, 5] }),
-                    fill: new ol.style.Fill({ color: 'rgba(0, 123, 255, 0.1)' })
-                }));
-                searchResultsHighlightSource?.addFeature(circleFeature);
-            }
-
-            if (radiusStr === "") {
-                let minDistance = Infinity;
-                let closestFeature = null;
-                features.forEach(f => {
-                    const dist = getDistanceInMeters(searchCenterLocation, f.getGeometry().getClosestPoint(searchCenterLocation));
-                    if (dist < minDistance) { minDistance = dist; closestFeature = f; }
-                });
-                if (closestFeature) nearby = [closestFeature];
-            } else {
-                if (radius === 0) {
-                    nearby = features.filter(f => f.getGeometry().intersectsCoordinate(searchCenterLocation));
-                } else {
-                    nearby = features.filter(f => {
-                        const dist = getDistanceInMeters(searchCenterLocation, f.getGeometry().getClosestPoint(searchCenterLocation));
-                        return dist <= radius;
-                    });
-                }
-            }
-
-                        // 🆕 تطبيق فلتر حالة الحاجز / توفر الوقود (إن وُجد) فوق نتائج البحث المكاني
-            nearby = applyExtraFilters(nearby, selectedLayerKey);
+            const nearby = findMatchingNearby(features);
 
             if (nearby.length > 0) {
                 searchResultsHighlightSource?.addFeatures(nearby);
@@ -269,41 +272,9 @@ function initializeLocationSearch(map, overlayLayersObj) {
             const layer = overlayLayersObj[selectedLayerKey];
             const source = layer.getSource();
             const features = source.getFeatures();
-            let nearby = [];
 
             searchResultsHighlightSource?.clear();
-
-            const radius = parseFloat(radiusStr) || 0;
-            if (radius > 0) {
-                const circleFeature = new ol.Feature(new ol.geom.Circle(searchCenterLocation, radius));
-                circleFeature.setStyle(new ol.style.Style({
-                    stroke: new ol.style.Stroke({ color: 'rgba(0, 123, 255, 0.5)', width: 2, lineDash: [5, 5] }),
-                    fill: new ol.style.Fill({ color: 'rgba(0, 123, 255, 0.1)' })
-                }));
-                searchResultsHighlightSource?.addFeature(circleFeature);
-            }
-
-            if (radiusStr === "") {
-                let minDistance = Infinity;
-                let closestFeature = null;
-                features.forEach(f => {
-                    const dist = getDistanceInMeters(searchCenterLocation, f.getGeometry().getClosestPoint(searchCenterLocation));
-                    if (dist < minDistance) { minDistance = dist; closestFeature = f; }
-                });
-                if (closestFeature) nearby = [closestFeature];
-            } else {
-                if (radius === 0) {
-                    nearby = features.filter(f => f.getGeometry().intersectsCoordinate(searchCenterLocation));
-                } else {
-                    nearby = features.filter(f => {
-                        const dist = getDistanceInMeters(searchCenterLocation, f.getGeometry().getClosestPoint(searchCenterLocation));
-                        return dist <= radius;
-                    });
-                }
-            }
-
-            // 🆕 تطبيق فلتر حالة الحاجز / توفر الوقود أيضاً في مسار البحث المحلي الاحتياطي
-            nearby = applyExtraFilters(nearby, selectedLayerKey);
+            const nearby = findMatchingNearby(features);
 
             if (nearby.length > 0) {
                 searchResultsHighlightSource?.addFeatures(nearby);
