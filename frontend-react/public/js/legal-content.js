@@ -733,7 +733,7 @@
     // ==========================================================================
     const idMap = {
         guide: ['btn-user-guide', 'welcome-guide-link'],
-        guideSearch: ['footer-guide-search', 'header-guide-search', 'header-guide-search-services', 'profile-guide-search'],
+        guideSearch: ['footer-guide-search', 'header-guide-search', 'profile-guide-search'],
         guideProvider: ['footer-guide-provider', 'header-guide-provider', 'profile-guide-provider'],
         guideSubscription: ['footer-guide-subscription', 'header-guide-subscription', 'profile-guide-subscription'],
         guideMap: ['footer-guide-map', 'header-guide-map'],

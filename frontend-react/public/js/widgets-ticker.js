@@ -404,29 +404,43 @@
         }
     }
 
-    // ============================================
-    // دالة تحديث الشريط المتحرك
-    // ============================================
-    function updateTickerHTML() {
-        const tickerScroll = document.getElementById('ticker-scroll');
-        if (!tickerScroll) return;
+                // ============================================
+                // دالة تحديث الشريط المتحرك
+                // ============================================
+                const TICKER_GROUPS = [
+                { id: 'portal-currency-card',        label: 'أسعار العملات',            icon: 'fa-dollar-sign' },
+                { id: 'portal-gold-card',            label: 'الذهب والمعادن النفيسة',   icon: 'fa-gem' },
+                { id: 'portal-weather-card',         label: 'حالة الطقس',               icon: 'fa-cloud-sun' },
+                { id: 'portal-fuel-card',            label: 'المحروقات والغاز',         icon: 'fa-gas-pump' },
+                { id: 'portal-transport-inter-card', label: 'النقل بين المدن',          icon: 'fa-bus' },
+                { id: 'portal-transport-intra-card', label: 'النقل الداخلي',            icon: 'fa-bus' },
+                { id: 'portal-prayer-card',          label: 'مواقيت الصلاة',            icon: 'fa-mosque' },
+                { id: 'portal-calendar-card',        label: 'التقويم الهجري والميلادي', icon: 'fa-calendar-alt' },
+                { id: 'portal-road-status-card',     label: 'حالة الطرق',               icon: 'fa-road' },
+                { id: 'portal-fuel-status-card',     label: 'حالة محطات الوقود',        icon: 'fa-gas-pump' }
+            ];
 
-            const html = [
-            renderCurrencyTicker(),
-            renderGoldTicker(),
-            renderWeatherTicker(),
-            renderFuelTicker(),
-            renderPrayerTicker(),
-            renderCalendarTicker(),
-            renderTrafficTicker(),
-            renderFuelStationsStatusTicker(),
-            renderTransportInterCityTicker(),
-            renderTransportIntraCityTicker(),
-            renderEventsTicker()
-        ].join('');
+            function renderTickerGroupsHTML() {
+                return TICKER_GROUPS.map(g => `
+                    <div class="ticker-item ticker-group-item" data-target="${g.id}">
+                        <i class="fas ${g.icon}"></i>
+                        <span class="ticker-label">${g.label}</span>
+                    </div>
+                `).join('');
+            }
 
-        tickerScroll.innerHTML = html;
-    }
+            function updateTickerHTML() {
+                const tickerScroll = document.getElementById('ticker-scroll');
+                if (!tickerScroll) return;
+                // تكرار القائمة مرتين لضمان حركة سلسة متصلة (نفس منطق أنيميشن scrollTicker)
+                tickerScroll.innerHTML = renderTickerGroupsHTML() + renderTickerGroupsHTML();
+                tickerScroll.querySelectorAll('.ticker-group-item').forEach(el => {
+                    el.addEventListener('click', () => {
+                        const targetId = el.getAttribute('data-target');
+                        if (window.openWidgetsPortalToCard) window.openWidgetsPortalToCard(targetId);
+                    });
+                });
+            }
 
     // ============================================
     // دالة تحميل HTML الشريط المتحرك
@@ -467,7 +481,7 @@
             tabContent.className = 'panel-right panel-content';
             tabContent.style.display = 'none';
             document.body.appendChild(tabContent);
-            console.log('Created widgets-content div');
+           
         }
         
         // تحميل محتوى البوابة الكاملة (8 مجموعات)
@@ -584,7 +598,7 @@
         const refreshBtn = document.getElementById('portal-refresh-btn');
         const contentArea = document.getElementById('portal-content-area');
 
-        console.log('Setting up portal modal:', { expandBtn, modal, overlay, closeBtn, refreshBtn });
+        
 
                 if (expandBtn && modal && overlay) {
             expandBtn.addEventListener('click', function(e) {

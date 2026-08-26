@@ -9,6 +9,17 @@ window.__nmsPageHandlesOwnAds = true;
     'use strict';
 
         document.addEventListener('DOMContentLoaded', () => {
+            ['header-guide-search-services', 'footer-guide-search-services'].forEach(id => {
+    const btn = document.getElementById(id);
+    if (btn) {
+        btn.addEventListener('click', (e) => {
+            e.preventDefault();
+            const target = document.getElementById('nms-categories-view') || document.getElementById('market-search-input');
+            target?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            document.getElementById('market-search-input')?.focus();
+        });
+    }
+});
 
         const baseUrl = window.location.origin + '/';
 

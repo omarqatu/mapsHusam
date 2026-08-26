@@ -137,101 +137,41 @@
     let allFieldValues = {}; // تخزين جميع القيم لكل حقل للفلترة المحلية
 
     async function getUniqueValues(layerKey, fieldId) {
-        const layer = currentOverlayLayers[layerKey];
-        if (!layer) return [];
+    const layer = currentOverlayLayers[layerKey];
+    if (!layer) return [];
 
-        // تحديد workspace و layer name
-        const isRealEstate = ['rentLayer', 'saleLayer', 'landLayer'].includes(layerKey);
-        const workspace = isRealEstate ? 'realestate' : 'services';
-        const layerNameMap = { 'rentLayer': 'ApartRent', 'saleLayer': 'ApartSale', 'landLayer': 'LandSale' };
-        const layerName = layerNameMap[layerKey] || layerKey.replace('Layer', '');
+    const isRealEstate = ['rentLayer', 'saleLayer', 'landLayer'].includes(layerKey);
+    const workspace = isRealEstate ? 'realestate' : 'services';
+    const layerNameMap = { 'rentLayer': 'ApartRent', 'saleLayer': 'ApartSale', 'landLayer': 'LandSale' };
+    const layerName = layerNameMap[layerKey] || layerKey.replace('Layer', '');
 
-        // للمواقع والأسماء: استخدام الفلترة المحلية الخفيفة
-        if (fieldId === 'location' || fieldId === 'location_name' || fieldId === 'name') {
-            return getUniqueValuesWithLightFiltering(layerKey, fieldId, layerName, workspace);
-        }
+    try {
+        const baseUrl = window.MAP_CONFIG?.server?.proxyUrl || (window.location.origin + "/");
+        const params = new URLSearchParams({ layer: layerName, workspace, field: fieldId });
 
-        // للمحافظة والمدن: استخدام السيرفر
-        try {
-            const baseUrl = window.MAP_CONFIG?.server?.proxyUrl || (window.location.origin + "/");
-            const params = new URLSearchParams({
-                layer: layerName,
-                workspace: workspace,
-                field: fieldId
-            });
-
-            const response = await fetch(`${baseUrl}api/get-unique-values?${params.toString()}`);
-            const data = await response.json();
-
-            if (data.success && data.values) {
-                const uniqueValues = data.values.sort();
-
-                // تخزين القيم للفلترة المحلية
-                allFieldValues[fieldId] = uniqueValues;
-
-                // تحديث UI بالقيم الجديدة
-                updateValueUIWithData(uniqueValues);
-                return uniqueValues;
-            }
-        } catch (err) {
-            console.error('Error fetching unique values from PostgreSQL:', err);
-            // Fallback: استخدام البيانات المحلية
-            const localValues = getUniqueValuesLocal(layer, fieldId);
-            updateValueUIWithData(localValues);
-            return localValues;
-        }
-
-        // Fallback: استخدام البيانات المحلية
-        const localValues = getUniqueValuesLocal(layer, fieldId);
-        updateValueUIWithData(localValues);
-        return localValues;
-    }
-
-    async function getUniqueValuesWithLightFiltering(layerKey, fieldId, layerName, workspace) {
-        // جلب القيم المخزنة أو جلبها من السيرفر إذا لم تكن موجودة
-        if (!allFieldValues[fieldId]) {
-            try {
-                const baseUrl = window.MAP_CONFIG?.server?.proxyUrl || (window.location.origin + "/");
-                const params = new URLSearchParams({
-                    layer: layerName,
-                    workspace: workspace,
-                    field: fieldId
-                });
-
-                const response = await fetch(`${baseUrl}api/get-unique-values?${params.toString()}`);
-                const data = await response.json();
-
-                if (data.success && data.values) {
-                    allFieldValues[fieldId] = data.values;
-                }
-            } catch (err) {
-                console.error('Error fetching unique values:', err);
-            }
-        }
-
-        if (!allFieldValues[fieldId]) {
-            const layer = currentOverlayLayers[layerKey];
-            const localValues = getUniqueValuesLocal(layer, fieldId);
-            allFieldValues[fieldId] = localValues;
-        }
-
-        const values = allFieldValues[fieldId];
+        const govValue = getFilterValueFromConditions('gov_a');
         const villageValue = getFilterValueFromConditions('village_a');
+        if (fieldId !== 'gov_a' && govValue) params.append('filter_gov_a', govValue);
+        if ((fieldId === 'location' || fieldId === 'location_name' || fieldId === 'name') && villageValue) {
+            params.append('filter_village_a', villageValue);
+        }
 
-        // فلترة خفيفة بناءً على المدينة فقط
-        const filteredValues = values.filter(value => {
-            // إذا لم يتم اختيار مدينة، عرض كل القيم
-            if (!villageValue) return true;
-
-            // فلترة بناءً على المدينة
-            if (villageValue && value.includes(villageValue)) return true;
-
-            return false;
-        });
-
-        updateValueUIWithData(filteredValues.sort());
-        return filteredValues;
+        const response = await fetch(`${baseUrl}api/get-unique-values?${params.toString()}`);
+        const data = await response.json();
+        if (data.success && data.values) {
+            const uniqueValues = data.values.sort();
+            allFieldValues[fieldId] = uniqueValues;
+            updateValueUIWithData(uniqueValues);
+            return uniqueValues;
+        }
+    } catch (err) {
+        console.error('Error fetching unique values from PostgreSQL:', err);
     }
+
+    const localValues = getUniqueValuesLocal(layer, fieldId);
+    updateValueUIWithData(localValues);
+    return localValues;
+}
 
     function getFilterValueFromConditions(fieldId) {
         for (const c of conditions) {

@@ -1181,40 +1181,31 @@ app.post('/api/auth/login', authLimiter, async (req, res) => {
 app.get('/api/get-unique-values', async (req, res) => {
     try {
         const { layer, workspace, field } = req.query;
-
-        if (!layer || !workspace || !field) {
-            return res.status(400).json({ error: 'layer, workspace, and field are required' });
-        }
-
-        // 🆕 [إصلاح ثغرة SQL Injection]: layer و field كانا يُدمَجان مباشرة داخل
-        // نص الاستعلام بدون أي تحقق. الآن نتحقق أن layer ضمن القائمة البيضاء
-        // المعتمدة وأن field يطابق نمط معرّف SQL عادي فقط قبل استخدامهما.
-        if (!isValidLayer(layer)) {
-            return res.status(403).json({ error: 'اسم طبقة غير مسموح به.' });
-        }
-        if (!isValidSqlIdentifier(field)) {
-            return res.status(400).json({ error: 'اسم حقل غير صالح.' });
-        }
+        if (!layer || !workspace || !field) return res.status(400).json({ error: 'layer, workspace, and field are required' });
+        if (!isValidLayer(layer)) return res.status(403).json({ error: 'اسم طبقة غير مسموح به.' });
+        if (!isValidSqlIdentifier(field)) return res.status(400).json({ error: 'اسم حقل غير صالح.' });
 
         const targetPool = workspace === 'realestate' ? realestatePool : servicesPool;
 
-        // استعلام لجلب القيم الفريدة من الحقل المحدد
-        const query = `SELECT DISTINCT "${field}" FROM public."${layer}" WHERE status = 0 AND auto_status = 0 AND "${field}" IS NOT NULL AND "${field}"::text != '' ORDER BY "${field}" ASC LIMIT 10000`;
-
-        console.log(`Unique Values Query for ${layer}.${field}:`, query);
-
-        const result = await targetPool.query(query);
-
-        const values = result.rows.map(row => row[field]).filter(v => v != null && v !== '');
-
-        res.json({
-            success: true,
-            values: values
+        // 🆕 فلترة تسلسلية اختيارية: filter_gov_a=... / filter_village_a=...
+        let extraWhere = '';
+        const extraParams = [];
+        Object.keys(req.query).forEach(key => {
+            if (key.startsWith('filter_')) {
+                const filterField = key.substring('filter_'.length);
+                const filterValue = req.query[key];
+                if (isValidSqlIdentifier(filterField) && filterField !== field && filterValue) {
+                    extraParams.push(filterValue);
+                    extraWhere += ` AND "${filterField}" = $${extraParams.length}`;
+                }
+            }
         });
 
+        const query = `SELECT DISTINCT "${field}" FROM public."${layer}" WHERE status = 0 AND auto_status = 0 AND "${field}" IS NOT NULL AND "${field}"::text != ''${extraWhere} ORDER BY "${field}" ASC LIMIT 10000`;
+        const result = await targetPool.query(query, extraParams);
+        const values = result.rows.map(row => row[field]).filter(v => v != null && v !== '');
+        res.json({ success: true, values });
     } catch (error) {
-        console.error('Unique Values API Error:', error);
-        console.error('Error details:', error.message);
         res.status(500).json({ error: 'Database query failed', details: error.message });
     }
 });
@@ -1304,31 +1295,29 @@ app.get('/api/search-features', async (req, res) => {
                     orParts.push(`${fieldName} = $${params.length + 1}`);
                     params.push(c.value);
                 } else if (c.operator === 'contains') {
+                    const NORM_FROM = 'أإآةهىيؤئء';
+                    const NORM_TO   = 'اااههييءءء';
                     if (fieldName === 'search_tags') {
-                        // 🆕 بحث ذكي بمنطق OR على مستوى الكلمات: يطابق إذا وُجدت أي كلمة
-                        // من كلمات البحث (مفصولة بمسافات) داخل الكلمات الدلالية أو الوصف
-                        // أو الاسم (للخدمات فقط) أو اسم الطبقة بالعربي - بدل شرط AND
-                        // الصارم القديم الذي كان يتطلب تطابق الجملة كاملة كنص واحد.
-                        const searchColumns = isRealEstate ? ['search_tags', 'des'] : ['search_tags', 'des', 'name'];
-                        const words = c.value.split(/\s+/).filter(w => w.length > 0);
-                        const wordGroups = words.map(word => {
-                            const colParts = searchColumns.map(col => {
-                                params.push(`%${word}%`);
-                                return `${col} ILIKE $${params.length}`;
-                            });
-                            if (layerNameAr) {
-                                params.push(layerNameAr);
-                                params.push(`%${word}%`);
-                                colParts.push(`$${params.length - 1} ILIKE $${params.length}`);
-                            }
-                            return `(${colParts.join(' OR ')})`;
+                    const searchColumns = isRealEstate ? ['search_tags', 'des'] : ['search_tags', 'des', 'name'];
+                    const words = c.value.split(/\s+/).filter(w => w.length > 0);
+                    const wordGroups = words.map(word => {
+                        const colParts = searchColumns.map(col => {
+                            params.push(`%${word}%`);
+                            return `translate(${col}::text, '${NORM_FROM}', '${NORM_TO}') ILIKE translate($${params.length}, '${NORM_FROM}', '${NORM_TO}')`;
                         });
-                        if (wordGroups.length > 0) orParts.push(`(${wordGroups.join(' OR ')})`);
-                    } else {
-                        orParts.push(`${fieldName} ILIKE $${params.length + 1}`);
-                        params.push(`%${c.value}%`);
-                    }
-                } else if (c.operator === '>') {
+                        if (layerNameAr) {
+                            params.push(layerNameAr);
+                            params.push(`%${word}%`);
+                            colParts.push(`translate($${params.length - 1}, '${NORM_FROM}', '${NORM_TO}') ILIKE translate($${params.length}, '${NORM_FROM}', '${NORM_TO}')`);
+                        }
+                        return `(${colParts.join(' OR ')})`;
+                    });
+                    if (wordGroups.length > 0) orParts.push(`(${wordGroups.join(' OR ')})`);
+                } else {
+                    params.push(`%${c.value}%`);
+                    orParts.push(`translate(${fieldName}::text, '${NORM_FROM}', '${NORM_TO}') ILIKE translate($${params.length}, '${NORM_FROM}', '${NORM_TO}')`);
+                }
+                 } else if (c.operator === '>') {
                     orParts.push(`CAST(${fieldName} AS NUMERIC) >= $${params.length + 1}`);
                     params.push(parseFloat(c.value));
                 } else if (c.operator === '<') {

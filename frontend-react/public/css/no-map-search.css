@@ -1476,3 +1476,24 @@ body {
         font-size: 11px;
     }
 }
+
+@media (max-width: 768px) {
+    body { overflow-x: hidden; }
+    .market-main-header { flex-wrap: wrap; }
+    .market-actions-area {
+        flex-wrap: wrap;
+        justify-content: center;
+        width: 100%;
+        gap: 8px;
+    }
+    .market-add-btn,
+    #nms-btn-road-status,
+    #nms-btn-fuel-status {
+        flex: 1 1 auto;
+        min-width: 130px;
+        font-size: 12px;
+        padding: 8px 10px;
+        justify-content: center;
+        white-space: normal;
+    }
+}

@@ -591,3 +591,11 @@ body.widgets-tab-active .widgets-ticker-container {
         color: #e0e0e0;
     }
 }
+
+.ticker-group-item {
+    min-width: auto !important;
+    max-width: none !important;
+    width: auto !important;
+    white-space: nowrap;
+    cursor: pointer;
+}
