@@ -2626,13 +2626,20 @@ app.post('/api/log-contact-click', async (req, res) => {
         );
 
         let provider_user_id = null;
-        let final_provider_name = provider_name;
-        
+        // 🆕 [إصلاح]: نُعطي الأولوية دائماً للاسم الفعلي المُرسل من الواجهة
+        // (وهو اسم مزود الخدمة الحقيقي كما أُدخل بحقل "name" بالمعلم على
+        // الخريطة)، وليس اسم الطبقة. اسم الطبقة يبقى فقط كحل أخير جداً في
+        // حال لم يصل أي اسم من الواجهة لأي سبب.
+        let final_provider_name = (provider_name && String(provider_name).trim() !== '') ? String(provider_name).trim() : null;
+
         if (providerResult.rows.length > 0) {
             provider_user_id = providerResult.rows[0].user_id;
-            final_provider_name = providerResult.rows[0].full_name;
-        } else {
-            // إذا لم يوجد مزود خدمة مرتبط، نستخدم اسم الطبقة كاسم المزود
+            // إذا لم تُرسل الواجهة اسماً صريحاً، نستخدم اسم صاحب الحساب الإداري كبديل
+            if (!final_provider_name) {
+                final_provider_name = providerResult.rows[0].full_name;
+            }
+        } else if (!final_provider_name) {
+            // لا يوجد مزود مرتبط ولا اسم مُرسل من الواجهة: نستخدم اسم الطبقة كحل أخير فقط
             final_provider_name = service_layer;
         }
 

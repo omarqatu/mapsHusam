@@ -1230,51 +1230,85 @@ window.__nmsPageHandlesOwnAds = true;
                     const featureIdForRequest = (p.id !== undefined && p.id !== null) ? p.id : '';
                     const isLinkedProvider = !isRealEstate && typeof window.isFeatureLinkedToProvider === 'function' && window.isFeatureLinkedToProvider(layerDbName, featureIdForRequest);
 
-                    if (isLinkedProvider) {
-                        // 🆕 [نظام طلب الخدمة]: بديل موحّد عن الاتصال/الواتساب المباشرين -
-                        // زر واحد يرسل طلباً حقيقياً لحساب مزود الخدمة (راجع service-chat.js)
-                        const actions = document.createElement('div');
-                        actions.className = 'nms-r-actions';
-                        actions.innerHTML = `
-                            <button class="req-svc-btn" style="flex:1;" data-provider="${providerName.replace(/"/g, '&quot;')}" data-service="${layerTitle.replace(/"/g, '&quot;')}" data-layer="${layerDbName}" data-feature-id="${featureIdForRequest}">
-                                <i class="fas fa-paper-plane"></i> طلب الخدمة
-                            </button>
-                        `;
-                        card.appendChild(actions);
-                    } else {
-                        // 🆕 زر الاتصال يظهر فقط إذا كان هناك phone
-                        const hasPhone = p.phone !== undefined && p.phone !== null && p.phone !== '' && String(p.phone).trim() !== '';
-                        const actions = document.createElement('div');
-                        actions.className = 'nms-r-actions';
-                        actions.innerHTML = `
-                            ${hasPhone ? `<button class="nms-call-btn"><i class="fas fa-mobile-alt"></i> اتصال</button>` : ''}
-                            <button class="nms-whatsapp-btn"><i class="fab fa-whatsapp"></i> واتساب</button>
-                        `;
-                        if (hasPhone) {
-                            actions.querySelector('.nms-call-btn').onclick = async () => {
-                                const quota = await checkRequestQuotaOrAlert(getRealUserId(), null);
-                                if (!quota.allowed) return;
-                                trackRequest(providerName, `(${layerTitle}) اتصال مباشر`);
-                                window.location.href = 'tel:' + localPhone;
-                            };
-                        }
-                        actions.querySelector('.nms-whatsapp-btn').onclick = async () => {
-                            const newTab = window.open('', '_blank');
-                            const quota = await checkRequestQuotaOrAlert(getRealUserId(), newTab);
+                                    if (isLinkedProvider) {
+                    // 🆕 [نظام طلب الخدمة]: بديل موحّد عن الاتصال/الواتساب المباشرين -
+                    // زر واحد يرسل طلباً حقيقياً لحساب مزود الخدمة (راجع service-chat.js)
+                    const actions = document.createElement('div');
+                    actions.className = 'nms-r-actions';
+                    actions.innerHTML = `
+                        <button class="req-svc-btn" style="flex:1;" data-provider="${providerName.replace(/"/g, '&quot;')}" data-service="${layerTitle.replace(/"/g, '&quot;')}" data-layer="${layerDbName}" data-feature-id="${featureIdForRequest}">
+                            <i class="fas fa-paper-plane"></i> طلب الخدمة
+                        </button>
+                    `;
+                    card.appendChild(actions);
+                } else {
+                    // 🆕 زر الاتصال يظهر فقط إذا كان هناك phone
+                    const hasPhone = p.phone !== undefined && p.phone !== null && p.phone !== '' && String(p.phone).trim() !== '';
+                    const actions = document.createElement('div');
+                    actions.className = 'nms-r-actions';
+                    actions.innerHTML = `
+                        ${hasPhone ? `<button class="nms-call-btn"><i class="fas fa-mobile-alt"></i> اتصال</button>` : ''}
+                        <button class="nms-whatsapp-btn"><i class="fab fa-whatsapp"></i> واتساب</button>
+                    `;
+                    if (hasPhone) {
+                        actions.querySelector('.nms-call-btn').onclick = async () => {
+                            const quota = await checkRequestQuotaOrAlert(getRealUserId(), null);
                             if (!quota.allowed) return;
-                            trackRequest(providerName, `(${layerTitle}) واتساب`);
-                            const message = `مرحباً ${providerName}، أرغب بالاستفسار عن (${layerTitle}) من خلال منصة الخدمات.`;
-                            let cleanNumber = whatsappNumber.replace(/\D/g, '');
-                            if (cleanNumber.startsWith('00')) cleanNumber = cleanNumber.substring(2);
-                            const whatsappUrl = `https://api.whatsapp.com/send?phone=${cleanNumber}&text=${encodeURIComponent(message)}`;
-                            if (newTab) {
-                                newTab.location.href = whatsappUrl;
-                            } else {
-                                window.open(whatsappUrl, '_blank');
+                            // 🆕 تسجيل نقرة الاتصال في نظام لوحة التحكم (service_requests)
+                            // بنفس طريقة market-search.js وpopup.js تماماً، لضمان ظهورها
+                            // في dashboard.html مع الاسم الحقيقي لمزود الخدمة
+                            try {
+                                await fetch(window.location.origin + '/api/log-contact-click', {
+                                    method: 'POST',
+                                    headers: { 'Content-Type': 'application/json' },
+                                    body: JSON.stringify({
+                                        user_id: getRealUserId(),
+                                        service_layer: layerDbName,
+                                        feature_id: featureIdForRequest,
+                                        provider_name: providerName,
+                                        contact_type: 'call'
+                                    })
+                                });
+                            } catch (err) {
+                                console.error('خطأ في تسجيل نقرة الاتصال:', err);
                             }
+                            trackRequest(providerName, `(${layerTitle}) اتصال مباشر`);
+                            window.location.href = 'tel:' + localPhone;
                         };
-                        card.appendChild(actions);
                     }
+                    actions.querySelector('.nms-whatsapp-btn').onclick = async () => {
+                        const newTab = window.open('', '_blank');
+                        const quota = await checkRequestQuotaOrAlert(getRealUserId(), newTab);
+                        if (!quota.allowed) return;
+                        // 🆕 تسجيل نقرة الواتساب في نظام لوحة التحكم (service_requests)
+                        try {
+                            await fetch(window.location.origin + '/api/log-contact-click', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({
+                                    user_id: getRealUserId(),
+                                    service_layer: layerDbName,
+                                    feature_id: featureIdForRequest,
+                                    provider_name: providerName,
+                                    contact_type: 'whatsapp'
+                                })
+                            });
+                        } catch (err) {
+                            console.error('خطأ في تسجيل نقرة الواتساب:', err);
+                        }
+                        trackRequest(providerName, `(${layerTitle}) واتساب`);
+                        const message = `مرحباً ${providerName}، أرغب بالاستفسار عن (${layerTitle}) من خلال منصة الخدمات.`;
+                        let cleanNumber = whatsappNumber.replace(/\D/g, '');
+                        if (cleanNumber.startsWith('00')) cleanNumber = cleanNumber.substring(2);
+                        const whatsappUrl = `https://api.whatsapp.com/send?phone=${cleanNumber}&text=${encodeURIComponent(message)}`;
+                        if (newTab) {
+                            newTab.location.href = whatsappUrl;
+                        } else {
+                            window.open(whatsappUrl, '_blank');
+                        }
+                    };
+                    card.appendChild(actions);
+                }
                 }
 
                 if (coords) {
