@@ -2454,6 +2454,33 @@ app.get('/api/service-ratings', async (req, res) => {
     }
 });
 
+        // =========================================================================
+        // 🆕 9-ب) قائمة أفضل مزودي الخدمة تقييماً بناءً على تقييمات حقيقية فعلية
+        // (جدول service_ratings الذي يُعبّأ فقط بعد اكتمال طلب خدمة حقيقي عبر نظام
+        // الدردشة)، وليس بناءً على عمود rating الوهمي المخزّن يدوياً بجدول كل طبقة.
+        // =========================================================================
+        app.get('/api/top-rated-providers', async (req, res) => {
+            try {
+                const limit = Math.min(parseInt(req.query.limit, 10) || 15, 50);
+                const result = await servicesPool.query(`
+                    SELECT service_layer, feature_id,
+                        ROUND(AVG(rating)::numeric, 1) AS avg_rating,
+                        COUNT(*) AS total_ratings
+                    FROM public.service_ratings
+                    GROUP BY service_layer, feature_id
+                    ORDER BY avg_rating DESC, total_ratings DESC
+                    LIMIT $1
+                `, [limit]);
+
+                res.json({ success: true, items: result.rows });
+            } catch (err) {
+                console.error('❌ خطأ أثناء جلب أفضل مزودي الخدمة تقييماً:', err.message);
+                res.status(500).json({ success: false, error: 'فشل جلب البيانات', details: err.message });
+            }
+        });
+
+
+
 // 10) إضافة تعليق لاحقاً على تقييم موجود
 app.put('/api/service-ratings/:id/comment', async (req, res) => {
     const { id } = req.params;
