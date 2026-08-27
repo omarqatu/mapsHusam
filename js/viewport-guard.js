@@ -1,0 +1,154 @@
+/**
+ * viewport-guard.js
+ */
+(function () {
+    'use strict';
+
+    const MARGIN = 8; // أقل مسافة مسموحة بين اللوحة وأقرب حافة للشاشة
+
+    /**
+     * يعيد أي عنصر positioned (fixed/absolute) داخل حدود الشاشة إن كان خارجها
+     * جزئياً أو كلياً، دون أي تأثير إطلاقاً إن كان أصلاً داخل الحدود بالكامل.
+     */
+    function clampElementToViewport(el, margin) {
+    if (!el) return;
+    if (document.body.classList.contains('mobile-tabs-portrait') || document.body.classList.contains('mobile-tabs-landscape')) return;
+
+        const m = typeof margin === 'number' ? margin : MARGIN;
+        const rect = el.getBoundingClientRect();
+
+        // عنصر مخفي (display:none) أو بلا أبعاد بعد - لا داعي لأي حساب
+        if (rect.width === 0 && rect.height === 0) return;
+
+        const vw = window.innerWidth;
+        const vh = window.innerHeight;
+
+        let left = rect.left;
+        let top = rect.top;
+        let needsFix = false;
+
+        if (rect.right > vw - m) { left = vw - m - rect.width; needsFix = true; }
+        if (rect.bottom > vh - m) { top = vh - m - rect.height; needsFix = true; }
+        // نعيد فحص الحافة اليسرى/العلوية بعد أي تصحيح أعلاه لضمان عدم تجاوزهما بالمقابل
+        if (left < m) { left = m; needsFix = true; }
+        if (top < m) { top = m; needsFix = true; }
+
+        // حالة نادرة: اللوحة نفسها أعرض/أطول من الشاشة بالكامل - نثبّتها من الزاوية
+        if (rect.width > vw - m * 2) left = m;
+        if (rect.height > vh - m * 2) top = m;
+
+        if (!needsFix) return;
+
+        el.style.setProperty('position', 'fixed', 'important');
+        el.style.setProperty('left', Math.round(left) + 'px', 'important');
+        el.style.setProperty('top', Math.round(top) + 'px', 'important');
+        el.style.setProperty('right', 'auto', 'important');
+        el.style.setProperty('bottom', 'auto', 'important');
+    }
+
+    // إتاحتها عالمياً لاستخدامها من provider-panel.js و resizable-panels.js وغيرها
+    window.clampElementToViewport = clampElementToViewport;
+
+    // ==========================================================================
+    // العناصر التي نراقبها باستمرار (فقط الظاهرة حالياً على الشاشة)
+    // ==========================================================================
+    function getGuardedElements() {
+        const list = [];
+
+        document.querySelectorAll('.panel-right').forEach(function (p) {
+            if (!p.classList.contains('hidden')) list.push(p);
+        });
+
+        const provider = document.getElementById('provider-mini-panel');
+        if (provider && !provider.classList.contains('hidden') && provider.style.display !== 'none') {
+            list.push(provider);
+        }
+
+        const banner = document.querySelector('.feedback-banner-wrapper');
+        if (banner) list.push(banner);
+
+        return list;
+    }
+
+    function clampAllVisible() {
+        getGuardedElements().forEach(function (el) { clampElementToViewport(el); });
+    }
+
+    // --------------------------------------------------------------------
+    // 1) إعادة الفحص عند تغيير حجم النافذة أو تدوير الجهاز
+    //    (مع تأخير بسيط لتفادي الحسابات المتكررة أثناء السحب المستمر للحجم)
+    // --------------------------------------------------------------------
+    let resizeToken = null;
+    function scheduleClamp() {
+        clearTimeout(resizeToken);
+        resizeToken = setTimeout(clampAllVisible, 150);
+    }
+    window.addEventListener('resize', scheduleClamp);
+    window.addEventListener('orientationchange', scheduleClamp);
+
+    // --------------------------------------------------------------------
+    // 2) مراقبة فتح أي لوحة (إزالة كلاس hidden) لضبط موضعها فوراً بعد ظهورها،
+    //    خصوصاً لو كانت محفوظة بموضع سابق من شاشة مختلفة الحجم.
+    // --------------------------------------------------------------------
+    const bodyObserver = new MutationObserver(function (mutations) {
+        mutations.forEach(function (m) {
+            if (m.type !== 'attributes' || m.attributeName !== 'class') return;
+            const el = m.target;
+            if (!el.classList) return;
+            const isTracked = el.classList.contains('panel-right') || el.id === 'provider-mini-panel';
+            if (!isTracked || el.classList.contains('hidden')) return;
+            // إعطاء المتصفح فرصة لحساب الأبعاد النهائية بعد الظهور قبل الفحص
+            requestAnimationFrame(function () { clampElementToViewport(el); });
+        });
+    });
+
+    // ==========================================================================
+    // 🆕 مراقبة تغيّر الحجم الفعلي (وليس فقط الكلاس) لكل عنصر محروس. هذا يلتقط
+    // حالات مثل: صف أزرار ينكسر أو يتمدد داخلياً (overflow) فيكبر ارتفاع/عرض
+    // اللوحة الفعلي دون أي تغيير بكلاس hidden - وهي بالضبط الحالة التي كانت
+    // تفوت على bodyObserver سابقاً (مثل مشكلة تمدد صف أزرار مزود الخدمة).
+    // ==========================================================================
+    let sizeObserver = null;
+    function initSizeObserver() {
+        if (typeof window.ResizeObserver === 'undefined') return;
+        if (sizeObserver) return;
+
+        sizeObserver = new ResizeObserver(function (entries) {
+            entries.forEach(function (entry) {
+                const el = entry.target;
+                // لا داعي للفحص إن كانت اللوحة مخفية أصلاً
+                if (el.classList && el.classList.contains('hidden')) return;
+                if (el.style && el.style.display === 'none') return;
+                requestAnimationFrame(function () { clampElementToViewport(el); });
+            });
+        });
+    }
+
+    function observeSizeOf(el) {
+        if (!el || !sizeObserver) return;
+        try { sizeObserver.observe(el); } catch (err) { /* تجاهل */ }
+    }
+
+    function initObservers() {
+        initSizeObserver();
+
+        document.querySelectorAll('.panel-right').forEach(function (p) {
+            bodyObserver.observe(p, { attributes: true });
+            observeSizeOf(p);
+        });
+        const provider = document.getElementById('provider-mini-panel');
+        if (provider) {
+            bodyObserver.observe(provider, { attributes: true });
+            observeSizeOf(provider);
+        }
+
+        // فحص أولي عند التحميل (مثلاً لوحة مزود الخدمة قد تظهر تلقائياً بعد تسجيل الدخول)
+        setTimeout(clampAllVisible, 800);
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initObservers);
+    } else {
+        initObservers();
+    }
+})();

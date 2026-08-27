@@ -1,0 +1,1164 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>خريطة الخدمات الفلسطينية</title>
+
+    <!-- Open Graph Tags لتحسين ظهور الرابط في مواقع التواصل الاجتماعي -->
+    <meta property="og:title" content="خريطة الخدمات والعقارات الفلسطينية">
+    <meta property="og:description" content="منصة شاملة للبحث عن الخدمات والعقارات في فلسطين - شقق للإيجار والبيع، أراضي، ومختلف الخدمات المهنية">
+    <meta property="og:image" content="https://cdn-icons-png.flaticon.com/512/684/684908.png">
+    <meta property="og:url" content="https://palestine-services-map.com">
+    <meta property="og:type" content="website">
+    <meta property="og:locale" content="ar_AR">
+
+    <!-- Twitter Card Tags -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="خريطة الخدمات والعقارات الفلسطينية">
+    <meta name="twitter:description" content="منصة شاملة للبحث عن الخدمات والعقارات في فلسطين">
+    <meta name="twitter:image" content="https://cdn-icons-png.flaticon.com/512/684/684908.png">
+
+    <!-- Additional Meta Tags -->
+    <meta name="description" content="منصة شاملة للبحث عن الخدمات والعقارات في فلسطين - شقق للإيجار والبيع، أراضي، ومختلف الخدمات المهنية">
+    <meta name="keywords" content="فلسطين, خدمات, عقارات, شقق, أراضي, خريطة, بحث">
+
+    <!-- 1. مكتبات خارجية أولاً -->
+    <link rel="stylesheet" href="/ol/ol.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+
+    <!-- 2. التصميم الأساسي (Global Styles) -->
+    <link rel="stylesheet" href="/css/no-map-search.css">
+    <link rel="stylesheet" href="/css/style.css">
+    <link rel="stylesheet" href="/css/resizable-panels.css">
+
+    <!-- 3. المكونات الأساسية (Layout & Features) -->
+    <link rel="stylesheet" href="/css/buttons.css">
+    <link rel="stylesheet" href="/css/features.css">
+    <link rel="stylesheet" href="/css/ui-collapse.css">
+    
+    <link rel="stylesheet" href="/css/provider-panel.css">
+
+    <!-- 4. ملفات التفاعل والوظائف الخاصة -->
+    <link rel="stylesheet" href="/css/auth-app-events.css">
+    <link rel="stylesheet" href="/css/auth-core-functions.css">
+    <link rel="stylesheet" href="/css/notifications.css">
+    <link rel="stylesheet" href="/css/promo-splash.css">
+    <link rel="stylesheet" href="/css/platform-stats.css">
+    <link rel="stylesheet" href="/css/social-links.css">
+    <link rel="stylesheet" href="/css/mobile-tabs.css">
+    <link rel="stylesheet" href="/css/widgets-ticker.css">
+    <link rel="stylesheet" href="/css/widgets-portal.css">
+
+</head>
+<body>
+
+<!-- ====== شاشة التسويق الترحيبية ====== -->
+<div id="promo-splash-overlay">
+    <div class="promo-slideshow-bg" id="promo-slideshow"></div>
+    <div class="promo-overlay-dark" style="background: linear-gradient(180deg, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.6) 50%, rgba(0,0,0,0.85) 100%);"></div>
+
+    <!-- كلمات متطايرة -->
+    <div class="promo-floating-text" style="left:5%; animation-delay:0s;">🧭 خريطة الخدمات</div>
+    <div class="promo-floating-text" style="left:15%; animation-delay:3s;">🏠 عقارات</div>
+    <div class="promo-floating-text" style="left:30%; animation-delay:6s;">🔧 فنيين</div>
+    <div class="promo-floating-text" style="left:50%; animation-delay:2s;">📍 GPS</div>
+    <div class="promo-floating-text" style="left:65%; animation-delay:5s;">📸 مصورين</div>
+    <div class="promo-floating-text" style="left:78%; animation-delay:1s;">🚑 إسعاف</div>
+    <div class="promo-floating-text" style="left:90%; animation-delay:4s;">⚡ كهربائي</div>
+    <div class="promo-floating-text" style="left:10%; animation-delay:7s;">🩺 تمريض</div>
+    <div class="promo-floating-text" style="left:40%; animation-delay:8s;">🚕 تاكسي</div>
+    <div class="promo-floating-text" style="left:75%; animation-delay:9s;">🛠️ بناء</div>
+
+    <div class="promo-content">
+        <span class="promo-logo-icon">🗺️</span>
+        
+        <h1 class="promo-title">
+            <span class="highlight">خريطة الخدمات الفلسطينية</span>
+            <br>كل ما تحتاج، في مكان واحد
+        </h1>
+
+        <p class="promo-subtitle">
+            المنصة التفاعلية الأولى في فلسطين — ابحث عن أي خدمة أو عقار بنقرة واحدة، 
+            تواصل مباشرة مع مزودي الخدمات، وكن على بعد خطوة من كل ما تريد.
+        </p>
+
+        <div class="promo-features-grid">
+            <div class="promo-feature-item">
+                <span class="icon">🏘️</span>
+                <span class="label">شقق للبيع والإيجار</span>
+                <span class="desc">آلاف العقارات المحدثة يومياً</span>
+            </div>
+            <div class="promo-feature-item">
+                <span class="icon">🔧</span>
+                <span class="label">مزودو خدمات</span>
+                <span class="desc">أكثر من ٥٠ تخصص مهني</span>
+            </div>
+            <div class="promo-feature-item">
+                <span class="icon">📍</span>
+                <span class="label">تحديد مواقع دقيق</span>
+                <span class="desc">GPS + خريطة تفاعلية</span>
+            </div>
+            <div class="promo-feature-item">
+                <span class="icon">💬</span>
+                <span class="label">تواصل مباشر</span>
+                <span class="desc">واتساب — دون وسطاء</span>
+            </div>
+            <div class="promo-feature-item">
+                <span class="icon">📋</span>
+                <span class="label">بحث ذكي</span>
+                <span class="desc">فلترة بالموقع والسعر والفئة</span>
+            </div>
+            <div class="promo-feature-item">
+                <span class="icon">🆓</span>
+                <span class="label">مجاني بالكامل</span>
+                <span class="desc">لكافة المستفيدين من الخدمات</span>
+            </div>
+        </div>
+
+        <!-- أزرار الإجراء الرئيسية ثابتة -->
+        <div class="promo-action-buttons">
+            <button class="promo-action-btn promo-btn-primary" id="promo-btn-register">
+                <i class="fas fa-user-plus"></i> إنشاء حساب جديد
+            </button>
+            <button class="promo-action-btn promo-btn-secondary" id="promo-btn-login">
+                <i class="fas fa-sign-in-alt"></i> لديك حساب؟ سجل الدخول
+            </button>
+        </div>
+
+        <p class="promo-footer-text">
+            تفضل بزيارة الخريطة — ابدأ بإنشاء حساب جديد، أو إذا كان لديك حساب قم بتسجيل الدخول
+        </p>
+
+        <!-- 🆕 روابط موحّدة لسياسة الاستخدام وسياسة الخصوصية ودليل الاستخدام، تفتح
+             نفس المحتوى المستخدم بكل صفحات المنصة (مصدرها الموحّد: js/legal-content.js) -->
+        <p class="promo-footer-text" style="font-size:12px; opacity:0.85; margin-top:8px;">
+            بمتابعتك أنت توافق على
+            <a href="#" id="footer-terms-btn" style="color:#fff; text-decoration:underline; font-weight:bold;">شروط الاستخدام</a>
+            و<a href="#" id="footer-privacy-btn" style="color:#fff; text-decoration:underline; font-weight:bold;">سياسة الخصوصية</a>
+            الخاصتين بالمنصة، ويمكنك أيضاً
+            <a href="#" id="footer-guide-map" style="color:#fff; text-decoration:underline; font-weight:bold;">الاطلاع على دليل استخدام منصة خريطة الخدمات الفلسطينية</a>
+            قبل التسجيل.
+        </p>
+    </div>
+</div>
+<!-- ====== نهاية الشاشة الترحيبية ====== -->
+
+<!-- ==========================================================================
+     🆕 app-shell: غلاف كامل واجهة الخريطة وعناصرها.
+     يبقى display:none تماماً منذ أول تحميل للصفحة، ولا يظهر إلا بعد استدعاء
+     showPlatformShell() من داخل enterPlatform() (auth-core-functions.js)،
+     أي فقط بعد اكتمال تسجيل الدخول/التسجيل فعلياً. هذا يمنع أي وميض للخريطة
+     أو أي من أزرارها/لوحاتها أثناء عرض شاشتي الترحيب والتسجيل.
+     ========================================================================== -->
+<div id="app-shell" style="display:none;">
+
+<div id="user-top-badge-container" class="hidden" style="display: none;">
+    <span class="user-badge-name" id="top-username-display">---</span>
+    <span class="user-badge-role" id="top-userrole-display">---</span>
+
+    <!-- مربعات منظمة بشكل متناسق -->
+    <div style="display: flex; gap: 8px; align-items: center; margin-right: 15px; flex-wrap: wrap; justify-content: flex-end;">
+
+        <!-- 1. لوحة التحكم (للأدمن فقط) -->
+        <button id="dashboard-btn" class="btn-dashboard-top" onclick="window.openDashboard()" style="display: none;">
+            <i class="fas fa-chart-line"></i> لوحة التحكم
+        </button>
+
+        <!-- 2. الإشعارات -->
+        <button class="notification-btn" id="notification-toggle-btn" style="display: none;">
+            <i class="fas fa-bell"></i>
+            <span id="notification-badge">0</span>
+        </button>
+
+        <!-- 3. تغيير كلمة المرور -->
+        <button class="btn-change-pwd-top" id="btn-change-password" onclick="window.changeUserPassword(event)">
+            <i class="fas fa-key"></i> تغيير كلمة المرور
+        </button>
+
+        <!-- 4. تسجيل الخروج -->
+        <button class="btn-logout-top" onclick="window.logoutPlatform()">
+            <i class="fas fa-sign-out-alt"></i> تسجيل الخروج
+        </button>
+
+        <!-- 5. محتويات الفوتر - ألوان بسيطة -->
+        <a href="#" id="profile-guide-map-interactive" class="btn-guide-top">
+            <i class="fas fa-map-marked-alt"></i> الخريطة التفاعلية
+        </a>
+
+        <a href="/no-map-search.html" target="_blank" class="btn-guide-top">
+            <i class="fas fa-search"></i> البحث السريع
+        </a>
+
+        <a href="#" id="profile-guide-search" class="btn-guide-top">
+            <i class="fas fa-list"></i> البحث عن الخدمات
+        </a>
+
+        <a href="#" id="profile-guide-provider" class="btn-guide-top">
+            <i class="fas fa-user-tie"></i> حساب مزود الخدمة
+        </a>
+
+        <a href="#" id="profile-guide-subscription" class="btn-guide-top">
+            <i class="fas fa-user-plus"></i> كيف تشترك معنا
+        </a>
+
+        <a href="#" id="profile-about-btn" class="btn-guide-top">
+            <i class="fas fa-circle-info"></i> من نحن
+        </a>
+
+        <a href="#" id="profile-terms-btn" class="btn-guide-top">
+            <i class="fas fa-file-contract"></i> شروط الاستخدام
+        </a>
+
+        <a href="#" id="profile-privacy-btn" class="btn-guide-top">
+            <i class="fas fa-user-shield"></i> سياسة الخصوصية
+        </a>
+
+    </div>
+</div>
+
+<div id="notification-dropdown" class="notification-dropdown">
+    <div class="notification-dropdown-header">
+        <h3>الإشعارات</h3>
+        <button onclick="window.notificationSystem.getUnreadNotifications(window.currentUser?.user_id)">تحديث</button>
+    </div>
+    <div class="notification-dropdown-body" id="notification-list">
+        <p style="text-align: center; color: #999; padding: 20px;">لا توجد إشعارات</p>
+    </div>
+    <div class="notification-dropdown-footer">
+        <p style="margin: 0; font-size: 12px; color: #666; text-align: center;">
+            <i class="fas fa-info-circle"></i> انقر أو المس الإشعار لتعليمه كمقروء
+        </p>
+    </div>
+</div>
+
+<!-- الأزرار بجانب بعضها أفقياً - للكمبيوتر فقط -->
+<div class="desktop-only-search-btn" style="position: fixed; top: 20px; left: 20px; z-index: 2000; display: flex; flex-direction: row; align-items: center; gap: 10px;">
+    
+    <!-- زر الانتقال إلى البحث بدون خريطة (سيكون على أقصى اليسار) -->
+    <a href="/no-map-search.html" target="_blank"
+       style="display: inline-block; background: linear-gradient(135deg, #28a745, #20c997); color: white;
+              padding: 12px 20px; border-radius: 25px; text-decoration: none; font-size: 14px; font-weight: 600;
+              box-shadow: 0 4px 15px rgba(40, 167, 69, 0.3); transition: all 0.3s ease;
+              border: 2px solid #fff; white-space: nowrap;"
+       onmouseover="this.style.transform='scale(1.05)'; this.style.boxShadow='0 6px 20px rgba(40, 167, 69, 0.4)';"
+       onmouseout="this.style.transform='scale(1)'; this.style.boxShadow='0 4px 15px rgba(40, 167, 69, 0.3)';">
+        <i class="fas fa-list"></i> الانتقال إلى البحث بدون خريطة
+    </a>
+
+    <!-- زر حالة الطرق (سيكون في الوسط) -->
+    <button type="button" id="btn-open-road-status"
+       style="display: inline-flex; align-items:center; justify-content:center; gap:8px; background: linear-gradient(135deg, #e67e22, #d35400); color: white;
+              padding: 12px 20px; border-radius: 25px; font-size: 14px; font-weight: 600;
+              box-shadow: 0 4px 15px rgba(230, 126, 34, 0.3); border: 2px solid #fff; white-space: nowrap; cursor:pointer;">
+        <i class="fas fa-road"></i> حالة الطرق
+    </button>
+
+    <!-- زر حالة محطات الوقود (سيكون على اليمين) -->
+    <button type="button" id="btn-open-fuel-status"
+       style="display: inline-flex; align-items:center; justify-content:center; gap:8px; background: linear-gradient(135deg, #2980b9, #1a5276); color: white;
+              padding: 12px 20px; border-radius: 25px; font-size: 14px; font-weight: 600;
+              box-shadow: 0 4px 15px rgba(41, 128, 185, 0.3); border: 2px solid #fff; white-space: nowrap; cursor:pointer;">
+        <i class="fas fa-gas-pump"></i> حالة محطات الوقود
+    </button>
+
+</div>
+
+<div id="map-header">
+    <div class="global-search-wrapper">
+        <i class="fas fa-search"></i>
+        <input type="text" id="global-search-input" placeholder="ابحث عن عقار، مطعم، فني...">
+
+        <!-- زر التحديث -->
+        <button id="global-refresh-btn" class="global-refresh-btn" title="تحديث الخريطة">
+            <i class="fas fa-sync-alt"></i>
+        </button>
+
+        <div id="search-suggestions"></div>
+    </div>
+
+    <div class="quick-search-wrapper">
+        <button class="scroll-btn left" id="scrollLeft"><i class="fas fa-chevron-right"></i></button>
+        <div id="quick-search-container" class="quick-search-bar"></div>
+        <button class="scroll-btn right" id="scrollRight"><i class="fas fa-chevron-left"></i></button>
+    </div>
+
+    <h2>خريطة الخدمات الفلسطينية</h2>
+
+    <div id="basemap-switcher">
+        <select id="basemap-select">
+            <option value="esri" selected>صورة فضائية</option>
+            <option value="aerial">صورة جوية</option>
+            <option value="osm">خريطة أساس</option>
+            <option value="none">بدون خريطة أساس</option>
+        </select>
+    </div>
+    <button id="toggle-top-buttons-btn" class="top-button"><i class="fas fa-bars"></i></button>
+</div>
+
+<div id="map-controls">
+    <div id="top-buttons-container" class="hidden-buttons-container">
+                <button id="togglePopupBtn" class="top-button"
+                    style="height: 42px; padding: 0 16px; font-size: 14px; font-weight: 500; border-radius: 20px; border: 1px solid #ddd; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; color: #444; background-color: #f8f9fa; margin: 2px; transition: 0.2s;">
+                    <i class="fas fa-info-circle" style="font-size: 16px;"></i> <span>استعلام</span>
+                </button>
+
+                <button id="open-search-panel-desktop" class="top-button desktop-only"
+                    style="height: 42px; padding: 0 16px; font-size: 14px; font-weight: 500; border-radius: 20px; border: 1px solid #ddd; cursor: pointer; display: none; align-items: center; gap: 8px; color: #444; background-color: #f8f9fa; margin: 2px; transition: 0.2s;">
+                    <i class="fas fa-search" style="font-size: 16px;"></i> <span>البحث الذكي</span>
+                </button>
+
+                <button id="open-nearby-panel-desktop" class="top-button desktop-only"
+                    style="height: 42px; padding: 0 16px; font-size: 14px; font-weight: 500; border-radius: 20px; border: 1px solid #ddd; cursor: pointer; display: none; align-items: center; gap: 8px; color: #444; background-color: #f8f9fa; margin: 2px; transition: 0.2s;">
+                    <i class="fas fa-map-marker-alt" style="font-size: 16px;"></i> <span>البحث من خلال الموقع</span>
+                </button>
+
+                <button id="toggleLayerPanel" class="top-button" data-panel="layerPanel"
+                    style="height: 42px; padding: 0 16px; font-size: 14px; font-weight: 500; border-radius: 20px; border: 1px solid #ddd; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; color: #444; background-color: #f8f9fa; margin: 2px; transition: 0.2s;">
+                    <i class="fas fa-layer-group" style="font-size: 16px;"></i> <span>ظهور /اخفاء الخدمات</span>
+                </button>
+
+                <button id="measure-tools-toggle-btn" class="top-button" data-panel="measurePanel"
+                    style="padding: 0 16px; height: 42px; font-size: 14px; font-weight: 500; border-radius: 20px; border: 1px solid #ddd; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; color: #444; background-color: #f8f9fa; margin: 2px; transition: 0.2s;">
+                    <i class="fas fa-ruler" style="font-size: 16px;"></i> <span>أدوات القياس</span>
+                </button>
+
+                <button id="share-location-btn" class="top-button" data-panel="shareLocationPanel"
+                    style="height: 42px; padding: 0 16px; font-size: 14px; font-weight: 500; border-radius: 20px; border: 1px solid #ddd; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; color: #444; background-color: #f8f9fa; margin: 2px; transition: 0.2s;">
+                    <i class="fas fa-share-alt" style="font-size: 16px;"></i> <span>مشاركة موقع</span>
+                </button>
+        <button id="editBtn" class="top-button" data-panel="editPanel" data-edit-type="point" title="تحرير النقاط"><i class="fas fa-edit"></i></button>
+        <button id="polygonEditBtn" class="top-button" data-panel="polygonEditPanel" data-edit-type="polygon" title="تحرير مساحات"><i class="fas fa-draw-polygon"></i></button>
+        <button id="lineEditBtn" class="top-button" data-panel="lineEditPanel" data-edit-type="line" title="تحرير خطوط"><i class="fas fa-route"></i></button>
+    </div>
+</div>
+
+
+<div id="map" class="map"></div>
+
+<div id="shareLocationPanel" class="hidden panel-right">
+    <div class="panel-header">
+        <h3>🔗 مشاركة الموقع</h3>
+        <div class="panel-controls">
+            <button class="panel-drag-btn" title="تحريك">⋮⋮</button>
+            <button class="panel-minimize-btn" title="تصغير/تكبير">−</button>
+            <button class="panel-close-btn" id="close-share-panel" title="إغلاق">✕</button>
+        </div>
+    </div>
+    <div class="panel-body">
+        <p id="shared-location-display" style="font-size: 13px; color: #555; margin-bottom: 10px;">انقر على الخريطة لتحديد موقع ومشاركته.</p>
+        <div class="share-input-group" style="display: flex; gap: 5px; margin-bottom: 15px;">
+            <input type="text" id="share-link-input" readonly placeholder="سيتولد الرابط هنا..." style="flex: 1; padding: 8px; border: 1px solid #ccc; border-radius: 4px; font-size: 12px;">
+            <button id="copy-share-link-btn" class="action-btn" style="padding: 8px 15px; white-space: nowrap;"><i class="fas fa-copy"></i> نسخ الرابط</button>
+        </div>
+        <div id="coords-display-area" style="background: #fdfdfd; border: 1px dashed #bbb; padding: 10px; border-radius: 5px; margin-bottom: 15px; font-size: 12px; line-height: 1.6;">
+            <div style="margin-bottom: 8px;">
+                <strong>📍 إحداثيات فلسطينية (ArcGIS Pro):</strong>
+                <div style="display: flex; gap: 5px; align-items: center; margin-top: 5px;">
+                    <div id="pal-coords-text" style="flex: 1;">E: --- , N: ---</div>
+                    <button id="copy-pal-coords-btn" class="action-btn" style="padding: 5px 10px; font-size: 11px;"><i class="fas fa-copy"></i> نسخ</button>
+                </div>
+            </div>
+            <div>
+                <strong>🌍 إحداثيات عالمية (Google Maps):</strong>
+                <div style="display: flex; gap: 5px; align-items: center; margin-top: 5px;">
+                    <div id="wgs-coords-text" style="flex: 1;">Lat: --- , Lon: ---</div>
+                    <button id="copy-wgs-coords-btn" class="action-btn" style="padding: 5px 10px; font-size: 11px;"><i class="fas fa-copy"></i> نسخ</button>
+                    <button id="open-google-maps-btn" class="action-btn" style="padding: 5px 10px; font-size: 11px; background-color: #4285f4;"><i class="fas fa-map"></i> Google Maps</button>
+                </div>
+            </div>
+        </div>
+        <button id="clear-share-location-btn" class="run-btn" style="background-color: #666; width: 100%;">🧹 إلغاء التحديد</button>
+    </div>
+</div>
+
+<div id="layerPanel" class="hidden panel-right">
+    <div class="panel-header">
+        <h3>📚 طبقات الخريطة</h3>
+        <div class="panel-controls">
+            <button class="panel-drag-btn" title="تحريك">⋮⋮</button>
+            <button class="panel-minimize-btn" title="تصغير/تكبير">−</button>
+            <button class="panel-close-btn" id="close-layer-panel" title="إغلاق">✕</button>
+        </div>
+    </div>
+    <div class="panel-body">
+        <div id="layer-list-container"></div>
+    </div>
+</div>
+
+<div id="measurePanel" class="hidden panel-right">
+    <div class="panel-header">
+        <h3>📏 أدوات القياس والرسم</h3>
+        <div class="panel-controls">
+            <button class="panel-drag-btn" title="تحريك">⋮⋮</button>
+            <button class="panel-minimize-btn" title="تصغير/تكبير">−</button>
+            <button class="panel-close-btn" id="close-measure-panel" title="إغلاق">✕</button>
+        </div>
+    </div>
+    <div class="panel-body">
+        <div class="measure-tools">
+            <button id="measure-length-btn" class="action-btn" style="width: 100%; margin-bottom: 5px;">📏 قياس مسافة (متر)</button>
+            <button id="measure-area-btn" class="action-btn" style="width: 100%; margin-bottom: 5px;">📐 قياس مساحة (متر²)</button>
+            <button id="draw-point-btn" class="action-btn" style="width: 100%; margin-bottom: 5px;">📍 رسم نقطة</button>
+            <hr>
+            <button id="clear-measure-btn" class="run-btn" style="background-color: #d9534f; width: 100%;">🧹 مسح القياسات</button>
+        </div>
+        <div id="measure-result" style="margin-top: 15px; padding: 10px; background: #f9f9f9; border-radius: 5px; font-weight: bold; color: #2c3e50; min-height: 40px; text-align: center;">النتائج تظهر هنا</div>
+    </div>
+</div>
+
+<div id="nearby-apartments-panel" class="hidden panel-right">
+    <div class="panel-header">
+        <h3>📍 بحث حسب الموقع</h3>
+        <div class="panel-controls">
+            <button class="panel-drag-btn" title="تحريك">⋮⋮</button>
+            <button class="panel-minimize-btn" title="تصغير/تكبير">−</button>
+            <button class="panel-close-btn" id="close-nearby-panel" title="إغلاق">✕</button>
+        </div>
+    </div>
+    <div class="panel-body">
+        <div class="search-group">
+            <label>1. حدد مركز البحث:</label>
+            <div style="display: flex; gap: 5px; margin-bottom: 8px;">
+                <button id="get-my-location-btn" class="action-btn" style="flex: 1;"><i class="fas fa-crosshairs"></i> موقعي</button>
+                <button id="select-from-map-btn" class="action-btn" style="flex: 1;"><i class="fas fa-mouse-pointer"></i> الخريطة</button>
+            </div>
+            <div id="selected-location-display" style="text-align: center; font-size: 11px; color: gray; background: #f9f9f9; padding: 5px; border: 1px solid #eee; border-radius: 4px; margin-bottom: 10px;">لم يتم تحديد موقع بعد</div>
+        </div>
+    <div class="search-group">
+        <label for="search-layer-select">2. اختر نوع الخدمة/العقار:</label>
+        <select id="search-layer-select"></select>
+    </div>
+    <div class="search-group">
+        <label for="search-radius-input">3. مسافة البحث (متر):</label>
+        <input type="number" id="search-radius-input" value="500">
+    </div>
+    <div style="display: flex; gap: 5px; margin-top: 15px;">
+        <button id="execute-location-search-btn" class="run-btn" style="flex: 2;">🔍 ابحث الآن</button>
+        <button id="clear-location-search-btn" class="run-btn" style="flex: 1; background-color: #666;">🧹 مسح</button>
+    </div>
+    </div>
+</div>
+
+<div id="popup" class="ol-popup">
+    <a href="#" id="popup-closer" class="ol-popup-closer"></a>
+    <div id="popup-title"></div>
+    <div id="popup-content"></div>
+</div>
+
+<div id="search-panel" class="hidden panel-right">
+    <div class="panel-header">
+        <h3>🔎 البحث الذكي</h3>
+        <div class="panel-controls">
+            <button class="panel-drag-btn" title="تحريك">⋮⋮</button>
+            <button class="panel-minimize-btn" title="تصغير/تكبير">−</button>
+            <button class="panel-close-btn" id="close-search-panel" title="إغلاق">✕</button>
+        </div>
+    </div>
+    <div class="panel-body">
+        <label for="layer-select">اختر الطبقة:</label>
+        <select id="layer-select"></select>
+        <label for="field-select">اختر الحقل:</label>
+        <select id="field-select"></select>
+        <label for="operator-select">نوع الشرط:</label>
+        <select id="operator-select">
+        <option value="=">=</option>
+        <option value="contains">يحتوي على</option>
+        <option value=">">&gt;</option>
+        <option value="<">&lt;</option>
+    </select>
+    <label for="value-input">القيمة:</label>
+    <div id="value-input-container"></div>
+    <button id="add-condition">➕ إضافة شرط</button>
+    <button id="run-search">🔎 تنفيذ البحث</button>
+    <button id="clear-search">🧹 مسح</button>
+    <div id="search-conditions"></div>
+    </div>
+</div>
+
+<div id="results-panel" class="hidden panel-right">
+    <div class="panel-header">
+        <h3>النتائج: <span id="results-count-span">0</span></h3>
+        <div class="panel-controls">
+            <button class="panel-drag-btn" title="تحريك">⋮⋮</button>
+            <button class="panel-minimize-btn" title="تصغير/تكبير">−</button>
+            <button class="panel-close-btn" id="close-results-panel" title="إغلاق">✕</button>
+        </div>
+    </div>
+    <div class="panel-body">
+        <div class="results-table-container">
+            <table id="results-table">
+                <thead><tr><th>#</th><th>التفاصيل</th></tr></thead>
+                <tbody></tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<div id="editPanel" class="hidden panel-right">
+    <div class="panel-header">
+        <h4>📝 تحرير النقاط</h4>
+        <div class="panel-controls">
+            <button class="panel-drag-btn" title="تحريك">⋮⋮</button>
+            <button class="panel-minimize-btn" title="تصغير/تكبير">−</button>
+            <button class="panel-close-btn" id="close-edit-panel" title="إغلاق">✕</button>
+        </div>
+    </div>
+    <div class="panel-body">
+        <select id="edit-layer-select" style="width:100%; margin-bottom:10px;"></select>
+        <div class="edit-tools-container" style="display: flex; flex-direction: column; gap: 8px;">
+            <button id="add-feature-btn" class="action-btn">إضافة معلم جديد</button>
+            <button id="modify-feature-btn" class="action-btn">تعديل بيانات / موقع</button>
+            <button id="delete-feature-btn" class="action-btn" style="background-color:#d9534f; color:white;">حذف معلم</button>
+        </div>
+    </div>
+</div>
+
+<div id="polygonEditPanel" class="hidden panel-right">
+    <div class="panel-header">
+        <h4>🗺️ تحرير المضلعات (أراضي ومناطق)</h4>
+        <div class="panel-controls">
+            <button class="panel-drag-btn" title="تحريك">⋮⋮</button>
+            <button class="panel-minimize-btn" title="تصغير/تكبير">−</button>
+            <button class="panel-close-btn" id="close-polygon-edit-panel" title="إغلاق">✕</button>
+        </div>
+    </div>
+    <div class="panel-body">
+        <label for="polygon-layer-select">اختر الطبقة المستهدفة:</label>
+        <select id="polygon-layer-select" style="width:100%; margin-bottom:15px; padding: 8px;"></select>
+
+    <div class="edit-tools-container" style="display: flex; flex-direction: column; gap: 10px;">
+        <button id="polygon-add-feature-btn" class="action-btn"><i class="fas fa-plus-circle"></i> ➕ إضافة مضلع جديد</button>
+        <button id="polygon-modify-feature-btn" class="action-btn"><i class="fas fa-vector-square"></i> ✏️ تعديل (بيانات + شكل)</button>
+        <button id="polygon-delete-feature-btn" class="action-btn" style="background-color:#d9534f; color:white;"><i class="fas fa-trash-alt"></i> 🗑️ حذف المضلع المختار</button>
+    </div>
+
+    <div id="geometry-tools-sub" style="display:none; margin-top:15px; padding:10px; background:#f9f9f9; border:1px solid #ddd; border-radius:5px;">
+        <p style="font-weight:bold; font-size:12px; margin-bottom:10px;">🛠️ خيارات تعديل الشكل:</p>
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:5px;">
+            <button id="tool-modify-points" class="action-btn" style="font-size:11px;">📍 تحريك نقاط</button>
+            <button id="tool-reshape" class="action-btn" style="font-size:11px;">✂️ إعادة تشكيل</button>
+            <button id="tool-replace" class="action-btn" style="font-size:11px;">🔄 رسم جديد</button>
+            <button id="polygonFinalSave" class="run-btn" style="background-color:#28a745; color:white; grid-column: span 2;">✅ حفظ نهائي للسيرفر</button>
+        </div>
+    </div>
+    <p style="font-size: 11px; color: #666; margin-top: 15px; border-top: 1px solid #eee; padding-top: 5px;">* ملاحظة: للتعديل أو الحظر، انقر داخل المضلع بعد تفعيل الأداة.</p>
+    </div>
+</div>
+
+<div id="lineEditPanel" class="hidden panel-right">
+    <div class="panel-header">
+        <h4>🛣️ تحرير الخطوط (طرق وشوارع)</h4>
+        <div class="panel-controls">
+            <button class="panel-drag-btn" title="تحريك">⋮⋮</button>
+            <button class="panel-minimize-btn" title="تصغير/تكبير">−</button>
+            <button class="panel-close-btn" id="close-line-edit-panel" title="إغلاق">✕</button>
+        </div>
+    </div>
+    <div class="panel-body">
+        <div class="edit-tools-container" style="display: flex; flex-direction: column; gap: 10px;">
+            <button id="line-add-feature-btn" class="action-btn"><i class="fas fa-plus-square"></i> ➕ إضافة طريق جديد</button>
+            <button id="line-modify-feature-btn" class="action-btn"><i class="fas fa-edit"></i> ✏️ تعديل مسار أو بيانات</button>
+            <button id="line-delete-feature-btn" class="action-btn" style="background-color:#d9534f; color:white;"><i class="fas fa-trash"></i> 🗑️ حذف الطريق المختار</button>
+        </div>
+        <p style="font-size: 11px; color: #666; margin-top: 15px; border-top: 1px solid #eee; padding-top: 5px;">* ملاحظة: يتم الحفظ التلقائي في قاعدة البيانات بعد تعبئة النموذج.</p>
+    </div>
+</div>
+
+<div id="lineAttributeModal" class="modal" style="display:none; position:fixed; z-index:9999; left:0; top:0; width:100%; height:100%; background-color:rgba(0,0,0,0.5);">
+    <div class="modal-content" style="background-color:white; margin:10% auto; padding:20px; border-radius:8px; width:80%; max-width:400px;">
+        <h4>📋 بيانات الطريق</h4>
+        <form id="lineAttributeForm"></form>
+        <div style="margin-top:20px; display:flex; gap:10px;">
+            <button id="lineSubmitAttributes" class="run-btn" style="flex:1;">حفظ</button>
+            <button id="lineCancelAttributes" class="action-btn" style="flex:1; background-color:#666;">إلغاء</button>
+        </div>
+    </div>
+</div>
+
+<div id="polygonAttributeModal" class="modal" style="display:none; position:fixed; z-index:9999; left:0; top:0; width:100%; height:100%; background-color:rgba(0,0,0,0.5);">
+    <div class="modal-content" style="background-color:white; margin:10% auto; padding:20px; border-radius:8px; width:80%; max-width:400px;">
+        <h4 id="polygonModalTitle">بيانات المضلع</h4>
+        <form id="polygonAttributeForm"></form>
+        <div style="margin-top:20px; display:flex; gap:10px;">
+            <button id="polygonSubmitAttributes" class="run-btn" style="flex:1;">متابعة لتعديل الشكل</button>
+            <button id="polygonCancelAttributes" class="action-btn" style="flex:1; background-color:#666;">إلغاء</button>
+        </div>
+    </div>
+</div>
+
+<div id="attributeModal" class="modal" style="display:none; position:fixed; z-index:9999; left:0; top:0; width:100%; height:100%; background-color:rgba(0,0,0,0.5);">
+    <div class="modal-content" style="background-color:white; margin:10% auto; padding:20px; border-radius:8px; width:80%; max-width:400px;">
+        <h4 id="modalTitle">بيانات النقطة</h4>
+        <form id="attributeForm"></form>
+        <div style="margin-top:20px; display:flex; gap:10px;">
+            <button id="submitAttributes" class="run-btn" style="flex:1;">حفظ</button>
+            <button id="cancelAttributes" class="action-btn" style="flex:1; background-color:#666;">إلغاء</button>
+        </div>
+    </div>
+</div>
+
+<div id="coordinates">
+    <p id="palestineCoords">E: 0, N: 0</p>
+</div>
+<footer id="platform-stats-footer" class="pstats-wrap pstats-footer-bar" data-platform-stats-target></footer>
+</div><!-- 🆕 نهاية #app-shell -->
+
+<div id="auth-splash-overlay" class="auth-overlay">
+    <div id="auth-welcome-section" class="auth-dialog-box">
+        <h2 class="auth-title">منصة خريطة الخدمات الفلسطينية</h2>
+        <h2 class="auth-title">نسخة تجريبية</h2>
+        <p class="auth-welcome-text">
+            المنصة التفاعلية الأولى لربط المستخدمين بمزودي الخدمات وأصحاب العقارات في فلسطين. 
+            سواء كنت تبحث عن خدمة، أو لديك عقار للبيع أو الإيجار، نحن نمنحك تسويقاً جغرافياً ذكياً يربطك مباشرة بالجمهور.
+        </p>
+
+        <hr class="auth-divider">
+
+        <h4 class="auth-section-title">سياسة وشروط الاستخدام:</h4>
+        <div class="auth-terms-container">
+            <ul>
+                <li>المنصة عبارة عن وسيط جيو-رقمي يربط المستخدم بمزود الخدمة عبر الواتساب فقط.</li>
+                <li>الاتفاق على الأسعار، المواعيد، أو تفاصيل الخدمة يتم بين الطرفين مباشرة دون أي تدخل منا.</li>
+                <li>المنصة تخلي مسؤوليتها بالكامل عن أي خلاف، سوء معاملة، أو إخلال بالاتفاق بين الأطراف.</li>
+                <li>في حال وجود شكاوى، يتم مراسلتنا عبر صفحة الفيسبوك لاتخاذ الإجراءات الإدارية (كالحظر).</li>
+            </ul>
+        </div>
+
+        <div class="auth-requirements-container">
+            <label class="auth-checkbox-label">
+                <input type="checkbox" id="agree-to-terms">
+                <span>أوافق على سياسة الاستخدام وسياسة الخصوصية وإخلاء المسؤولية المذكورة أعلاه.</span>
+            </label>
+
+            <div class="facebook-like-section">
+                <p>يدعمنا استمراركم، يرجى تسجيل الإعجاب بصفحتنا على فيسبوك للمتابعة:</p>
+                <a href="https://www.facebook.com/MapServesPalestine/" target="_blank" id="fb-page-link" class="fb-button">
+                    👍 زيارة صفحة الفيس بوك والاعجاب بها
+                </a>
+                <label class="auth-checkbox-label" style="margin-top: 8px;">
+                    <input type="checkbox" id="liked-fb-page">
+                    <span>قمت بالدخول والضغط على زر الإعجاب بالصفحة.</span>
+                </label>
+            </div>
+        </div>
+
+        <div id="auth-buttons-group" class="auth-buttons-disabled">
+            <p class="auth-action-hint">الرجاء الموافقة على الشروط والإعجاب بالصفحة لتفعيل التسجيل:</p>
+            <button class="btn-auth" id="btn-go-to-register-email" style="background-color: #2980b9; width: 100%; color: white; padding: 12px; border: none; border-radius: 5px; cursor: pointer; font-size: 16px;">
+                📱 التسجيل عبر رقم واتساب
+            </button>
+            <button type="button" class="btn-auth" id="btn-welcome-back-to-login" style="background-color: #27ae60; width: 100%; margin-top: 15px; color: white; padding: 12px; border: none; border-radius: 5px; cursor: pointer; font-size: 16px;">
+                ⬅️ إذا كنت مسجلاً مسبقاً، انقر هنا لتسجيل الدخول
+            </button>
+
+            <!-- أزرار الشروط والسياسات -->
+            <div style="display: flex; gap: 10px; margin-top: 20px; flex-wrap: wrap; justify-content: center;">
+                <button data-legal="terms" class="btn-auth" style="background-color: #3498db; flex: 1; min-width: 120px; color: white; padding: 10px; border: none; border-radius: 5px; cursor: pointer; font-size: 14px;">
+                    📄 شروط الاستخدام
+                </button>
+                <button data-legal="privacy" class="btn-auth" style="background-color: #e74c3c; flex: 1; min-width: 120px; color: white; padding: 10px; border: none; border-radius: 5px; cursor: pointer; font-size: 14px;">
+                    🛡️ سياسة الخصوصية
+                </button>
+                <button data-legal="guide" class="btn-auth" style="background-color: #16a085; flex: 1; min-width: 120px; color: white; padding: 10px; border: none; border-radius: 5px; cursor: pointer; font-size: 14px;">
+                    📖 دليل الاستخدام
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div id="auth-login-form-section" class="auth-dialog-box hidden">
+        <h3 class="auth-title">تسجيل الدخول للخريطة</h3>
+        <p class="auth-welcome-text" style="text-align: center;">أدخل بيانات حسابك المسجل للدخول إلى الخريطة التفاعلية</p>
+
+        <form id="login-form">
+            <div class="auth-form-group">
+                <label>رقم الموبايل:</label>
+                <input type="text" id="login-phone" placeholder="0598512667" required>
+                <small style="color: #7f8c8d; display: block; margin-top: 4px;">استخدم رقم الموبايل نفسه الذي سجّلت به حساب واتساب.</small>
+            </div>
+
+            <div class="auth-form-group">
+                <label>كلمة المرور:</label>
+                <input type="password" id="login-password" placeholder="••••••••" required>
+            </div>
+
+            <button type="submit" class="btn-auth btn-submit-reg" style="background-color: #27ae60;" id="btn-submit-login">دخول إلى المنصة</button>
+
+            <hr class="auth-divider">
+            <p style="text-align:center; margin-bottom:5px; font-size:16px; color:#777;">أو يمكنك مراجعة الاتفاقية والشروط ثم إنشاء حساب جديد:</p>
+            <button type="button" class="btn-auth-back" id="btn-login-back-to-welcome" style="background-color: #3c384d; margin-top:0;">📋 من هنا للموافقة على الاتفاقية والشروط</button>
+        </form>
+    </div>
+
+    <div id="auth-email-form-section" class="auth-dialog-box hidden">
+        <button type="button" class="btn-auth-back" id="btn-back-to-login-direct" style="margin-top: 0; margin-bottom: 15px; background-color: #2980b9; color: white; width: 100%;">
+            ⬅️ إذا كنت مسجلاً مسبقاً (مستخدم / مزود خدمة)، انقر هنا لإدخال بياناتك السابقة والدخول
+        </button>
+
+        <h3 class="auth-title">إنشاء حساب جديد برقم واتساب</h3>
+        <p class="auth-welcome-text" style="text-align: center;">سجل حسابك عبر WhatsApp برقم موبايل فلسطيني لتفعيل سريع وآمن</p>
+
+        <form id="register-form">
+            <div class="auth-form-group">
+                <label>الاسم الكامل:</label>
+                <input type="text" id="reg-name" placeholder="أدخل اسمك الشخصي أو التجاري" required>
+            </div>
+
+            <div class="auth-form-group">
+                <label>مقدمة واتساب:</label>
+                <select id="reg-whatsapp-prefix" required>
+                    <option value="970">+970</option>
+                    <option value="972">+972</option>
+                </select>
+                <small style="color: #7f8c8d; display: block; margin-top: 4px;">اختر مقدمة الدولة لرقم واتسابك.</small>
+            </div>
+
+            <div class="auth-form-group">
+               <label for="reg-phone">رقم الموبايل المحلي:</label>
+               <input type="text" id="reg-phone" required pattern="^05\d{8}$" maxlength="10" placeholder="0598512667">
+               <small style="color: #7f8c8d; display: block; margin-top: 4px;">أدخل رقم الموبايل كاملاً مع الصفر الأول. سيُحوّل تلقائياً إلى WhatsApp بصيغة +970... أو +972...</small>
+            </div>
+
+            <div class="auth-form-group">
+                <label>كلمة المرور:</label>
+                <input type="password" id="reg-password" placeholder="••••••••" required>
+            </div>
+
+            <div class="auth-form-group">
+                <label>نوع الحساب المستهدف:</label>
+                <select id="reg-role" required>
+                    <option value="user">مستخدم عادي (البحث وتصفح وطلب الخدمات)</option>
+                </select>
+            </div>
+
+            <button type="submit" class="btn-auth btn-submit-reg" id="btn-submit-register">إتمام التسجيل والدخول الخريطة</button>
+
+            <p style="text-align:center; margin-top:12px; font-size:13px; color:#444;">
+                لديك حساب بالفعل؟ <a href="#" id="go-to-login" style="color:#2980b9; font-weight:bold; text-decoration:underline;">تسجيل الدخول من هنا</a>
+            </p>
+        </form>
+    </div>
+</div>
+
+
+
+<!-- ====== دليل الاستخدام واتصل بنا - أزرار عائمة ====== -->
+<div id="guide-contact-floating-buttons" style="position:fixed; bottom:20px; right:15px; z-index:5000; display:flex; flex-direction:column; gap:8px; direction:rtl;">
+    <!-- زر دليل الاستخدام: يفتح المحتوى الموحّد المُعرَّف بملف js/legal-content.js -->
+    <button id="btn-user-guide" style="width:100%; min-width:220px; padding:10px 15px; border-radius:8px; background:linear-gradient(135deg,#1a73e8,#0d47a1); color:white; border:none; cursor:pointer; box-shadow:0 2px 8px rgba(26,115,232,0.3); font-size:14px; font-weight:bold; display:flex; align-items:center; justify-content:center; gap:8px; transition:all 0.3s ease;" title="دليل الاستخدام" onmouseover="this.style.transform='scale(1.02)'" onmouseout="this.style.transform='scale(1)'">
+        <i class="fas fa-book"></i> دليل الاستخدام
+    </button>
+
+    <!-- زر التواصل عبر فيسبوك -->
+    <a href="https://www.facebook.com/MapServesPalestine" target="_blank" style="width:100%; min-width:220px; padding:10px 15px; border-radius:8px; background:linear-gradient(135deg,#1877f2,#0a4c8c); color:white; text-decoration:none; cursor:pointer; box-shadow:0 2px 8px rgba(24,119,242,0.3); font-size:14px; font-weight:bold; display:flex; align-items:center; justify-content:center; gap:8px; transition:all 0.3s ease;" title="اتصل بنا عبر فيسبوك" onmouseover="this.style.transform='scale(1.02)'" onmouseout="this.style.transform='scale(1)'">
+        <i class="fab fa-facebook-f"></i> تواصل معنا عبر فيسبوك
+    </a>
+</div>
+
+<div id="feedbackBannerWrapper" class="feedback-banner-wrapper" style="pointer-events: none !important;">
+
+    
+    <!-- زر الإغلاق المؤقت (×) - أعلى اليمين -->
+    <button type="button" id="closeBannerBtn" class="banner-close-btn" title="إغلاق مؤقت" onclick="closeBannerTemporarily()">×</button>
+
+    <!-- زر التكبير والتصغير (+) - بجانب زر الإغلاق -->
+    <button type="button" id="toggleBannerBtn" class="banner-toggle-btn" title="تكبير البنر" onclick="handleBannerToggle(event, this)">+</button>
+
+    <!-- زر التحريك والسحب (⋮⋮) - أعلى اليسار -->
+    <button type="button" id="dragBannerBtn" class="banner-drag-btn" title="تحريك">⋮⋮</button>
+
+    <!-- البنر الرئيسي (يبدأ مصغراً minimized) -->
+    <a href="https://www.facebook.com/MapServesPalestine" target="_blank" class="feedback-banner minimized" id="feedbackBanner" onclick="handleBannerLinkClick(event, this)">
+        <div class="banner-full-content">
+            <p>هل لديك استفسار أو تود تقديم شكوى ؟؟   </p>
+            <p>أو إذا كنت مزود خدمة، تواصل معنا عبر رسائل الصفحة
+                <br><strong>انقر داخل المربع للتواصل</strong>
+            </p>
+        </div>
+
+        <div class="banner-minimized-content">
+            تواصل معنا عبر فيسبوك
+        </div>
+    </a>
+</div>
+
+<div class="provider-panel-bottom-left" id="provider-mini-panel" style="display:none;">
+    
+    <input type="hidden" id="provider-layer-name" value="">
+    <input type="hidden" id="provider-feature-id" value="">
+
+    <div class="panel-header" style="border-bottom: 2px solid #f5f5f5; padding-bottom: 10px; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center;">
+        <h4 style="margin: 0; color: #2c3e50; font-size: 14px; font-weight: 700;">🛠️ لوحة إدارة الخدمة الحية</h4>
+        <div class="panel-controls" style="display:flex; align-items:center; gap:8px;">
+            <span class="provider-name-badge" id="provider-welcome-name" style="background: #e1f5fe; color: #0288d1; padding: 4px 10px; border-radius: 6px; font-size: 11px; font-weight: bold;">مرحباً، مزود الخدمة</span>
+            <button class="panel-drag-btn" title="تحريك">⋮⋮</button>
+            <button class="panel-minimize-btn" title="تصغير/تكبير">−</button>
+        </div>
+    </div>
+
+    <div class="provider-panel-body">
+        <p class="provider-status-text" style="font-size: 12px; margin: 0 0 12px 0; color: #666; font-weight: 500;">حالة تواجدك الحالي المباشر على الخريطة:</p>
+
+        <div class="provider-action-buttons" style="display: flex; flex-direction: column; gap: 8px; margin-bottom: 12px;">
+            <div style="display: flex; gap: 8px; width: 100%;">
+                <button type="button" class="btn-prov btn-status-available" id="btn-prov-available-current" style="flex: 1; padding: 10px 5px; border: 2px solid #27ae60; background: #fff; color: #27ae60; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 11px; transition: all 0.2s ease;">🟢 متوفر (موقعي)</button>
+                <button type="button" class="btn-prov btn-status-available" id="btn-prov-available-prev" style="flex: 1; padding: 10px 5px; border: 2px solid #27ae60; background: #fff; color: #27ae60; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 11px; transition: all 0.2s ease;">🟢 متوفر (السابق)</button>
+                <button type="button" class="btn-prov" id="btn-prov-live-gps" 
+                    style="width: 100%; padding: 10px; border: 2px solid #2980b9; background: #fff; color: #2980b9; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 13px; transition: all 0.2s ease;">
+                    📍 تتبع مباشر (كل 10 ثوانٍ)
+                </button>
+            </div>
+            <button type="button" class="btn-prov btn-status-busy" id="btn-prov-busy" style="flex: 1; padding: 10px; border: 2px solid #c0392b; background: #fff; color: #c0392b; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 13px; transition: all 0.2s ease;">🔴 غير متوفر</button>
+        </div>
+
+        <button type="button" class="btn-prov btn-go-to-location" id="btn-prov-fly" style="width: 100%; padding: 10px; border: none; background: #2980b9; color: #ffffff; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 13px; transition: background 0.2s ease;">📍 الانتقال إلى موقعي على الخريطة</button>
+
+        <p id="provider-status-indicator" class="status-indicator-msg" style="font-size: 12px; margin: 0; text-align: center; font-weight: 600; padding-top: 10px; margin-top: 10px; border-top: 1px solid #eee;">جاري جلب الحالة من السيرفر... 🔄</p>
+    </div>
+</div>
+
+<script src="/ol/ol.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/ol-ext@4.0.0/dist/ol-ext.min.js"></script>
+<script src="/proj4/proj4.js"></script>
+
+<script src="/js/auth-core-functions.js"></script>
+<script src="/js/legal-content.js"></script>
+
+<!-- ====== شاشة التسويق الترحيبية - JavaScript ====== -->
+<script>
+(function() {
+    // لا تظهر الشاشة إذا كان هناك مستخدم مسجل الدخول مسبقاً
+    try {
+        var savedUser = JSON.parse(localStorage.getItem('map_user')) || JSON.parse(sessionStorage.getItem('map_user'));
+        if (savedUser) {
+            var overlay = document.getElementById('promo-splash-overlay');
+            if (overlay) overlay.style.display = 'none';
+            return; // لا تعرض البرومو
+        }
+    } catch(e) {}
+
+    var overlay = document.getElementById('promo-splash-overlay');
+    if (!overlay) return;
+
+    var images = [
+        'pic/Picture1.jpg',
+        'pic/Picture2.jpg',
+        'pic/Picture3.jpg',
+        'pic/Picture4.jpg',
+        'pic/Picture5.jpg',
+        'pic/Picture6.jpg',
+        'pic/Picture7.jpg',
+        'pic/Picture8.jpg',
+        'pic/Picture9.jpg',
+        'pic/Picture10.jpg',
+        'pic/Picture11.jpg',
+        'pic/Picture12.jpg',
+        'pic/Picture13.jpg',
+        'pic/Picture14.jpg',
+        'pic/Picture15.jpg',
+        'pic/Picture16.jpg',
+        'pic/غلاف1.png'
+    ];
+
+    // إنشاء عناصر الصور المتحركة
+    var slideshow = document.getElementById('promo-slideshow');
+    if (slideshow) {
+        images.forEach(function(src, index) {
+            var img = document.createElement('img');
+            img.className = 'promo-slide-img' + (index === 0 ? ' active' : '');
+            img.src = src;
+            img.alt = 'صورة تسويقية ' + (index + 1);
+            slideshow.appendChild(img);
+        });
+
+        // تغيير الصورة كل 4 ثواني
+        var currentSlide = 0;
+        setInterval(function() {
+            var slides = slideshow.querySelectorAll('.promo-slide-img');
+            slides.forEach(function(s) { s.classList.remove('active'); });
+            currentSlide = (currentSlide + 1) % slides.length;
+            slides[currentSlide].classList.add('active');
+        }, 4000);
+    }
+
+    // إخفاء البرومو وإظهار شاشة التسجيل
+    function dismissPromo(goToRegister, goToLogin) {
+        if (!overlay) return;
+        overlay.classList.add('promo-hidden');
+        setTimeout(function() {
+            overlay.style.display = 'none';
+            // تفعيل auth overlay
+            var authOverlay = document.getElementById('auth-splash-overlay');
+            if (authOverlay) {
+                authOverlay.style.display = 'flex';
+                authOverlay.style.opacity = '1';
+                authOverlay.style.visibility = 'visible';
+            }
+            // التوجيه للشاشة المناسبة
+            if (goToRegister) {
+                var welcomeSection = document.getElementById('auth-welcome-section');
+                var emailFormSection = document.getElementById('auth-email-form-section');
+                if (welcomeSection && emailFormSection) {
+                    welcomeSection.classList.add('hidden');
+                    emailFormSection.classList.remove('hidden');
+                }
+            } else if (goToLogin) {
+                var welcomeSec = document.getElementById('auth-welcome-section');
+                var loginSec = document.getElementById('auth-login-form-section');
+                if (welcomeSec && loginSec) {
+                    welcomeSec.classList.add('hidden');
+                    loginSec.classList.remove('hidden');
+                }
+            }
+        }, 800);
+    }
+
+    // زر إنشاء حساب جديد — يودي على صفحة الشروط والموافقة أولاً
+    var registerBtn = document.getElementById('promo-btn-register');
+    if (registerBtn) {
+        registerBtn.addEventListener('click', function() {
+            dismissPromo(false, false); // يروح للـ auth-welcome-section (الشروط)
+        });
+    }
+
+    // زر تسجيل الدخول
+    var loginBtn = document.getElementById('promo-btn-login');
+    if (loginBtn) {
+        loginBtn.addEventListener('click', function() {
+            dismissPromo(false, true);
+        });
+    }
+
+    // إخفاء auth overlay في البداية
+    var authOverlay = document.getElementById('auth-splash-overlay');
+    if (authOverlay) {
+        authOverlay.style.display = 'none';
+    }
+})();
+</script>
+<!-- ====== نهاية شاشة التسويق ====== -->
+
+<script src="/js/auth-app-events.js"></script>
+
+<script src="/js/shared-utils.js"></script>
+<script src="/js/quick-search.js"></script>
+<script src="/js/config.js"></script>
+<script src="/js/layers.js"></script>
+<script src="/js/layer-manager.js"></script>
+<script src="/js/popup.js"></script>
+<script src="/js/search.js"></script>
+<script src="/js/location-search.js"></script>
+<script src="/js/measure.js"></script>
+<script src="/js/share-location.js"></script>
+<script src="/js/edit-core.js"></script>
+<script src="/js/edit-wfs.js"></script>
+<script src="/js/editPolygons.js"></script>
+<script src="/js/editLines.js"></script>
+<script src="/js/global-search.js"></script>
+<script src="/js/viewport-guard.js"></script>
+<script src="/js/panel-controls.js"></script>
+<script src="/js/main.js"></script>
+
+
+<script>
+// دالة التبديل (مفتوح/مصغر)
+function handleBannerToggle(event, button) {
+    event.preventDefault(); 
+    event.stopPropagation(); 
+    var banner = document.getElementById('feedbackBanner');
+
+    banner.classList.toggle('minimized');
+
+    if(banner.classList.contains('minimized')){
+        button.innerText = '+'; 
+        button.setAttribute('title', 'تكبير البنر');
+    } else {
+        button.innerText = '—'; 
+        button.setAttribute('title', 'تصغير');
+    }
+}
+
+// دالة الفتح عند النقر على البانر نفسه
+function handleBannerLinkClick(event, banner) {
+    if(banner.classList.contains('minimized')){
+        event.preventDefault();
+        event.stopPropagation();
+        banner.classList.remove('minimized');
+
+        var toggleBtn = document.getElementById('toggleBannerBtn');
+        if(toggleBtn) {
+            toggleBtn.innerText = '—';
+            toggleBtn.setAttribute('title', 'تصغير');
+        }
+    }
+}
+
+// متغيّر لحفظ مؤقت الـ setTimeout
+let bannerTimeout;
+
+// دالة إغلاق الإعلان مؤقتاً (تجمع بين الـ 5 دقائق والـ Refresh)
+function closeBannerTemporarily() {
+    const wrapper = document.getElementById('feedbackBannerWrapper');
+    if (wrapper) {
+        wrapper.style.display = 'none'; 
+    }
+
+    // 1. حساب وقت إعادة الإظهار بعد 5 دقائق من الآن
+    const duration = 5 * 60 * 1000; // 5 دقائق بالميلي ثانية
+    const expirationTime = new Date().getTime() + duration; 
+    sessionStorage.setItem('bannerHiddenUntil', expirationTime);
+
+    // 2. تشغيل مؤقت خفي يُظهر البانر تلقائياً بعد 5 دقائق دون الحاجة لـ Refresh
+    clearTimeout(bannerTimeout);
+    bannerTimeout = setTimeout(function() {
+        if (wrapper) {
+            wrapper.style.display = 'block';
+            sessionStorage.removeItem('bannerHiddenUntil');
+        }
+    }, duration);
+}
+
+// فحص حالة الإعلان عند تحميل الصفحة أو تحديثها (Refresh)
+function checkBannerStatus() {
+    const wrapper = document.getElementById('feedbackBannerWrapper');
+    if (!wrapper) return;
+
+    // كشف ما إذا كانت الصفحة قد تم عمل Refresh لها بواسطة المستخدم
+    const navigationEntries = performance.getEntriesByType("navigation");
+    const isRefresh = navigationEntries.length > 0 && navigationEntries[0].type === "reload";
+
+    if (isRefresh) {
+        // الحوزة الأولى: إذا قام المستخدم بعمل Refresh للخريطة، أظهره فوراً ونظف التخزين
+        sessionStorage.removeItem('bannerHiddenUntil');
+        wrapper.style.display = 'block';
+        return;
+    }
+
+    // الحوزة الثانية: فحص مؤقت الـ 5 دقائق المتبقي (في حال التنقل العادي أو فتح الصفحة)
+    const hiddenUntil = sessionStorage.getItem('bannerHiddenUntil');
+    if (hiddenUntil) {
+        const currentTime = new Date().getTime();
+        const timeLeft = hiddenUntil - currentTime;
+
+        if (timeLeft > 0) {
+            // لا يزال هناك وقت متبقي من الـ 5 دقائق، يبدأ مخفياً
+            wrapper.style.display = 'none';
+            
+            // تعيين الـ setTimeout للوقت المتبقي ليعود تلقائياً
+            clearTimeout(bannerTimeout);
+            bannerTimeout = setTimeout(function() {
+                wrapper.style.display = 'block';
+                sessionStorage.removeItem('bannerHiddenUntil');
+            }, timeLeft);
+        } else {
+            // انتهت الـ 5 دقائق بالفعل
+            sessionStorage.removeItem('bannerHiddenUntil');
+            wrapper.style.display = 'block';
+        }
+    } else {
+        // لم يتم الضغط على إغلاق مطلقاً
+        wrapper.style.display = 'block';
+    }
+}
+
+// تشغيل الفحص فور تحميل وتجهيز عناصر الصفحة
+document.addEventListener('DOMContentLoaded', checkBannerStatus);
+</script>
+
+<!-- Services Bridge - يجب تحميله قبل جميع ملفات JS الأخرى -->
+<script src="/js/services-bridge.js"></script>
+
+<script src="/js/provider-panel.js"></script>
+<script src="/js/no-map-search.js"></script>
+<script src="/js/ui-collapse.js"></script>
+
+<!-- لوحات البحث للكمبيوتر -->
+<script src="/js/desktop-panels.js"></script>
+<script src="/js/resizable-panels.js?v=reset-search-panel-sizes-v1"></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+<script src="/js/notifications.js"></script>
+<script src="/js/service-chat.js"></script>
+
+<!-- حاوية الإشعارات -->
+<div id="notification-container"></div>
+<script src="/js/platform-stats.js"></script>
+<script src="/js/mobile-tabs.js"></script>
+
+<!-- نظام العناصر الحيوية -->
+<script src="/js/widgets-config.js"></script>
+<script src="/js/widgets-ticker.js"></script>
+
+<!-- تذييل الصفحة (Footer) -->
+<footer class="nms-site-footer">
+    <div class="nms-footer-container">
+        <div class="nms-footer-col nms-footer-brand-col">
+            <div class="nms-footer-logo">
+                <i class="fas fa-map-marked-alt"></i> <span>خريطة الخدمات الفلسطينية</span>
+            </div>
+            <p class="nms-footer-about">
+                منصة رقمية جغرافية تهدف لربط المستخدمين بأقرب وأنسب الخدمات، العقارات، والفنيين في فلسطين بكل سهولة وبدون وسطاء.
+            </p>
+            <div class="nms-footer-social">
+                <a href="https://www.facebook.com/MapServesPalestine" target="_blank" rel="noopener" aria-label="Facebook"><i class="fab fa-facebook-f"></i></a>
+                <a href="#" target="_blank" rel="noopener" aria-label="WhatsApp"><i class="fab fa-whatsapp"></i></a>
+                <a href="#" target="_blank" rel="noopener" aria-label="LinkedIn"><i class="fab fa-linkedin-in"></i></a>
+                <a href="#" target="_blank" rel="noopener" aria-label="YouTube"><i class="fab fa-youtube"></i></a>
+            </div>
+            <p class="nms-copyright">
+                جميع الحقوق محفوظة &copy; 2026<br>
+                <span>خريطة الخدمات الفلسطينية (Map Serves Palestine)</span>
+            </p>
+        </div>
+
+        <div class="nms-footer-col">
+            <h3>مساعدة ودعم</h3>
+            <ul>
+                <li><a href="#" id="footer-guide-map-interactive"><i class="fas fa-angle-left"></i> الخريطة التفاعلية</a></li>
+                <li><a href="#" id="footer-guide-search"><i class="fas fa-angle-left"></i> البحث السريع</a></li>
+                <li><a href="#" id="footer-about-btn"><i class="fas fa-angle-left"></i> من نحن</a></li>
+                <li><a href="#" id="footer-terms-btn" data-legal="terms"><i class="fas fa-angle-left"></i> شروط الاستخدام</a></li>
+                <li><a href="#" id="footer-privacy-btn" data-legal="privacy"><i class="fas fa-angle-left"></i> سياسة الخصوصية</a></li>
+            </ul>
+        </div>
+
+        <div class="nms-footer-col">
+            <h3>دليل الاستخدام والمساعدة</h3>
+            <ul>
+                <li><a href="#" id="footer-guide-search"><i class="fas fa-angle-left"></i> البحث عن الخدمات</a></li>
+                <li><a href="#" id="footer-guide-provider"><i class="fas fa-angle-left"></i> حساب مزود الخدمة</a></li>
+                <li><a href="#" id="footer-guide-subscription"><i class="fas fa-angle-left"></i> كيف تشترك معنا</a></li>
+                <li><a href="#" id="footer-guide-map" data-legal="guide"><i class="fas fa-angle-left"></i> دليل استخدام منصة خريطة الخدمات الفلسطينية</a></li>
+            </ul>
+        </div>
+
+        <div class="nms-footer-col">
+            <h3>العقارات والخدمات</h3>
+            <ul>
+                <li><a href="no-map-search.html?group=realestate"><i class="fas fa-angle-left"></i> العقارات</a></li>
+                <li><a href="no-map-search.html?group=technicians"><i class="fas fa-angle-left"></i> فنييون وصيانة منزلية</a></li>
+                <li><a href="no-map-search.html?group=health"><i class="fas fa-angle-left"></i> صحة ورعاية طبية</a></li>
+                <li><a href="no-map-search.html?group=vehicles"><i class="fas fa-angle-left"></i> مركبات وقطع غيار</a></li>
+                <li><a href="no-map-search.html?group=professional"><i class="fas fa-angle-left"></i> المهن الحرة والخصوصي</a></li>
+                <li><a href="no-map-search.html?group=events"><i class="fas fa-angle-left"></i> مناسبات وضيافة وترفيه</a></li>
+                <li><a href="no-map-search.html?group=misc"><i class="fas fa-angle-left"></i> متفرقات وخدمات عامة</a></li>
+                <li><a href="no-map-search.html?group=landmarks"><i class="fas fa-angle-left"></i> معالم المدينة</a></li>
+                <li><a href="no-map-search.html?group=commercial"><i class="fas fa-angle-left"></i> محلات تجارية ومطاعم</a></li>
+                <li><a href="no-map-search.html?group=education"><i class="fas fa-angle-left"></i> مدارس ورياض أطفال</a></li>
+                <li><a href="no-map-search.html?group=jobs"><i class="fas fa-angle-left"></i> وظائف شاغرة</a></li>
+            </ul>
+        </div>
+    </div>
+</footer>
+
+<!-- ملف المحتوى القانوني الموحّد -->
+<script src="/js/legal-content.js"></script>
+
+<!-- فوتر الشريط المتحرك للعناصر الحيوية -->
+<footer class="widgets-ticker-footer">
+    <div id="widgets-ticker-wrapper"></div>
+</footer>
+
+</body>
+</html>

@@ -1,0 +1,658 @@
+// js/search.js
+(function() {
+    let mapInstance = null;
+    let highlightLayer = null;
+    let currentOverlayLayers = null;
+    let conditions = [];
+
+    // 🆕 دالة موحّدة لفحص حد الطلبات + تسجيل الحدث دفعة واحدة (Atomic).
+    // تُستخدم من كل عمليات البحث (سريع، عالمي، ذكي، بالموقع، بدون خريطة) لضمان
+    // أن كل بحث يُخصم من نفس رصيد الاتصال/الواتساب، ويمنع التنفيذ فوراً عند التجاوز.
+    function getSharedUserIdForQuota() {
+        try {
+            const saved = localStorage.getItem('map_user');
+            if (saved) {
+                const parsed = JSON.parse(saved);
+                if (parsed && (parsed.user_id || parsed.id)) return String(parsed.user_id || parsed.id);
+            }
+        } catch (e) {}
+        if (!localStorage.getItem('map_user_guid')) {
+            localStorage.setItem('map_user_guid', 'guest_' + Math.random().toString(36).substr(2, 9));
+        }
+        return localStorage.getItem('map_user_guid');
+    }
+
+    window.checkAndLogMapEvent = async function (eventType, provider, service) {
+        const userId = getSharedUserIdForQuota();
+        try {
+            const res = await fetch(window.location.origin + '/api/log-map-event', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ user_id: userId, event_type: eventType, provider: provider || null, service: service || null })
+            });
+
+            if (res.status === 429) {
+                const data = await res.json().catch(() => ({}));
+                const quota = data.quota || {};
+                const periodLabels = { daily: 'اليوم', weekly: 'هذا الأسبوع', monthly: 'هذا الشهر' };
+                const periodText = periodLabels[quota.period] || 'هذه الفترة';
+                if (window.toast) {
+                    window.toast(`⛔ لقد تجاوزت الحد المسموح من الطلبات (${quota.limit || ''}) ${periodText}. يرجى المحاولة لاحقاً أو التواصل مع الإدارة.`, 'warning', 6000);
+                } else {
+                    alert(`⛔ لقد تجاوزت الحد المسموح من الطلبات (${quota.limit || ''}) ${periodText}. يرجى المحاولة لاحقاً أو التواصل مع الإدارة.`);
+                }
+                return { allowed: false };
+            }
+            return { allowed: true };
+        } catch (err) {
+            console.warn('تعذر التحقق من حد الطلبات، سيتم السماح بالطلب:', err.message);
+            return { allowed: true }; // Fail-open فقط عند تعذر الاتصال بالشبكة
+        }
+    };
+
+    // 🆕 دالة موحّدة لإضافة قائمة اختيار العملة بجانب حقل القيمة عند البحث بالسعر
+    function appendCurrencySelector(container) {
+        const wrap = document.createElement('div');
+        wrap.style.marginTop = '8px';
+
+        const label = document.createElement('div');
+        label.textContent = 'العملة:';
+        label.style.cssText = 'font-size:12px; font-weight:bold; color:#555; margin-bottom:4px;';
+
+        const currencySelect = document.createElement('select');
+        currencySelect.id = 'value-currency-select';
+        Object.assign(currencySelect.style, {
+            width: "100%", padding: "10px", border: "1px solid #ccc",
+            borderRadius: "4px", backgroundColor: "#fff", fontSize: "14px"
+        });
+        currencySelect.innerHTML = `
+            <option value="">كل العملات</option>
+            <option value="USD">دولار $</option>
+            <option value="ILS">شيكل ₪</option>
+            <option value="JOD">دينار د.أ</option>
+        `;
+
+        wrap.appendChild(label);
+        wrap.appendChild(currencySelect);
+        container.appendChild(wrap);
+    }
+
+        const fieldsConfig = {
+        realEstate: [
+            { id: 'gov_a', name: 'المحافظة', type: 'dropdown' },
+            { id: 'village_a', name: 'المدينة/القرية', type: 'dropdown' },
+            { id: 'location', name: 'الموقع', type: 'dropdown' },
+            { id: 'price', name: 'السعر', type: 'number' },
+            { id: 'area', name: 'المساحة', type: 'number' }
+        ],
+        locationLayer: [
+            { id: 'gov_a', name: 'المحافظة', type: 'dropdown' },
+            { id: 'village_a', name: 'المدينة/القرية', type: 'dropdown' },
+            { id: 'location', name: 'الموقع', type: 'dropdown' }
+        ],
+        services: [
+            { id: 'gov_a', name: 'المحافظة', type: 'dropdown' },
+            { id: 'village_a', name: 'المدينة/القرية', type: 'dropdown' },
+            { id: 'location_name', name: 'الموقع', type: 'dropdown' },
+            { id: 'name', name: 'الاسم', type: 'dropdown' }
+        ],
+        // 🆕 حقول خاصة بطبقة حواجز الطرق: بحث حسب حالة الحاجز (عمود stop)
+        roadBarriers: [
+            { id: 'gov_a', name: 'المحافظة', type: 'dropdown' },
+            { id: 'village_a', name: 'المدينة/القرية', type: 'dropdown' },
+            { id: 'location_name', name: 'الموقع', type: 'dropdown' },
+            { id: 'name', name: 'اسم الحاجز', type: 'dropdown' },
+            { id: 'stop', name: 'حالة الحاجز', type: 'fixedSelect', options: [
+                { value: '0', label: '🟢 مفتوح' },
+                { value: '1', label: '🔴 مغلق' },
+                { value: '2', label: '🟠 أزمة خفيفة' },
+                { value: '3', label: '🟤 أزمة خانقة' },
+                { value: '4', label: '🟣 تفتيش وأزمة خانقة' }
+            ]}
+        ],
+        // 🆕 حقول خاصة بطبقة محطات الوقود: بحث حسب توفر كل نوع وقود
+        fuelStations: [
+            { id: 'gov_a', name: 'المحافظة', type: 'dropdown' },
+            { id: 'village_a', name: 'المدينة/القرية', type: 'dropdown' },
+            { id: 'location_name', name: 'الموقع', type: 'dropdown' },
+            { id: 'name', name: 'اسم المحطة', type: 'dropdown' },
+            { id: 'diesel', name: 'ديزل (سولار)', type: 'fixedSelect', options: [
+                { value: '0', label: '✔️ متوفر' },
+                { value: '1', label: '❌ غير متوفر' }
+            ]},
+            { id: 'banzen95', name: 'بنزين 95', type: 'fixedSelect', options: [
+                { value: '0', label: '✔️ متوفر' },
+                { value: '1', label: '❌ غير متوفر' }
+            ]},
+            { id: 'banzen98', name: 'بنزين 98', type: 'fixedSelect', options: [
+                { value: '0', label: '✔️ متوفر' },
+                { value: '1', label: '❌ غير متوفر' }
+            ]}
+        ]
+    };
+
+    window.searchFieldsConfig = fieldsConfig;
+
+    let fieldSelect, operatorSelect, valueInputContainer, layerSelect, conditionsContainer;
+    let allFieldValues = {}; // تخزين جميع القيم لكل حقل للفلترة المحلية
+
+    async function getUniqueValues(layerKey, fieldId) {
+    const layer = currentOverlayLayers[layerKey];
+    if (!layer) return [];
+
+    const isRealEstate = ['rentLayer', 'saleLayer', 'landLayer'].includes(layerKey);
+    const workspace = isRealEstate ? 'realestate' : 'services';
+    const layerNameMap = { 'rentLayer': 'ApartRent', 'saleLayer': 'ApartSale', 'landLayer': 'LandSale' };
+    const layerName = layerNameMap[layerKey] || layerKey.replace('Layer', '');
+
+    try {
+        const baseUrl = window.MAP_CONFIG?.server?.proxyUrl || (window.location.origin + "/");
+        const params = new URLSearchParams({ layer: layerName, workspace, field: fieldId });
+
+        const govValue = getFilterValueFromConditions('gov_a');
+        const villageValue = getFilterValueFromConditions('village_a');
+        if (fieldId !== 'gov_a' && govValue) params.append('filter_gov_a', govValue);
+        if ((fieldId === 'location' || fieldId === 'location_name' || fieldId === 'name') && villageValue) {
+            params.append('filter_village_a', villageValue);
+        }
+
+        const response = await fetch(`${baseUrl}api/get-unique-values?${params.toString()}`);
+        const data = await response.json();
+        if (data.success && data.values) {
+            const uniqueValues = data.values.sort();
+            allFieldValues[fieldId] = uniqueValues;
+            updateValueUIWithData(uniqueValues);
+            return uniqueValues;
+        }
+    } catch (err) {
+        console.error('Error fetching unique values from PostgreSQL:', err);
+    }
+
+    const localValues = getUniqueValuesLocal(layer, fieldId);
+    updateValueUIWithData(localValues);
+    return localValues;
+}
+
+    function getFilterValueFromConditions(fieldId) {
+        for (const c of conditions) {
+            if (c.field === fieldId) return c.value;
+        }
+        return null;
+    }
+
+    function getUniqueValuesLocal(layer, fieldId) {
+        const source = layer.getSource();
+        const features = source ? source.getFeatures() : [];
+        const values = features.map(f => {
+            const val = f.get(fieldId);
+            return val != null ? String(val).trim() : null;
+        }).filter(v => v !== null && v !== '');
+        return [...new Set(values)].sort();
+    }
+
+    function updateValueUIWithData(uniqueValues) {
+        if (!valueInputContainer) return;
+        valueInputContainer.innerHTML = '';
+
+        // استخدام select عادية مثل "اختر الطبقة" و "اختر الحقل"
+        const select = document.createElement('select');
+        select.id = 'value-input';
+        select.className = 'search-input-field';
+
+        Object.assign(select.style, {
+            width: "100%",
+            padding: "10px",
+            border: "1px solid #ccc",
+            borderRadius: "4px",
+            backgroundColor: "#fff",
+            fontSize: "14px",
+            minHeight: "40px"
+        });
+
+        // خيار افتراضي
+        const defaultOpt = document.createElement('option');
+        defaultOpt.value = '';
+        defaultOpt.textContent = '-- اختر قيمة --';
+        select.appendChild(defaultOpt);
+
+        // خيار "قيمة مخصصة" للكتابة
+        const customOpt = document.createElement('option');
+        customOpt.value = '__custom__';
+        customOpt.textContent = '✏️ قيمة مخصصة (اكتب)';
+        select.appendChild(customOpt);
+
+        // إضافة جميع القيم مرتبة
+        uniqueValues.forEach(v => {
+            const opt = document.createElement('option');
+            opt.value = v;
+            opt.textContent = v;
+            select.appendChild(opt);
+        });
+
+        // عند اختيار "قيمة مخصصة"، استبدل بـ input مع زر عودة
+        select.onchange = () => {
+            if (select.value === '__custom__') {
+                valueInputContainer.innerHTML = '';
+
+                const container = document.createElement('div');
+                container.style.display = 'flex';
+                container.style.gap = '5px';
+
+                const input = document.createElement('input');
+                input.id = 'value-input';
+                input.className = 'search-input-field';
+                input.placeholder = 'اكتب القيمة هنا...';
+                input.autocomplete = "off";
+
+                Object.assign(input.style, {
+                    flex: "1",
+                    padding: "10px",
+                    border: "1px solid #ccc",
+                    borderRadius: "4px",
+                    backgroundColor: "#fff",
+                    fontSize: "16px",
+                    minHeight: "44px"
+                });
+
+                const backBtn = document.createElement('button');
+                backBtn.type = 'button';
+                backBtn.innerHTML = '📋';
+                backBtn.title = 'العودة للقائمة';
+                backBtn.style.cssText = 'padding: 0 15px; border: 1px solid #ccc; background: #f5f5f5; border-radius: 4px; cursor: pointer; font-size: 16px; minHeight: 44px; white-space: nowrap;';
+
+                backBtn.onclick = () => {
+                    updateValueUIWithData(uniqueValues);
+                };
+
+                container.appendChild(input);
+                container.appendChild(backBtn);
+                valueInputContainer.appendChild(container);
+                container.appendChild(input);
+                container.appendChild(backBtn);
+                valueInputContainer.appendChild(container);
+                // 🆕 إعادة إضافة قائمة العملة بعد التحويل لإدخال يدوي
+                if (fieldSelect && fieldSelect.value === 'price') {
+                    appendCurrencySelector(valueInputContainer);
+                }
+            }
+        };
+
+        valueInputContainer.appendChild(select);
+
+        // 🆕 إضافة قائمة العملة إذا كان الحقل هو السعر
+        if (fieldSelect && fieldSelect.value === 'price') {
+            appendCurrencySelector(valueInputContainer);
+        }
+    }
+
+    
+
+        // 🆕 بناء قائمة اختيار ثابتة (بدون استعلام سيرفر) لحقول مثل حالة الحاجز
+    // أو توفر الوقود، لأن القيم معروفة ومحدودة سلفاً
+    function buildFixedSelectUI(fieldDef) {
+        if (!valueInputContainer) return;
+        valueInputContainer.innerHTML = '';
+        const select = document.createElement('select');
+        select.id = 'value-input';
+        select.className = 'search-input-field';
+        Object.assign(select.style, {
+            width: "100%", padding: "10px", border: "1px solid #ccc",
+            borderRadius: "4px", backgroundColor: "#fff", fontSize: "14px", minHeight: "40px"
+        });
+        const defaultOpt = document.createElement('option');
+        defaultOpt.value = '';
+        defaultOpt.textContent = '-- اختر قيمة --';
+        select.appendChild(defaultOpt);
+        (fieldDef.options || []).forEach(opt => {
+            const o = document.createElement('option');
+            o.value = opt.value;
+            o.textContent = opt.label;
+            select.appendChild(o);
+        });
+        valueInputContainer.appendChild(select);
+    }
+
+    function findFieldDefinition(layerKey, fieldId) {
+        let fields;
+        if (['rentLayer', 'saleLayer', 'landLayer'].includes(layerKey)) fields = fieldsConfig.realEstate;
+        else if (layerKey === 'locationLayer') fields = fieldsConfig.locationLayer;
+        else if (layerKey === 'road_barriersLayer') fields = fieldsConfig.roadBarriers;
+        else if (layerKey === 'fuel_stationsLayer') fields = fieldsConfig.fuelStations;
+        else fields = fieldsConfig.services;
+        return (fields || []).find(f => f.id === fieldId);
+    }
+
+    function updateValueUI() {
+        const fieldId = fieldSelect.value;
+        const layerKey = layerSelect.value;
+        if (!fieldId || !layerKey) {
+            if (valueInputContainer) valueInputContainer.innerHTML = '';
+            return;
+        }
+        const fieldDef = findFieldDefinition(layerKey, fieldId);
+        if (fieldDef && fieldDef.type === 'fixedSelect') {
+            buildFixedSelectUI(fieldDef);
+            return;
+        }
+        getUniqueValues(layerKey, fieldId);
+    }
+
+        function renderConditions() {
+        if (!conditionsContainer) return;
+        conditionsContainer.innerHTML = '';
+        conditions.forEach((c, idx) => {
+            const div = document.createElement('div');
+            div.style.cssText = 'display:flex; align-items:center; gap:5px; margin-bottom:5px; padding:8px; background:#f9f9f9; border-radius:4px; border:1px solid #eee;';
+            // 🆕 عرض displayValue (النص المقروء) إن وُجد، وإلا القيمة كما كانت
+            const shownValue = c.displayValue !== undefined ? c.displayValue : c.value;
+            div.innerHTML = `
+                <span style="flex:1; font-size:13px;">
+                    <strong>${c.fieldName}</strong> ${c.operator} "${shownValue}"
+                </span>
+                <button type="button" data-idx="${idx}" style="padding:4px 8px; background:#dc3545; color:white; border:none; border-radius:3px; cursor:pointer;">×</button>
+            `;
+            div.querySelector('button').onclick = () => {
+                conditions.splice(idx, 1);
+                renderConditions();
+            };
+            conditionsContainer.appendChild(div);
+        });
+    }
+
+    function displaySearchResults(features, layerKey) {
+        const tbody = document.querySelector('#results-table tbody');
+        const countSpan = document.getElementById('results-count-span');
+        const resultsPanel = document.getElementById('results-panel');
+
+        if (tbody) tbody.innerHTML = '';
+        if (countSpan) countSpan.innerText = features.length;
+        if (highlightLayer) highlightLayer.getSource().clear();
+
+        if (features.length === 0) {
+            if (resultsPanel) resultsPanel.classList.add('hidden');
+            if (window.toast) {
+                window.toast('لا توجد نتائج.', 'info');
+            } else {
+                alert("لا توجد نتائج.");
+            }
+            return;
+        }
+
+        // ترتيب النتائج بناءً على التقييم rating تنازلياً
+        features.sort((a, b) => {
+            const rA = parseFloat(a.get('rating')) || 0;
+            const rB = parseFloat(b.get('rating')) || 0;
+            return rB - rA;
+        });
+
+        const layer = currentOverlayLayers[layerKey];
+        const extent = ol.extent.createEmpty();
+
+        features.forEach((f, i) => {
+            if (highlightLayer) highlightLayer.getSource().addFeature(f);
+            ol.extent.extend(extent, f.getGeometry().getExtent());
+            const row = document.createElement('tr');
+            row.style.cursor = 'pointer';
+            const cardHtml = (typeof window.generateFeatureHtml === 'function') 
+                ? window.generateFeatureHtml(f, layer) 
+                : `<div style="padding:10px;">${f.get('name') || 'معلم'}</div>`;
+
+            row.innerHTML = `<td style="vertical-align:top; text-align:center; padding-top:15px; color:#999;">${i + 1}</td>
+                             <td style="padding:10px;">
+                                <div class="result-card" style="border:1px solid #eee; border-radius:8px; padding:10px; background:#fff; box-shadow:0 2px 4px rgba(0,0,0,0.05);">
+                                    ${cardHtml}
+                                </div>
+                             </td>`;
+            
+            row.onclick = () => {
+                mapInstance.getView().fit(f.getGeometry().getExtent(), { duration: 800, maxZoom: 19 });
+                const center = ol.extent.getCenter(f.getGeometry().getExtent());
+                window.currentPopupCoordinate = center;
+                const overlay = mapInstance.getOverlays().getArray().find(o => o.getElement().id === 'popup');
+                if (overlay) {
+                    const content = document.getElementById('popup-content');
+                    content.innerHTML = cardHtml;
+                    overlay.setPosition(center);
+                }
+            };
+            if (tbody) tbody.appendChild(row);
+        });
+
+        if (resultsPanel) resultsPanel.classList.remove('hidden');
+        if (typeof window.mobileTabsShowResults === 'function') window.mobileTabsShowResults();
+        mapInstance.getView().fit(extent, { duration: 1000, padding: [50, 50, 50, 50], maxZoom: 19 });
+    }
+
+    window.initializeSearch = function(mapObject, overlayLayersObj) {
+        mapInstance = mapObject;
+        currentOverlayLayers = overlayLayersObj;
+        layerSelect = document.getElementById('layer-select');
+        fieldSelect = document.getElementById('field-select');
+        operatorSelect = document.getElementById('operator-select');
+        valueInputContainer = document.getElementById('value-input-container');
+        conditionsContainer = document.getElementById('search-conditions'); 
+        highlightLayer = overlayLayersObj.searchResultsHighlightLayer;
+
+                        if (layerSelect) {
+            layerSelect.innerHTML = '<option value="">-- اختر الطبقة للبحث --</option>';
+            // 🆕 مطابقة دقيقة (Exact) وليس substring، لأن "حواجز الطرق" كانت تُستبعد
+            // بالخطأ بسبب احتوائها على كلمة "الطرق" المخصصة لاستبعاد طبقة roadsLayer فقط
+            const excludedTitles = ['المدن', 'المحافظات', 'الطرق', 'المناطق'];
+            const excludedKeys = ['cityLayer', 'governorateLayer', 'roadsLayer', 'locationLayer'];
+
+            Object.keys(overlayLayersObj).forEach(key => {
+                const lyr = overlayLayersObj[key];
+                const title = lyr?.get('title') || '';
+
+                // 🆕 التحقق من الاستثناءات العامة عبر الدالة الموحّدة (shared-utils.js)
+                if (title && !key.toLowerCase().includes('search') && !excludedTitles.includes(title) && !excludedKeys.includes(key) && !window.isLayerGloballyExcluded(key)) {
+                    layerSelect.innerHTML += `<option value="${key}">${title}</option>`;
+                }
+            });
+                        layerSelect.onchange = () => {
+                const layerKey = layerSelect.value;
+                if (!layerKey) {
+                    fieldSelect.innerHTML = '<option value="">-- اختر الحقل --</option>';
+                    if (valueInputContainer) valueInputContainer.innerHTML = '';
+                    conditions = [];
+                    renderConditions();
+                    return;
+                }
+                // 🆕 حقول مخصصة لطبقتي حواجز الطرق ومحطات الوقود
+                let fields;
+                if (['rentLayer', 'saleLayer', 'landLayer'].includes(layerKey)) {
+                    fields = fieldsConfig.realEstate;
+                } else if (layerKey === 'locationLayer') {
+                    fields = fieldsConfig.locationLayer;
+                } else if (layerKey === 'road_barriersLayer') {
+                    fields = fieldsConfig.roadBarriers;
+                } else if (layerKey === 'fuel_stationsLayer') {
+                    fields = fieldsConfig.fuelStations;
+                } else {
+                    fields = fieldsConfig.services;
+                }
+                fieldSelect.innerHTML = fields.map(f => `<option value="${f.id}">${f.name}</option>`).join('');
+                conditions = []; 
+                renderConditions();
+                updateValueUI();
+            };
+        }
+
+        if (fieldSelect) fieldSelect.onchange = updateValueUI;
+
+        document.getElementById('run-search').onclick = async () => {
+            const layerKey = layerSelect.value;
+            if (!layerKey) {
+                if (window.toast) {
+                    window.toast('اختر الطبقة للبحث أولاً.', 'warning');
+                } else {
+                    alert('اختر الطبقة للبحث أولاً.');
+                }
+                return;
+            }
+
+            // 🆕 فحص حد الطلبات قبل تنفيذ البحث الذكي (يُحسب من نفس رصيد الاتصال/الواتساب)
+            const layerTitleForQuota = layerSelect.options[layerSelect.selectedIndex]?.text || layerKey;
+            if (window.checkAndLogMapEvent) {
+                const quotaCheck = await window.checkAndLogMapEvent('attribute_search', null, layerTitleForQuota);
+                if (!quotaCheck.allowed) return;
+            }
+
+            let finalConditions = [...conditions];
+            const currentVal = document.getElementById('value-input')?.value.trim();
+            if (finalConditions.length === 0 && currentVal) {
+                finalConditions.push({ field: fieldSelect.value, fieldName: fieldSelect.options[fieldSelect.selectedIndex].text, operator: operatorSelect.value, value: currentVal });
+
+                // 🆕 إضافة شرط العملة تلقائياً بنفس المسار السريع
+                if (fieldSelect.value === 'price') {
+                    const currencySelect = document.getElementById('value-currency-select');
+                    if (currencySelect && currencySelect.value) {
+                        finalConditions.push({ field: 'currency', fieldName: 'العملة', operator: '=', value: currencySelect.value });
+                    }
+                }
+            }
+            if (finalConditions.length === 0) {
+                if (window.toast) {
+                    window.toast('حدد معايير البحث.', 'warning');
+                } else {
+                    alert('حدد معايير البحث.');
+                }
+                return;
+            }
+
+            // تحديد workspace و layer name
+            const isRealEstate = ['rentLayer', 'saleLayer', 'landLayer'].includes(layerKey);
+            const workspace = isRealEstate ? 'realestate' : 'services';
+            const layerNameMap = { 'rentLayer': 'ApartRent', 'saleLayer': 'ApartSale', 'landLayer': 'LandSale' };
+            const layerName = layerNameMap[layerKey] || layerKey.replace('Layer', '');
+
+            // استخدام البحث من السيرفر بدون BBOX للحصول على جميع النتائج
+            try {
+                const baseUrl = window.MAP_CONFIG?.server?.proxyUrl || (window.location.origin + "/");
+                const params = new URLSearchParams({
+                    layer: layerName,
+                    workspace: workspace
+                });
+
+                // إضافة شروط البحث المتعددة
+                if (finalConditions.length > 0) {
+                    finalConditions.forEach((c, index) => {
+                        params.append(`field_${index}`, c.field);
+                        params.append(`operator_${index}`, c.operator);
+                        params.append(`value_${index}`, c.value);
+                    });
+                    params.append('conditions_count', finalConditions.length);
+                }
+
+                const response = await fetch(`${baseUrl}api/search-features?${params.toString()}`);
+                const data = await response.json();
+
+                if (!data.features || data.features.length === 0) {
+                    if (window.toast) {
+                        window.toast('لا توجد نتائج.', 'info');
+                    } else {
+                        alert('لا توجد نتائج.');
+                    }
+                    return;
+                }
+
+                // تحويل GeoJSON إلى OpenLayers Features
+                const format = new ol.format.GeoJSON();
+                const features = data.features.map(f => format.readFeature(f));
+
+                displaySearchResults(features, layerKey);
+            } catch (error) {
+                console.error("خطأ في البحث:", error);
+                if (window.toast) {
+                    window.toast('حدث خطأ أثناء البحث. سيتم استخدام البحث المحلي.', 'warning');
+                } else {
+                    alert('حدث خطأ أثناء البحث. سيتم استخدام البحث المحلي.');
+                }
+
+                // الفallback للبحث المحلي
+                const source = currentOverlayLayers[layerKey]?.getSource();
+                if (!source) return;
+                let matched = source.getFeatures();
+                matched = matched.filter(f => {
+                    return finalConditions.every(c => {
+                        const raw = f.get(c.field);
+                        if (raw == null) return false;
+                        const fVal = String(raw).trim().toLowerCase();
+                        const sVal = String(c.value).trim().toLowerCase();
+                        if (c.operator === '>') return parseFloat(fVal) >= parseFloat(sVal);
+                        if (c.operator === '<') return parseFloat(fVal) <= parseFloat(sVal);
+                        if (c.operator === '=') return fVal === sVal;
+                        if (c.operator === 'contains') return fVal.includes(sVal);
+                        return false;
+                    });
+                });
+                displaySearchResults(matched, layerKey);
+            }
+        };
+
+                document.getElementById('add-condition').onclick = () => {
+            const inputEl = document.getElementById('value-input');
+            const val = inputEl?.value.trim();
+            if (!val) return;
+            // 🆕 إذا كان الحقل عبارة عن قائمة اختيار (select)، نعرض نص الخيار المختار
+            // (مثل "🟢 مفتوح") بدل القيمة الرقمية الخام (مثل "0") في شارة الشرط،
+            // بينما تبقى القيمة الخام هي المُرسَلة فعلياً للبحث بالسيرفر كما هي
+            const displayVal = (inputEl && inputEl.tagName === 'SELECT' && inputEl.selectedIndex >= 0)
+                ? inputEl.options[inputEl.selectedIndex].text
+                : val;
+            conditions.push({ field: fieldSelect.value, fieldName: fieldSelect.options[fieldSelect.selectedIndex].text, operator: operatorSelect.value, value: val, displayValue: displayVal });
+
+            // 🆕 إضافة شرط العملة تلقائياً إذا كان الحقل هو السعر وتم اختيار عملة محددة
+            if (fieldSelect.value === 'price') {
+                const currencySelect = document.getElementById('value-currency-select');
+                if (currencySelect && currencySelect.value) {
+                    conditions.push({ field: 'currency', fieldName: 'العملة', operator: '=', value: currencySelect.value });
+                }
+            }
+
+            renderConditions();
+            
+            // تهيئة الحقل بعد الإضافة حسب نوعه (تفادياً لمشاكل الخيار الفارغ في الـ select)
+            if (inputEl) {
+                inputEl.value = '';
+            }
+        };
+        document.getElementById('clear-search').onclick = () => {
+            conditions = [];
+            renderConditions();
+            if (highlightLayer) highlightLayer.getSource().clear();
+            document.querySelector('#results-table tbody').innerHTML = '';
+            document.getElementById('results-panel').classList.add('hidden');
+        };
+
+        // زر طباعة التقرير
+        document.getElementById('print-attribute-results')?.addEventListener('click', () => {
+            const table = document.getElementById('results-table').cloneNode(true);
+            const newWin = window.open('', '_blank');
+            newWin.document.write(`
+                <html>
+                    <head>
+                        <title>تقرير نتائج البحث</title>
+                        <style>
+                            body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; direction: rtl; padding: 20px; }
+                            table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+                            th, td { border: 1px solid #ddd; padding: 12px; text-align: right; }
+                            th { background-color: #f8f9fa; }
+                            .result-card { border: none !important; box-shadow: none !important; }
+                            .popup-img-container, .popup-link, .popup-header-title, button { display: none !important; }
+                        </style>
+                    </head>
+                    <body>
+                        <h2 style="text-align: center;">تقرير نتائج البحث - منصة الخدمات والعقارات</h2>
+                        <p>تاريخ الاستخراج: \${new Date().toLocaleString('ar-EG')}</p>
+                        \${table.outerHTML}
+                    </body>
+                </html>
+            `);
+            newWin.document.close();
+            newWin.print();
+        });
+
+        if (layerSelect?.options.length > 0) layerSelect.dispatchEvent(new Event('change'));
+    };
+})();

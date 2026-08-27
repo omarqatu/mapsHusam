@@ -1,0 +1,121 @@
+/* تنسيق لوحة إدارة الخدمة أسفل اليسار */
+.provider-panel-bottom-left {
+    position: fixed;
+    bottom: 20px;
+    left: 20px;
+    width: auto;            /* تغيير من 320px إلى auto */
+    min-width: 280px;      /* عرض أدنى مناسب للنصوص */
+    max-width: 90vw;       /* لضمان عدم خروجها عن الشاشة في الموبايل */
+    background-color: #ffffff;
+    border-radius: 8px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+    z-index: 1000;
+    /* إزالة overflow: hidden للسماح للوحة بالتمدد حسب المحتوى */
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    transition: all 0.3s ease;
+}
+
+.provider-panel-body {
+    padding: 15px;
+    height: auto; 
+    max-height: 70vh; /* تحديد أقصى ارتفاع فقط ليتم التمرير إذا كان المحتوى طويلاً جداً */
+    overflow-y: auto;
+}
+
+.provider-panel-header {
+    background-color: #2c3e50;
+    color: #fff;
+    padding: 12px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.provider-panel-header h4 {
+    margin: 0;
+    font-size: 14px;
+}
+
+.provider-name-badge {
+    background-color: #34495e;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 11px;
+}
+
+.provider-status-text {
+    font-size: 13px;
+    margin-top: 0;
+    margin-bottom: 10px;
+    color: #333;
+}
+
+.provider-action-buttons {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.btn-prov {
+    border: none;
+    padding: 10px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-weight: bold;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    transition: background 0.2s;
+}
+
+.btn-status-available { background-color: #2ecc71; color: white; }
+.btn-status-available:hover { background-color: #27ae60; }
+
+.btn-status-busy { background-color: #e74c3c; color: white; }
+.btn-status-busy:hover { background-color: #c0392b; }
+
+.btn-go-to-location { background-color: #3498db; color: white; }
+.btn-go-to-location:hover { background-color: #2980b9; }
+
+.status-indicator-msg {
+    margin-top: 10px;
+    margin-bottom: 0;
+    font-size: 12px;
+    text-align: center;
+    font-weight: bold;
+    color: inherit !important;
+}
+
+.hidden {
+    display: none !important;
+}
+
+
+/* ==========================================================================
+   تنسيقات اللوحة المتحركة (الموحدة)
+   ========================================================================== */
+#provider-mini-panel {
+    position: fixed !important;
+    width: 300px !important;
+    min-height: 100px;
+    max-width: 90vw;
+    box-sizing: border-box !important;
+    z-index: 9999;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    background: white;
+    border-radius: 8px;
+    overflow: hidden;
+    transition: none; 
+    touch-action: none; 
+    user-select: none;
+}
+
+/* جعل الارتفاع مرناً في الشاشات العادية، وسيتم إعادة ضبطه تلقائياً عبر قاعدتنا الأعلى في الموبايل */
+#provider-mini-panel .provider-panel-body {
+    padding: 15px;
+    height: auto; 
+    max-height: 70vh; 
+    overflow-y: auto;
+}

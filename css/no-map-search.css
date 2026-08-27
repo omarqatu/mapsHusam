@@ -1,0 +1,1499 @@
+/* ==========================================================================
+   no-map-search.css
+   تصميم صفحة "البحث بدون خريطة" - بسيط، جذاب، وسريع التحميل (معدل بالكامل)
+   ========================================================================== */
+
+* { box-sizing: border-box; }
+
+body {
+    margin: 0;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: #f2f4f7;
+    color: #2c3e50;
+    direction: rtl;
+    position: relative;
+}
+
+.hidden { display: none !important; }
+
+/* ---------- زخرفة خلفية هادئة (فقاعات ضبابية بطيئة الحركة) ---------- */
+.nms-ambient {
+    position: fixed;
+    inset: 0;
+    overflow: hidden;
+    z-index: 0;
+    pointer-events: none;
+}
+
+.nms-blob {
+    position: absolute;
+    border-radius: 50%;
+    filter: blur(60px);
+    opacity: 0.18;
+}
+
+.nms-blob-1 {
+    width: 380px; height: 380px;
+    top: -120px; right: -100px;
+    background: radial-gradient(circle, #1a73e8, transparent 70%);
+    animation: nmsFloatSlow 22s ease-in-out infinite;
+}
+
+.nms-blob-2 {
+    width: 300px; height: 300px;
+    bottom: -80px; left: -80px;
+    background: radial-gradient(circle, #34a853, transparent 70%);
+    animation: nmsFloatSlow 26s ease-in-out infinite reverse;
+}
+
+.nms-blob-3 {
+    width: 240px; height: 240px;
+    top: 45%; left: 50%;
+    background: radial-gradient(circle, #fbbc04, transparent 70%);
+    animation: nmsFloatSlow 30s ease-in-out infinite;
+    animation-delay: -8s;
+}
+
+@keyframes nmsFloatSlow {
+    0%, 100% { transform: translate(0, 0) scale(1); }
+    50% { transform: translate(30px, -25px) scale(1.08); }
+}
+
+/* إخفاء الخلفية المتحركة في الموبايل لتقليل استهلاك المتصفح */
+@media (max-width: 767px) {
+    .nms-ambient {
+        display: none;
+    }
+}
+
+.nms-page { position: relative; z-index: 1; }
+
+/* ---------- الشريط العلوي ---------- */
+.nms-topbar {
+    background: linear-gradient(120deg, #1a73e8, #0d47a1, #1a73e8);
+    background-size: 200% 200%;
+    animation: nmsGradientShift 16s ease infinite;
+    color: #fff;
+    padding: 14px 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 15px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.15);
+    position: sticky;
+    top: 0;
+    z-index: 500;
+}
+
+@keyframes nmsGradientShift {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+}
+
+/* إيقاف animation الهيدر في الموبايل */
+@media (max-width: 767px) {
+    .nms-topbar {
+        animation: none;
+        background: linear-gradient(120deg, #1a73e8, #0d47a1);
+    }
+}
+
+.nms-topbar h1 {
+    margin: 0;
+    font-size: 18px;
+    flex: 1;
+    text-align: center;
+}
+
+.nms-topbar-spacer { width: 90px; }
+
+.nms-back-home {
+    color: #fff;
+    text-decoration: none;
+    font-weight: bold;
+    font-size: 13px;
+    background: rgba(255,255,255,0.15);
+    padding: 8px 14px;
+    border-radius: 20px;
+    white-space: nowrap;
+    transition: background 0.2s;
+}
+.nms-back-home:hover { background: rgba(255,255,255,0.3); }
+
+/* ---------- أزرار "من نحن" و"اتصل بنا" في الهيدر ---------- */
+.nms-topbar-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+}
+
+.nms-topbar-action-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    color: #fff;
+    text-decoration: none;
+    font-weight: bold;
+    font-size: 13px;
+    background: rgba(255,255,255,0.15);
+    border: none;
+    padding: 8px 14px;
+    border-radius: 20px;
+    white-space: nowrap;
+    cursor: pointer;
+    font-family: inherit;
+    transition: background 0.2s ease, transform 0.15s ease;
+}
+.nms-topbar-action-btn:hover {
+    background: rgba(255,255,255,0.3);
+    transform: translateY(-1px);
+}
+.nms-topbar-action-btn:active { transform: translateY(0); }
+
+.nms-topbar-action-fb {
+    background: rgba(255,255,255,0.15);
+}
+.nms-topbar-action-fb:hover { background: #1877f2; }
+
+
+
+/* ---------- تخطيط الصفحة الرئيسي (معالجة تساوي الارتفاع والتوزيع) ---------- */
+.nms-layout {
+    display: flex;
+    flex-direction: row;
+    align-items: stretch;
+    gap: 40px; /* زيادة التباعد بين الأعمدة الجانبية والمحتوى الرئيسي */
+    max-width: 1400px;
+    margin: 20px auto;
+    padding: 0 20px;
+    box-sizing: border-box;
+}
+
+.nms-main {
+    flex: 4;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    box-sizing: border-box;
+}
+
+/* ---------- أعمدة الإعلانات الجانبية ---------- */
+.nms-ad-side {
+    flex: 1;
+    max-width: 240px;
+    min-height: 100%;
+    position: sticky;
+    top: 80px;
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    box-sizing: border-box;
+}
+
+/* حاوية الإعلانات الداخلية الموحدة */
+.nms-ad-space {
+    background: #f8f9fa;
+    border: 2px dashed #cbd5e1;
+    border-radius: 10px;
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    justify-content: space-between;
+    position: relative;
+    overflow: hidden;
+    padding: 12px;
+    height: 100%;
+    min-height: 100%;
+    box-sizing: border-box;
+}
+
+.nms-ad-space span {
+    color: #94a3b8;
+    font-size: 13px;
+    font-weight: 500;
+    text-align: center;
+}
+
+/* تنسيق كرت العقار/الإعلان المميز داخل المساحة الجانبية */
+.nms-ad-space .featured-ad-card, 
+.nms-ad-space div[style*="background"] {
+    width: 100% !important;
+    background: #ffffff !important;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+    padding: 10px;
+    text-align: right;
+    box-sizing: border-box;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    margin-bottom: 0 !important;
+}
+
+.nms-ad-bottom {
+    max-width: 1400px;
+    margin: 10px auto 30px;
+    width: 100%;
+    min-height: 100px;
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    gap: 15px;
+    overflow-x: auto;
+    overflow-y: hidden;
+    padding: 10px;
+    box-sizing: border-box;
+}
+
+/* ---------- قسم التعريف والإرشاد (الهيرو) ---------- */
+.nms-hero {
+    position: relative;
+    border-radius: 18px;
+    overflow: hidden;
+    margin-bottom: 22px;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.1);
+    animation: nmsFadeInUp 0.6s ease both;
+}
+
+.nms-hero-slideshow {
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+}
+
+.nms-hero-slide {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    opacity: 0;
+    transform: scale(1.04);
+    transition: opacity 2.2s ease, transform 9s ease;
+}
+
+/* إيقاف slideshow في الموبايل لتقليل استهلاك المتصفح */
+@media (max-width: 767px) {
+    .nms-hero-slide {
+        display: none;
+    }
+    
+    .nms-hero {
+        background: linear-gradient(135deg, rgba(255,255,255,0.97) 0%, rgba(255,255,255,0.93) 55%, rgba(238,246,255,0.9) 100%);
+    }
+}
+
+.nms-hero-slide.active {
+    opacity: 0.28;
+    transform: scale(1);
+}
+
+.nms-hero-overlay {
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    background: linear-gradient(135deg, rgba(255,255,255,0.97) 0%, rgba(255,255,255,0.93) 55%, rgba(238,246,255,0.9) 100%);
+}
+
+.nms-hero-content {
+    position: relative;
+    z-index: 2;
+    padding: 26px 26px 24px;
+    text-align: center;
+}
+
+.nms-hero-content h2 {
+    margin: 0 0 10px;
+    font-size: 19px;
+    color: #1a73e8;
+}
+
+.nms-hero-content p {
+    margin: 0 0 16px;
+    font-size: 14px;
+    line-height: 1.9;
+    color: #555;
+}
+
+.nms-map-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: #eef6ff;
+    color: #1a73e8;
+    border: 1px solid #cfe3fb;
+    padding: 10px 20px;
+    border-radius: 30px;
+    text-decoration: none;
+    font-weight: bold;
+    font-size: 13px;
+    transition: all 0.25s ease;
+}
+.nms-map-link:hover {
+    background: #1a73e8;
+    color: #fff;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(26,115,232,0.35);
+}
+
+@keyframes nmsFadeInUp {
+    from { opacity: 0; transform: translateY(14px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ---------- عنوان الأقسام ---------- */
+.nms-section-title {
+    font-size: 15px;
+    color: #444;
+    margin: 0 0 14px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+/* ---------- تبويبات الفروع (فلترة الفئات) ---------- */
+.nms-groups-tabs {
+    display: flex;
+    flex-wrap: nowrap;
+    gap: 10px;
+    overflow-x: auto;
+    padding: 4px 2px 14px;
+    margin-bottom: 6px;
+    scrollbar-width: thin;
+}
+.nms-groups-tabs::-webkit-scrollbar { height: 6px; }
+.nms-groups-tabs::-webkit-scrollbar-thumb { background: #cfd6de; border-radius: 10px; }
+
+.nms-group-tab {
+    flex: 0 0 auto;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: #fff;
+    border: 1px solid #dde3ea;
+    color: #444;
+    padding: 9px 16px;
+    border-radius: 30px;
+    font-size: 13px;
+    font-weight: bold;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: all 0.2s ease, transform 0.15s ease;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.04);
+    animation: nmsFadeInUp 0.5s ease both;
+    animation-delay: calc(var(--i, 0) * 45ms);
+}
+
+/* إيقاف animations التبويبات في الموبايل */
+@media (max-width: 767px) {
+    .nms-group-tab {
+        animation: none;
+        transition: background 0.15s ease;
+    }
+}
+
+.nms-group-tab i { font-size: 13px; color: #1a73e8; transition: transform 0.25s ease; }
+
+.nms-group-tab:hover {
+    border-color: #1a73e8;
+    background: #f2f8ff;
+    transform: translateY(-2px);
+}
+.nms-group-tab:hover i { transform: scale(1.15); }
+.nms-group-tab:active { transform: translateY(0) scale(0.96); }
+
+.nms-group-tab.active {
+    background: #1a73e8;
+    border-color: #1a73e8;
+    color: #fff;
+    box-shadow: 0 4px 12px rgba(26,115,232,0.3);
+}
+.nms-group-tab.active i { color: #fff; }
+
+
+
+/* ---------- شبكة الفئات ---------- */
+.nms-categories-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+    gap: 14px;
+}
+
+.nms-category-card {
+    background: #fff;
+    border: 1px solid #e6e9ee;
+    border-radius: 14px;
+    padding: 18px 10px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    cursor: pointer;
+    transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.04);
+    animation: nmsFadeInUp 0.45s ease both;
+    animation-delay: calc(var(--i, 0) * 30ms);
+}
+
+/* إيقاف animations البطاقات في الموبايل */
+@media (max-width: 767px) {
+    .nms-category-card {
+        animation: none;
+        transition: background 0.15s ease;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+    }
+}
+
+.nms-category-card i {
+    font-size: 26px;
+    color: #1a73e8;
+    width: 52px;
+    height: 52px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #eef6ff;
+    border-radius: 50%;
+    transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* إيقاف transition الأيقونات في الموبايل */
+@media (max-width: 767px) {
+    .nms-category-card i {
+        transition: none;
+    }
+}
+
+.nms-category-card span {
+    font-size: 12.5px;
+    font-weight: bold;
+    color: #333;
+    text-align: center;
+    line-height: 1.4;
+    transition: color 0.2s ease;
+}
+
+.nms-category-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 22px rgba(26,115,232,0.18);
+    border-color: #1a73e8;
+}
+
+.nms-category-card:hover i {
+    background: #1a73e8;
+    color: #fff;
+    transform: scale(1.1) rotate(-6deg);
+}
+
+.nms-category-card:active {
+    transform: translateY(-1px) scale(0.98);
+}
+
+/* ---------- قسم النتائج ---------- */
+#nms-results-view:not(.hidden) { animation: nmsFadeInUp 0.4s ease both; }
+
+.nms-back-btn {
+    background: #fff;
+    border: 1px solid #ddd;
+    color: #555;
+    padding: 8px 16px;
+    border-radius: 20px;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: bold;
+    margin-bottom: 14px;
+    transition: all 0.2s ease;
+}
+.nms-back-btn:hover { background: #eee; transform: translateX(4px); }
+
+.nms-current-category-title {
+    font-size: 20px;
+    color: #1a73e8;
+    margin: 0 0 16px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+.nms-current-category-title i {
+    background: #eef6ff;
+    padding: 10px;
+    border-radius: 50%;
+    font-size: 18px;
+    animation: nmsPopIn 0.4s ease both;
+}
+
+@keyframes nmsPopIn {
+    from { opacity: 0; transform: scale(0.6); }
+    to   { opacity: 1; transform: scale(1); }
+}
+
+/* ---------- صندوق الفلاتر ---------- */
+.nms-filters-box {
+    background: #fff;
+    border-radius: 14px;
+    padding: 18px 20px;
+    box-shadow: 0 3px 12px rgba(0,0,0,0.06);
+    margin-bottom: 20px;
+}
+
+.nms-filters-hint {
+    margin: 0 0 12px;
+    font-size: 13px;
+    color: #666;
+    font-weight: bold;
+}
+
+.nms-filter-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    align-items: center;
+}
+
+.nms-select {
+    padding: 9px 10px;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    font-size: 13px;
+    background: #fff;
+    color: #333;
+    min-width: 130px;
+}
+
+.nms-value-container {
+    flex: 1;
+    min-width: 160px;
+}
+.nms-value-container select,
+.nms-value-container input {
+    width: 100%;
+    padding: 9px 10px;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    font-size: 13px;
+}
+
+.nms-value-loading {
+    font-size: 12px;
+    color: #999;
+    padding: 9px 5px;
+}
+
+.nms-conditions-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 12px;
+}
+
+.nms-condition-tag {
+    background: #f1f6ff;
+    border: 1px solid #cfe3fb;
+    color: #1a4a8a;
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+.nms-condition-tag i {
+    cursor: pointer;
+    color: #c0392b;
+}
+
+.nms-filter-actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 16px;
+}
+
+.nms-btn {
+    border: none;
+    padding: 10px 18px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: bold;
+    font-size: 13px;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    transition: all 0.2s;
+}
+.nms-btn-primary { background: #1a73e8; color: #fff; }
+.nms-btn-primary:hover { background: #1557b0; }
+.nms-btn-secondary { background: #eef6ff; color: #1a73e8; border: 1px solid #cfe3fb; }
+.nms-btn-secondary:hover { background: #dbeaff; }
+.nms-btn-muted { background: #f0f0f0; color: #555; }
+.nms-btn-muted:hover { background: #e2e2e2; }
+
+/* ---------- عدد النتائج ---------- */
+.nms-results-count {
+    font-size: 13px;
+    color: #666;
+    margin-bottom: 12px;
+    font-weight: bold;
+}
+
+/* ---------- قائمة بطاقات النتائج ---------- */
+.nms-results-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 16px;
+}
+
+.nms-loading, .nms-empty {
+    grid-column: 1 / -1;
+    text-align: center;
+    padding: 40px 20px;
+    color: #888;
+    font-size: 14px;
+    animation: nmsFadeInUp 0.35s ease both;
+}
+
+/* تنسيق بطاقات النتائج */
+.nms-result-card {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 14px;
+    padding: 16px;
+    margin-bottom: 15px;
+    box-shadow: 0 3px 10px rgba(0,0,0,0.06);
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    font-size: 13px;
+    line-height: 1.7;
+    transition: transform 0.25s ease, box-shadow 0.25s ease;
+    animation: nmsFadeInUp 0.4s ease both;
+    animation-delay: calc(var(--i, 0) * 35ms);
+    height: auto; /* جعل الارتفاع مرن حسب المحتوى */
+    min-height: auto; /* إزالة الحد الأدنى الثابت */
+}
+
+.nms-result-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 18px rgba(0,0,0,0.1);
+}
+
+.nms-status-badge {
+    display: inline-flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    padding: 8px;
+    border: 1px dashed;
+    border-radius: 8px;
+    font-weight: bold;
+    font-size: 12.5px;
+    text-align: center;
+}
+.nms-status-hours {
+    font-weight: normal;
+    font-size: 11px;
+    color: #666;
+}
+
+.nms-result-title {
+    font-size: 16px;
+    font-weight: bold;
+    color: #2c3e50;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.nms-r-name {
+    font-weight: bold;
+    font-size: 14.5px;
+    color: #222;
+}
+
+.nms-r-loc { color: #555; }
+
+.nms-result-details {
+    font-size: 14px;
+    color: #555;
+    line-height: 1.6;
+}
+
+.nms-r-line b { color: #333; }
+
+.nms-r-desc {
+    background: #f9f9f9;
+    padding: 8px;
+    border-radius: 8px;
+    color: #444;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    white-space: normal;
+    max-height: none;
+    overflow: visible;
+}
+
+.nms-r-img img {
+    width: 100%;
+    border-radius: 10px;
+    max-height: 180px;
+    object-fit: cover;
+}
+
+.nms-r-actions {
+    display: flex;
+    gap: 8px;
+    margin-top: 6px;
+}
+.nms-r-actions button {
+    flex: 1;
+    border: none;
+    border-radius: 8px;
+    padding: 10px 6px;
+    font-weight: bold;
+    font-size: 12.5px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+}
+.nms-call-btn { background: #1a73e8; color: #fff; direction: ltr; }
+.nms-whatsapp-btn { background: #25d366; color: #fff; }
+.req-svc-btn { background: linear-gradient(135deg, #1a73e8, #6c5ce7); color: #fff; }
+
+.nms-popup-actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1px solid #eee;
+}
+
+.nms-popup-btn {
+    flex: 1;
+    padding: 8px 12px;
+    border-radius: 6px;
+    text-align: center;
+    font-size: 13px;
+    font-weight: bold;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+}
+
+.btn-whatsapp { background: #25d366; color: #fff; }
+.btn-map-location { background: #007bff; color: #fff; }
+
+.nms-goto-map-btn {
+    margin-top: 4px;
+    width: 100%;
+    background: #6c757d;
+    color: #fff;
+    border: none;
+    padding: 10px;
+    border-radius: 8px;
+    font-weight: bold;
+    font-size: 12.5px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    transition: background 0.2s;
+}
+.nms-goto-map-btn:hover { background: #545b62; }
+
+/* ---------- مودال "من نحن" ---------- */
+.nms-modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.55);
+    backdrop-filter: blur(2px);
+    z-index: 100000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    animation: nmsFadeInUp 0.25s ease both;
+}
+
+.nms-modal-box {
+    position: relative;
+    background: #fff;
+    border-radius: 18px;
+    max-width: 640px;
+    width: 100%;
+    max-height: 85vh;
+    overflow-y: auto;
+    padding: 30px 28px;
+    box-shadow: 0 20px 50px rgba(0,0,0,0.3);
+    animation: nmsPopIn 0.3s ease both;
+}
+
+.nms-modal-close {
+    position: absolute;
+    top: 14px;
+    left: 14px;
+    background: #f0f2f5;
+    border: none;
+    border-radius: 50%;
+    width: 34px;
+    height: 34px;
+    font-size: 15px;
+    color: #555;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+}
+.nms-modal-close:hover { background: #e2e5ea; color: #000; transform: rotate(90deg); }
+
+.nms-modal-title {
+    margin: 0 0 14px;
+    font-size: 21px;
+    color: #1a73e8;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    border-bottom: 2px solid #eef6ff;
+    padding-bottom: 12px;
+}
+
+.nms-modal-lead {
+    font-size: 14px;
+    line-height: 1.9;
+    color: #444;
+    margin: 0 0 20px;
+    text-align: justify;
+}
+
+.nms-modal-section {
+    background: #f8f9fb;
+    border-radius: 12px;
+    padding: 16px 18px;
+    margin-bottom: 16px;
+    border-right: 4px solid #1a73e8;
+}
+
+.nms-modal-section h3 {
+    margin: 0 0 8px;
+    font-size: 15px;
+    color: #2c3e50;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.nms-modal-section p {
+    margin: 0 0 6px;
+    font-size: 13.5px;
+    line-height: 1.85;
+    color: #555;
+}
+
+.nms-modal-list {
+    margin: 8px 0 0;
+    padding-right: 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.nms-modal-list li {
+    font-size: 13px;
+    line-height: 1.8;
+    color: #444;
+}
+
+.nms-modal-fb-link {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    background: #1877f2;
+    color: #fff;
+    text-decoration: none;
+    font-weight: bold;
+    font-size: 14px;
+    padding: 12px;
+    border-radius: 10px;
+    margin-top: 6px;
+    transition: all 0.2s ease;
+}
+.nms-modal-fb-link:hover {
+    background: #145dbf;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(24,119,242,0.35);
+}
+
+/* ================= تصميم التذييل (Footer) الاحترافي ================= */
+.nms-site-footer {
+    background-color: #1a252f;
+    color: #ecf0f1;
+    padding: 50px 20px 30px 20px;
+    margin-top: 60px;
+    font-family: inherit;
+    border-top: 4px solid #3498db;
+    direction: rtl;
+}
+
+.nms-footer-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 40px;
+}
+
+.nms-footer-col h3 {
+    color: #fff;
+    font-size: 18px;
+    margin-bottom: 20px;
+    position: relative;
+    padding-bottom: 8px;
+    border-bottom: 2px solid #3498db;
+    display: inline-block;
+}
+
+.nms-footer-col ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.nms-footer-col ul li {
+    margin-bottom: 12px;
+}
+
+.nms-footer-col ul li a {
+    color: #bdc3c7;
+    text-decoration: none;
+    font-size: 14px;
+    transition: color 0.3s ease, transform 0.3s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.nms-footer-col ul li a:hover {
+    color: #3498db;
+    transform: translateX(-4px);
+}
+
+.nms-footer-brand-col .nms-footer-logo {
+    font-size: 20px;
+    font-weight: bold;
+    color: #fff;
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.nms-footer-brand-col .nms-footer-logo i {
+    color: #3498db;
+}
+
+.nms-footer-about {
+    font-size: 13px;
+    color: #95a5a6;
+    line-height: 1.6;
+    margin-bottom: 20px;
+}
+
+.nms-footer-social {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 20px;
+}
+
+.nms-footer-social a {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    background-color: rgba(255, 255, 255, 0.1);
+    color: #fff;
+    border-radius: 50%;
+    text-decoration: none;
+    transition: background 0.3s, transform 0.3s;
+}
+
+.nms-footer-social a:hover {
+    background-color: #3498db;
+    transform: translateY(-3px);
+}
+
+.nms-copyright {
+    font-size: 12px;
+    color: #7f8c8d;
+    line-height: 1.5;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    padding-top: 15px;
+}
+
+.nms-copyright span {
+    color: #bdc3c7;
+    font-weight: 500;
+}
+
+/* ==================== Media Queries للموبايل والتابلت ==================== */
+
+/* تابلت (768px - 1024px) */
+@media (max-width: 1024px) and (min-width: 768px) {
+    .nms-layout {
+        gap: 20px;
+        padding: 0 15px;
+    }
+    
+    .nms-ad-side {
+        max-width: 200px;
+    }
+    
+    .nms-categories-grid {
+        grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+        gap: 12px;
+    }
+    
+    .nms-results-list {
+        grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    }
+    
+    .nms-hero-content {
+        padding: 20px;
+    }
+    
+    .nms-hero-content h2 {
+        font-size: 17px;
+    }
+    
+    .nms-hero-content p {
+        font-size: 13px;
+    }
+}
+
+/* موبايل أفقي (480px - 767px) */
+@media (max-width: 767px) and (min-width: 480px) {
+    .nms-layout {
+        flex-direction: column;
+        gap: 20px;
+        padding: 0 10px;
+    }
+    
+    .nms-main {
+        width: 100%;
+    }
+    
+    /* إخفاء الأعمدة الجانبية في الموبايل الأفقي */
+    .nms-ad-side {
+        display: none;
+    }
+    
+    /* تحويل الإعلانات الجانبية إلى إعلانات أفقية في الأسفل */
+    .nms-ad-bottom {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+    }
+    
+    .nms-ad-bottom .nms-ad-space {
+        flex: 1;
+        min-width: 200px;
+        max-width: calc(50% - 5px);
+    }
+    
+    .nms-categories-grid {
+        grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+        gap: 10px;
+    }
+    
+    .nms-category-card {
+        padding: 14px 8px;
+    }
+    
+    .nms-category-card i {
+        font-size: 22px;
+        width: 44px;
+        height: 44px;
+    }
+    
+    .nms-category-card span {
+        font-size: 11px;
+    }
+    
+    .nms-results-list {
+        grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+        gap: 12px;
+    }
+    
+    .nms-hero-content {
+        padding: 18px;
+    }
+    
+    .nms-hero-content h2 {
+        font-size: 16px;
+    }
+    
+    .nms-hero-content p {
+        font-size: 12px;
+    }
+    
+    .nms-topbar {
+        padding: 10px 15px;
+    }
+    
+    .nms-topbar h1 {
+        font-size: 16px;
+    }
+    
+    .nms-topbar-action-btn {
+        padding: 6px 12px;
+        font-size: 12px;
+    }
+    
+    .nms-filters-box {
+        padding: 14px 16px;
+    }
+    
+    .nms-select {
+        padding: 8px;
+        font-size: 12px;
+        min-width: 120px;
+    }
+    
+    .nms-value-container select,
+    .nms-value-container input {
+        padding: 8px;
+        font-size: 12px;
+    }
+    
+    .nms-result-card {
+        padding: 14px;
+        font-size: 12px;
+    }
+    
+    .nms-result-title {
+        font-size: 14px;
+    }
+    
+    .nms-r-name {
+        font-size: 13px;
+    }
+    
+    .nms-r-actions button {
+        font-size: 11px;
+        padding: 8px 5px;
+    }
+}
+
+/* موبايل عمودي (أقل من 480px) */
+@media (max-width: 479px) {
+    .nms-layout {
+        flex-direction: column;
+        gap: 15px;
+        padding: 0 8px;
+    }
+    
+    .nms-main {
+        width: 100%;
+    }
+    
+    /* إخفاء الأعمدة الجانبية في الموبايل العمودي */
+    .nms-ad-side {
+        display: none;
+    }
+    
+    /* تحويل الإعلانات الجانبية إلى إعلانات أفقية في الأسفل */
+    .nms-ad-bottom {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        padding: 8px;
+    }
+    
+    .nms-ad-bottom .nms-ad-space {
+        flex: 1;
+        min-width: 150px;
+        max-width: 100%;
+        min-height: 120px;
+    }
+    
+    /* تحسين ظهور الإعلانات */
+    .nms-ad-space {
+        padding: 10px;
+        min-height: 120px;
+    }
+    
+    .nms-ad-space span {
+        font-size: 11px;
+    }
+    
+    .nms-ad-space .featured-ad-card,
+    .nms-ad-space div[style*="background"] {
+        padding: 8px;
+        font-size: 11px;
+    }
+    
+    .nms-categories-grid {
+        grid-template-columns: repeat(auto-fill, minmax(85px, 1fr));
+        gap: 8px;
+    }
+    
+    .nms-category-card {
+        padding: 12px 6px;
+    }
+    
+    .nms-category-card i {
+        font-size: 20px;
+        width: 40px;
+        height: 40px;
+    }
+    
+    .nms-category-card span {
+        font-size: 10px;
+    }
+    
+    .nms-results-list {
+        grid-template-columns: 1fr;
+        gap: 12px;
+    }
+    
+    .nms-hero-content {
+        padding: 16px;
+    }
+    
+    .nms-hero-content h2 {
+        font-size: 15px;
+    }
+    
+    .nms-hero-content p {
+        font-size: 11px;
+        line-height: 1.7;
+    }
+    
+    .nms-map-link {
+        padding: 8px 16px;
+        font-size: 12px;
+    }
+    
+    .nms-topbar {
+        padding: 8px 12px;
+        gap: 8px;
+    }
+    
+    .nms-topbar h1 {
+        font-size: 14px;
+    }
+    
+    .nms-topbar-spacer {
+        width: 70px;
+    }
+    
+    .nms-back-home {
+        padding: 6px 12px;
+        font-size: 11px;
+    }
+    
+    .nms-topbar-action-btn {
+        padding: 6px 10px;
+        font-size: 11px;
+    }
+    
+    .nms-groups-tabs {
+        gap: 8px;
+        padding: 4px 2px 12px;
+    }
+    
+    .nms-group-tab {
+        padding: 7px 12px;
+        font-size: 11px;
+    }
+    
+    .nms-group-tab i {
+        font-size: 11px;
+    }
+    
+    .nms-section-title {
+        font-size: 13px;
+    }
+    
+    .nms-filters-box {
+        padding: 12px 14px;
+    }
+    
+    .nms-filters-hint {
+        font-size: 12px;
+    }
+    
+    .nms-select {
+        padding: 7px;
+        font-size: 11px;
+        min-width: 100px;
+    }
+    
+    .nms-value-container {
+        min-width: 140px;
+    }
+    
+    .nms-value-container select,
+    .nms-value-container input {
+        padding: 7px;
+        font-size: 11px;
+    }
+    
+    .nms-condition-tag {
+        padding: 5px 10px;
+        font-size: 11px;
+    }
+    
+    .nms-btn {
+        padding: 8px 14px;
+        font-size: 11px;
+    }
+    
+    .nms-results-count {
+        font-size: 11px;
+    }
+    
+    .nms-result-card {
+        padding: 12px;
+        font-size: 11px;
+    }
+    
+    .nms-result-title {
+        font-size: 13px;
+    }
+    
+    .nms-r-name {
+        font-size: 12px;
+    }
+    
+    .nms-result-details {
+        font-size: 11px;
+    }
+    
+    .nms-r-desc {
+        padding: 6px;
+        font-size: 10px;
+    }
+    
+    .nms-r-img img {
+        max-height: 140px;
+    }
+    
+    .nms-r-actions button {
+        font-size: 10px;
+        padding: 7px 4px;
+    }
+    
+    .nms-status-badge {
+        font-size: 11px;
+        padding: 6px;
+    }
+    
+    .nms-status-hours {
+        font-size: 10px;
+    }
+    
+    .nms-back-btn {
+        padding: 6px 12px;
+        font-size: 11px;
+    }
+    
+    .nms-current-category-title {
+        font-size: 16px;
+    }
+    
+    .nms-current-category-title i {
+        font-size: 16px;
+        padding: 8px;
+    }
+    
+    .nms-goto-map-btn {
+        padding: 8px;
+        font-size: 11px;
+    }
+    
+    .nms-modal-box {
+        padding: 20px 18px;
+        max-height: 90vh;
+    }
+    
+    .nms-modal-title {
+        font-size: 17px;
+    }
+    
+    .nms-modal-lead {
+        font-size: 12px;
+    }
+    
+    .nms-modal-section {
+        padding: 12px 14px;
+    }
+    
+    .nms-modal-section h3 {
+        font-size: 13px;
+    }
+    
+    .nms-modal-section p {
+        font-size: 12px;
+    }
+    
+    .nms-modal-list li {
+        font-size: 11px;
+    }
+    
+    .nms-modal-fb-link {
+        font-size: 12px;
+        padding: 10px;
+    }
+    
+    .nms-site-footer {
+        padding: 30px 15px 20px;
+    }
+    
+    .nms-footer-container {
+        grid-template-columns: 1fr;
+        gap: 25px;
+    }
+    
+    .nms-footer-col h3 {
+        font-size: 15px;
+    }
+    
+    .nms-footer-col ul li a {
+        font-size: 12px;
+    }
+    
+    .nms-footer-about {
+        font-size: 11px;
+    }
+}
+
+@media (max-width: 768px) {
+    body { overflow-x: hidden; }
+    .market-main-header { flex-wrap: wrap; }
+    .market-actions-area {
+        flex-wrap: wrap;
+        justify-content: center;
+        width: 100%;
+        gap: 8px;
+    }
+    .market-add-btn,
+    #nms-btn-road-status,
+    #nms-btn-fuel-status {
+        flex: 1 1 auto;
+        min-width: 130px;
+        font-size: 12px;
+        padding: 8px 10px;
+        justify-content: center;
+        white-space: normal;
+    }
+}
