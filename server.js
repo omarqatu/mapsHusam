@@ -2089,6 +2089,13 @@ app.post('/api/service-requests/:id/cancel', async (req, res) => {
         return res.status(400).json({ success: false, error: 'معرف المستخدم مطلوب' });
     }
 
+    // 🆕 [فرض إجباري]: خط دفاع أخير على مستوى السيرفر - لا يُقبل إلغاء أي
+    // طلب بدون سبب حقيقي، حتى لو تم تجاوز الواجهة الأمامية بأي شكل
+    const reasonText = cancellation_reason ? String(cancellation_reason).trim() : '';
+    if (!reasonText) {
+        return res.status(400).json({ success: false, error: 'يجب كتابة سبب إلغاء الطلب، لا يمكن إتمام الإلغاء بدونه.' });
+    }
+
     try {
         const reqCheck = await servicesPool.query(
             `SELECT * FROM public.service_requests WHERE id = $1`,
@@ -2106,8 +2113,6 @@ app.post('/api/service-requests/:id/cancel', async (req, res) => {
         if (!isOwner && !isProvider) {
             return res.status(403).json({ success: false, error: 'عذراً، ليس لديك صلاحية إلغاء هذا الطلب.' });
         }
-
-        const reasonText = cancellation_reason ? String(cancellation_reason).trim() : 'تم الإلغاء بدون ذكر أسباب';
 
         const updateRes = await servicesPool.query(
             `UPDATE public.service_requests 
@@ -2586,24 +2591,27 @@ app.get('/api/service-requests/pending-ratings', async (req, res) => {
     }
 });
 
-// 7) إحصائية عدد عمليات النجاح لكل مزود خدمة
-app.get('/api/admin/provider-success-stats', requireAdmin, async (req, res) => {
-    try {
-        const result = await servicesPool.query(`
-            SELECT sr.*, 
-                   ru.full_name AS username, ru.phone AS requester_phone, COALESCE(ru.phone, '') AS requester_whatsapp,
-                   pu.full_name AS provider_name, pu.phone AS provider_phone, COALESCE(pu.phone, '') AS provider_whatsapp
-            FROM public.service_requests sr
-            LEFT JOIN public.users ru ON ru.user_id = sr.user_id
-            LEFT JOIN public.users pu ON pu.user_id = sr.provider_user_id
-            ORDER BY sr.created_at DESC
-        `);
-        res.json({ success: true, stats: result.rows });
-    } catch (err) {
-        console.error('❌ خطأ حرج في الـ API:', err.message);
-        res.status(500).json({ success: false, error: err.message });
-    }
-});
+        // 7) إحصائية عدد عمليات النجاح لكل مزود خدمة
+        app.get('/api/admin/provider-success-stats', requireAdmin, async (req, res) => {
+            try {
+                const result = await servicesPool.query(`
+                    SELECT sr.id, sr.user_id, sr.provider_user_id, sr.service_layer, sr.feature_id,
+                        sr.provider_name, sr.service_type, sr.status, sr.contact_type,
+                        sr.cancellation_reason, sr.created_at, sr.updated_at,
+                        ru.full_name AS username, ru.phone AS requester_phone, COALESCE(ru.phone, '') AS requester_whatsapp,
+                        CASE WHEN sr.provider_user_id = sr.user_id THEN NULL ELSE pu.phone END AS provider_phone,
+                        CASE WHEN sr.provider_user_id = sr.user_id THEN '' ELSE COALESCE(pu.phone, '') END AS provider_whatsapp
+                    FROM public.service_requests sr
+                    LEFT JOIN public.users ru ON ru.user_id = sr.user_id
+                    LEFT JOIN public.users pu ON pu.user_id = sr.provider_user_id
+                    ORDER BY sr.created_at DESC
+                `);
+                res.json({ success: true, stats: result.rows });
+            } catch (err) {
+                console.error('❌ خطأ حرج في الـ API:', err.message);
+                res.status(500).json({ success: false, error: err.message });
+            }
+        });
 
 // 🆕 7.5) تسجيل نقرات الاتصال والواتساب
 app.post('/api/log-contact-click', async (req, res) => {

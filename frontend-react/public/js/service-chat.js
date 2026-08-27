@@ -272,39 +272,53 @@
         });
     }
 
-    function promptDialog(title, defaultValue = '') {
-        return new Promise((resolve) => {
-            const overlay = document.createElement('div');
-            overlay.style.cssText = `
-                position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 300500;
-                display: flex; align-items: center; justify-content: center; direction: rtl; padding: 15px; box-sizing: border-box;
-            `;
-            const box = document.createElement('div');
-            box.style.cssText = `
-                background:#fff; width:100%; max-width:380px; border-radius:14px; padding:22px;
-                box-shadow:0 15px 40px rgba(0,0,0,0.3); animation: svcToastIn 0.22s ease;
-            `;
-            box.innerHTML = `
-                <div style="font-size:14px; color:#333; font-weight:bold; margin-bottom:10px;">${title}</div>
-                <textarea id="svc-prompt-input" rows="3" style="width:100%; box-sizing:border-box; padding:10px; border:1px solid #ddd; border-radius:8px; font-size:13px; font-family:inherit; resize:vertical; direction:rtl;">${defaultValue}</textarea>
-                <div style="display:flex; gap:10px; margin-top:15px;">
-                    <button id="svc-prompt-ok" style="flex:1; background:#28a745; color:#fff; border:none; padding:11px; border-radius:8px; font-weight:bold; cursor:pointer; font-size:13px;">تأكيد</button>
-                    <button id="svc-prompt-cancel" style="flex:1; background:#f1f3f4; color:#444; border:none; padding:11px; border-radius:8px; font-weight:bold; cursor:pointer; font-size:13px;">إلغاء</button>
-                </div>
-            `;
-            overlay.appendChild(box);
-            document.body.appendChild(overlay);
+    function promptDialog(title, defaultValue = '', options = {}) {
+    const required = options.required === true;
+    return new Promise((resolve) => {
+        const overlay = document.createElement('div');
+        overlay.style.cssText = `
+            position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 300500;
+            display: flex; align-items: center; justify-content: center; direction: rtl; padding: 15px; box-sizing: border-box;
+        `;
+        const box = document.createElement('div');
+        box.style.cssText = `
+            background:#fff; width:100%; max-width:380px; border-radius:14px; padding:22px;
+            box-shadow:0 15px 40px rgba(0,0,0,0.3); animation: svcToastIn 0.22s ease;
+        `;
+        box.innerHTML = `
+            <div style="font-size:14px; color:#333; font-weight:bold; margin-bottom:10px;">${title}</div>
+            <textarea id="svc-prompt-input" rows="3" placeholder="${required ? 'اكتب السبب هنا (إجباري)...' : ''}" style="width:100%; box-sizing:border-box; padding:10px; border:1px solid #ddd; border-radius:8px; font-size:13px; font-family:inherit; resize:vertical; direction:rtl;">${defaultValue}</textarea>
+            <div id="svc-prompt-error" style="display:none; color:#dc3545; font-size:12px; margin-top:6px; font-weight:bold;">⚠️ هذا الحقل إجباري، يرجى كتابة نص واضح قبل المتابعة.</div>
+            <div style="display:flex; gap:10px; margin-top:15px;">
+                <button id="svc-prompt-ok" style="flex:1; background:#28a745; color:#fff; border:none; padding:11px; border-radius:8px; font-weight:bold; cursor:pointer; font-size:13px;">تأكيد</button>
+                <button id="svc-prompt-cancel" style="flex:1; background:#f1f3f4; color:#444; border:none; padding:11px; border-radius:8px; font-weight:bold; cursor:pointer; font-size:13px;">إلغاء</button>
+            </div>
+        `;
+        overlay.appendChild(box);
+        document.body.appendChild(overlay);
 
-            const input = box.querySelector('#svc-prompt-input');
-            input.focus();
-            input.select();
+        const input = box.querySelector('#svc-prompt-input');
+        const errorLine = box.querySelector('#svc-prompt-error');
+        input.focus();
+        input.select();
 
-            const cleanup = (result) => { overlay.remove(); resolve(result); };
-            box.querySelector('#svc-prompt-ok').onclick = () => cleanup(input.value.trim() || defaultValue);
-            box.querySelector('#svc-prompt-cancel').onclick = () => cleanup(null);
-            overlay.addEventListener('click', (e) => { if (e.target === overlay) cleanup(null); });
-        });
-    }
+        const cleanup = (result) => { overlay.remove(); resolve(result); };
+
+        box.querySelector('#svc-prompt-ok').onclick = () => {
+            const val = input.value.trim();
+            if (required && !val) {
+                // 🆕 لا يُغلق المودال ولا يُتابع أي إجراء بدون نص حقيقي يكتبه المستخدم بنفسه
+                errorLine.style.display = 'block';
+                input.style.borderColor = '#dc3545';
+                input.focus();
+                return;
+            }
+            cleanup(val || defaultValue);
+        };
+        box.querySelector('#svc-prompt-cancel').onclick = () => cleanup(null);
+        overlay.addEventListener('click', (e) => { if (e.target === overlay) cleanup(null); });
+    });
+}
 
     let chatModal, chatBody, chatInput, chatHeaderTitle, chatConfirmBtn, chatCancelBtn, chatStatusLine;
     let incomingBanner;
@@ -515,17 +529,18 @@
         chatConfirmBtn.onclick = confirmAgreement;
 
         chatCancelBtn.onclick = async () => {
-            if (!currentOpenRequestId) return;
-            const reason = await promptDialog('يرجى كتابة سبب إلغاء الطلب:', 'تم الإلغاء بناءً على رغبة الطرفين');
-            if (reason === null) return;
+    if (!currentOpenRequestId) return;
+    // 🆕 لا يوجد نص افتراضي جاهز - المستخدم مُلزَم بكتابة سبب حقيقي بنفسه
+    const reason = await promptDialog('يرجى كتابة سبب إلغاء الطلب:', '', { required: true });
+    if (reason === null) return;
 
-            const userId = getCurrentUserId();
-            try {
-                const cancelRes = await fetch(`${window.location.origin}/api/service-requests/${currentOpenRequestId}/cancel`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ user_id: userId, role: currentUserRoleInChat, cancellation_reason: reason })
-                });
+    const userId = getCurrentUserId();
+    try {
+        const cancelRes = await fetch(`${window.location.origin}/api/service-requests/${currentOpenRequestId}/cancel`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ user_id: userId, role: currentUserRoleInChat, cancellation_reason: reason.trim() })
+        });
                 const cancelData = await cancelRes.json();
                 if (cancelData.success) {
                     toast('✅ تم إلغاء الطلب بنجاح.', 'success');
@@ -766,9 +781,9 @@
                     cancelBtn.innerHTML = '<i class="fas fa-ban"></i> إلغاء الطلب';
                     cancelBtn.style.cssText = 'background:#dc3545; color:#fff; border:none; padding:8px; border-radius:6px; cursor:pointer; font-size:12px; margin-top:4px; font-weight:bold;';
                     cancelBtn.onclick = async (event) => {
-                        event.stopPropagation();
-                        const reason = await promptDialog('يرجى كتابة سبب إلغاء الطلب:', 'رغبة في إلغاء الطلب');
-                        if (reason === null) return;
+                    event.stopPropagation();
+                    const reason = await promptDialog('يرجى كتابة سبب إلغاء الطلب:', '', { required: true });
+                    if (reason === null) return;
 
                         try {
                             const cancelRes = await fetch(`${window.location.origin}/api/service-requests/${r.id}/cancel`, {

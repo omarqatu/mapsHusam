@@ -119,6 +119,7 @@
                     <th>
                         <div class="filter-group">
                             <input type="text" class="filter-input" data-col="username" placeholder="بحث باسم المستخدم...">
+                            <select class="filter-select" data-col="username"><option value="">الكل</option></select>
                         </div>
                     </th>
                     <th>
@@ -134,12 +135,13 @@
                     </th>
                     <th>
                         <div class="filter-group">
-                            <input type="text" class="filter-input" data-col="formatted_date" placeholder="بحث بالتاريخ...">
+                            <input type="date" id="date-filter-picker" style="padding:6px; border:1px solid #ccc; border-radius:4px; font-size:11px; width:90%;">
+                            <input type="text" id="date-filter-text" placeholder="يوم/شهر/سنة مثال 22/08/2026" dir="ltr" style="padding:6px; border:1px solid #ccc; border-radius:4px; font-size:11px; width:90%; text-align:center;">
                         </div>
                     </th>
                     <th>
                         <div class="filter-group">
-                            <select class="filter-select" data-col="contact_type">
+                            <select class="filter-select" data-col="raw_contact_type">
                                 <option value="">الكل</option>
                                 <option value="service_request">طلب خدمة</option>
                                 <option value="call">اتصال</option>
@@ -160,6 +162,7 @@
                     <th>
                         <div class="filter-group">
                             <input type="text" class="filter-input" data-col="cancel_reason" placeholder="بحث بالسبب...">
+                            <select class="filter-select" data-col="cancel_reason"><option value="">الكل</option></select>
                         </div>
                     </th>
                     <th></th>
@@ -204,20 +207,27 @@
                     mappedStatus = 'معلقة';
                 }
 
-                // تحويل نوع التواصل
+                // تحويل نوع التواصل - نحتفظ بالقيمة الخام (إنجليزية) لأغراض الفلترة، مع
+                // النص العربي المترجم لأغراض العرض فقط، حتى لا يتعارض الفلتر مع نص العرض
+                const rawContactType = (row.contact_type || '').toLowerCase().trim();
                 let contactTypeText = 'طلب خدمة';
-                const dbContactType = (row.contact_type || '').toLowerCase();
-                if (dbContactType === 'call') contactTypeText = 'اتصال';
-                else if (dbContactType === 'whatsapp') contactTypeText = 'واتساب';
-                else if (dbContactType === 'service_request') contactTypeText = 'طلب خدمة';
+                if (rawContactType === 'call') contactTypeText = 'اتصال';
+                else if (rawContactType === 'whatsapp') contactTypeText = 'واتساب';
+                else if (rawContactType === 'service_request') contactTypeText = 'طلب خدمة';
+
+                // 🆕 التاريخ الخام (ISO) محفوظ بجانب النص المعروض، لأن فلتر التاريخ الجديد
+                // يحتاج مقارنة رقمية دقيقة (يوم/شهر/سنة) وليس مقارنة نص محلي
+                const rawDateValue = row.updated_at || row.created_at || row.date || null;
 
                 return {
                     ...row,
                     username: row.username || row.user_name || row.client_name || row.full_name || '—',
                     provider_name: row.provider_name || row.provider_user_name || '—',
                     provider_phone: row.provider_phone || row.phone || row.provider_phone_number || '—',
-                    formatted_date: (row.updated_at || row.created_at || row.date) ? new Date(row.updated_at || row.created_at || row.date).toLocaleString('ar-EG') : '—',
+                    raw_date: rawDateValue,
+                    formatted_date: rawDateValue ? new Date(rawDateValue).toLocaleString('ar-EG') : '—',
                     contact_type: contactTypeText,
+                    raw_contact_type: rawContactType || 'service_request',
                     status: mappedStatus,
                     cancel_reason: row.cancellation_reason || row.cancel_reason || row.cancellation_message || '—'
                 };
@@ -232,11 +242,40 @@
         }
     }
 
+            // 🆕 عناصر فلتر التاريخ المخصصة + دوال التطبيع والتفسير
+        const dateFilterPicker = document.getElementById('date-filter-picker');
+        const dateFilterText = document.getElementById('date-filter-text');
+
+        // تحويل الأرقام العربية (٠-٩) إلى أرقام إنجليزية لقبول الكتابة بأي من اللغتين
+        function normalizeDigits(str) {
+            const arabicDigits = '٠١٢٣٤٥٦٧٨٩';
+            return str.replace(/[٠-٩]/g, d => String(arabicDigits.indexOf(d)));
+        }
+
+        // تفسير نص مكتوب يدوياً بصيغة يوم/شهر/سنة (يقبل الفاصل /) - يرجع null إذا كانت الصيغة غير مكتملة/غير صالحة
+        function parseTypedDate(text) {
+            if (!text) return null;
+            const cleaned = normalizeDigits(text).trim();
+            const match = cleaned.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+            if (!match) return null;
+            const day = parseInt(match[1], 10);
+            const month = parseInt(match[2], 10);
+            const year = parseInt(match[3], 10);
+            if (day < 1 || day > 31 || month < 1 || month > 12) return null;
+            return { day, month, year };
+        }
+
     function updateFilterOptions(data) {
-        const select = document.querySelector('.filter-select[data-col="provider_name"]');
+    // 🆕 توليد قوائم منسدلة ديناميكية لكل عمود يملك select[data-col] مطابق:
+    // اسم المستخدم، اسم مزود الخدمة، ورسالة الإلغاء (بدل الاقتصار على عمود واحد)
+    const dynamicColumns = ['username', 'provider_name', 'cancel_reason'];
+    dynamicColumns.forEach(col => {
+        const select = document.querySelector(`.filter-select[data-col="${col}"]`);
         if (!select) return;
         const currentValue = select.value;
-        const uniqueValues = [...new Set(data.map(item => item.provider_name))].filter(Boolean).sort();
+        const uniqueValues = [...new Set(data.map(item => item[col]))]
+            .filter(v => v && v !== '—')
+            .sort();
 
         select.innerHTML = '<option value="">الكل</option>';
         uniqueValues.forEach(val => {
@@ -246,7 +285,8 @@
             select.appendChild(opt);
         });
         select.value = currentValue;
-    }
+    });
+}
 
     function renderTable(data) {
         const tbody = document.getElementById('logsBody');
@@ -288,38 +328,79 @@
     }
 
     function applyFilters() {
-        const inputs = document.querySelectorAll('.filter-input');
-        const selects = document.querySelectorAll('.filter-select');
+    const inputs = document.querySelectorAll('.filter-input');
+    const selects = document.querySelectorAll('.filter-select');
+    const typedDate = parseTypedDate(dateFilterText ? dateFilterText.value : '');
 
-        const filteredData = allData.filter(row => {
-            let isMatch = true;
+    const filteredData = allData.filter(row => {
+        let isMatch = true;
 
-            inputs.forEach(input => {
-                const col = input.getAttribute('data-col');
-                const val = input.value.toLowerCase().trim();
-                if (val) {
-                    const rowVal = (row[col] !== null && row[col] !== undefined) ? row[col].toString().toLowerCase() : '';
-                    if (!rowVal.includes(val)) isMatch = false;
-                }
-            });
-
-            selects.forEach(select => {
-                const col = select.getAttribute('data-col');
-                const val = select.value;
-                if (val) {
-                    const rowVal = (row[col] !== null && row[col] !== undefined) ? row[col].toString() : '';
-                    if (rowVal !== val) isMatch = false;
-                }
-            });
-
-            return isMatch;
+        inputs.forEach(input => {
+            const col = input.getAttribute('data-col');
+            const val = input.value.toLowerCase().trim();
+            if (val) {
+                const rowVal = (row[col] !== null && row[col] !== undefined) ? row[col].toString().toLowerCase() : '';
+                if (!rowVal.includes(val)) isMatch = false;
+            }
         });
 
-        renderTable(filteredData);
-    }
+        selects.forEach(select => {
+            const col = select.getAttribute('data-col');
+            const val = select.value;
+            if (val) {
+                const rowVal = (row[col] !== null && row[col] !== undefined) ? row[col].toString() : '';
+                if (rowVal !== val) isMatch = false;
+            }
+        });
 
-    document.querySelectorAll('.filter-input').forEach(el => el.addEventListener('keyup', applyFilters));
-    document.querySelectorAll('.filter-select').forEach(el => el.addEventListener('change', applyFilters));
+        // 🆕 فلتر التاريخ المخصص: مقارنة رقمية دقيقة (يوم/شهر/سنة) بالتاريخ
+        // الفعلي للسجل، وليس بنص العرض المحلي، لضمان دقة تامة بغض النظر عن التنسيق
+        if (typedDate) {
+            if (!row.raw_date) {
+                isMatch = false;
+            } else {
+                const rowDate = new Date(row.raw_date);
+                if (
+                    rowDate.getDate() !== typedDate.day ||
+                    (rowDate.getMonth() + 1) !== typedDate.month ||
+                    rowDate.getFullYear() !== typedDate.year
+                ) {
+                    isMatch = false;
+                }
+            }
+        }
+
+        return isMatch;
+    });
+
+    renderTable(filteredData);
+}
+
+            document.querySelectorAll('.filter-input').forEach(el => el.addEventListener('keyup', applyFilters));
+            document.querySelectorAll('.filter-select').forEach(el => el.addEventListener('change', applyFilters));
+
+            // 🆕 عند اختيار تاريخ من التقويم، نعبّئ حقل الكتابة اليدوية تلقائياً بصيغة يوم/شهر/سنة
+            dateFilterPicker.addEventListener('change', () => {
+                if (!dateFilterPicker.value) {
+                    dateFilterText.value = '';
+                    applyFilters();
+                    return;
+                }
+                const [y, m, d] = dateFilterPicker.value.split('-');
+                dateFilterText.value = `${d}/${m}/${y}`;
+                applyFilters();
+            });
+
+            // 🆕 عند الكتابة اليدوية، نطبّع الأرقام العربية فوراً أثناء الكتابة
+            dateFilterText.addEventListener('input', () => {
+                const cursorPos = dateFilterText.selectionStart;
+                const normalized = normalizeDigits(dateFilterText.value);
+                if (normalized !== dateFilterText.value) {
+                    dateFilterText.value = normalized;
+                    dateFilterText.setSelectionRange(cursorPos, cursorPos);
+                }
+                applyFilters();
+            });
 
     function getAdminAuthHeadersForDashboard() {
         try {
