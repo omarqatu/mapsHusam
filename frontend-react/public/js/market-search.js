@@ -643,17 +643,79 @@ if (typeof window.renderMarketSearchResults !== 'function') {
 
                     if (hasPhone) {
                         actions.querySelector('.nms-call-btn').onclick = async () => {
+                            // 🆕 التحقق من الفاصل الزمني
+                            const cooldownKey = `click_cooldown_call_${featureIdForRequest}`;
+                            const lastClickTime = localStorage.getItem(cooldownKey);
+                            const now = Date.now();
+                            if (lastClickTime && (now - parseInt(lastClickTime)) / 1000 < 10) {
+                                const remaining = Math.ceil(10 - (now - parseInt(lastClickTime)) / 1000);
+                                if (window.toast) {
+                                    window.toast(`يرجى الانتظار ${remaining} ثوانٍ قبل المحاولة مرة أخرى`, 'warning', 3000);
+                                } else {
+                                    alert(`يرجى الانتظار ${remaining} ثوانٍ قبل المحاولة مرة أخرى.`);
+                                }
+                                return;
+                            }
+                            localStorage.setItem(cooldownKey, now.toString());
+                            
                             const quota = await window.checkRequestQuotaOrAlert(window.getRealUserId(), null);
                             if (!quota.allowed) return;
+                            // 🆕 تسجيل نقرة الاتصال
+                            try {
+                                await fetch(window.location.origin + '/api/log-contact-click', {
+                                    method: 'POST',
+                                    headers: { 'Content-Type': 'application/json' },
+                                    body: JSON.stringify({
+                                        user_id: window.getRealUserId(),
+                                        service_layer: layerDbName,
+                                        feature_id: featureIdForRequest,
+                                        provider_name: providerName,
+                                        contact_type: 'call'
+                                    })
+                                });
+                            } catch (err) {
+                                console.error('خطأ في تسجيل نقرة الاتصال:', err);
+                            }
                             window.trackRequest(providerName, `(${layerTitle}) اتصال مباشر`);
                             window.location.href = 'tel:' + localPhone;
                         };
                     }
 
                     actions.querySelector('.nms-whatsapp-btn').onclick = async () => {
+                        // 🆕 التحقق من الفاصل الزمني
+                        const cooldownKey = `click_cooldown_whatsapp_${featureIdForRequest}`;
+                        const lastClickTime = localStorage.getItem(cooldownKey);
+                        const now = Date.now();
+                        if (lastClickTime && (now - parseInt(lastClickTime)) / 1000 < 10) {
+                            const remaining = Math.ceil(10 - (now - parseInt(lastClickTime)) / 1000);
+                            if (window.toast) {
+                                window.toast(`يرجى الانتظار ${remaining} ثوانٍ قبل المحاولة مرة أخرى`, 'warning', 3000);
+                            } else {
+                                alert(`يرجى الانتظار ${remaining} ثوانٍ قبل المحاولة مرة أخرى.`);
+                            }
+                            return;
+                        }
+                        localStorage.setItem(cooldownKey, now.toString());
+                        
                         const newTab = window.open('', '_blank');
                         const quota = await window.checkRequestQuotaOrAlert(window.getRealUserId(), newTab);
                         if (!quota.allowed) return;
+                        // 🆕 تسجيل نقرة الواتساب
+                        try {
+                            await fetch(window.location.origin + '/api/log-contact-click', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({
+                                    user_id: window.getRealUserId(),
+                                    service_layer: layerDbName,
+                                    feature_id: featureIdForRequest,
+                                    provider_name: providerName,
+                                    contact_type: 'whatsapp'
+                                })
+                            });
+                        } catch (err) {
+                            console.error('خطأ في تسجيل نقرة الواتساب:', err);
+                        }
                         window.trackRequest(providerName, `(${layerTitle}) واتساب`);
                         const message = `مرحباً ${providerName}، أرغب بالاستفسار عن (${layerTitle}) من خلال منصة الخدمات.`;
                         let cleanNumber = cleanDigits;

@@ -8,8 +8,8 @@ window.__nmsPageHandlesOwnAds = true;
     
     'use strict';
 
-        document.addEventListener('DOMContentLoaded', () => {
-            ['header-guide-search-services', 'footer-guide-search-services'].forEach(id => {
+    document.addEventListener('DOMContentLoaded', () => {
+        ['header-guide-search-services', 'footer-guide-search-services'].forEach(id => {
     const btn = document.getElementById(id);
     if (btn) {
         btn.addEventListener('click', (e) => {
@@ -418,18 +418,33 @@ window.__nmsPageHandlesOwnAds = true;
                     const localPhone = hasPhone ? String(props.phone) : ('0' + whatsappNumber.replace(/\D/g, '').slice(5));
                     actionHtml = `
                         <div style="display:flex; gap:5px; margin-top:6px;">
-                            ${hasPhone ? `<button class="ad-call-btn" data-phone="${localPhone}" data-whatsapp="${whatsappNumber}" data-provider="${escapeAdAttr(providerName)}" data-service="${escapeAdAttr(item.label)}" style="flex:1; background:#1a73e8; color:#fff; border:none; padding:6px 4px; border-radius:6px; font-size:10px; font-weight:bold; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:4px;"><i class="fas fa-mobile-alt"></i> اتصال</button>` : ''}
-                            <button class="ad-whatsapp-btn" data-whatsapp="${whatsappNumber}" data-provider="${escapeAdAttr(providerName)}" data-service="${escapeAdAttr(item.label)}" style="flex:${hasPhone ? '1' : '1'}; background:#25d366; color:#fff; border:none; padding:6px 4px; border-radius:6px; font-size:10px; font-weight:bold; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:4px;"><i class="fab fa-whatsapp"></i> واتساب</button>
+                            ${hasPhone ? `<button class="ad-call-btn" data-phone="${localPhone}" data-whatsapp="${whatsappNumber}" data-provider="${escapeAdAttr(providerName)}" data-service="${escapeAdAttr(item.label)}" data-layer="${escapeAdAttr(item.layer)}" data-feature-id="${escapeAdAttr(String(props.id || ''))}" style="flex:1; background:#1a73e8; color:#fff; border:none; padding:6px 4px; border-radius:6px; font-size:10px; font-weight:bold; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:4px;"><i class="fas fa-mobile-alt"></i> اتصال</button>` : ''}
+                            <button class="ad-whatsapp-btn" data-whatsapp="${whatsappNumber}" data-provider="${escapeAdAttr(providerName)}" data-service="${escapeAdAttr(item.label)}" data-layer="${escapeAdAttr(item.layer)}" data-feature-id="${escapeAdAttr(String(props.id || ''))}" style="flex:${hasPhone ? '1' : '1'}; background:#25d366; color:#fff; border:none; padding:6px 4px; border-radius:6px; font-size:10px; font-weight:bold; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:4px;"><i class="fab fa-whatsapp"></i> واتساب</button>
                         </div>`;
                 } else {
+                    // 🆕 للخدمات: نتحقق هل المعلم مرتبط بمزود خدمة
                     const layerDbName = item.layer;
                     const featureId = (props.id !== undefined && props.id !== null) ? props.id : '';
-                    actionHtml = `
-                        <div style="margin-top:6px;">
-                            <button class="req-svc-btn" data-provider="${escapeAdAttr(providerName)}" data-service="${escapeAdAttr(item.label)}" data-layer="${layerDbName}" data-feature-id="${featureId}" style="width:100%; background:linear-gradient(135deg,#1a73e8,#6c5ce7); color:#fff; border:none; padding:6px 4px; border-radius:6px; font-size:10px; font-weight:bold; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:4px;">
-                                <i class="fas fa-paper-plane"></i> طلب الخدمة
-                            </button>
-                        </div>`;
+                    const isLinkedProvider = typeof window.isFeatureLinkedToProvider === 'function' && window.isFeatureLinkedToProvider(layerDbName, featureId);
+                    
+                    if (isLinkedProvider) {
+                        // معلم مرتبط بمزود خدمة - عرض زر طلب الخدمة
+                        actionHtml = `
+                            <div style="margin-top:6px;">
+                                <button class="req-svc-btn" data-provider="${escapeAdAttr(providerName)}" data-service="${escapeAdAttr(item.label)}" data-layer="${layerDbName}" data-feature-id="${featureId}" style="width:100%; background:linear-gradient(135deg,#1a73e8,#6c5ce7); color:#fff; border:none; padding:6px 4px; border-radius:6px; font-size:10px; font-weight:bold; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:4px;">
+                                    <i class="fas fa-paper-plane"></i> طلب الخدمة
+                                </button>
+                            </div>`;
+                    } else {
+                        // معلم غير مرتبط - عرض اتصال + واتساب
+                        const hasPhone = props.phone !== undefined && props.phone !== null && props.phone !== '' && String(props.phone).trim() !== '';
+                        const localPhone = hasPhone ? String(props.phone) : ('0' + whatsappNumber.replace(/\D/g, '').slice(5));
+                        actionHtml = `
+                            <div style="display:flex; gap:5px; margin-top:6px;">
+                                ${hasPhone ? `<button class="ad-call-btn" data-phone="${localPhone}" data-whatsapp="${whatsappNumber}" data-provider="${escapeAdAttr(providerName)}" data-service="${escapeAdAttr(item.label)}" data-layer="${escapeAdAttr(item.layer)}" data-feature-id="${escapeAdAttr(String(props.id || ''))}" style="flex:1; background:#1a73e8; color:#fff; border:none; padding:6px 4px; border-radius:6px; font-size:10px; font-weight:bold; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:4px;"><i class="fas fa-mobile-alt"></i> اتصال</button>` : ''}
+                                <button class="ad-whatsapp-btn" data-whatsapp="${whatsappNumber}" data-provider="${escapeAdAttr(providerName)}" data-service="${escapeAdAttr(item.label)}" data-layer="${escapeAdAttr(item.layer)}" data-feature-id="${escapeAdAttr(String(props.id || ''))}" style="flex:${hasPhone ? '1' : '1'}; background:#25d366; color:#fff; border:none; padding:6px 4px; border-radius:6px; font-size:10px; font-weight:bold; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:4px;"><i class="fab fa-whatsapp"></i> واتساب</button>
+                            </div>`;
+                    }
                 }
             }
 
@@ -544,13 +559,52 @@ window.__nmsPageHandlesOwnAds = true;
 
         // تفعيل أزرار الاتصال/واتساب الخاصة بكروت الإعلانات (تسجيل تتبع + فحص حد الطلبات)
         document.addEventListener('click', async (e) => {
+            console.log('🔍 Document click event triggered, target:', e.target);
+            
             const callBtn = e.target.closest('.ad-call-btn');
             if (callBtn) {
                 const phone = callBtn.dataset.phone;
                 const provider = callBtn.dataset.provider;
                 const service = callBtn.dataset.service;
+                const layer = callBtn.dataset.layer || '';
+                const featureId = callBtn.dataset.featureId || '';
+                console.log('📞 No-map call button clicked:', { phone, provider, service, layer, featureId });
+                
+                // 🆕 التحقق من الفاصل الزمني
+                const cooldownKey = `click_cooldown_call_${featureId}`;
+                const lastClickTime = localStorage.getItem(cooldownKey);
+                const now = Date.now();
+                if (lastClickTime && (now - parseInt(lastClickTime)) / 1000 < 10) {
+                    const remaining = Math.ceil(10 - (now - parseInt(lastClickTime)) / 1000);
+                    if (window.toast) {
+                        window.toast(`يرجى الانتظار ${remaining} ثوانٍ قبل المحاولة مرة أخرى`, 'warning', 3000);
+                    } else {
+                        alert(`يرجى الانتظار ${remaining} ثوانٍ قبل المحاولة مرة أخرى.`);
+                    }
+                    return;
+                }
+                localStorage.setItem(cooldownKey, now.toString());
+                
                 const quota = await checkRequestQuotaOrAlert(getRealUserId(), null);
                 if (!quota.allowed) return;
+                // 🆕 تسجيل نقرة الاتصال
+                try {
+                    const response = await fetch(window.location.origin + '/api/log-contact-click', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            user_id: getRealUserId(),
+                            service_layer: layer,
+                            feature_id: featureId,
+                            provider_name: provider,
+                            contact_type: 'call'
+                        })
+                    });
+                    const result = await response.json();
+                    console.log('📞 No-map call logged:', result);
+                } catch (err) {
+                    console.error('خطأ في تسجيل نقرة الاتصال:', err);
+                }
                 trackRequest(provider, `(${service}) اتصال مباشر`);
                 window.location.href = 'tel:' + phone;
                 return;
@@ -560,9 +614,46 @@ window.__nmsPageHandlesOwnAds = true;
                 const whatsappNumber = waBtn.dataset.whatsapp;
                 const provider = waBtn.dataset.provider;
                 const service = waBtn.dataset.service;
+                const layer = waBtn.dataset.layer || '';
+                const featureId = waBtn.dataset.featureId || '';
+                console.log('💬 No-map WhatsApp button clicked:', { whatsappNumber, provider, service, layer, featureId });
+                
+                // 🆕 التحقق من الفاصل الزمني
+                const cooldownKey = `click_cooldown_whatsapp_${featureId}`;
+                const lastClickTime = localStorage.getItem(cooldownKey);
+                const now = Date.now();
+                if (lastClickTime && (now - parseInt(lastClickTime)) / 1000 < 10) {
+                    const remaining = Math.ceil(10 - (now - parseInt(lastClickTime)) / 1000);
+                    if (window.toast) {
+                        window.toast(`يرجى الانتظار ${remaining} ثوانٍ قبل المحاولة مرة أخرى`, 'warning', 3000);
+                    } else {
+                        alert(`يرجى الانتظار ${remaining} ثوانٍ قبل المحاولة مرة أخرى.`);
+                    }
+                    return;
+                }
+                localStorage.setItem(cooldownKey, now.toString());
+                
                 const newTab = window.open('', '_blank');
                 const quota = await checkRequestQuotaOrAlert(getRealUserId(), newTab);
                 if (!quota.allowed) return;
+                // 🆕 تسجيل نقرة الواتساب
+                try {
+                    const response = await fetch(window.location.origin + '/api/log-contact-click', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            user_id: getRealUserId(),
+                            service_layer: layer,
+                            feature_id: featureId,
+                            provider_name: provider,
+                            contact_type: 'whatsapp'
+                        })
+                    });
+                    const result = await response.json();
+                    console.log('💬 No-map WhatsApp logged:', result);
+                } catch (err) {
+                    console.error('خطأ في تسجيل نقرة الواتساب:', err);
+                }
                 trackRequest(provider, `(${service}) واتساب`);
                 const message = `مرحباً ${provider}، أرغب بالاستفسار عن (${service}) من خلال منصة الخدمات.`;
                 let cleanNumber = whatsappNumber.replace(/\D/g, '');
@@ -1353,21 +1444,21 @@ window.__nmsPageHandlesOwnAds = true;
                 container.style.display = 'none';
             }
         };
+
+        // قراءة معامل group من رابط الصفحة وتفعيل الفلتر تلقائياً
+        const urlParams = new URLSearchParams(window.location.search);
+        const targetGroup = urlParams.get('group');
+        if (targetGroup) {
+            // العثور على زر التبويب المطابق وتفعيل الضغط عليه برمجياً
+            setTimeout(() => {
+                const groupTabBtn = document.querySelector(`.nms-group-tab[data-group="${targetGroup}"]`) || 
+                                       document.querySelector(`#nms-groups-tabs [data-group="${targetGroup}"]`);
+                if (groupTabBtn) {
+                    groupTabBtn.click();
+                } else if (typeof filterByCategoryGroup === 'function') {
+                    filterByCategoryGroup(targetGroup);
+                }
+            }, 300);
+        }
     });
 })();
-
-// قراءة معامل group من رابط الصفحة وتفعيل الفلتر تلقائياً
-    const urlParams = new URLSearchParams(window.location.search);
-    const targetGroup = urlParams.get('group');
-    if (targetGroup) {
-        // العثور على زر التبويب المطابق وتفعيل الضغط عليه برمجياً
-        setTimeout(() => {
-            const groupTabBtn = document.querySelector(`.nms-group-tab[data-group="${targetGroup}"]`) || 
-                                   document.querySelector(`#nms-groups-tabs [data-group="${targetGroup}"]`);
-            if (groupTabBtn) {
-                groupTabBtn.click();
-            } else if (typeof filterByCategoryGroup === 'function') {
-                filterByCategoryGroup(targetGroup);
-            }
-        }, 300);
-    }

@@ -110,6 +110,7 @@
                     <th>اسم مزود الخدمة</th>
                     <th>رقم الجوال</th>
                     <th>الوقت والتاريخ</th>
+                    <th>نوع التواصل</th>
                     <th>حالة الطلب</th>
                     <th>رسالة الإلغاء</th>
                     <th>إجراءات</th>
@@ -138,6 +139,16 @@
                     </th>
                     <th>
                         <div class="filter-group">
+                            <select class="filter-select" data-col="contact_type">
+                                <option value="">الكل</option>
+                                <option value="service_request">طلب خدمة</option>
+                                <option value="call">اتصال</option>
+                                <option value="whatsapp">واتساب</option>
+                            </select>
+                        </div>
+                    </th>
+                    <th>
+                        <div class="filter-group">
                             <select class="filter-select" data-col="status">
                                 <option value="">الكل</option>
                                 <option value="ناجحة">ناجحة</option>
@@ -155,7 +166,7 @@
                 </tr>
             </thead>
             <tbody id="logsBody">
-                <tr><td colspan="7" class="no-data">جارٍ التحميل...</td></tr>
+                <tr><td colspan="8" class="no-data">جارٍ التحميل...</td></tr>
             </tbody>
         </table>
     </div>
@@ -166,7 +177,7 @@
 
     async function loadProviderSuccessStats() {
         const tbody = document.getElementById('logsBody');
-        tbody.innerHTML = '<tr><td colspan="6" class="no-data">جارٍ التحميل...</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="8" class="no-data">جارٍ التحميل...</td></tr>';
 
         try {
             const res = await fetch('/api/admin/provider-success-stats', { 
@@ -177,7 +188,7 @@
             const rawStats = Array.isArray(data) ? data : (data.stats || data.data || []);
 
             if (!rawStats || rawStats.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="7" class="no-data">لا توجد بيانات مسجّلة بعد.</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="8" class="no-data">لا توجد بيانات مسجّلة بعد.</td></tr>';
                 document.getElementById('totalInfo').innerText = 'إجمالي السجلات: 0';
                 return;
             }
@@ -193,13 +204,20 @@
                     mappedStatus = 'معلقة';
                 }
 
+                // تحويل نوع التواصل
+                let contactTypeText = 'طلب خدمة';
+                const dbContactType = (row.contact_type || '').toLowerCase();
+                if (dbContactType === 'call') contactTypeText = 'اتصال';
+                else if (dbContactType === 'whatsapp') contactTypeText = 'واتساب';
+                else if (dbContactType === 'service_request') contactTypeText = 'طلب خدمة';
+
                 return {
                     ...row,
-                    // تصحيح جلب الأسماء والأرقام لتتوافق مع مختلف هياكل الـ Backend
                     username: row.username || row.user_name || row.client_name || row.full_name || '—',
                     provider_name: row.provider_name || row.provider_user_name || '—',
                     provider_phone: row.provider_phone || row.phone || row.provider_phone_number || '—',
                     formatted_date: (row.updated_at || row.created_at || row.date) ? new Date(row.updated_at || row.created_at || row.date).toLocaleString('ar-EG') : '—',
+                    contact_type: contactTypeText,
                     status: mappedStatus,
                     cancel_reason: row.cancellation_reason || row.cancel_reason || row.cancellation_message || '—'
                 };
@@ -210,7 +228,7 @@
             document.getElementById('totalInfo').innerText = `إجمالي السجلات: ${allData.length}`;
 
         } catch (err) {
-            tbody.innerHTML = '<tr><td colspan="7" class="no-data" style="color:red;">خطأ في الاتصال بالسيرفر أو جلب البيانات</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="8" class="no-data" style="color:red;">خطأ في الاتصال بالسيرفر أو جلب البيانات</td></tr>';
         }
     }
 
@@ -235,7 +253,7 @@
         tbody.innerHTML = '';
 
         if (data.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="7" class="no-data">لا توجد نتائج تطابق الفلاتر المختارة</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="8" class="no-data">لا توجد نتائج تطابق الفلاتر المختارة</td></tr>';
             return;
         }
 
@@ -244,12 +262,19 @@
             if (row.status === 'معلقة') statusClass = 'status-pending';
             if (row.status === 'تم الإلغاء') statusClass = 'status-cancelled';
 
+            // أيقونة نوع التواصل
+            let contactIcon = '📋';
+            if (row.contact_type === 'اتصال') contactIcon = '📞';
+            else if (row.contact_type === 'واتساب') contactIcon = '💬';
+            else if (row.contact_type === 'طلب خدمة') contactIcon = '📋';
+
             const tr = document.createElement('tr');
             tr.innerHTML = `
                 <td><b>${row.username}</b></td>
                 <td><b>${row.provider_name}</b></td>
                 <td><small style="direction:ltr; display:inline-block;">${row.provider_phone}</small></td>
                 <td>${row.formatted_date}</td>
+                <td><span style="font-size:16px;">${contactIcon}</span> ${row.contact_type}</td>
                 <td><span class="status-badge ${statusClass}">${row.status}</span></td>
                 <td><small>${row.cancel_reason}</small></td>
                 <td>

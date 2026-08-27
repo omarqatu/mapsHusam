@@ -276,10 +276,59 @@ function initializePopup(map) {
 
     const checkRequestQuotaOrAlert = window.checkRequestQuotaOrAlert;
 
-    window.handlePhoneCall = async function(providerName, localPhone, whatsappNumber, serviceType) {
+    // 🆕 دالة للتحقق من الفاصل الزمني بين النقرات
+    function checkClickCooldown(actionType, featureId, cooldownSeconds = 10) {
+        const key = `click_cooldown_${actionType}_${featureId}`;
+        const lastClickTime = localStorage.getItem(key);
+        const now = Date.now();
+        
+        if (lastClickTime) {
+            const elapsed = (now - parseInt(lastClickTime)) / 1000;
+            if (elapsed < cooldownSeconds) {
+                const remaining = Math.ceil(cooldownSeconds - elapsed);
+                if (window.toast) {
+                    window.toast(`يرجى الانتظار ${remaining} ثوانٍ قبل المحاولة مرة أخرى`, 'warning', 3000);
+                } else {
+                    alert(`يرجى الانتظار ${remaining} ثوانٍ قبل المحاولة مرة أخرى.`);
+                }
+                return false;
+            }
+        }
+        
+        localStorage.setItem(key, now.toString());
+        return true;
+    }
+
+    window.handlePhoneCall = async function(providerName, localPhone, serviceType, featureId, serviceLayer) {
         const currentUserId = getRealUserId();
+        console.log('📞 handlePhoneCall called:', { providerName, localPhone, serviceType, featureId, serviceLayer, userId: currentUserId });
+        
+        // 🆕 التحقق من الفاصل الزمني
+        if (!checkClickCooldown('call', featureId || 'unknown', 10)) {
+            return;
+        }
+        
         const quota = await checkRequestQuotaOrAlert(currentUserId, null);
         if (!quota.allowed) return;
+
+        // 🆕 تسجيل نقرة الاتصال في قاعدة البيانات
+        try {
+            const response = await fetch(window.location.origin + '/api/log-contact-click', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    user_id: currentUserId,
+                    service_layer: serviceLayer,
+                    feature_id: featureId,
+                    provider_name: providerName,
+                    contact_type: 'call'
+                })
+            });
+            const result = await response.json();
+            console.log('📞 Contact click logged:', result);
+        } catch (err) {
+            console.error('خطأ في تسجيل نقرة الاتصال:', err);
+        }
 
         const serviceDescription = `(${serviceType}) اتصال مباشر`;
         if (window.sendTrackingRequest) {
@@ -294,12 +343,39 @@ function initializePopup(map) {
         window.location.href = 'tel:' + localPhone;
     };
 
-    window.handleServiceRequest = async function(providerName, whatsappNumber, serviceType) {
+    window.handleServiceRequest = async function(providerName, whatsappNumber, serviceType, featureId, serviceLayer) {
         const newTab = window.open('', '_blank');
 
         const currentUserId = getRealUserId();
+        console.log('💬 handleServiceRequest called:', { providerName, whatsappNumber, serviceType, featureId, serviceLayer, userId: currentUserId });
+        
+        // 🆕 التحقق من الفاصل الزمني
+        if (!checkClickCooldown('whatsapp', featureId || 'unknown', 10)) {
+            if (newTab) newTab.close();
+            return;
+        }
+        
         const quota = await checkRequestQuotaOrAlert(currentUserId, newTab);
         if (!quota.allowed) return;
+
+        // 🆕 تسجيل نقرة الواتساب في قاعدة البيانات
+        try {
+            const response = await fetch(window.location.origin + '/api/log-contact-click', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    user_id: currentUserId,
+                    service_layer: serviceLayer,
+                    feature_id: featureId,
+                    provider_name: providerName,
+                    contact_type: 'whatsapp'
+                })
+            });
+            const result = await response.json();
+            console.log('💬 Contact click logged:', result);
+        } catch (err) {
+            console.error('خطأ في تسجيل نقرة الواتساب:', err);
+        }
 
         const serviceDescription = `(${serviceType}) واتساب`;
         if (window.sendTrackingRequest) {
@@ -462,6 +538,35 @@ function initializePopup(map) {
         window.setPopupState(!isPopupEnabled);
     };
 
+    // 🆕 Event delegation لأزرار الاتصال والواتساب في popup
+    container.addEventListener('click', async (e) => {
+        console.log('🔍 Popup click event triggered, target:', e.target);
+        
+        const callBtn = e.target.closest('.popup-call-btn');
+        if (callBtn) {
+            const providerName = callBtn.dataset.provider;
+            const localPhone = callBtn.dataset.phone;
+            const serviceType = callBtn.dataset.service;
+            const featureId = callBtn.dataset.featureId;
+            const serviceLayer = callBtn.dataset.layer;
+            console.log('📞 Call button clicked:', { providerName, localPhone, serviceType, featureId, serviceLayer });
+            await window.handlePhoneCall(providerName, localPhone, serviceType, featureId, serviceLayer);
+            return;
+        }
+
+        const whatsappBtn = e.target.closest('.popup-whatsapp-btn');
+        if (whatsappBtn) {
+            const providerName = whatsappBtn.dataset.provider;
+            const whatsappNumber = whatsappBtn.dataset.whatsapp;
+            const serviceType = whatsappBtn.dataset.service;
+            const featureId = whatsappBtn.dataset.featureId;
+            const serviceLayer = whatsappBtn.dataset.layer;
+            console.log('💬 WhatsApp button clicked:', { providerName, whatsappNumber, serviceType, featureId, serviceLayer });
+            await window.handleServiceRequest(providerName, whatsappNumber, serviceType, featureId, serviceLayer);
+            return;
+        }
+    });
+
     function parseArabicTime(timeStr) {
         if (!timeStr) return "";
         let [hours, minutes] = timeStr.split(':').map(Number);
@@ -618,11 +723,11 @@ function initializePopup(map) {
                 // مرتبطاً نعرض "طلب الخدمة" (نظام الطلب والدردشة الحقيقي)، وإلا
                 // نعرض اتصال+واتساب مباشرة تماماً مثل العقارات، لأنه لا يوجد
                 // حساب حقيقي يستقبل طلب الدردشة لهذا المعلم بالذات.
-                let layerDbName = '';
+                let layerDbName = layerEnglishName || '';
                 let isLinkedProvider = false;
                 if (isService) {
                     const layerKeyForRequest = Object.keys(window.overlayLayersObj || {}).find(k => window.overlayLayersObj[k] === layer);
-                    layerDbName = layerKeyForRequest ? layerKeyForRequest.replace(/Layer$/i, '') : '';
+                    layerDbName = layerKeyForRequest ? layerKeyForRequest.replace(/Layer$/i, '') : layerEnglishName || '';
                     isLinkedProvider = typeof window.isFeatureLinkedToProvider === 'function' && window.isFeatureLinkedToProvider(layerDbName, displayFeatureId);
                 }
 
@@ -652,11 +757,21 @@ function initializePopup(map) {
                     <div style="margin-top: 15px; border-top: 2px solid #eee; padding-top: 12px;">
                         <div style="display: flex; gap: 8px; margin-bottom: 8px;">
                             ${hasPhone ? `
-                            <button onclick="handlePhoneCall('${providerName}', '${localPhone}', '${whatsappNumber}', '${layerTitle}')"
+                            <button class="popup-call-btn" 
+                                    data-provider="${escapeForAttribute(providerName)}" 
+                                    data-phone="${escapeForAttribute(localPhone)}" 
+                                    data-service="${escapeForAttribute(layerTitle)}" 
+                                    data-feature-id="${escapeForAttribute(String(displayFeatureId || ''))}" 
+                                    data-layer="${escapeForAttribute(layerDbName || layerEnglishName || '')}"
                                     style="flex: 1; background: #1a73e8; color: white; border: none; padding: 12px 8px; border-radius: 10px; cursor: pointer; font-weight: bold; display: flex; align-items: center; justify-content: center; gap: 6px; font-size: 13px; box-shadow: 0 4px 12px rgba(26,115,232,0.3);">
                                 <i class="fas fa-mobile-alt" style="font-size: 16px;"></i> اتصال
                             </button>` : ''}
-                            <button onclick="handleServiceRequest('${providerName}', '${whatsappNumber}', '${layerTitle}')"
+                            <button class="popup-whatsapp-btn" 
+                                    data-provider="${escapeForAttribute(providerName)}" 
+                                    data-whatsapp="${escapeForAttribute(whatsappNumber)}" 
+                                    data-service="${escapeForAttribute(layerTitle)}" 
+                                    data-feature-id="${escapeForAttribute(String(displayFeatureId || ''))}" 
+                                    data-layer="${escapeForAttribute(layerDbName || layerEnglishName || '')}"
                                     style="flex: ${hasPhone ? '1' : '1'}; background: #25d366; color: white; border: none; padding: 12px 8px; border-radius: 10px; cursor: pointer; font-weight: bold; display: flex; align-items: center; justify-content: center; gap: 6px; font-size: 13px; box-shadow: 0 4px 12px rgba(37,211,102,0.3);">
                                 <i class="fab fa-whatsapp" style="font-size: 16px;"></i> واتساب
                             </button>

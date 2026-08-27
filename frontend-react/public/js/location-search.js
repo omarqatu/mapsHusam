@@ -80,14 +80,14 @@ function initializeLocationSearch(map, overlayLayersObj) {
             const val = sel ? sel.value : '';
             if (val !== '') return features.filter(f => String(f.get('stop')) === val);
         } else if (layerKey === 'fuel_stationsLayer') {
-            // 🆕 منطق OR: إذا اختار المستخدم أكثر من نوع وقود (مثلاً ديزل غير متوفر
-            // وبنزين95 غير متوفر معاً)، تُعرض المحطة إن حقّقت أياً من الشروط المختارة،
-            // وليس بالضرورة كل الشروط معاً كما كان سابقاً (AND متسلسل)
+            // 🆕 منطق AND: يجب أن تحقق المحطة جميع الشروط المختارة
+            // مثلاً إذا اختار "ديزل متوفر" و"بنزين 95 غير متوفر"، يجب أن يكون في المحطة
+            // ديزل متوفر وبنزين 95 غير متوفر معاً
             const activeSelections = ['diesel', 'banzen95', 'banzen98']
                 .map(fid => ({ fid, val: document.getElementById('location-fuel-filter-' + fid)?.value || '' }))
                 .filter(s => s.val !== '');
             if (activeSelections.length === 0) return features;
-            return features.filter(f => activeSelections.some(s => String(f.get(s.fid)) === s.val));
+            return features.filter(f => activeSelections.every(s => String(f.get(s.fid)) === s.val));
         }
         return features;
     }

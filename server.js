@@ -65,6 +65,8 @@ if (!ALLOWED_ORIGINS) {
 function corsOriginCheck(origin, callback) {
     // طلبات بدون origin (مثل curl أو تطبيقات موبايل أو نفس السيرفر) نسمح بها دائماً
     if (!origin || !ALLOWED_ORIGINS) return callback(null, true);
+    // السماح بـ localhost أثناء التطوير
+    if (origin.includes('localhost') || origin.includes('127.0.0.1')) return callback(null, true);
     if (ALLOWED_ORIGINS.includes(origin)) return callback(null, true);
     return callback(new Error('غير مسموح بالوصول من هذا الدومين (CORS)'));
 }
@@ -271,11 +273,23 @@ async function ensureServiceRequestSchema() {
                 provider_name TEXT,
                 service_type TEXT,
                 status TEXT NOT NULL DEFAULT 'pending',
+                contact_type TEXT NOT NULL DEFAULT 'service_request',
                 user_confirmed BOOLEAN NOT NULL DEFAULT false,
                 provider_confirmed BOOLEAN NOT NULL DEFAULT false,
                 created_at TIMESTAMP NOT NULL DEFAULT NOW(),
                 updated_at TIMESTAMP NOT NULL DEFAULT NOW()
             )
+        `);
+        // إضافة عمود contact_type إذا لم يكن موجوداً
+        await servicesPool.query(`
+            ALTER TABLE public.service_requests 
+            ADD COLUMN IF NOT EXISTS contact_type TEXT NOT NULL DEFAULT 'service_request'
+        `);
+        // تحديث السجلات القديمة التي لا تحتوي على contact_type
+        await servicesPool.query(`
+            UPDATE public.service_requests 
+            SET contact_type = 'service_request' 
+            WHERE contact_type IS NULL OR contact_type = ''
         `);
         await servicesPool.query(`
             CREATE TABLE IF NOT EXISTS public.service_request_messages (
@@ -1253,14 +1267,10 @@ app.get('/api/search-features', async (req, res) => {
 
                 // 🆕 معالجة الشروط المتعددة بمنطق منطقي حقيقي: نجمع الشروط في "مجموعات" -
         // داخل نفس المجموعة يتم الربط بـ OR، وبين المجموعات المختلفة يتم الربط بـ AND.
-        // حقول توفر الوقود الثلاثة (ديزل/بنزين95/بنزين98) تُعامل كمجموعة واحدة رغم
-        // اختلاف أسمائها، حتى يعمل "ديزل غير متوفر أو بنزين95 غير متوفر" كما هو متوقع.
         // حقل حالة الحاجز (stop) يُجمَّع تلقائياً مع نفسه (نفس الحقل) فتصبح عدة قيم
         // مختارة له (مفتوح/مغلق/أزمة...) بمنطق OR أيضاً. باقي الحقول (السعر، المنطقة،
-        // الاسم...) تبقى AND تماماً كما كانت، لأنها مجموعات منفصلة عن بعضها.
-        const FUEL_AVAILABILITY_FIELDS = ['diesel', 'banzen95', 'banzen98'];
+        // الاسم، وحالات الوقود) تبقى AND تماماً كما كانت، لأنها مجموعات منفصلة عن بعضها.
         function getConditionGroupKey(fieldName) {
-            if (FUEL_AVAILABILITY_FIELDS.includes(fieldName)) return '__fuel_availability_group__';
             return fieldName;
         }
 
@@ -1914,8 +1924,8 @@ app.post('/api/service-requests', async (req, res) => {
         }
 
         const insertResult = await servicesPool.query(
-            `INSERT INTO public.service_requests (user_id, provider_user_id, service_layer, feature_id, provider_name, service_type)
-             VALUES ($1, $2, $3, $4, $5, $6) RETURNING id, status, created_at`,
+            `INSERT INTO public.service_requests (user_id, provider_user_id, service_layer, feature_id, provider_name, service_type, contact_type)
+             VALUES ($1, $2, $3, $4, $5, $6, 'service_request') RETURNING id, status, created_at`,
             [user_id, provider.user_id, service_layer, feature_id, provider_name || provider.full_name, service_type || service_layer]
         );
 
@@ -2592,6 +2602,55 @@ app.get('/api/admin/provider-success-stats', requireAdmin, async (req, res) => {
     } catch (err) {
         console.error('❌ خطأ حرج في الـ API:', err.message);
         res.status(500).json({ success: false, error: err.message });
+    }
+});
+
+// 🆕 7.5) تسجيل نقرات الاتصال والواتساب
+app.post('/api/log-contact-click', async (req, res) => {
+    const { user_id, service_layer, feature_id, provider_name, contact_type } = req.body;
+
+    if (!user_id || !service_layer || !feature_id || !contact_type) {
+        return res.status(400).json({ success: false, error: 'بيانات غير مكتملة.' });
+    }
+    if (!['call', 'whatsapp'].includes(contact_type)) {
+        return res.status(400).json({ success: false, error: 'نوع التواصل غير صالح.' });
+    }
+
+    try {
+        // محاولة العثور على مزود خدمة مرتبط
+        const providerResult = await servicesPool.query(
+            `SELECT user_id, full_name, phone
+             FROM public.users
+             WHERE role = 'provider' AND service_layer = $1 AND feature_id = $2 LIMIT 1`,
+            [service_layer, feature_id]
+        );
+
+        let provider_user_id = null;
+        let final_provider_name = provider_name;
+        
+        if (providerResult.rows.length > 0) {
+            provider_user_id = providerResult.rows[0].user_id;
+            final_provider_name = providerResult.rows[0].full_name;
+        } else {
+            // إذا لم يوجد مزود خدمة مرتبط، نستخدم اسم الطبقة كاسم المزود
+            final_provider_name = service_layer;
+        }
+
+        // إذا لم يوجد مزود خدمة مرتبط، نستخدم user_id نفسه كـ provider_user_id مؤقتاً
+        if (!provider_user_id) {
+            provider_user_id = user_id;
+        }
+
+        const insertResult = await servicesPool.query(
+            `INSERT INTO public.service_requests (user_id, provider_user_id, service_layer, feature_id, provider_name, service_type, contact_type, status)
+             VALUES ($1, $2, $3, $4, $5, $6, $7, 'completed') RETURNING id, created_at`,
+            [user_id, provider_user_id, service_layer, feature_id, final_provider_name, service_layer, contact_type]
+        );
+
+        res.json({ success: true, id: insertResult.rows[0].id });
+    } catch (err) {
+        console.error('❌ خطأ أثناء تسجيل النقرة:', err.message);
+        res.status(500).json({ success: false, error: 'فشل تسجيل النقرة', details: err.message });
     }
 });
 
