@@ -21,6 +21,7 @@ function initializeEditTools(map, overlayLayersObjParam) {
     realEstateLayers = ['rentLayer', 'saleLayer']; 
 
     const fieldsRealEstate = [
+        { name: 'name', label: 'اسم المتصرف', type: 'text' },
         { name: 'price', label: 'السعر', type: 'number' },
         { name: 'currency', label: 'العملة', type: 'select', options: [
             { value: 'USD', label: 'دولار $' },

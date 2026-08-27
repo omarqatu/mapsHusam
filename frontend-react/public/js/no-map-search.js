@@ -537,6 +537,7 @@ window.__nmsPageHandlesOwnAds = true;
                     `;
                     const styledCards = selectedCards.map(card => card.replace('width: 100%;', 'width: 24%; min-width: 240px;'));
                     space.innerHTML = styledCards.join('');
+                    wireAdActionButtons(space);
                 } else {
                     // 🆕 الإصلاح الأساسي للفراغ: تباعد ثابت بسيط (gap) بدل
                     // justify-content:space-between المرتبط بطول main، و
@@ -553,121 +554,201 @@ window.__nmsPageHandlesOwnAds = true;
                         min-height: 0;
                     `;
                     space.innerHTML = selectedCards.join('');
+                    wireAdActionButtons(space);
                 }
             });
         }
 
         // تفعيل أزرار الاتصال/واتساب الخاصة بكروت الإعلانات (تسجيل تتبع + فحص حد الطلبات)
-        document.addEventListener('click', async (e) => {
-            console.log('🔍 Document click event triggered, target:', e.target);
-            
-            const callBtn = e.target.closest('.ad-call-btn');
-            if (callBtn) {
-                const phone = callBtn.dataset.phone;
-                const provider = callBtn.dataset.provider;
-                const service = callBtn.dataset.service;
-                const layer = callBtn.dataset.layer || '';
-                const featureId = callBtn.dataset.featureId || '';
-                console.log('📞 No-map call button clicked:', { phone, provider, service, layer, featureId });
-                
-                // 🆕 التحقق من الفاصل الزمني
-                const cooldownKey = `click_cooldown_call_${featureId}`;
-                const lastClickTime = localStorage.getItem(cooldownKey);
-                const now = Date.now();
-                if (lastClickTime && (now - parseInt(lastClickTime)) / 1000 < 10) {
-                    const remaining = Math.ceil(10 - (now - parseInt(lastClickTime)) / 1000);
-                    if (window.toast) {
-                        window.toast(`يرجى الانتظار ${remaining} ثوانٍ قبل المحاولة مرة أخرى`, 'warning', 3000);
-                    } else {
-                        alert(`يرجى الانتظار ${remaining} ثوانٍ قبل المحاولة مرة أخرى.`);
+                // 🆕 ربط مباشر (وليس عام) لأزرار الاتصال/واتساب الخاصة بكروت الإعلانات،
+        // مع تسجيل تتبع + فحص حد الطلبات + تسجيل النقرة في /api/log-contact-click.
+        // يُستدعى بعد كل مرة تُحقَن فيها كروت جديدة (إعلانات، أعلى تقييماً، موصى بهم)
+        function wireAdActionButtons(container) {
+            if (!container) return;
+
+            container.querySelectorAll('.ad-call-btn').forEach(callBtn => {
+                if (callBtn.dataset.wired) return;
+                callBtn.dataset.wired = '1';
+                callBtn.addEventListener('click', async () => {
+                    const phone = callBtn.dataset.phone;
+                    const provider = callBtn.dataset.provider;
+                    const service = callBtn.dataset.service;
+                    const layer = callBtn.dataset.layer || '';
+                    const featureId = callBtn.dataset.featureId || '';
+
+                    const cooldownKey = `click_cooldown_call_${featureId}`;
+                    const lastClickTime = localStorage.getItem(cooldownKey);
+                    const now = Date.now();
+                    if (lastClickTime && (now - parseInt(lastClickTime)) / 1000 < 10) {
+                        const remaining = Math.ceil(10 - (now - parseInt(lastClickTime)) / 1000);
+                        if (window.toast) window.toast(`يرجى الانتظار ${remaining} ثوانٍ قبل المحاولة مرة أخرى`, 'warning', 3000);
+                        else alert(`يرجى الانتظار ${remaining} ثوانٍ قبل المحاولة مرة أخرى.`);
+                        return;
                     }
-                    return;
-                }
-                localStorage.setItem(cooldownKey, now.toString());
-                
-                const quota = await checkRequestQuotaOrAlert(getRealUserId(), null);
-                if (!quota.allowed) return;
-                // 🆕 تسجيل نقرة الاتصال
-                try {
-                    const response = await fetch(window.location.origin + '/api/log-contact-click', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                            user_id: getRealUserId(),
-                            service_layer: layer,
-                            feature_id: featureId,
-                            provider_name: provider,
-                            contact_type: 'call'
-                        })
-                    });
-                    const result = await response.json();
-                    console.log('📞 No-map call logged:', result);
-                } catch (err) {
-                    console.error('خطأ في تسجيل نقرة الاتصال:', err);
-                }
-                trackRequest(provider, `(${service}) اتصال مباشر`);
-                window.location.href = 'tel:' + phone;
+                    localStorage.setItem(cooldownKey, now.toString());
+
+                    const quota = await checkRequestQuotaOrAlert(getRealUserId(), null);
+                    if (!quota.allowed) return;
+
+                    try {
+                        await fetch(window.location.origin + '/api/log-contact-click', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                user_id: getRealUserId(),
+                                service_layer: layer,
+                                feature_id: featureId,
+                                provider_name: provider,
+                                contact_type: 'call'
+                            })
+                        });
+                    } catch (err) {
+                        console.error('خطأ في تسجيل نقرة الاتصال:', err);
+                    }
+                    trackRequest(provider, `(${service}) اتصال مباشر`);
+                    window.location.href = 'tel:' + phone;
+                });
+            });
+
+            container.querySelectorAll('.ad-whatsapp-btn').forEach(waBtn => {
+                if (waBtn.dataset.wired) return;
+                waBtn.dataset.wired = '1';
+                waBtn.addEventListener('click', async () => {
+                    const whatsappNumber = waBtn.dataset.whatsapp;
+                    const provider = waBtn.dataset.provider;
+                    const service = waBtn.dataset.service;
+                    const layer = waBtn.dataset.layer || '';
+                    const featureId = waBtn.dataset.featureId || '';
+
+                    const cooldownKey = `click_cooldown_whatsapp_${featureId}`;
+                    const lastClickTime = localStorage.getItem(cooldownKey);
+                    const now = Date.now();
+                    if (lastClickTime && (now - parseInt(lastClickTime)) / 1000 < 10) {
+                        const remaining = Math.ceil(10 - (now - parseInt(lastClickTime)) / 1000);
+                        if (window.toast) window.toast(`يرجى الانتظار ${remaining} ثوانٍ قبل المحاولة مرة أخرى`, 'warning', 3000);
+                        else alert(`يرجى الانتظار ${remaining} ثوانٍ قبل المحاولة مرة أخرى.`);
+                        return;
+                    }
+                    localStorage.setItem(cooldownKey, now.toString());
+
+                    const newTab = window.open('', '_blank');
+                    const quota = await checkRequestQuotaOrAlert(getRealUserId(), newTab);
+                    if (!quota.allowed) return;
+
+                    try {
+                        await fetch(window.location.origin + '/api/log-contact-click', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                user_id: getRealUserId(),
+                                service_layer: layer,
+                                feature_id: featureId,
+                                provider_name: provider,
+                                contact_type: 'whatsapp'
+                            })
+                        });
+                    } catch (err) {
+                        console.error('خطأ في تسجيل نقرة الواتساب:', err);
+                    }
+                    trackRequest(provider, `(${service}) واتساب`);
+                    const message = `مرحباً ${provider}، أرغب بالاستفسار عن (${service}) من خلال منصة الخدمات.`;
+                    let cleanNumber = (whatsappNumber || '').replace(/\D/g, '');
+                    if (cleanNumber.startsWith('00')) cleanNumber = cleanNumber.substring(2);
+                    const whatsappUrl = `https://api.whatsapp.com/send?phone=${cleanNumber}&text=${encodeURIComponent(message)}`;
+                    if (newTab) newTab.location.href = whatsappUrl; else window.open(whatsappUrl, '_blank');
+                });
+            });
+        }
+
+                // ==========================================================================
+        // 🆕 الأعلى تقييماً + موصى بهم: نفس تصميم كروت الإعلانات، عرض أفقي 3 كروت
+        // على الكمبيوتر مع سكرول عند الزيادة، ويتكيف تلقائياً على الموبايل/التابلت
+        // عبر CSS. "الأعلى تقييماً" = أي معلم له تقييم فعلي (rating > 0)، بينما
+        // "موصى بهم" = المعالم المقيّمة بالضبط 9.9 (رتبة أقل من رتبة الإعلانات 10)
+        // ==========================================================================
+        function refreshHomeSectionsVisibility() {
+            const topRatedSection = document.getElementById('nms-top-rated-section');
+            const recommendedSection = document.getElementById('nms-recommended-section');
+            const onHome = categoriesView && !categoriesView.classList.contains('hidden');
+            if (topRatedSection) {
+                topRatedSection.style.display = (onHome && topRatedSection.dataset.hasData === '1') ? '' : 'none';
+            }
+            if (recommendedSection) {
+                recommendedSection.style.display = (onHome && recommendedSection.dataset.hasData === '1') ? '' : 'none';
+            }
+        }
+
+        async function loadRatedRow(gridId, sectionId, operator, ratingValue) {
+            const grid = document.getElementById(gridId);
+            const section = document.getElementById(sectionId);
+            if (!grid || !section) return;
+
+            const allTargets = categories.map(cat => {
+                const { workspace, layerName, isRealEstate } = getWorkspaceAndName(cat.key);
+                return { layer: layerName, workspace, label: cat.title, isRealEstate };
+            });
+
+            let collected = [];
+            const batchSize = 10;
+            for (let i = 0; i < allTargets.length; i += batchSize) {
+                const batch = allTargets.slice(i, i + batchSize);
+                const promises = batch.map(async (item) => {
+                    try {
+                        const params = new URLSearchParams({
+                            layer: item.layer,
+                            workspace: item.workspace,
+                            field_0: 'rating',
+                            operator_0: operator,
+                            value_0: String(ratingValue),
+                            conditions_count: '1'
+                        });
+                        const response = await fetch(`${baseUrl}api/search-features?${params.toString()}`);
+                        if (!response.ok) return [];
+                        const data = await response.json();
+                        const features = data.features || [];
+                        return features.map(f => ({
+                            props: f.properties || {},
+                            item,
+                            rating: parseFloat((f.properties || {}).rating) || 0
+                        }));
+                    } catch (err) {
+                        return [];
+                    }
+                });
+                const results = await Promise.all(promises);
+                results.forEach(list => { if (list.length) collected.push(...list); });
+            }
+
+            collected.sort((a, b) => b.rating - a.rating);
+
+            if (collected.length === 0) {
+                section.dataset.hasData = '0';
+                grid.innerHTML = '';
+                refreshHomeSectionsVisibility();
                 return;
             }
-            const waBtn = e.target.closest('.ad-whatsapp-btn');
-            if (waBtn) {
-                const whatsappNumber = waBtn.dataset.whatsapp;
-                const provider = waBtn.dataset.provider;
-                const service = waBtn.dataset.service;
-                const layer = waBtn.dataset.layer || '';
-                const featureId = waBtn.dataset.featureId || '';
-                console.log('💬 No-map WhatsApp button clicked:', { whatsappNumber, provider, service, layer, featureId });
-                
-                // 🆕 التحقق من الفاصل الزمني
-                const cooldownKey = `click_cooldown_whatsapp_${featureId}`;
-                const lastClickTime = localStorage.getItem(cooldownKey);
-                const now = Date.now();
-                if (lastClickTime && (now - parseInt(lastClickTime)) / 1000 < 10) {
-                    const remaining = Math.ceil(10 - (now - parseInt(lastClickTime)) / 1000);
-                    if (window.toast) {
-                        window.toast(`يرجى الانتظار ${remaining} ثوانٍ قبل المحاولة مرة أخرى`, 'warning', 3000);
-                    } else {
-                        alert(`يرجى الانتظار ${remaining} ثوانٍ قبل المحاولة مرة أخرى.`);
-                    }
-                    return;
-                }
-                localStorage.setItem(cooldownKey, now.toString());
-                
-                const newTab = window.open('', '_blank');
-                const quota = await checkRequestQuotaOrAlert(getRealUserId(), newTab);
-                if (!quota.allowed) return;
-                // 🆕 تسجيل نقرة الواتساب
-                try {
-                    const response = await fetch(window.location.origin + '/api/log-contact-click', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                            user_id: getRealUserId(),
-                            service_layer: layer,
-                            feature_id: featureId,
-                            provider_name: provider,
-                            contact_type: 'whatsapp'
-                        })
-                    });
-                    const result = await response.json();
-                    console.log('💬 No-map WhatsApp logged:', result);
-                } catch (err) {
-                    console.error('خطأ في تسجيل نقرة الواتساب:', err);
-                }
-                trackRequest(provider, `(${service}) واتساب`);
-                const message = `مرحباً ${provider}، أرغب بالاستفسار عن (${service}) من خلال منصة الخدمات.`;
-                let cleanNumber = whatsappNumber.replace(/\D/g, '');
-                if (cleanNumber.startsWith('00')) cleanNumber = cleanNumber.substring(2);
-                const whatsappUrl = `https://api.whatsapp.com/send?phone=${cleanNumber}&text=${encodeURIComponent(message)}`;
-                if (newTab) newTab.location.href = whatsappUrl; else window.open(whatsappUrl, '_blank');
-            }
-        });
+
+            section.dataset.hasData = '1';
+            grid.innerHTML = collected.slice(0, 15).map(c => buildAdCardHtml(c.props, c.item)).join('');
+            wireAdActionButtons(grid);
+            refreshHomeSectionsVisibility();
+        }
+
+        setTimeout(() => {
+            loadRatedRow('nms-top-rated-grid', 'nms-top-rated-section', '>', 0.1);
+            loadRatedRow('nms-recommended-grid', 'nms-recommended-section', '=', 9.9);
+        }, 1200);
 
         setTimeout(loadFeaturedAds, 1000);
 
-        backBtn.onclick = () => {
+        setTimeout(loadFeaturedAds, 1000);
+
+
+
+            backBtn.onclick = () => {
             resultsView.classList.add('hidden');
             categoriesView.classList.remove('hidden');
+            refreshHomeSectionsVisibility();
             window.scrollTo({ top: 0, behavior: 'smooth' });
         };
 
@@ -700,11 +781,12 @@ window.__nmsPageHandlesOwnAds = true;
         const resultsCountEl = document.getElementById('nms-results-count');
         const resultsListEl = document.getElementById('nms-results-list');
 
-                function openCategory(cat) {
+            function openCategory(cat) {
             currentCategory = cat;
             allFieldValues = {}; // إعادة تعيين القيم المخزنة
             categoriesView.classList.add('hidden');
             resultsView.classList.remove('hidden');
+            refreshHomeSectionsVisibility();
             categoryTitleEl.innerHTML = `<i class="fas ${cat.icon}"></i> ${cat.title}`;
 
             // 🆕 نفس منطق حقول البحث الذكي (search.js): حقل stop لحواجز الطرق،

@@ -105,9 +105,10 @@
     <div class="table-container">
         <table id="logsTable">
             <thead>
-                <tr>
+                                <tr>
                     <th>اسم المستخدم</th>
                     <th>اسم مزود الخدمة</th>
+                    <th>اسم الطبقة</th>
                     <th>رقم الجوال</th>
                     <th>الوقت والتاريخ</th>
                     <th>نوع التواصل</th>
@@ -126,6 +127,11 @@
                         <div class="filter-group">
                             <input type="text" class="filter-input" data-col="provider_name" placeholder="بحث بالمزود...">
                             <select class="filter-select" data-col="provider_name"><option value="">الكل</option></select>
+                        </div>
+                    </th>
+                    <th>
+                        <div class="filter-group">
+                            <select class="filter-select" data-col="layer_ar"><option value="">كل الطبقات</option></select>
                         </div>
                     </th>
                     <th>
@@ -176,11 +182,39 @@
 </div>
 
 <script>
+    // 🆕 قاموس ترجمة اسم الطبقة الإنجليزي إلى العربي لأغراض فلتر لوحة التحكم
+    const LAYER_AR_NAMES = {
+        'road_barriers': 'حواجز الطرق', 'fuel_stations': 'محطات الوقود',
+        'electrician': 'فني كهرباء', 'ac_technician': 'فني تكييف وتبريد', 'plumber': 'سباك (مواسيرجي)',
+        'general_maintenance': 'صيانة عامة', 'painter': 'دهان/طراشة', 'Finisher': 'فني ديكور', 'carpenter': 'نجار',
+        'blacksmith': 'حداد', 'builder': 'بناء ومعمار', 'house_cleaner': 'خدمات تنظيف', 'aluminum_tech': 'فني ألمنيوم', 'glass_tech': 'فني زجاج وسكريت',
+        'car_mechanic': 'ميكانيكي سيارات', 'car_electrician': 'كهربائي سيارات', 'tire_tech': 'بنشري / إطارات',
+        'car_wash': 'غسيل سيارات', 'motorcycle_repair': 'صيانة دراجات نارية', 'taxi_driver': 'مكتب تاكسي',
+        'delivery_services': 'خدمات توصيل', 'tow_truck': 'ونش إنقاذ', 'cctv_installer': 'فني كاميرات مراقبة',
+        'party_planner': 'منظم حفلات', 'zaffa_bands': 'فرقة زفة', 'music_bands': 'فرق موسيقية',
+        'party_rental': 'تأجير مستلزمات حفلات', 'home_nurse': 'تمريض منزلي',
+        'masseur': 'أخصائي مساج', 'cupping_specialist': 'أخصائي حجامة', 'nutritionist': 'أخصائي تغذية',
+        'truck_driver': 'سائق شاحنة', 'security_firms': 'شركات أمن وحراسة', 'furniture_buyer': 'شراء أثاث مستعمل',
+        'gardener': 'تنسيق حدائق', 'pet_care': 'رعاية حيوانات أليفة', 'clown_entertainer': 'مهرج وعروض أطفال',
+        'online_stores': 'متاجر أون لاين', 'villas_rent': 'فلل أجار', 'martial_arts_gymnastics': 'فنون قتالية وجمباز',
+        'public_parks_recreation': 'حدائق ومناطق ترفيهية', 'hotels': 'فنادق', 'free_distribution': 'توزيع أغراض مجاناً',
+        'barber_shop': 'حلاقة شباب', 'photographers': 'مصور فوتوغرافي', 'video_design_ads': 'تصميم فيديو إعلاني',
+        'pharmacies_on_call': 'صيدليات مناوبة', 'taxis_on_call': 'تكاسي نظام مناوبة', 'emergency_hospitals': 'طوارئ ومستشفيات',
+        'clinics': 'عيادات', 'doctors_on_call': 'دكاترة مناوبة', 'ambulances_on_call': 'إسعاف مناوبة',
+        'music_training': 'تدريب موسيقى ومعاهد', 'lawyers': 'محاميين', 'land_surveyors': 'مساحين أراضي',
+        'real_estate_valuers': 'مخمنين عقاريين', 'private_tutors': 'أساتذة خصوصي', 'programmers': 'مبرمجين',
+        'car_delivery_on_call': 'دليفري سيارات (مناوبة)', 'motorcycle_delivery_on_call': 'دليفري دراجات (مناوبة)',
+        'bicycle_delivery_on_call': 'دليفري هوائية (مناوبة)', 'student_research_assist': 'مساعد أبحاث طلاب',
+        'supermarket': 'سوبرماركت', 'commercial_shops': 'محلات تجارية', 'restaurants': 'مطاعم وكوفي شوبات',
+        'schools_kindergartens': 'مدارس ورياض أطفال', 'job_vacancies': 'وظائف شاغرة', 'city_landmarks': 'معالم المدينة',
+        'ApartRent': 'شقة للإيجار', 'ApartSale': 'شقة للبيع', 'LandSale': 'أرض للبيع'
+    };
+
     let allData = [];
 
     async function loadProviderSuccessStats() {
         const tbody = document.getElementById('logsBody');
-        tbody.innerHTML = '<tr><td colspan="8" class="no-data">جارٍ التحميل...</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="9" class="no-data">جارٍ التحميل...</td></tr>';
 
         try {
             const res = await fetch('/api/admin/provider-success-stats', { 
@@ -191,7 +225,7 @@
             const rawStats = Array.isArray(data) ? data : (data.stats || data.data || []);
 
             if (!rawStats || rawStats.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="8" class="no-data">لا توجد بيانات مسجّلة بعد.</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="9" class="no-data">لا توجد بيانات مسجّلة بعد.</td></tr>';
                 document.getElementById('totalInfo').innerText = 'إجمالي السجلات: 0';
                 return;
             }
@@ -219,10 +253,14 @@
                 // يحتاج مقارنة رقمية دقيقة (يوم/شهر/سنة) وليس مقارنة نص محلي
                 const rawDateValue = row.updated_at || row.created_at || row.date || null;
 
+                const layerKey = (row.service_layer || '').trim();
+                const layerArName = LAYER_AR_NAMES[layerKey] || layerKey || '—';
+
                 return {
                     ...row,
                     username: row.username || row.user_name || row.client_name || row.full_name || '—',
                     provider_name: row.provider_name || row.provider_user_name || '—',
+                    layer_ar: layerArName,
                     provider_phone: row.provider_phone || row.phone || row.provider_phone_number || '—',
                     raw_date: rawDateValue,
                     formatted_date: rawDateValue ? new Date(rawDateValue).toLocaleString('ar-EG') : '—',
@@ -238,7 +276,7 @@
             document.getElementById('totalInfo').innerText = `إجمالي السجلات: ${allData.length}`;
 
         } catch (err) {
-            tbody.innerHTML = '<tr><td colspan="8" class="no-data" style="color:red;">خطأ في الاتصال بالسيرفر أو جلب البيانات</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="9" class="no-data" style="color:red;">خطأ في الاتصال بالسيرفر أو جلب البيانات</td></tr>';
         }
     }
 
@@ -268,7 +306,7 @@
     function updateFilterOptions(data) {
     // 🆕 توليد قوائم منسدلة ديناميكية لكل عمود يملك select[data-col] مطابق:
     // اسم المستخدم، اسم مزود الخدمة، ورسالة الإلغاء (بدل الاقتصار على عمود واحد)
-    const dynamicColumns = ['username', 'provider_name', 'cancel_reason'];
+        const dynamicColumns = ['username', 'provider_name', 'layer_ar', 'cancel_reason'];
     dynamicColumns.forEach(col => {
         const select = document.querySelector(`.filter-select[data-col="${col}"]`);
         if (!select) return;
@@ -293,7 +331,7 @@
         tbody.innerHTML = '';
 
         if (data.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="8" class="no-data">لا توجد نتائج تطابق الفلاتر المختارة</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="9" class="no-data">لا توجد نتائج تطابق الفلاتر المختارة</td></tr>';
             return;
         }
 
@@ -309,9 +347,10 @@
             else if (row.contact_type === 'طلب خدمة') contactIcon = '📋';
 
             const tr = document.createElement('tr');
-            tr.innerHTML = `
+                        tr.innerHTML = `
                 <td><b>${row.username}</b></td>
                 <td><b>${row.provider_name}</b></td>
+                <td><span style="color:#1a73e8; font-weight:bold;">${row.layer_ar}</span></td>
                 <td><small style="direction:ltr; display:inline-block;">${row.provider_phone}</small></td>
                 <td>${row.formatted_date}</td>
                 <td><span style="font-size:16px;">${contactIcon}</span> ${row.contact_type}</td>

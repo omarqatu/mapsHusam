@@ -168,7 +168,7 @@ async function sendWFS_T(feature, type) {
 
         // 🎯 الترتيب الهيكلي المتطابق تماماً مع Schema الجيوسيرفر لجدول الشقق والخدمات (الـ Sequence الصارم)
         const realEstateSchemaOrder = [
-            'geom', 'location', 'price', 'currency', 'des', 'pic', 'video', 'area',
+            'geom', 'location', 'name', 'price', 'currency', 'des', 'pic', 'video', 'area',
             'x_coord', 'y_coord', 'status', 'gov_a', 'village_a',
             'X', 'Y', 'start_date', 'end_date', 'work_hours',
             'auto_status', 'whatsapp', 'search_tags', 'rating'

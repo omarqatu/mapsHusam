@@ -4,6 +4,28 @@
     <!-- 🔒 حارس الوصول: يمنع عرض الصفحة لأي شخص غير مسجل دخول بالمنصة -->
     <style id="access-guard-style">
         html { visibility: hidden; }
+    
+        .nms-rated-section { margin: 25px 0; }
+        .nms-rated-section h3 { margin-bottom: 10px; }
+        .nms-rated-scroll-row {
+            display: flex;
+            gap: 15px;
+            overflow-x: auto;
+            padding: 10px 2px 14px;
+            scroll-snap-type: x proximity;
+        }
+        .nms-rated-scroll-row > div {
+            flex: 0 0 calc(33.333% - 10px);
+            scroll-snap-align: start;
+            min-width: 240px;
+        }
+        @media (max-width: 992px) {
+            .nms-rated-scroll-row > div { flex: 0 0 80%; min-width: 220px; }
+        }
+        @media (max-width: 576px) {
+            .nms-rated-scroll-row > div { flex: 0 0 88%; min-width: 200px; }
+        }
+    
     </style>
     <script>
     (function () {
@@ -364,10 +386,22 @@
             </section>
 
             <!-- شبكة الفئات -->
-            <section id="nms-categories-view" class="nms-categories-view">
+                        <section id="nms-categories-view" class="nms-categories-view">
                 <h3 class="nms-section-title"><i class="fas fa-grip"></i> اختر نوع الخدمة أو العقار</h3>
                 <div id="nms-groups-tabs" class="nms-groups-tabs"></div>
                 <div id="nms-categories-grid" class="nms-categories-grid"></div>
+            </section>
+
+            <!-- 🆕 الأعلى تقييماً -->
+            <section id="nms-top-rated-section" class="nms-rated-section" style="display:none;">
+                <h3 class="nms-section-title"><i class="fas fa-star"></i> الأعلى تقييماً</h3>
+                <div id="nms-top-rated-grid" class="nms-rated-scroll-row"></div>
+            </section>
+
+            <!-- 🆕 موصى بهم -->
+            <section id="nms-recommended-section" class="nms-rated-section" style="display:none;">
+                <h3 class="nms-section-title"><i class="fas fa-thumbs-up"></i> موصى بهم</h3>
+                <div id="nms-recommended-grid" class="nms-rated-scroll-row"></div>
             </section>
 
             <!-- الفلاتر + النتائج -->
