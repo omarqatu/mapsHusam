@@ -621,7 +621,9 @@ if (typeof window.renderMarketSearchResults !== 'function') {
                 const providerName = p.name || (isRealEstate ? 'المعلن' : 'مزود الخدمة');
 
                 const layerDbName = (f.layerId || '').replace(/Layer$/i, '');
-                const featureIdForRequest = (p.id !== undefined && p.id !== null) ? p.id : '';
+                const featureIdForRequest = isRealEstate
+                    ? ((p.fid !== undefined && p.fid !== null) ? p.fid : '')
+                    : ((p.id !== undefined && p.id !== null) ? p.id : '');
                 const isLinkedProvider = !isRealEstate && typeof window.isFeatureLinkedToProvider === 'function' && window.isFeatureLinkedToProvider(layerDbName, featureIdForRequest);
 
                 const actions = document.createElement('div');

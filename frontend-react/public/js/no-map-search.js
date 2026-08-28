@@ -382,10 +382,22 @@ window.__nmsPageHandlesOwnAds = true;
             return String(str).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/'/g, '&#39;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
         }
 
-        function buildAdCardHtml(props, item) {
+                function buildAdCardHtml(props, item) {
             const isRealEstate = item.isRealEstate;
             const name = sanitize(props.name || props.location_name || props.location || '');
             const location = sanitize(props.location_name || props.location || '');
+
+            // 🆕 إذا كانت البطاقة قادمة من قسم "الأعلى تقييماً" الحقيقي (بناءً على
+            // تقييمات فعلية من جدول service_ratings)، نعرض شارة تقييم حقيقية
+            // بدل الاعتماد فقط على شارة "⭐ مميز" العامة
+            let ratingBadgeHtml = '';
+            if (item.avgRating !== undefined && item.avgRating !== null) {
+                const roundedStars = Math.round(item.avgRating);
+                const starsHtml = '★'.repeat(roundedStars) + '☆'.repeat(5 - roundedStars);
+                ratingBadgeHtml = `<div style="background:#fff8e1; border:1px solid #ffe082; border-radius:6px; padding:4px 6px; margin-bottom:6px; font-size:11px; font-weight:bold; color:#f57c00; text-align:center;">
+                    ${starsHtml} <span style="color:#555;">${item.avgRating} (${item.totalRatings || 0} تقييم حقيقي)</span>
+                </div>`;
+            }
 
             let statusHtml = '';
             if (!isRealEstate) {
@@ -413,13 +425,12 @@ window.__nmsPageHandlesOwnAds = true;
                 const providerName = name || (isRealEstate ? 'المعلن' : 'مزود الخدمة');
                 const whatsappNumber = props.whatsapp.toString();
                 if (isRealEstate) {
-                    // 🆕 زر الاتصال يظهر فقط إذا كان هناك phone
                     const hasPhone = props.phone !== undefined && props.phone !== null && props.phone !== '' && String(props.phone).trim() !== '';
                     const localPhone = hasPhone ? String(props.phone) : ('0' + whatsappNumber.replace(/\D/g, '').slice(5));
                     actionHtml = `
                         <div style="display:flex; gap:5px; margin-top:6px;">
-                            ${hasPhone ? `<button class="ad-call-btn" data-phone="${localPhone}" data-whatsapp="${whatsappNumber}" data-provider="${escapeAdAttr(providerName)}" data-service="${escapeAdAttr(item.label)}" data-layer="${escapeAdAttr(item.layer)}" data-feature-id="${escapeAdAttr(String(props.id || ''))}" style="flex:1; background:#1a73e8; color:#fff; border:none; padding:6px 4px; border-radius:6px; font-size:10px; font-weight:bold; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:4px;"><i class="fas fa-mobile-alt"></i> اتصال</button>` : ''}
-                            <button class="ad-whatsapp-btn" data-whatsapp="${whatsappNumber}" data-provider="${escapeAdAttr(providerName)}" data-service="${escapeAdAttr(item.label)}" data-layer="${escapeAdAttr(item.layer)}" data-feature-id="${escapeAdAttr(String(props.id || ''))}" style="flex:${hasPhone ? '1' : '1'}; background:#25d366; color:#fff; border:none; padding:6px 4px; border-radius:6px; font-size:10px; font-weight:bold; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:4px;"><i class="fab fa-whatsapp"></i> واتساب</button>
+                            ${hasPhone ? `<button class="ad-call-btn" data-phone="${localPhone}" data-whatsapp="${whatsappNumber}" data-provider="${escapeAdAttr(providerName)}" data-service="${escapeAdAttr(item.label)}" data-layer="${escapeAdAttr(item.layer)}" data-feature-id="${escapeAdAttr(String(props.fid || ''))}" style="flex:1; background:#1a73e8; color:#fff; border:none; padding:6px 4px; border-radius:6px; font-size:10px; font-weight:bold; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:4px;"><i class="fas fa-mobile-alt"></i> اتصال</button>` : ''}
+                            <button class="ad-whatsapp-btn" data-whatsapp="${whatsappNumber}" data-provider="${escapeAdAttr(providerName)}" data-service="${escapeAdAttr(item.label)}" data-layer="${escapeAdAttr(item.layer)}" data-feature-id="${escapeAdAttr(String(props.fid || ''))}" style="flex:${hasPhone ? '1' : '1'}; background:#25d366; color:#fff; border:none; padding:6px 4px; border-radius:6px; font-size:10px; font-weight:bold; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:4px;"><i class="fab fa-whatsapp"></i> واتساب</button>
                         </div>`;
                 } else {
                     // 🆕 للخدمات: نتحقق هل المعلم مرتبط بمزود خدمة
@@ -448,12 +459,13 @@ window.__nmsPageHandlesOwnAds = true;
                 }
             }
 
-            return `
+                        return `
                 <div style="background:#fff; border:2px solid #fbc02d; border-radius:8px; padding:10px; box-shadow:0 2px 5px rgba(0,0,0,0.1); box-sizing:border-box; text-align:right; direction:rtl; width:100%;">
                     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
-                        <span style="background:#fbc02d; color:#000; font-size:9px; padding:2px 5px; border-radius:4px; font-weight:bold;">⭐ مميز</span>
+                        <span style="background:#fbc02d; color:#000; font-size:9px; padding:2px 5px; border-radius:4px; font-weight:bold;">${item.badgeText || '⭐ مميز'}</span>
                         <span style="background:#e8f0fe; color:#1a73e8; font-size:10px; padding:2px 6px; border-radius:4px; font-weight:bold;">📌 ${item.label}</span>
                     </div>
+                    ${ratingBadgeHtml}
                     ${statusHtml}
                     ${name ? `<div style="font-weight:bold; color:#202124; font-size:12px; margin-bottom:4px;"><i class="fas fa-user" style="color:#1a73e8;"></i> ${name}</div>` : ''}
                     ${location ? `<div style="color:#555; font-size:11px; margin-bottom:3px;"><i class="fas fa-map-marker-alt" style="color:#e74c3c;"></i> ${location}</div>` : ''}
@@ -463,7 +475,7 @@ window.__nmsPageHandlesOwnAds = true;
             `;
         }
 
-        async function loadFeaturedAds() {
+                async function loadFeaturedAds() {
             const adSpaces = document.querySelectorAll('.nms-ad-space');
             if (!adSpaces.length) return;
 
@@ -512,6 +524,11 @@ window.__nmsPageHandlesOwnAds = true;
                 return arr;
             }
 
+            // 🆕 نخزّن كامل مجموعة الكروت عالمياً حتى تستطيع دالة إعادة التعبئة
+            // (refillAllSideAds) الوصول إليها لاحقاً عند تغيّر حجم الشاشة أو
+            // تغيّر طول المحتوى الأوسط (فتح تصنيف مختلف، تنفيذ بحث/فلترة...)
+            window.__nmsAdCardPool = allValidCards;
+
             adSpaces.forEach((space) => {
                 space.innerHTML = '';
 
@@ -521,9 +538,9 @@ window.__nmsPageHandlesOwnAds = true;
                 }
 
                 const randomizedCards = shuffleArray(allValidCards);
-                const selectedCards = randomizedCards.slice(0, 4);
 
                 if (space.classList.contains('nms-ad-bottom')) {
+                    const selectedCards = randomizedCards.slice(0, 4);
                     space.style.cssText += `
                         display: flex;
                         flex-direction: row;
@@ -539,25 +556,80 @@ window.__nmsPageHandlesOwnAds = true;
                     space.innerHTML = styledCards.join('');
                     wireAdActionButtons(space);
                 } else {
-                    // 🆕 الإصلاح الأساسي للفراغ: تباعد ثابت بسيط (gap) بدل
-                    // justify-content:space-between المرتبط بطول main، و
-                    // align-self:flex-start عشان لا تتمدد الحاوية لطول الصفحة كاملة
+                    // 🆕 الإصلاح الجذري لمشكلة الفراغ (شكل حرف U المطلوب): إعادة
+                    // align-self إلى stretch بدل flex-start، ليتمدد العمود الجانبي
+                    // تلقائياً ليطابق تماماً ارتفاع القسم الأوسط (.nms-main) - قصيراً
+                    // كان أم طويلاً - ثم نملأه بعدد كافٍ من البطاقات (مع تكرار نفس
+                    // المجموعة عند نفادها) عبر fillAdSideWithPool أدناه، بدل الاكتفاء
+                    // بـ4 بطاقات ثابتة تترك فراغاً فارغاً أسفلها دائماً.
                     space.style.cssText += `
                         display: flex;
                         flex-direction: column;
                         justify-content: flex-start;
-                        align-self: flex-start;
+                        align-self: stretch;
                         gap: 15px;
                         padding: 10px 0;
                         box-sizing: border-box;
                         height: auto;
                         min-height: 0;
                     `;
-                    space.innerHTML = selectedCards.join('');
-                    wireAdActionButtons(space);
+                    requestAnimationFrame(() => fillAdSideWithPool(space, randomizedCards));
                 }
             });
         }
+
+        // 🆕 تملأ عموداً جانبياً واحداً ببطاقات كافية (مع تكرار المجموعة المتاحة
+        // دورياً عند نفادها) حتى يغطي المحتوى الفعلي كامل الارتفاع الممتد للعمود
+        // (المحدَّد عبر align-self: stretch)، فلا يتبقى أي فراغ فارغ داخله.
+        function fillAdSideWithPool(sideEl, cardsPool) {
+            if (!sideEl || !cardsPool || cardsPool.length === 0) return;
+            sideEl.innerHTML = '';
+
+            const targetHeight = sideEl.clientHeight;
+            if (!targetHeight) return;
+
+            let poolIndex = 0;
+            let safetyCounter = 0;
+            while (sideEl.scrollHeight < targetHeight && safetyCounter < 150) {
+                const wrapper = document.createElement('div');
+                wrapper.innerHTML = cardsPool[poolIndex % cardsPool.length];
+                const cardNode = wrapper.firstElementChild;
+                if (cardNode) sideEl.appendChild(cardNode);
+                poolIndex++;
+                safetyCounter++;
+            }
+
+            wireAdActionButtons(sideEl);
+        }
+
+        // 🆕 إعادة تعبئة كل الأعمدة الجانبية (يمين ويسار) دفعة واحدة - تُستدعى
+        // عند تغيّر حجم الشاشة أو تغيّر ارتفاع القسم الأوسط (فتح تصنيف مختلف،
+        // تنفيذ بحث أو فلترة تُغيّر عدد النتائج المعروضة...)
+        function refillAllSideAds() {
+            const pool = window.__nmsAdCardPool;
+            if (!pool || pool.length === 0) return;
+            document.querySelectorAll('.nms-ad-space.nms-ad-side').forEach(sideEl => {
+                fillAdSideWithPool(sideEl, pool);
+            });
+        }
+
+        (function setupSideAdsAutoRefill() {
+            let resizeToken = null;
+            window.addEventListener('resize', () => {
+                clearTimeout(resizeToken);
+                resizeToken = setTimeout(refillAllSideAds, 250);
+            });
+
+            const mainEl = document.querySelector('.nms-main');
+            if (mainEl && typeof ResizeObserver !== 'undefined') {
+                let roToken = null;
+                const ro = new ResizeObserver(() => {
+                    clearTimeout(roToken);
+                    roToken = setTimeout(refillAllSideAds, 250);
+                });
+                ro.observe(mainEl);
+            }
+        })();
 
         // تفعيل أزرار الاتصال/واتساب الخاصة بكروت الإعلانات (تسجيل تتبع + فحص حد الطلبات)
                 // 🆕 ربط مباشر (وليس عام) لأزرار الاتصال/واتساب الخاصة بكروت الإعلانات،
@@ -734,8 +806,80 @@ window.__nmsPageHandlesOwnAds = true;
             refreshHomeSectionsVisibility();
         }
 
+                // 🆕 قسم "الأعلى تقييماً" الحقيقي: يعتمد على جدول service_ratings الفعلي
+    
+        async function loadTopRatedFromRealRatings() {
+            const grid = document.getElementById('nms-top-rated-grid');
+            const section = document.getElementById('nms-top-rated-section');
+            if (!grid || !section) return;
+
+            try {
+                const res = await fetch(`${baseUrl}api/top-rated-providers?limit=15`);
+                const data = await res.json();
+
+                if (!data.success || !data.items || data.items.length === 0) {
+                    section.dataset.hasData = '0';
+                    grid.innerHTML = '';
+                    refreshHomeSectionsVisibility();
+                    return;
+                }
+
+                const cardsPromises = data.items.map(async (ratingItem) => {
+                    const layerKey = ratingItem.service_layer;
+                    const featureId = ratingItem.feature_id;
+                    if (!layerKey || !featureId) return null;
+
+                    try {
+                        const params = new URLSearchParams({
+                            layer: layerKey,
+                            workspace: 'services',
+                            field_0: 'id',
+                            operator_0: '=',
+                            value_0: String(featureId),
+                            conditions_count: '1'
+                        });
+                        const fRes = await fetch(`${baseUrl}api/search-features?${params.toString()}`);
+                        if (!fRes.ok) return null;
+                        const fData = await fRes.json();
+                        const feature = (fData.features || [])[0];
+                        if (!feature) return null;
+
+                        const label = serviceNames[layerKey] || layerKey;
+                        const cardItem = {
+                            layer: layerKey,
+                            workspace: 'services',
+                            label,
+                            isRealEstate: false,
+                            avgRating: parseFloat(ratingItem.avg_rating) || 0,
+                            totalRatings: parseInt(ratingItem.total_ratings, 10) || 0,
+                            badgeText: '🏆 الأعلى تقييماً'
+                        };
+                        return buildAdCardHtml(feature.properties || {}, cardItem);
+                    } catch (err) {
+                        return null;
+                    }
+                });
+
+                const cards = (await Promise.all(cardsPromises)).filter(Boolean);
+
+                if (cards.length === 0) {
+                    section.dataset.hasData = '0';
+                    grid.innerHTML = '';
+                    refreshHomeSectionsVisibility();
+                    return;
+                }
+
+                section.dataset.hasData = '1';
+                grid.innerHTML = cards.join('');
+                wireAdActionButtons(grid); // 🆕 يضمن تسجيل نقرات اتصال/واتساب/طلب خدمة لهذا القسم أيضاً
+                refreshHomeSectionsVisibility();
+            } catch (err) {
+                console.warn('تعذر جلب قسم الأعلى تقييماً الحقيقي:', err.message);
+            }
+        }
+
         setTimeout(() => {
-            loadRatedRow('nms-top-rated-grid', 'nms-top-rated-section', '>', 0.1);
+            loadTopRatedFromRealRatings();
             loadRatedRow('nms-recommended-grid', 'nms-recommended-section', '=', 9.9);
         }, 1200);
 
@@ -1309,7 +1453,9 @@ window.__nmsPageHandlesOwnAds = true;
                     // اتصال+واتساب. الخدمات: "طلب الخدمة" فقط إذا كان المعلم مرتبطاً
                     // فعلياً بحساب مزود مُفعّل، وإلا اتصال+واتساب مباشرة مثل العقارات.
                     const layerDbName = (currentCategory.key || '').replace(/Layer$/i, '');
-                    const featureIdForRequest = (p.id !== undefined && p.id !== null) ? p.id : '';
+                    const featureIdForRequest = isRealEstate
+                        ? ((p.fid !== undefined && p.fid !== null) ? p.fid : '')
+                        : ((p.id !== undefined && p.id !== null) ? p.id : '');
                     const isLinkedProvider = !isRealEstate && typeof window.isFeatureLinkedToProvider === 'function' && window.isFeatureLinkedToProvider(layerDbName, featureIdForRequest);
 
                                     if (isLinkedProvider) {

@@ -71,6 +71,7 @@ const MAP_CONFIG = {
     },
 
     propertyFields: [
+        { name: 'name', label: 'اسم المتصرف', type: 'text' },
         { name: 'location', label: 'المنطقة', type: 'text', autoFill: true },
         { name: 'price', label: 'السعر ($)', type: 'number' },
         { name: 'area', label: 'المساحة (م²)', type: 'number' },
