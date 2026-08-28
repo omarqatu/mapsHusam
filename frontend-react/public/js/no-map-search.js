@@ -555,38 +555,65 @@ window.__nmsPageHandlesOwnAds = true;
                     const styledCards = selectedCards.map(card => card.replace('width: 100%;', 'width: 24%; min-width: 240px;'));
                     space.innerHTML = styledCards.join('');
                     wireAdActionButtons(space);
-                } else {
-                    // 🆕 الإصلاح الجذري لمشكلة الفراغ (شكل حرف U المطلوب): إعادة
-                    // align-self إلى stretch بدل flex-start، ليتمدد العمود الجانبي
-                    // تلقائياً ليطابق تماماً ارتفاع القسم الأوسط (.nms-main) - قصيراً
-                    // كان أم طويلاً - ثم نملأه بعدد كافٍ من البطاقات (مع تكرار نفس
-                    // المجموعة عند نفادها) عبر fillAdSideWithPool أدناه، بدل الاكتفاء
-                    // بـ4 بطاقات ثابتة تترك فراغاً فارغاً أسفلها دائماً.
+                                } else {
+                    // 🆕 الإصلاح الجذري لمشكلة الفراغ (شكل حرف U المطلوب): لا نستخدم
+                    // align-self:stretch إطلاقاً (كان يسبب حلقة تغذية راجعة تجعل
+                    // الصفحة تكبر بلا نهاية - راجع getMainNaturalHeight أدناه لشرح
+                    // المشكلة). بدلاً من ذلك نستخدم flex-start، ونُعطي العمود ارتفاعاً
+                    // ثابتاً بالبكسل يُحسب من الارتفاع الطبيعي لـ .nms-main، ثم نملأه
+                    // بعدد كافٍ من البطاقات (مع تكرار نفس المجموعة عند نفادها).
                     space.style.cssText += `
                         display: flex;
                         flex-direction: column;
                         justify-content: flex-start;
-                        align-self: stretch;
+                        align-self: flex-start;
                         gap: 15px;
                         padding: 10px 0;
                         box-sizing: border-box;
-                        height: auto;
-                        min-height: 0;
+                        overflow: hidden;
                     `;
                     requestAnimationFrame(() => fillAdSideWithPool(space, randomizedCards));
                 }
             });
         }
 
-        // 🆕 تملأ عموداً جانبياً واحداً ببطاقات كافية (مع تكرار المجموعة المتاحة
-        // دورياً عند نفادها) حتى يغطي المحتوى الفعلي كامل الارتفاع الممتد للعمود
-        // (المحدَّد عبر align-self: stretch)، فلا يتبقى أي فراغ فارغ داخله.
-        function fillAdSideWithPool(sideEl, cardsPool) {
-            if (!sideEl || !cardsPool || cardsPool.length === 0) return;
-            sideEl.innerHTML = '';
+                        // 🆕 [إصلاح حلقة التغذية الراجعة]: align-self:stretch كان يجعل .nms-main
+        // نفسه يتمدد ليطابق ارتفاع العمود الجانبي، فتتضخم الصفحة بلا نهاية مع كل
+        // إعادة تعبئة. الحل: نفرض align-items:flex-start على .nms-layout لمنع أي
+        // تمدد تلقائي بين الأعمدة، فيبقى ارتفاع .nms-main معبّراً دائماً عن محتواه
+        // الفعلي فقط، بغض النظر عن طول الأعمدة الجانبية بجانبه.
+        function getMainNaturalHeight() {
+            const layoutEl = document.querySelector('.nms-layout');
+            const mainEl = document.querySelector('.nms-main');
+            if (!mainEl) return 0;
+            if (layoutEl) {
+                layoutEl.style.setProperty('align-items', 'flex-start', 'important');
+            }
+            return mainEl.getBoundingClientRect().height;
+        }
 
-            const targetHeight = sideEl.clientHeight;
-            if (!targetHeight) return;
+        // 🆕 تملأ عموداً جانبياً واحداً ببطاقات كافية (مع تكرار المجموعة المتاحة
+        // دورياً عند نفادها) حتى يغطي بالضبط الارتفاع الطبيعي لـ .nms-main، عبر
+        // ارتفاع ثابت بالبكسل (وليس stretch) لمنع أي حلقة تغذية راجعة.
+        function fillAdSideWithPool(sideEl, cardsPool, attempt) {
+            if (!sideEl || !cardsPool || cardsPool.length === 0) return;
+            attempt = attempt || 0;
+
+            const targetHeight = getMainNaturalHeight();
+
+            if (!targetHeight) {
+                // الصفحة أو المحتوى لم يكتمل رسمه بعد - أعد المحاولة بضع مرات
+                // قبل الاستسلام نهائياً (حد أقصى نصف ثانية تقريباً)
+                if (attempt < 20) {
+                    requestAnimationFrame(() => fillAdSideWithPool(sideEl, cardsPool, attempt + 1));
+                }
+                return;
+            }
+
+            sideEl.innerHTML = '';
+            // 🆕 ارتفاع ثابت بالبكسل مأخوذ من القياس أعلاه - لا يتغيّر تبعاً لعدد
+            // الكروت التي سنضيفها، وبالتالي لا يوجد أي حلقة تغذية راجعة ممكنة
+            sideEl.style.height = targetHeight + 'px';
 
             let poolIndex = 0;
             let safetyCounter = 0;
@@ -624,13 +651,16 @@ window.__nmsPageHandlesOwnAds = true;
             if (mainEl && typeof ResizeObserver !== 'undefined') {
                 let roToken = null;
                 const ro = new ResizeObserver(() => {
+                    // 🆕 نتجاهل أي تغيّر ارتفاع ناتج عن تعديلنا نحن لارتفاع الأعمدة
+                    // الجانبية (لا يمكن حدوثه أصلاً الآن لأن .nms-main لم يعد يتمدد،
+                    // لكن كإجراء أمان إضافي نُبقي الـ debounce لتفادي أي استدعاءات
+                    // متلاحقة أثناء تغييرات DOM سريعة مثل فتح تصنيف جديد)
                     clearTimeout(roToken);
                     roToken = setTimeout(refillAllSideAds, 250);
                 });
                 ro.observe(mainEl);
             }
         })();
-
         // تفعيل أزرار الاتصال/واتساب الخاصة بكروت الإعلانات (تسجيل تتبع + فحص حد الطلبات)
                 // 🆕 ربط مباشر (وليس عام) لأزرار الاتصال/واتساب الخاصة بكروت الإعلانات،
         // مع تسجيل تتبع + فحص حد الطلبات + تسجيل النقرة في /api/log-contact-click.
