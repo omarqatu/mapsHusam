@@ -338,6 +338,42 @@
         });
     }
 
+        // ============================================
+    // 🆕 تحديث "آخر تحديث" الحقيقي لكل مجموعة (تاريخ يدوي من widgets-config.js
+    // للمجموعات الثابتة، أو تاريخ اليوم تلقائياً للمجموعات الحية/اليومية)
+    // ============================================
+    function formatTodayDMY() {
+        const d = new Date();
+        const dd = String(d.getDate()).padStart(2, '0');
+        const mm = String(d.getMonth() + 1).padStart(2, '0');
+        const yyyy = d.getFullYear();
+        return `${dd}/${mm}/${yyyy}`;
+    }
+
+    function setLastUpdatedValue(id, value) {
+        ['', 'mobile-'].forEach(function (prefix) {
+            const el = document.getElementById(prefix + id);
+            if (el) el.textContent = value;
+        });
+    }
+
+    function updateLastUpdatedTimestamps() {
+        const manualDates = (typeof WIDGETS_LAST_UPDATED !== 'undefined') ? WIDGETS_LAST_UPDATED : {};
+        const todayStr = formatTodayDMY();
+
+        setLastUpdatedValue('currency-update-time', manualDates.currency || '—');
+        setLastUpdatedValue('gold-update-time', manualDates.gold || '—');
+        setLastUpdatedValue('fuel-update-time', manualDates.fuel || '—');
+        setLastUpdatedValue('transport-inter-city-update-time', manualDates.transport_inter_city || '—');
+        setLastUpdatedValue('transport-intra-city-update-time', manualDates.transport_intra_city || '—');
+
+        // مجموعات حية/يومية: دائماً تاريخ اليوم
+        setLastUpdatedValue('prayer-date', todayStr);
+        setLastUpdatedValue('calendar-today', todayStr);
+        setLastUpdatedValue('traffic-update-time', todayStr);
+        setLastUpdatedValue('fuel-status-update-time', todayStr);
+    }
+
     // ============================================
     // دالة تحديث جميع البيانات
     // ============================================
@@ -512,6 +548,7 @@
                 updateMobilePortalData();
                 updateMobilePortalTrafficList();
                 updateMobilePortalFuelStatusList();
+                updateLastUpdatedTimestamps();
             })
             .catch(err => console.error('خطأ في تحميل محتوى البوابة للموبايل:', err));
     }
@@ -699,6 +736,7 @@
                 updatePortalData();
                 updatePortalTrafficList();
                 updatePortalFuelStatusList();
+                updateLastUpdatedTimestamps();
             })
             .catch(err => {
                 console.error('خطأ في تحميل محتوى البوابة:', err);

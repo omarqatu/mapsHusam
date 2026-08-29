@@ -2725,10 +2725,12 @@ app.post('/api/log-contact-click', async (req, res) => {
             provider_user_id = user_id;
         }
 
+                const arabicServiceTypeForContact = LAYER_AR_NAMES[service_layer] || service_layer;
+
         const insertResult = await servicesPool.query(
             `INSERT INTO public.service_requests (user_id, provider_user_id, service_layer, feature_id, provider_name, service_type, contact_type, status)
              VALUES ($1, $2, $3, $4, $5, $6, $7, 'completed') RETURNING id, created_at`,
-            [user_id, provider_user_id, service_layer, feature_id, final_provider_name, service_layer, contact_type]
+            [user_id, provider_user_id, service_layer, feature_id, final_provider_name, arabicServiceTypeForContact, contact_type]
         );
 
         res.json({ success: true, id: insertResult.rows[0].id });

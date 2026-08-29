@@ -977,56 +977,23 @@ window.__nmsPageHandlesOwnAds = true;
             return `<div class="nms-gallery-card nms-before-after-card">${mediaHtml}${infoHtml}${actionsHtml}${gotoBtnHtml}</div>`;
         }
 
-        // 🆕 تطبيع بسيط للنص العربي لأغراض البحث المحلي داخل الأقسام
-        function nmsLocalNormalize(text) {
-            if (!text) return '';
-            return text.toString()
-                .replace(/[أإآا]/g, 'ا').replace(/[ةه]/g, 'ه')
-                .replace(/[ىي]/g, 'ي').replace(/[ؤئء]/g, 'ء')
-                .trim().toLowerCase();
-        }
+                    // 🆕 عرض كل النتائج ضمن شريط أفقي قابل للسكرول (نفس أسلوب "الأعلى تقييماً"
+                // و"موصى بهم" تماماً) - أول 3 عناصر تظهر مباشرة، والباقي يظهر بالسكرول
+                // الأفقي، بدون أي مربع بحث
+                function renderGalleryScrollRow(gridId, allEntries, buildCardFn) {
+                    const grid = document.getElementById(gridId);
+                    if (!grid) return;
 
-        // 🆕 عرض 3 نتائج فقط افتراضياً + شريط بحث يفلتر ضمن كامل المجموعة
-        // المجلوبة (مطابقة الاسم أو المنطقة أو اسم التصنيف)
-        function setupGallerySectionSearch(gridId, searchInputId, allEntries, buildCardFn) {
-            const grid = document.getElementById(gridId);
-            const searchInput = document.getElementById(searchInputId);
-            if (!grid) return;
-
-            function render(list) {
-                const cardsHtml = list.map(entry => buildCardFn(entry.feature, entry.item)).filter(h => h !== '');
-                grid.innerHTML = cardsHtml.length
-                    ? cardsHtml.join('')
-                    : '<div class="nms-empty" style="grid-column:1/-1;">لا توجد نتائج مطابقة</div>';
-                wireAdActionButtons(grid);
-            }
-
-            render(allEntries.slice(0, 3));
-
-            if (searchInput) {
-                let debounceToken = null;
-                searchInput.oninput = () => {
-                    clearTimeout(debounceToken);
-                    debounceToken = setTimeout(() => {
-                        const term = nmsLocalNormalize(searchInput.value.trim());
-                        if (term.length < 2) {
-                            render(allEntries.slice(0, 3));
-                            return;
-                        }
-                        const filtered = allEntries.filter(entry => {
-                            const props = entry.feature.properties || {};
-                            const haystack = nmsLocalNormalize(`${props.name || ''} ${props.location_name || props.location || ''} ${entry.item.label || ''}`);
-                            return haystack.includes(term);
-                        });
-                        render(filtered);
-                    }, 300);
-                };
-            }
-        }
+                    const cardsHtml = allEntries.map(entry => buildCardFn(entry.feature, entry.item)).filter(h => h !== '');
+                    grid.innerHTML = cardsHtml.length
+                        ? cardsHtml.join('')
+                        : '<div class="nms-empty">لا توجد نتائج</div>';
+                    wireAdActionButtons(grid);
+                }
 
         // 🆕 تحميل قسم صور أو فيديوهات: فقط المعالم التي تُعتبر "الأعلى تقييماً"
         // (rating = 10 أو 9.9 بنفس منطق باقي أقسام الصفحة) وتملك وسائط حقيقية
-        async function loadGallerySection(fieldName, gridId, sectionId, searchInputId, mode, includeRealEstate) {
+        async function loadGallerySection(fieldName, gridId, sectionId, mode, includeRealEstate) {
             const grid = document.getElementById(gridId);
             const section = document.getElementById(sectionId);
             if (!grid || !section) return;
@@ -1080,7 +1047,7 @@ window.__nmsPageHandlesOwnAds = true;
             }
 
             section.dataset.hasData = '1';
-            setupGallerySectionSearch(gridId, searchInputId, validEntries, (f, it) => buildGalleryDetailCardHtml(f, it, mode));
+            renderGalleryScrollRow(gridId, validEntries, (f, it) => buildGalleryDetailCardHtml(f, it, mode));
             refreshHomeSectionsVisibility();
         }
 
@@ -1141,7 +1108,7 @@ window.__nmsPageHandlesOwnAds = true;
             }
 
             section.dataset.hasData = '1';
-            setupGallerySectionSearch('nms-before-after-grid', 'nms-before-after-search', collected, buildBeforeAfterCardHtml);
+            renderGalleryScrollRow('nms-before-after-grid', collected, buildBeforeAfterCardHtml);
             refreshHomeSectionsVisibility();
         }
 
@@ -1293,8 +1260,8 @@ window.__nmsPageHandlesOwnAds = true;
         // و"موصى بهم" (مسح شامل لكل الفئات)، تُشغَّل بتأخير بسيط لضمان جاهزية
         // مصفوفة categories وكل الدوال المساعدة المطلوبة
                 setTimeout(() => {
-            loadGallerySection('pic', 'nms-photos-grid', 'nms-photos-section', 'nms-photos-search', 'photo', true);
-            loadGallerySection('video', 'nms-videos-grid', 'nms-videos-section', 'nms-videos-search', 'video', true);
+            loadGallerySection('pic', 'nms-photos-grid', 'nms-photos-section', 'photo', true);
+loadGallerySection('video', 'nms-videos-grid', 'nms-videos-section', 'video', true);
             loadBeforeAfterSection();
         }, 1400);
 
