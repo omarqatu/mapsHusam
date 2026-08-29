@@ -454,6 +454,31 @@
                 <div id="nms-categories-grid" class="nms-categories-grid"></div>
             </section>
 
+            
+
+            <!-- الفلاتر + النتائج -->
+            <section id="nms-results-view" class="nms-results-view hidden">
+                <button id="nms-back-to-categories" class="nms-back-btn">
+                    <i class="fas fa-arrow-right"></i> عودة لكل الفئات
+                </button>
+
+                <h2 id="nms-current-category-title" class="nms-current-category-title"></h2>
+
+                <div class="nms-filters-box">
+                    <p class="nms-filters-hint"><i class="fas fa-filter"></i> فلترة النتائج (اختياري):</p>
+                    <div id="nms-filters-grid" class="nms-filters-grid"></div>
+
+                    <div class="nms-filter-actions">
+                        <button id="nms-clear-search" class="nms-btn nms-btn-muted">
+                            <i class="fas fa-broom"></i> إعادة تعيين
+                        </button>
+                    </div>
+                </div>
+
+                <div id="nms-results-count" class="nms-results-count"></div>
+                <div id="nms-results-list" class="nms-results-list"></div>
+            </section>
+
             <!-- 🆕 الأعلى تقييماً -->
             <section id="nms-top-rated-section" class="nms-rated-section" style="display:none;">
                 <h3 class="nms-section-title"><i class="fas fa-star"></i> الأعلى تقييماً</h3>
@@ -483,29 +508,6 @@
                     <h3 class="nms-section-title"><i class="fas fa-exchange-alt"></i> قبل وبعد</h3>
                     <div id="nms-before-after-grid" class="nms-rated-scroll-row"></div>
                 </section>
-
-            <!-- الفلاتر + النتائج -->
-            <section id="nms-results-view" class="nms-results-view hidden">
-                <button id="nms-back-to-categories" class="nms-back-btn">
-                    <i class="fas fa-arrow-right"></i> عودة لكل الفئات
-                </button>
-
-                <h2 id="nms-current-category-title" class="nms-current-category-title"></h2>
-
-                <div class="nms-filters-box">
-                    <p class="nms-filters-hint"><i class="fas fa-filter"></i> فلترة النتائج (اختياري):</p>
-                    <div id="nms-filters-grid" class="nms-filters-grid"></div>
-
-                    <div class="nms-filter-actions">
-                        <button id="nms-clear-search" class="nms-btn nms-btn-muted">
-                            <i class="fas fa-broom"></i> إعادة تعيين
-                        </button>
-                    </div>
-                </div>
-
-                <div id="nms-results-count" class="nms-results-count"></div>
-                <div id="nms-results-list" class="nms-results-list"></div>
-            </section>
         </main>
 
         <aside class="nms-ad-space nms-ad-side" aria-hidden="true">

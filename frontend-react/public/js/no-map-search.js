@@ -424,13 +424,16 @@ window.__nmsPageHandlesOwnAds = true;
             if (props.whatsapp) {
                 const providerName = name || (isRealEstate ? 'المعلن' : 'مزود الخدمة');
                 const whatsappNumber = props.whatsapp.toString();
-                if (isRealEstate) {
+                                if (isRealEstate) {
                     const hasPhone = props.phone !== undefined && props.phone !== null && props.phone !== '' && String(props.phone).trim() !== '';
                     const localPhone = hasPhone ? String(props.phone) : ('0' + whatsappNumber.replace(/\D/g, '').slice(5));
+                    // 🆕 [إصلاح]: العقارات تستخدم عمود fid وليس id، وكان استخدام props.id فقط
+                    // يجعل feature_id فارغاً دائماً للعقارات، فيرفضه السيرفر ولا يُسجَّل شيء
+                    const realEstateFeatureId = (props.fid !== undefined && props.fid !== null) ? props.fid : props.id;
                                         actionHtml = `
                         <div style="display:flex; gap:5px; margin-top:6px;">
-                            ${hasPhone ? `<button class="ad-call-btn" data-phone="${localPhone}" data-whatsapp="${whatsappNumber}" data-provider="${escapeAdAttr(providerName)}" data-service="${escapeAdAttr(item.label)}" data-layer="${escapeAdAttr(item.layer)}" data-feature-id="${escapeAdAttr(String(props.id || ''))}" style="flex:1; background:#1a73e8; color:#fff; border:none; padding:6px 4px; border-radius:6px; font-size:10px; font-weight:bold; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:4px;"><i class="fas fa-mobile-alt"></i> اتصال <span dir="ltr">${localPhone}</span></button>` : ''}
-                            <button class="ad-whatsapp-btn" data-whatsapp="${whatsappNumber}" data-provider="${escapeAdAttr(providerName)}" data-service="${escapeAdAttr(item.label)}" data-layer="${escapeAdAttr(item.layer)}" data-feature-id="${escapeAdAttr(String(props.id || ''))}" style="flex:${hasPhone ? '1' : '1'}; background:#25d366; color:#fff; border:none; padding:6px 4px; border-radius:6px; font-size:10px; font-weight:bold; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:4px;"><i class="fab fa-whatsapp"></i> واتساب</button>
+                            ${hasPhone ? `<button class="ad-call-btn" data-phone="${localPhone}" data-whatsapp="${whatsappNumber}" data-provider="${escapeAdAttr(providerName)}" data-service="${escapeAdAttr(item.label)}" data-layer="${escapeAdAttr(item.layer)}" data-feature-id="${escapeAdAttr(String(realEstateFeatureId || ''))}" style="flex:1; background:#1a73e8; color:#fff; border:none; padding:6px 4px; border-radius:6px; font-size:10px; font-weight:bold; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:4px;"><i class="fas fa-mobile-alt"></i> اتصال <span dir="ltr">${localPhone}</span></button>` : ''}
+                            <button class="ad-whatsapp-btn" data-whatsapp="${whatsappNumber}" data-provider="${escapeAdAttr(providerName)}" data-service="${escapeAdAttr(item.label)}" data-layer="${escapeAdAttr(item.layer)}" data-feature-id="${escapeAdAttr(String(realEstateFeatureId || ''))}" style="flex:${hasPhone ? '1' : '1'}; background:#25d366; color:#fff; border:none; padding:6px 4px; border-radius:6px; font-size:10px; font-weight:bold; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:4px;"><i class="fab fa-whatsapp"></i> واتساب</button>
                         </div>`;
                 } else {
                     // 🆕 للخدمات: نتحقق هل المعلم مرتبط بمزود خدمة
@@ -1189,14 +1192,16 @@ window.__nmsPageHandlesOwnAds = true;
                     const featureId = ratingItem.feature_id;
                     if (!layerKey || !featureId) return null;
 
-                    try {
+                                        try {
+                        
                         const params = new URLSearchParams({
                             layer: layerKey,
                             workspace: 'services',
                             field_0: 'id',
                             operator_0: '=',
                             value_0: String(featureId),
-                            conditions_count: '1'
+                            conditions_count: '1',
+                            ignore_status: '1'
                         });
                         const fRes = await fetch(`${baseUrl}api/search-features?${params.toString()}`);
                         if (!fRes.ok) return null;

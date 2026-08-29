@@ -529,7 +529,7 @@
     // ============================================
     // دالة تحميل HTML الشريط المتحرك
     // ============================================
-        function loadTickerHTML() {
+                function loadTickerHTML() {
         fetch('/widgets-ticker.html')
             .then(response => response.text())
             .then(html => {
@@ -548,6 +548,13 @@
                 // 🆕 إعادة رسم الشريط بالكامل الآن بعد ضمان وجود #ticker-scroll
                 // فعلياً بالـ DOM (يحل مشكلة توقيت السباق مع أول استدعاء مبكر)
                 updateTickerHTML();
+
+                // 🆕 [إصلاح]: عناصر البوابة (#ticker-expand-btn، #widgets-portal-modal،
+                // #widgets-portal-overlay) موجودة داخل نفس ملف widgets-ticker.html الذي
+                // تم حقنه للتو، لذلك نُهيّئ البوابة الآن مباشرة بعد ضمان وجودها فعلياً
+                // بالـ DOM، بدل الاعتماد على setTimeout بمدة ثابتة كانت أحياناً تُنفَّذ
+                // قبل اكتمال هذا الـ fetch (خصوصاً عند بطء الشبكة عند أول تحميل).
+                setupPortalModal();
             })
             .catch(err => {
                 console.error('خطأ في تحميل الشريط المتحرك:', err);
@@ -675,7 +682,9 @@
     // ============================================
     // دالة إعداد البوابة التفصيلية (للكمبيوتر)
     // ============================================
-    function setupPortalModal() {
+        function setupPortalModal() {
+        if (window.__widgetsPortalModalReady) return;
+
         const expandBtn = document.getElementById('ticker-expand-btn');
         const modal = document.getElementById('widgets-portal-modal');
         const overlay = document.getElementById('widgets-portal-overlay');
@@ -686,6 +695,7 @@
         
 
                 if (expandBtn && modal && overlay) {
+                    window.__widgetsPortalModalReady = true;
             expandBtn.addEventListener('click', function(e) {
                 e.preventDefault();
                 e.stopPropagation();

@@ -220,6 +220,8 @@ realestatePool.connect((err, client, release) => {
     release();
 });
 
+
+
 // =========================================================================
 // 🆕 ضمان وجود عمود force_logout_flag (تسجيل الخروج الإجباري الحقيقي)
 // يُستخدم لإبطال الجلسة المحفوظة في المتصفح فعلياً حتى لو كان المستخدم
@@ -235,8 +237,32 @@ async function ensureSchemaColumns() {
     } catch (err) {
         console.error('⚠️ خطأ أثناء التأكد من مخطط قاعدة البيانات:', err.message);
     }
+    // =========================================================================
+// 🆕 [مركز المعلومات الحية]: جدول تخزين المجموعات اليدوية الست (عملات/ذهب/
+// طقس/محروقات/نقل بين المدن/نقل داخلي) + عمود updated_at على طبقتي حواجز
+// الطرق ومحطات الوقود لتتبع آخر تعديل حقيقي على حالتهما.
+// =========================================================================
+async function ensureWidgetsSchema() {
+    try {
+        await servicesPool.query(`
+            CREATE TABLE IF NOT EXISTS public.widgets_manual_groups (
+                group_key TEXT PRIMARY KEY,
+                data JSONB NOT NULL DEFAULT '[]'::jsonb,
+                updated_at TIMESTAMP NOT NULL DEFAULT NOW()
+            )
+        `);
+        await servicesPool.query(`ALTER TABLE public.road_barriers ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP DEFAULT NOW()`);
+        await servicesPool.query(`ALTER TABLE public.fuel_stations ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP DEFAULT NOW()`);
+        console.log('✅ تم التأكد من وجود جداول/أعمدة مركز المعلومات الحية (widgets)');
+    } catch (err) {
+        console.error('⚠️ خطأ أثناء إنشاء مخطط مركز المعلومات الحية:', err.message);
+    }
 }
+ensureWidgetsSchema();
+}
+
 ensureSchemaColumns();
+
 
 async function ensureWidgetsSchema() {
     try {
@@ -1294,8 +1320,14 @@ app.get('/api/search-features', async (req, res) => {
         const isRealEstate = REAL_ESTATE_LAYERS.includes(layer);
         const isPolygonLayer = layer === 'LandSale'; // الأراضي هي مضلعات
 
-        // بناء استعلام البحث مع فلترة status = 0 AND auto_status = 0
-        let query = `SELECT *, ST_AsGeoJSON(geom) as geom_json FROM public."${layer}" WHERE status = 0 AND auto_status = 0`;
+       
+        const ignoreStatusFilter = req.query.ignore_status === '1';
+
+        
+        let query = `SELECT *, ST_AsGeoJSON(geom) as geom_json FROM public."${layer}" WHERE 1=1`;
+        if (!ignoreStatusFilter) {
+            query += ` AND status = 0 AND auto_status = 0`;
+        }
         const params = [];
 
         // إضافة فلترة مكانية BBOX إذا تم توفيرها
@@ -1496,108 +1528,7 @@ app.get('/api/users', requireAdmin, async (req, res) => {
 // السماح للطلب بالمتابعة. أي طلب بدون هيدر صالح يُرفض بـ 403 فوراً.
 // =========================================================================
 async function requireAdmin(req, res, next) {
-    // =========================================================================
-// 🆕 [مركز المعلومات الحية]: إدارة 8 مجموعات يدوية + جلب آخر تحديث حقيقي
-// لحالة الطرق ومحطات الوقود (مرتبطة بمعالم فعلية على الخريطة)
-// =========================================================================
-const WIDGETS_CONFIG_GROUPS = ['currency', 'gold', 'weather', 'fuel', 'transport_inter_city', 'transport_intra_city'];
-
-// عام (بدون حماية): تستخدمه واجهة العرض widgets-ticker.js
-app.get('/api/widgets-data', async (req, res) => {
-    try {
-        const result = await servicesPool.query(`SELECT group_key, data, updated_at FROM public.widgets_manual_groups`);
-        const groups = {};
-        result.rows.forEach(row => { groups[row.group_key] = { items: row.data, updated_at: row.updated_at }; });
-
-        const roadResult = await servicesPool.query(`SELECT MAX(updated_at) as last FROM public.road_barriers`);
-        const fuelResult = await servicesPool.query(`SELECT MAX(updated_at) as last FROM public.fuel_stations`);
-
-        res.json({
-            success: true,
-            groups,
-            road_status_updated_at: roadResult.rows[0].last,
-            fuel_status_updated_at: fuelResult.rows[0].last
-        });
-    } catch (err) {
-        console.error('❌ خطأ أثناء جلب بيانات مركز المعلومات الحية:', err.message);
-        res.status(500).json({ success: false, error: 'فشل جلب البيانات' });
-    }
-});
-
-// للمشرف: جلب كل المجموعات للتعديل
-app.get('/api/admin/widgets-data', requireAdmin, async (req, res) => {
-    try {
-        const result = await servicesPool.query(`SELECT group_key, data, updated_at FROM public.widgets_manual_groups`);
-        const groups = {};
-        result.rows.forEach(row => { groups[row.group_key] = { items: row.data, updated_at: row.updated_at }; });
-        res.json({ success: true, groups });
-    } catch (err) {
-        res.status(500).json({ success: false, error: err.message });
-    }
-});
-
-// حفظ مجموعة كاملة (تحديث تلقائي لتاريخ آخر تعديل)
-app.post('/api/admin/widgets-data/:groupKey', requireAdmin, async (req, res) => {
-    const { groupKey } = req.params;
-    const { items } = req.body;
-
-    if (!WIDGETS_CONFIG_GROUPS.includes(groupKey)) {
-        return res.status(400).json({ success: false, error: 'مجموعة غير معروفة' });
-    }
-    if (!Array.isArray(items)) {
-        return res.status(400).json({ success: false, error: 'صيغة البيانات غير صحيحة' });
-    }
-
-    try {
-        await servicesPool.query(`
-            INSERT INTO public.widgets_manual_groups (group_key, data, updated_at)
-            VALUES ($1, $2, NOW())
-            ON CONFLICT (group_key) DO UPDATE SET data = $2, updated_at = NOW()
-        `, [groupKey, JSON.stringify(items)]);
-        res.json({ success: true, message: 'تم حفظ التعديلات بنجاح' });
-    } catch (err) {
-        console.error('❌ خطأ أثناء حفظ مجموعة widgets:', err.message);
-        res.status(500).json({ success: false, error: err.message });
-    }
-});
-
-// جلب معالم حواجز الطرق ومحطات الوقود لتعديلها من صفحة الإدارة
-app.get('/api/admin/road-fuel-features', requireAdmin, async (req, res) => {
-    try {
-        const roadResult = await servicesPool.query(`SELECT id, name, stop FROM public.road_barriers ORDER BY id ASC`);
-        const fuelResult = await servicesPool.query(`SELECT id, name, diesel, banzen95, banzen98 FROM public.fuel_stations ORDER BY id ASC`);
-        res.json({ success: true, roadBarriers: roadResult.rows, fuelStations: fuelResult.rows });
-    } catch (err) {
-        res.status(500).json({ success: false, error: err.message });
-    }
-});
-
-// تحديث حالة حاجز طريق واحد
-app.post('/api/admin/update-road-barrier', requireAdmin, async (req, res) => {
-    const { id, stop } = req.body;
-    if (id === undefined || stop === undefined) return res.status(400).json({ success: false, error: 'بيانات ناقصة' });
-    try {
-        await servicesPool.query(`UPDATE public.road_barriers SET stop = $1, updated_at = NOW() WHERE id = $2`, [stop, id]);
-        res.json({ success: true });
-    } catch (err) {
-        res.status(500).json({ success: false, error: err.message });
-    }
-});
-
-// تحديث توفر الوقود لمحطة واحدة
-app.post('/api/admin/update-fuel-station', requireAdmin, async (req, res) => {
-    const { id, diesel, banzen95, banzen98 } = req.body;
-    if (id === undefined) return res.status(400).json({ success: false, error: 'بيانات ناقصة' });
-    try {
-        await servicesPool.query(
-            `UPDATE public.fuel_stations SET diesel = $1, banzen95 = $2, banzen98 = $3, updated_at = NOW() WHERE id = $4`,
-            [diesel, banzen95, banzen98, id]
-        );
-        res.json({ success: true });
-    } catch (err) {
-        res.status(500).json({ success: false, error: err.message });
-    }
-});
+    
     const adminUserId = req.headers['x-admin-user-id'];
     if (!adminUserId) {
         return res.status(401).json({ success: false, error: 'مطلوب تسجيل دخول كمشرف (هيدر x-admin-user-id مفقود).' });
@@ -1627,6 +1558,123 @@ app.post('/api/admin/update-fuel-station', requireAdmin, async (req, res) => {
         return res.status(500).json({ success: false, error: 'تعذر التحقق من صلاحية المشرف.' });
     }
 }
+
+// =========================================================================
+// 🆕 [مركز المعلومات الحية]: مسارات جلب/حفظ المجموعات الست اليدوية، وجلب/
+// تعديل حالة حواجز الطرق ومحطات الوقود (معالم حقيقية على الخريطة).
+// =========================================================================
+const WIDGETS_CONFIG_GROUPS = ['currency', 'gold', 'weather', 'fuel', 'transport_inter_city', 'transport_intra_city'];
+
+// 🌐 عام (بدون حماية): تستخدمه واجهة العرض widgets-ticker.js وصفحة الإدارة
+// لجلب تاريخ آخر تحديث حقيقي لحالة الطرق ومحطات الوقود
+app.get('/api/widgets-data', async (req, res) => {
+    try {
+        const result = await servicesPool.query(`SELECT group_key, data, updated_at FROM public.widgets_manual_groups`);
+        const groups = {};
+        result.rows.forEach(row => {
+            groups[row.group_key] = { data: row.data, updated_at: row.updated_at };
+        });
+
+        const roadResult = await servicesPool.query(`SELECT MAX(updated_at) as last FROM public.road_barriers`);
+        const fuelResult = await servicesPool.query(`SELECT MAX(updated_at) as last FROM public.fuel_stations`);
+
+        res.json({
+            success: true,
+            groups,
+            road_status_updated_at: roadResult.rows[0].last,
+            fuel_status_updated_at: fuelResult.rows[0].last
+        });
+    } catch (err) {
+        console.error('❌ خطأ أثناء جلب بيانات مركز المعلومات الحية:', err.message);
+        res.status(500).json({ success: false, error: 'فشل جلب البيانات', details: err.message });
+    }
+});
+
+// 🔒 للمشرف: جلب كل المجموعات الست للتعديل من صفحة الإدارة
+app.get('/api/admin/widgets-data', requireAdmin, async (req, res) => {
+    try {
+        const result = await servicesPool.query(`SELECT group_key, data, updated_at FROM public.widgets_manual_groups`);
+        const groups = {};
+        result.rows.forEach(row => {
+            groups[row.group_key] = { data: row.data, updated_at: row.updated_at };
+        });
+        res.json({ success: true, groups });
+    } catch (err) {
+        console.error('❌ خطأ أثناء جلب مجموعات widgets للمشرف:', err.message);
+        res.status(500).json({ success: false, error: 'فشل جلب البيانات', details: err.message });
+    }
+});
+
+// 🔒 للمشرف: حفظ مجموعة كاملة (تحديث تلقائي لتاريخ آخر تعديل عبر NOW())
+app.post('/api/admin/widgets-data/:groupKey', requireAdmin, async (req, res) => {
+    const { groupKey } = req.params;
+    const { items } = req.body;
+
+    if (!WIDGETS_CONFIG_GROUPS.includes(groupKey)) {
+        return res.status(400).json({ success: false, error: 'مجموعة غير معروفة' });
+    }
+    if (!Array.isArray(items)) {
+        return res.status(400).json({ success: false, error: 'صيغة البيانات غير صحيحة' });
+    }
+
+    try {
+        await servicesPool.query(`
+            INSERT INTO public.widgets_manual_groups (group_key, data, updated_at)
+            VALUES ($1, $2, NOW())
+            ON CONFLICT (group_key) DO UPDATE SET data = $2, updated_at = NOW()
+        `, [groupKey, JSON.stringify(items)]);
+
+        res.json({ success: true, message: 'تم حفظ التعديلات بنجاح' });
+    } catch (err) {
+        console.error('❌ خطأ أثناء حفظ مجموعة widgets:', err.message);
+        res.status(500).json({ success: false, error: 'فشل الحفظ', details: err.message });
+    }
+});
+
+// 🔒 للمشرف: جلب معالم حواجز الطرق ومحطات الوقود لتعديلها من صفحة الإدارة
+app.get('/api/admin/road-fuel-features', requireAdmin, async (req, res) => {
+    try {
+        const roadResult = await servicesPool.query(`SELECT id, name, stop, updated_at FROM public.road_barriers ORDER BY id ASC`);
+        const fuelResult = await servicesPool.query(`SELECT id, name, diesel, banzen95, banzen98, updated_at FROM public.fuel_stations ORDER BY id ASC`);
+        res.json({ success: true, roadBarriers: roadResult.rows, fuelStations: fuelResult.rows });
+    } catch (err) {
+        console.error('❌ خطأ أثناء جلب معالم الحواجز/المحطات:', err.message);
+        res.status(500).json({ success: false, error: 'فشل جلب البيانات', details: err.message });
+    }
+});
+
+// 🔒 للمشرف: تحديث حالة حاجز طريق واحد
+app.post('/api/admin/update-road-barrier', requireAdmin, async (req, res) => {
+    const { id, stop } = req.body;
+    if (id === undefined || stop === undefined) {
+        return res.status(400).json({ success: false, error: 'بيانات ناقصة' });
+    }
+    try {
+        await servicesPool.query(`UPDATE public.road_barriers SET stop = $1, updated_at = NOW() WHERE id = $2`, [stop, id]);
+        res.json({ success: true });
+    } catch (err) {
+        console.error('❌ خطأ أثناء تحديث حالة الحاجز:', err.message);
+        res.status(500).json({ success: false, error: 'فشل التحديث', details: err.message });
+    }
+});
+
+// 🔒 للمشرف: تحديث توفر الوقود لمحطة واحدة
+app.post('/api/admin/update-fuel-station', requireAdmin, async (req, res) => {
+    const { id, diesel, banzen95, banzen98 } = req.body;
+    if (id === undefined) {
+        return res.status(400).json({ success: false, error: 'بيانات ناقصة' });
+    }
+    try {
+        await servicesPool.query(
+            `UPDATE public.fuel_stations SET diesel = $1, banzen95 = $2, banzen98 = $3, updated_at = NOW() WHERE id = $4`,
+            [diesel, banzen95, banzen98, id]
+        );
+        res.json({ success: true });
+    } catch (err) {
+        console.error('❌ خطأ أثناء تحديث حالة المحطة:', err.message);
+        res.status(500).json({ success: false, error: 'فشل التحديث', details: err.message });
+    }
+});
 
 // 1. جلب جميع المستخدمين مع خيارات البحث والتصفية
 app.get('/api/admin/users', requireAdmin, async (req, res) => {
@@ -2080,15 +2128,22 @@ app.post('/api/service-requests', async (req, res) => {
             return res.status(400).json({ success: false, error: 'لا يمكنك إرسال طلب خدمة لنفسك.' });
         }
 
-                // 🆕 [إصلاح عرض اسم الطبقة بالعربي]: service_type المخزَّن هنا يجب أن
+                                // 🆕 [إصلاح عرض اسم الطبقة بالعربي]: service_type المخزَّن هنا يجب أن
         // يكون بالعربي (نفس أسلوب طلبات "طلب الخدمة" الحقيقية)، وليس اسم الطبقة
-        // الخام بالإنجليزي كما كان سابقاً، حتى يظهر بشكل صحيح لاحقاً في "طلباتي"
+        // الخام بالإنجليزية كما كان سابقاً، حتى يظهر بشكل صحيح لاحقاً في "طلباتي"
         const arabicServiceType = LAYER_AR_NAMES[service_layer] || service_layer;
+
+        // 🆕 [إصلاح حرج]: هذا الاستعلام كان يستخدم متغيرات غير معرّفة إطلاقاً
+        // (provider_user_id, final_provider_name, contact_type) منسوخة بالخطأ من
+        // مسار /api/log-contact-click، وهذا كان يسبب ReferenceError وخطأ 500 فوري
+        // مع كل ضغطة على زر "طلب الخدمة". كما أن حالة الطلب الجديد يجب أن تكون
+        // 'pending' (بانتظار رد مزود الخدمة)، وليست 'completed' مباشرة.
+        const finalProviderName = (provider_name && String(provider_name).trim() !== '') ? String(provider_name).trim() : provider.full_name;
 
         const insertResult = await servicesPool.query(
             `INSERT INTO public.service_requests (user_id, provider_user_id, service_layer, feature_id, provider_name, service_type, contact_type, status)
-             VALUES ($1, $2, $3, $4, $5, $6, $7, 'completed') RETURNING id, created_at`,
-            [user_id, provider_user_id, service_layer, feature_id, final_provider_name, arabicServiceType, contact_type]
+             VALUES ($1, $2, $3, $4, $5, $6, $7, 'pending') RETURNING id, created_at, status`,
+            [user_id, provider.user_id, service_layer, feature_id, finalProviderName, arabicServiceType, 'service_request']
         );
 
         const newRequest = insertResult.rows[0];

@@ -12,10 +12,16 @@ export default defineConfig({
         changeOrigin: true,
         secure: false,
       },
-      '/socket.io': {
+            '/socket.io': {
         target: 'http://localhost:3000',
         changeOrigin: true,
         ws: true,
+      },
+      
+      '/save-stat': {
+        target: 'http://localhost:3000',
+        changeOrigin: true,
+        secure: false,
       },
       '/geoserver-proxy': {
         target: 'http://194.163.174.162:8080',
