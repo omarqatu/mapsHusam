@@ -1327,12 +1327,18 @@ app.get('/api/search-features', async (req, res) => {
                     params.push(`%${c.value}%`);
                     orParts.push(`translate(${fieldName}::text, '${NORM_FROM}', '${NORM_TO}') ILIKE translate($${params.length}, '${NORM_FROM}', '${NORM_TO}')`);
                 }
-                 } else if (c.operator === '>') {
+                                  } else if (c.operator === '>') {
                     orParts.push(`CAST(${fieldName} AS NUMERIC) >= $${params.length + 1}`);
                     params.push(parseFloat(c.value));
                 } else if (c.operator === '<') {
                     orParts.push(`CAST(${fieldName} AS NUMERIC) <= $${params.length + 1}`);
                     params.push(parseFloat(c.value));
+                } else if (c.operator === 'notempty') {
+                    // 🆕 [قسم الصور/الفيديوهات/قبل وبعد]: شرط "الحقل غير فارغ"
+                    // يُستخدم لجلب أي معلم (خدمة أو عقار) يملك قيمة حقيقية بعمود
+                    // pic أو video أو details_link_1/details_link_2، بغض النظر
+                    // عن قيمة العمود نفسها. لا حاجة لأي parameter إضافي هنا.
+                    orParts.push(`(${fieldName} IS NOT NULL AND ${fieldName}::text != '')`);
                 }
             });
             if (orParts.length > 0) {

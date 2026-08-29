@@ -768,9 +768,13 @@ window.__nmsPageHandlesOwnAds = true;
         // عبر CSS. "الأعلى تقييماً" = أي معلم له تقييم فعلي (rating > 0)، بينما
         // "موصى بهم" = المعالم المقيّمة بالضبط 9.9 (رتبة أقل من رتبة الإعلانات 10)
         // ==========================================================================
-        function refreshHomeSectionsVisibility() {
+                function refreshHomeSectionsVisibility() {
             const topRatedSection = document.getElementById('nms-top-rated-section');
             const recommendedSection = document.getElementById('nms-recommended-section');
+            // 🆕 الأقسام الثلاثة الجديدة (صور، فيديوهات، قبل وبعد)
+            const photosSection = document.getElementById('nms-photos-section');
+            const videosSection = document.getElementById('nms-videos-section');
+            const beforeAfterSection = document.getElementById('nms-before-after-section');
             const onHome = categoriesView && !categoriesView.classList.contains('hidden');
             if (topRatedSection) {
                 topRatedSection.style.display = (onHome && topRatedSection.dataset.hasData === '1') ? '' : 'none';
@@ -778,7 +782,309 @@ window.__nmsPageHandlesOwnAds = true;
             if (recommendedSection) {
                 recommendedSection.style.display = (onHome && recommendedSection.dataset.hasData === '1') ? '' : 'none';
             }
+            if (photosSection) {
+                photosSection.style.display = (onHome && photosSection.dataset.hasData === '1') ? '' : 'none';
+            }
+            if (videosSection) {
+                videosSection.style.display = (onHome && videosSection.dataset.hasData === '1') ? '' : 'none';
+            }
+            if (beforeAfterSection) {
+                beforeAfterSection.style.display = (onHome && beforeAfterSection.dataset.hasData === '1') ? '' : 'none';
+            }
         }
+
+        // ==========================================================================
+        // 🆕 أقسام الصور / الفيديوهات / قبل وبعد - نفس مبدأ فحص "الأعلى تقييماً"
+        // و"موصى بهم" (مسح شامل لكل الـ 62 فئة عبر categories)، لكن بشكل عرض مختلف
+        // تماماً (شبكة بطاقات كبيرة تُبرز الوسائط بدل الشريط الأفقي الصغير).
+        // ==========================================================================
+
+        // تنظيف رابط خارجي (صورة/فيديو/رابط تفاصيل) قبل استخدامه في الصفحة
+        function cleanExternalUrl(rawUrl) {
+            if (!rawUrl) return '';
+            let url = String(rawUrl).trim().replace(/["']/g, '');
+            if (!url || url === '#' || url.toLowerCase() === 'undefined') return '';
+            if (!url.startsWith('http')) url = 'https://' + url;
+            return url;
+        }
+
+        // تحويل رابط فيديو (يوتيوب أو ملف مباشر أو رابط عام) إلى عنصر عرض مناسب
+        function buildVideoEmbedHtml(rawUrl) {
+            const url = cleanExternalUrl(rawUrl);
+            if (!url) return '';
+
+            const ytMatch = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([\w-]+)/);
+            if (ytMatch) {
+                return `<div class="nms-gallery-media nms-gallery-video"><iframe src="https://www.youtube.com/embed/${ytMatch[1]}" frameborder="0" allow="autoplay; encrypted-media" allowfullscreen loading="lazy"></iframe></div>`;
+            }
+
+            if (/\.(mp4|webm|ogg)(\?.*)?$/i.test(url)) {
+                return `<div class="nms-gallery-media nms-gallery-video"><video controls preload="metadata" src="${url}"></video></div>`;
+            }
+
+            return `<div class="nms-gallery-media nms-gallery-video-link"><a href="${url}" target="_blank" rel="noopener" class="nms-video-link-btn"><i class="fas fa-play-circle"></i> مشاهدة الفيديو</a></div>`;
+        }
+
+        // عرض صورة أو رابط ضمن عمود "قبل" أو "بعد"
+        function renderBeforeAfterMedia(url) {
+            if (/\.(jpg|jpeg|png|gif|webp)(\?.*)?$/i.test(url)) {
+                return `<img src="${url}" loading="lazy" onerror="this.style.display='none'; this.insertAdjacentHTML('afterend', '<div class=\\'nms-ba-empty\\'>تعذر تحميل الصورة</div>');">`;
+            }
+            return `<a href="${url}" target="_blank" rel="noopener" class="nms-video-link-btn"><i class="fas fa-external-link-alt"></i> عرض</a>`;
+        }
+
+        // 🆕 أزرار التواصل (اتصال/واتساب/طلب الخدمة) بنفس آلية تسجيل النقرات
+        // المستخدمة بقسم الإعلانات المميزة (log-contact-click) تماماً - تُستخدم
+        // من قِبل الأقسام الثلاثة الجديدة كلها لضمان تسجيل كل نقرة بلا استثناء
+        function buildGalleryContactActionsHtml(props, item) {
+            if (!props.whatsapp) return '';
+            const isRealEstate = item.isRealEstate;
+            const whatsappNumber = props.whatsapp.toString();
+            const providerName = props.name || (isRealEstate ? 'المعلن' : 'مزود الخدمة');
+            const featureId = (props.id !== undefined && props.id !== null) ? props.id : (props.fid !== undefined ? props.fid : '');
+
+            if (!isRealEstate) {
+                const isLinkedProvider = typeof window.isFeatureLinkedToProvider === 'function' && window.isFeatureLinkedToProvider(item.layer, featureId);
+                if (isLinkedProvider) {
+                    return `<div class="nms-gallery-actions">
+                        <button class="req-svc-btn" style="width:100%;" data-provider="${escapeAdAttr(providerName)}" data-service="${escapeAdAttr(item.label)}" data-layer="${item.layer}" data-feature-id="${featureId}">
+                            <i class="fas fa-paper-plane"></i> طلب الخدمة
+                        </button>
+                    </div>`;
+                }
+            }
+
+            const hasPhone = props.phone !== undefined && props.phone !== null && props.phone !== '' && String(props.phone).trim() !== '';
+            const localPhone = hasPhone ? String(props.phone) : ('0' + whatsappNumber.replace(/\D/g, '').slice(5));
+
+            return `<div class="nms-gallery-actions" style="display:flex; gap:8px;">
+                ${hasPhone ? `<button class="ad-call-btn" data-phone="${localPhone}" data-whatsapp="${whatsappNumber}" data-provider="${escapeAdAttr(providerName)}" data-service="${escapeAdAttr(item.label)}" data-layer="${escapeAdAttr(item.layer)}" data-feature-id="${escapeAdAttr(String(featureId))}" style="flex:1;"><i class="fas fa-mobile-alt"></i> اتصال</button>` : ''}
+                <button class="ad-whatsapp-btn" data-whatsapp="${whatsappNumber}" data-provider="${escapeAdAttr(providerName)}" data-service="${escapeAdAttr(item.label)}" data-layer="${escapeAdAttr(item.layer)}" data-feature-id="${escapeAdAttr(String(featureId))}" style="flex:1;"><i class="fab fa-whatsapp"></i> واتساب</button>
+            </div>`;
+        }
+
+        // بطاقة شبكية مفصّلة (صور / فيديوهات) - تعرض نفس بيانات المعلم الأساسية
+        // (الاسم، الموقع، السعر/المساحة، الوصف، التقييم) بشكل مختلف عن بطاقة الإعلان الصغيرة
+        function buildGalleryDetailCardHtml(feature, item, mode) {
+            const props = feature.properties || {};
+            const isRealEstate = item.isRealEstate;
+            const name = sanitize(props.name || '');
+            const location = sanitize(props.location_name || props.location || '');
+            const featureId = (props.id !== undefined && props.id !== null) ? props.id : (props.fid !== undefined ? props.fid : '');
+
+            let mediaHtml = '';
+            if (mode === 'photo' && props.pic) {
+                const cleanPic = cleanExternalUrl(props.pic);
+                if (cleanPic) mediaHtml = `<div class="nms-gallery-media"><img src="${cleanPic}" alt="${name}" loading="lazy" onerror="this.parentElement.style.display='none'"></div>`;
+            } else if (mode === 'video' && props.video) {
+                mediaHtml = buildVideoEmbedHtml(props.video);
+            }
+            if (!mediaHtml) return ''; // بدون وسائط حقيقية صالحة، لا نعرض بطاقة فارغة
+
+            let infoHtml = `<div class="nms-gallery-card-body">`;
+            infoHtml += `<div class="nms-gallery-badge">📌 ${item.label}</div>`;
+            if (!isRealEstate) infoHtml += getStatusBadge(props.auto_status, props.work_hours);
+            if (name) infoHtml += `<div class="nms-r-name"><i class="fas fa-user"></i> ${name}</div>`;
+            if (location) infoHtml += `<div class="nms-r-loc"><i class="fas fa-map-marker-alt"></i> ${location}</div>`;
+
+            if (isRealEstate) {
+                if (props.price) {
+                    const symbols = { USD: 'دولار', ILS: 'شيقل', JOD: 'دينار' };
+                    infoHtml += `<div class="nms-r-line"><b>💰 السعر:</b> ${Number(props.price).toLocaleString()} ${symbols[props.currency] || ''}</div>`;
+                }
+                if (props.area) infoHtml += `<div class="nms-r-line"><b>📐 المساحة:</b> ${props.area} م²</div>`;
+            } else if (featureId !== '') {
+                infoHtml += `<div id="rating-display-${item.layer}-${featureId}" class="nms-rating-display">
+                    <span style="color:#f57c00;">⭐</span>
+                    <span id="rating-text-${item.layer}-${featureId}" style="color:#666; font-size:12px;">جاري تحميل التقييم...</span>
+                </div>`;
+                setTimeout(() => fetchRatingsForFeature(item.layer, featureId), Math.floor(Math.random() * 600));
+            }
+
+            if (props.des) infoHtml += `<div class="nms-r-desc"><b>📝 الوصف:</b> ${sanitize(props.des)}</div>`;
+            infoHtml += `</div>`;
+
+            const actionsHtml = buildGalleryContactActionsHtml(props, item);
+
+            const coords = getFeatureCoords(feature);
+            const gotoBtnHtml = coords
+                ? `<button type="button" class="nms-goto-map-btn" onclick="window.nmsGotoMapFromCoords(${coords[0]}, ${coords[1]})"><i class="fas fa-map-location-dot"></i> الانتقال إلى الخريطة</button>`
+                : '';
+
+            return `<div class="nms-gallery-card">${mediaHtml}${infoHtml}${actionsHtml}${gotoBtnHtml}</div>`;
+        }
+
+        // بطاقة "قبل وبعد" (تعتمد فقط على details_link_1 و details_link_2 للخدمات)
+        function buildBeforeAfterCardHtml(feature, item) {
+            const props = feature.properties || {};
+            const name = sanitize(props.name || '');
+            const location = sanitize(props.location_name || props.location || '');
+            const featureId = (props.id !== undefined && props.id !== null) ? props.id : '';
+
+            const beforeUrl = cleanExternalUrl(props.details_link_1);
+            const afterUrl = cleanExternalUrl(props.details_link_2);
+            if (!beforeUrl && !afterUrl) return '';
+
+            const mediaHtml = `<div class="nms-before-after-media">
+                <div class="nms-ba-col">
+                    <span class="nms-ba-label">قبل</span>
+                    ${beforeUrl ? renderBeforeAfterMedia(beforeUrl) : '<div class="nms-ba-empty">لا يوجد</div>'}
+                </div>
+                <div class="nms-ba-col">
+                    <span class="nms-ba-label">بعد</span>
+                    ${afterUrl ? renderBeforeAfterMedia(afterUrl) : '<div class="nms-ba-empty">لا يوجد</div>'}
+                </div>
+            </div>`;
+
+            let infoHtml = `<div class="nms-gallery-card-body">`;
+            infoHtml += `<div class="nms-gallery-badge">📌 ${item.label}</div>`;
+            infoHtml += getStatusBadge(props.auto_status, props.work_hours);
+            if (name) infoHtml += `<div class="nms-r-name"><i class="fas fa-user"></i> ${name}</div>`;
+            if (location) infoHtml += `<div class="nms-r-loc"><i class="fas fa-map-marker-alt"></i> ${location}</div>`;
+            if (featureId !== '') {
+                infoHtml += `<div id="rating-display-${item.layer}-${featureId}" class="nms-rating-display">
+                    <span style="color:#f57c00;">⭐</span>
+                    <span id="rating-text-${item.layer}-${featureId}" style="color:#666; font-size:12px;">جاري تحميل التقييم...</span>
+                </div>`;
+                setTimeout(() => fetchRatingsForFeature(item.layer, featureId), Math.floor(Math.random() * 600));
+            }
+            if (props.des) infoHtml += `<div class="nms-r-desc"><b>📝 الوصف:</b> ${sanitize(props.des)}</div>`;
+            infoHtml += `</div>`;
+
+            const actionsHtml = buildGalleryContactActionsHtml(props, item);
+
+            const coords = getFeatureCoords(feature);
+            const gotoBtnHtml = coords
+                ? `<button type="button" class="nms-goto-map-btn" onclick="window.nmsGotoMapFromCoords(${coords[0]}, ${coords[1]})"><i class="fas fa-map-location-dot"></i> الانتقال إلى الخريطة</button>`
+                : '';
+
+            return `<div class="nms-gallery-card nms-before-after-card">${mediaHtml}${infoHtml}${actionsHtml}${gotoBtnHtml}</div>`;
+        }
+
+        // مسح كل الفئات (62 فئة) بحثاً عن معالم تملك قيمة حقيقية بالحقل المطلوب
+        async function collectFeaturesByField(fieldName, includeRealEstate, includeServices) {
+            const collected = [];
+            const targets = categories
+                .filter(cat => (cat.isRealEstate && includeRealEstate) || (!cat.isRealEstate && includeServices))
+                .map(cat => {
+                    const { workspace, layerName, isRealEstate } = getWorkspaceAndName(cat.key);
+                    return { layer: layerName, workspace, label: cat.title, isRealEstate };
+                });
+
+            const batchSize = 10;
+            for (let i = 0; i < targets.length; i += batchSize) {
+                const batch = targets.slice(i, i + batchSize);
+                const promises = batch.map(async (item) => {
+                    try {
+                        const params = new URLSearchParams({
+                            layer: item.layer,
+                            workspace: item.workspace,
+                            field_0: fieldName,
+                            operator_0: 'notempty',
+                            value_0: '1',
+                            conditions_count: '1'
+                        });
+                        const response = await fetch(`${baseUrl}api/search-features?${params.toString()}`);
+                        if (!response.ok) return [];
+                        const data = await response.json();
+                        return (data.features || []).map(f => ({ feature: f, item }));
+                    } catch (err) {
+                        return [];
+                    }
+                });
+                const results = await Promise.all(promises);
+                results.forEach(list => { if (list.length) collected.push(...list); });
+            }
+            return collected;
+        }
+
+        // تحميل وعرض قسم صور أو فيديوهات
+        async function loadGallerySection(fieldName, gridId, sectionId, mode, includeRealEstate) {
+            const grid = document.getElementById(gridId);
+            const section = document.getElementById(sectionId);
+            if (!grid || !section) return;
+
+            const collected = await collectFeaturesByField(fieldName, includeRealEstate, true);
+            const cardsHtml = collected
+                .map(entry => buildGalleryDetailCardHtml(entry.feature, entry.item, mode))
+                .filter(html => html !== '');
+
+            if (cardsHtml.length === 0) {
+                section.dataset.hasData = '0';
+                grid.innerHTML = '';
+                refreshHomeSectionsVisibility();
+                return;
+            }
+
+            section.dataset.hasData = '1';
+            grid.innerHTML = cardsHtml.join('');
+            wireAdActionButtons(grid); // 🆕 يضمن تسجيل نقرات اتصال/واتساب فعلياً
+            refreshHomeSectionsVisibility();
+        }
+
+        // تحميل وعرض قسم "قبل وبعد" (خدمات فقط - details_link_1 و details_link_2 معاً)
+        async function loadBeforeAfterSection() {
+            const grid = document.getElementById('nms-before-after-grid');
+            const section = document.getElementById('nms-before-after-section');
+            if (!grid || !section) return;
+
+            const targets = categories.filter(cat => !cat.isRealEstate).map(cat => {
+                const { workspace, layerName } = getWorkspaceAndName(cat.key);
+                return { layer: layerName, workspace, label: cat.title, isRealEstate: false };
+            });
+
+            let collected = [];
+            const batchSize = 10;
+            for (let i = 0; i < targets.length; i += batchSize) {
+                const batch = targets.slice(i, i + batchSize);
+                const promises = batch.map(async (item) => {
+                    try {
+                        const params = new URLSearchParams({
+                            layer: item.layer,
+                            workspace: item.workspace,
+                            field_0: 'details_link_1',
+                            operator_0: 'notempty',
+                            value_0: '1',
+                            field_1: 'details_link_2',
+                            operator_1: 'notempty',
+                            value_1: '1',
+                            conditions_count: '2'
+                        });
+                        const response = await fetch(`${baseUrl}api/search-features?${params.toString()}`);
+                        if (!response.ok) return [];
+                        const data = await response.json();
+                        return (data.features || []).map(f => ({ feature: f, item }));
+                    } catch (err) {
+                        return [];
+                    }
+                });
+                const results = await Promise.all(promises);
+                results.forEach(list => { if (list.length) collected.push(...list); });
+            }
+
+            const cardsHtml = collected
+                .map(entry => buildBeforeAfterCardHtml(entry.feature, entry.item))
+                .filter(html => html !== '');
+
+            if (cardsHtml.length === 0) {
+                section.dataset.hasData = '0';
+                grid.innerHTML = '';
+                refreshHomeSectionsVisibility();
+                return;
+            }
+
+            section.dataset.hasData = '1';
+            grid.innerHTML = cardsHtml.join('');
+            wireAdActionButtons(grid);
+            refreshHomeSectionsVisibility();
+        }
+
+        // 🆕 دالة عامة للانتقال إلى موقع أي معلم على الخريطة من أزرار البطاقات
+        // (نفس منطق goBtn.onclick الموجود بباقي الصفحة، لكن بصيغة onclick داخل HTML)
+        window.nmsGotoMapFromCoords = function (x, y) {
+            if (x === undefined || y === undefined || x === null || y === null) return;
+            window.open(`/original-index.html?x=${Number(x).toFixed(3)}&y=${Number(y).toFixed(3)}`, '_blank');
+        };
 
         async function loadRatedRow(gridId, sectionId, operator, ratingValue) {
             const grid = document.getElementById(gridId);
@@ -913,9 +1219,18 @@ window.__nmsPageHandlesOwnAds = true;
             loadRatedRow('nms-recommended-grid', 'nms-recommended-section', '=', 9.9);
         }, 1200);
 
-        setTimeout(loadFeaturedAds, 1000);
+                setTimeout(loadFeaturedAds, 1000);
 
         setTimeout(loadFeaturedAds, 1000);
+
+        // 🆕 تحميل أقسام الصور والفيديوهات وقبل/بعد - نفس مبدأ "الأعلى تقييماً"
+        // و"موصى بهم" (مسح شامل لكل الفئات)، تُشغَّل بتأخير بسيط لضمان جاهزية
+        // مصفوفة categories وكل الدوال المساعدة المطلوبة
+        setTimeout(() => {
+            loadGallerySection('pic', 'nms-photos-grid', 'nms-photos-section', 'photo', true);
+            loadGallerySection('video', 'nms-videos-grid', 'nms-videos-section', 'video', true);
+            loadBeforeAfterSection();
+        }, 1400);
 
 
 

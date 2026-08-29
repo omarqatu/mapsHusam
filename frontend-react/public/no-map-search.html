@@ -5,7 +5,7 @@
     <style id="access-guard-style">
         html { visibility: hidden; }
     
-        .nms-rated-section { margin: 25px 0; }
+                .nms-rated-section { margin: 25px 0; }
         .nms-rated-section h3 { margin-bottom: 10px; }
         .nms-rated-scroll-row {
             display: flex;
@@ -25,6 +25,62 @@
         @media (max-width: 576px) {
             .nms-rated-scroll-row > div { flex: 0 0 88%; min-width: 200px; }
         }
+
+        /* 🆕 أقسام الصور والفيديوهات وقبل/بعد - شبكة بطاقات كبيرة تُبرز الوسائط
+           بصرياً، شكل مختلف تماماً عن الشريط الأفقي الصغير للأعلى تقييماً/موصى بهم */
+        .nms-gallery-section { margin: 30px 0; }
+        .nms-gallery-section h3 { margin-bottom: 14px; }
+        .nms-gallery-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+            gap: 18px;
+        }
+        .nms-gallery-card {
+            background: #fff;
+            border: 1px solid #e6e6e6;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.06);
+            display: flex;
+            flex-direction: column;
+        }
+        .nms-gallery-media { width: 100%; aspect-ratio: 4 / 3; background: #f2f2f2; overflow: hidden; }
+        .nms-gallery-media img { width: 100%; height: 100%; object-fit: cover; display: block; }
+        .nms-gallery-media.nms-gallery-video { aspect-ratio: 16 / 9; }
+        .nms-gallery-media.nms-gallery-video iframe,
+        .nms-gallery-media.nms-gallery-video video { width: 100%; height: 100%; border: none; display: block; }
+        .nms-gallery-media.nms-gallery-video-link { display: flex; align-items: center; justify-content: center; aspect-ratio: 16 / 9; }
+        .nms-video-link-btn {
+            display: inline-flex; align-items: center; gap: 6px;
+            background: #1a73e8; color: #fff; padding: 10px 18px;
+            border-radius: 20px; text-decoration: none; font-size: 13px; font-weight: bold;
+        }
+        .nms-gallery-card-body { padding: 12px; direction: rtl; text-align: right; flex: 1; }
+        .nms-gallery-badge {
+            display: inline-block; background: #e8f0fe; color: #1a73e8;
+            font-size: 11px; padding: 3px 8px; border-radius: 4px; font-weight: bold; margin-bottom: 6px;
+        }
+        .nms-gallery-actions { padding: 0 12px 12px; }
+        .nms-gallery-card .nms-goto-map-btn { margin: 0 12px 12px; width: calc(100% - 24px); }
+
+        /* قسم قبل وبعد */
+        .nms-before-after-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: 18px;
+        }
+        .nms-before-after-media { display: flex; gap: 2px; }
+        .nms-ba-col {
+            flex: 1; position: relative; aspect-ratio: 4 / 3; background: #f2f2f2;
+            display: flex; align-items: center; justify-content: center; overflow: hidden;
+        }
+        .nms-ba-col img { width: 100%; height: 100%; object-fit: cover; display: block; }
+        .nms-ba-label {
+            position: absolute; top: 8px; right: 8px; z-index: 2;
+            background: rgba(0,0,0,0.65); color: #fff; font-size: 11px; font-weight: bold;
+            padding: 3px 10px; border-radius: 12px;
+        }
+        .nms-ba-empty { color: #999; font-size: 12px; }
     
     </style>
     <script>
@@ -395,10 +451,28 @@
                 <div id="nms-top-rated-grid" class="nms-rated-scroll-row"></div>
             </section>
 
-            <!-- 🆕 موصى بهم -->
+                        <!-- 🆕 موصى بهم -->
             <section id="nms-recommended-section" class="nms-rated-section" style="display:none;">
                 <h3 class="nms-section-title"><i class="fas fa-thumbs-up"></i> موصى بهم</h3>
                 <div id="nms-recommended-grid" class="nms-rated-scroll-row"></div>
+            </section>
+
+            <!-- 🆕 قسم الصور -->
+            <section id="nms-photos-section" class="nms-gallery-section" style="display:none;">
+                <h3 class="nms-section-title"><i class="fas fa-images"></i> صور من الخدمات والعقارات</h3>
+                <div id="nms-photos-grid" class="nms-gallery-grid"></div>
+            </section>
+
+            <!-- 🆕 قسم الفيديوهات -->
+            <section id="nms-videos-section" class="nms-gallery-section" style="display:none;">
+                <h3 class="nms-section-title"><i class="fas fa-video"></i> فيديوهات من الخدمات والعقارات</h3>
+                <div id="nms-videos-grid" class="nms-gallery-grid"></div>
+            </section>
+
+            <!-- 🆕 قسم قبل وبعد -->
+            <section id="nms-before-after-section" class="nms-gallery-section" style="display:none;">
+                <h3 class="nms-section-title"><i class="fas fa-exchange-alt"></i> قبل وبعد</h3>
+                <div id="nms-before-after-grid" class="nms-before-after-grid"></div>
             </section>
 
             <!-- الفلاتر + النتائج -->
