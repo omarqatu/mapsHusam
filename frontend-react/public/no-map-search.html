@@ -81,6 +81,15 @@
             padding: 3px 10px; border-radius: 12px;
         }
         .nms-ba-empty { color: #999; font-size: 12px; }
+
+        /* 🆕 شريط البحث فوق أقسام الصور/الفيديوهات/قبل وبعد */
+        .nms-gallery-search-box { margin-bottom: 14px; }
+        .nms-gallery-search-box input {
+            width: 100%; max-width: 420px; padding: 10px 14px; border: 1px solid #ccd0d5;
+            border-radius: 20px; font-size: 13px; outline: none; transition: border-color .2s;
+            display: block;
+        }
+        .nms-gallery-search-box input:focus { border-color: #1a73e8; }
     
     </style>
     <script>
@@ -457,21 +466,30 @@
                 <div id="nms-recommended-grid" class="nms-rated-scroll-row"></div>
             </section>
 
-            <!-- 🆕 قسم الصور -->
+                        <!-- 🆕 قسم الصور -->
             <section id="nms-photos-section" class="nms-gallery-section" style="display:none;">
                 <h3 class="nms-section-title"><i class="fas fa-images"></i> صور من الخدمات والعقارات</h3>
+                <div class="nms-gallery-search-box">
+                    <input type="text" id="nms-photos-search" placeholder="ابحث عن اسم أو منطقة ضمن الصور...">
+                </div>
                 <div id="nms-photos-grid" class="nms-gallery-grid"></div>
             </section>
 
             <!-- 🆕 قسم الفيديوهات -->
             <section id="nms-videos-section" class="nms-gallery-section" style="display:none;">
                 <h3 class="nms-section-title"><i class="fas fa-video"></i> فيديوهات من الخدمات والعقارات</h3>
+                <div class="nms-gallery-search-box">
+                    <input type="text" id="nms-videos-search" placeholder="ابحث عن اسم أو منطقة ضمن الفيديوهات...">
+                </div>
                 <div id="nms-videos-grid" class="nms-gallery-grid"></div>
             </section>
 
             <!-- 🆕 قسم قبل وبعد -->
             <section id="nms-before-after-section" class="nms-gallery-section" style="display:none;">
                 <h3 class="nms-section-title"><i class="fas fa-exchange-alt"></i> قبل وبعد</h3>
+                <div class="nms-gallery-search-box">
+                    <input type="text" id="nms-before-after-search" placeholder="ابحث عن اسم أو منطقة ضمن قبل/بعد...">
+                </div>
                 <div id="nms-before-after-grid" class="nms-before-after-grid"></div>
             </section>
 

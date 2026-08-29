@@ -732,8 +732,13 @@
                     statusColor = '#6c757d';
                 }
 
-                const chatRole = String(r.provider_user_id) === String(userId) ? 'provider' : 'user';
-                const otherPartyName = chatRole === 'provider' ? (r.user_name || 'المستخدم الطالب') : (r.provider_name || 'مزود الخدمة');
+                                const chatRole = String(r.provider_user_id) === String(userId) ? 'provider' : 'user';
+                // 🆕 [إصلاح الاسم بين القوسين]: نقرات الاتصال/الواتساب المباشرة
+                
+                const isDirectContactRecord = r.contact_type === 'call' || r.contact_type === 'whatsapp';
+                const otherPartyName = isDirectContactRecord
+                    ? (r.provider_name || 'مزود الخدمة')
+                    : (chatRole === 'provider' ? (r.user_name || 'المستخدم الطالب') : (r.provider_name || 'مزود الخدمة'));
 
                 const card = document.createElement('div');
                 card.className = hasUnseenActivity ? 'svc-request-card-glow' : '';

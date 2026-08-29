@@ -639,7 +639,7 @@ if (typeof window.renderMarketSearchResults !== 'function') {
                     // 🆕 زر الاتصال يظهر فقط إذا كان هناك phone
                     const hasPhone = p.phone !== undefined && p.phone !== null && p.phone !== '' && String(p.phone).trim() !== '';
                     actions.innerHTML = `
-                        ${hasPhone ? `<button class="nms-call-btn"><i class="fas fa-mobile-alt"></i> اتصال</button>` : ''}
+                        ${hasPhone ? `<button class="nms-call-btn"><i class="fas fa-mobile-alt"></i> اتصال <span dir="ltr">${window.sanitize(localPhone)}</span></button>` : ''}
                         <button class="nms-whatsapp-btn"><i class="fab fa-whatsapp"></i> واتساب</button>
                     `;
 

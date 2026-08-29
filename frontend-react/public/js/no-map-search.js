@@ -427,10 +427,10 @@ window.__nmsPageHandlesOwnAds = true;
                 if (isRealEstate) {
                     const hasPhone = props.phone !== undefined && props.phone !== null && props.phone !== '' && String(props.phone).trim() !== '';
                     const localPhone = hasPhone ? String(props.phone) : ('0' + whatsappNumber.replace(/\D/g, '').slice(5));
-                    actionHtml = `
+                                        actionHtml = `
                         <div style="display:flex; gap:5px; margin-top:6px;">
-                            ${hasPhone ? `<button class="ad-call-btn" data-phone="${localPhone}" data-whatsapp="${whatsappNumber}" data-provider="${escapeAdAttr(providerName)}" data-service="${escapeAdAttr(item.label)}" data-layer="${escapeAdAttr(item.layer)}" data-feature-id="${escapeAdAttr(String(props.fid || ''))}" style="flex:1; background:#1a73e8; color:#fff; border:none; padding:6px 4px; border-radius:6px; font-size:10px; font-weight:bold; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:4px;"><i class="fas fa-mobile-alt"></i> اتصال</button>` : ''}
-                            <button class="ad-whatsapp-btn" data-whatsapp="${whatsappNumber}" data-provider="${escapeAdAttr(providerName)}" data-service="${escapeAdAttr(item.label)}" data-layer="${escapeAdAttr(item.layer)}" data-feature-id="${escapeAdAttr(String(props.fid || ''))}" style="flex:${hasPhone ? '1' : '1'}; background:#25d366; color:#fff; border:none; padding:6px 4px; border-radius:6px; font-size:10px; font-weight:bold; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:4px;"><i class="fab fa-whatsapp"></i> واتساب</button>
+                            ${hasPhone ? `<button class="ad-call-btn" data-phone="${localPhone}" data-whatsapp="${whatsappNumber}" data-provider="${escapeAdAttr(providerName)}" data-service="${escapeAdAttr(item.label)}" data-layer="${escapeAdAttr(item.layer)}" data-feature-id="${escapeAdAttr(String(props.id || ''))}" style="flex:1; background:#1a73e8; color:#fff; border:none; padding:6px 4px; border-radius:6px; font-size:10px; font-weight:bold; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:4px;"><i class="fas fa-mobile-alt"></i> اتصال <span dir="ltr">${localPhone}</span></button>` : ''}
+                            <button class="ad-whatsapp-btn" data-whatsapp="${whatsappNumber}" data-provider="${escapeAdAttr(providerName)}" data-service="${escapeAdAttr(item.label)}" data-layer="${escapeAdAttr(item.layer)}" data-feature-id="${escapeAdAttr(String(props.id || ''))}" style="flex:${hasPhone ? '1' : '1'}; background:#25d366; color:#fff; border:none; padding:6px 4px; border-radius:6px; font-size:10px; font-weight:bold; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:4px;"><i class="fab fa-whatsapp"></i> واتساب</button>
                         </div>`;
                 } else {
                     // 🆕 للخدمات: نتحقق هل المعلم مرتبط بمزود خدمة
@@ -446,13 +446,13 @@ window.__nmsPageHandlesOwnAds = true;
                                     <i class="fas fa-paper-plane"></i> طلب الخدمة
                                 </button>
                             </div>`;
-                    } else {
+                                        } else {
                         // معلم غير مرتبط - عرض اتصال + واتساب
                         const hasPhone = props.phone !== undefined && props.phone !== null && props.phone !== '' && String(props.phone).trim() !== '';
                         const localPhone = hasPhone ? String(props.phone) : ('0' + whatsappNumber.replace(/\D/g, '').slice(5));
                         actionHtml = `
                             <div style="display:flex; gap:5px; margin-top:6px;">
-                                ${hasPhone ? `<button class="ad-call-btn" data-phone="${localPhone}" data-whatsapp="${whatsappNumber}" data-provider="${escapeAdAttr(providerName)}" data-service="${escapeAdAttr(item.label)}" data-layer="${escapeAdAttr(item.layer)}" data-feature-id="${escapeAdAttr(String(props.id || ''))}" style="flex:1; background:#1a73e8; color:#fff; border:none; padding:6px 4px; border-radius:6px; font-size:10px; font-weight:bold; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:4px;"><i class="fas fa-mobile-alt"></i> اتصال</button>` : ''}
+                                ${hasPhone ? `<button class="ad-call-btn" data-phone="${localPhone}" data-whatsapp="${whatsappNumber}" data-provider="${escapeAdAttr(providerName)}" data-service="${escapeAdAttr(item.label)}" data-layer="${escapeAdAttr(item.layer)}" data-feature-id="${escapeAdAttr(String(props.id || ''))}" style="flex:1; background:#1a73e8; color:#fff; border:none; padding:6px 4px; border-radius:6px; font-size:10px; font-weight:bold; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:4px;"><i class="fas fa-mobile-alt"></i> اتصال <span dir="ltr">${localPhone}</span></button>` : ''}
                                 <button class="ad-whatsapp-btn" data-whatsapp="${whatsappNumber}" data-provider="${escapeAdAttr(providerName)}" data-service="${escapeAdAttr(item.label)}" data-layer="${escapeAdAttr(item.layer)}" data-feature-id="${escapeAdAttr(String(props.id || ''))}" style="flex:${hasPhone ? '1' : '1'}; background:#25d366; color:#fff; border:none; padding:6px 4px; border-radius:6px; font-size:10px; font-weight:bold; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:4px;"><i class="fab fa-whatsapp"></i> واتساب</button>
                             </div>`;
                     }
@@ -833,9 +833,10 @@ window.__nmsPageHandlesOwnAds = true;
             return `<a href="${url}" target="_blank" rel="noopener" class="nms-video-link-btn"><i class="fas fa-external-link-alt"></i> عرض</a>`;
         }
 
-        // 🆕 أزرار التواصل (اتصال/واتساب/طلب الخدمة) بنفس آلية تسجيل النقرات
-        // المستخدمة بقسم الإعلانات المميزة (log-contact-click) تماماً - تُستخدم
-        // من قِبل الأقسام الثلاثة الجديدة كلها لضمان تسجيل كل نقرة بلا استثناء
+                // 🆕 أزرار التواصل (اتصال/واتساب/طلب الخدمة) بنفس آلية تسجيل النقرات
+        // المستخدمة بقسم "موصى بهم" و"الأعلى تقييماً" تماماً (نفس الألوان: أزرق
+        // للاتصال، أخضر للواتساب، تدرّج بنفسجي/أزرق لطلب الخدمة) + عرض رقم
+        // الهاتف مباشرة على زر الاتصال نفسه.
         function buildGalleryContactActionsHtml(props, item) {
             if (!props.whatsapp) return '';
             const isRealEstate = item.isRealEstate;
@@ -847,7 +848,7 @@ window.__nmsPageHandlesOwnAds = true;
                 const isLinkedProvider = typeof window.isFeatureLinkedToProvider === 'function' && window.isFeatureLinkedToProvider(item.layer, featureId);
                 if (isLinkedProvider) {
                     return `<div class="nms-gallery-actions">
-                        <button class="req-svc-btn" style="width:100%;" data-provider="${escapeAdAttr(providerName)}" data-service="${escapeAdAttr(item.label)}" data-layer="${item.layer}" data-feature-id="${featureId}">
+                        <button class="req-svc-btn" style="width:100%; background:linear-gradient(135deg,#1a73e8,#6c5ce7); color:#fff; border:none; padding:10px; border-radius:8px; font-weight:bold; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:6px;" data-provider="${escapeAdAttr(providerName)}" data-service="${escapeAdAttr(item.label)}" data-layer="${item.layer}" data-feature-id="${featureId}">
                             <i class="fas fa-paper-plane"></i> طلب الخدمة
                         </button>
                     </div>`;
@@ -858,13 +859,30 @@ window.__nmsPageHandlesOwnAds = true;
             const localPhone = hasPhone ? String(props.phone) : ('0' + whatsappNumber.replace(/\D/g, '').slice(5));
 
             return `<div class="nms-gallery-actions" style="display:flex; gap:8px;">
-                ${hasPhone ? `<button class="ad-call-btn" data-phone="${localPhone}" data-whatsapp="${whatsappNumber}" data-provider="${escapeAdAttr(providerName)}" data-service="${escapeAdAttr(item.label)}" data-layer="${escapeAdAttr(item.layer)}" data-feature-id="${escapeAdAttr(String(featureId))}" style="flex:1;"><i class="fas fa-mobile-alt"></i> اتصال</button>` : ''}
-                <button class="ad-whatsapp-btn" data-whatsapp="${whatsappNumber}" data-provider="${escapeAdAttr(providerName)}" data-service="${escapeAdAttr(item.label)}" data-layer="${escapeAdAttr(item.layer)}" data-feature-id="${escapeAdAttr(String(featureId))}" style="flex:1;"><i class="fab fa-whatsapp"></i> واتساب</button>
+                ${hasPhone ? `<button class="ad-call-btn" data-phone="${localPhone}" data-whatsapp="${whatsappNumber}" data-provider="${escapeAdAttr(providerName)}" data-service="${escapeAdAttr(item.label)}" data-layer="${escapeAdAttr(item.layer)}" data-feature-id="${escapeAdAttr(String(featureId))}" style="flex:1; background:#1a73e8; color:#fff; border:none; padding:10px; border-radius:8px; font-size:12px; font-weight:bold; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:5px;"><i class="fas fa-mobile-alt"></i> اتصال <span dir="ltr">${localPhone}</span></button>` : ''}
+                <button class="ad-whatsapp-btn" data-whatsapp="${whatsappNumber}" data-provider="${escapeAdAttr(providerName)}" data-service="${escapeAdAttr(item.label)}" data-layer="${escapeAdAttr(item.layer)}" data-feature-id="${escapeAdAttr(String(featureId))}" style="flex:1; background:#25d366; color:#fff; border:none; padding:10px; border-radius:8px; font-size:12px; font-weight:bold; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:5px;"><i class="fab fa-whatsapp"></i> واتساب</button>
             </div>`;
         }
 
-        // بطاقة شبكية مفصّلة (صور / فيديوهات) - تعرض نفس بيانات المعلم الأساسية
-        // (الاسم، الموقع، السعر/المساحة، الوصف، التقييم) بشكل مختلف عن بطاقة الإعلان الصغيرة
+        // 🆕 فحص وجود وسائط صالحة فقط (بدون أي آثار جانبية مثل جلب التقييم)،
+        // يُستخدم لتصفية النتائج قبل البناء الفعلي لتفادي جلب التقييم مرتين
+        function galleryEntryHasMedia(props, mode) {
+            if (mode === 'photo') return !!cleanExternalUrl(props.pic);
+            if (mode === 'video') return !!cleanExternalUrl(props.video);
+            return false;
+        }
+
+        // 🆕 حارس بسيط لمنع تكرار طلب نفس التقييم عدة مرات عند إعادة الرسم
+        // (مثلاً كل مرة يكتب المستخدم حرفاً بشريط البحث)
+        window.__nmsRatingFetchGuard = window.__nmsRatingFetchGuard || new Set();
+        function scheduleRatingFetchOnce(layerKey, featureId) {
+            const key = `${layerKey}-${featureId}`;
+            if (window.__nmsRatingFetchGuard.has(key)) return;
+            window.__nmsRatingFetchGuard.add(key);
+            setTimeout(() => fetchRatingsForFeature(layerKey, featureId), Math.floor(Math.random() * 500));
+        }
+
+        // بطاقة شبكية مفصّلة (صور / فيديوهات)
         function buildGalleryDetailCardHtml(feature, item, mode) {
             const props = feature.properties || {};
             const isRealEstate = item.isRealEstate;
@@ -879,10 +897,10 @@ window.__nmsPageHandlesOwnAds = true;
             } else if (mode === 'video' && props.video) {
                 mediaHtml = buildVideoEmbedHtml(props.video);
             }
-            if (!mediaHtml) return ''; // بدون وسائط حقيقية صالحة، لا نعرض بطاقة فارغة
+            if (!mediaHtml) return '';
 
             let infoHtml = `<div class="nms-gallery-card-body">`;
-            infoHtml += `<div class="nms-gallery-badge">📌 ${item.label}</div>`;
+            infoHtml += `<div class="nms-gallery-badge">🏆 ${item.label}</div>`;
             if (!isRealEstate) infoHtml += getStatusBadge(props.auto_status, props.work_hours);
             if (name) infoHtml += `<div class="nms-r-name"><i class="fas fa-user"></i> ${name}</div>`;
             if (location) infoHtml += `<div class="nms-r-loc"><i class="fas fa-map-marker-alt"></i> ${location}</div>`;
@@ -898,14 +916,13 @@ window.__nmsPageHandlesOwnAds = true;
                     <span style="color:#f57c00;">⭐</span>
                     <span id="rating-text-${item.layer}-${featureId}" style="color:#666; font-size:12px;">جاري تحميل التقييم...</span>
                 </div>`;
-                setTimeout(() => fetchRatingsForFeature(item.layer, featureId), Math.floor(Math.random() * 600));
+                scheduleRatingFetchOnce(item.layer, featureId);
             }
 
             if (props.des) infoHtml += `<div class="nms-r-desc"><b>📝 الوصف:</b> ${sanitize(props.des)}</div>`;
             infoHtml += `</div>`;
 
             const actionsHtml = buildGalleryContactActionsHtml(props, item);
-
             const coords = getFeatureCoords(feature);
             const gotoBtnHtml = coords
                 ? `<button type="button" class="nms-goto-map-btn" onclick="window.nmsGotoMapFromCoords(${coords[0]}, ${coords[1]})"><i class="fas fa-map-location-dot"></i> الانتقال إلى الخريطة</button>`
@@ -914,7 +931,7 @@ window.__nmsPageHandlesOwnAds = true;
             return `<div class="nms-gallery-card">${mediaHtml}${infoHtml}${actionsHtml}${gotoBtnHtml}</div>`;
         }
 
-        // بطاقة "قبل وبعد" (تعتمد فقط على details_link_1 و details_link_2 للخدمات)
+        // بطاقة "قبل وبعد" (خدمات فقط - details_link_1 و details_link_2)
         function buildBeforeAfterCardHtml(feature, item) {
             const props = feature.properties || {};
             const name = sanitize(props.name || '');
@@ -937,7 +954,7 @@ window.__nmsPageHandlesOwnAds = true;
             </div>`;
 
             let infoHtml = `<div class="nms-gallery-card-body">`;
-            infoHtml += `<div class="nms-gallery-badge">📌 ${item.label}</div>`;
+            infoHtml += `<div class="nms-gallery-badge">🏆 ${item.label}</div>`;
             infoHtml += getStatusBadge(props.auto_status, props.work_hours);
             if (name) infoHtml += `<div class="nms-r-name"><i class="fas fa-user"></i> ${name}</div>`;
             if (location) infoHtml += `<div class="nms-r-loc"><i class="fas fa-map-marker-alt"></i> ${location}</div>`;
@@ -946,13 +963,12 @@ window.__nmsPageHandlesOwnAds = true;
                     <span style="color:#f57c00;">⭐</span>
                     <span id="rating-text-${item.layer}-${featureId}" style="color:#666; font-size:12px;">جاري تحميل التقييم...</span>
                 </div>`;
-                setTimeout(() => fetchRatingsForFeature(item.layer, featureId), Math.floor(Math.random() * 600));
+                scheduleRatingFetchOnce(item.layer, featureId);
             }
             if (props.des) infoHtml += `<div class="nms-r-desc"><b>📝 الوصف:</b> ${sanitize(props.des)}</div>`;
             infoHtml += `</div>`;
 
             const actionsHtml = buildGalleryContactActionsHtml(props, item);
-
             const coords = getFeatureCoords(feature);
             const gotoBtnHtml = coords
                 ? `<button type="button" class="nms-goto-map-btn" onclick="window.nmsGotoMapFromCoords(${coords[0]}, ${coords[1]})"><i class="fas fa-map-location-dot"></i> الانتقال إلى الخريطة</button>`
@@ -961,16 +977,68 @@ window.__nmsPageHandlesOwnAds = true;
             return `<div class="nms-gallery-card nms-before-after-card">${mediaHtml}${infoHtml}${actionsHtml}${gotoBtnHtml}</div>`;
         }
 
-        // مسح كل الفئات (62 فئة) بحثاً عن معالم تملك قيمة حقيقية بالحقل المطلوب
-        async function collectFeaturesByField(fieldName, includeRealEstate, includeServices) {
-            const collected = [];
+        // 🆕 تطبيع بسيط للنص العربي لأغراض البحث المحلي داخل الأقسام
+        function nmsLocalNormalize(text) {
+            if (!text) return '';
+            return text.toString()
+                .replace(/[أإآا]/g, 'ا').replace(/[ةه]/g, 'ه')
+                .replace(/[ىي]/g, 'ي').replace(/[ؤئء]/g, 'ء')
+                .trim().toLowerCase();
+        }
+
+        // 🆕 عرض 3 نتائج فقط افتراضياً + شريط بحث يفلتر ضمن كامل المجموعة
+        // المجلوبة (مطابقة الاسم أو المنطقة أو اسم التصنيف)
+        function setupGallerySectionSearch(gridId, searchInputId, allEntries, buildCardFn) {
+            const grid = document.getElementById(gridId);
+            const searchInput = document.getElementById(searchInputId);
+            if (!grid) return;
+
+            function render(list) {
+                const cardsHtml = list.map(entry => buildCardFn(entry.feature, entry.item)).filter(h => h !== '');
+                grid.innerHTML = cardsHtml.length
+                    ? cardsHtml.join('')
+                    : '<div class="nms-empty" style="grid-column:1/-1;">لا توجد نتائج مطابقة</div>';
+                wireAdActionButtons(grid);
+            }
+
+            render(allEntries.slice(0, 3));
+
+            if (searchInput) {
+                let debounceToken = null;
+                searchInput.oninput = () => {
+                    clearTimeout(debounceToken);
+                    debounceToken = setTimeout(() => {
+                        const term = nmsLocalNormalize(searchInput.value.trim());
+                        if (term.length < 2) {
+                            render(allEntries.slice(0, 3));
+                            return;
+                        }
+                        const filtered = allEntries.filter(entry => {
+                            const props = entry.feature.properties || {};
+                            const haystack = nmsLocalNormalize(`${props.name || ''} ${props.location_name || props.location || ''} ${entry.item.label || ''}`);
+                            return haystack.includes(term);
+                        });
+                        render(filtered);
+                    }, 300);
+                };
+            }
+        }
+
+        // 🆕 تحميل قسم صور أو فيديوهات: فقط المعالم التي تُعتبر "الأعلى تقييماً"
+        // (rating = 10 أو 9.9 بنفس منطق باقي أقسام الصفحة) وتملك وسائط حقيقية
+        async function loadGallerySection(fieldName, gridId, sectionId, searchInputId, mode, includeRealEstate) {
+            const grid = document.getElementById(gridId);
+            const section = document.getElementById(sectionId);
+            if (!grid || !section) return;
+
             const targets = categories
-                .filter(cat => (cat.isRealEstate && includeRealEstate) || (!cat.isRealEstate && includeServices))
+                .filter(cat => (cat.isRealEstate && includeRealEstate) || !cat.isRealEstate)
                 .map(cat => {
                     const { workspace, layerName, isRealEstate } = getWorkspaceAndName(cat.key);
                     return { layer: layerName, workspace, label: cat.title, isRealEstate };
                 });
 
+            let collected = [];
             const batchSize = 10;
             for (let i = 0; i < targets.length; i += batchSize) {
                 const batch = targets.slice(i, i + batchSize);
@@ -982,7 +1050,13 @@ window.__nmsPageHandlesOwnAds = true;
                             field_0: fieldName,
                             operator_0: 'notempty',
                             value_0: '1',
-                            conditions_count: '1'
+                            field_1: 'rating',
+                            operator_1: '=',
+                            value_1: '10',
+                            field_2: 'rating',
+                            operator_2: '=',
+                            value_2: '9.9',
+                            conditions_count: '3'
                         });
                         const response = await fetch(`${baseUrl}api/search-features?${params.toString()}`);
                         if (!response.ok) return [];
@@ -995,21 +1069,10 @@ window.__nmsPageHandlesOwnAds = true;
                 const results = await Promise.all(promises);
                 results.forEach(list => { if (list.length) collected.push(...list); });
             }
-            return collected;
-        }
 
-        // تحميل وعرض قسم صور أو فيديوهات
-        async function loadGallerySection(fieldName, gridId, sectionId, mode, includeRealEstate) {
-            const grid = document.getElementById(gridId);
-            const section = document.getElementById(sectionId);
-            if (!grid || !section) return;
+            const validEntries = collected.filter(entry => galleryEntryHasMedia(entry.feature.properties || {}, mode));
 
-            const collected = await collectFeaturesByField(fieldName, includeRealEstate, true);
-            const cardsHtml = collected
-                .map(entry => buildGalleryDetailCardHtml(entry.feature, entry.item, mode))
-                .filter(html => html !== '');
-
-            if (cardsHtml.length === 0) {
+            if (validEntries.length === 0) {
                 section.dataset.hasData = '0';
                 grid.innerHTML = '';
                 refreshHomeSectionsVisibility();
@@ -1017,17 +1080,19 @@ window.__nmsPageHandlesOwnAds = true;
             }
 
             section.dataset.hasData = '1';
-            grid.innerHTML = cardsHtml.join('');
-            wireAdActionButtons(grid); // 🆕 يضمن تسجيل نقرات اتصال/واتساب فعلياً
+            setupGallerySectionSearch(gridId, searchInputId, validEntries, (f, it) => buildGalleryDetailCardHtml(f, it, mode));
             refreshHomeSectionsVisibility();
         }
 
-        // تحميل وعرض قسم "قبل وبعد" (خدمات فقط - details_link_1 و details_link_2 معاً)
+        // 🆕 تحميل قسم "قبل وبعد": خدمات فقط (لا عقارات إطلاقاً)، ويشترط أن
+        // يكون rating = 10 أو 9.9، بالإضافة إلى وجود details_link_1 و details_link_2 معاً
         async function loadBeforeAfterSection() {
             const grid = document.getElementById('nms-before-after-grid');
             const section = document.getElementById('nms-before-after-section');
             if (!grid || !section) return;
 
+            // 🆕 استبعاد صريح لطبقات العقارات (شقق الإيجار، شقق البيع، الأراضي)
+            // - هذا القسم للخدمات فقط كما طُلب
             const targets = categories.filter(cat => !cat.isRealEstate).map(cat => {
                 const { workspace, layerName } = getWorkspaceAndName(cat.key);
                 return { layer: layerName, workspace, label: cat.title, isRealEstate: false };
@@ -1048,7 +1113,13 @@ window.__nmsPageHandlesOwnAds = true;
                             field_1: 'details_link_2',
                             operator_1: 'notempty',
                             value_1: '1',
-                            conditions_count: '2'
+                            field_2: 'rating',
+                            operator_2: '=',
+                            value_2: '10',
+                            field_3: 'rating',
+                            operator_3: '=',
+                            value_3: '9.9',
+                            conditions_count: '4'
                         });
                         const response = await fetch(`${baseUrl}api/search-features?${params.toString()}`);
                         if (!response.ok) return [];
@@ -1062,11 +1133,7 @@ window.__nmsPageHandlesOwnAds = true;
                 results.forEach(list => { if (list.length) collected.push(...list); });
             }
 
-            const cardsHtml = collected
-                .map(entry => buildBeforeAfterCardHtml(entry.feature, entry.item))
-                .filter(html => html !== '');
-
-            if (cardsHtml.length === 0) {
+            if (collected.length === 0) {
                 section.dataset.hasData = '0';
                 grid.innerHTML = '';
                 refreshHomeSectionsVisibility();
@@ -1074,8 +1141,7 @@ window.__nmsPageHandlesOwnAds = true;
             }
 
             section.dataset.hasData = '1';
-            grid.innerHTML = cardsHtml.join('');
-            wireAdActionButtons(grid);
+            setupGallerySectionSearch('nms-before-after-grid', 'nms-before-after-search', collected, buildBeforeAfterCardHtml);
             refreshHomeSectionsVisibility();
         }
 
@@ -1226,9 +1292,9 @@ window.__nmsPageHandlesOwnAds = true;
         // 🆕 تحميل أقسام الصور والفيديوهات وقبل/بعد - نفس مبدأ "الأعلى تقييماً"
         // و"موصى بهم" (مسح شامل لكل الفئات)، تُشغَّل بتأخير بسيط لضمان جاهزية
         // مصفوفة categories وكل الدوال المساعدة المطلوبة
-        setTimeout(() => {
-            loadGallerySection('pic', 'nms-photos-grid', 'nms-photos-section', 'photo', true);
-            loadGallerySection('video', 'nms-videos-grid', 'nms-videos-section', 'video', true);
+                setTimeout(() => {
+            loadGallerySection('pic', 'nms-photos-grid', 'nms-photos-section', 'nms-photos-search', 'photo', true);
+            loadGallerySection('video', 'nms-videos-grid', 'nms-videos-section', 'nms-videos-search', 'video', true);
             loadBeforeAfterSection();
         }, 1400);
 
@@ -1815,12 +1881,12 @@ window.__nmsPageHandlesOwnAds = true;
                     `;
                     card.appendChild(actions);
                 } else {
-                    // 🆕 زر الاتصال يظهر فقط إذا كان هناك phone
+                                        // 🆕 زر الاتصال يظهر فقط إذا كان هناك phone
                     const hasPhone = p.phone !== undefined && p.phone !== null && p.phone !== '' && String(p.phone).trim() !== '';
                     const actions = document.createElement('div');
                     actions.className = 'nms-r-actions';
                     actions.innerHTML = `
-                        ${hasPhone ? `<button class="nms-call-btn"><i class="fas fa-mobile-alt"></i> اتصال</button>` : ''}
+                        ${hasPhone ? `<button class="nms-call-btn"><i class="fas fa-mobile-alt"></i> اتصال <span dir="ltr">${sanitize(localPhone)}</span></button>` : ''}
                         <button class="nms-whatsapp-btn"><i class="fab fa-whatsapp"></i> واتساب</button>
                     `;
                     if (hasPhone) {

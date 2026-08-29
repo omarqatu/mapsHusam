@@ -757,14 +757,14 @@ function initializePopup(map) {
                     <div style="margin-top: 15px; border-top: 2px solid #eee; padding-top: 12px;">
                         <div style="display: flex; gap: 8px; margin-bottom: 8px;">
                             ${hasPhone ? `
-                            <button class="popup-call-btn" 
+                                                        <button class="popup-call-btn" 
                                     data-provider="${escapeForAttribute(providerName)}" 
                                     data-phone="${escapeForAttribute(localPhone)}" 
                                     data-service="${escapeForAttribute(layerTitle)}" 
                                     data-feature-id="${escapeForAttribute(String(displayFeatureId || ''))}" 
                                     data-layer="${escapeForAttribute(layerDbName || layerEnglishName || '')}"
                                     style="flex: 1; background: #1a73e8; color: white; border: none; padding: 12px 8px; border-radius: 10px; cursor: pointer; font-weight: bold; display: flex; align-items: center; justify-content: center; gap: 6px; font-size: 13px; box-shadow: 0 4px 12px rgba(26,115,232,0.3);">
-                                <i class="fas fa-mobile-alt" style="font-size: 16px;"></i> اتصال
+                                <i class="fas fa-mobile-alt" style="font-size: 16px;"></i> اتصال <span dir="ltr">${window.sanitizeHTML(localPhone)}</span>
                             </button>` : ''}
                             <button class="popup-whatsapp-btn" 
                                     data-provider="${escapeForAttribute(providerName)}" 
