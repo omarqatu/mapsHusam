@@ -96,6 +96,7 @@ const MAP_CONFIG = {
         { name: 'rating', label: 'التقييم (1-10)', type: 'number' },
         { name: 'des', label: 'وصف الخدمة والخبرة', type: 'text' },
         { name: 'pic', label: 'رابط الصورة', type: 'text' },
+        { name: 'video', label: 'رابط الفيديو', type: 'text' },
         { name: 'details_link_1', label: 'رابط تفاصيل 1', type: 'text' },
         { name: 'details_link_2', label: 'رابط تفاصيل 2', type: 'text' },
         { name: 'work_hours', label: 'ساعات العمل', type: 'text' },

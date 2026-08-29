@@ -103,6 +103,52 @@
         }
     };
 
+        // 🆕 بيانات حقيقية من قاعدة البيانات (تُستبدل بها القيم الافتراضية بمجرد الوصول)
+    let remoteGroupsData = {};
+    let remoteRoadStatusUpdatedAt = null;
+    let remoteFuelStatusUpdatedAt = null;
+
+    function formatDateDMY(isoStr) {
+        if (!isoStr) return '—';
+        const d = new Date(isoStr);
+        if (isNaN(d.getTime())) return '—';
+        const dd = String(d.getDate()).padStart(2, '0');
+        const mm = String(d.getMonth() + 1).padStart(2, '0');
+        return `${dd}/${mm}/${d.getFullYear()}`;
+    }
+
+    async function fetchRemoteWidgetsData() {
+        try {
+            const res = await fetch('/api/widgets-data');
+            const data = await res.json();
+            if (!data.success) return;
+
+            remoteGroupsData = data.groups || {};
+            remoteRoadStatusUpdatedAt = data.road_status_updated_at;
+            remoteFuelStatusUpdatedAt = data.fuel_status_updated_at;
+
+            // استبدال القيم الافتراضية بالقيم الحقيقية المخزّنة (إن وُجدت)
+            ['currency', 'gold', 'fuel', 'transport_inter_city', 'transport_intra_city'].forEach(key => {
+                if (remoteGroupsData[key] && remoteGroupsData[key].items && remoteGroupsData[key].items.length > 0) {
+                    MANUAL_DATA[key] = remoteGroupsData[key].items;
+                }
+            });
+            if (remoteGroupsData.weather && remoteGroupsData.weather.items && remoteGroupsData.weather.items.length > 0) {
+                const weatherObj = {};
+                remoteGroupsData.weather.items.forEach(w => { weatherObj[w.id] = w; });
+                apiData.weather = weatherObj;
+            }
+
+            updateAllData();
+            updateTickerHTML();
+            updatePortalData();
+            updateMobilePortalData();
+            updateLastUpdatedTimestamps();
+        } catch (err) {
+            console.warn('تعذر جلب بيانات مركز المعلومات الحية:', err.message);
+        }
+    }
+
         // ============================================
     // 🆕 بيانات حيّة (Live) من طبقات الخريطة مباشرة - المصدر الوحيد للتعديل
     // هو قاعدة البيانات/GeoServer نفسها، وليس أي ملف كود
@@ -134,6 +180,7 @@
         updateTickerHTML();
         updatePortalFuelStatusList();
         updateMobilePortalFuelStatusList();
+        updateLastUpdatedTimestamps();
     }
 
     // ============================================
@@ -350,7 +397,7 @@
         return `${dd}/${mm}/${yyyy}`;
     }
 
-    function setLastUpdatedValue(id, value) {
+        function setLastUpdatedValue(id, value) {
         ['', 'mobile-'].forEach(function (prefix) {
             const el = document.getElementById(prefix + id);
             if (el) el.textContent = value;
@@ -358,22 +405,23 @@
     }
 
     function updateLastUpdatedTimestamps() {
-        const manualDates = (typeof WIDGETS_LAST_UPDATED !== 'undefined') ? WIDGETS_LAST_UPDATED : {};
-        const todayStr = formatTodayDMY();
+        const todayStr = formatDateDMY(new Date().toISOString());
 
-        setLastUpdatedValue('currency-update-time', manualDates.currency || '—');
-        setLastUpdatedValue('gold-update-time', manualDates.gold || '—');
-        setLastUpdatedValue('fuel-update-time', manualDates.fuel || '—');
-        setLastUpdatedValue('transport-inter-city-update-time', manualDates.transport_inter_city || '—');
-        setLastUpdatedValue('transport-intra-city-update-time', manualDates.transport_intra_city || '—');
+        setLastUpdatedValue('currency-update-time', formatDateDMY(remoteGroupsData.currency?.updated_at));
+        setLastUpdatedValue('gold-update-time', formatDateDMY(remoteGroupsData.gold?.updated_at));
+        setLastUpdatedValue('weather-update-time', formatDateDMY(remoteGroupsData.weather?.updated_at));
+        setLastUpdatedValue('fuel-update-time', formatDateDMY(remoteGroupsData.fuel?.updated_at));
+        setLastUpdatedValue('transport-inter-city-update-time', formatDateDMY(remoteGroupsData.transport_inter_city?.updated_at));
+        setLastUpdatedValue('transport-intra-city-update-time', formatDateDMY(remoteGroupsData.transport_intra_city?.updated_at));
 
-        // مجموعات حية/يومية: دائماً تاريخ اليوم
+        // مجموعتان أوتوماتيك (API): تاريخ اليوم دائماً
         setLastUpdatedValue('prayer-date', todayStr);
         setLastUpdatedValue('calendar-today', todayStr);
-        setLastUpdatedValue('traffic-update-time', todayStr);
-        setLastUpdatedValue('fuel-status-update-time', todayStr);
-    }
 
+        // حالة الطرق ومحطات الوقود: آخر تحديث فعلي من قاعدة البيانات
+        setLastUpdatedValue('traffic-update-time', formatDateDMY(remoteRoadStatusUpdatedAt));
+        setLastUpdatedValue('fuel-status-update-time', formatDateDMY(remoteFuelStatusUpdatedAt));
+    }
     // ============================================
     // دالة تحديث جميع البيانات
     // ============================================
@@ -737,6 +785,7 @@
                 updatePortalTrafficList();
                 updatePortalFuelStatusList();
                 updateLastUpdatedTimestamps();
+                updateLastUpdatedTimestamps();
             })
             .catch(err => {
                 console.error('خطأ في تحميل محتوى البوابة:', err);
@@ -836,8 +885,10 @@
         // دقيقة تلقائياً - هذا المصدر الوحيد الآن، لا حاجة لأي تعديل يدوي
         refreshLiveRoadBarriers();
         refreshLiveFuelStations();
+        fetchRemoteWidgetsData();   // 🆕
         setInterval(refreshLiveRoadBarriers, 60000);
         setInterval(refreshLiveFuelStations, 60000);
+        setInterval(fetchRemoteWidgetsData, 60000);   // 🆕
         
         // بدء التحديث التلقائي من APIs
         if (DISPLAY_CONFIG.autoUpdate) {

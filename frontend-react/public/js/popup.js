@@ -708,7 +708,7 @@ function initializePopup(map) {
                 if (props.village_a) bodyHtml += `<b>🏘️ البلدة:</b> ${window.sanitizeHTML(props.village_a)}<br>`;
                 if (props.gov_a) bodyHtml += `<b>🌍 المحافظة:</b> ${window.sanitizeHTML(props.gov_a)}<br>`;
                 if (props.des) bodyHtml += `<div style="margin-top:5px; background:#f9f9f9; padding:5px; border-radius:4px;"><b>📝 الوصف:</b> ${window.sanitizeHTML(props.des)}</div>`;
-                if (props.video) bodyHtml += `<div style="margin-top:8px;">🎥 ${createLink(props.video, "عرض الفيديو")}</div>`;
+                
             } 
 
             if (props.des && !isRealEstate) bodyHtml += `<div style="margin-top:5px; background:#f9f9f9; padding:5px; border-radius:4px;"><b>📝 الوصف:</b> ${props.des}</div>`;
@@ -788,11 +788,12 @@ function initializePopup(map) {
                 </button>
             </div>`;
 
-            if (props.details_link_1 || props.pic) {
-                if (props.details_link_1) bodyHtml += `<div style="margin-top:8px;">🔗 ${createLink(props.details_link_1, "تفاصيل إضافية")}</div>`;
-                if (props.pic) bodyHtml += `<hr>${createImageElement(props.pic)}`;
-            }
-        } else if (isAreaLayer) {
+            if (props.details_link_1 || props.pic || props.video) {
+            if (props.details_link_1) bodyHtml += `<div style="margin-top:8px;">🔗 ${createLink(props.details_link_1, "تفاصيل إضافية")}</div>`;
+            if (props.video) bodyHtml += `<div style="margin-top:8px;">🎥 ${createLink(props.video, "عرض الفيديو")}</div>`;
+            if (props.pic) bodyHtml += `<hr>${createImageElement(props.pic)}`;
+}
+              } else if (isAreaLayer) {
             const areaFieldLabels = {
                 'gov_a': '🌍 اسم المحافظة',
                 'village_a': '🏘️ المدينة / القرية',

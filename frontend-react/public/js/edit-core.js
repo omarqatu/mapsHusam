@@ -45,6 +45,7 @@ function initializeEditTools(map, overlayLayersObjParam) {
         { name: 'phone', label: 'رقم الهاتف (يبدأ بـ 0 مثلاً 0598...)', type: 'text' },
         { name: 'des', label: 'وصف الخدمة والخبرة', type: 'text' },
         { name: 'pic', label: 'رابط الصورة', type: 'url' },
+        { name: 'video', label: 'رابط الفيديو', type: 'url' },
         { name: 'rating', label: 'الرتبة (0-10)', type: 'number' },
         { name: 'details_link_1', label: 'رابط تفاصيل 1', type: 'url' },
         { name: 'details_link_2', label: 'رابط تفاصيل 2', type: 'url' },

@@ -238,6 +238,24 @@ async function ensureSchemaColumns() {
 }
 ensureSchemaColumns();
 
+async function ensureWidgetsSchema() {
+    try {
+        await servicesPool.query(`
+            CREATE TABLE IF NOT EXISTS public.widgets_manual_groups (
+                group_key TEXT PRIMARY KEY,
+                data JSONB NOT NULL DEFAULT '[]'::jsonb,
+                updated_at TIMESTAMP NOT NULL DEFAULT NOW()
+            )
+        `);
+        await servicesPool.query(`ALTER TABLE public.road_barriers ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP DEFAULT NOW()`);
+        await servicesPool.query(`ALTER TABLE public.fuel_stations ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP DEFAULT NOW()`);
+        console.log('✅ تم التأكد من وجود جداول/أعمدة مركز المعلومات الحية');
+    } catch (err) {
+        console.error('⚠️ خطأ أثناء إنشاء مخطط مركز المعلومات الحية:', err.message);
+    }
+}
+ensureWidgetsSchema();
+
 function normalizeWhatsappNumber(rawNumber) {
     if (rawNumber === undefined || rawNumber === null) return null;
     const trimmed = String(rawNumber).trim();
@@ -1478,6 +1496,108 @@ app.get('/api/users', requireAdmin, async (req, res) => {
 // السماح للطلب بالمتابعة. أي طلب بدون هيدر صالح يُرفض بـ 403 فوراً.
 // =========================================================================
 async function requireAdmin(req, res, next) {
+    // =========================================================================
+// 🆕 [مركز المعلومات الحية]: إدارة 8 مجموعات يدوية + جلب آخر تحديث حقيقي
+// لحالة الطرق ومحطات الوقود (مرتبطة بمعالم فعلية على الخريطة)
+// =========================================================================
+const WIDGETS_CONFIG_GROUPS = ['currency', 'gold', 'weather', 'fuel', 'transport_inter_city', 'transport_intra_city'];
+
+// عام (بدون حماية): تستخدمه واجهة العرض widgets-ticker.js
+app.get('/api/widgets-data', async (req, res) => {
+    try {
+        const result = await servicesPool.query(`SELECT group_key, data, updated_at FROM public.widgets_manual_groups`);
+        const groups = {};
+        result.rows.forEach(row => { groups[row.group_key] = { items: row.data, updated_at: row.updated_at }; });
+
+        const roadResult = await servicesPool.query(`SELECT MAX(updated_at) as last FROM public.road_barriers`);
+        const fuelResult = await servicesPool.query(`SELECT MAX(updated_at) as last FROM public.fuel_stations`);
+
+        res.json({
+            success: true,
+            groups,
+            road_status_updated_at: roadResult.rows[0].last,
+            fuel_status_updated_at: fuelResult.rows[0].last
+        });
+    } catch (err) {
+        console.error('❌ خطأ أثناء جلب بيانات مركز المعلومات الحية:', err.message);
+        res.status(500).json({ success: false, error: 'فشل جلب البيانات' });
+    }
+});
+
+// للمشرف: جلب كل المجموعات للتعديل
+app.get('/api/admin/widgets-data', requireAdmin, async (req, res) => {
+    try {
+        const result = await servicesPool.query(`SELECT group_key, data, updated_at FROM public.widgets_manual_groups`);
+        const groups = {};
+        result.rows.forEach(row => { groups[row.group_key] = { items: row.data, updated_at: row.updated_at }; });
+        res.json({ success: true, groups });
+    } catch (err) {
+        res.status(500).json({ success: false, error: err.message });
+    }
+});
+
+// حفظ مجموعة كاملة (تحديث تلقائي لتاريخ آخر تعديل)
+app.post('/api/admin/widgets-data/:groupKey', requireAdmin, async (req, res) => {
+    const { groupKey } = req.params;
+    const { items } = req.body;
+
+    if (!WIDGETS_CONFIG_GROUPS.includes(groupKey)) {
+        return res.status(400).json({ success: false, error: 'مجموعة غير معروفة' });
+    }
+    if (!Array.isArray(items)) {
+        return res.status(400).json({ success: false, error: 'صيغة البيانات غير صحيحة' });
+    }
+
+    try {
+        await servicesPool.query(`
+            INSERT INTO public.widgets_manual_groups (group_key, data, updated_at)
+            VALUES ($1, $2, NOW())
+            ON CONFLICT (group_key) DO UPDATE SET data = $2, updated_at = NOW()
+        `, [groupKey, JSON.stringify(items)]);
+        res.json({ success: true, message: 'تم حفظ التعديلات بنجاح' });
+    } catch (err) {
+        console.error('❌ خطأ أثناء حفظ مجموعة widgets:', err.message);
+        res.status(500).json({ success: false, error: err.message });
+    }
+});
+
+// جلب معالم حواجز الطرق ومحطات الوقود لتعديلها من صفحة الإدارة
+app.get('/api/admin/road-fuel-features', requireAdmin, async (req, res) => {
+    try {
+        const roadResult = await servicesPool.query(`SELECT id, name, stop FROM public.road_barriers ORDER BY id ASC`);
+        const fuelResult = await servicesPool.query(`SELECT id, name, diesel, banzen95, banzen98 FROM public.fuel_stations ORDER BY id ASC`);
+        res.json({ success: true, roadBarriers: roadResult.rows, fuelStations: fuelResult.rows });
+    } catch (err) {
+        res.status(500).json({ success: false, error: err.message });
+    }
+});
+
+// تحديث حالة حاجز طريق واحد
+app.post('/api/admin/update-road-barrier', requireAdmin, async (req, res) => {
+    const { id, stop } = req.body;
+    if (id === undefined || stop === undefined) return res.status(400).json({ success: false, error: 'بيانات ناقصة' });
+    try {
+        await servicesPool.query(`UPDATE public.road_barriers SET stop = $1, updated_at = NOW() WHERE id = $2`, [stop, id]);
+        res.json({ success: true });
+    } catch (err) {
+        res.status(500).json({ success: false, error: err.message });
+    }
+});
+
+// تحديث توفر الوقود لمحطة واحدة
+app.post('/api/admin/update-fuel-station', requireAdmin, async (req, res) => {
+    const { id, diesel, banzen95, banzen98 } = req.body;
+    if (id === undefined) return res.status(400).json({ success: false, error: 'بيانات ناقصة' });
+    try {
+        await servicesPool.query(
+            `UPDATE public.fuel_stations SET diesel = $1, banzen95 = $2, banzen98 = $3, updated_at = NOW() WHERE id = $4`,
+            [diesel, banzen95, banzen98, id]
+        );
+        res.json({ success: true });
+    } catch (err) {
+        res.status(500).json({ success: false, error: err.message });
+    }
+});
     const adminUserId = req.headers['x-admin-user-id'];
     if (!adminUserId) {
         return res.status(401).json({ success: false, error: 'مطلوب تسجيل دخول كمشرف (هيدر x-admin-user-id مفقود).' });

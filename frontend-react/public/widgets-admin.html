@@ -1,0 +1,607 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>مركز المعلومات الحية - لوحة المشرف</title>
+
+    <!-- 🔒 Access guard: only admin can view (نفس آلية باقي صفحات المشرف) -->
+    <style id="access-guard-style">
+        html { visibility: hidden; }
+    </style>
+    <script>
+    (function () {
+        function getStoredUser() {
+            try {
+                return JSON.parse(localStorage.getItem('map_user')) ||
+                       JSON.parse(sessionStorage.getItem('map_user')) ||
+                       JSON.parse(localStorage.getItem('user')) ||
+                       JSON.parse(sessionStorage.getItem('user'));
+            } catch (e) { return null; }
+        }
+        var user = getStoredUser();
+        if (!user || user.role !== 'admin') {
+            window.location.replace('/original-index.html');
+        } else {
+            document.addEventListener('DOMContentLoaded', function () {
+                document.documentElement.style.visibility = 'visible';
+            });
+        }
+    })();
+    </script>
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        * { box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f4f7f6;
+            margin: 0;
+            padding: 20px;
+            min-height: 100vh;
+        }
+        .container {
+            max-width: 1300px;
+            margin: 0 auto;
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.12);
+        }
+        @media (max-width: 768px) {
+            body { padding: 10px; }
+            .container { padding: 16px; border-radius: 10px; }
+        }
+        h1 { color: #1a73e8; text-align: center; margin-bottom: 6px; font-size: 24px; }
+        h1 i { margin-left: 10px; }
+        .subtitle { text-align: center; color: #666; font-size: 13px; margin-bottom: 20px; }
+        .back-link {
+            display: inline-block; margin-bottom: 20px; color: #1a73e8; text-decoration: none;
+            font-weight: bold; font-size: 14px;
+        }
+        .back-link:hover { color: #1557b0; }
+        .back-link i { margin-left: 5px; }
+
+        .info-banner {
+            background: #fff8e1; border: 1px solid #ffe082; border-right: 4px solid #f39c12;
+            padding: 14px 16px; border-radius: 10px; margin-bottom: 22px; font-size: 13px; color: #7a5b00; line-height: 1.8;
+        }
+        .info-banner strong { color: #b06000; }
+
+        .alert { padding: 12px 20px; border-radius: 8px; margin-bottom: 15px; font-size: 13px; font-weight: bold; }
+        .alert-success { background: #e6f4ea; color: #1e7e34; border-right: 4px solid #34a853; }
+        .alert-error { background: #fce8e6; color: #c5221f; border-right: 4px solid #ea4335; }
+
+        /* Tabs */
+        .tabs-bar {
+            display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 20px;
+            border-bottom: 2px solid #eee; padding-bottom: 12px;
+        }
+        .tab-btn {
+            padding: 10px 16px; border: 1px solid #ddd; background: #f9f9f9; color: #444;
+            border-radius: 20px; cursor: pointer; font-size: 13px; font-weight: bold;
+            display: inline-flex; align-items: center; gap: 6px; transition: all .2s;
+        }
+        .tab-btn:hover { background: #eef4ff; }
+        .tab-btn.active { background: #1a73e8; color: #fff; border-color: #1a73e8; }
+
+        .tab-panel { display: none; }
+        .tab-panel.active { display: block; animation: fadeIn .2s ease; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+        .panel-header {
+            display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;
+            margin-bottom: 14px;
+        }
+        .panel-header h2 { margin: 0; font-size: 17px; color: #2c3e50; }
+        .last-updated-badge {
+            background: #e8f0fe; color: #1a73e8; padding: 6px 14px; border-radius: 20px;
+            font-size: 12px; font-weight: bold; display: inline-flex; align-items: center; gap: 6px;
+        }
+
+        .btn { padding: 9px 16px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 12.5px; display: inline-flex; align-items: center; gap: 6px; transition: all .2s; }
+        .btn:hover { transform: translateY(-1px); box-shadow: 0 3px 10px rgba(0,0,0,0.15); }
+        .btn-primary { background: #1a73e8; color: #fff; }
+        .btn-success { background: #34a853; color: #fff; }
+        .btn-danger { background: #ea4335; color: #fff; }
+        .btn-secondary { background: #666; color: #fff; }
+        .btn-sm { padding: 6px 10px; font-size: 11.5px; }
+
+        table { width: 100%; border-collapse: collapse; margin-bottom: 14px; }
+        th { background: #1a73e8; color: #fff; padding: 10px 8px; font-size: 12.5px; text-align: center; }
+        td { padding: 6px; border-bottom: 1px solid #eee; text-align: center; font-size: 12.5px; }
+        tr:hover { background: #f8f9fa; }
+        td input, td select {
+            width: 100%; padding: 7px; border: 1px solid #ccc; border-radius: 5px; font-size: 12.5px; text-align: center;
+        }
+        td input:focus, td select:focus { outline: none; border-color: #1a73e8; box-shadow: 0 0 4px rgba(26,115,232,.3); }
+
+        .table-actions { display: flex; gap: 10px; margin-top: 8px; flex-wrap: wrap; }
+        .no-data { text-align: center; padding: 30px; color: #999; font-style: italic; }
+        .loading-line { text-align: center; padding: 20px; color: #666; }
+        .loading-line i { margin-left: 6px; }
+
+        .feature-name-cell { font-weight: bold; color: #333; text-align: right !important; padding-right: 10px !important; }
+        .id-cell { color: #888; font-size: 11px; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <a href="/dashboard.html" class="back-link"><i class="fas fa-arrow-right"></i> العودة للوحة التحكم</a>
+
+    <h1><i class="fas fa-bolt"></i> مركز المعلومات الحية</h1>
+    <p class="subtitle">تعديل مباشر لكل مجموعات التحديثات الفورية، مع تسجيل حقيقي لآخر تحديث لكل مجموعة</p>
+
+    <div class="info-banner">
+        <strong>ملاحظة هامة قبل التعديل:</strong>
+        تعديل حقل "القيمة" لأي عنصر موجود مسبقاً ينعكس فوراً على الموقع. أما تعديل الاسم/الوحدة/الرمز لعنصر موجود، أو
+        إضافة عنصر جديد كلياً بمعرّف (ID) غير موجود مسبقاً، فلن يظهر أي تغيير في الواجهة إلا إذا أُضيف عنصر HTML مطابق
+        بنفس المعرّف داخل ملفي <code>widgets-ticker.html</code> و<code>widgets-portal.html</code>. لذلك يُفضّل الالتزام
+        بتعديل قيم العناصر الموجودة أصلاً بدل إضافة عناصر جديدة، إلا إذا كنت مستعداً لتعديل تلك الملفات أيضاً.
+        <br><strong>حالة الطرق ومحطات الوقود:</strong> إضافة معلم جديد (حاجز/محطة) تتم فقط من الخريطة التفاعلية، وهذه
+        الصفحة مخصصة فقط لتغيير حالة المعالم الموجودة أصلاً (مفتوح/مغلق/متوفر/غير متوفر).
+    </div>
+
+    <div id="alert-container"></div>
+
+    <div class="tabs-bar" id="tabs-bar"></div>
+
+    <div id="panels-container"></div>
+</div>
+
+<script>
+// ==========================================================================
+// إعدادات عامة
+// ==========================================================================
+function getAdminAuthHeaders() {
+    try {
+        const raw = localStorage.getItem('map_user') || sessionStorage.getItem('map_user') ||
+                    localStorage.getItem('user') || sessionStorage.getItem('user');
+        if (raw) {
+            const u = JSON.parse(raw);
+            const uid = u.user_id || u.id;
+            if (uid) return { 'x-admin-user-id': String(uid) };
+        }
+    } catch (e) {}
+    return {};
+}
+
+function showAlert(message, type) {
+    const container = document.getElementById('alert-container');
+    const el = document.createElement('div');
+    el.className = 'alert alert-' + (type || 'success');
+    el.innerHTML = message;
+    container.appendChild(el);
+    setTimeout(() => { if (el.parentElement) el.remove(); }, 5000);
+}
+
+function formatDate(dateStr) {
+    if (!dateStr) return 'لا يوجد تحديث بعد';
+    let normalized = String(dateStr).trim().replace(' ', 'T').replace(/(\.\d{3})\d+/, '$1');
+    const d = new Date(normalized);
+    if (isNaN(d.getTime())) return 'غير معروف';
+    return d.toLocaleString('ar-EG', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' });
+}
+
+let uidCounter = 0;
+function nextUid() { return 'row-' + (++uidCounter); }
+
+// ==========================================================================
+// تعريف المجموعات الست القابلة للتعديل كعناصر JSON (currency/gold/weather/fuel/transport)
+// ==========================================================================
+const JSON_GROUPS = {
+    currency: {
+        title: 'أسعار العملات',
+        icon: 'fa-dollar-sign',
+        fields: [
+            { key: 'id',    label: 'المعرف (ID)',      placeholder: 'currency-usd-ils' },
+            { key: 'label', label: 'الاسم المعروض',     placeholder: 'دولار أمريكي' },
+            { key: 'code',  label: 'الرمز',             placeholder: 'USD/ILS' },
+            { key: 'value', label: 'القيمة (تُعرض فعلياً)', placeholder: '3.45' }
+        ]
+    },
+    gold: {
+        title: 'الذهب والمعادن النفيسة',
+        icon: 'fa-gem',
+        fields: [
+            { key: 'id',    label: 'المعرف (ID)',      placeholder: 'gold-24' },
+            { key: 'label', label: 'الاسم المعروض',     placeholder: 'ذهب عيار 24' },
+            { key: 'value', label: 'القيمة (تُعرض فعلياً)', placeholder: '215.5' },
+            { key: 'unit',  label: 'الوحدة',            placeholder: 'شيكل/غرام' }
+        ]
+    },
+    weather: {
+        title: 'حالة الطقس',
+        icon: 'fa-cloud-sun',
+        fields: [
+            { key: 'id',        label: 'معرف المدينة (id)',     placeholder: 'ramallah' },
+            { key: 'temp',      label: 'الحرارة °م (تُعرض فعلياً)', placeholder: '28' },
+            { key: 'humidity',  label: 'الرطوبة % (عرض مستقبلي)', placeholder: '65' },
+            { key: 'wind',      label: 'الرياح كم/س (عرض مستقبلي)', placeholder: '12' },
+            { key: 'condition', label: 'الحالة (عرض مستقبلي)',   placeholder: 'غائم جزئياً' }
+        ]
+    },
+    fuel: {
+        title: 'المحروقات والغاز',
+        icon: 'fa-gas-pump',
+        fields: [
+            { key: 'id',    label: 'المعرف (ID)',      placeholder: 'fuel-95' },
+            { key: 'label', label: 'الاسم المعروض',     placeholder: 'بنزين 95' },
+            { key: 'value', label: 'القيمة (تُعرض فعلياً)', placeholder: '6.85' },
+            { key: 'unit',  label: 'الوحدة',            placeholder: 'شيكل/لتر' }
+        ]
+    },
+    transport_inter_city: {
+        title: 'النقل بين المدن',
+        icon: 'fa-bus',
+        fields: [
+            { key: 'id',    label: 'المعرف (ID)',      placeholder: 'transport-ramallah-hebron' },
+            { key: 'label', label: 'الاسم المعروض',     placeholder: 'رام الله - الخليل' },
+            { key: 'value', label: 'القيمة (تُعرض فعلياً)', placeholder: '30' },
+            { key: 'unit',  label: 'الوحدة',            placeholder: 'شيكل' }
+        ]
+    },
+    transport_intra_city: {
+        title: 'النقل الداخلي',
+        icon: 'fa-bus',
+        fields: [
+            { key: 'id',    label: 'المعرف (ID)',      placeholder: 'transport-bireh-qalandia' },
+            { key: 'label', label: 'الاسم المعروض',     placeholder: 'البيرة - قلنديا' },
+            { key: 'value', label: 'القيمة (تُعرض فعلياً)', placeholder: '4.5' },
+            { key: 'unit',  label: 'الوحدة',            placeholder: 'شيكل' }
+        ]
+    }
+};
+
+const ROAD_STOP_OPTIONS = [
+    { value: '0', label: '🟢 مفتوح' },
+    { value: '1', label: '🔴 مغلق' },
+    { value: '2', label: '🟠 أزمة خفيفة' },
+    { value: '3', label: '🟤 أزمة خانقة' },
+    { value: '4', label: '🟣 تفتيش وأزمة خانقة' }
+];
+const FUEL_AVAIL_OPTIONS = [
+    { value: '0', label: '✔️ متوفر' },
+    { value: '1', label: '❌ غير متوفر' }
+];
+
+// حالة محلية: صفوف كل مجموعة JSON + قوائم المعالم
+let groupsState = {};      // { currency: {items:[...rows with _uid], updated_at}, ... }
+let roadBarriersState = [];
+let fuelStationsState = [];
+let roadStatusUpdatedAt = null;
+let fuelStatusUpdatedAt = null;
+
+// ==========================================================================
+// بناء التبويبات
+// ==========================================================================
+const TAB_ORDER = [
+    ...Object.keys(JSON_GROUPS),
+    'road_status',
+    'fuel_status'
+];
+const TAB_META = {
+    ...Object.fromEntries(Object.entries(JSON_GROUPS).map(([k, v]) => [k, { title: v.title, icon: v.icon }])),
+    road_status: { title: 'حالة الطرق', icon: 'fa-road' },
+    fuel_status: { title: 'حالة محطات الوقود', icon: 'fa-gas-pump' }
+};
+
+function buildTabsBar() {
+    const bar = document.getElementById('tabs-bar');
+    bar.innerHTML = '';
+    TAB_ORDER.forEach((key, i) => {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'tab-btn' + (i === 0 ? ' active' : '');
+        btn.dataset.tab = key;
+        btn.innerHTML = `<i class="fas ${TAB_META[key].icon}"></i> ${TAB_META[key].title}`;
+        btn.onclick = () => setActiveTab(key);
+        bar.appendChild(btn);
+    });
+}
+
+function setActiveTab(key) {
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b.dataset.tab === key));
+    document.querySelectorAll('.tab-panel').forEach(p => p.classList.toggle('active', p.id === 'panel-' + key));
+}
+
+function buildPanelsSkeleton() {
+    const container = document.getElementById('panels-container');
+    container.innerHTML = '';
+    TAB_ORDER.forEach((key, i) => {
+        const panel = document.createElement('div');
+        panel.className = 'tab-panel' + (i === 0 ? ' active' : '');
+        panel.id = 'panel-' + key;
+        panel.innerHTML = '<div class="loading-line"><i class="fas fa-spinner fa-spin"></i> جاري التحميل...</div>';
+        container.appendChild(panel);
+    });
+}
+
+// ==========================================================================
+// تحميل البيانات
+// ==========================================================================
+async function loadEverything() {
+    buildTabsBar();
+    buildPanelsSkeleton();
+
+    try {
+        const [adminGroupsRes, publicRes, featuresRes] = await Promise.all([
+            fetch('/api/admin/widgets-data', { headers: getAdminAuthHeaders() }),
+            fetch('/api/widgets-data'),
+            fetch('/api/admin/road-fuel-features', { headers: getAdminAuthHeaders() })
+        ]);
+
+        const adminGroupsData = await adminGroupsRes.json();
+        const publicData = await publicRes.json();
+        const featuresData = await featuresRes.json();
+
+        if (!adminGroupsData.success) throw new Error(adminGroupsData.error || 'فشل جلب المجموعات');
+        if (!featuresData.success) throw new Error(featuresData.error || 'فشل جلب المعالم');
+
+        groupsState = {};
+        Object.keys(JSON_GROUPS).forEach(key => {
+            const serverGroup = adminGroupsData.groups[key] || { data: [] };
+            const items = Array.isArray(serverGroup.data) ? serverGroup.data : [];
+            groupsState[key] = {
+                updated_at: serverGroup.updated_at || null,
+                items: items.map(it => ({ ...it, _uid: nextUid() }))
+            };
+        });
+
+        roadBarriersState = (featuresData.roadBarriers || []).map(f => ({ ...f, _uid: nextUid() }));
+        fuelStationsState = (featuresData.fuelStations || []).map(f => ({ ...f, _uid: nextUid() }));
+        roadStatusUpdatedAt = publicData.road_status_updated_at || null;
+        fuelStatusUpdatedAt = publicData.fuel_status_updated_at || null;
+
+        renderAllPanels();
+    } catch (err) {
+        console.error(err);
+        document.getElementById('panels-container').innerHTML =
+            '<div class="no-data">تعذر تحميل بيانات مركز المعلومات الحية: ' + err.message + '</div>';
+    }
+}
+
+function renderAllPanels() {
+    Object.keys(JSON_GROUPS).forEach(renderJsonGroupPanel);
+    renderRoadStatusPanel();
+    renderFuelStatusPanel();
+}
+
+// ==========================================================================
+// عرض/تعديل مجموعة JSON عامة (عملات/ذهب/طقس/وقود/نقل)
+// ==========================================================================
+function renderJsonGroupPanel(groupKey) {
+    const meta = JSON_GROUPS[groupKey];
+    const state = groupsState[groupKey];
+    const panel = document.getElementById('panel-' + groupKey);
+
+    const fieldsHtml = meta.fields.map(f => `<th>${f.label}</th>`).join('');
+
+    const rowsHtml = state.items.map(item => `
+        <tr data-uid="${item._uid}">
+            ${meta.fields.map(f => `
+                <td>
+                    <input type="text" data-field="${f.field || f.key}" placeholder="${f.placeholder || ''}"
+                           value="${(item[f.key] !== undefined && item[f.key] !== null) ? String(item[f.key]).replace(/"/g, '&quot;') : ''}">
+                </td>
+            `).join('')}
+            <td><button type="button" class="btn btn-danger btn-sm" onclick="removeJsonRow('${groupKey}', '${item._uid}')"><i class="fas fa-trash"></i></button></td>
+        </tr>
+    `).join('');
+
+    panel.innerHTML = `
+        <div class="panel-header">
+            <h2><i class="fas ${meta.icon}"></i> ${meta.title}</h2>
+            <span class="last-updated-badge" id="last-updated-${groupKey}">
+                <i class="fas fa-clock"></i> آخر تحديث: ${formatDate(state.updated_at)}
+            </span>
+        </div>
+        <div style="overflow-x:auto;">
+            <table>
+                <thead><tr>${fieldsHtml}<th style="width:60px;">حذف</th></tr></thead>
+                <tbody id="tbody-${groupKey}">${rowsHtml || ''}</tbody>
+            </table>
+        </div>
+        ${state.items.length === 0 ? '<div class="no-data">لا توجد عناصر في هذه المجموعة بعد</div>' : ''}
+        <div class="table-actions">
+            <button type="button" class="btn btn-secondary" onclick="addJsonRow('${groupKey}')"><i class="fas fa-plus"></i> إضافة عنصر جديد</button>
+            <button type="button" class="btn btn-success" onclick="saveJsonGroup('${groupKey}')"><i class="fas fa-save"></i> حفظ تعديلات هذه المجموعة</button>
+            <button type="button" class="btn btn-primary" onclick="loadEverything()"><i class="fas fa-sync-alt"></i> تحديث القائمة</button>
+        </div>
+    `;
+}
+
+function addJsonRow(groupKey) {
+    const meta = JSON_GROUPS[groupKey];
+    const newItem = { _uid: nextUid() };
+    meta.fields.forEach(f => { newItem[f.key] = ''; });
+    groupsState[groupKey].items.push(newItem);
+    renderJsonGroupPanel(groupKey);
+}
+
+function removeJsonRow(groupKey, uid) {
+    groupsState[groupKey].items = groupsState[groupKey].items.filter(it => it._uid !== uid);
+    renderJsonGroupPanel(groupKey);
+}
+
+async function saveJsonGroup(groupKey) {
+    const meta = JSON_GROUPS[groupKey];
+    const tbody = document.getElementById('tbody-' + groupKey);
+    const rows = tbody ? Array.from(tbody.querySelectorAll('tr')) : [];
+
+    const items = [];
+    rows.forEach(row => {
+        const inputs = row.querySelectorAll('input');
+        const obj = {};
+        let hasId = false;
+        inputs.forEach(input => {
+            const key = input.dataset.field;
+            const val = input.value.trim();
+            if (key === 'id' && val) hasId = true;
+            if (val !== '') obj[key] = val;
+        });
+        if (hasId) items.push(obj);
+    });
+
+    try {
+        const res = await fetch('/api/admin/widgets-data/' + groupKey, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', ...getAdminAuthHeaders() },
+            body: JSON.stringify({ items })
+        });
+        const data = await res.json();
+        if (data.success) {
+            showAlert('✅ تم حفظ تعديلات "' + meta.title + '" بنجاح، وتم تحديث تاريخ آخر تحديث تلقائياً.', 'success');
+            await loadEverything();
+            setActiveTab(groupKey);
+        } else {
+            showAlert('❌ ' + (data.error || 'فشل الحفظ'), 'error');
+        }
+    } catch (err) {
+        showAlert('❌ خطأ في الاتصال بالسيرفر: ' + err.message, 'error');
+    }
+}
+
+// ==========================================================================
+// حالة الطرق (حواجز) - تعديل حالة معالم موجودة فقط
+// ==========================================================================
+function renderRoadStatusPanel() {
+    const panel = document.getElementById('panel-road_status');
+
+    const rowsHtml = roadBarriersState.map(f => `
+        <tr data-uid="${f._uid}">
+            <td class="id-cell">${f.id}</td>
+            <td class="feature-name-cell">${f.name || '—'}</td>
+            <td>
+                <select id="stop-select-${f._uid}">
+                    ${ROAD_STOP_OPTIONS.map(o => `<option value="${o.value}" ${String(f.stop) === o.value ? 'selected' : ''}>${o.label}</option>`).join('')}
+                </select>
+            </td>
+            <td><button type="button" class="btn btn-primary btn-sm" onclick="saveRoadBarrier(${f.id}, '${f._uid}')"><i class="fas fa-save"></i> حفظ</button></td>
+        </tr>
+    `).join('');
+
+    panel.innerHTML = `
+        <div class="panel-header">
+            <h2><i class="fas fa-road"></i> حالة الطرق (حواجز)</h2>
+            <span class="last-updated-badge"><i class="fas fa-clock"></i> آخر تحديث: ${formatDate(roadStatusUpdatedAt)}</span>
+        </div>
+        <p style="font-size:12.5px; color:#777; margin-bottom:10px;">
+            لإضافة حاجز جديد استخدم أداة "تحرير النقاط" على الخريطة التفاعلية. هذه القائمة لتغيير حالة الحواجز الموجودة فقط.
+        </p>
+        <div style="overflow-x:auto;">
+            <table>
+                <thead><tr><th style="width:80px;">ID</th><th>اسم الحاجز</th><th>الحالة</th><th style="width:100px;">حفظ</th></tr></thead>
+                <tbody>${rowsHtml || ''}</tbody>
+            </table>
+        </div>
+        ${roadBarriersState.length === 0 ? '<div class="no-data">لا توجد حواجز مسجّلة بعد</div>' : ''}
+        <div class="table-actions">
+            <button type="button" class="btn btn-primary" onclick="loadEverything()"><i class="fas fa-sync-alt"></i> تحديث القائمة</button>
+        </div>
+    `;
+}
+
+async function saveRoadBarrier(id, uid) {
+    const select = document.getElementById('stop-select-' + uid);
+    const stop = select.value;
+    try {
+        const res = await fetch('/api/admin/update-road-barrier', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', ...getAdminAuthHeaders() },
+            body: JSON.stringify({ id, stop })
+        });
+        const data = await res.json();
+        if (data.success) {
+            showAlert('✅ تم تحديث حالة الحاجز بنجاح.', 'success');
+            const pub = await fetch('/api/widgets-data');
+            const pubData = await pub.json();
+            roadStatusUpdatedAt = pubData.road_status_updated_at || roadStatusUpdatedAt;
+            renderRoadStatusPanel();
+            setActiveTab('road_status');
+        } else {
+            showAlert('❌ ' + (data.error || 'فشل التحديث'), 'error');
+        }
+    } catch (err) {
+        showAlert('❌ خطأ في الاتصال: ' + err.message, 'error');
+    }
+}
+
+// ==========================================================================
+// حالة محطات الوقود - تعديل توفر ديزل/بنزين95/بنزين98 لمعالم موجودة فقط
+// ==========================================================================
+function renderFuelStatusPanel() {
+    const panel = document.getElementById('panel-fuel_status');
+
+    function buildSelect(uid, fieldName, currentVal) {
+        return `<select id="fuel-${fieldName}-${uid}">
+            ${FUEL_AVAIL_OPTIONS.map(o => `<option value="${o.value}" ${String(currentVal) === o.value ? 'selected' : ''}>${o.label}</option>`).join('')}
+        </select>`;
+    }
+
+    const rowsHtml = fuelStationsState.map(f => `
+        <tr data-uid="${f._uid}">
+            <td class="id-cell">${f.id}</td>
+            <td class="feature-name-cell">${f.name || '—'}</td>
+            <td>${buildSelect(f._uid, 'diesel', f.diesel)}</td>
+            <td>${buildSelect(f._uid, 'banzen95', f.banzen95)}</td>
+            <td>${buildSelect(f._uid, 'banzen98', f.banzen98)}</td>
+            <td><button type="button" class="btn btn-primary btn-sm" onclick="saveFuelStation(${f.id}, '${f._uid}')"><i class="fas fa-save"></i> حفظ</button></td>
+        </tr>
+    `).join('');
+
+    panel.innerHTML = `
+        <div class="panel-header">
+            <h2><i class="fas fa-gas-pump"></i> حالة محطات الوقود</h2>
+            <span class="last-updated-badge"><i class="fas fa-clock"></i> آخر تحديث: ${formatDate(fuelStatusUpdatedAt)}</span>
+        </div>
+        <p style="font-size:12.5px; color:#777; margin-bottom:10px;">
+            لإضافة محطة جديدة استخدم أداة "تحرير النقاط" على الخريطة التفاعلية. هذه القائمة لتغيير توفر الوقود بالمحطات الموجودة فقط.
+        </p>
+        <div style="overflow-x:auto;">
+            <table>
+                <thead><tr><th style="width:80px;">ID</th><th>اسم المحطة</th><th>ديزل</th><th>بنزين 95</th><th>بنزين 98</th><th style="width:100px;">حفظ</th></tr></thead>
+                <tbody>${rowsHtml || ''}</tbody>
+            </table>
+        </div>
+        ${fuelStationsState.length === 0 ? '<div class="no-data">لا توجد محطات وقود مسجّلة بعد</div>' : ''}
+        <div class="table-actions">
+            <button type="button" class="btn btn-primary" onclick="loadEverything()"><i class="fas fa-sync-alt"></i> تحديث القائمة</button>
+        </div>
+    `;
+}
+
+async function saveFuelStation(id, uid) {
+    const diesel = document.getElementById('fuel-diesel-' + uid).value;
+    const banzen95 = document.getElementById('fuel-banzen95-' + uid).value;
+    const banzen98 = document.getElementById('fuel-banzen98-' + uid).value;
+    try {
+        const res = await fetch('/api/admin/update-fuel-station', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', ...getAdminAuthHeaders() },
+            body: JSON.stringify({ id, diesel, banzen95, banzen98 })
+        });
+        const data = await res.json();
+        if (data.success) {
+            showAlert('✅ تم تحديث توفر الوقود لهذه المحطة بنجاح.', 'success');
+            const pub = await fetch('/api/widgets-data');
+            const pubData = await pub.json();
+            fuelStatusUpdatedAt = pubData.fuel_status_updated_at || fuelStatusUpdatedAt;
+            renderFuelStatusPanel();
+            setActiveTab('fuel_status');
+        } else {
+            showAlert('❌ ' + (data.error || 'فشل التحديث'), 'error');
+        }
+    } catch (err) {
+        showAlert('❌ خطأ في الاتصال: ' + err.message, 'error');
+    }
+}
+
+// ==========================================================================
+// بدء التشغيل
+// ==========================================================================
+loadEverything();
+</script>
+</body>
+</html>

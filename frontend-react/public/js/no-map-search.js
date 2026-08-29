@@ -769,29 +769,20 @@ window.__nmsPageHandlesOwnAds = true;
         // "موصى بهم" = المعالم المقيّمة بالضبط 9.9 (رتبة أقل من رتبة الإعلانات 10)
         // ==========================================================================
                 function refreshHomeSectionsVisibility() {
-            const topRatedSection = document.getElementById('nms-top-rated-section');
-            const recommendedSection = document.getElementById('nms-recommended-section');
-            // 🆕 الأقسام الثلاثة الجديدة (صور، فيديوهات، قبل وبعد)
-            const photosSection = document.getElementById('nms-photos-section');
-            const videosSection = document.getElementById('nms-videos-section');
-            const beforeAfterSection = document.getElementById('nms-before-after-section');
-            const onHome = categoriesView && !categoriesView.classList.contains('hidden');
-            if (topRatedSection) {
-                topRatedSection.style.display = (onHome && topRatedSection.dataset.hasData === '1') ? '' : 'none';
-            }
-            if (recommendedSection) {
-                recommendedSection.style.display = (onHome && recommendedSection.dataset.hasData === '1') ? '' : 'none';
-            }
-            if (photosSection) {
-                photosSection.style.display = (onHome && photosSection.dataset.hasData === '1') ? '' : 'none';
-            }
-            if (videosSection) {
-                videosSection.style.display = (onHome && videosSection.dataset.hasData === '1') ? '' : 'none';
-            }
-            if (beforeAfterSection) {
-                beforeAfterSection.style.display = (onHome && beforeAfterSection.dataset.hasData === '1') ? '' : 'none';
-            }
-        }
+                    const topRatedSection = document.getElementById('nms-top-rated-section');
+                    const recommendedSection = document.getElementById('nms-recommended-section');
+                    const photosSection = document.getElementById('nms-photos-section');
+                    const videosSection = document.getElementById('nms-videos-section');
+                    const beforeAfterSection = document.getElementById('nms-before-after-section');
+
+                    // 🆕 الأقسام الخمسة تبقى ظاهرة دائماً طالما تحتوي بيانات، بغض النظر عن
+                    // كون المستخدم بشاشة "الرئيسية" أو داخل نتائج تصنيف/فلترة معينة
+                    if (topRatedSection) topRatedSection.style.display = (topRatedSection.dataset.hasData === '1') ? '' : 'none';
+                    if (recommendedSection) recommendedSection.style.display = (recommendedSection.dataset.hasData === '1') ? '' : 'none';
+                    if (photosSection) photosSection.style.display = (photosSection.dataset.hasData === '1') ? '' : 'none';
+                    if (videosSection) videosSection.style.display = (videosSection.dataset.hasData === '1') ? '' : 'none';
+                    if (beforeAfterSection) beforeAfterSection.style.display = (beforeAfterSection.dataset.hasData === '1') ? '' : 'none';
+                }
 
         // ==========================================================================
         // 🆕 أقسام الصور / الفيديوهات / قبل وبعد - نفس مبدأ فحص "الأعلى تقييماً"
@@ -1818,6 +1809,10 @@ loadGallerySection('video', 'nms-videos-grid', 'nms-videos-section', 'video', tr
                 }
                 if (p.des) html += `<div class="nms-r-desc"><b>📝 الوصف:</b> ${sanitize(p.des)}</div>`;
                 if (p.pic) html += `<div class="nms-r-img"><img src="${p.pic}" onerror="this.parentElement.style.display='none'"></div>`;
+                if (p.video) {
+                    const videoUrl = p.video.toString().trim().startsWith('http') ? p.video : 'https://' + p.video;
+                    html += `<div style="margin-top:6px;"><a href="${videoUrl}" target="_blank" rel="noopener" style="color:#1a73e8; font-weight:bold; text-decoration:none; display:inline-flex; align-items:center; gap:5px; font-size:12px;"><i class="fas fa-video"></i> عرض الفيديو</a></div>`;
+                }
 
                 card.innerHTML = html;
 
