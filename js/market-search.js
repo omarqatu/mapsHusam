@@ -611,6 +611,10 @@ if (typeof window.renderMarketSearchResults !== 'function') {
             }
             if (p.des) html += `<div class="nms-r-desc"><b>📝 الوصف:</b> ${window.sanitize(p.des)}</div>`;
             if (p.pic) html += `<div class="nms-r-img"><img src="${p.pic}" onerror="this.parentElement.style.display='none'"></div>`;
+            if (p.video) {
+                    const videoUrl = p.video.toString().trim().startsWith('http') ? p.video : 'https://' + p.video;
+                    html += `<div style="margin-top:6px;"><a href="${videoUrl}" target="_blank" rel="noopener" style="color:#1a73e8; font-weight:bold; text-decoration:none; display:inline-flex; align-items:center; gap:5px; font-size:12px;"><i class="fas fa-video"></i> عرض الفيديو</a></div>`;
+                }   
 
             card.innerHTML = html;
 
@@ -621,7 +625,9 @@ if (typeof window.renderMarketSearchResults !== 'function') {
                 const providerName = p.name || (isRealEstate ? 'المعلن' : 'مزود الخدمة');
 
                 const layerDbName = (f.layerId || '').replace(/Layer$/i, '');
-                const featureIdForRequest = (p.id !== undefined && p.id !== null) ? p.id : '';
+                const featureIdForRequest = isRealEstate
+                    ? ((p.fid !== undefined && p.fid !== null) ? p.fid : '')
+                    : ((p.id !== undefined && p.id !== null) ? p.id : '');
                 const isLinkedProvider = !isRealEstate && typeof window.isFeatureLinkedToProvider === 'function' && window.isFeatureLinkedToProvider(layerDbName, featureIdForRequest);
 
                 const actions = document.createElement('div');
@@ -637,7 +643,7 @@ if (typeof window.renderMarketSearchResults !== 'function') {
                     // 🆕 زر الاتصال يظهر فقط إذا كان هناك phone
                     const hasPhone = p.phone !== undefined && p.phone !== null && p.phone !== '' && String(p.phone).trim() !== '';
                     actions.innerHTML = `
-                        ${hasPhone ? `<button class="nms-call-btn"><i class="fas fa-mobile-alt"></i> اتصال</button>` : ''}
+                        ${hasPhone ? `<button class="nms-call-btn"><i class="fas fa-mobile-alt"></i> اتصال <span dir="ltr">${window.sanitize(localPhone)}</span></button>` : ''}
                         <button class="nms-whatsapp-btn"><i class="fab fa-whatsapp"></i> واتساب</button>
                     `;
 

@@ -73,15 +73,13 @@ async function sendWFS_T(feature, type) {
     const rawId = rawIdCandidate ? (String(rawIdCandidate).includes('.') ? String(rawIdCandidate).split('.').pop() : rawIdCandidate) : '';
     const fidValue = rawId ? `${typeName}.${rawId}` : "";
 
-        // عزل حقول المدخلات اليدوية لكل بيئة بشكل مستقل ومضمون (شقق عقارات مقابل خدمات نقاط)
-    const allowedPropsAdd = isRealEstate ?
-        ['price', 'currency', 'des', 'pic', 'video', 'area', 'whatsapp', 'phone', 'end_date', 'work_hours', 'rating', 'location'] :
-        ['name', 'whatsapp', 'phone', 'des', 'pic', 'rating', 'details_link_1', 'details_link_2', 'end_date', 'work_hours'];
+        const allowedPropsAdd = isRealEstate ?
+        ['name', 'price', 'currency', 'des', 'pic', 'video', 'area', 'whatsapp', 'phone', 'end_date', 'work_hours', 'rating', 'location'] :
+        ['name', 'whatsapp', 'phone', 'des', 'pic', 'video', 'rating', 'details_link_1', 'details_link_2', 'end_date', 'work_hours'];
 
-    // إضافة search_tags وغيرها لضمان تحديثها عند التعديل
-    const allowedPropsUpdate = isRealEstate ?
-        ['price', 'currency', 'des', 'pic', 'video', 'area', 'end_date', 'work_hours', 'whatsapp', 'phone', 'rating', 'location', 'search_tags'] :
-        ['name', 'whatsapp', 'phone', 'pic', 'rating', 'details_link_1', 'details_link_2', 'end_date', 'work_hours', 'des', 'search_tags'];
+        const allowedPropsUpdate = isRealEstate ?
+        ['name', 'price', 'currency', 'des', 'pic', 'video', 'area', 'end_date', 'work_hours', 'whatsapp', 'phone', 'rating', 'location', 'search_tags'] :
+        ['name', 'whatsapp', 'phone', 'pic', 'video', 'rating', 'details_link_1', 'details_link_2', 'end_date', 'work_hours', 'des', 'search_tags'];
 
     // 🆕 عمود "stop" الخاص بحالة حاجز الطرق (0=مفتوح، 1=مغلق، 2=أزمة خفيفة،
     // 3=أزمة خانقة، 4=تفتيش) - يُضاف فقط عند تحرير طبقة حواجز الطرق
@@ -174,10 +172,10 @@ async function sendWFS_T(feature, type) {
             'auto_status', 'whatsapp', 'search_tags', 'rating'
         ];
 
-        const servicesSchemaOrder = [
-            'geom', 'name', 'whatsapp', 'des', 'pic', 'rating', 'details_link_1', 'details_link_2', 'end_date', 'work_hours',
+            const servicesSchemaOrder = [
+            'geom', 'name', 'whatsapp', 'des', 'pic', 'video', 'rating', 'details_link_1', 'details_link_2', 'end_date', 'work_hours',
             'location_name', 'x_coord', 'y_coord', 'x_global', 'y_global', 'status', 'gov_a', 'village_a', 'start_date', 'auto_status', 'search_tags'
-        ];
+                ];
 
         const finalExecutionOrder = isRealEstate ? realEstateSchemaOrder : servicesSchemaOrder;
 

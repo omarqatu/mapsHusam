@@ -1,330 +1,78 @@
 <!-- widgets-portal.html - البوابة التفصيلية للعناصر الحيوية -->
 <div class="widgets-portal-grid">
-    
-    <!-- 1. أسعار العملات المباشرة -->
+
+        <!-- 1. أسعار العملات المباشرة -->
     <div class="widget-card currency-card" id="portal-currency-card">
         <div class="widget-header">
             <h3><i class="fas fa-dollar-sign"></i> أسعار العملات المباشرة</h3>
             <span class="widget-update-time">آخر تحديث: <span id="currency-update-time">--:--</span></span>
         </div>
         <div class="widget-body">
-            <div class="currency-grid">
-                <div class="currency-item">
-                    <div class="currency-flag">🇺🇸</div>
-                    <div class="currency-info">
-                        <span class="currency-name">دولار أمريكي</span>
-                        <span class="currency-code">USD/ILS</span>
-                    </div>
-                    <div class="currency-value" id="portal-currency-usd-ils">3.45</div>
-                </div>
-                
-                <div class="currency-item">
-                    <div class="currency-flag">🇯🇴</div>
-                    <div class="currency-info">
-                        <span class="currency-name">دينار أردني</span>
-                        <span class="currency-code">JOD/ILS</span>
-                    </div>
-                    <div class="currency-value" id="portal-currency-jod-ils">4.86</div>
-                </div>
-                
-                <div class="currency-item">
-                    <div class="currency-flag">🇪🇺</div>
-                    <div class="currency-info">
-                        <span class="currency-name">يورو</span>
-                        <span class="currency-code">EUR/ILS</span>
-                    </div>
-                    <div class="currency-value" id="portal-currency-eur-ils">3.72</div>
-                </div>
-            </div>
+            <input type="text" class="widget-search-input" data-target-grid="portal-currency-grid" placeholder="🔍 ابحث بالاسم...">
+            <div class="currency-grid" id="portal-currency-grid"></div>
         </div>
     </div>
-    
-    <!-- 2. أسعار الذهب والمعادن النفيسة -->
+
+        <!-- 2. أسعار الذهب والمعادن النفيسة -->
     <div class="widget-card gold-card" id="portal-gold-card">
         <div class="widget-header">
             <h3><i class="fas fa-gem"></i> أسعار الذهب والمعادن النفيسة</h3>
             <span class="widget-update-time">آخر تحديث: <span id="gold-update-time">--:--</span></span>
         </div>
         <div class="widget-body">
-            <div class="gold-grid">
-                <div class="gold-item">
-                    <div class="gold-icon">🥇</div>
-                    <div class="gold-info">
-                        <span class="gold-name">ذهب عيار 24</span>
-                        <span class="gold-unit">شيكل/غرام</span>
-                    </div>
-                    <div class="gold-value" id="portal-gold-24">215.5</div>
-                </div>
-                
-                <div class="gold-item">
-                    <div class="gold-icon">🥈</div>
-                    <div class="gold-info">
-                        <span class="gold-name">ذهب عيار 21</span>
-                        <span class="gold-unit">شيكل/غرام</span>
-                    </div>
-                    <div class="gold-value" id="portal-gold-21">188.5</div>
-                </div>
-                
-                <div class="gold-item">
-                    <div class="gold-icon">🥉</div>
-                    <div class="gold-info">
-                        <span class="gold-name">ذهب عيار 18</span>
-                        <span class="gold-unit">شيكل/غرام</span>
-                    </div>
-                    <div class="gold-value" id="portal-gold-18">161.5</div>
-                </div>
-                
-                <div class="gold-item">
-                    <div class="gold-icon">💎</div>
-                    <div class="gold-info">
-                        <span class="gold-name">أونصة الذهب عالمياً</span>
-                        <span class="gold-unit">دولار/أونصة</span>
-                    </div>
-                    <div class="gold-value" id="portal-gold-ounce">2450</div>
-                </div>
-                
-                <div class="gold-item">
-                    <div class="gold-icon">⚪</div>
-                    <div class="gold-info">
-                        <span class="gold-name">الفضة</span>
-                        <span class="gold-unit">دولار/أونصة</span>
-                    </div>
-                    <div class="gold-value" id="portal-silver">28.50</div>
-                </div>
-            </div>
+            <input type="text" class="widget-search-input" data-target-grid="portal-gold-grid" placeholder="🔍 ابحث بالاسم...">
+            <div class="gold-grid" id="portal-gold-grid"></div>
         </div>
     </div>
-    
-    <!-- 3. حالة الطقس المحدثة -->
+
+        <!-- 3. حالة الطقس المحدثة -->
     <div class="widget-card weather-card" id="portal-weather-card">
         <div class="widget-header">
             <h3><i class="fas fa-cloud-sun"></i> حالة الطقس المحدثة</h3>
             <span class="widget-update-time">آخر تحديث: <span id="weather-update-time">--:--</span></span>
         </div>
         <div class="widget-body">
-            <div class="weather-grid">
-                <div class="weather-city">
-                    <div class="weather-icon">🌤️</div>
-                    <div class="weather-info">
-                        <span class="weather-city-name">رام الله</span>
-                        <span class="weather-temp" id="portal-weather-ramallah">28°C</span>
-                    </div>
-                    <div class="weather-details">
-                        <span>رطوبة: 65%</span>
-                        <span>رياح: 12 كم/س</span>
-                    </div>
-                </div>
-                
-                <div class="weather-city">
-                    <div class="weather-icon">☀️</div>
-                    <div class="weather-info">
-                        <span class="weather-city-name">غزة</span>
-                        <span class="weather-temp" id="portal-weather-gaza">32°C</span>
-                    </div>
-                    <div class="weather-details">
-                        <span>رطوبة: 70%</span>
-                        <span>رياح: 15 كم/س</span>
-                    </div>
-                </div>
-                
-                <div class="weather-city">
-                    <div class="weather-icon">☁️</div>
-                    <div class="weather-info">
-                        <span class="weather-city-name">القدس</span>
-                        <span class="weather-temp" id="portal-weather-jerusalem">26°C</span>
-                    </div>
-                    <div class="weather-details">
-                        <span>رطوبة: 60%</span>
-                        <span>رياح: 10 كم/س</span>
-                    </div>
-                </div>
-                
-                <div class="weather-city">
-                    <div class="weather-icon">🌤️</div>
-                    <div class="weather-info">
-                        <span class="weather-city-name">نابلس</span>
-                        <span class="weather-temp">27°C</span>
-                    </div>
-                    <div class="weather-details">
-                        <span>رطوبة: 62%</span>
-                        <span>رياح: 11 كم/س</span>
-                    </div>
-                </div>
-                
-                <div class="weather-city">
-                    <div class="weather-icon">🌤️</div>
-                    <div class="weather-info">
-                        <span class="weather-city-name">بيت لحم</span>
-                        <span class="weather-temp">25°C</span>
-                    </div>
-                    <div class="weather-details">
-                        <span>رطوبة: 58%</span>
-                        <span>رياح: 9 كم/س</span>
-                    </div>
-                </div>
-            </div>
+            <input type="text" class="widget-search-input" data-target-grid="portal-weather-grid" placeholder="🔍 ابحث بالاسم...">
+            <div class="weather-grid" id="portal-weather-grid"></div>
         </div>
     </div>
-    
-    <!-- 4. أسعار المحروقات والغاز -->
+
+        <!-- 4. أسعار المحروقات والغاز -->
     <div class="widget-card fuel-card" id="portal-fuel-card">
         <div class="widget-header">
             <h3><i class="fas fa-gas-pump"></i> أسعار المحروقات والغاز</h3>
             <span class="widget-update-time">آخر تحديث: <span id="fuel-update-time">--:--</span></span>
         </div>
         <div class="widget-body">
-            <div class="fuel-grid" id="portal-fuel-grid">
-                <div class="fuel-item">
-                    <div class="fuel-icon">⛽</div>
-                    <div class="fuel-info">
-                        <span class="fuel-name">بنزين 95</span>
-                        <span class="fuel-unit">شيكل/لتر</span>
-                    </div>
-                    <div class="fuel-value" id="portal-fuel-95">6.85</div>
-                </div>
-                
-                <div class="fuel-item">
-                    <div class="fuel-icon">⛽</div>
-                    <div class="fuel-info">
-                        <span class="fuel-name">بنزين 98</span>
-                        <span class="fuel-unit">شيكل/لتر</span>
-                    </div>
-                    <div class="fuel-value" id="portal-fuel-98">7.05</div>
-                </div>
-                
-                <div class="fuel-item">
-                    <div class="fuel-icon">🛢️</div>
-                    <div class="fuel-info">
-                        <span class="fuel-name">سولار</span>
-                        <span class="fuel-unit">شيكل/لتر</span>
-                    </div>
-                    <div class="fuel-value" id="portal-fuel-diesel">8.56</div>
-                </div>
-                
-                <div class="fuel-item">
-                    <div class="fuel-icon">🔥</div>
-                    <div class="fuel-info">
-                        <span class="fuel-name">أسطوانة غاز</span>
-                        <span class="fuel-unit">شيكل</span>
-                    </div>
-                    <div class="fuel-value" id="portal-fuel-gas-cylinder">35.00</div>
-                </div>
-                
-                <div class="fuel-item">
-                    <div class="fuel-icon">🔥</div>
-                    <div class="fuel-info">
-                        <span class="fuel-name">غاز حجم كبير</span>
-                        <span class="fuel-unit">شيكل</span>
-                    </div>
-                    <div class="fuel-value" id="portal-fuel-gas-large">85.00</div>
-                </div>
-                
-                <div class="fuel-item">
-                    <div class="fuel-icon">🔥</div>
-                    <div class="fuel-info">
-                        <span class="fuel-name">غاز حجم صغير</span>
-                        <span class="fuel-unit">شيكل</span>
-                    </div>
-                    <div class="fuel-value" id="portal-fuel-gas-small">45.00</div>
-                </div>
-            </div>
+            <input type="text" class="widget-search-input" data-target-grid="portal-fuel-grid" placeholder="🔍 ابحث بالاسم...">
+            <div class="fuel-grid" id="portal-fuel-grid"></div>
         </div>
     </div>
-    
-    <!-- 4.5. أجرة النقل بين المدن -->
+
+        <!-- 4.5. أجرة النقل بين المدن -->
     <div class="widget-card transport-card" id="portal-transport-inter-card">
         <div class="widget-header">
             <h3><i class="fas fa-bus"></i> أجرة النقل بين المدن</h3>
             <span class="widget-update-time">آخر تحديث: <span id="transport-inter-city-update-time">--:--</span></span>
         </div>
         <div class="widget-body">
-            <div class="transport-grid" id="portal-transport-inter-city-grid">
-                <div class="transport-item">
-                    <div class="transport-icon">�</div>
-                    <div class="transport-info">
-                        <span class="transport-name">رام الله - الخليل</span>
-                        <span class="transport-unit">شيكل</span>
-                    </div>
-                    <div class="transport-value" id="portal-transport-ramallah-hebron">30</div>
-                </div>
-                
-                <div class="transport-item">
-                    <div class="transport-icon">�</div>
-                    <div class="transport-info">
-                        <span class="transport-name">رام الله - بيت لحم</span>
-                        <span class="transport-unit">شيكل</span>
-                    </div>
-                    <div class="transport-value" id="portal-transport-ramallah-bethlehem">22</div>
-                </div>
-                
-                <div class="transport-item">
-                    <div class="transport-icon">🚌</div>
-                    <div class="transport-info">
-                        <span class="transport-name">رام الله - أريحا</span>
-                        <span class="transport-unit">شيكل</span>
-                    </div>
-                    <div class="transport-value" id="portal-transport-ramallah-jericho">15</div>
-                </div>
-                
-                <div class="transport-item">
-                    <div class="transport-icon">🚌</div>
-                    <div class="transport-info">
-                        <span class="transport-name">رام الله - نابلس</span>
-                        <span class="transport-unit">شيكل</span>
-                    </div>
-                    <div class="transport-value" id="portal-transport-ramallah-nablus">18</div>
-                </div>
-            </div>
+            <input type="text" class="widget-search-input" data-target-grid="portal-transport-inter-city-grid" placeholder="🔍 ابحث باسم المدينة أو الخط...">
+            <div class="transport-grid" id="portal-transport-inter-city-grid"></div>
         </div>
     </div>
-    
-    <!-- 4.6. أجرة النقل الداخلي -->
+
+        <!-- 4.6. أجرة النقل الداخلي -->
     <div class="widget-card transport-card">
         <div class="widget-header">
             <h3><i class="fas fa-bus"></i> أجرة النقل الداخلي (البيرة)</h3>
             <span class="widget-update-time">آخر تحديث: <span id="transport-intra-city-update-time">--:--</span></span>
         </div>
         <div class="widget-body">
-            <div class="transport-grid" id="portal-transport-intra-city-grid">
-                <div class="transport-item">
-                    <div class="transport-icon">🚌</div>
-                    <div class="transport-info">
-                        <span class="transport-name">البيرة - قلنديا</span>
-                        <span class="transport-unit">شيكل</span>
-                    </div>
-                    <div class="transport-value" id="portal-transport-bireh-qalandia">4.5</div>
-                </div>
-                
-                <div class="transport-item">
-                    <div class="transport-icon">🚌</div>
-                    <div class="transport-info">
-                        <span class="transport-name">البيرة - البالوع</span>
-                        <span class="transport-unit">شيكل</span>
-                    </div>
-                    <div class="transport-value" id="portal-transport-bireh-albalou">3.5</div>
-                </div>
-                
-                <div class="transport-item">
-                    <div class="transport-icon">🚌</div>
-                    <div class="transport-info">
-                        <span class="transport-name">البيرة - بيتونيا</span>
-                        <span class="transport-unit">شيكل</span>
-                    </div>
-                    <div class="transport-value" id="portal-transport-bireh-bitunia">5</div>
-                </div>
-                
-                <div class="transport-item">
-                    <div class="transport-icon">🚌</div>
-                    <div class="transport-info">
-                        <span class="transport-name">البيرة - أم الشرايط</span>
-                        <span class="transport-unit">شيكل</span>
-                    </div>
-                    <div class="transport-value" id="portal-transport-bireh-umsharayet">3.5</div>
-                </div>
-            </div>
+            <input type="text" class="widget-search-input" data-target-grid="portal-transport-intra-city-grid" placeholder="🔍 ابحث باسم المنطقة أو الخط...">
+            <div class="transport-grid" id="portal-transport-intra-city-grid"></div>
         </div>
     </div>
-    
+
     <!-- 5. مواقيت الصلاة -->
     <div class="widget-card prayer-card" id="portal-prayer-card">
         <div class="widget-header">
@@ -340,7 +88,7 @@
                         <span class="prayer-value" id="portal-prayer-fajr">04:45</span>
                     </div>
                 </div>
-                
+
                 <div class="prayer-time">
                     <div class="prayer-icon">☀️</div>
                     <div class="prayer-info">
@@ -348,7 +96,7 @@
                         <span class="prayer-value" id="portal-prayer-dhuhr">12:30</span>
                     </div>
                 </div>
-                
+
                 <div class="prayer-time">
                     <div class="prayer-icon">🌤️</div>
                     <div class="prayer-info">
@@ -356,7 +104,7 @@
                         <span class="prayer-value" id="portal-prayer-asr">15:45</span>
                     </div>
                 </div>
-                
+
                 <div class="prayer-time">
                     <div class="prayer-icon">🌅</div>
                     <div class="prayer-info">
@@ -364,7 +112,7 @@
                         <span class="prayer-value" id="portal-prayer-maghrib">18:45</span>
                     </div>
                 </div>
-                
+
                 <div class="prayer-time">
                     <div class="prayer-icon">🌙</div>
                     <div class="prayer-info">
@@ -375,7 +123,7 @@
             </div>
         </div>
     </div>
-    
+
     <!-- 6. التقويم الهجري والميلادي -->
     <div class="widget-card calendar-card" id="portal-calendar-card">
         <div class="widget-header">
@@ -391,7 +139,7 @@
                         <span class="calendar-value" id="portal-hijri-date">12 رجب 1446</span>
                     </div>
                 </div>
-                
+
                 <div class="calendar-item gregorian">
                     <div class="calendar-icon">📅</div>
                     <div class="calendar-info">
@@ -400,50 +148,50 @@
                     </div>
                 </div>
             </div>
-            
+
             <div class="calendar-events">
-    <h4>المناسبات القادمة</h4>
-    <div id="portal-calendar-events-list">
-        <div class="event-item">
-            <span class="event-date">15 شعبان</span>
-            <span class="event-name">بداية شهر شعبان</span>
-              </div>
-                     <div class="event-item">
-                   <span class="event-date">1 رمضان</span>
-                   <span class="event-name">بداية شهر رمضان المبارك</span>
+                <h4>المناسبات القادمة</h4>
+                <div id="portal-calendar-events-list">
+                    <div class="event-item">
+                        <span class="event-date">15 شعبان</span>
+                        <span class="event-name">بداية شهر شعبان</span>
+                    </div>
+                    <div class="event-item">
+                        <span class="event-date">1 رمضان</span>
+                        <span class="event-name">بداية شهر رمضان المبارك</span>
+                    </div>
                 </div>
-             </div>
             </div>
         </div>
     </div>
-    
+
         <!-- 7. حالة الطرق والحركة المرورية (تُملأ ديناميكياً من طبقة road_barriers الحية) -->
-        <div class="widget-card traffic-card" id="portal-road-status-card">
+    <div class="widget-card traffic-card" id="portal-road-status-card">
         <div class="widget-header">
             <h3><i class="fas fa-road"></i> حالة الطرق (حواجز الاحتلال)</h3>
             <span class="widget-update-time">آخر تحديث: <span id="traffic-update-time">--:--</span></span>
         </div>
         <div class="widget-body">
+            <input type="text" class="widget-search-input" data-target-grid="portal-traffic-list" placeholder="🔍 ابحث باسم الحاجز أو المنطقة...">
             <div class="traffic-list" id="portal-traffic-list">
                 <div style="padding:10px; text-align:center; color:#999;">جاري التحميل...</div>
             </div>
         </div>
-    </div>
+    </div>  
 
-    <!-- 🆕 8. حالة محطات الوقود (تُملأ ديناميكياً من طبقة fuel_stations الحية) -->
-        <div class="widget-card traffic-card" id="portal-fuel-status-card">
+        <!-- 8. حالة محطات الوقود (تُملأ ديناميكياً من طبقة fuel_stations الحية) -->
+    <div class="widget-card traffic-card" id="portal-fuel-status-card">
         <div class="widget-header">
             <h3><i class="fas fa-gas-pump"></i> حالة محطات الوقود</h3>
             <span class="widget-update-time">آخر تحديث: <span id="fuel-status-update-time">--:--</span></span>
         </div>
         <div class="widget-body">
+            <input type="text" class="widget-search-input" data-target-grid="portal-fuel-status-list" placeholder="🔍 ابحث باسم المحطة أو المنطقة...">
             <div class="traffic-list" id="portal-fuel-status-list">
                 <div style="padding:10px; text-align:center; color:#999;">جاري التحميل...</div>
             </div>
         </div>
     </div>
-
-</div>
 
 <!-- أزرار التحكم -->
 <div class="portal-controls">

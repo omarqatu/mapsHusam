@@ -377,15 +377,91 @@ window.__nmsPageHandlesOwnAds = true;
         // 🆕 الإعلانات المميزة (يمين/يسار/أسفل) - نسخة موحّدة تجلب عقارات وخدمات معاً
         // وتحل مشكلتي: (أ) ظهور العقارات فقط، (ب) الفراغ الكبير أسفل الإعلانات
         // ==========================================================================
-        function escapeAdAttr(str) {
+                function escapeAdAttr(str) {
             if (str === null || str === undefined) return '';
             return String(str).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/'/g, '&#39;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
         }
 
-        function buildAdCardHtml(props, item) {
+        // 🆕 ودجت تقييم موحّد (نجوم + عدد + زر "عرض التعليقات") يُستخدم بكل من:
+        // الإعلانات المميزة، الأعلى تقييماً، موصى بهم. يعتمد على data-layer/
+        // data-feature-id بدل id فريد، لأن نفس البطاقة قد تُستنسخ عدة مرات
+        // بأعمدة مختلفة (يمين/يسار/أسفل)، وكل نسخة تُحيّى (hydrate) بشكل مستقل.
+        function buildRatingWidgetHtml(layer, featureId) {
+            if (!layer || featureId === undefined || featureId === null || featureId === '') return '';
+            return `<div class="nms-rating-display" data-layer="${escapeAdAttr(layer)}" data-feature-id="${escapeAdAttr(String(featureId))}" style="margin:6px 0; font-size:11px;">
+                <span style="color:#f57c00;">⭐</span>
+                <span class="nms-rating-text" style="color:#666; font-size:11px;">جاري تحميل التقييم...</span>
+            </div>`;
+        }
+
+        async function hydrateRatingWidgets(container) {
+            if (!container) return;
+            const widgets = container.querySelectorAll('.nms-rating-display[data-layer]');
+            for (const widget of widgets) {
+                if (widget.dataset.hydrated) continue;
+                widget.dataset.hydrated = '1';
+                const layer = widget.dataset.layer;
+                const featureId = widget.dataset.featureId;
+                try {
+                    const response = await fetch(`${window.location.origin}/api/service-ratings?service_layer=${layer}&feature_id=${featureId}`);
+                    const data = await response.json();
+                    const textEl = widget.querySelector('.nms-rating-text');
+                    if (!textEl) continue;
+
+                    if (data.success && data.totalRatings > 0) {
+                        const stars = '★'.repeat(Math.round(data.averageRating)) + '☆'.repeat(5 - Math.round(data.averageRating));
+                        textEl.innerHTML = `<span style="color:#ffc107;">${stars}</span> <span style="color:#333; font-weight:bold;">${data.averageRating}</span> <span style="color:#666;">(${data.totalRatings} تقييم)</span>`;
+
+                        const btn = document.createElement('button');
+                        btn.type = 'button';
+                        btn.innerHTML = `💬 عرض التعليقات (${data.totalRatings})`;
+                        btn.style.cssText = 'margin-top:6px; padding:4px 8px; background:#1a73e8; color:#fff; border:none; border-radius:4px; cursor:pointer; font-size:11px; display:block; width:100%;';
+
+                        const commentsDiv = document.createElement('div');
+                        commentsDiv.style.cssText = 'display:none; margin-top:8px; max-height:180px; overflow-y:auto; border-top:1px solid #eee; padding-top:6px;';
+
+                        btn.onclick = () => {
+                            if (commentsDiv.style.display === 'none') {
+                                commentsDiv.style.display = 'block';
+                                if (!data.ratings || data.ratings.length === 0) {
+                                    commentsDiv.innerHTML = '<div style="color:#999; font-size:12px;">لا توجد تعليقات</div>';
+                                } else {
+                                    commentsDiv.innerHTML = data.ratings.map(r => `
+                                        <div style="padding:6px; background:#f9f9f9; border-radius:4px; margin-bottom:6px;">
+                                            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+                                                <span style="font-weight:bold; font-size:12px; color:#333;">${sanitize(r.user_name || 'مستخدم')}</span>
+                                                <span style="color:#ffc107; font-size:13px;">${'★'.repeat(r.rating)}</span>
+                                            </div>
+                                            ${r.comment ? `<div style="font-size:12px; color:#666; line-height:1.4;">${sanitize(r.comment)}</div>` : ''}
+                                            <div style="font-size:10px; color:#999; margin-top:4px;">${new Date(r.created_at).toLocaleDateString('ar-EG')}</div>
+                                        </div>
+                                    `).join('');
+                                }
+                            } else {
+                                commentsDiv.style.display = 'none';
+                            }
+                        };
+
+                        widget.appendChild(btn);
+                        widget.appendChild(commentsDiv);
+                    } else {
+                        textEl.innerHTML = '<span style="color:#999;">لا توجد تقييمات بعد</span>';
+                    }
+                } catch (err) {
+                    // تجاهل فشل جلب تقييم بطاقة واحدة، لا يوقف باقي البطاقات
+                }
+            }
+        }
+
+                function buildAdCardHtml(props, item) {
             const isRealEstate = item.isRealEstate;
             const name = sanitize(props.name || props.location_name || props.location || '');
             const location = sanitize(props.location_name || props.location || '');
+
+            // 🆕 [إصلاح]: بدل شارة نجوم ثابتة بدون أي تفاعل، نستخدم ودجت التقييم
+            
+            const featureIdForRating = (!isRealEstate && props.id !== undefined && props.id !== null && props.id !== '') ? props.id : null;
+            const ratingBadgeHtml = featureIdForRating !== null ? buildRatingWidgetHtml(item.layer, featureIdForRating) : '';
 
             let statusHtml = '';
             if (!isRealEstate) {
@@ -412,14 +488,16 @@ window.__nmsPageHandlesOwnAds = true;
             if (props.whatsapp) {
                 const providerName = name || (isRealEstate ? 'المعلن' : 'مزود الخدمة');
                 const whatsappNumber = props.whatsapp.toString();
-                if (isRealEstate) {
-                    // 🆕 زر الاتصال يظهر فقط إذا كان هناك phone
+                                if (isRealEstate) {
                     const hasPhone = props.phone !== undefined && props.phone !== null && props.phone !== '' && String(props.phone).trim() !== '';
                     const localPhone = hasPhone ? String(props.phone) : ('0' + whatsappNumber.replace(/\D/g, '').slice(5));
-                    actionHtml = `
+                    // 🆕 [إصلاح]: العقارات تستخدم عمود fid وليس id، وكان استخدام props.id فقط
+                    // يجعل feature_id فارغاً دائماً للعقارات، فيرفضه السيرفر ولا يُسجَّل شيء
+                    const realEstateFeatureId = (props.fid !== undefined && props.fid !== null) ? props.fid : props.id;
+                                        actionHtml = `
                         <div style="display:flex; gap:5px; margin-top:6px;">
-                            ${hasPhone ? `<button class="ad-call-btn" data-phone="${localPhone}" data-whatsapp="${whatsappNumber}" data-provider="${escapeAdAttr(providerName)}" data-service="${escapeAdAttr(item.label)}" data-layer="${escapeAdAttr(item.layer)}" data-feature-id="${escapeAdAttr(String(props.id || ''))}" style="flex:1; background:#1a73e8; color:#fff; border:none; padding:6px 4px; border-radius:6px; font-size:10px; font-weight:bold; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:4px;"><i class="fas fa-mobile-alt"></i> اتصال</button>` : ''}
-                            <button class="ad-whatsapp-btn" data-whatsapp="${whatsappNumber}" data-provider="${escapeAdAttr(providerName)}" data-service="${escapeAdAttr(item.label)}" data-layer="${escapeAdAttr(item.layer)}" data-feature-id="${escapeAdAttr(String(props.id || ''))}" style="flex:${hasPhone ? '1' : '1'}; background:#25d366; color:#fff; border:none; padding:6px 4px; border-radius:6px; font-size:10px; font-weight:bold; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:4px;"><i class="fab fa-whatsapp"></i> واتساب</button>
+                            ${hasPhone ? `<button class="ad-call-btn" data-phone="${localPhone}" data-whatsapp="${whatsappNumber}" data-provider="${escapeAdAttr(providerName)}" data-service="${escapeAdAttr(item.label)}" data-layer="${escapeAdAttr(item.layer)}" data-feature-id="${escapeAdAttr(String(realEstateFeatureId || ''))}" style="flex:1; background:#1a73e8; color:#fff; border:none; padding:6px 4px; border-radius:6px; font-size:10px; font-weight:bold; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:4px;"><i class="fas fa-mobile-alt"></i> اتصال <span dir="ltr">${localPhone}</span></button>` : ''}
+                            <button class="ad-whatsapp-btn" data-whatsapp="${whatsappNumber}" data-provider="${escapeAdAttr(providerName)}" data-service="${escapeAdAttr(item.label)}" data-layer="${escapeAdAttr(item.layer)}" data-feature-id="${escapeAdAttr(String(realEstateFeatureId || ''))}" style="flex:${hasPhone ? '1' : '1'}; background:#25d366; color:#fff; border:none; padding:6px 4px; border-radius:6px; font-size:10px; font-weight:bold; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:4px;"><i class="fab fa-whatsapp"></i> واتساب</button>
                         </div>`;
                 } else {
                     // 🆕 للخدمات: نتحقق هل المعلم مرتبط بمزود خدمة
@@ -435,25 +513,26 @@ window.__nmsPageHandlesOwnAds = true;
                                     <i class="fas fa-paper-plane"></i> طلب الخدمة
                                 </button>
                             </div>`;
-                    } else {
+                                        } else {
                         // معلم غير مرتبط - عرض اتصال + واتساب
                         const hasPhone = props.phone !== undefined && props.phone !== null && props.phone !== '' && String(props.phone).trim() !== '';
                         const localPhone = hasPhone ? String(props.phone) : ('0' + whatsappNumber.replace(/\D/g, '').slice(5));
                         actionHtml = `
                             <div style="display:flex; gap:5px; margin-top:6px;">
-                                ${hasPhone ? `<button class="ad-call-btn" data-phone="${localPhone}" data-whatsapp="${whatsappNumber}" data-provider="${escapeAdAttr(providerName)}" data-service="${escapeAdAttr(item.label)}" data-layer="${escapeAdAttr(item.layer)}" data-feature-id="${escapeAdAttr(String(props.id || ''))}" style="flex:1; background:#1a73e8; color:#fff; border:none; padding:6px 4px; border-radius:6px; font-size:10px; font-weight:bold; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:4px;"><i class="fas fa-mobile-alt"></i> اتصال</button>` : ''}
+                                ${hasPhone ? `<button class="ad-call-btn" data-phone="${localPhone}" data-whatsapp="${whatsappNumber}" data-provider="${escapeAdAttr(providerName)}" data-service="${escapeAdAttr(item.label)}" data-layer="${escapeAdAttr(item.layer)}" data-feature-id="${escapeAdAttr(String(props.id || ''))}" style="flex:1; background:#1a73e8; color:#fff; border:none; padding:6px 4px; border-radius:6px; font-size:10px; font-weight:bold; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:4px;"><i class="fas fa-mobile-alt"></i> اتصال <span dir="ltr">${localPhone}</span></button>` : ''}
                                 <button class="ad-whatsapp-btn" data-whatsapp="${whatsappNumber}" data-provider="${escapeAdAttr(providerName)}" data-service="${escapeAdAttr(item.label)}" data-layer="${escapeAdAttr(item.layer)}" data-feature-id="${escapeAdAttr(String(props.id || ''))}" style="flex:${hasPhone ? '1' : '1'}; background:#25d366; color:#fff; border:none; padding:6px 4px; border-radius:6px; font-size:10px; font-weight:bold; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:4px;"><i class="fab fa-whatsapp"></i> واتساب</button>
                             </div>`;
                     }
                 }
             }
 
-            return `
+                        return `
                 <div style="background:#fff; border:2px solid #fbc02d; border-radius:8px; padding:10px; box-shadow:0 2px 5px rgba(0,0,0,0.1); box-sizing:border-box; text-align:right; direction:rtl; width:100%;">
                     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
-                        <span style="background:#fbc02d; color:#000; font-size:9px; padding:2px 5px; border-radius:4px; font-weight:bold;">⭐ مميز</span>
+                        <span style="background:#fbc02d; color:#000; font-size:9px; padding:2px 5px; border-radius:4px; font-weight:bold;">${item.badgeText || '⭐ مميز'}</span>
                         <span style="background:#e8f0fe; color:#1a73e8; font-size:10px; padding:2px 6px; border-radius:4px; font-weight:bold;">📌 ${item.label}</span>
                     </div>
+                    ${ratingBadgeHtml}
                     ${statusHtml}
                     ${name ? `<div style="font-weight:bold; color:#202124; font-size:12px; margin-bottom:4px;"><i class="fas fa-user" style="color:#1a73e8;"></i> ${name}</div>` : ''}
                     ${location ? `<div style="color:#555; font-size:11px; margin-bottom:3px;"><i class="fas fa-map-marker-alt" style="color:#e74c3c;"></i> ${location}</div>` : ''}
@@ -463,7 +542,7 @@ window.__nmsPageHandlesOwnAds = true;
             `;
         }
 
-        async function loadFeaturedAds() {
+                async function loadFeaturedAds() {
             const adSpaces = document.querySelectorAll('.nms-ad-space');
             if (!adSpaces.length) return;
 
@@ -512,6 +591,11 @@ window.__nmsPageHandlesOwnAds = true;
                 return arr;
             }
 
+            // 🆕 نخزّن كامل مجموعة الكروت عالمياً حتى تستطيع دالة إعادة التعبئة
+            // (refillAllSideAds) الوصول إليها لاحقاً عند تغيّر حجم الشاشة أو
+            // تغيّر طول المحتوى الأوسط (فتح تصنيف مختلف، تنفيذ بحث/فلترة...)
+            window.__nmsAdCardPool = allValidCards;
+
             adSpaces.forEach((space) => {
                 space.innerHTML = '';
 
@@ -521,9 +605,9 @@ window.__nmsPageHandlesOwnAds = true;
                 }
 
                 const randomizedCards = shuffleArray(allValidCards);
-                const selectedCards = randomizedCards.slice(0, 4);
 
                 if (space.classList.contains('nms-ad-bottom')) {
+                    const selectedCards = randomizedCards.slice(0, 4);
                     space.style.cssText += `
                         display: flex;
                         flex-direction: row;
@@ -538,10 +622,13 @@ window.__nmsPageHandlesOwnAds = true;
                     const styledCards = selectedCards.map(card => card.replace('width: 100%;', 'width: 24%; min-width: 240px;'));
                     space.innerHTML = styledCards.join('');
                     wireAdActionButtons(space);
-                } else {
-                    // 🆕 الإصلاح الأساسي للفراغ: تباعد ثابت بسيط (gap) بدل
-                    // justify-content:space-between المرتبط بطول main، و
-                    // align-self:flex-start عشان لا تتمدد الحاوية لطول الصفحة كاملة
+                                } else {
+                    // 🆕 الإصلاح الجذري لمشكلة الفراغ (شكل حرف U المطلوب): لا نستخدم
+                    // align-self:stretch إطلاقاً (كان يسبب حلقة تغذية راجعة تجعل
+                    // الصفحة تكبر بلا نهاية - راجع getMainNaturalHeight أدناه لشرح
+                    // المشكلة). بدلاً من ذلك نستخدم flex-start، ونُعطي العمود ارتفاعاً
+                    // ثابتاً بالبكسل يُحسب من الارتفاع الطبيعي لـ .nms-main، ثم نملأه
+                    // بعدد كافٍ من البطاقات (مع تكرار نفس المجموعة عند نفادها).
                     space.style.cssText += `
                         display: flex;
                         flex-direction: column;
@@ -550,21 +637,106 @@ window.__nmsPageHandlesOwnAds = true;
                         gap: 15px;
                         padding: 10px 0;
                         box-sizing: border-box;
-                        height: auto;
-                        min-height: 0;
+                        overflow: hidden;
                     `;
-                    space.innerHTML = selectedCards.join('');
-                    wireAdActionButtons(space);
+                    requestAnimationFrame(() => fillAdSideWithPool(space, randomizedCards));
                 }
             });
         }
 
+                        // 🆕 [إصلاح حلقة التغذية الراجعة]: align-self:stretch كان يجعل .nms-main
+        // نفسه يتمدد ليطابق ارتفاع العمود الجانبي، فتتضخم الصفحة بلا نهاية مع كل
+        // إعادة تعبئة. الحل: نفرض align-items:flex-start على .nms-layout لمنع أي
+        // تمدد تلقائي بين الأعمدة، فيبقى ارتفاع .nms-main معبّراً دائماً عن محتواه
+        // الفعلي فقط، بغض النظر عن طول الأعمدة الجانبية بجانبه.
+        function getMainNaturalHeight() {
+            const layoutEl = document.querySelector('.nms-layout');
+            const mainEl = document.querySelector('.nms-main');
+            if (!mainEl) return 0;
+            if (layoutEl) {
+                layoutEl.style.setProperty('align-items', 'flex-start', 'important');
+            }
+            return mainEl.getBoundingClientRect().height;
+        }
+
+        // 🆕 تملأ عموداً جانبياً واحداً ببطاقات كافية (مع تكرار المجموعة المتاحة
+        // دورياً عند نفادها) حتى يغطي بالضبط الارتفاع الطبيعي لـ .nms-main، عبر
+        // ارتفاع ثابت بالبكسل (وليس stretch) لمنع أي حلقة تغذية راجعة.
+        function fillAdSideWithPool(sideEl, cardsPool, attempt) {
+            if (!sideEl || !cardsPool || cardsPool.length === 0) return;
+            attempt = attempt || 0;
+
+            const targetHeight = getMainNaturalHeight();
+
+            if (!targetHeight) {
+                // الصفحة أو المحتوى لم يكتمل رسمه بعد - أعد المحاولة بضع مرات
+                // قبل الاستسلام نهائياً (حد أقصى نصف ثانية تقريباً)
+                if (attempt < 20) {
+                    requestAnimationFrame(() => fillAdSideWithPool(sideEl, cardsPool, attempt + 1));
+                }
+                return;
+            }
+
+            sideEl.innerHTML = '';
+            // 🆕 ارتفاع ثابت بالبكسل مأخوذ من القياس أعلاه - لا يتغيّر تبعاً لعدد
+            // الكروت التي سنضيفها، وبالتالي لا يوجد أي حلقة تغذية راجعة ممكنة
+            sideEl.style.height = targetHeight + 'px';
+
+            let poolIndex = 0;
+            let safetyCounter = 0;
+            while (sideEl.scrollHeight < targetHeight && safetyCounter < 150) {
+                const wrapper = document.createElement('div');
+                wrapper.innerHTML = cardsPool[poolIndex % cardsPool.length];
+                const cardNode = wrapper.firstElementChild;
+                if (cardNode) sideEl.appendChild(cardNode);
+                poolIndex++;
+                safetyCounter++;
+            }
+
+            wireAdActionButtons(sideEl);
+        }
+
+        // 🆕 إعادة تعبئة كل الأعمدة الجانبية (يمين ويسار) دفعة واحدة - تُستدعى
+        // عند تغيّر حجم الشاشة أو تغيّر ارتفاع القسم الأوسط (فتح تصنيف مختلف،
+        // تنفيذ بحث أو فلترة تُغيّر عدد النتائج المعروضة...)
+        function refillAllSideAds() {
+            const pool = window.__nmsAdCardPool;
+            if (!pool || pool.length === 0) return;
+            document.querySelectorAll('.nms-ad-space.nms-ad-side').forEach(sideEl => {
+                fillAdSideWithPool(sideEl, pool);
+            });
+        }
+
+        (function setupSideAdsAutoRefill() {
+            let resizeToken = null;
+            window.addEventListener('resize', () => {
+                clearTimeout(resizeToken);
+                resizeToken = setTimeout(refillAllSideAds, 250);
+            });
+
+            const mainEl = document.querySelector('.nms-main');
+            if (mainEl && typeof ResizeObserver !== 'undefined') {
+                let roToken = null;
+                const ro = new ResizeObserver(() => {
+                    // 🆕 نتجاهل أي تغيّر ارتفاع ناتج عن تعديلنا نحن لارتفاع الأعمدة
+                    // الجانبية (لا يمكن حدوثه أصلاً الآن لأن .nms-main لم يعد يتمدد،
+                    // لكن كإجراء أمان إضافي نُبقي الـ debounce لتفادي أي استدعاءات
+                    // متلاحقة أثناء تغييرات DOM سريعة مثل فتح تصنيف جديد)
+                    clearTimeout(roToken);
+                    roToken = setTimeout(refillAllSideAds, 250);
+                });
+                ro.observe(mainEl);
+            }
+        })();
         // تفعيل أزرار الاتصال/واتساب الخاصة بكروت الإعلانات (تسجيل تتبع + فحص حد الطلبات)
                 // 🆕 ربط مباشر (وليس عام) لأزرار الاتصال/واتساب الخاصة بكروت الإعلانات،
         // مع تسجيل تتبع + فحص حد الطلبات + تسجيل النقرة في /api/log-contact-click.
         // يُستدعى بعد كل مرة تُحقَن فيها كروت جديدة (إعلانات، أعلى تقييماً، موصى بهم)
-        function wireAdActionButtons(container) {
+                function wireAdActionButtons(container) {
             if (!container) return;
+
+            
+            hydrateRatingWidgets(container);
 
             container.querySelectorAll('.ad-call-btn').forEach(callBtn => {
                 if (callBtn.dataset.wired) return;
@@ -666,17 +838,347 @@ window.__nmsPageHandlesOwnAds = true;
         // عبر CSS. "الأعلى تقييماً" = أي معلم له تقييم فعلي (rating > 0)، بينما
         // "موصى بهم" = المعالم المقيّمة بالضبط 9.9 (رتبة أقل من رتبة الإعلانات 10)
         // ==========================================================================
-        function refreshHomeSectionsVisibility() {
-            const topRatedSection = document.getElementById('nms-top-rated-section');
-            const recommendedSection = document.getElementById('nms-recommended-section');
-            const onHome = categoriesView && !categoriesView.classList.contains('hidden');
-            if (topRatedSection) {
-                topRatedSection.style.display = (onHome && topRatedSection.dataset.hasData === '1') ? '' : 'none';
-            }
-            if (recommendedSection) {
-                recommendedSection.style.display = (onHome && recommendedSection.dataset.hasData === '1') ? '' : 'none';
-            }
+                function refreshHomeSectionsVisibility() {
+                    const topRatedSection = document.getElementById('nms-top-rated-section');
+                    const recommendedSection = document.getElementById('nms-recommended-section');
+                    const photosSection = document.getElementById('nms-photos-section');
+                    const videosSection = document.getElementById('nms-videos-section');
+                    const beforeAfterSection = document.getElementById('nms-before-after-section');
+
+                    // 🆕 الأقسام الخمسة تبقى ظاهرة دائماً طالما تحتوي بيانات، بغض النظر عن
+                    // كون المستخدم بشاشة "الرئيسية" أو داخل نتائج تصنيف/فلترة معينة
+                    if (topRatedSection) topRatedSection.style.display = (topRatedSection.dataset.hasData === '1') ? '' : 'none';
+                    if (recommendedSection) recommendedSection.style.display = (recommendedSection.dataset.hasData === '1') ? '' : 'none';
+                    if (photosSection) photosSection.style.display = (photosSection.dataset.hasData === '1') ? '' : 'none';
+                    if (videosSection) videosSection.style.display = (videosSection.dataset.hasData === '1') ? '' : 'none';
+                    if (beforeAfterSection) beforeAfterSection.style.display = (beforeAfterSection.dataset.hasData === '1') ? '' : 'none';
+                }
+
+        // ==========================================================================
+        // 🆕 أقسام الصور / الفيديوهات / قبل وبعد - نفس مبدأ فحص "الأعلى تقييماً"
+        // و"موصى بهم" (مسح شامل لكل الـ 62 فئة عبر categories)، لكن بشكل عرض مختلف
+        // تماماً (شبكة بطاقات كبيرة تُبرز الوسائط بدل الشريط الأفقي الصغير).
+        // ==========================================================================
+
+        // تنظيف رابط خارجي (صورة/فيديو/رابط تفاصيل) قبل استخدامه في الصفحة
+        function cleanExternalUrl(rawUrl) {
+            if (!rawUrl) return '';
+            let url = String(rawUrl).trim().replace(/["']/g, '');
+            if (!url || url === '#' || url.toLowerCase() === 'undefined') return '';
+            if (!url.startsWith('http')) url = 'https://' + url;
+            return url;
         }
+
+        // تحويل رابط فيديو (يوتيوب أو ملف مباشر أو رابط عام) إلى عنصر عرض مناسب
+        function buildVideoEmbedHtml(rawUrl) {
+            const url = cleanExternalUrl(rawUrl);
+            if (!url) return '';
+
+            const ytMatch = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([\w-]+)/);
+            if (ytMatch) {
+                return `<div class="nms-gallery-media nms-gallery-video"><iframe src="https://www.youtube.com/embed/${ytMatch[1]}" frameborder="0" allow="autoplay; encrypted-media" allowfullscreen loading="lazy"></iframe></div>`;
+            }
+
+            if (/\.(mp4|webm|ogg)(\?.*)?$/i.test(url)) {
+                return `<div class="nms-gallery-media nms-gallery-video"><video controls preload="metadata" src="${url}"></video></div>`;
+            }
+
+            return `<div class="nms-gallery-media nms-gallery-video-link"><a href="${url}" target="_blank" rel="noopener" class="nms-video-link-btn"><i class="fas fa-play-circle"></i> مشاهدة الفيديو</a></div>`;
+        }
+
+        // عرض صورة أو رابط ضمن عمود "قبل" أو "بعد"
+        function renderBeforeAfterMedia(url) {
+            if (/\.(jpg|jpeg|png|gif|webp)(\?.*)?$/i.test(url)) {
+                return `<img src="${url}" loading="lazy" onerror="this.style.display='none'; this.insertAdjacentHTML('afterend', '<div class=\\'nms-ba-empty\\'>تعذر تحميل الصورة</div>');">`;
+            }
+            return `<a href="${url}" target="_blank" rel="noopener" class="nms-video-link-btn"><i class="fas fa-external-link-alt"></i> عرض</a>`;
+        }
+
+                // 🆕 أزرار التواصل (اتصال/واتساب/طلب الخدمة) بنفس آلية تسجيل النقرات
+        // المستخدمة بقسم "موصى بهم" و"الأعلى تقييماً" تماماً (نفس الألوان: أزرق
+        // للاتصال، أخضر للواتساب، تدرّج بنفسجي/أزرق لطلب الخدمة) + عرض رقم
+        // الهاتف مباشرة على زر الاتصال نفسه.
+        function buildGalleryContactActionsHtml(props, item) {
+            if (!props.whatsapp) return '';
+            const isRealEstate = item.isRealEstate;
+            const whatsappNumber = props.whatsapp.toString();
+            const providerName = props.name || (isRealEstate ? 'المعلن' : 'مزود الخدمة');
+            const featureId = (props.id !== undefined && props.id !== null) ? props.id : (props.fid !== undefined ? props.fid : '');
+
+            if (!isRealEstate) {
+                const isLinkedProvider = typeof window.isFeatureLinkedToProvider === 'function' && window.isFeatureLinkedToProvider(item.layer, featureId);
+                if (isLinkedProvider) {
+                    return `<div class="nms-gallery-actions">
+                        <button class="req-svc-btn" style="width:100%; background:linear-gradient(135deg,#1a73e8,#6c5ce7); color:#fff; border:none; padding:10px; border-radius:8px; font-weight:bold; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:6px;" data-provider="${escapeAdAttr(providerName)}" data-service="${escapeAdAttr(item.label)}" data-layer="${item.layer}" data-feature-id="${featureId}">
+                            <i class="fas fa-paper-plane"></i> طلب الخدمة
+                        </button>
+                    </div>`;
+                }
+            }
+
+            const hasPhone = props.phone !== undefined && props.phone !== null && props.phone !== '' && String(props.phone).trim() !== '';
+            const localPhone = hasPhone ? String(props.phone) : ('0' + whatsappNumber.replace(/\D/g, '').slice(5));
+
+            return `<div class="nms-gallery-actions" style="display:flex; gap:8px;">
+                ${hasPhone ? `<button class="ad-call-btn" data-phone="${localPhone}" data-whatsapp="${whatsappNumber}" data-provider="${escapeAdAttr(providerName)}" data-service="${escapeAdAttr(item.label)}" data-layer="${escapeAdAttr(item.layer)}" data-feature-id="${escapeAdAttr(String(featureId))}" style="flex:1; background:#1a73e8; color:#fff; border:none; padding:10px; border-radius:8px; font-size:12px; font-weight:bold; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:5px;"><i class="fas fa-mobile-alt"></i> اتصال <span dir="ltr">${localPhone}</span></button>` : ''}
+                <button class="ad-whatsapp-btn" data-whatsapp="${whatsappNumber}" data-provider="${escapeAdAttr(providerName)}" data-service="${escapeAdAttr(item.label)}" data-layer="${escapeAdAttr(item.layer)}" data-feature-id="${escapeAdAttr(String(featureId))}" style="flex:1; background:#25d366; color:#fff; border:none; padding:10px; border-radius:8px; font-size:12px; font-weight:bold; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:5px;"><i class="fab fa-whatsapp"></i> واتساب</button>
+            </div>`;
+        }
+
+        // 🆕 فحص وجود وسائط صالحة فقط (بدون أي آثار جانبية مثل جلب التقييم)،
+        // يُستخدم لتصفية النتائج قبل البناء الفعلي لتفادي جلب التقييم مرتين
+        function galleryEntryHasMedia(props, mode) {
+            if (mode === 'photo') return !!cleanExternalUrl(props.pic);
+            if (mode === 'video') return !!cleanExternalUrl(props.video);
+            return false;
+        }
+
+        // 🆕 حارس بسيط لمنع تكرار طلب نفس التقييم عدة مرات عند إعادة الرسم
+        // (مثلاً كل مرة يكتب المستخدم حرفاً بشريط البحث)
+        window.__nmsRatingFetchGuard = window.__nmsRatingFetchGuard || new Set();
+        function scheduleRatingFetchOnce(layerKey, featureId) {
+            const key = `${layerKey}-${featureId}`;
+            if (window.__nmsRatingFetchGuard.has(key)) return;
+            window.__nmsRatingFetchGuard.add(key);
+            setTimeout(() => fetchRatingsForFeature(layerKey, featureId), Math.floor(Math.random() * 500));
+        }
+
+        // بطاقة شبكية مفصّلة (صور / فيديوهات)
+        function buildGalleryDetailCardHtml(feature, item, mode) {
+            const props = feature.properties || {};
+            const isRealEstate = item.isRealEstate;
+            const name = sanitize(props.name || '');
+            const location = sanitize(props.location_name || props.location || '');
+            const featureId = (props.id !== undefined && props.id !== null) ? props.id : (props.fid !== undefined ? props.fid : '');
+
+            let mediaHtml = '';
+            if (mode === 'photo' && props.pic) {
+                const cleanPic = cleanExternalUrl(props.pic);
+                if (cleanPic) mediaHtml = `<div class="nms-gallery-media"><img src="${cleanPic}" alt="${name}" loading="lazy" onerror="this.parentElement.style.display='none'"></div>`;
+            } else if (mode === 'video' && props.video) {
+                mediaHtml = buildVideoEmbedHtml(props.video);
+            }
+            if (!mediaHtml) return '';
+
+            let infoHtml = `<div class="nms-gallery-card-body">`;
+            infoHtml += `<div class="nms-gallery-badge">🏆 ${item.label}</div>`;
+            if (!isRealEstate) infoHtml += getStatusBadge(props.auto_status, props.work_hours);
+            if (name) infoHtml += `<div class="nms-r-name"><i class="fas fa-user"></i> ${name}</div>`;
+            if (location) infoHtml += `<div class="nms-r-loc"><i class="fas fa-map-marker-alt"></i> ${location}</div>`;
+
+            if (isRealEstate) {
+                if (props.price) {
+                    const symbols = { USD: 'دولار', ILS: 'شيقل', JOD: 'دينار' };
+                    infoHtml += `<div class="nms-r-line"><b>💰 السعر:</b> ${Number(props.price).toLocaleString()} ${symbols[props.currency] || ''}</div>`;
+                }
+                if (props.area) infoHtml += `<div class="nms-r-line"><b>📐 المساحة:</b> ${props.area} م²</div>`;
+            } else if (featureId !== '') {
+                infoHtml += `<div id="rating-display-${item.layer}-${featureId}" class="nms-rating-display">
+                    <span style="color:#f57c00;">⭐</span>
+                    <span id="rating-text-${item.layer}-${featureId}" style="color:#666; font-size:12px;">جاري تحميل التقييم...</span>
+                </div>`;
+                scheduleRatingFetchOnce(item.layer, featureId);
+            }
+
+            if (props.des) infoHtml += `<div class="nms-r-desc"><b>📝 الوصف:</b> ${sanitize(props.des)}</div>`;
+            infoHtml += `</div>`;
+
+            const actionsHtml = buildGalleryContactActionsHtml(props, item);
+            const coords = getFeatureCoords(feature);
+            const gotoBtnHtml = coords
+                ? `<button type="button" class="nms-goto-map-btn" onclick="window.nmsGotoMapFromCoords(${coords[0]}, ${coords[1]})"><i class="fas fa-map-location-dot"></i> الانتقال إلى الخريطة</button>`
+                : '';
+
+            return `<div class="nms-gallery-card">${mediaHtml}${infoHtml}${actionsHtml}${gotoBtnHtml}</div>`;
+        }
+
+        // بطاقة "قبل وبعد" (خدمات فقط - details_link_1 و details_link_2)
+        function buildBeforeAfterCardHtml(feature, item) {
+            const props = feature.properties || {};
+            const name = sanitize(props.name || '');
+            const location = sanitize(props.location_name || props.location || '');
+            const featureId = (props.id !== undefined && props.id !== null) ? props.id : '';
+
+            const beforeUrl = cleanExternalUrl(props.details_link_1);
+            const afterUrl = cleanExternalUrl(props.details_link_2);
+            if (!beforeUrl && !afterUrl) return '';
+
+            const mediaHtml = `<div class="nms-before-after-media">
+                <div class="nms-ba-col">
+                    <span class="nms-ba-label">قبل</span>
+                    ${beforeUrl ? renderBeforeAfterMedia(beforeUrl) : '<div class="nms-ba-empty">لا يوجد</div>'}
+                </div>
+                <div class="nms-ba-col">
+                    <span class="nms-ba-label">بعد</span>
+                    ${afterUrl ? renderBeforeAfterMedia(afterUrl) : '<div class="nms-ba-empty">لا يوجد</div>'}
+                </div>
+            </div>`;
+
+            let infoHtml = `<div class="nms-gallery-card-body">`;
+            infoHtml += `<div class="nms-gallery-badge">🏆 ${item.label}</div>`;
+            infoHtml += getStatusBadge(props.auto_status, props.work_hours);
+            if (name) infoHtml += `<div class="nms-r-name"><i class="fas fa-user"></i> ${name}</div>`;
+            if (location) infoHtml += `<div class="nms-r-loc"><i class="fas fa-map-marker-alt"></i> ${location}</div>`;
+            if (featureId !== '') {
+                infoHtml += `<div id="rating-display-${item.layer}-${featureId}" class="nms-rating-display">
+                    <span style="color:#f57c00;">⭐</span>
+                    <span id="rating-text-${item.layer}-${featureId}" style="color:#666; font-size:12px;">جاري تحميل التقييم...</span>
+                </div>`;
+                scheduleRatingFetchOnce(item.layer, featureId);
+            }
+            if (props.des) infoHtml += `<div class="nms-r-desc"><b>📝 الوصف:</b> ${sanitize(props.des)}</div>`;
+            infoHtml += `</div>`;
+
+            const actionsHtml = buildGalleryContactActionsHtml(props, item);
+            const coords = getFeatureCoords(feature);
+            const gotoBtnHtml = coords
+                ? `<button type="button" class="nms-goto-map-btn" onclick="window.nmsGotoMapFromCoords(${coords[0]}, ${coords[1]})"><i class="fas fa-map-location-dot"></i> الانتقال إلى الخريطة</button>`
+                : '';
+
+            return `<div class="nms-gallery-card nms-before-after-card">${mediaHtml}${infoHtml}${actionsHtml}${gotoBtnHtml}</div>`;
+        }
+
+                    // 🆕 عرض كل النتائج ضمن شريط أفقي قابل للسكرول (نفس أسلوب "الأعلى تقييماً"
+                // و"موصى بهم" تماماً) - أول 3 عناصر تظهر مباشرة، والباقي يظهر بالسكرول
+                // الأفقي، بدون أي مربع بحث
+                function renderGalleryScrollRow(gridId, allEntries, buildCardFn) {
+                    const grid = document.getElementById(gridId);
+                    if (!grid) return;
+
+                    const cardsHtml = allEntries.map(entry => buildCardFn(entry.feature, entry.item)).filter(h => h !== '');
+                    grid.innerHTML = cardsHtml.length
+                        ? cardsHtml.join('')
+                        : '<div class="nms-empty">لا توجد نتائج</div>';
+                    wireAdActionButtons(grid);
+                }
+
+        // 🆕 تحميل قسم صور أو فيديوهات: فقط المعالم التي تُعتبر "الأعلى تقييماً"
+        // (rating = 10 أو 9.9 بنفس منطق باقي أقسام الصفحة) وتملك وسائط حقيقية
+        async function loadGallerySection(fieldName, gridId, sectionId, mode, includeRealEstate) {
+            const grid = document.getElementById(gridId);
+            const section = document.getElementById(sectionId);
+            if (!grid || !section) return;
+
+            const targets = categories
+                .filter(cat => (cat.isRealEstate && includeRealEstate) || !cat.isRealEstate)
+                .map(cat => {
+                    const { workspace, layerName, isRealEstate } = getWorkspaceAndName(cat.key);
+                    return { layer: layerName, workspace, label: cat.title, isRealEstate };
+                });
+
+            let collected = [];
+            const batchSize = 10;
+            for (let i = 0; i < targets.length; i += batchSize) {
+                const batch = targets.slice(i, i + batchSize);
+                const promises = batch.map(async (item) => {
+                    try {
+                        const params = new URLSearchParams({
+                            layer: item.layer,
+                            workspace: item.workspace,
+                            field_0: fieldName,
+                            operator_0: 'notempty',
+                            value_0: '1',
+                            field_1: 'rating',
+                            operator_1: '=',
+                            value_1: '10',
+                            field_2: 'rating',
+                            operator_2: '=',
+                            value_2: '9.9',
+                            conditions_count: '3'
+                        });
+                        const response = await fetch(`${baseUrl}api/search-features?${params.toString()}`);
+                        if (!response.ok) return [];
+                        const data = await response.json();
+                        return (data.features || []).map(f => ({ feature: f, item }));
+                    } catch (err) {
+                        return [];
+                    }
+                });
+                const results = await Promise.all(promises);
+                results.forEach(list => { if (list.length) collected.push(...list); });
+            }
+
+            const validEntries = collected.filter(entry => galleryEntryHasMedia(entry.feature.properties || {}, mode));
+
+            if (validEntries.length === 0) {
+                section.dataset.hasData = '0';
+                grid.innerHTML = '';
+                refreshHomeSectionsVisibility();
+                return;
+            }
+
+            section.dataset.hasData = '1';
+            renderGalleryScrollRow(gridId, validEntries, (f, it) => buildGalleryDetailCardHtml(f, it, mode));
+            refreshHomeSectionsVisibility();
+        }
+
+        // 🆕 تحميل قسم "قبل وبعد": خدمات فقط (لا عقارات إطلاقاً)، ويشترط أن
+        // يكون rating = 10 أو 9.9، بالإضافة إلى وجود details_link_1 و details_link_2 معاً
+        async function loadBeforeAfterSection() {
+            const grid = document.getElementById('nms-before-after-grid');
+            const section = document.getElementById('nms-before-after-section');
+            if (!grid || !section) return;
+
+            // 🆕 استبعاد صريح لطبقات العقارات (شقق الإيجار، شقق البيع، الأراضي)
+            // - هذا القسم للخدمات فقط كما طُلب
+            const targets = categories.filter(cat => !cat.isRealEstate).map(cat => {
+                const { workspace, layerName } = getWorkspaceAndName(cat.key);
+                return { layer: layerName, workspace, label: cat.title, isRealEstate: false };
+            });
+
+            let collected = [];
+            const batchSize = 10;
+            for (let i = 0; i < targets.length; i += batchSize) {
+                const batch = targets.slice(i, i + batchSize);
+                const promises = batch.map(async (item) => {
+                    try {
+                        const params = new URLSearchParams({
+                            layer: item.layer,
+                            workspace: item.workspace,
+                            field_0: 'details_link_1',
+                            operator_0: 'notempty',
+                            value_0: '1',
+                            field_1: 'details_link_2',
+                            operator_1: 'notempty',
+                            value_1: '1',
+                            field_2: 'rating',
+                            operator_2: '=',
+                            value_2: '10',
+                            field_3: 'rating',
+                            operator_3: '=',
+                            value_3: '9.9',
+                            conditions_count: '4'
+                        });
+                        const response = await fetch(`${baseUrl}api/search-features?${params.toString()}`);
+                        if (!response.ok) return [];
+                        const data = await response.json();
+                        return (data.features || []).map(f => ({ feature: f, item }));
+                    } catch (err) {
+                        return [];
+                    }
+                });
+                const results = await Promise.all(promises);
+                results.forEach(list => { if (list.length) collected.push(...list); });
+            }
+
+            if (collected.length === 0) {
+                section.dataset.hasData = '0';
+                grid.innerHTML = '';
+                refreshHomeSectionsVisibility();
+                return;
+            }
+
+            section.dataset.hasData = '1';
+            renderGalleryScrollRow('nms-before-after-grid', collected, buildBeforeAfterCardHtml);
+            refreshHomeSectionsVisibility();
+        }
+
+        // 🆕 دالة عامة للانتقال إلى موقع أي معلم على الخريطة من أزرار البطاقات
+        // (نفس منطق goBtn.onclick الموجود بباقي الصفحة، لكن بصيغة onclick داخل HTML)
+        window.nmsGotoMapFromCoords = function (x, y) {
+            if (x === undefined || y === undefined || x === null || y === null) return;
+            window.open(`/original-index.html?x=${Number(x).toFixed(3)}&y=${Number(y).toFixed(3)}`, '_blank');
+        };
 
         async function loadRatedRow(gridId, sectionId, operator, ratingValue) {
             const grid = document.getElementById(gridId);
@@ -734,14 +1236,87 @@ window.__nmsPageHandlesOwnAds = true;
             refreshHomeSectionsVisibility();
         }
 
-        setTimeout(() => {
-            loadRatedRow('nms-top-rated-grid', 'nms-top-rated-section', '>', 0.1);
-            loadRatedRow('nms-recommended-grid', 'nms-recommended-section', '=', 9.9);
-        }, 1200);
+                // 🆕 قسم "الأعلى تقييماً" الحقيقي: يعتمد على جدول service_ratings الفعلي
+    
+        async function loadTopRatedFromRealRatings() {
+            const grid = document.getElementById('nms-top-rated-grid');
+            const section = document.getElementById('nms-top-rated-section');
+            if (!grid || !section) return;
 
-        setTimeout(loadFeaturedAds, 1000);
+            try {
+                const res = await fetch(`${baseUrl}api/top-rated-providers?limit=15`);
+                const data = await res.json();
 
-        setTimeout(loadFeaturedAds, 1000);
+                if (!data.success || !data.items || data.items.length === 0) {
+                    section.dataset.hasData = '0';
+                    grid.innerHTML = '';
+                    refreshHomeSectionsVisibility();
+                    return;
+                }
+
+                const cardsPromises = data.items.map(async (ratingItem) => {
+                    const layerKey = ratingItem.service_layer;
+                    const featureId = ratingItem.feature_id;
+                    if (!layerKey || !featureId) return null;
+
+                                        try {
+                        
+                        const params = new URLSearchParams({
+                            layer: layerKey,
+                            workspace: 'services',
+                            field_0: 'id',
+                            operator_0: '=',
+                            value_0: String(featureId),
+                            conditions_count: '1',
+                            ignore_status: '1'
+                        });
+                        const fRes = await fetch(`${baseUrl}api/search-features?${params.toString()}`);
+                        if (!fRes.ok) return null;
+                        const fData = await fRes.json();
+                        const feature = (fData.features || [])[0];
+                        if (!feature) return null;
+
+                        const label = serviceNames[layerKey] || layerKey;
+                        const cardItem = {
+                            layer: layerKey,
+                            workspace: 'services',
+                            label,
+                            isRealEstate: false,
+                            avgRating: parseFloat(ratingItem.avg_rating) || 0,
+                            totalRatings: parseInt(ratingItem.total_ratings, 10) || 0,
+                            badgeText: '🏆 الأعلى تقييماً'
+                        };
+                        return buildAdCardHtml(feature.properties || {}, cardItem);
+                    } catch (err) {
+                        return null;
+                    }
+                });
+
+                const cards = (await Promise.all(cardsPromises)).filter(Boolean);
+
+                if (cards.length === 0) {
+                    section.dataset.hasData = '0';
+                    grid.innerHTML = '';
+                    refreshHomeSectionsVisibility();
+                    return;
+                }
+
+                section.dataset.hasData = '1';
+                grid.innerHTML = cards.join('');
+                wireAdActionButtons(grid); // 🆕 يضمن تسجيل نقرات اتصال/واتساب/طلب خدمة لهذا القسم أيضاً
+                refreshHomeSectionsVisibility();
+            } catch (err) {
+                console.warn('تعذر جلب قسم الأعلى تقييماً الحقيقي:', err.message);
+            }
+        }
+
+       
+        loadTopRatedFromRealRatings();
+        loadRatedRow('nms-recommended-grid', 'nms-recommended-section', '=', 9.9);
+        loadFeaturedAds();
+        loadGallerySection('pic', 'nms-photos-grid', 'nms-photos-section', 'photo', true);
+        loadGallerySection('video', 'nms-videos-grid', 'nms-videos-section', 'video', true);
+        loadBeforeAfterSection();
 
 
 
@@ -1296,6 +1871,10 @@ window.__nmsPageHandlesOwnAds = true;
                 }
                 if (p.des) html += `<div class="nms-r-desc"><b>📝 الوصف:</b> ${sanitize(p.des)}</div>`;
                 if (p.pic) html += `<div class="nms-r-img"><img src="${p.pic}" onerror="this.parentElement.style.display='none'"></div>`;
+                if (p.video) {
+                    const videoUrl = p.video.toString().trim().startsWith('http') ? p.video : 'https://' + p.video;
+                    html += `<div style="margin-top:6px;"><a href="${videoUrl}" target="_blank" rel="noopener" style="color:#1a73e8; font-weight:bold; text-decoration:none; display:inline-flex; align-items:center; gap:5px; font-size:12px;"><i class="fas fa-video"></i> عرض الفيديو</a></div>`;
+                }
 
                 card.innerHTML = html;
 
@@ -1309,7 +1888,9 @@ window.__nmsPageHandlesOwnAds = true;
                     // اتصال+واتساب. الخدمات: "طلب الخدمة" فقط إذا كان المعلم مرتبطاً
                     // فعلياً بحساب مزود مُفعّل، وإلا اتصال+واتساب مباشرة مثل العقارات.
                     const layerDbName = (currentCategory.key || '').replace(/Layer$/i, '');
-                    const featureIdForRequest = (p.id !== undefined && p.id !== null) ? p.id : '';
+                    const featureIdForRequest = isRealEstate
+                        ? ((p.fid !== undefined && p.fid !== null) ? p.fid : '')
+                        : ((p.id !== undefined && p.id !== null) ? p.id : '');
                     const isLinkedProvider = !isRealEstate && typeof window.isFeatureLinkedToProvider === 'function' && window.isFeatureLinkedToProvider(layerDbName, featureIdForRequest);
 
                                     if (isLinkedProvider) {
@@ -1324,12 +1905,12 @@ window.__nmsPageHandlesOwnAds = true;
                     `;
                     card.appendChild(actions);
                 } else {
-                    // 🆕 زر الاتصال يظهر فقط إذا كان هناك phone
+                                        // 🆕 زر الاتصال يظهر فقط إذا كان هناك phone
                     const hasPhone = p.phone !== undefined && p.phone !== null && p.phone !== '' && String(p.phone).trim() !== '';
                     const actions = document.createElement('div');
                     actions.className = 'nms-r-actions';
                     actions.innerHTML = `
-                        ${hasPhone ? `<button class="nms-call-btn"><i class="fas fa-mobile-alt"></i> اتصال</button>` : ''}
+                        ${hasPhone ? `<button class="nms-call-btn"><i class="fas fa-mobile-alt"></i> اتصال <span dir="ltr">${sanitize(localPhone)}</span></button>` : ''}
                         <button class="nms-whatsapp-btn"><i class="fab fa-whatsapp"></i> واتساب</button>
                     `;
                     if (hasPhone) {

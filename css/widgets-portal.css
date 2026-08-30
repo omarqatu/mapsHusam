@@ -15,6 +15,7 @@
    البطاقات العامة
    ============================================ */
 .widget-card {
+    position: relative; /* 🆕 يحصر طبقة ::before داخل حدود هذه البطاقة فقط بدل أن تغطي كامل المودال */
     background: #fff;
     border-radius: 12px;
     box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
@@ -627,12 +628,12 @@
     background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);
     opacity: 0;
     transition: opacity 0.3s ease;
+    pointer-events: none; /* 🆕 تأكيد إضافي: هذه الطبقة زخرفية بحتة ويجب ألا تعترض أي نقرة أو تحديد نص أبداً */
 }
 
 .widget-card:hover::before {
     opacity: 1;
 }
-
 /* ============================================
    دعم الوضع الليلي
    ============================================ */
@@ -675,4 +676,44 @@
         background: rgba(255, 255, 255, 0.1);
         color: #e0e0e0;
     }
+}
+
+/* 🆕 حدّ أقصى لعرض 5 صفوف تقريباً لكل مجموعة ما عدا الحواجز ومحطات الوقود، ثم سكرول عمودي للباقي */
+.currency-grid, .gold-grid, .weather-grid, 
+.prayer-times,  .market-grid,
+[id$="-transport-inter-city-grid"], [id$="-transport-intra-city-grid"] {
+    max-height: 400px;
+    overflow-y: auto;
+    padding-left: 4px;
+}
+.currency-grid::-webkit-scrollbar, .gold-grid::-webkit-scrollbar,
+.weather-grid::-webkit-scrollbar, .fuel-grid::-webkit-scrollbar,
+.prayer-times::-webkit-scrollbar, .traffic-list::-webkit-scrollbar,
+[id$="-transport-inter-city-grid"]::-webkit-scrollbar,
+[id$="-transport-intra-city-grid"]::-webkit-scrollbar {
+    width: 6px;
+}
+.currency-grid::-webkit-scrollbar-thumb, .gold-grid::-webkit-scrollbar-thumb,
+.weather-grid::-webkit-scrollbar-thumb, .fuel-grid::-webkit-scrollbar-thumb,
+.prayer-times::-webkit-scrollbar-thumb, .traffic-list::-webkit-scrollbar-thumb,
+[id$="-transport-inter-city-grid"]::-webkit-scrollbar-thumb,
+[id$="-transport-intra-city-grid"]::-webkit-scrollbar-thumb {
+    background: #c7c7c7;
+    border-radius: 4px;
+}
+
+/* 🆕 مربع البحث داخل كل بطاقة مجموعة */
+.widget-search-input {
+    width: 100%;
+    padding: 8px 12px;
+    margin-bottom: 12px;
+    border: 1px solid #ddd;
+    border-radius: 20px;
+    font-size: 13px;
+    outline: none;
+    transition: border-color .2s;
+    box-sizing: border-box;
+}
+.widget-search-input:focus {
+    border-color: #667eea;
 }

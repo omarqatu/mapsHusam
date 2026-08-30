@@ -34,20 +34,23 @@ function initializePolygonEditTools(map, overlayLayersObj) {
 
     // مصفوفات الحقول المتطابقة مع قاعدة البيانات الجغرافية
     const fieldsLand = [
-        { name: 'price', label: 'السعر', type: 'number' },
-        { name: 'currency', label: 'العملة', type: 'select', options: [
-            { value: 'USD', label: 'دولار $' },
-            { value: 'ILS', label: 'شيكل ₪' },
-            { value: 'JOD', label: 'دينار د.أ' }
-        ] },
-        { name: 'des', label: 'وصف العقار', type: 'text' },
-        { name: 'pic', label: 'رابط الصورة', type: 'url' },
-        { name: 'area', label: 'المساحة (م٢)', type: 'number' },
-        { name: 'whatsapp', label: 'رقم الواتساب مع المقدمة (مثلاً 00970...)', type: 'text' },
-        { name: 'end_date', label: 'تاريخ انتهاء الاشتراك', type: 'date' },
-        { name: 'work_hours', label: 'ساعات العمل', type: 'hours' },
-        { name: 'rating', label: 'الرتبة (0-5)', type: 'number' }
-    ];
+    { name: 'name', label: 'اسم المتصرف', type: 'text' },
+    { name: 'phone', label: 'رقم الهاتف (يبدأ بـ 0 مثلاً 0598...)', type: 'text' },   // 🆕 جديد
+    { name: 'price', label: 'السعر', type: 'number' },
+    { name: 'currency', label: 'العملة', type: 'select', options: [
+        { value: 'USD', label: 'دولار $' },
+        { value: 'ILS', label: 'شيكل ₪' },
+        { value: 'JOD', label: 'دينار د.أ' }
+    ] },
+    { name: 'des', label: 'وصف العقار', type: 'text' },
+    { name: 'pic', label: 'رابط الصورة', type: 'url' },
+    { name: 'video', label: 'رابط الفيديو', type: 'url' },
+    { name: 'area', label: 'المساحة (م٢)', type: 'number' },
+    { name: 'whatsapp', label: 'رقم الواتساب مع المقدمة (مثلاً 00970...)', type: 'text' },
+    { name: 'end_date', label: 'تاريخ انتهاء الاشتراك', type: 'date' },
+    { name: 'work_hours', label: 'ساعات العمل', type: 'hours' },
+    { name: 'rating', label: 'الرتبة (0-5)', type: 'number' }
+];
 
     const fieldsLocation = [
         { name: 'gov_a', label: 'اسم المحافظة', type: 'text' },
@@ -421,11 +424,11 @@ function initializePolygonEditTools(map, overlayLayersObj) {
 
             // الالتزام التام بالترتيب الهيكلي الصارم لطبقات المضلعات بداخل الجيوسيرفر (بدون حقول الإحداثيات)
             const landSchemaOrder = [
-                'geom', 'location', 'price', 'currency', 'des', 'pic', 'area',
-                'status', 'gov_a', 'village_a',
-                'start_date', 'end_date', 'work_hours',
-                'auto_status', 'whatsapp', 'search_tags', 'rating'
-            ];
+                    'geom', 'location', 'name', 'phone', 'price', 'currency', 'des', 'pic', 'video', 'area',
+                    'status', 'gov_a', 'village_a',
+                    'start_date', 'end_date', 'work_hours',
+                    'auto_status', 'whatsapp', 'search_tags', 'rating'
+                ];
 
             const locationSchemaOrder = [
                 'geom', 'gov_a', 'village_a', 'location'
@@ -460,7 +463,7 @@ function initializePolygonEditTools(map, overlayLayersObj) {
             }
             let propsXML = '';
            const allowedPropsUpdate = isRealEstate ? 
-                ['price', 'currency', 'des', 'pic', 'area', 'end_date', 'work_hours', 'whatsapp', 'rating', 'search_tags'] :
+                ['name', 'phone', 'price', 'currency', 'des', 'pic', 'video', 'area', 'end_date', 'work_hours', 'whatsapp', 'rating', 'search_tags'] :
                 ['gov_a', 'village_a', 'location'];
 
             allowedPropsUpdate.forEach(k => {

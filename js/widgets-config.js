@@ -125,11 +125,26 @@ const WIDGETS_DISPLAY_CONFIG = {
     showUnits: true
 };
 
-// تصدير الإعدادات للاستخدام في widgets-ticker.js
+// ============================================
+// القسم الرابع: تواريخ "آخر تحديث" اليدوية لكل مجموعة بيانات ثابتة
+// ============================================
+// 🆕 عدّل التاريخ هنا يدوياً (صيغة يوم/شهر/سنة) في كل مرة تُعدّل فيها بيانات
+// المجموعة المقابلة (عنصر واحد أو أكثر داخلها). مجموعتا الصلاة والتقويم
+// تعرضان تاريخ اليوم تلقائياً، وحالة الطرق ومحطات الوقود تُجلب حياً فتعرض
+// تاريخ اليوم تلقائياً أيضاً - لا داعي لتعديلها هنا.
+const WIDGETS_LAST_UPDATED = {
+    currency: '29/08/2026',
+    gold: '29/08/2026',
+    fuel: '29/08/2026',
+    transport_inter_city: '01/06/2026',
+    transport_intra_city: '01/06/2026'
+};
+
 if (typeof module !== 'undefined' && module.exports) {
     module.exports = {
         WIDGETS_MANUAL_DATA,
         WIDGETS_API_CONFIG,
-        WIDGETS_DISPLAY_CONFIG
+        WIDGETS_DISPLAY_CONFIG,
+        WIDGETS_LAST_UPDATED
     };
 }

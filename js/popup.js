@@ -708,7 +708,7 @@ function initializePopup(map) {
                 if (props.village_a) bodyHtml += `<b>🏘️ البلدة:</b> ${window.sanitizeHTML(props.village_a)}<br>`;
                 if (props.gov_a) bodyHtml += `<b>🌍 المحافظة:</b> ${window.sanitizeHTML(props.gov_a)}<br>`;
                 if (props.des) bodyHtml += `<div style="margin-top:5px; background:#f9f9f9; padding:5px; border-radius:4px;"><b>📝 الوصف:</b> ${window.sanitizeHTML(props.des)}</div>`;
-                if (props.video) bodyHtml += `<div style="margin-top:8px;">🎥 ${createLink(props.video, "عرض الفيديو")}</div>`;
+                
             } 
 
             if (props.des && !isRealEstate) bodyHtml += `<div style="margin-top:5px; background:#f9f9f9; padding:5px; border-radius:4px;"><b>📝 الوصف:</b> ${props.des}</div>`;
@@ -757,14 +757,14 @@ function initializePopup(map) {
                     <div style="margin-top: 15px; border-top: 2px solid #eee; padding-top: 12px;">
                         <div style="display: flex; gap: 8px; margin-bottom: 8px;">
                             ${hasPhone ? `
-                            <button class="popup-call-btn" 
+                                                        <button class="popup-call-btn" 
                                     data-provider="${escapeForAttribute(providerName)}" 
                                     data-phone="${escapeForAttribute(localPhone)}" 
                                     data-service="${escapeForAttribute(layerTitle)}" 
                                     data-feature-id="${escapeForAttribute(String(displayFeatureId || ''))}" 
                                     data-layer="${escapeForAttribute(layerDbName || layerEnglishName || '')}"
                                     style="flex: 1; background: #1a73e8; color: white; border: none; padding: 12px 8px; border-radius: 10px; cursor: pointer; font-weight: bold; display: flex; align-items: center; justify-content: center; gap: 6px; font-size: 13px; box-shadow: 0 4px 12px rgba(26,115,232,0.3);">
-                                <i class="fas fa-mobile-alt" style="font-size: 16px;"></i> اتصال
+                                <i class="fas fa-mobile-alt" style="font-size: 16px;"></i> اتصال <span dir="ltr">${window.sanitizeHTML(localPhone)}</span>
                             </button>` : ''}
                             <button class="popup-whatsapp-btn" 
                                     data-provider="${escapeForAttribute(providerName)}" 
@@ -788,11 +788,12 @@ function initializePopup(map) {
                 </button>
             </div>`;
 
-            if (props.details_link_1 || props.pic) {
-                if (props.details_link_1) bodyHtml += `<div style="margin-top:8px;">🔗 ${createLink(props.details_link_1, "تفاصيل إضافية")}</div>`;
-                if (props.pic) bodyHtml += `<hr>${createImageElement(props.pic)}`;
-            }
-        } else if (isAreaLayer) {
+            if (props.details_link_1 || props.pic || props.video) {
+            if (props.details_link_1) bodyHtml += `<div style="margin-top:8px;">🔗 ${createLink(props.details_link_1, "تفاصيل إضافية")}</div>`;
+            if (props.video) bodyHtml += `<div style="margin-top:8px;">🎥 ${createLink(props.video, "عرض الفيديو")}</div>`;
+            if (props.pic) bodyHtml += `<hr>${createImageElement(props.pic)}`;
+}
+              } else if (isAreaLayer) {
             const areaFieldLabels = {
                 'gov_a': '🌍 اسم المحافظة',
                 'village_a': '🏘️ المدينة / القرية',

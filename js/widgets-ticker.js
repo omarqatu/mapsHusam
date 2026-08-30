@@ -84,24 +84,200 @@
     // البيانات من APIs (القسم الأول)
     // ============================================
     let apiData = {
-        weather: {
-            ramallah: { temp: 28, humidity: 65, wind: 12, condition: 'غائم جزئياً' },
-            gaza: { temp: 32, humidity: 70, wind: 15, condition: 'مشمس' },
-            jerusalem: { temp: 26, humidity: 60, wind: 10, condition: 'غائم' }
-        },
-        prayer: {
-            fajr: '04:45',
-            dhuhr: '12:30',
-            asr: '15:45',
-            maghrib: '18:45',
-            isha: '20:15'
-        },
-        calendar: {
-            hijri: '12 رجب 1446',
-            gregorian: '2026-08-17',
-            events: []
+    weather: {
+        ramallah: { label: 'رام الله', temp: 28, humidity: 65, wind: 12, condition: 'غائم جزئياً' },
+        gaza: { label: 'غزة', temp: 32, humidity: 70, wind: 15, condition: 'مشمس' },
+        jerusalem: { label: 'القدس', temp: 26, humidity: 60, wind: 10, condition: 'غائم' }
+    },
+    prayer: { fajr: '04:45', dhuhr: '12:30', asr: '15:45', maghrib: '18:45', isha: '20:15' },
+    calendar: { hijri: '12 رجب 1446', gregorian: '2026-08-17', events: [] }
+};
+
+// ============================================
+// 🆕 البناء الديناميكي الكامل للمجموعات الست القابلة للتعديل من لوحة الإدارة
+// (مركز المعلومات الحية). كل بطاقة تُبنى بالكامل من البيانات نفسها القادمة
+// من السيرفر - أيقونة/اسم/رمز/وحدة/قيمة - وليس فقط القيمة كما كان سابقاً.
+// هذا يضمن أن أي تعديل (حتى تغيير اسم أو رمز أو إضافة عنصر جديد بالكامل)
+// ينعكس فوراً بكل الصفحات دون الحاجة لتعديل أي HTML يدوياً بعد الآن.
+// ============================================
+function escWidgetText(v) {
+    if (v === undefined || v === null) return '';
+    const d = document.createElement('div');
+    d.textContent = String(v);
+    return d.innerHTML;
+}
+
+const CURRENCY_FLAGS = { USD: '🇺🇸', JOD: '🇯🇴', EUR: '🇪🇺', ILS: '🇮🇱', GBP: '🇬🇧', EGP: '🇪🇬', SAR: '🇸🇦' };
+function pickCurrencyFlag(item) {
+    const code = (item.code || '').toUpperCase();
+    for (const k in CURRENCY_FLAGS) { if (code.includes(k)) return CURRENCY_FLAGS[k]; }
+    return '💱';
+}
+const GOLD_ICONS = ['🥇', '🥈', '🥉', '💎', '⚪'];
+function pickGoldIcon(index) { return GOLD_ICONS[index % GOLD_ICONS.length]; }
+function pickWeatherIcon(condition) {
+    const c = (condition || '').trim();
+    if (c.includes('مشمس')) return '☀️';
+    if (c.includes('ممطر') || c.includes('مطر')) return '🌧️';
+    if (c.includes('غائم جزئياً')) return '🌤️';
+    if (c.includes('غائم')) return '☁️';
+    return '🌤️';
+}
+function pickFuelIcon(item) {
+    const id = (item.id || '').toLowerCase();
+    if (id.includes('diesel')) return '🛢️';
+    if (id.includes('gas')) return '🔥';
+    return '⛽';
+}
+const EMPTY_GROUP_MSG = '<div style="padding:12px; text-align:center; color:#999; font-size:12px; grid-column:1/-1;">لا توجد عناصر بعد</div>';
+
+function renderCurrencyGridHTML(prefix) {
+    const items = MANUAL_DATA.currency || [];
+    if (!items.length) return EMPTY_GROUP_MSG;
+    return items.map(c => `
+        <div class="currency-item">
+            <div class="currency-flag">${pickCurrencyFlag(c)}</div>
+            <div class="currency-info">
+                <span class="currency-name">${escWidgetText(c.label)}</span>
+                <span class="currency-code">${escWidgetText(c.code)}</span>
+            </div>
+            <div class="currency-value" id="${prefix}${escWidgetText(c.id)}">${escWidgetText(c.value)}</div>
+        </div>
+    `).join('');
+}
+
+function renderGoldGridHTML(prefix) {
+    const items = MANUAL_DATA.gold || [];
+    if (!items.length) return EMPTY_GROUP_MSG;
+    return items.map((g, i) => `
+        <div class="gold-item">
+            <div class="gold-icon">${pickGoldIcon(i)}</div>
+            <div class="gold-info">
+                <span class="gold-name">${escWidgetText(g.label)}</span>
+                <span class="gold-unit">${escWidgetText(g.unit)}</span>
+            </div>
+            <div class="gold-value" id="${prefix}${escWidgetText(g.id)}">${escWidgetText(g.value)}</div>
+        </div>
+    `).join('');
+}
+
+function renderWeatherGridHTML(prefix) {
+    const entries = Object.entries(apiData.weather || {});
+    if (!entries.length) return EMPTY_GROUP_MSG;
+    return entries.map(([cityId, w]) => {
+        const label = w.label || (cityId.charAt(0).toUpperCase() + cityId.slice(1));
+        return `
+        <div class="weather-city">
+            <div class="weather-icon">${pickWeatherIcon(w.condition)}</div>
+            <div class="weather-info">
+                <span class="weather-city-name">${escWidgetText(label)}</span>
+                <span class="weather-temp" id="${prefix}weather-${escWidgetText(cityId)}">${escWidgetText(w.temp)}°C</span>
+            </div>
+            <div class="weather-details">
+                <span>رطوبة: ${escWidgetText(w.humidity)}%</span>
+                <span>رياح: ${escWidgetText(w.wind)} كم/س</span>
+            </div>
+        </div>`;
+    }).join('');
+}
+
+function renderFuelGridHTML(prefix) {
+    const items = MANUAL_DATA.fuel || [];
+    if (!items.length) return EMPTY_GROUP_MSG;
+    return items.map(f => `
+        <div class="fuel-item">
+            <div class="fuel-icon">${pickFuelIcon(f)}</div>
+            <div class="fuel-info">
+                <span class="fuel-name">${escWidgetText(f.label)}</span>
+                <span class="fuel-unit">${escWidgetText(f.unit)}</span>
+            </div>
+            <div class="fuel-value" id="${prefix}${escWidgetText(f.id)}">${escWidgetText(f.value)}</div>
+        </div>
+    `).join('');
+}
+
+function renderTransportGridHTML(prefix, groupKey) {
+    const items = MANUAL_DATA[groupKey] || [];
+    if (!items.length) return EMPTY_GROUP_MSG;
+    return items.map(t => `
+        <div class="transport-item">
+            <div class="transport-icon">🚌</div>
+            <div class="transport-info">
+                <span class="transport-name">${escWidgetText(t.label)}</span>
+                <span class="transport-unit">${escWidgetText(t.unit)}</span>
+            </div>
+            <div class="transport-value" id="${prefix}${escWidgetText(t.id)}">${escWidgetText(t.value)}</div>
+        </div>
+    `).join('');
+}
+
+function renderManualGroupsInto(prefix) {
+    const currencyGrid = document.getElementById(prefix + 'currency-grid');
+    if (currencyGrid) currencyGrid.innerHTML = renderCurrencyGridHTML(prefix);
+
+    const goldGrid = document.getElementById(prefix + 'gold-grid');
+    if (goldGrid) goldGrid.innerHTML = renderGoldGridHTML(prefix);
+
+    const weatherGrid = document.getElementById(prefix + 'weather-grid');
+    if (weatherGrid) weatherGrid.innerHTML = renderWeatherGridHTML(prefix);
+
+    const fuelGrid = document.getElementById(prefix + 'fuel-grid');
+    if (fuelGrid) fuelGrid.innerHTML = renderFuelGridHTML(prefix);
+
+    const interGrid = document.getElementById(prefix + 'transport-inter-city-grid');
+    if (interGrid) interGrid.innerHTML = renderTransportGridHTML(prefix, 'transport_inter_city');
+
+    const intraGrid = document.getElementById(prefix + 'transport-intra-city-grid');
+    if (intraGrid) intraGrid.innerHTML = renderTransportGridHTML(prefix, 'transport_intra_city');
+}
+
+    
+
+        // 🆕 بيانات حقيقية من قاعدة البيانات (تُستبدل بها القيم الافتراضية بمجرد الوصول)
+    let remoteGroupsData = {};
+    let remoteRoadStatusUpdatedAt = null;
+    let remoteFuelStatusUpdatedAt = null;
+
+    function formatDateDMY(isoStr) {
+        if (!isoStr) return '—';
+        const d = new Date(isoStr);
+        if (isNaN(d.getTime())) return '—';
+        const dd = String(d.getDate()).padStart(2, '0');
+        const mm = String(d.getMonth() + 1).padStart(2, '0');
+        return `${dd}/${mm}/${d.getFullYear()}`;
+    }
+
+    async function fetchRemoteWidgetsData() {
+        try {
+            const res = await fetch('/api/widgets-data');
+            const data = await res.json();
+            if (!data.success) return;
+
+            remoteGroupsData = data.groups || {};
+            remoteRoadStatusUpdatedAt = data.road_status_updated_at;
+            remoteFuelStatusUpdatedAt = data.fuel_status_updated_at;
+
+            // استبدال القيم الافتراضية بالقيم الحقيقية المخزّنة (إن وُجدت)
+            ['currency', 'gold', 'fuel', 'transport_inter_city', 'transport_intra_city'].forEach(key => {
+                if (remoteGroupsData[key] && remoteGroupsData[key].items && remoteGroupsData[key].items.length > 0) {
+                    MANUAL_DATA[key] = remoteGroupsData[key].items;
+                }
+            });
+            if (remoteGroupsData.weather && remoteGroupsData.weather.items && remoteGroupsData.weather.items.length > 0) {
+                const weatherObj = {};
+                remoteGroupsData.weather.items.forEach(w => { weatherObj[w.id] = w; });
+                apiData.weather = weatherObj;
+            }
+
+            updateAllData();
+            updateTickerHTML();
+            updatePortalData();
+            updateMobilePortalData();
+            updateLastUpdatedTimestamps();
+        } catch (err) {
+            console.warn('تعذر جلب بيانات مركز المعلومات الحية:', err.message);
         }
-    };
+    }
 
         // ============================================
     // 🆕 بيانات حيّة (Live) من طبقات الخريطة مباشرة - المصدر الوحيد للتعديل
@@ -134,6 +310,7 @@
         updateTickerHTML();
         updatePortalFuelStatusList();
         updateMobilePortalFuelStatusList();
+        updateLastUpdatedTimestamps();
     }
 
     // ============================================
@@ -186,7 +363,7 @@
                 <i class="fas fa-gas-pump"></i>
                 <span class="ticker-label">${name}</span>
                 <span class="ticker-value">
-                    <span style="color:${diesel.color};">${diesel.icon} ديزل</span>
+                    <span style="color:${diesel.color};">${diesel.icon} سولار/ديزل</span>
                     <span style="color:${b95.color}; margin-right:6px;">${b95.icon} 95</span>
                     <span style="color:${b98.color}; margin-right:6px;">${b98.icon} 98</span>
                 </span>
@@ -338,6 +515,148 @@
         });
     }
 
+        // ============================================
+    // 🆕 تحديث "آخر تحديث" الحقيقي لكل مجموعة (تاريخ يدوي من widgets-config.js
+    // للمجموعات الثابتة، أو تاريخ اليوم تلقائياً للمجموعات الحية/اليومية)
+    // ============================================
+    function formatTodayDMY() {
+        const d = new Date();
+        const dd = String(d.getDate()).padStart(2, '0');
+        const mm = String(d.getMonth() + 1).padStart(2, '0');
+        const yyyy = d.getFullYear();
+        return `${dd}/${mm}/${yyyy}`;
+    }
+
+        function setLastUpdatedValue(id, value) {
+        ['', 'mobile-'].forEach(function (prefix) {
+            const el = document.getElementById(prefix + id);
+            if (el) el.textContent = value;
+        });
+    }
+
+    function updateLastUpdatedTimestamps() {
+        const todayStr = formatDateDMY(new Date().toISOString());
+
+        setLastUpdatedValue('currency-update-time', formatDateDMY(remoteGroupsData.currency?.updated_at));
+        setLastUpdatedValue('gold-update-time', formatDateDMY(remoteGroupsData.gold?.updated_at));
+        setLastUpdatedValue('weather-update-time', formatDateDMY(remoteGroupsData.weather?.updated_at));
+        setLastUpdatedValue('fuel-update-time', formatDateDMY(remoteGroupsData.fuel?.updated_at));
+        setLastUpdatedValue('transport-inter-city-update-time', formatDateDMY(remoteGroupsData.transport_inter_city?.updated_at));
+        setLastUpdatedValue('transport-intra-city-update-time', formatDateDMY(remoteGroupsData.transport_intra_city?.updated_at));
+
+        // مجموعتان أوتوماتيك (API): تاريخ اليوم دائماً
+        setLastUpdatedValue('prayer-date', todayStr);
+        setLastUpdatedValue('calendar-today', todayStr);
+
+        // حالة الطرق ومحطات الوقود: آخر تحديث فعلي من قاعدة البيانات
+        setLastUpdatedValue('traffic-update-time', formatDateDMY(remoteRoadStatusUpdatedAt));
+        setLastUpdatedValue('fuel-status-update-time', formatDateDMY(remoteFuelStatusUpdatedAt));
+    }
+        // ============================================
+    // 🆕 بحث نصي مرن (يتجاهل فروقات الحروف العربية المتشابهة) لكل مجموعة
+    // ============================================
+    function normalizeSearchText(text) {
+        if (!text) return '';
+        return text.toString()
+            .replace(/[أإآا]/g, 'ا').replace(/[ةه]/g, 'ه')
+            .replace(/[ىي]/g, 'ي').replace(/[ؤئء]/g, 'ء')
+            .toLowerCase().trim();
+    }
+
+    function filterWidgetGrid(grid, rawTerm) {
+        if (!grid) return;
+        const term = normalizeSearchText(rawTerm);
+        const words = term.split(/\s+/).filter(Boolean);
+        Array.from(grid.children).forEach(item => {
+            if (!words.length) { item.style.display = ''; return; }
+            const text = normalizeSearchText(item.textContent);
+            item.style.display = words.every(w => text.includes(w)) ? '' : 'none';
+        });
+    }
+
+    function wireWidgetSearchInputs(container) {
+        if (!container) return;
+        container.querySelectorAll('.widget-search-input').forEach(input => {
+            if (input.dataset.wired) return;
+            input.dataset.wired = '1';
+            input.addEventListener('input', () => {
+                const grid = container.querySelector('#' + CSS.escape(input.dataset.targetGrid))
+                           || document.getElementById(input.dataset.targetGrid);
+                filterWidgetGrid(grid, input.value);
+            });
+        });
+    }
+
+    // ============================================
+    // 🆕 سكرول يدوي حقيقي لشريط "المعلومات الفورية" (سحب بالفأرة/اللمس + عجلة الفأرة)
+    // بدل الأنيميشن التلقائي الثابت، حتى لا يتعارض تمرير عجلة الفأرة فوق الشريط
+    // مع تمرير الصفحة نفسها
+    // ============================================
+        function initTickerManualScroll() {
+        const content = document.querySelector('.ticker-content');
+        const track = document.getElementById('ticker-scroll');
+        if (!content || !track || content.dataset.manualScrollWired) return;
+        content.dataset.manualScrollWired = '1';
+
+        let userActive = false, resumeTimer = null;
+        let isDragging = false, startX = 0, startScroll = 0;
+
+        function pause() { userActive = true; clearTimeout(resumeTimer); }
+        function scheduleResume() { clearTimeout(resumeTimer); resumeTimer = setTimeout(() => userActive = false, 2000); }
+
+        function autoStep() {
+            if (!userActive) {
+                content.scrollLeft += 0.6;
+                const half = track.scrollWidth / 2;
+                if (content.scrollLeft >= half) content.scrollLeft -= half;
+            }
+            requestAnimationFrame(autoStep);
+        }
+        requestAnimationFrame(autoStep);
+
+        content.addEventListener('mouseenter', pause);
+        content.addEventListener('mouseleave', () => { if (!isDragging) scheduleResume(); });
+
+        content.addEventListener('wheel', (e) => {
+            e.preventDefault();
+            pause();
+            content.scrollLeft += (Math.abs(e.deltaY) > Math.abs(e.deltaX) ? e.deltaY : e.deltaX);
+            scheduleResume();
+        }, { passive: false });
+
+        content.addEventListener('mousedown', (e) => {
+            isDragging = true;
+            pause();
+            content.classList.add('dragging');
+            startX = e.pageX;
+            startScroll = content.scrollLeft;
+            e.preventDefault(); // 🆕 يمنع تحديد النص الافتراضي من مقاطعة عملية السحب اليدوي
+        });
+        window.addEventListener('mousemove', (e) => {
+            if (!isDragging) return;
+            content.scrollLeft = startScroll - (e.pageX - startX);
+        });
+        function endTickerDrag() {
+            if (!isDragging) return;
+            isDragging = false;
+            content.classList.remove('dragging');
+            scheduleResume();
+        }
+        window.addEventListener('mouseup', endTickerDrag);
+        window.addEventListener('blur', endTickerDrag); // 🆕 يمنع بقاء حالة السحب "عالقة" إذا غادر المؤشر النافذة أثناء السحب
+
+        let touchStartX = 0, touchStartScroll = 0;
+        content.addEventListener('touchstart', (e) => {
+            pause();
+            touchStartX = e.touches[0].pageX;
+            touchStartScroll = content.scrollLeft;
+        }, { passive: true });
+        content.addEventListener('touchmove', (e) => {
+            content.scrollLeft = touchStartScroll - (e.touches[0].pageX - touchStartX);
+        }, { passive: true });
+        content.addEventListener('touchend', scheduleResume);
+    }
+
     // ============================================
     // دالة تحديث جميع البيانات
     // ============================================
@@ -445,7 +764,7 @@
     // ============================================
     // دالة تحميل HTML الشريط المتحرك
     // ============================================
-        function loadTickerHTML() {
+                function loadTickerHTML() {
         fetch('/widgets-ticker.html')
             .then(response => response.text())
             .then(html => {
@@ -461,9 +780,19 @@
                 // إنشاء تبويب الموبايل
                 createMobileTabContent(html);
 
-                // 🆕 إعادة رسم الشريط بالكامل الآن بعد ضمان وجود #ticker-scroll
+                                // 🆕 إعادة رسم الشريط بالكامل الآن بعد ضمان وجود #ticker-scroll
                 // فعلياً بالـ DOM (يحل مشكلة توقيت السباق مع أول استدعاء مبكر)
                 updateTickerHTML();
+
+                // 🆕 [إصلاح]: عناصر البوابة (#ticker-expand-btn، #widgets-portal-modal،
+                // #widgets-portal-overlay) موجودة داخل نفس ملف widgets-ticker.html الذي
+                // تم حقنه للتو، لذلك نُهيّئ البوابة الآن مباشرة بعد ضمان وجودها فعلياً
+                // بالـ DOM، بدل الاعتماد على setTimeout بمدة ثابتة كانت أحياناً تُنفَّذ
+                // قبل اكتمال هذا الـ fetch (خصوصاً عند بطء الشبكة عند أول تحميل).
+                setupPortalModal();
+
+                // 🆕 تفعيل سحب/عجلة الفأرة على شريط المعلومات الفورية
+                initTickerManualScroll();
             })
             .catch(err => {
                 console.error('خطأ في تحميل الشريط المتحرك:', err);
@@ -494,10 +823,14 @@
                 const grid = container.querySelector('.widgets-portal-grid');
                 if (!grid) return;
                 
-                const clonedGrid = grid.cloneNode(true);
+                                const clonedGrid = grid.cloneNode(true);
                 // تسمية كل id بادئة mobile- لعزلها عن نسخة المودال الأصلية
                 clonedGrid.querySelectorAll('[id]').forEach(function (el) {
                     el.id = 'mobile-' + el.id;
+                });
+                // 🆕 تحديث مربعات البحث المستنسخة لتُشير إلى معرّفات الشبكات الجديدة (mobile-)
+                clonedGrid.querySelectorAll('[data-target-grid]').forEach(function (el) {
+                    el.dataset.targetGrid = 'mobile-' + el.dataset.targetGrid;
                 });
                 
                 tabContent.innerHTML = `
@@ -512,85 +845,37 @@
                 updateMobilePortalData();
                 updateMobilePortalTrafficList();
                 updateMobilePortalFuelStatusList();
+                updateLastUpdatedTimestamps();
+                wireWidgetSearchInputs(tabContent); // 🆕
             })
             .catch(err => console.error('خطأ في تحميل محتوى البوابة للموبايل:', err));
     }
-
     // ============================================
     // دالة تحديث البيانات في تبويب الموبايل
     // ============================================
     function updateMobilePortalData() {
-        // تحديث البيانات اليدوية
-        if (MANUAL_DATA.currency) {
-            MANUAL_DATA.currency.forEach(c => {
-                const el = document.getElementById('mobile-portal-' + c.id);
-                if (el) el.textContent = c.value;
-            });
-        }
-        if (MANUAL_DATA.gold) {
-            MANUAL_DATA.gold.forEach(g => {
-                const el = document.getElementById('mobile-portal-' + g.id);
-                if (el) el.textContent = g.value;
-            });
-        }
-        if (MANUAL_DATA.fuel) {
-            MANUAL_DATA.fuel.forEach(f => {
-                const el = document.getElementById('mobile-portal-' + f.id);
-                if (el) el.textContent = f.value;
-            });
-        }
-        if (MANUAL_DATA.traffic) {
-            MANUAL_DATA.traffic.forEach(t => {
-                const el = document.getElementById('mobile-portal-' + t.id);
-                if (el) {
-                    el.innerHTML = `<i class="fas ${TRAFFIC_ICONS[t.status]}" style="color: ${TRAFFIC_COLORS[t.status]}"></i>`;
-                }
-            });
-        }
-        if (MANUAL_DATA.transport_inter_city) {
-            MANUAL_DATA.transport_inter_city.forEach(t => {
-                const el = document.getElementById('mobile-portal-' + t.id);
-                if (el) el.textContent = t.value;
-            });
-        }
-        if (MANUAL_DATA.transport_intra_city) {
-            MANUAL_DATA.transport_intra_city.forEach(t => {
-                const el = document.getElementById('mobile-portal-' + t.id);
-                if (el) el.textContent = t.value;
-            });
-        }
-        if (MANUAL_DATA.events) {
-            MANUAL_DATA.events.forEach(e => {
-                const el = document.getElementById('mobile-portal-' + e.id);
-                if (el) el.textContent = e.date;
-            });
-        }
+    renderManualGroupsInto('mobile-portal-');   // 🆕
 
-        // تحديث البيانات من APIs
-        if (apiData.weather) {
-            Object.entries(apiData.weather).forEach(([city, data]) => {
-                const el = document.getElementById('mobile-portal-weather-' + city);
-                if (el) el.textContent = data.temp + '°C';
-            });
-        }
-        if (apiData.prayer) {
-            Object.entries(apiData.prayer).forEach(([prayer, time]) => {
-                const el = document.getElementById('mobile-portal-prayer-' + prayer);
-                if (el) el.textContent = time;
-            });
-        }
-        if (apiData.calendar) {
-            Object.entries(apiData.calendar).forEach(([type, value]) => {
-                const el = document.getElementById('mobile-portal-' + type + '-date');
-                if (el) el.textContent = value;
-            });
-        }
+    if (apiData.prayer) {
+        Object.entries(apiData.prayer).forEach(([prayer, time]) => {
+            const el = document.getElementById('mobile-portal-prayer-' + prayer);
+            if (el) el.textContent = time;
+        });
     }
+    if (apiData.calendar) {
+        Object.entries(apiData.calendar).forEach(([type, value]) => {
+            const el = document.getElementById('mobile-portal-' + type + '-date');
+            if (el) el.textContent = value;
+        });
+    }
+}
 
     // ============================================
     // دالة إعداد البوابة التفصيلية (للكمبيوتر)
     // ============================================
-    function setupPortalModal() {
+        function setupPortalModal() {
+        if (window.__widgetsPortalModalReady) return;
+
         const expandBtn = document.getElementById('ticker-expand-btn');
         const modal = document.getElementById('widgets-portal-modal');
         const overlay = document.getElementById('widgets-portal-overlay');
@@ -601,6 +886,7 @@
         
 
                 if (expandBtn && modal && overlay) {
+                    window.__widgetsPortalModalReady = true;
             expandBtn.addEventListener('click', function(e) {
                 e.preventDefault();
                 e.stopPropagation();
@@ -688,7 +974,7 @@
     // ============================================
     // دالة تحميل محتوى البوابة
     // ============================================
-        function loadPortalContent() {
+                function loadPortalContent() {
         const contentArea = document.getElementById('portal-content-area');
         if (!contentArea) return;
 
@@ -699,6 +985,8 @@
                 updatePortalData();
                 updatePortalTrafficList();
                 updatePortalFuelStatusList();
+                updateLastUpdatedTimestamps();
+                wireWidgetSearchInputs(contentArea); // 🆕
             })
             .catch(err => {
                 console.error('خطأ في تحميل محتوى البوابة:', err);
@@ -710,72 +998,22 @@
     // دالة تحديث البيانات في البوابة
     // ============================================
     function updatePortalData() {
-        // تحديث البيانات اليدوية
-        if (MANUAL_DATA.currency) {
-            MANUAL_DATA.currency.forEach(c => {
-                const el = document.getElementById('portal-' + c.id);
-                if (el) el.textContent = c.value;
-            });
-        }
-        if (MANUAL_DATA.gold) {
-            MANUAL_DATA.gold.forEach(g => {
-                const el = document.getElementById('portal-' + g.id);
-                if (el) el.textContent = g.value;
-            });
-        }
-        if (MANUAL_DATA.fuel) {
-            MANUAL_DATA.fuel.forEach(f => {
-                const el = document.getElementById('portal-' + f.id);
-                if (el) el.textContent = f.value;
-            });
-        }
-        if (MANUAL_DATA.traffic) {
-            MANUAL_DATA.traffic.forEach(t => {
-                const el = document.getElementById('portal-' + t.id);
-                if (el) {
-                    el.innerHTML = `<i class="fas ${TRAFFIC_ICONS[t.status]}" style="color: ${TRAFFIC_COLORS[t.status]}"></i>`;
-                }
-            });
-        }
-        if (MANUAL_DATA.transport_inter_city) {
-            MANUAL_DATA.transport_inter_city.forEach(t => {
-                const el = document.getElementById('portal-' + t.id);
-                if (el) el.textContent = t.value;
-            });
-        }
-        if (MANUAL_DATA.transport_intra_city) {
-            MANUAL_DATA.transport_intra_city.forEach(t => {
-                const el = document.getElementById('portal-' + t.id);
-                if (el) el.textContent = t.value;
-            });
-        }
-        if (MANUAL_DATA.events) {
-            MANUAL_DATA.events.forEach(e => {
-                const el = document.getElementById('portal-' + e.id);
-                if (el) el.textContent = e.date;
-            });
-        }
+    renderManualGroupsInto('portal-');   // 🆕 يبني كل شيء ديناميكياً دفعة واحدة
 
-        // تحديث البيانات من APIs
-        if (apiData.weather) {
-            Object.entries(apiData.weather).forEach(([city, data]) => {
-                const el = document.getElementById('portal-weather-' + city);
-                if (el) el.textContent = data.temp + '°C';
-            });
-        }
-        if (apiData.prayer) {
-            Object.entries(apiData.prayer).forEach(([prayer, time]) => {
-                const el = document.getElementById('portal-prayer-' + prayer);
-                if (el) el.textContent = time;
-            });
-        }
-        if (apiData.calendar) {
-            Object.entries(apiData.calendar).forEach(([type, value]) => {
-                const el = document.getElementById('portal-' + type + '-date');
-                if (el) el.textContent = value;
-            });
-        }
+    // البقية تبقى كما هي (prayer + calendar فقط):
+    if (apiData.prayer) {
+        Object.entries(apiData.prayer).forEach(([prayer, time]) => {
+            const el = document.getElementById('portal-prayer-' + prayer);
+            if (el) el.textContent = time;
+        });
     }
+    if (apiData.calendar) {
+        Object.entries(apiData.calendar).forEach(([type, value]) => {
+            const el = document.getElementById('portal-' + type + '-date');
+            if (el) el.textContent = value;
+        });
+    }
+}
 
     // ============================================
     // دالة بدء النظام
@@ -798,8 +1036,10 @@
         // دقيقة تلقائياً - هذا المصدر الوحيد الآن، لا حاجة لأي تعديل يدوي
         refreshLiveRoadBarriers();
         refreshLiveFuelStations();
+        fetchRemoteWidgetsData();   // 🆕
         setInterval(refreshLiveRoadBarriers, 60000);
         setInterval(refreshLiveFuelStations, 60000);
+        setInterval(fetchRemoteWidgetsData, 60000);   // 🆕
         
         // بدء التحديث التلقائي من APIs
         if (DISPLAY_CONFIG.autoUpdate) {
