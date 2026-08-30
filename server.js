@@ -1572,7 +1572,8 @@ app.get('/api/widgets-data', async (req, res) => {
         const result = await servicesPool.query(`SELECT group_key, data, updated_at FROM public.widgets_manual_groups`);
         const groups = {};
         result.rows.forEach(row => {
-            groups[row.group_key] = { data: row.data, updated_at: row.updated_at };
+            
+            groups[row.group_key] = { items: row.data, updated_at: row.updated_at };
         });
 
         const roadResult = await servicesPool.query(`SELECT MAX(updated_at) as last FROM public.road_barriers`);

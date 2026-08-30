@@ -31,6 +31,8 @@
     </script>
 
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    
+    <script src="/js/widgets-config.js"></script>
     <style>
         * { box-sizing: border-box; }
         body {
@@ -133,15 +135,7 @@
     <h1><i class="fas fa-bolt"></i> مركز المعلومات الحية</h1>
     <p class="subtitle">تعديل مباشر لكل مجموعات التحديثات الفورية، مع تسجيل حقيقي لآخر تحديث لكل مجموعة</p>
 
-    <div class="info-banner">
-        <strong>ملاحظة هامة قبل التعديل:</strong>
-        تعديل حقل "القيمة" لأي عنصر موجود مسبقاً ينعكس فوراً على الموقع. أما تعديل الاسم/الوحدة/الرمز لعنصر موجود، أو
-        إضافة عنصر جديد كلياً بمعرّف (ID) غير موجود مسبقاً، فلن يظهر أي تغيير في الواجهة إلا إذا أُضيف عنصر HTML مطابق
-        بنفس المعرّف داخل ملفي <code>widgets-ticker.html</code> و<code>widgets-portal.html</code>. لذلك يُفضّل الالتزام
-        بتعديل قيم العناصر الموجودة أصلاً بدل إضافة عناصر جديدة، إلا إذا كنت مستعداً لتعديل تلك الملفات أيضاً.
-        <br><strong>حالة الطرق ومحطات الوقود:</strong> إضافة معلم جديد (حاجز/محطة) تتم فقط من الخريطة التفاعلية، وهذه
-        الصفحة مخصصة فقط لتغيير حالة المعالم الموجودة أصلاً (مفتوح/مغلق/متوفر/غير متوفر).
-    </div>
+    
 
     <div id="alert-container"></div>
 
@@ -212,16 +206,17 @@ const JSON_GROUPS = {
         ]
     },
     weather: {
-        title: 'حالة الطقس',
-        icon: 'fa-cloud-sun',
-        fields: [
-            { key: 'id',        label: 'معرف المدينة (id)',     placeholder: 'ramallah' },
-            { key: 'temp',      label: 'الحرارة °م (تُعرض فعلياً)', placeholder: '28' },
-            { key: 'humidity',  label: 'الرطوبة % (عرض مستقبلي)', placeholder: '65' },
-            { key: 'wind',      label: 'الرياح كم/س (عرض مستقبلي)', placeholder: '12' },
-            { key: 'condition', label: 'الحالة (عرض مستقبلي)',   placeholder: 'غائم جزئياً' }
-        ]
-    },
+    title: 'حالة الطقس',
+    icon: 'fa-cloud-sun',
+    fields: [
+        { key: 'id',        label: 'معرف المدينة (id)',     placeholder: 'ramallah' },
+        { key: 'label',     label: 'اسم المدينة المعروض',    placeholder: 'رام الله' },   // 🆕
+        { key: 'temp',      label: 'الحرارة °م (تُعرض فعلياً)', placeholder: '28' },
+        { key: 'humidity',  label: 'الرطوبة %',              placeholder: '65' },
+        { key: 'wind',      label: 'الرياح كم/س',            placeholder: '12' },
+        { key: 'condition', label: 'الحالة',                 placeholder: 'غائم جزئياً' }
+    ]
+},
     fuel: {
         title: 'المحروقات والغاز',
         icon: 'fa-gas-pump',
@@ -253,6 +248,12 @@ const JSON_GROUPS = {
         ]
     }
 };
+
+const DEFAULT_WEATHER_ITEMS = [
+    { id: 'ramallah', label: 'رام الله', temp: 28, humidity: 65, wind: 12, condition: 'غائم جزئياً' },
+    { id: 'gaza', label: 'غزة', temp: 32, humidity: 70, wind: 15, condition: 'مشمس' },
+    { id: 'jerusalem', label: 'القدس', temp: 26, humidity: 60, wind: 10, condition: 'غائم' }
+];
 
 const ROAD_STOP_OPTIONS = [
     { value: '0', label: '🟢 مفتوح' },
@@ -339,10 +340,24 @@ async function loadEverything() {
         if (!adminGroupsData.success) throw new Error(adminGroupsData.error || 'فشل جلب المجموعات');
         if (!featuresData.success) throw new Error(featuresData.error || 'فشل جلب المعالم');
 
+                // 🆕 [إصلاح الفراغ الأولي]: خريطة الافتراضيات لكل مجموعة - الطقس له
+        // مصدر خاص (DEFAULT_WEATHER_ITEMS أعلاه)، وباقي المجموعات تُؤخذ مباشرة
+        // من نفس WIDGETS_MANUAL_DATA المُحمَّل من widgets-config.js
+        const DEFAULT_GROUP_ITEMS = {
+            weather: DEFAULT_WEATHER_ITEMS
+        };
+
         groupsState = {};
         Object.keys(JSON_GROUPS).forEach(key => {
             const serverGroup = adminGroupsData.groups[key] || { data: [] };
-            const items = Array.isArray(serverGroup.data) ? serverGroup.data : [];
+            let items = Array.isArray(serverGroup.data) ? serverGroup.data : [];
+
+            
+            if (items.length === 0) {
+                const fallback = DEFAULT_GROUP_ITEMS[key] || (typeof WIDGETS_MANUAL_DATA !== 'undefined' ? WIDGETS_MANUAL_DATA[key] : null);
+                if (Array.isArray(fallback)) items = fallback;
+            }
+
             groupsState[key] = {
                 updated_at: serverGroup.updated_at || null,
                 items: items.map(it => ({ ...it, _uid: nextUid() }))

@@ -84,24 +84,154 @@
     // البيانات من APIs (القسم الأول)
     // ============================================
     let apiData = {
-        weather: {
-            ramallah: { temp: 28, humidity: 65, wind: 12, condition: 'غائم جزئياً' },
-            gaza: { temp: 32, humidity: 70, wind: 15, condition: 'مشمس' },
-            jerusalem: { temp: 26, humidity: 60, wind: 10, condition: 'غائم' }
-        },
-        prayer: {
-            fajr: '04:45',
-            dhuhr: '12:30',
-            asr: '15:45',
-            maghrib: '18:45',
-            isha: '20:15'
-        },
-        calendar: {
-            hijri: '12 رجب 1446',
-            gregorian: '2026-08-17',
-            events: []
-        }
-    };
+    weather: {
+        ramallah: { label: 'رام الله', temp: 28, humidity: 65, wind: 12, condition: 'غائم جزئياً' },
+        gaza: { label: 'غزة', temp: 32, humidity: 70, wind: 15, condition: 'مشمس' },
+        jerusalem: { label: 'القدس', temp: 26, humidity: 60, wind: 10, condition: 'غائم' }
+    },
+    prayer: { fajr: '04:45', dhuhr: '12:30', asr: '15:45', maghrib: '18:45', isha: '20:15' },
+    calendar: { hijri: '12 رجب 1446', gregorian: '2026-08-17', events: [] }
+};
+
+// ============================================
+// 🆕 البناء الديناميكي الكامل للمجموعات الست القابلة للتعديل من لوحة الإدارة
+// (مركز المعلومات الحية). كل بطاقة تُبنى بالكامل من البيانات نفسها القادمة
+// من السيرفر - أيقونة/اسم/رمز/وحدة/قيمة - وليس فقط القيمة كما كان سابقاً.
+// هذا يضمن أن أي تعديل (حتى تغيير اسم أو رمز أو إضافة عنصر جديد بالكامل)
+// ينعكس فوراً بكل الصفحات دون الحاجة لتعديل أي HTML يدوياً بعد الآن.
+// ============================================
+function escWidgetText(v) {
+    if (v === undefined || v === null) return '';
+    const d = document.createElement('div');
+    d.textContent = String(v);
+    return d.innerHTML;
+}
+
+const CURRENCY_FLAGS = { USD: '🇺🇸', JOD: '🇯🇴', EUR: '🇪🇺', ILS: '🇮🇱', GBP: '🇬🇧', EGP: '🇪🇬', SAR: '🇸🇦' };
+function pickCurrencyFlag(item) {
+    const code = (item.code || '').toUpperCase();
+    for (const k in CURRENCY_FLAGS) { if (code.includes(k)) return CURRENCY_FLAGS[k]; }
+    return '💱';
+}
+const GOLD_ICONS = ['🥇', '🥈', '🥉', '💎', '⚪'];
+function pickGoldIcon(index) { return GOLD_ICONS[index % GOLD_ICONS.length]; }
+function pickWeatherIcon(condition) {
+    const c = (condition || '').trim();
+    if (c.includes('مشمس')) return '☀️';
+    if (c.includes('ممطر') || c.includes('مطر')) return '🌧️';
+    if (c.includes('غائم جزئياً')) return '🌤️';
+    if (c.includes('غائم')) return '☁️';
+    return '🌤️';
+}
+function pickFuelIcon(item) {
+    const id = (item.id || '').toLowerCase();
+    if (id.includes('diesel')) return '🛢️';
+    if (id.includes('gas')) return '🔥';
+    return '⛽';
+}
+const EMPTY_GROUP_MSG = '<div style="padding:12px; text-align:center; color:#999; font-size:12px; grid-column:1/-1;">لا توجد عناصر بعد</div>';
+
+function renderCurrencyGridHTML(prefix) {
+    const items = MANUAL_DATA.currency || [];
+    if (!items.length) return EMPTY_GROUP_MSG;
+    return items.map(c => `
+        <div class="currency-item">
+            <div class="currency-flag">${pickCurrencyFlag(c)}</div>
+            <div class="currency-info">
+                <span class="currency-name">${escWidgetText(c.label)}</span>
+                <span class="currency-code">${escWidgetText(c.code)}</span>
+            </div>
+            <div class="currency-value" id="${prefix}${escWidgetText(c.id)}">${escWidgetText(c.value)}</div>
+        </div>
+    `).join('');
+}
+
+function renderGoldGridHTML(prefix) {
+    const items = MANUAL_DATA.gold || [];
+    if (!items.length) return EMPTY_GROUP_MSG;
+    return items.map((g, i) => `
+        <div class="gold-item">
+            <div class="gold-icon">${pickGoldIcon(i)}</div>
+            <div class="gold-info">
+                <span class="gold-name">${escWidgetText(g.label)}</span>
+                <span class="gold-unit">${escWidgetText(g.unit)}</span>
+            </div>
+            <div class="gold-value" id="${prefix}${escWidgetText(g.id)}">${escWidgetText(g.value)}</div>
+        </div>
+    `).join('');
+}
+
+function renderWeatherGridHTML(prefix) {
+    const entries = Object.entries(apiData.weather || {});
+    if (!entries.length) return EMPTY_GROUP_MSG;
+    return entries.map(([cityId, w]) => {
+        const label = w.label || (cityId.charAt(0).toUpperCase() + cityId.slice(1));
+        return `
+        <div class="weather-city">
+            <div class="weather-icon">${pickWeatherIcon(w.condition)}</div>
+            <div class="weather-info">
+                <span class="weather-city-name">${escWidgetText(label)}</span>
+                <span class="weather-temp" id="${prefix}weather-${escWidgetText(cityId)}">${escWidgetText(w.temp)}°C</span>
+            </div>
+            <div class="weather-details">
+                <span>رطوبة: ${escWidgetText(w.humidity)}%</span>
+                <span>رياح: ${escWidgetText(w.wind)} كم/س</span>
+            </div>
+        </div>`;
+    }).join('');
+}
+
+function renderFuelGridHTML(prefix) {
+    const items = MANUAL_DATA.fuel || [];
+    if (!items.length) return EMPTY_GROUP_MSG;
+    return items.map(f => `
+        <div class="fuel-item">
+            <div class="fuel-icon">${pickFuelIcon(f)}</div>
+            <div class="fuel-info">
+                <span class="fuel-name">${escWidgetText(f.label)}</span>
+                <span class="fuel-unit">${escWidgetText(f.unit)}</span>
+            </div>
+            <div class="fuel-value" id="${prefix}${escWidgetText(f.id)}">${escWidgetText(f.value)}</div>
+        </div>
+    `).join('');
+}
+
+function renderTransportGridHTML(prefix, groupKey) {
+    const items = MANUAL_DATA[groupKey] || [];
+    if (!items.length) return EMPTY_GROUP_MSG;
+    return items.map(t => `
+        <div class="transport-item">
+            <div class="transport-icon">🚌</div>
+            <div class="transport-info">
+                <span class="transport-name">${escWidgetText(t.label)}</span>
+                <span class="transport-unit">${escWidgetText(t.unit)}</span>
+            </div>
+            <div class="transport-value" id="${prefix}${escWidgetText(t.id)}">${escWidgetText(t.value)}</div>
+        </div>
+    `).join('');
+}
+
+function renderManualGroupsInto(prefix) {
+    const currencyGrid = document.getElementById(prefix + 'currency-grid');
+    if (currencyGrid) currencyGrid.innerHTML = renderCurrencyGridHTML(prefix);
+
+    const goldGrid = document.getElementById(prefix + 'gold-grid');
+    if (goldGrid) goldGrid.innerHTML = renderGoldGridHTML(prefix);
+
+    const weatherGrid = document.getElementById(prefix + 'weather-grid');
+    if (weatherGrid) weatherGrid.innerHTML = renderWeatherGridHTML(prefix);
+
+    const fuelGrid = document.getElementById(prefix + 'fuel-grid');
+    if (fuelGrid) fuelGrid.innerHTML = renderFuelGridHTML(prefix);
+
+    const interGrid = document.getElementById(prefix + 'transport-inter-city-grid');
+    if (interGrid) interGrid.innerHTML = renderTransportGridHTML(prefix, 'transport_inter_city');
+
+    const intraGrid = document.getElementById(prefix + 'transport-intra-city-grid');
+    if (intraGrid) intraGrid.innerHTML = renderTransportGridHTML(prefix, 'transport_intra_city');
+}
+
+    
 
         // 🆕 بيانات حقيقية من قاعدة البيانات (تُستبدل بها القيم الافتراضية بمجرد الوصول)
     let remoteGroupsData = {};
@@ -612,72 +742,21 @@
     // دالة تحديث البيانات في تبويب الموبايل
     // ============================================
     function updateMobilePortalData() {
-        // تحديث البيانات اليدوية
-        if (MANUAL_DATA.currency) {
-            MANUAL_DATA.currency.forEach(c => {
-                const el = document.getElementById('mobile-portal-' + c.id);
-                if (el) el.textContent = c.value;
-            });
-        }
-        if (MANUAL_DATA.gold) {
-            MANUAL_DATA.gold.forEach(g => {
-                const el = document.getElementById('mobile-portal-' + g.id);
-                if (el) el.textContent = g.value;
-            });
-        }
-        if (MANUAL_DATA.fuel) {
-            MANUAL_DATA.fuel.forEach(f => {
-                const el = document.getElementById('mobile-portal-' + f.id);
-                if (el) el.textContent = f.value;
-            });
-        }
-        if (MANUAL_DATA.traffic) {
-            MANUAL_DATA.traffic.forEach(t => {
-                const el = document.getElementById('mobile-portal-' + t.id);
-                if (el) {
-                    el.innerHTML = `<i class="fas ${TRAFFIC_ICONS[t.status]}" style="color: ${TRAFFIC_COLORS[t.status]}"></i>`;
-                }
-            });
-        }
-        if (MANUAL_DATA.transport_inter_city) {
-            MANUAL_DATA.transport_inter_city.forEach(t => {
-                const el = document.getElementById('mobile-portal-' + t.id);
-                if (el) el.textContent = t.value;
-            });
-        }
-        if (MANUAL_DATA.transport_intra_city) {
-            MANUAL_DATA.transport_intra_city.forEach(t => {
-                const el = document.getElementById('mobile-portal-' + t.id);
-                if (el) el.textContent = t.value;
-            });
-        }
-        if (MANUAL_DATA.events) {
-            MANUAL_DATA.events.forEach(e => {
-                const el = document.getElementById('mobile-portal-' + e.id);
-                if (el) el.textContent = e.date;
-            });
-        }
+    renderManualGroupsInto('mobile-portal-');   // 🆕
 
-        // تحديث البيانات من APIs
-        if (apiData.weather) {
-            Object.entries(apiData.weather).forEach(([city, data]) => {
-                const el = document.getElementById('mobile-portal-weather-' + city);
-                if (el) el.textContent = data.temp + '°C';
-            });
-        }
-        if (apiData.prayer) {
-            Object.entries(apiData.prayer).forEach(([prayer, time]) => {
-                const el = document.getElementById('mobile-portal-prayer-' + prayer);
-                if (el) el.textContent = time;
-            });
-        }
-        if (apiData.calendar) {
-            Object.entries(apiData.calendar).forEach(([type, value]) => {
-                const el = document.getElementById('mobile-portal-' + type + '-date');
-                if (el) el.textContent = value;
-            });
-        }
+    if (apiData.prayer) {
+        Object.entries(apiData.prayer).forEach(([prayer, time]) => {
+            const el = document.getElementById('mobile-portal-prayer-' + prayer);
+            if (el) el.textContent = time;
+        });
     }
+    if (apiData.calendar) {
+        Object.entries(apiData.calendar).forEach(([type, value]) => {
+            const el = document.getElementById('mobile-portal-' + type + '-date');
+            if (el) el.textContent = value;
+        });
+    }
+}
 
     // ============================================
     // دالة إعداد البوابة التفصيلية (للكمبيوتر)
@@ -807,72 +886,22 @@
     // دالة تحديث البيانات في البوابة
     // ============================================
     function updatePortalData() {
-        // تحديث البيانات اليدوية
-        if (MANUAL_DATA.currency) {
-            MANUAL_DATA.currency.forEach(c => {
-                const el = document.getElementById('portal-' + c.id);
-                if (el) el.textContent = c.value;
-            });
-        }
-        if (MANUAL_DATA.gold) {
-            MANUAL_DATA.gold.forEach(g => {
-                const el = document.getElementById('portal-' + g.id);
-                if (el) el.textContent = g.value;
-            });
-        }
-        if (MANUAL_DATA.fuel) {
-            MANUAL_DATA.fuel.forEach(f => {
-                const el = document.getElementById('portal-' + f.id);
-                if (el) el.textContent = f.value;
-            });
-        }
-        if (MANUAL_DATA.traffic) {
-            MANUAL_DATA.traffic.forEach(t => {
-                const el = document.getElementById('portal-' + t.id);
-                if (el) {
-                    el.innerHTML = `<i class="fas ${TRAFFIC_ICONS[t.status]}" style="color: ${TRAFFIC_COLORS[t.status]}"></i>`;
-                }
-            });
-        }
-        if (MANUAL_DATA.transport_inter_city) {
-            MANUAL_DATA.transport_inter_city.forEach(t => {
-                const el = document.getElementById('portal-' + t.id);
-                if (el) el.textContent = t.value;
-            });
-        }
-        if (MANUAL_DATA.transport_intra_city) {
-            MANUAL_DATA.transport_intra_city.forEach(t => {
-                const el = document.getElementById('portal-' + t.id);
-                if (el) el.textContent = t.value;
-            });
-        }
-        if (MANUAL_DATA.events) {
-            MANUAL_DATA.events.forEach(e => {
-                const el = document.getElementById('portal-' + e.id);
-                if (el) el.textContent = e.date;
-            });
-        }
+    renderManualGroupsInto('portal-');   // 🆕 يبني كل شيء ديناميكياً دفعة واحدة
 
-        // تحديث البيانات من APIs
-        if (apiData.weather) {
-            Object.entries(apiData.weather).forEach(([city, data]) => {
-                const el = document.getElementById('portal-weather-' + city);
-                if (el) el.textContent = data.temp + '°C';
-            });
-        }
-        if (apiData.prayer) {
-            Object.entries(apiData.prayer).forEach(([prayer, time]) => {
-                const el = document.getElementById('portal-prayer-' + prayer);
-                if (el) el.textContent = time;
-            });
-        }
-        if (apiData.calendar) {
-            Object.entries(apiData.calendar).forEach(([type, value]) => {
-                const el = document.getElementById('portal-' + type + '-date');
-                if (el) el.textContent = value;
-            });
-        }
+    // البقية تبقى كما هي (prayer + calendar فقط):
+    if (apiData.prayer) {
+        Object.entries(apiData.prayer).forEach(([prayer, time]) => {
+            const el = document.getElementById('portal-prayer-' + prayer);
+            if (el) el.textContent = time;
+        });
     }
+    if (apiData.calendar) {
+        Object.entries(apiData.calendar).forEach(([type, value]) => {
+            const el = document.getElementById('portal-' + type + '-date');
+            if (el) el.textContent = value;
+        });
+    }
+}
 
     // ============================================
     // دالة بدء النظام

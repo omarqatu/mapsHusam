@@ -377,9 +377,80 @@ window.__nmsPageHandlesOwnAds = true;
         // 🆕 الإعلانات المميزة (يمين/يسار/أسفل) - نسخة موحّدة تجلب عقارات وخدمات معاً
         // وتحل مشكلتي: (أ) ظهور العقارات فقط، (ب) الفراغ الكبير أسفل الإعلانات
         // ==========================================================================
-        function escapeAdAttr(str) {
+                function escapeAdAttr(str) {
             if (str === null || str === undefined) return '';
             return String(str).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/'/g, '&#39;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+        }
+
+        // 🆕 ودجت تقييم موحّد (نجوم + عدد + زر "عرض التعليقات") يُستخدم بكل من:
+        // الإعلانات المميزة، الأعلى تقييماً، موصى بهم. يعتمد على data-layer/
+        // data-feature-id بدل id فريد، لأن نفس البطاقة قد تُستنسخ عدة مرات
+        // بأعمدة مختلفة (يمين/يسار/أسفل)، وكل نسخة تُحيّى (hydrate) بشكل مستقل.
+        function buildRatingWidgetHtml(layer, featureId) {
+            if (!layer || featureId === undefined || featureId === null || featureId === '') return '';
+            return `<div class="nms-rating-display" data-layer="${escapeAdAttr(layer)}" data-feature-id="${escapeAdAttr(String(featureId))}" style="margin:6px 0; font-size:11px;">
+                <span style="color:#f57c00;">⭐</span>
+                <span class="nms-rating-text" style="color:#666; font-size:11px;">جاري تحميل التقييم...</span>
+            </div>`;
+        }
+
+        async function hydrateRatingWidgets(container) {
+            if (!container) return;
+            const widgets = container.querySelectorAll('.nms-rating-display[data-layer]');
+            for (const widget of widgets) {
+                if (widget.dataset.hydrated) continue;
+                widget.dataset.hydrated = '1';
+                const layer = widget.dataset.layer;
+                const featureId = widget.dataset.featureId;
+                try {
+                    const response = await fetch(`${window.location.origin}/api/service-ratings?service_layer=${layer}&feature_id=${featureId}`);
+                    const data = await response.json();
+                    const textEl = widget.querySelector('.nms-rating-text');
+                    if (!textEl) continue;
+
+                    if (data.success && data.totalRatings > 0) {
+                        const stars = '★'.repeat(Math.round(data.averageRating)) + '☆'.repeat(5 - Math.round(data.averageRating));
+                        textEl.innerHTML = `<span style="color:#ffc107;">${stars}</span> <span style="color:#333; font-weight:bold;">${data.averageRating}</span> <span style="color:#666;">(${data.totalRatings} تقييم)</span>`;
+
+                        const btn = document.createElement('button');
+                        btn.type = 'button';
+                        btn.innerHTML = `💬 عرض التعليقات (${data.totalRatings})`;
+                        btn.style.cssText = 'margin-top:6px; padding:4px 8px; background:#1a73e8; color:#fff; border:none; border-radius:4px; cursor:pointer; font-size:11px; display:block; width:100%;';
+
+                        const commentsDiv = document.createElement('div');
+                        commentsDiv.style.cssText = 'display:none; margin-top:8px; max-height:180px; overflow-y:auto; border-top:1px solid #eee; padding-top:6px;';
+
+                        btn.onclick = () => {
+                            if (commentsDiv.style.display === 'none') {
+                                commentsDiv.style.display = 'block';
+                                if (!data.ratings || data.ratings.length === 0) {
+                                    commentsDiv.innerHTML = '<div style="color:#999; font-size:12px;">لا توجد تعليقات</div>';
+                                } else {
+                                    commentsDiv.innerHTML = data.ratings.map(r => `
+                                        <div style="padding:6px; background:#f9f9f9; border-radius:4px; margin-bottom:6px;">
+                                            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+                                                <span style="font-weight:bold; font-size:12px; color:#333;">${sanitize(r.user_name || 'مستخدم')}</span>
+                                                <span style="color:#ffc107; font-size:13px;">${'★'.repeat(r.rating)}</span>
+                                            </div>
+                                            ${r.comment ? `<div style="font-size:12px; color:#666; line-height:1.4;">${sanitize(r.comment)}</div>` : ''}
+                                            <div style="font-size:10px; color:#999; margin-top:4px;">${new Date(r.created_at).toLocaleDateString('ar-EG')}</div>
+                                        </div>
+                                    `).join('');
+                                }
+                            } else {
+                                commentsDiv.style.display = 'none';
+                            }
+                        };
+
+                        widget.appendChild(btn);
+                        widget.appendChild(commentsDiv);
+                    } else {
+                        textEl.innerHTML = '<span style="color:#999;">لا توجد تقييمات بعد</span>';
+                    }
+                } catch (err) {
+                    // تجاهل فشل جلب تقييم بطاقة واحدة، لا يوقف باقي البطاقات
+                }
+            }
         }
 
                 function buildAdCardHtml(props, item) {
@@ -387,17 +458,10 @@ window.__nmsPageHandlesOwnAds = true;
             const name = sanitize(props.name || props.location_name || props.location || '');
             const location = sanitize(props.location_name || props.location || '');
 
-            // 🆕 إذا كانت البطاقة قادمة من قسم "الأعلى تقييماً" الحقيقي (بناءً على
-            // تقييمات فعلية من جدول service_ratings)، نعرض شارة تقييم حقيقية
-            // بدل الاعتماد فقط على شارة "⭐ مميز" العامة
-            let ratingBadgeHtml = '';
-            if (item.avgRating !== undefined && item.avgRating !== null) {
-                const roundedStars = Math.round(item.avgRating);
-                const starsHtml = '★'.repeat(roundedStars) + '☆'.repeat(5 - roundedStars);
-                ratingBadgeHtml = `<div style="background:#fff8e1; border:1px solid #ffe082; border-radius:6px; padding:4px 6px; margin-bottom:6px; font-size:11px; font-weight:bold; color:#f57c00; text-align:center;">
-                    ${starsHtml} <span style="color:#555;">${item.avgRating} (${item.totalRatings || 0} تقييم حقيقي)</span>
-                </div>`;
-            }
+            // 🆕 [إصلاح]: بدل شارة نجوم ثابتة بدون أي تفاعل، نستخدم ودجت التقييم
+            
+            const featureIdForRating = (!isRealEstate && props.id !== undefined && props.id !== null && props.id !== '') ? props.id : null;
+            const ratingBadgeHtml = featureIdForRating !== null ? buildRatingWidgetHtml(item.layer, featureIdForRating) : '';
 
             let statusHtml = '';
             if (!isRealEstate) {
@@ -668,8 +732,11 @@ window.__nmsPageHandlesOwnAds = true;
                 // 🆕 ربط مباشر (وليس عام) لأزرار الاتصال/واتساب الخاصة بكروت الإعلانات،
         // مع تسجيل تتبع + فحص حد الطلبات + تسجيل النقرة في /api/log-contact-click.
         // يُستدعى بعد كل مرة تُحقَن فيها كروت جديدة (إعلانات، أعلى تقييماً، موصى بهم)
-        function wireAdActionButtons(container) {
+                function wireAdActionButtons(container) {
             if (!container) return;
+
+            
+            hydrateRatingWidgets(container);
 
             container.querySelectorAll('.ad-call-btn').forEach(callBtn => {
                 if (callBtn.dataset.wired) return;
@@ -1243,23 +1310,13 @@ window.__nmsPageHandlesOwnAds = true;
             }
         }
 
-        setTimeout(() => {
-            loadTopRatedFromRealRatings();
-            loadRatedRow('nms-recommended-grid', 'nms-recommended-section', '=', 9.9);
-        }, 1200);
-
-                setTimeout(loadFeaturedAds, 1000);
-
-        setTimeout(loadFeaturedAds, 1000);
-
-        // 🆕 تحميل أقسام الصور والفيديوهات وقبل/بعد - نفس مبدأ "الأعلى تقييماً"
-        // و"موصى بهم" (مسح شامل لكل الفئات)، تُشغَّل بتأخير بسيط لضمان جاهزية
-        // مصفوفة categories وكل الدوال المساعدة المطلوبة
-                setTimeout(() => {
-            loadGallerySection('pic', 'nms-photos-grid', 'nms-photos-section', 'photo', true);
-loadGallerySection('video', 'nms-videos-grid', 'nms-videos-section', 'video', true);
-            loadBeforeAfterSection();
-        }, 1400);
+       
+        loadTopRatedFromRealRatings();
+        loadRatedRow('nms-recommended-grid', 'nms-recommended-section', '=', 9.9);
+        loadFeaturedAds();
+        loadGallerySection('pic', 'nms-photos-grid', 'nms-photos-section', 'photo', true);
+        loadGallerySection('video', 'nms-videos-grid', 'nms-videos-section', 'video', true);
+        loadBeforeAfterSection();
 
 
 
