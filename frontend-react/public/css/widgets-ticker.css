@@ -100,34 +100,30 @@ body.no-map-page .widgets-ticker-container {
    ============================================ */
 .ticker-content {
     position: relative;
-    overflow: hidden;
+    overflow-x: auto;
+    overflow-y: hidden;
     padding: 10px 0;
+    scrollbar-width: none;
+    cursor: grab;
+}
+.ticker-content::-webkit-scrollbar { display: none; }
+.ticker-content.dragging {
+    cursor: grabbing;
+    scroll-behavior: auto;
 }
 
 .ticker-scroll {
     display: flex;
     gap: 20px;
-    animation: scrollTicker 30s linear infinite;
     padding: 0 20px;
+    width: max-content;
+    /* 🆕 تم حذف animation: scrollTicker لأن التحريك أصبح يدوياً بالكامل عبر JS */
 }
-
-@keyframes scrollTicker {
-    0% {
-        transform: translateX(0);
-    }
-    100% {
-        transform: translateX(-50%);
-    }
-}
-
-.ticker-scroll:hover {
-    animation-play-state: paused;
-}
-
 /* ============================================
    عناصر الشريط
    ============================================ */
 .ticker-item {
+    position: relative; /* 🆕 يحصر طبقة ::before داخل حدود هذا العنصر فقط بدل أن تغطي كامل شريط الـticker */
     display: flex;
     align-items: center;
     gap: 10px;
@@ -561,6 +557,7 @@ body.widgets-tab-active .widgets-ticker-container {
     background: linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0) 100%);
     opacity: 0;
     transition: opacity 0.3s ease;
+    pointer-events: none; /* 🆕 تأكيد إضافي: طبقة زخرفية بحتة، يجب ألا تعترض السحب أو النقر */
 }
 
 .ticker-item:hover::before {

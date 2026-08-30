@@ -181,6 +181,62 @@ function formatDate(dateStr) {
 let uidCounter = 0;
 function nextUid() { return 'row-' + (++uidCounter); }
 
+// 🆕 جعل صفوف أي جدول قابلة للسحب لإعادة الترتيب
+function makeTableRowsDraggable(tbody) {
+    if (!tbody) return;
+    let draggedRow = null;
+    tbody.querySelectorAll('tr').forEach(row => {
+        row.setAttribute('draggable', 'true');
+        row.style.cursor = 'grab';
+        row.addEventListener('dragstart', () => {
+            draggedRow = row;
+            row.style.opacity = '0.4';
+        });
+        row.addEventListener('dragend', () => { row.style.opacity = ''; });
+        row.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            if (!draggedRow || row === draggedRow) return;
+            const rect = row.getBoundingClientRect();
+            const isAfter = (e.clientY - rect.top) > rect.height / 2;
+            isAfter ? row.after(draggedRow) : row.before(draggedRow);
+        });
+    });
+}
+
+// 🆕 حفظ ترتيب حواجز الطرق بعد السحب
+async function saveRoadOrder() {
+    const rows = document.querySelectorAll('#panel-road_status tbody tr');
+    const orderedIds = Array.from(rows).map(r => parseInt(r.dataset.featureId, 10));
+    try {
+        const res = await fetch('/api/admin/reorder-features', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', ...getAdminAuthHeaders() },
+            body: JSON.stringify({ layer: 'road_barriers', orderedIds })
+        });
+        const data = await res.json();
+        showAlert(data.success ? '✅ تم حفظ ترتيب الحواجز بنجاح' : '❌ ' + (data.error || 'فشل الحفظ'), data.success ? 'success' : 'error');
+    } catch (err) {
+        showAlert('❌ خطأ في الاتصال: ' + err.message, 'error');
+    }
+}
+
+// 🆕 حفظ ترتيب محطات الوقود بعد السحب
+async function saveFuelOrder() {
+    const rows = document.querySelectorAll('#panel-fuel_status tbody tr');
+    const orderedIds = Array.from(rows).map(r => parseInt(r.dataset.featureId, 10));
+    try {
+        const res = await fetch('/api/admin/reorder-features', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', ...getAdminAuthHeaders() },
+            body: JSON.stringify({ layer: 'fuel_stations', orderedIds })
+        });
+        const data = await res.json();
+        showAlert(data.success ? '✅ تم حفظ ترتيب المحطات بنجاح' : '❌ ' + (data.error || 'فشل الحفظ'), data.success ? 'success' : 'error');
+    } catch (err) {
+        showAlert('❌ خطأ في الاتصال: ' + err.message, 'error');
+    }
+}
+
 // ==========================================================================
 // تعريف المجموعات الست القابلة للتعديل كعناصر JSON (currency/gold/weather/fuel/transport)
 // ==========================================================================
@@ -395,6 +451,7 @@ function renderJsonGroupPanel(groupKey) {
 
     const rowsHtml = state.items.map(item => `
         <tr data-uid="${item._uid}">
+            <td style="cursor:grab; color:#999; width:30px;">⋮⋮</td>
             ${meta.fields.map(f => `
                 <td>
                     <input type="text" data-field="${f.field || f.key}" placeholder="${f.placeholder || ''}"
@@ -412,9 +469,10 @@ function renderJsonGroupPanel(groupKey) {
                 <i class="fas fa-clock"></i> آخر تحديث: ${formatDate(state.updated_at)}
             </span>
         </div>
+        <p style="font-size:12px; color:#888; margin:0 0 8px;"><i class="fas fa-arrows-alt-v"></i> اسحب أيقونة ⋮⋮ لإعادة ترتيب الصفوف، ثم اضغط "حفظ تعديلات هذه المجموعة".</p>
         <div style="overflow-x:auto;">
             <table>
-                <thead><tr>${fieldsHtml}<th style="width:60px;">حذف</th></tr></thead>
+                <thead><tr><th style="width:30px;"></th>${fieldsHtml}<th style="width:60px;">حذف</th></tr></thead>
                 <tbody id="tbody-${groupKey}">${rowsHtml || ''}</tbody>
             </table>
         </div>
@@ -425,6 +483,7 @@ function renderJsonGroupPanel(groupKey) {
             <button type="button" class="btn btn-primary" onclick="loadEverything()"><i class="fas fa-sync-alt"></i> تحديث القائمة</button>
         </div>
     `;
+    makeTableRowsDraggable(document.getElementById('tbody-' + groupKey)); // 🆕
 }
 
 function addJsonRow(groupKey) {
@@ -485,7 +544,8 @@ function renderRoadStatusPanel() {
     const panel = document.getElementById('panel-road_status');
 
     const rowsHtml = roadBarriersState.map(f => `
-        <tr data-uid="${f._uid}">
+        <tr data-uid="${f._uid}" data-feature-id="${f.id}">
+            <td style="cursor:grab; color:#999; width:30px;">⋮⋮</td>
             <td class="id-cell">${f.id}</td>
             <td class="feature-name-cell">${f.name || '—'}</td>
             <td>
@@ -503,19 +563,21 @@ function renderRoadStatusPanel() {
             <span class="last-updated-badge"><i class="fas fa-clock"></i> آخر تحديث: ${formatDate(roadStatusUpdatedAt)}</span>
         </div>
         <p style="font-size:12.5px; color:#777; margin-bottom:10px;">
-            لإضافة حاجز جديد استخدم أداة "تحرير النقاط" على الخريطة التفاعلية. هذه القائمة لتغيير حالة الحواجز الموجودة فقط.
+            لإضافة حاجز جديد استخدم أداة "تحرير النقاط" على الخريطة التفاعلية. اسحب ⋮⋮ لإعادة الترتيب، ثم اضغط "حفظ الترتيب".
         </p>
         <div style="overflow-x:auto;">
             <table>
-                <thead><tr><th style="width:80px;">ID</th><th>اسم الحاجز</th><th>الحالة</th><th style="width:100px;">حفظ</th></tr></thead>
+                <thead><tr><th style="width:30px;"></th><th style="width:80px;">ID</th><th>اسم الحاجز</th><th>الحالة</th><th style="width:100px;">حفظ</th></tr></thead>
                 <tbody>${rowsHtml || ''}</tbody>
             </table>
         </div>
         ${roadBarriersState.length === 0 ? '<div class="no-data">لا توجد حواجز مسجّلة بعد</div>' : ''}
         <div class="table-actions">
+            <button type="button" class="btn btn-success" onclick="saveRoadOrder()"><i class="fas fa-arrows-alt-v"></i> حفظ الترتيب</button>
             <button type="button" class="btn btn-primary" onclick="loadEverything()"><i class="fas fa-sync-alt"></i> تحديث القائمة</button>
         </div>
     `;
+    makeTableRowsDraggable(panel.querySelector('tbody')); // 🆕
 }
 
 async function saveRoadBarrier(id, uid) {
@@ -556,7 +618,8 @@ function renderFuelStatusPanel() {
     }
 
     const rowsHtml = fuelStationsState.map(f => `
-        <tr data-uid="${f._uid}">
+        <tr data-uid="${f._uid}" data-feature-id="${f.id}">
+            <td style="cursor:grab; color:#999; width:30px;">⋮⋮</td>
             <td class="id-cell">${f.id}</td>
             <td class="feature-name-cell">${f.name || '—'}</td>
             <td>${buildSelect(f._uid, 'diesel', f.diesel)}</td>
@@ -572,19 +635,21 @@ function renderFuelStatusPanel() {
             <span class="last-updated-badge"><i class="fas fa-clock"></i> آخر تحديث: ${formatDate(fuelStatusUpdatedAt)}</span>
         </div>
         <p style="font-size:12.5px; color:#777; margin-bottom:10px;">
-            لإضافة محطة جديدة استخدم أداة "تحرير النقاط" على الخريطة التفاعلية. هذه القائمة لتغيير توفر الوقود بالمحطات الموجودة فقط.
+            لإضافة محطة جديدة استخدم أداة "تحرير النقاط" على الخريطة التفاعلية. اسحب ⋮⋮ لإعادة الترتيب، ثم اضغط "حفظ الترتيب".
         </p>
         <div style="overflow-x:auto;">
             <table>
-                <thead><tr><th style="width:80px;">ID</th><th>اسم المحطة</th><th>ديزل</th><th>بنزين 95</th><th>بنزين 98</th><th style="width:100px;">حفظ</th></tr></thead>
+                <thead><tr><th style="width:30px;"></th><th style="width:80px;">ID</th><th>اسم المحطة</th><th>سولار/ديزل</th><th>بنزين 95</th><th>بنزين 98</th><th style="width:100px;">حفظ</th></tr></thead>
                 <tbody>${rowsHtml || ''}</tbody>
             </table>
         </div>
         ${fuelStationsState.length === 0 ? '<div class="no-data">لا توجد محطات وقود مسجّلة بعد</div>' : ''}
         <div class="table-actions">
+            <button type="button" class="btn btn-success" onclick="saveFuelOrder()"><i class="fas fa-arrows-alt-v"></i> حفظ الترتيب</button>
             <button type="button" class="btn btn-primary" onclick="loadEverything()"><i class="fas fa-sync-alt"></i> تحديث القائمة</button>
         </div>
     `;
+    makeTableRowsDraggable(panel.querySelector('tbody')); // 🆕
 }
 
 async function saveFuelStation(id, uid) {

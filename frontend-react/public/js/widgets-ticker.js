@@ -363,7 +363,7 @@ function renderManualGroupsInto(prefix) {
                 <i class="fas fa-gas-pump"></i>
                 <span class="ticker-label">${name}</span>
                 <span class="ticker-value">
-                    <span style="color:${diesel.color};">${diesel.icon} ديزل</span>
+                    <span style="color:${diesel.color};">${diesel.icon} سولار/ديزل</span>
                     <span style="color:${b95.color}; margin-right:6px;">${b95.icon} 95</span>
                     <span style="color:${b98.color}; margin-right:6px;">${b98.icon} 98</span>
                 </span>
@@ -552,6 +552,111 @@ function renderManualGroupsInto(prefix) {
         setLastUpdatedValue('traffic-update-time', formatDateDMY(remoteRoadStatusUpdatedAt));
         setLastUpdatedValue('fuel-status-update-time', formatDateDMY(remoteFuelStatusUpdatedAt));
     }
+        // ============================================
+    // 🆕 بحث نصي مرن (يتجاهل فروقات الحروف العربية المتشابهة) لكل مجموعة
+    // ============================================
+    function normalizeSearchText(text) {
+        if (!text) return '';
+        return text.toString()
+            .replace(/[أإآا]/g, 'ا').replace(/[ةه]/g, 'ه')
+            .replace(/[ىي]/g, 'ي').replace(/[ؤئء]/g, 'ء')
+            .toLowerCase().trim();
+    }
+
+    function filterWidgetGrid(grid, rawTerm) {
+        if (!grid) return;
+        const term = normalizeSearchText(rawTerm);
+        const words = term.split(/\s+/).filter(Boolean);
+        Array.from(grid.children).forEach(item => {
+            if (!words.length) { item.style.display = ''; return; }
+            const text = normalizeSearchText(item.textContent);
+            item.style.display = words.every(w => text.includes(w)) ? '' : 'none';
+        });
+    }
+
+    function wireWidgetSearchInputs(container) {
+        if (!container) return;
+        container.querySelectorAll('.widget-search-input').forEach(input => {
+            if (input.dataset.wired) return;
+            input.dataset.wired = '1';
+            input.addEventListener('input', () => {
+                const grid = container.querySelector('#' + CSS.escape(input.dataset.targetGrid))
+                           || document.getElementById(input.dataset.targetGrid);
+                filterWidgetGrid(grid, input.value);
+            });
+        });
+    }
+
+    // ============================================
+    // 🆕 سكرول يدوي حقيقي لشريط "المعلومات الفورية" (سحب بالفأرة/اللمس + عجلة الفأرة)
+    // بدل الأنيميشن التلقائي الثابت، حتى لا يتعارض تمرير عجلة الفأرة فوق الشريط
+    // مع تمرير الصفحة نفسها
+    // ============================================
+        function initTickerManualScroll() {
+        const content = document.querySelector('.ticker-content');
+        const track = document.getElementById('ticker-scroll');
+        if (!content || !track || content.dataset.manualScrollWired) return;
+        content.dataset.manualScrollWired = '1';
+
+        let userActive = false, resumeTimer = null;
+        let isDragging = false, startX = 0, startScroll = 0;
+
+        function pause() { userActive = true; clearTimeout(resumeTimer); }
+        function scheduleResume() { clearTimeout(resumeTimer); resumeTimer = setTimeout(() => userActive = false, 2000); }
+
+        function autoStep() {
+            if (!userActive) {
+                content.scrollLeft += 0.6;
+                const half = track.scrollWidth / 2;
+                if (content.scrollLeft >= half) content.scrollLeft -= half;
+            }
+            requestAnimationFrame(autoStep);
+        }
+        requestAnimationFrame(autoStep);
+
+        content.addEventListener('mouseenter', pause);
+        content.addEventListener('mouseleave', () => { if (!isDragging) scheduleResume(); });
+
+        content.addEventListener('wheel', (e) => {
+            e.preventDefault();
+            pause();
+            content.scrollLeft += (Math.abs(e.deltaY) > Math.abs(e.deltaX) ? e.deltaY : e.deltaX);
+            scheduleResume();
+        }, { passive: false });
+
+        content.addEventListener('mousedown', (e) => {
+            isDragging = true;
+            pause();
+            content.classList.add('dragging');
+            startX = e.pageX;
+            startScroll = content.scrollLeft;
+            e.preventDefault(); // 🆕 يمنع تحديد النص الافتراضي من مقاطعة عملية السحب اليدوي
+        });
+        window.addEventListener('mousemove', (e) => {
+            if (!isDragging) return;
+            content.scrollLeft = startScroll - (e.pageX - startX);
+        });
+        function endTickerDrag() {
+            if (!isDragging) return;
+            isDragging = false;
+            content.classList.remove('dragging');
+            scheduleResume();
+        }
+        window.addEventListener('mouseup', endTickerDrag);
+        window.addEventListener('blur', endTickerDrag); // 🆕 يمنع بقاء حالة السحب "عالقة" إذا غادر المؤشر النافذة أثناء السحب
+
+        let touchStartX = 0, touchStartScroll = 0;
+        content.addEventListener('touchstart', (e) => {
+            pause();
+            touchStartX = e.touches[0].pageX;
+            touchStartScroll = content.scrollLeft;
+        }, { passive: true });
+        content.addEventListener('touchmove', (e) => {
+            content.scrollLeft = touchStartScroll - (e.touches[0].pageX - touchStartX);
+        }, { passive: true });
+        content.addEventListener('touchend', scheduleResume);
+    }
+
     // ============================================
     // دالة تحديث جميع البيانات
     // ============================================
@@ -675,7 +780,7 @@ function renderManualGroupsInto(prefix) {
                 // إنشاء تبويب الموبايل
                 createMobileTabContent(html);
 
-                // 🆕 إعادة رسم الشريط بالكامل الآن بعد ضمان وجود #ticker-scroll
+                                // 🆕 إعادة رسم الشريط بالكامل الآن بعد ضمان وجود #ticker-scroll
                 // فعلياً بالـ DOM (يحل مشكلة توقيت السباق مع أول استدعاء مبكر)
                 updateTickerHTML();
 
@@ -685,6 +790,9 @@ function renderManualGroupsInto(prefix) {
                 // بالـ DOM، بدل الاعتماد على setTimeout بمدة ثابتة كانت أحياناً تُنفَّذ
                 // قبل اكتمال هذا الـ fetch (خصوصاً عند بطء الشبكة عند أول تحميل).
                 setupPortalModal();
+
+                // 🆕 تفعيل سحب/عجلة الفأرة على شريط المعلومات الفورية
+                initTickerManualScroll();
             })
             .catch(err => {
                 console.error('خطأ في تحميل الشريط المتحرك:', err);
@@ -715,10 +823,14 @@ function renderManualGroupsInto(prefix) {
                 const grid = container.querySelector('.widgets-portal-grid');
                 if (!grid) return;
                 
-                const clonedGrid = grid.cloneNode(true);
+                                const clonedGrid = grid.cloneNode(true);
                 // تسمية كل id بادئة mobile- لعزلها عن نسخة المودال الأصلية
                 clonedGrid.querySelectorAll('[id]').forEach(function (el) {
                     el.id = 'mobile-' + el.id;
+                });
+                // 🆕 تحديث مربعات البحث المستنسخة لتُشير إلى معرّفات الشبكات الجديدة (mobile-)
+                clonedGrid.querySelectorAll('[data-target-grid]').forEach(function (el) {
+                    el.dataset.targetGrid = 'mobile-' + el.dataset.targetGrid;
                 });
                 
                 tabContent.innerHTML = `
@@ -734,10 +846,10 @@ function renderManualGroupsInto(prefix) {
                 updateMobilePortalTrafficList();
                 updateMobilePortalFuelStatusList();
                 updateLastUpdatedTimestamps();
+                wireWidgetSearchInputs(tabContent); // 🆕
             })
             .catch(err => console.error('خطأ في تحميل محتوى البوابة للموبايل:', err));
     }
-
     // ============================================
     // دالة تحديث البيانات في تبويب الموبايل
     // ============================================
@@ -862,7 +974,7 @@ function renderManualGroupsInto(prefix) {
     // ============================================
     // دالة تحميل محتوى البوابة
     // ============================================
-        function loadPortalContent() {
+                function loadPortalContent() {
         const contentArea = document.getElementById('portal-content-area');
         if (!contentArea) return;
 
@@ -874,7 +986,7 @@ function renderManualGroupsInto(prefix) {
                 updatePortalTrafficList();
                 updatePortalFuelStatusList();
                 updateLastUpdatedTimestamps();
-                updateLastUpdatedTimestamps();
+                wireWidgetSearchInputs(contentArea); // 🆕
             })
             .catch(err => {
                 console.error('خطأ في تحميل محتوى البوابة:', err);

@@ -275,6 +275,9 @@ async function ensureWidgetsSchema() {
         `);
         await servicesPool.query(`ALTER TABLE public.road_barriers ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP DEFAULT NOW()`);
         await servicesPool.query(`ALTER TABLE public.fuel_stations ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP DEFAULT NOW()`);
+        // 🆕 عمود ترتيب العرض اليدوي لحواجز الطرق ومحطات الوقود
+        await servicesPool.query(`ALTER TABLE public.road_barriers ADD COLUMN IF NOT EXISTS display_order INTEGER`);
+        await servicesPool.query(`ALTER TABLE public.fuel_stations ADD COLUMN IF NOT EXISTS display_order INTEGER`);
         console.log('✅ تم التأكد من وجود جداول/أعمدة مركز المعلومات الحية');
     } catch (err) {
         console.error('⚠️ خطأ أثناء إنشاء مخطط مركز المعلومات الحية:', err.message);
@@ -1427,7 +1430,11 @@ app.get('/api/search-features', async (req, res) => {
             }
         });
 
-        query += ` ORDER BY rating DESC`;
+                if (layer === 'road_barriers' || layer === 'fuel_stations') {
+            query += ` ORDER BY display_order NULLS LAST, id ASC`;
+        } else {
+            query += ` ORDER BY rating DESC`;
+        }
 
         console.log(`Search Query for ${layer}:`, query);
         console.log(`Search Params:`, params);
@@ -1635,8 +1642,8 @@ app.post('/api/admin/widgets-data/:groupKey', requireAdmin, async (req, res) => 
 // 🔒 للمشرف: جلب معالم حواجز الطرق ومحطات الوقود لتعديلها من صفحة الإدارة
 app.get('/api/admin/road-fuel-features', requireAdmin, async (req, res) => {
     try {
-        const roadResult = await servicesPool.query(`SELECT id, name, stop, updated_at FROM public.road_barriers ORDER BY id ASC`);
-        const fuelResult = await servicesPool.query(`SELECT id, name, diesel, banzen95, banzen98, updated_at FROM public.fuel_stations ORDER BY id ASC`);
+        const roadResult = await servicesPool.query(`SELECT id, name, stop, updated_at FROM public.road_barriers ORDER BY display_order NULLS LAST, id ASC`);
+        const fuelResult = await servicesPool.query(`SELECT id, name, diesel, banzen95, banzen98, updated_at FROM public.fuel_stations ORDER BY display_order NULLS LAST, id ASC`);
         res.json({ success: true, roadBarriers: roadResult.rows, fuelStations: fuelResult.rows });
     } catch (err) {
         console.error('❌ خطأ أثناء جلب معالم الحواجز/المحطات:', err.message);
@@ -1644,6 +1651,22 @@ app.get('/api/admin/road-fuel-features', requireAdmin, async (req, res) => {
     }
 });
 
+// 🆕 حفظ الترتيب اليدوي الجديد لحواجز الطرق أو محطات الوقود
+app.post('/api/admin/reorder-features', requireAdmin, async (req, res) => {
+    const { layer, orderedIds } = req.body;
+    if (!['road_barriers', 'fuel_stations'].includes(layer) || !Array.isArray(orderedIds)) {
+        return res.status(400).json({ success: false, error: 'بيانات غير صالحة' });
+    }
+    try {
+        await Promise.all(orderedIds.map((id, index) =>
+            servicesPool.query(`UPDATE public."${layer}" SET display_order = $1 WHERE id = $2`, [index, id])
+        ));
+        res.json({ success: true });
+    } catch (err) {
+        console.error('❌ خطأ أثناء حفظ الترتيب:', err.message);
+        res.status(500).json({ success: false, error: 'فشل حفظ الترتيب', details: err.message });
+    }
+});
 // 🔒 للمشرف: تحديث حالة حاجز طريق واحد
 app.post('/api/admin/update-road-barrier', requireAdmin, async (req, res) => {
     const { id, stop } = req.body;
