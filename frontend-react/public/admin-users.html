@@ -271,14 +271,13 @@
     // تتطلب هيدر x-admin-user-id يحمل معرّف المشرف الحالي، ويتحقق منه السيرفر
     // فعلياً بقاعدة البيانات (role='admin' + is_active) قبل تنفيذ أي طلب.
     // هذه الدالة تجلبه من نفس مكان تخزين الجلسة الذي يعتمده حارس الوصول أعلاه.
-    function getAdminAuthHeaders() {
+        function getAdminAuthHeaders() {
         try {
             const raw = localStorage.getItem('map_user') || sessionStorage.getItem('map_user') ||
                         localStorage.getItem('user') || sessionStorage.getItem('user');
             if (raw) {
                 const u = JSON.parse(raw);
-                const uid = u.user_id || u.id;
-                if (uid) return { 'x-admin-user-id': String(uid) };
+                if (u.admin_token) return { 'Authorization': 'Bearer ' + u.admin_token };
             }
         } catch (e) { /* تجاهل */ }
         return {};

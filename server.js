@@ -15,6 +15,7 @@ import cors from 'cors';
 import http from 'http';
 import { Server } from 'socket.io';
 import bcrypt from 'bcrypt';
+import jwt from 'jsonwebtoken';
 import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
 
@@ -25,6 +26,7 @@ const __dirname = path.dirname(__filename);
 const BCRYPT_SALT_ROUNDS = 10;
 const BCRYPT_HASH_REGEX = /^\$2[aby]\$\d{2}\$/;
 const REAL_ESTATE_LAYERS = ['ApartRent', 'ApartSale', 'LandSale', 'Location', 'RoadsTest'];
+const ADMIN_JWT_SECRET = process.env.JWT_SECRET || 'change_this_secret_in_env';
 
 // =========================================================================
 // 🆕 [ترحيل آمن لكلمات المرور]: الحسابات القديمة محفوظة بكلمة مرور نصية
@@ -77,7 +79,18 @@ const server = http.createServer(app);
 // 🔒 Security Middleware
 if (process.env.ENABLE_HELMET !== 'false') {
     app.use(helmet({
-        contentSecurityPolicy: false, // تعطيل CSP مؤقتاً للتوافق مع GeoServer
+        contentSecurityPolicy: {
+            directives: {
+                defaultSrc: ["'self'"],
+                imgSrc: ["'self'", "data:", "blob:", "https:"],
+                mediaSrc: ["'self'", "https:"],
+                fontSrc: ["'self'", "https://cdnjs.cloudflare.com", "data:"],
+                scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'", "https://cdnjs.cloudflare.com", "https://cdn.jsdelivr.net", "https://cdn.socket.io"],
+                styleSrc: ["'self'", "'unsafe-inline'", "https://cdnjs.cloudflare.com"],
+                connectSrc: ["'self'", "ws:", "wss:", "https:"],
+                frameSrc: ["'self'", "https://www.youtube.com"]
+            }
+        },
         hsts: {
             maxAge: 31536000,
             includeSubDomains: true,
@@ -133,7 +146,15 @@ const authLimiter = rateLimit({
     message: { success: false, error: 'محاولات تسجيل دخول كثيرة، يرجى المحاولة لاحقاً' }
 });
 
-// تعطيل Rate Limiting العام لتجنب منع الطلبات المهمة
+// 🆕 حماية مسارات تسجيل الأحداث/النقرات العامة من الإغراق الآلي (بوتات)
+const publicEventsLimiter = rateLimit({
+    windowMs: 60 * 1000, // دقيقة واحدة
+    max: 30,             // 30 طلباً بالدقيقة لكل جهاز - أعلى من أي استخدام طبيعي
+    standardHeaders: true,
+    legacyHeaders: false,
+    message: { success: false, error: 'طلبات كثيرة جداً من هذا الجهاز، يرجى الانتظار قليلاً.' }
+});
+
 // سيتم تطبيقه فقط على endpoints حساسة (تسجيل الدخول، التسجيل)
 if (process.env.ENABLE_RATE_LIMITING !== 'false') {
     // لا نطبق على جميع /api/ لتجنب منع الطلبات المهمة
@@ -237,28 +258,6 @@ async function ensureSchemaColumns() {
     } catch (err) {
         console.error('⚠️ خطأ أثناء التأكد من مخطط قاعدة البيانات:', err.message);
     }
-    // =========================================================================
-// 🆕 [مركز المعلومات الحية]: جدول تخزين المجموعات اليدوية الست (عملات/ذهب/
-// طقس/محروقات/نقل بين المدن/نقل داخلي) + عمود updated_at على طبقتي حواجز
-// الطرق ومحطات الوقود لتتبع آخر تعديل حقيقي على حالتهما.
-// =========================================================================
-async function ensureWidgetsSchema() {
-    try {
-        await servicesPool.query(`
-            CREATE TABLE IF NOT EXISTS public.widgets_manual_groups (
-                group_key TEXT PRIMARY KEY,
-                data JSONB NOT NULL DEFAULT '[]'::jsonb,
-                updated_at TIMESTAMP NOT NULL DEFAULT NOW()
-            )
-        `);
-        await servicesPool.query(`ALTER TABLE public.road_barriers ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP DEFAULT NOW()`);
-        await servicesPool.query(`ALTER TABLE public.fuel_stations ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP DEFAULT NOW()`);
-        console.log('✅ تم التأكد من وجود جداول/أعمدة مركز المعلومات الحية (widgets)');
-    } catch (err) {
-        console.error('⚠️ خطأ أثناء إنشاء مخطط مركز المعلومات الحية:', err.message);
-    }
-}
-ensureWidgetsSchema();
 }
 
 ensureSchemaColumns();
@@ -836,7 +835,7 @@ app.post('/api/check-request-limit', async (req, res) => {
 });
 
 // 4-ب. مسار تسجيل حدث/نقرة على الخريطة أو البحث (يُستدعى عند كل نقرة)
-app.post('/api/log-map-event', async (req, res) => {
+app.post('/api/log-map-event', publicEventsLimiter, async (req, res) => {
     const { user_id, event_type, provider, service } = req.body;
 
     console.log("📥 تسجيل حدث خريطة/بحث:", req.body);
@@ -876,7 +875,7 @@ app.post('/api/log-map-event', async (req, res) => {
 });
 
 // 4. مسار استقبال الإحصائيات (POST)
-app.post('/save-stat', async (req, res) => {
+app.post('/save-stat', publicEventsLimiter, async (req, res) => {
     const { user_id, provider, service } = req.body;
 
     console.log("📥 استلام بيانات جديدة للحفظ:", req.body);
@@ -1238,10 +1237,16 @@ app.post('/api/auth/login', authLimiter, async (req, res) => {
         // استخدام المنصة بشكل طبيعي بعد إعادة الدخول الصريحة ببياناته.
         await servicesPool.query('UPDATE public.users SET force_logout_flag = false WHERE user_id = $1', [user.user_id]);
 
-        // 🛑 [إصلاح حاسم للأمان وجذر المشكلة]: إرجاع القيمة الفعلية من الداتابيز فقط (null إذا لم يكن مربوطاً)
+                // 🛑 [إصلاح حاسم للأمان وجذر المشكلة]: إرجاع القيمة الفعلية من الداتابيز فقط (null إذا لم يكن مربوطاً)
         // تم إلغاء فرض طبقة النجار carpenter والمعلم 14 للحسابات غير المربوطة بشكل كامل هنا.
         const finalLayer = user.service_layer ? user.service_layer.trim() : null;
         const finalId = user.feature_id ? user.feature_id : null;
+
+        // 🆕 إصدار توكن موقّع للمشرفين فقط، يحل محل الثقة بأي رقم يرسله المتصفح
+        let adminToken = null;
+        if (user.role === 'admin') {
+            adminToken = jwt.sign({ uid: user.user_id, role: 'admin' }, ADMIN_JWT_SECRET, { expiresIn: '12h' });
+        }
 
         res.status(200).json({
             message: 'تم تسجيل الدخول بنجاح بالمطابقة الكاملة الثلاثية المشروطة ببيانات قاعدة البيانات الحقيقية',
@@ -1258,7 +1263,8 @@ app.post('/api/auth/login', authLimiter, async (req, res) => {
                 targetId: finalId,
                 target_id: finalId,
                 x_coord: user.x_coord,
-                y_coord: user.y_coord
+                y_coord: user.y_coord,
+                admin_token: adminToken
             }
         });
 
@@ -1430,10 +1436,10 @@ app.get('/api/search-features', async (req, res) => {
             }
         });
 
-                if (layer === 'road_barriers' || layer === 'fuel_stations') {
-            query += ` ORDER BY display_order NULLS LAST, id ASC`;
+        if (layer === 'road_barriers' || layer === 'fuel_stations') {
+            query += ` ORDER BY display_order NULLS LAST, id ASC LIMIT 2000`;
         } else {
-            query += ` ORDER BY rating DESC`;
+            query += ` ORDER BY rating DESC LIMIT 2000`;
         }
 
         console.log(`Search Query for ${layer}:`, query);
@@ -1535,16 +1541,28 @@ app.get('/api/users', requireAdmin, async (req, res) => {
 // السماح للطلب بالمتابعة. أي طلب بدون هيدر صالح يُرفض بـ 403 فوراً.
 // =========================================================================
 async function requireAdmin(req, res, next) {
-    
-    const adminUserId = req.headers['x-admin-user-id'];
-    if (!adminUserId) {
-        return res.status(401).json({ success: false, error: 'مطلوب تسجيل دخول كمشرف (هيدر x-admin-user-id مفقود).' });
+
+    const authHeader = req.headers['authorization'] || '';
+    const token = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : null;
+    if (!token) {
+        return res.status(401).json({ success: false, error: 'مطلوب تسجيل دخول كمشرف (توكن مفقود).' });
+    }
+
+    let decoded;
+    try {
+        decoded = jwt.verify(token, ADMIN_JWT_SECRET);
+    } catch (e) {
+        return res.status(401).json({ success: false, error: 'جلسة المشرف منتهية أو غير صالحة، يرجى تسجيل الدخول من جديد.' });
+    }
+
+    if (decoded.role !== 'admin' || !decoded.uid) {
+        return res.status(403).json({ success: false, error: 'لا تملك صلاحية المشرف اللازمة لهذا الإجراء.' });
     }
 
     try {
         const result = await servicesPool.query(
             'SELECT role, is_active, force_logout_flag FROM public.users WHERE user_id = $1',
-            [adminUserId]
+            [decoded.uid]
         );
 
         if (result.rows.length === 0) {
@@ -1557,6 +1575,7 @@ async function requireAdmin(req, res, next) {
             return res.status(403).json({ success: false, error: 'لا تملك صلاحية المشرف اللازمة لهذا الإجراء.' });
         }
 
+        req.adminUserId = decoded.uid;
         next();
     } catch (e) {
         console.error('❌ خطأ في التحقق من صلاحية المشرف:', e.message);
@@ -2882,7 +2901,7 @@ app.get('/api/service-requests/pending-ratings', async (req, res) => {
         });
 
 // 🆕 7.5) تسجيل نقرات الاتصال والواتساب
-app.post('/api/log-contact-click', async (req, res) => {
+app.post('/api/log-contact-click', publicEventsLimiter, async (req, res) => {
     const { user_id, service_layer, feature_id, provider_name, contact_type } = req.body;
 
     if (!user_id || !service_layer || !feature_id || !contact_type) {

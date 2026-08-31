@@ -219,6 +219,10 @@ window.__nmsPageHandlesOwnAds = true;
         // ==========================================================================
         const groupDefs = [
             { id: 'all',        title: 'الكل',                    icon: 'fa-border-all' },
+            // 🆕 فرعان مستقلان (نفس أسلوب مدارس ورياض الأطفال): كل منهما يحتوي
+            // طبقة واحدة فقط، فيُفتح مباشرة عند النقر بدل عرض شبكة فئات فرعية
+            { id: 'roads',       title: 'حواجز الطرق',            icon: 'fa-signs-post' },
+            { id: 'fuel',        title: 'محطات الوقود',           icon: 'fa-gas-pump' },
             { id: 'realestate',   title: 'العقارات',                icon: 'fa-building' },
             { id: 'technicians',  title: 'الفنيين والصيانة',        icon: 'fa-tools' },
             { id: 'health',       title: 'الصحة والرعاية',          icon: 'fa-briefcase-medical' },
@@ -267,13 +271,15 @@ window.__nmsPageHandlesOwnAds = true;
             villas_rent: 'events', barber_shop: 'events', video_design_ads: 'events',
             photographers: 'events',
 
-            // 📦 متفرقات
-            online_stores: 'misc', free_distribution: 'misc', 'fuel_stations': 'misc', 'road_barriers': 'misc',
+                        // 📦 متفرقات
+            online_stores: 'misc', free_distribution: 'misc',
 
             // --- الطبقات الجديدة (6) ---
             supermarket: 'commercial', commercial_shops: 'commercial', restaurants: 'commercial',
             schools_kindergartens: 'education', job_vacancies: 'jobs', city_landmarks: 'landmarks',
-            fuel_stations: 'misc', road_barriers: 'misc',
+
+            // 🆕 فرعان مستقلان بدل بقائهما ضمن "متفرقات"
+            fuel_stations: 'fuel', road_barriers: 'roads',
         };
 
                 const categories = [
@@ -1332,6 +1338,7 @@ window.__nmsPageHandlesOwnAds = true;
         // ==========================================================================
         let currentCategory = null;
         let allFieldValues = {}; // تخزين جميع القيم لكل حقل للفلترة المحلية
+        let currentFilterFields = []; // 🆕 حقول الفئة الحالية (لمعرفة نوع كل حقل عند إعادة التعبئة)
 
         const fallbackFieldsConfig = {
             realEstate: [
@@ -1364,7 +1371,7 @@ window.__nmsPageHandlesOwnAds = true;
             refreshHomeSectionsVisibility();
             categoryTitleEl.innerHTML = `<i class="fas ${cat.icon}"></i> ${cat.title}`;
 
-            // 🆕 نفس منطق حقول البحث الذكي (search.js): حقل stop لحواجز الطرق،
+                        // 🆕 نفس منطق حقول البحث الذكي (search.js): حقل stop لحواجز الطرق،
             // وحقول ديزل/بنزين95/بنزين98 لمحطات الوقود، بدل الحقول العامة فقط
             let fields;
             if (cat.isRealEstate) {
@@ -1376,6 +1383,7 @@ window.__nmsPageHandlesOwnAds = true;
             } else {
                 fields = fieldsConfig.services;
             }
+            currentFilterFields = fields; // 🆕 حفظها لاستخدامها لاحقاً عند إعادة تعبئة الحقول التابعة
             renderFiltersGrid(fields);
             executeSearch();
             window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -1628,17 +1636,28 @@ window.__nmsPageHandlesOwnAds = true;
             return null;
         }
 
-        function updateDependentDropdowns(changedIndex) {
+            function updateDependentDropdowns(changedIndex) {
             const filterItems = filtersGrid.querySelectorAll('.nms-filter-item');
             const { workspace, layerName } = getWorkspaceAndName(currentCategory.key);
 
             filterItems.forEach((item, index) => {
                 if (index > changedIndex) {
                     const select = item.querySelector('select');
-                    if (select) {
-                        select.value = ''; // إعادة تعيين القيمة
-                        updateDropdownValues(select, select.dataset.fieldId, layerName, workspace);
+                    if (!select) return;
+
+                    // 🆕 [إصلاح حاسم]: الحقول الثابتة (fixedSelect) مثل "حالة الحاجز"
+                    // أو "توفر الوقود" لها قيم جاهزة ومعروفة سلفاً (لا تُجلب من قاعدة
+                    // البيانات إطلاقاً)، فيجب عدم لمسها أو إعادة تعبئتها هنا مطلقاً.
+                    // كانت هذه الدالة تعاملها كحقل عادي وتستبدل تسمياتها (🟢 مفتوح...)
+                    // بالقيم الرقمية الخام من قاعدة البيانات (0،1،2...) عند تفعيل أي
+                    // فلتر متسلسل قبلها (مثل المحافظة أو المدينة).
+                    const fieldDef = currentFilterFields[index];
+                    if (fieldDef && fieldDef.type === 'fixedSelect') {
+                        return;
                     }
+
+                    select.value = ''; // إعادة تعيين القيمة
+                    updateDropdownValues(select, select.dataset.fieldId, layerName, workspace);
                 }
             });
         }

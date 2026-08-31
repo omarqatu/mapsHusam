@@ -433,7 +433,7 @@ function initAuthAppEvents() {
                     window.showAuthMessage(`مرحباً بك مجدداً: ${data.user.full_name}`, 'success');
                     activateAuthCooldown(3);
 
-                    let finalUserData = {
+                        let finalUserData = {
                         id: parseInt(data.user.user_id),
                         user_id: parseInt(data.user.user_id),
                         name: data.user.full_name,
@@ -446,7 +446,8 @@ function initAuthAppEvents() {
                         service_layer: data.user.target_layer || null,
                         feature_id: data.user.target_id ? parseInt(data.user.target_id) : null,
                         targetLayer: data.user.target_layer || null,
-                        targetId: data.user.target_id ? parseInt(data.user.target_id) : null
+                        targetId: data.user.target_id ? parseInt(data.user.target_id) : null,
+                        admin_token: data.user.admin_token || null
                     };
 
                     if (finalUserData.role === "admin") {

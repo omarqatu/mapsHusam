@@ -154,8 +154,7 @@ function getAdminAuthHeaders() {
                     localStorage.getItem('user') || sessionStorage.getItem('user');
         if (raw) {
             const u = JSON.parse(raw);
-            const uid = u.user_id || u.id;
-            if (uid) return { 'x-admin-user-id': String(uid) };
+            if (u.admin_token) return { 'Authorization': 'Bearer ' + u.admin_token };
         }
     } catch (e) {}
     return {};

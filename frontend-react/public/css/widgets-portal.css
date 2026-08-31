@@ -679,7 +679,7 @@
 }
 
 /* 🆕 حدّ أقصى لعرض 5 صفوف تقريباً لكل مجموعة ما عدا الحواجز ومحطات الوقود، ثم سكرول عمودي للباقي */
-.currency-grid, .gold-grid, .weather-grid, 
+.currency-grid, .gold-grid, .weather-grid, .fuel-grid,
 .prayer-times,  .market-grid,
 [id$="-transport-inter-city-grid"], [id$="-transport-intra-city-grid"] {
     max-height: 400px;

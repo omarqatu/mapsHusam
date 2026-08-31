@@ -446,19 +446,17 @@
                 applyFilters();
             });
 
-    function getAdminAuthHeadersForDashboard() {
+        function getAdminAuthHeadersForDashboard() {
         try {
             const raw = localStorage.getItem('map_user') || sessionStorage.getItem('map_user') ||
                         localStorage.getItem('user') || sessionStorage.getItem('user');
             if (raw) {
                 const u = JSON.parse(raw);
-                const uid = u.user_id || u.id;
-                if (uid) return { 'x-admin-user-id': String(uid) };
+                if (u.admin_token) return { 'Authorization': 'Bearer ' + u.admin_token };
             }
         } catch (e) { /* تجاهل */ }
         return {};
     }
-
     async function deleteRecord(recordId) {
         if (!confirm('هل أنت متأكد من حذف هذا السجل؟ هذا الإجراء لا يمكن التراجع عنه.')) {
             return;
