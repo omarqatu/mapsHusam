@@ -1260,17 +1260,31 @@ window.__nmsPageHandlesOwnAds = true;
                     return;
                 }
 
+                                const REAL_ESTATE_TABLE_NAMES = ['ApartRent', 'ApartSale', 'LandSale'];
+                const REAL_ESTATE_LABELS = { 'ApartRent': 'شقة للإيجار', 'ApartSale': 'شقة للبيع', 'LandSale': 'أرض للبيع' };
+
+                                const KNOWN_SERVICE_KEYS = Object.keys(serviceNames || {});
+
                 const cardsPromises = data.items.map(async (ratingItem) => {
                     const layerKey = ratingItem.service_layer;
                     const featureId = ratingItem.feature_id;
                     if (!layerKey || !featureId) return null;
 
-                                        try {
-                        
+                    const isRealEstateLayer = REAL_ESTATE_TABLE_NAMES.includes(layerKey);
+
+                    // 🆕 تجاهل أي سجل تقييم قديم/فاسد يحمل اسم طبقة غير معروف
+                    // (مثل تسمية عربية مخزّنة بالخطأ بدل اسم الجدول الحقيقي)
+                    if (!isRealEstateLayer && !KNOWN_SERVICE_KEYS.includes(layerKey)) {
+                        return null;
+                    }
+
+                    const workspaceForLayer = isRealEstateLayer ? 'realestate' : 'services';
+
+                    try {
                         const params = new URLSearchParams({
                             layer: layerKey,
-                            workspace: 'services',
-                            field_0: 'id',
+                            workspace: workspaceForLayer,
+                            field_0: isRealEstateLayer ? 'fid' : 'id',
                             operator_0: '=',
                             value_0: String(featureId),
                             conditions_count: '1',
@@ -1282,12 +1296,12 @@ window.__nmsPageHandlesOwnAds = true;
                         const feature = (fData.features || [])[0];
                         if (!feature) return null;
 
-                        const label = serviceNames[layerKey] || layerKey;
+                        const label = isRealEstateLayer ? (REAL_ESTATE_LABELS[layerKey] || layerKey) : (serviceNames[layerKey] || layerKey);
                         const cardItem = {
                             layer: layerKey,
-                            workspace: 'services',
+                            workspace: workspaceForLayer,
                             label,
-                            isRealEstate: false,
+                            isRealEstate: isRealEstateLayer,
                             avgRating: parseFloat(ratingItem.avg_rating) || 0,
                             totalRatings: parseInt(ratingItem.total_ratings, 10) || 0,
                             badgeText: '🏆 الأعلى تقييماً'

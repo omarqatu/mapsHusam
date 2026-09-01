@@ -1,237 +1,125 @@
-# 🔒 دليل الأمن السيبراني - Real Estate Map System
+# 🔒 دليل الأمن السيبراني - منصة خريطة الخدمات الفلسطينية (PSM)
 
-## نظرة عامة على الأمان
+## نظرة عامة
 
-تم تطبيق طبقات متعددة من الحماية لتأمين النظام من الهجمات السيبرانية ومنع الوصول غير المصرح به.
-
----
-
-## ✅ التدابير الأمنية المطبقة
-
-### 1. **Helmet.js - حماية HTTP Headers**
-- **Content Security Policy (CSP)**: تقييد مصادر المحتوى المسموح بها
-- **HSTS**: فرض HTTPS للاتصالات
-- **XSS Protection**: حماية من هجمات XSS
-- **No Sniff**: منع MIME type sniffing
-- **Referrer Policy**: التحكم في معلومات referrer
-- **X-Frame-Options**: منع clickjacking
-- **X-Content-Type-Options**: منع MIME sniffing
-
-### 2. **CORS Protection - تقييد المصادر**
-- السماح فقط بالمصادر المحددة في متغير البيئة `ALLOWED_ORIGINS`
-- رفض الطلبات من مصادر غير معروفة
-- دعم الاعتمادات (credentials) للمصادر الموثوقة
-
-### 3. **Rate Limiting - منع الهجمات**
-- **عام**: 100 طلب كل 15 دقيقة لكل IP
-- **تسجيل الدخول**: 5 محاولات كل 15 دقيقة
-- **Socket.io**: 10 رسائل كل دقيقة لكل اتصال
-
-### 4. **Socket.io Security**
-- التحقق من Origin قبل الاتصال
-- Rate limiting للرسائل
-- التحقق من userId قبل ربط الاتصال
-- تسجيل IP العميل لكل اتصال
-
-### 5. **PostgreSQL Security**
-- تشفير SSL للاتصالات
-- حد أقصى لعدد الاتصالات (20 لكل pool)
-- timeout للاتصالات (10 ثواني)
-- idle timeout (30 ثانية)
-
-### 6. **GeoServer Protection**
-- **Authentication**: Basic Auth مطلوب
-- **Authorization**: التحقق من user_id في header
-- **Origin Check**: التحقق من مصدر الطلب
-- **DELETE Block**: منع عمليات الحذف
-- **IP Logging**: تسجيل IP لكل طلب
-
-### 7. **Input Validation**
-- التحقق من نوع البيانات (numbers, strings)
-- التحقق من النطاق (قيم موجبة، 0 أو 1)
-- التحقق من الطبقات المسموح بها (ALLOWED_LAYERS)
-- Sanitization للمدخلات
-- حماية من XSS عبر تنظيف البيانات
-
-### 8. **Logging & Monitoring**
-- تسجيل جميع الطلبات مع IP ووقت الاستجابة
-- تسجيل الأخطاء بالتفصيل
-- تسجيل محاولات الوصول المرفوضة
-- تسجيل اتصالات Socket.io
-
-### 9. **Environment Variables**
-- تخزين البيانات الحساسة في `.env`
-- إضافة `.env` إلى `.gitignore`
-- قيم افتراضية آمنة للبيئة المحلية
+هذا الملف يوثّق **الوضع الأمني الفعلي الحالي** للمنصة بعد مراجعة أمنية شاملة. تم إصلاح عدة ثغرات جوهرية، وتم توثيق بعض القيود المعروفة التي لم تُحل بعد لأسباب تتعلق ببنية النشر (IIS + Node خلفه).
 
 ---
 
-## 🔑 إعدادات البيئة
+## ✅ التدابير الأمنية المطبّقة فعلياً
 
-### ملف `.env` المطلوب:
+### 1. مصادقة المشرف (Admin) — توكن موقّع (JWT)
+**هذا هو الإصلاح الأهم في المنصة.** سابقاً كانت صلاحية المشرف تُمنح لأي طلب يحمل هيدر `x-admin-user-id` بقيمة يحددها المتصفح نفسه — وهذا لم يكن مصادقة حقيقية، بل ثقة عمياء بقيمة يتحكم بها الطرف المُرسِل.
+
+**الوضع الحالي:**
+- عند تسجيل دخول مستخدم بدوره `admin` بنجاح (`POST /api/auth/login`)، يُصدر السيرفر توكن JWT موقّع بمفتاح `JWT_SECRET` (من `.env`)، صلاحيته 12 ساعة:
+  ```js
+  jwt.sign({ uid: user.user_id, role: 'admin' }, ADMIN_JWT_SECRET, { expiresIn: '12h' })
+  ```
+  ويُرسَل هذا التوكن ضمن حقل `admin_token` باستجابة تسجيل الدخول، ويُخزَّن مع بيانات المستخدم بـ `localStorage` تحت مفتاح `map_user`.
+- كل طلب لمسارات `/api/admin/*` يجب أن يحمل الهيدر:
+  ```
+  Authorization: Bearer <admin_token>
+  ```
+- الـ middleware `requireAdmin` بـ `server.js` يتحقق من توقيع التوكن (`jwt.verify`) **ثم** يعيد التحقق من قاعدة البيانات (الدور `admin`، الحساب مُفعَّل، غير مسجَّل خروجه إجبارياً) — تحقق مزدوج (Defense in Depth).
+- انتهاء صلاحية التوكن بعد 12 ساعة يفرض على المشرف تسجيل الدخول من جديد؛ أي محاولة وصول بتوكن منتهي أو مزوَّر تُرفض فوراً بـ 401/403.
+
+**الصفحات المتأثرة (تستخدم `getAdminAuthHeaders()` المحدَّثة):** `admin-users.html`, `dashboard.html`, `widgets-admin.html`, `notifications-panel.html`.
+
+### 2. تشفير كلمات المرور
+- **bcrypt** (10 جولات ملح) لكل كلمة مرور جديدة أو مُحدَّثة.
+- دعم ترحيل تلقائي شفاف للحسابات القديمة (كانت مخزَّنة نصاً صريحاً قبل هذا الإصلاح): عند أول تسجيل دخول ناجح لحساب قديم، تُعاد كتابة كلمة المرور فوراً كـ bcrypt hash (`verifyPasswordWithMigration`).
+
+### 3. حماية من حقن SQL (SQL Injection)
+- **الاستعلامات المُعامَلة (Parameterized Queries)** في كل الاستعلامات — لا يوجد أي دمج مباشر لمدخلات المستخدم داخل نص SQL.
+- **قائمة بيضاء صارمة لأسماء الطبقات** (`ALLOWED_LAYERS` + دالة `isValidLayer`) — أي اسم جدول غير موجود بالقائمة يُرفض بـ 403 قبل تنفيذ أي استعلام.
+- **التحقق من أسماء الأعمدة الديناميكية** (`isValidSqlIdentifier`) بمسارات مثل `/api/search-features` و`/api/get-unique-values` — حيث تصل أسماء الحقول من الواجهة الأمامية كنص، ويُتحقَّق أنها تطابق نمط معرّف SQL عادي (`^[a-zA-Z_][a-zA-Z0-9_]{0,63}$`) فقط قبل استخدامها.
+
+### 4. حد أقصى لحجم نتائج البحث
+- مسار `/api/search-features` يفرض `LIMIT 2000` على كل استعلام — يمنع استنزاف قاعدة البيانات بطلب واحد يجلب طبقة كاملة بلا فلترة (رقم لا يؤثر عملياً على أي واجهة، فلا توجد طبقة تعرض أكثر من ذلك فعلياً).
+
+### 5. Rate Limiting على المصادقة
+- `authLimiter`: 5–10 محاولات كل 15 دقيقة على `/api/auth/login` و`/api/auth/register` — يمنع هجمات القوة الغاشمة (Brute Force) على كلمات المرور.
+
+### 6. Helmet.js
+- رؤوس أمان أساسية مفعّلة (HSTS، إلخ). **ملاحظة:** `Content-Security-Policy` معطَّلة افتراضياً حالياً (`contentSecurityPolicy: false`) بسبب تعارضات سابقة مع تحميل موارد GeoServer/CDN؛ هذه نقطة تحسين مستقبلية موثّقة أدناه.
+
+### 7. CORS مقيَّد
+- `ALLOWED_ORIGINS` من `.env` تحدد النطاقات المسموح لها بالوصول عبر CORS. إن لم يُضبط المتغير، يُسمح لأي نطاق مؤقتاً مع تحذير بالـ Console — **يجب ضبط `ALLOWED_ORIGINS` دائماً بالإنتاج**.
+
+### 8. تسجيل خروج إجباري حقيقي (وليس شكلياً فقط)
+- عمود `force_logout_flag` بجدول `users` يُفعَّل من لوحة الإدارة، ويُتحقَّق منه في `/api/auth/verify-session` عند كل دخول تلقائي (autoboot) — لا يستطيع المستخدم المطرود الدخول بجلسته المحفوظة القديمة حتى لو كان غير متصل وقت الطرد.
+
+---
+
+## ⚠️ قيود معروفة (Known Limitations) — لم تُحل بعد عمداً
+
+### أ) لا يوجد Rate Limiting عام على كل مسارات `/api/`
+تمت تجربة تفعيل حد عام (`apiLimiter`) على كل `/api/*`، لكن تبيّن أن بنية النشر الحالية (IIS كـ Reverse Proxy أمام Node على نفس الجهاز، مع `app.set('trust proxy', true)`) **لا تُميّز عناوين IP الحقيقية لكل زائر بشكل موثوق**، فينتج عن ذلك أن كل زوار الموقع يُحسَبون على نفس "الحصة" المشتركة، مما يؤدي لحجب الجميع بسرعة عند أي حمل عادي (تم رصد هذا فعلياً وتم التراجع عن التفعيل).
+
+**الحل الصحيح المؤجَّل:** ضبط IIS (`web.config`) لتمرير عنوان IP الحقيقي للزائر عبر هيدر (`X-Forwarded-For` بشكل صحيح)، أو استخدام مفتاح تحديد معدّل مبني على `user_id`/الجلسة بدل الـ IP الخام. **لا يُنصح بإعادة تفعيل `app.use('/api/', apiLimiter)` قبل حل مشكلة الـ IP هذه.**
+
+### ب) نفس القيد على مسارات تسجيل الأحداث العامة
+`log-map-event`, `save-stat`, `log-contact-click` كانت مرشَّحة لحد معدّل مخصص (`publicEventsLimiter`)، لكن تم التراجع عنه لنفس سبب مشكلة الـ IP المشتركة أعلاه. الحماية الحالية الوحيدة لهذه المسارات هي **حد الطلبات لكل مستخدم مسجَّل** (`request_limit` بجدول `users`، اختياري ويُضبط من لوحة الإدارة، الافتراضي "غير محدود").
+
+### ج) CSP معطَّلة
+راجع البند 6 أعلاه — تفعيلها يتطلب اختباراً دقيقاً لكل صفحة (خصوصاً موارد CDN الخارجية وخرائط GeoServer) قبل تطبيقها بالإنتاج.
+
+---
+
+## 🔑 إعدادات البيئة المطلوبة (`.env`)
 
 ```env
-# Server Configuration
+# Server
 PORT=3000
 NODE_ENV=production
 
-# Database Configuration
-POSTGRES_HOST=your_database_host
+# Database
+POSTGRES_HOST=...
 POSTGRES_PORT=5432
-POSTGRES_USER=your_database_user
-POSTGRES_PASSWORD=your_secure_password
+POSTGRES_USER=...
+POSTGRES_PASSWORD=...
 SERVICES_DB_NAME=services_db
 REAL_ESTATE_DB_NAME=realestate
 
-# GeoServer Configuration
-GEOSERVER_TARGET=http://your_geoserver_host:8080/geoserver
+# GeoServer
+GEOSERVER_TARGET=http://.../geoserver
 
-# Security Configuration
-ALLOWED_ORIGINS=http://your-domain.com,https://your-domain.com
-SESSION_SECRET=your_super_secret_session_key_change_this_in_production
+# Security — ضرورية جداً
+ALLOWED_ORIGINS=https://your-domain.com
+JWT_SECRET=مفتاح_عشوائي_طويل_وقوي   # يُستخدم الآن فعلياً لتوقيع توكن المشرف
 
-# Rate Limiting
-API_RATE_LIMIT=100
-API_RATE_WINDOW_MS=900000
-AUTH_RATE_LIMIT=5
-SOCKET_RATE_LIMIT=10
+# Rate limiting على المصادقة فقط
+AUTH_RATE_LIMIT=10
 ```
+
+⚠️ **`JWT_SECRET` أصبح حرجاً الآن** (وليس مجرد إعداد احتياطي كما كان سابقاً) — لأن كامل أمان لوحات الإدارة يعتمد عليه. تأكد أنه قيمة عشوائية طويلة (32+ حرفاً) وغير موجودة بأي نسخة قديمة من الكود على GitHub.
 
 ---
 
-## 🚨 خطوات الأمان الإلزامية
+## 🚨 خطوات التحقق الدوري الموصى بها
 
-### 1. **تغيير كلمات المرور الافتراضية**
-```bash
-# في ملف .env
-POSTGRES_PASSWORD=your_strong_password_here
-SESSION_SECRET=your_random_secret_key_here
-```
+1. **اختبار انتحال صلاحية المشرف** (يجب تنفيذه بعد أي نشر جديد):
+   ```js
+   fetch('/api/admin/users', { headers: { 'x-admin-user-id': '1' } })
+       .then(r => r.json()).then(console.log);
+   ```
+   يجب أن يرجع خطأ "مطلوب تسجيل دخول كمشرف (توكن مفقود)" — أي استجابة تحتوي بيانات مستخدمين تعني وجود ثغرة يجب إصلاحها فوراً.
 
-### 2. **تكوين ALLOWED_ORIGINS**
-```bash
-# أضف فقط الدومينات الموثوقة
-ALLOWED_ORIGINS=https://your-domain.com,https://www.your-domain.com
-```
+2. **مراجعة `ALLOWED_ORIGINS`** بعد كل نشر على دومين جديد — يجب أن يحتوي فقط الدومينات الفعلية للموقع.
 
-### 3. **تأمين GeoServer**
-```bash
-# في GeoServer config
-# تغيير كلمة مرور admin الافتراضية
-# تفعيل HTTPS
-# تقييد الوصول بالـ IP
-```
-
-### 4. **تأمين PostgreSQL**
-```bash
-# تفعيل SSL/TLS
-# إنشاء مستخدمين محددين لكل قاعدة بيانات
-# تقييد الوصول بالـ IP
-```
+3. **تدقيق دوري لجدول `users`** بحثاً عن حسابات `role='admin'` غير متوقعة.
 
 ---
 
-## 📊 المراقبة والتنبيهات
+## 📝 سجل التغييرات الأمنية
 
-### السجلات المهمة:
-- 🚫 الطلبات المرفوضة (CORS, Rate Limit)
-- ⚠️ محاولات تسجيل دخول فاشلة
-- 🔌 اتصالات Socket.io الجديدة
-- 📡 طلبات GeoServer
-- ❌ الأخطاء في قاعدة البيانات
-
-### الأدوات المقترحة:
-- **PM2**: لإدارة العمليات وإعادة التشغيل التلقائي
-- **Winston**: لتسجيل متقدم
-- **Sentry**: لتتبع الأخطاء
-- **New Relic**: لمراقبة الأداء
+- **إضافة مصادقة JWT موقّعة لصلاحيات المشرف** بدل الثقة بهيدر `x-admin-user-id` — أغلق ثغرة تصعيد صلاحيات كاملة (Full Privilege Escalation) بدون كلمة مرور.
+- إضافة `LIMIT 2000` على `/api/search-features` لمنع استعلامات ضخمة غير مقيَّدة.
+- تجربة والتراجع عن Rate Limiting عام على `/api/*` بسبب قيد بنية النشر الحالية (موثّق كقيد معروف أعلاه).
+- التشفير bcrypt، الحماية من SQL Injection، وCORS المقيَّد — إصلاحات سابقة لا تزال سارية وتم التحقق من استمرارها.
 
 ---
 
-## 🛡️ أفضل الممارسات
-
-### 1. **تحديث المكتبات بانتظام**
-```bash
-npm audit
-npm audit fix
-npm update
-```
-
-### 2. **استخدام HTTPS في الإنتاج**
-```bash
-# تثبيت SSL certificate
-# تكوين Nginx/Apache كـ reverse proxy
-```
-
-### 3. **النسخ الاحتياطي**
-- نسخ احتياطي يومي لقاعدة البيانات
-- نسخ احتياطي للملفات الثابتة
-- اختبار استعادة النسخ الاحتياطي
-
-### 4. **فحص الثغرات**
-```bash
-npm install -g snyk
-snyk test
-```
-
----
-
-## ⚠️ تحذيرات أمنية
-
-### ❌ ما يجب تجنبه:
-- ✗ نشر ملف `.env` في Git
-- ✗ استخدام كلمات مرور ضعيفة
-- ✗ السماح بـ CORS من `*`
-- ✗ تعطيل Rate Limiting
-- ✗ استخدام GeoServer بدون auth
-- ✗ تعطيل SSL في PostgreSQL
-
-### ✅ ما يجب فعله:
-- ✓ استخدام كلمات مرور قوية
-- ✓ تفعيل HTTPS
-- ✓ تحديث المكتبات بانتظام
-- ✓ مراقبة السجلات يومياً
-- ✓ عمل نسخ احتياطي
-- ✓ اختبار الأمان بانتظام
-
----
-
-## 📞 في حالة الاختراق
-
-### خطوات الطوارئ:
-1. **فوراً**: قطع الاتصال بالإنترنت
-2. **تغيير كلمات المرور**: جميع الحسابات
-3. **مراجعة السجلات**: تحديد نقطة الاختراق
-4. **إعادة التشغيل**: بعد إصلاح الثغرة
-5. **إبلاغ المستخدمين**: إذا كانت بياناتهم معرضة للخطر
-6. **توثيق الحادث**: للتحليل المستقبلي
-
----
-
-## 🔗 روابط مفيدة
-
-- [OWASP Top 10](https://owasp.org/www-project-top-ten/)
-- [Helmet.js Documentation](https://helmetjs.github.io/)
-- [Express Security Best Practices](https://expressjs.com/en/advanced/best-practice-security.html)
-- [PostgreSQL Security](https://www.postgresql.org/docs/current/security.html)
-- [Socket.io Security](https://socket.io/docs/v4/security/)
-
----
-
-## 📝 التغييرات الأخيرة
-
-- **2026-07-29**: إضافة XSS Protection Middleware
-- **2026-07-29**: تحديث Rate Limiting على endpoints المصادقة
-- **2026-07-29**: إضافة JWT Secret للتوثيق
-- **2026-07-29**: تحديث .env.example مع جميع إعدادات الأمان
-- **2026-07-05**: إضافة Helmet.js، Rate Limiting، CORS Protection
-- **2026-07-05**: تأمين GeoServer Proxy
-- **2026-07-05**: إضافة Input Validation
-- **2026-07-05**: تأمين PostgreSQL Connections
-- **2026-07-05**: إضافة Logging & Monitoring
-
----
-
-**آخر تحديث**: 5 يوليو 2026  
-**الإصدار**: 1.0.0  
-**الحالة**: ✅ نشط ومحمي
+**آخر مراجعة:** بعد جولة الفحص الأمني الشاملة الأخيرة.
+**الحالة:** ✅ الثغرة الحرجة (صلاحية المشرف) مُغلَقة. ⚠️ قيد معروف واحد متعلق ببنية الشبكة بانتظار حل مستقبلي (Rate Limiting العام).

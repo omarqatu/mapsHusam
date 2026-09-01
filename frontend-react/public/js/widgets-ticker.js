@@ -883,21 +883,17 @@ function renderManualGroupsInto(prefix) {
         const refreshBtn = document.getElementById('portal-refresh-btn');
         const contentArea = document.getElementById('portal-content-area');
 
-        
-
-                if (expandBtn && modal && overlay) {
-                    window.__widgetsPortalModalReady = true;
+            if (expandBtn && modal && overlay) {
+            window.__widgetsPortalModalReady = true;
             expandBtn.addEventListener('click', function(e) {
                 e.preventDefault();
                 e.stopPropagation();
-                console.log('Expand button clicked');
                 modal.classList.add('active');
                 overlay.classList.add('active');
                 loadPortalContent();
             });
-        } else {
-            console.error('Missing elements:', { expandBtn, modal, overlay });
         }
+
 
         // 🆕 فتح البوابة مباشرة عند بطاقة معينة (لزري "حالة الطرق" و"حالة
         // محطات الوقود" أعلى الخريطة، وأيضاً من تبويبة الرئيسية بالموبايل)
@@ -935,7 +931,6 @@ function renderManualGroupsInto(prefix) {
             closeBtn.addEventListener('click', function(e) {
                 e.preventDefault();
                 e.stopPropagation();
-                console.log('Close button clicked');
                 modal.classList.remove('active');
                 overlay.classList.remove('active');
             });
@@ -945,7 +940,6 @@ function renderManualGroupsInto(prefix) {
             refreshBtn.addEventListener('click', function(e) {
                 e.preventDefault();
                 e.stopPropagation();
-                console.log('Refresh button clicked');
                 updateAllData();
                 updatePortalData();
                 
@@ -1019,6 +1013,20 @@ function renderManualGroupsInto(prefix) {
     // دالة بدء النظام
     // ============================================
         function init() {
+        // 🆕 ربط روابط "مركز المعلومات الحية" بالفوتر (مشترك بين صفحة الخريطة
+        // وصفحة البحث بدون خريطة) بفتح البوابة مباشرة عند البطاقة المطلوبة
+        document.querySelectorAll('.footer-widgets-link').forEach(function (link) {
+            if (link.dataset.wired) return;
+            link.dataset.wired = '1';
+            link.addEventListener('click', function (e) {
+                e.preventDefault();
+                const cardId = link.getAttribute('data-widgets-card');
+                if (cardId && typeof window.openWidgetsPortalToCard === 'function') {
+                    window.openWidgetsPortalToCard(cardId);
+                }
+            });
+        });
+
         loadTickerHTML();
         
         // تحديث البيانات فوراً
@@ -1027,11 +1035,6 @@ function renderManualGroupsInto(prefix) {
         // تحديث الشريط المتحرك
         updateTickerHTML();
         
-        // إعداد البوابة التفصيلية
-        setTimeout(() => {
-            setupPortalModal();
-        }, 200);
-
         // 🆕 جلب حواجز الطرق ومحطات الوقود من الطبقات الحية أول مرة، ثم كل
         // دقيقة تلقائياً - هذا المصدر الوحيد الآن، لا حاجة لأي تعديل يدوي
         refreshLiveRoadBarriers();

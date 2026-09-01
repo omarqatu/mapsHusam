@@ -155,6 +155,7 @@ const publicEventsLimiter = rateLimit({
     message: { success: false, error: 'طلبات كثيرة جداً من هذا الجهاز، يرجى الانتظار قليلاً.' }
 });
 
+// تعطيل Rate Limiting العام لتجنب منع الطلبات المهمة
 // سيتم تطبيقه فقط على endpoints حساسة (تسجيل الدخول، التسجيل)
 if (process.env.ENABLE_RATE_LIMITING !== 'false') {
     // لا نطبق على جميع /api/ لتجنب منع الطلبات المهمة
@@ -835,7 +836,7 @@ app.post('/api/check-request-limit', async (req, res) => {
 });
 
 // 4-ب. مسار تسجيل حدث/نقرة على الخريطة أو البحث (يُستدعى عند كل نقرة)
-app.post('/api/log-map-event', publicEventsLimiter, async (req, res) => {
+app.post('/api/log-map-event', async (req, res) => {
     const { user_id, event_type, provider, service } = req.body;
 
     console.log("📥 تسجيل حدث خريطة/بحث:", req.body);
@@ -875,7 +876,7 @@ app.post('/api/log-map-event', publicEventsLimiter, async (req, res) => {
 });
 
 // 4. مسار استقبال الإحصائيات (POST)
-app.post('/save-stat', publicEventsLimiter, async (req, res) => {
+app.post('/save-stat', async (req, res) => {
     const { user_id, provider, service } = req.body;
 
     console.log("📥 استلام بيانات جديدة للحفظ:", req.body);
@@ -2901,7 +2902,7 @@ app.get('/api/service-requests/pending-ratings', async (req, res) => {
         });
 
 // 🆕 7.5) تسجيل نقرات الاتصال والواتساب
-app.post('/api/log-contact-click', publicEventsLimiter, async (req, res) => {
+app.post('/api/log-contact-click', async (req, res) => {
     const { user_id, service_layer, feature_id, provider_name, contact_type } = req.body;
 
     if (!user_id || !service_layer || !feature_id || !contact_type) {

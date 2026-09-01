@@ -222,14 +222,25 @@ document.addEventListener('DOMContentLoaded', () => {
         return allFeatures;
     }
 
-    async function executeMarketGlobalSearch(term) {
+            async function executeMarketGlobalSearch(term) {
         if (!term || term.trim().length < 2) return;
 
         const container = document.getElementById('market-results-container');
         if (container) {
-            container.innerHTML = '<div style="text-align:center; padding:30px; color:#666;"><i class="fas fa-spinner fa-spin fa-2x"></i><p style="margin-top:10px;">جاري البحث في كافة أقسام وعقارات الخريطة...</p></div>';
-        }
+            container.innerHTML = '<div style="text-align:center; padding:30px; color:#666;"><i class="fas fa-spinner fa-spin fa-2x"></i><p style="margin-top:10px;">جاري البحث في كافة أقسام وعقارات الخريطة... انتظر قليلاً</p></div>';
 
+            // 🆕 توجيه المستخدم تلقائياً لمكان ظهور رسالة "جاري البحث" فور بدء
+            // البحث، مع احتساب ارتفاع الهيدر الثابت (position: sticky) حتى لا
+            // تختبئ الرسالة خلفه جزئياً كما كان يحدث مع scrollIntoView العادية.
+            const marketHeader = document.querySelector('.market-header');
+            const headerOffset = marketHeader ? marketHeader.getBoundingClientRect().height : 0;
+            const containerTop = container.getBoundingClientRect().top + window.pageYOffset;
+
+            window.scrollTo({
+                top: containerTop - headerOffset - 15, // مسافة إضافية بسيطة للتهوية
+                behavior: 'smooth'
+            });
+        }
         try {
             const promises = Object.keys(searchConfig).map(group => fetchGroupWFS(group, term));
             // 🆕 دمج نتائج البحث بالكلمات الدلالية الخاصة (حالة الحاجز / توفر الوقود)
@@ -367,20 +378,7 @@ if (typeof window.sanitize !== 'function') {
     };
 }
 
-if (typeof window.getRealUserId !== 'function') {
-    window.getRealUserId = function() {
-        return typeof window.getRealUserId === 'function' ? window.getRealUserId() : 'guest';
-    };
-}
 
-if (typeof window.checkRequestQuotaOrAlert !== 'function') {
-    window.checkRequestQuotaOrAlert = function(userId, newTab) {
-        if (typeof window.checkRequestQuotaOrAlert === 'function') {
-            return window.checkRequestQuotaOrAlert(userId, newTab);
-        }
-        return Promise.resolve({ allowed: true });
-    };
-}
 
 if (typeof window.trackRequest !== 'function') {
     window.trackRequest = function(provider, service) {
