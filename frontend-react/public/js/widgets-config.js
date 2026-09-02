@@ -87,9 +87,9 @@ const WIDGETS_API_CONFIG = {
     },
     
     // مواقيت الصلاة (API للقدس - Aladhan API)
-    prayer: {
+        prayer: {
         enabled: true,
-        url: 'https://api.aladhan.com/v1/timingsByCity?city=Jerusalem&country=Palestine&method=2',
+        url: 'https://api.aladhan.com/v1/timingsByCity?city=Jerusalem&country=Palestine&method=23',
         updateInterval: 3600000 // ساعة واحدة
     },
     

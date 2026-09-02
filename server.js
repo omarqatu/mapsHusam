@@ -1590,7 +1590,7 @@ async function requireAdmin(req, res, next) {
 // 🆕 [مركز المعلومات الحية]: مسارات جلب/حفظ المجموعات الست اليدوية، وجلب/
 // تعديل حالة حواجز الطرق ومحطات الوقود (معالم حقيقية على الخريطة).
 // =========================================================================
-const WIDGETS_CONFIG_GROUPS = ['currency', 'gold', 'weather', 'fuel', 'transport_inter_city', 'transport_intra_city'];
+const WIDGETS_CONFIG_GROUPS = ['currency', 'gold', 'weather', 'fuel', 'transport_inter_city', 'transport_intra_city', 'events'];
 
 // 🌐 عام (بدون حماية): تستخدمه واجهة العرض widgets-ticker.js وصفحة الإدارة
 // لجلب تاريخ آخر تحديث حقيقي لحالة الطرق ومحطات الوقود

@@ -562,7 +562,7 @@ window.__nmsPageHandlesOwnAds = true;
                 return { layer: layerName, workspace, label: cat.title, isRealEstate };
             });
 
-            const batchSize = 10;
+            const batchSize = 100;
             for (let i = 0; i < allTargets.length; i += batchSize) {
                 const batch = allTargets.slice(i, i + batchSize);
                 const promises = batch.map(async (item) => {
@@ -1073,7 +1073,7 @@ window.__nmsPageHandlesOwnAds = true;
                 });
 
             let collected = [];
-            const batchSize = 10;
+            const batchSize = 100;
             for (let i = 0; i < targets.length; i += batchSize) {
                 const batch = targets.slice(i, i + batchSize);
                 const promises = batch.map(async (item) => {
@@ -1133,7 +1133,7 @@ window.__nmsPageHandlesOwnAds = true;
             });
 
             let collected = [];
-            const batchSize = 10;
+            const batchSize = 100;
             for (let i = 0; i < targets.length; i += batchSize) {
                 const batch = targets.slice(i, i + batchSize);
                 const promises = batch.map(async (item) => {
@@ -1197,7 +1197,7 @@ window.__nmsPageHandlesOwnAds = true;
             });
 
             let collected = [];
-            const batchSize = 10;
+            const batchSize = 100;
             for (let i = 0; i < allTargets.length; i += batchSize) {
                 const batch = allTargets.slice(i, i + batchSize);
                 const promises = batch.map(async (item) => {

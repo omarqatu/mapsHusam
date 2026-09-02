@@ -89,7 +89,7 @@
         gaza: { label: 'غزة', temp: 32, humidity: 70, wind: 15, condition: 'مشمس' },
         jerusalem: { label: 'القدس', temp: 26, humidity: 60, wind: 10, condition: 'غائم' }
     },
-    prayer: { fajr: '04:45', dhuhr: '12:30', asr: '15:45', maghrib: '18:45', isha: '20:15' },
+        prayer: { fajr: '04:45', shuruq: '06:15', dhuhr: '12:30', asr: '15:45', maghrib: '18:45', isha: '20:15' },
     calendar: { hijri: '12 رجب 1446', gregorian: '2026-08-17', events: [] }
 };
 
@@ -196,6 +196,21 @@ function renderFuelGridHTML(prefix) {
     `).join('');
 }
 
+function renderCalendarEventsHTML() {
+    const items = (MANUAL_DATA.events || []).slice().sort((a, b) => {
+        const da = a.date ? new Date(a.date).getTime() : 0;
+        const db = b.date ? new Date(b.date).getTime() : 0;
+        return da - db;
+    });
+    if (!items.length) return '<div style="padding:10px; text-align:center; color:#999; font-size:12px;">لا توجد مناسبات مسجّلة بعد</div>';
+    return items.map(e => `
+        <div class="event-item">
+            <span class="event-date">${escWidgetText(e.date || '')}</span>
+            <span class="event-name">${escWidgetText(e.label || '')}${e.notes ? ' — ' + escWidgetText(e.notes) : ''}</span>
+        </div>
+    `).join('');
+}
+
 function renderTransportGridHTML(prefix, groupKey) {
     const items = MANUAL_DATA[groupKey] || [];
     if (!items.length) return EMPTY_GROUP_MSG;
@@ -263,6 +278,11 @@ function renderManualGroupsInto(prefix) {
                     MANUAL_DATA[key] = remoteGroupsData[key].items;
                 }
             });
+
+                if (remoteGroupsData.events && Array.isArray(remoteGroupsData.events.items)) {
+                MANUAL_DATA.events = remoteGroupsData.events.items;
+            }
+
             if (remoteGroupsData.weather && remoteGroupsData.weather.items && remoteGroupsData.weather.items.length > 0) {
                 const weatherObj = {};
                 remoteGroupsData.weather.items.forEach(w => { weatherObj[w.id] = w; });
@@ -699,10 +719,11 @@ function renderManualGroupsInto(prefix) {
                         if (apiData.weather[city]) apiData.weather[city] = data[city];
                     });
                     break;
-                case 'prayer':
+                    case 'prayer':
                     if (data.data && data.data.timings) {
                         const timings = data.data.timings;
                         apiData.prayer.fajr = timings.Fajr;
+                        apiData.prayer.shuruq = timings.Sunrise;
                         apiData.prayer.dhuhr = timings.Dhuhr;
                         apiData.prayer.asr = timings.Asr;
                         apiData.prayer.maghrib = timings.Maghrib;
@@ -853,8 +874,11 @@ function renderManualGroupsInto(prefix) {
     // ============================================
     // دالة تحديث البيانات في تبويب الموبايل
     // ============================================
-    function updateMobilePortalData() {
+        function updateMobilePortalData() {
     renderManualGroupsInto('mobile-portal-');   // 🆕
+
+    const mobileEventsList = document.getElementById('mobile-portal-calendar-events-list');
+    if (mobileEventsList) mobileEventsList.innerHTML = renderCalendarEventsHTML();
 
     if (apiData.prayer) {
         Object.entries(apiData.prayer).forEach(([prayer, time]) => {
@@ -993,6 +1017,9 @@ function renderManualGroupsInto(prefix) {
     // ============================================
     function updatePortalData() {
     renderManualGroupsInto('portal-');   // 🆕 يبني كل شيء ديناميكياً دفعة واحدة
+
+    const portalEventsList = document.getElementById('portal-calendar-events-list');
+    if (portalEventsList) portalEventsList.innerHTML = renderCalendarEventsHTML();
 
     // البقية تبقى كما هي (prayer + calendar فقط):
     if (apiData.prayer) {
