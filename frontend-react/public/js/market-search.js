@@ -382,7 +382,7 @@ if (typeof window.sanitize !== 'function') {
 
 if (typeof window.trackRequest !== 'function') {
     window.trackRequest = function(provider, service) {
-        const payload = JSON.stringify({ user_id: window.getRealUserId(), provider, service });
+        const payload = JSON.stringify({ user_id: window.getRealUserId(), provider, service, source: 'quick_search' }); // 🆕
         const baseUrl = window.MAP_CONFIG?.server?.proxyUrl || (window.location.origin + "/");
         const url = baseUrl + 'save-stat';
         if (navigator.sendBeacon) {

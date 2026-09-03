@@ -89,7 +89,22 @@ function initializeLocationSearch(map, overlayLayersObj) {
             if (activeSelections.length === 0) return features;
             return features.filter(f => activeSelections.every(s => String(f.get(s.fid)) === s.val));
         }
-        return features;
+                return features;
+    }
+
+    // 🆕 قراءة قيم فلاتر الحالة الإضافية الحالية (لبناء رابط مشاركة النتائج)
+    function captureExtraFilterValues(layerKey) {
+        const result = {};
+        if (layerKey === 'road_barriersLayer') {
+            const el = document.getElementById('location-stop-filter');
+            if (el) result['location-stop-filter'] = el.value;
+        } else if (layerKey === 'fuel_stationsLayer') {
+            ['diesel', 'banzen95', 'banzen98'].forEach(function (fid) {
+                const el = document.getElementById('location-fuel-filter-' + fid);
+                if (el) result['location-fuel-filter-' + fid] = el.value;
+            });
+        }
+        return result;
     }
 
     let searchCenterLocation = null;
@@ -257,9 +272,18 @@ function initializeLocationSearch(map, overlayLayersObj) {
             searchResultsHighlightSource?.clear();
             const nearby = findMatchingNearby(features);
 
-            if (nearby.length > 0) {
+                        if (nearby.length > 0) {
                 searchResultsHighlightSource?.addFeatures(nearby);
                 displayResults(nearby, overlayLayersObj[selectedLayerKey]);
+                if (window.setResultsShareState) {
+                    window.setResultsShareState({
+                        type: 'location',
+                        layerKey: selectedLayerKey,
+                        center: searchCenterLocation,
+                        radius: radiusStr,
+                        extra: captureExtraFilterValues(selectedLayerKey)
+                    });
+                }
             } else {
                 alert("لا توجد نتائج تطابق معايير البحث.");
                 resultsPanel?.classList.add('hidden');
@@ -276,9 +300,18 @@ function initializeLocationSearch(map, overlayLayersObj) {
             searchResultsHighlightSource?.clear();
             const nearby = findMatchingNearby(features);
 
-            if (nearby.length > 0) {
+                        if (nearby.length > 0) {
                 searchResultsHighlightSource?.addFeatures(nearby);
                 displayResults(nearby, layer);
+                if (window.setResultsShareState) {
+                    window.setResultsShareState({
+                        type: 'location',
+                        layerKey: selectedLayerKey,
+                        center: searchCenterLocation,
+                        radius: radiusStr,
+                        extra: captureExtraFilterValues(selectedLayerKey)
+                    });
+                }
             } else {
                 alert("لا توجد نتائج تطابق معايير البحث.");
                 resultsPanel?.classList.add('hidden');
@@ -373,5 +406,35 @@ function initializeLocationSearch(map, overlayLayersObj) {
         newWin.print();
     });
     
+        // 🆕 إعادة تنفيذ بحث "من خلال الموقع" تمت مشاركته عبر رابط (نسخ رابط النتائج)
+    window.replayLocationSearch = async function (state) {
+        if (!state || !state.layerKey || !state.center) return false;
+
+        searchCenterLocation = state.center;
+        if (searchLayerSelect) searchLayerSelect.value = state.layerKey;
+        renderExtraFilterUI();
+
+        if (state.extra) {
+            Object.keys(state.extra).forEach(function (selId) {
+                const el = document.getElementById(selId);
+                if (el) el.value = state.extra[selId];
+            });
+        }
+        if (searchRadiusInput && state.radius !== undefined) searchRadiusInput.value = state.radius;
+
+        searchMarkerSource?.clear();
+        searchMarkerSource?.addFeature(new ol.Feature(new ol.geom.Point(state.center)));
+        if (selectedLocationDisplay) {
+            selectedLocationDisplay.textContent = 'تم استرجاع موقع البحث من الرابط المشترك.';
+            selectedLocationDisplay.style.color = '#28a745';
+        }
+
+        if (executeLocationSearchBtn) {
+            executeLocationSearchBtn.click();
+            return true;
+        }
+        return false;
+    };
+
     window.populateSearchLayerSelect();
 }

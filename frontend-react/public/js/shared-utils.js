@@ -241,3 +241,37 @@ window.isLayerGloballyExcluded = function (layerIdentifier) {
     }
     return false;
 };
+
+// ==========================================================================
+// 9) [نسخ رابط نتائج البحث]: حفظ آخر عملية بحث ناجحة من أي من أدوات البحث
+// الثلاث (البحث الذكي، البحث السريع، البحث من خلال الموقع) بشكل موحّد لبناء
+// رابط مشاركة يُعيد تنفيذ نفس البحث تلقائياً عند فتحه من متصفح/جهاز آخر.
+// ==========================================================================
+window.__lastResultsShareState = null;
+
+window.setResultsShareState = function (state) {
+    window.__lastResultsShareState = state;
+};
+
+window.buildResultsShareLink = function () {
+    if (!window.__lastResultsShareState) return null;
+    try {
+        const json = JSON.stringify(window.__lastResultsShareState);
+        const encoded = encodeURIComponent(btoa(unescape(encodeURIComponent(json))));
+        return window.location.origin + window.location.pathname + '?resultsShare=' + encoded;
+    } catch (e) {
+        return null;
+    }
+};
+
+window.parseResultsShareParam = function () {
+    try {
+        const params = new URLSearchParams(window.location.search);
+        const raw = params.get('resultsShare');
+        if (!raw) return null;
+        const json = decodeURIComponent(escape(atob(decodeURIComponent(raw))));
+        return JSON.parse(json);
+    } catch (e) {
+        return null;
+    }
+};

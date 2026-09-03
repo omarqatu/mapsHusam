@@ -2022,8 +2022,8 @@ window.__nmsPageHandlesOwnAds = true;
             });
         }
 
-        function trackRequest(provider, service) {
-            const payload = JSON.stringify({ user_id: getRealUserId(), provider, service });
+            function trackRequest(provider, service) {
+            const payload = JSON.stringify({ user_id: getRealUserId(), provider, service, source: 'quick_search' }); // 🆕
             const url = baseUrl + 'save-stat';
             if (navigator.sendBeacon) {
                 navigator.sendBeacon(url, new Blob([payload], { type: 'application/json' }));

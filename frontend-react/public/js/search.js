@@ -22,13 +22,14 @@
         return localStorage.getItem('map_user_guid');
     }
 
-    window.checkAndLogMapEvent = async function (eventType, provider, service) {
+        window.checkAndLogMapEvent = async function (eventType, provider, service) {
         const userId = getSharedUserIdForQuota();
+        const source = window.location.pathname.includes('no-map-search') ? 'quick_search' : 'map'; // 🆕
         try {
             const res = await fetch(window.location.origin + '/api/log-map-event', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ user_id: userId, event_type: eventType, provider: provider || null, service: service || null })
+                body: JSON.stringify({ user_id: userId, event_type: eventType, provider: provider || null, service: service || null, source })
             });
 
             if (res.status === 429) {
@@ -359,7 +360,7 @@
         });
     }
 
-    function displaySearchResults(features, layerKey) {
+        function displaySearchResults(features, layerKey, conditionsUsed) {
         const tbody = document.querySelector('#results-table tbody');
         const countSpan = document.getElementById('results-count-span');
         const resultsPanel = document.getElementById('results-panel');
@@ -376,6 +377,11 @@
                 alert("لا توجد نتائج.");
             }
             return;
+        }
+
+        // 🆕 حفظ حالة هذا البحث لبناء رابط مشاركة (زر "نسخ رابط النتائج")
+        if (window.setResultsShareState) {
+            window.setResultsShareState({ type: 'attribute', layerKey, conditions: conditionsUsed || [] });
         }
 
         // ترتيب النتائج بناءً على التقييم rating تنازلياً
@@ -560,7 +566,7 @@
                 const format = new ol.format.GeoJSON();
                 const features = data.features.map(f => format.readFeature(f));
 
-                displaySearchResults(features, layerKey);
+                displaySearchResults(features, layerKey, finalConditions);
             } catch (error) {
                 console.error("خطأ في البحث:", error);
                 if (window.toast) {
@@ -586,7 +592,7 @@
                         return false;
                     });
                 });
-                displaySearchResults(matched, layerKey);
+                displaySearchResults(matched, layerKey, finalConditions);
             }
         };
 
@@ -653,6 +659,41 @@
             newWin.print();
         });
 
-        if (layerSelect?.options.length > 0) layerSelect.dispatchEvent(new Event('change'));
+                if (layerSelect?.options.length > 0) layerSelect.dispatchEvent(new Event('change'));
+
+        // 🆕 إعادة تنفيذ بحث "ذكي" تمت مشاركته عبر رابط (نسخ رابط النتائج)
+        window.replayAttributeSearch = async function (state) {
+            if (!state || !state.layerKey || !currentOverlayLayers || !currentOverlayLayers[state.layerKey]) return false;
+            try {
+                layerSelect.value = state.layerKey;
+                layerSelect.dispatchEvent(new Event('change'));
+
+                const isRealEstate = ['rentLayer', 'saleLayer', 'landLayer'].includes(state.layerKey);
+                const workspace = isRealEstate ? 'realestate' : 'services';
+                const layerNameMap = { 'rentLayer': 'ApartRent', 'saleLayer': 'ApartSale', 'landLayer': 'LandSale' };
+                const layerName = layerNameMap[state.layerKey] || state.layerKey.replace('Layer', '');
+
+                const baseUrl = window.MAP_CONFIG?.server?.proxyUrl || (window.location.origin + "/");
+                const params = new URLSearchParams({ layer: layerName, workspace: workspace });
+                (state.conditions || []).forEach((c, index) => {
+                    params.append(`field_${index}`, c.field);
+                    params.append(`operator_${index}`, c.operator);
+                    params.append(`value_${index}`, c.value);
+                });
+                if ((state.conditions || []).length > 0) params.append('conditions_count', state.conditions.length);
+
+                const response = await fetch(`${baseUrl}api/search-features?${params.toString()}`);
+                const data = await response.json();
+                if (!data.features || data.features.length === 0) return false;
+
+                const format = new ol.format.GeoJSON();
+                const features = data.features.map(f => format.readFeature(f));
+                displaySearchResults(features, state.layerKey, state.conditions || []);
+                return true;
+            } catch (err) {
+                console.warn('تعذر إعادة تنفيذ البحث الذكي المشترك:', err.message);
+                return false;
+            }
+        };
     };
 })();

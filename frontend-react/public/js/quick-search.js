@@ -180,6 +180,9 @@ function initializeQuickSearch(map, overlayLayersObj) {
             }
 
             displayQuickResults(features, layer);
+            if (window.setResultsShareState) {
+                window.setResultsShareState({ type: 'quick', layerKey, layerTitle });
+            }
         } catch (error) {
             console.error("خطأ في البحث السريع:", error);
             if (window.toast) {
@@ -221,6 +224,9 @@ function initializeQuickSearch(map, overlayLayersObj) {
             }
 
             displayQuickResults(features, layer);
+            if (window.setResultsShareState) {
+                window.setResultsShareState({ type: 'quick', layerKey, layerTitle });
+            }
         }
     }
 
@@ -279,8 +285,43 @@ function initializeQuickSearch(map, overlayLayersObj) {
             resultsTableBody.appendChild(tr);
         });
 
-        resultsPanel.classList.remove('hidden');
+                resultsPanel.classList.remove('hidden');
 
         if (typeof window.mobileTabsShowResults === 'function') window.mobileTabsShowResults();
     }
+
+    // 🆕 إعادة تنفيذ بحث "سريع" تمت مشاركته عبر رابط (نسخ رابط النتائج)
+    window.replayQuickSearch = async function (state) {
+        if (!state || !state.layerKey || !overlayLayersObj[state.layerKey]) return false;
+        const layer = overlayLayersObj[state.layerKey];
+        const isRealEstate = ['rentLayer', 'saleLayer', 'landLayer'].includes(state.layerKey);
+        const workspace = isRealEstate ? 'realestate' : 'services';
+        const layerNameMap = { 'rentLayer': 'ApartRent', 'saleLayer': 'ApartSale', 'landLayer': 'LandSale' };
+        const layerName = layerNameMap[state.layerKey] || state.layerKey.replace('Layer', '');
+
+        try {
+            const baseUrl = window.MAP_CONFIG?.server?.proxyUrl || (window.location.origin + "/");
+            const params = new URLSearchParams({ layer: layerName, workspace: workspace });
+            const response = await fetch(`${baseUrl}api/search-features?${params.toString()}`);
+            const data = await response.json();
+            if (!data.features || data.features.length === 0) return false;
+
+            const format = new ol.format.GeoJSON();
+            const features = data.features.map(f => format.readFeature(f));
+
+            if (window.searchResultsHighlightLayer) {
+                window.searchResultsHighlightLayer.getSource().clear();
+                window.searchResultsHighlightLayer.getSource().addFeatures(features);
+                const combinedExtent = window.searchResultsHighlightLayer.getSource().getExtent();
+                map.getView().fit(combinedExtent, { padding: [80, 80, 80, 80], duration: 1000, maxZoom: 19 });
+            }
+
+            displayQuickResults(features, layer);
+            window.setResultsShareState(state);
+            return true;
+        } catch (err) {
+            console.warn('تعذر إعادة تنفيذ البحث السريع المشترك:', err.message);
+            return false;
+        }
+    };
 }

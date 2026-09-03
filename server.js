@@ -255,7 +255,10 @@ async function ensureSchemaColumns() {
     try {
         await servicesPool.query(`ALTER TABLE public.users ADD COLUMN IF NOT EXISTS force_logout_flag BOOLEAN DEFAULT false`);
         await servicesPool.query(`ALTER TABLE public.users ADD COLUMN IF NOT EXISTS whatsapp_number TEXT`);
-        console.log('✅ تم التأكد من وجود أعمدة force_logout_flag و whatsapp_number في جدول users');
+        // 🆕 عمود مصدر الحدث (map / quick_search) لتمييز زيارات الخريطة عن زيارات
+        // صفحة البحث السريع ضمن إحصائيات المنصة
+        await servicesPool.query(`ALTER TABLE public.map_service_stats ADD COLUMN IF NOT EXISTS source_page TEXT`);
+        console.log('✅ تم التأكد من وجود أعمدة force_logout_flag و whatsapp_number و source_page');
     } catch (err) {
         console.error('⚠️ خطأ أثناء التأكد من مخطط قاعدة البيانات:', err.message);
     }
@@ -483,24 +486,52 @@ app.get('/api/platform-stats', async (req, res) => {
             else usersUser += count;
         });
 
-        // 2) عدد المشاهدات = إجمالي الأحداث المسجلة على الخريطة والبحث
-        //    (نقرات، بحث، اتصال/واتساب...) من نفس جدول map_service_stats الموجود أصلاً
-        const viewsResult = await servicesPool.query(`SELECT COUNT(*) FROM "public"."map_service_stats"`);
-        const viewsTotal = parseInt(viewsResult.rows[0].count, 10) || 0;
+        // 🆕 2) عدد المشاهدات مقسّمة حسب المصدر: زيارات الخريطة، زيارات البحث السريع،
+        // وإجمالي زيارات كامل المنصة (= مجموع الاثنين). السجلات القديمة (قبل إضافة
+        // عمود source_page) تُحتسب ضمن "زيارات الخريطة" افتراضياً حتى يبقى المجموع دقيقاً.
+        const viewsResult = await servicesPool.query(`
+            SELECT
+                COUNT(*) AS total,
+                COUNT(*) FILTER (WHERE source_page = 'quick_search') AS quick_search
+            FROM "public"."map_service_stats"
+        `);
+        const viewsTotal = parseInt(viewsResult.rows[0].total, 10) || 0;
+        const viewsQuickSearch = parseInt(viewsResult.rows[0].quick_search, 10) || 0;
+        const viewsMap = Math.max(0, viewsTotal - viewsQuickSearch);
 
         // 3) عدد الخدمات (الطبقات) = القائمة البيضاء المعتمدة بالسيرفر بعد استثناء طبقات العقارات/المواقع
         const realEstateAndLocationLayers = ['ApartRent', 'ApartSale', 'LandSale', 'Location', 'RoadsTest'];
         const servicesCount = ALLOWED_LAYERS.filter(l => !realEstateAndLocationLayers.includes(l)).length;
 
-        // 4) عدد المعالم = عدد مزودي الخدمة المرتبطين فعلياً بمعلم حقيقي على الخريطة
-        const featuresResult = await servicesPool.query(`
-            SELECT COUNT(*) FROM public.users
-            WHERE role = 'provider' AND is_active = true
-              AND service_layer IS NOT NULL AND feature_id IS NOT NULL
-        `);
-        const featuresCount = parseInt(featuresResult.rows[0].count, 10) || 0;
+        // 🆕 4) عدد مزودي الخدمات = مجموع كل معالم طبقات العقارات (شقق إيجار/بيع + أراضي)
+        // وكل معالم طبقات الخدمات الفعلية (أكثر من 65 طبقة)، وليس فقط حسابات المزودين
+        // المرتبطة - أي كل معلم موجود فعلياً على الخريطة ضمن هذه الطبقات
+        const realEstateFeatureLayers = ['ApartRent', 'ApartSale', 'LandSale'];
+        const serviceFeatureLayers = ALLOWED_LAYERS.filter(l => !REAL_ESTATE_LAYERS.includes(l));
 
-        const statsData = { usersTotal, usersAdmin, usersUser, usersProvider, viewsTotal, servicesCount, featuresCount };
+        let featuresCount = 0;
+        for (const layerName of realEstateFeatureLayers) {
+            try {
+                const countRes = await realestatePool.query(`SELECT COUNT(*) FROM public."${layerName}"`);
+                featuresCount += parseInt(countRes.rows[0].count, 10) || 0;
+            } catch (layerErr) {
+                console.warn(`⚠️ تعذر عد معالم طبقة العقار [${layerName}]:`, layerErr.message);
+            }
+        }
+        for (const layerName of serviceFeatureLayers) {
+            try {
+                const countRes = await servicesPool.query(`SELECT COUNT(*) FROM public."${layerName}"`);
+                featuresCount += parseInt(countRes.rows[0].count, 10) || 0;
+            } catch (layerErr) {
+                console.warn(`⚠️ تعذر عد معالم طبقة الخدمة [${layerName}]:`, layerErr.message);
+            }
+        }
+
+        const statsData = {
+            usersTotal, usersAdmin, usersUser, usersProvider,
+            viewsTotal, viewsMap, viewsQuickSearch,
+            servicesCount, featuresCount
+        };
 
         platformStatsCache = { data: statsData, expiresAt: Date.now() + 60000 };
 
@@ -837,8 +868,7 @@ app.post('/api/check-request-limit', async (req, res) => {
 
 // 4-ب. مسار تسجيل حدث/نقرة على الخريطة أو البحث (يُستدعى عند كل نقرة)
 app.post('/api/log-map-event', async (req, res) => {
-    const { user_id, event_type, provider, service } = req.body;
-
+    const { user_id, event_type, provider, service, source } = req.body;
     console.log("📥 تسجيل حدث خريطة/بحث:", req.body);
 
     if (!user_id || !event_type) {
@@ -857,12 +887,15 @@ app.post('/api/log-map-event', async (req, res) => {
             });
         }
 
+        // 🆕 تسجيل مصدر الحدث (خريطة / بحث سريع) لإحصائيات المنصة
+        const sourcePage = source === 'quick_search' ? 'quick_search' : 'map';
+
         const query = `
-            INSERT INTO "public"."map_service_stats" ("user_identifier", "provider_name", "service_type", "request_date")
-            VALUES ($1, $2, $3, NOW())
+            INSERT INTO "public"."map_service_stats" ("user_identifier", "provider_name", "service_type", "request_date", "source_page")
+            VALUES ($1, $2, $3, NOW(), $4)
         `;
 
-        await servicesPool.query(query, [user_id, provider || null, event_type]);
+        await servicesPool.query(query, [user_id, provider || null, event_type, sourcePage]);
 
         console.log(`\x1b[32m%s\x1b[0m`, `✅ نجاح تسجيل الحدث: ${event_type}`);
         res.status(200).json({ status: 'success', message: 'Event logged successfully' });
@@ -877,7 +910,7 @@ app.post('/api/log-map-event', async (req, res) => {
 
 // 4. مسار استقبال الإحصائيات (POST)
 app.post('/save-stat', async (req, res) => {
-    const { user_id, provider, service } = req.body;
+    const { user_id, provider, service, source } = req.body;
 
     console.log("📥 استلام بيانات جديدة للحفظ:", req.body);
 
@@ -897,12 +930,15 @@ app.post('/save-stat', async (req, res) => {
             });
         }
 
+                // 🆕 تسجيل مصدر الحدث (خريطة / بحث سريع) لإحصائيات المنصة
+        const sourcePage = source === 'quick_search' ? 'quick_search' : 'map';
+
         const query = `
-            INSERT INTO "public"."map_service_stats" ("user_identifier", "provider_name", "service_type", "request_date")
-            VALUES ($1, $2, $3, NOW())
+            INSERT INTO "public"."map_service_stats" ("user_identifier", "provider_name", "service_type", "request_date", "source_page")
+            VALUES ($1, $2, $3, NOW(), $4)
         `;
 
-        await servicesPool.query(query, [user_id, provider, service]);
+        await servicesPool.query(query, [user_id, provider, service, sourcePage]);
 
         console.log(`\x1b[32m%s\x1b[0m`, `✅ نجاح الحفظ في قاعدة البيانات للخدمة: ${service}`);
         res.status(200).json({ status: 'success', message: 'Stat saved successfully' });
