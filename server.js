@@ -402,8 +402,11 @@ const ALLOWED_LAYERS = [
     'motorcycle_delivery_on_call', 'bicycle_delivery_on_call', 'photographers', 'student_research_assist',
      
 
-    // --- طبقات العقارات والمواقع الفعالة ---
-    'ApartRent', 'ApartSale', 'LandSale', 'Location', 'RoadsTest'
+        // --- طبقات العقارات والمواقع الفعالة ---
+    'ApartRent', 'ApartSale', 'LandSale', 'Location', 'RoadsTest',
+
+    // 🆕 قيمة خاصة تُستخدم فقط بالبحث العالمي لجلب كل الخدمات دفعة واحدة بدون discriminator
+    'service_all'
 ];
 
 const isValidLayer = (layer) => typeof layer === 'string' && ALLOWED_LAYERS.includes(layer.trim());
@@ -507,7 +510,6 @@ app.get('/api/platform-stats', async (req, res) => {
         // وكل معالم طبقات الخدمات الفعلية (أكثر من 65 طبقة)، وليس فقط حسابات المزودين
         // المرتبطة - أي كل معلم موجود فعلياً على الخريطة ضمن هذه الطبقات
         const realEstateFeatureLayers = ['ApartRent', 'ApartSale', 'LandSale'];
-        const serviceFeatureLayers = ALLOWED_LAYERS.filter(l => !REAL_ESTATE_LAYERS.includes(l));
 
         let featuresCount = 0;
         for (const layerName of realEstateFeatureLayers) {
@@ -518,13 +520,12 @@ app.get('/api/platform-stats', async (req, res) => {
                 console.warn(`⚠️ تعذر عد معالم طبقة العقار [${layerName}]:`, layerErr.message);
             }
         }
-        for (const layerName of serviceFeatureLayers) {
-            try {
-                const countRes = await servicesPool.query(`SELECT COUNT(*) FROM public."${layerName}"`);
-                featuresCount += parseInt(countRes.rows[0].count, 10) || 0;
-            } catch (layerErr) {
-                console.warn(`⚠️ تعذر عد معالم طبقة الخدمة [${layerName}]:`, layerErr.message);
-            }
+        // 🆕 عدّ كل معالم الخدمات دفعة واحدة من الجدول الموحّد بدل لوب على 66 جدول منفصل (توفير أداء حقيقي)
+        try {
+            const servicesCountRes = await servicesPool.query(`SELECT COUNT(*) FROM public.service_all`);
+            featuresCount += parseInt(servicesCountRes.rows[0].count, 10) || 0;
+        } catch (err) {
+            console.warn('⚠️ تعذر عد معالم service_all:', err.message);
         }
 
         const statsData = {
@@ -650,13 +651,13 @@ app.get('/api/get-provider-service', async (req, res) => {
 
             console.log(`🔍 جلب الإحداثيات: layer=${layer}, idField=${idField}, featId=${featId}, isRealEstate=${isRealEstate}`);
 
-            const coordsQuery = `
-                SELECT x_coord, y_coord, status
-                FROM public."${layer}"
-                WHERE ${idField} = $1
-                LIMIT 1
-            `;
-            const coordsResult = await targetPool.query(coordsQuery, [featId]);
+            // 🆕 كل الخدمات أصبحت بجدول service_all موحّد، ولازم فلترة إضافية بعمود discriminator
+            const coordsQuery = isRealEstate
+                ? `SELECT x_coord, y_coord, status FROM public."${layer}" WHERE ${idField} = $1 LIMIT 1`
+                : `SELECT x_coord, y_coord, status FROM public.service_all WHERE id = $1 AND discriminator = $2 LIMIT 1`;
+            const coordsParams = isRealEstate ? [featId] : [featId, layer];
+
+            const coordsResult = await targetPool.query(coordsQuery, coordsParams);
             console.log(`🔍 نتيجة الاستعلام: ${coordsResult.rows.length} صفوف`);
             if (coordsResult.rows.length > 0) {
                 console.log(`🔍 البيانات المسترجعة:`, coordsResult.rows[0]);
@@ -732,53 +733,59 @@ app.post('/api/update-service-status', async (req, res) => {
     // مصفوفة طبقات العقارات لتحديد السلوك برمجياً
     const isRealEstate = REAL_ESTATE_LAYERS.includes(layerName);
 
-    try {
+        try {
         const targetPool = getPoolForLayer(layerName);
         let updateLayerQuery = '';
         let queryParams = [];
 
         // العقارات تستخدم fid، الخدمات تستخدم id
         const idField = isRealEstate ? 'fid' : 'id';
+        // 🆕 اسم الجدول الفعلي: للعقارات يبقى نفس اسم الطبقة، ولكل الخدمات service_all
+        const tableName = isRealEstate ? `"${layerName}"` : `service_all`;
+        // 🆕 شرط إضافي على discriminator (فقط للخدمات) — نضيفه بنهاية كل استعلام لاحقاً
+        const discriminatorWhere = isRealEstate ? '' : ` AND discriminator = $__DISC__`;
 
         // التحقق مما إذا كان الطلب يتضمن إحداثيات جديدة
         if (parsedXCoord && parsedYCoord && parsedXCoord > 100000) {
 
             if (isRealEstate && layerName !== 'Location') {
-                // 🏢 [حالة خاصة بالعقارات والمضلعات]: تحديث الإحداثيات كأعمدة رقمية فقط دون المساس بالـ geom المضلع
-                // لأن المضلع (Polygon) لا يمكن تحديثه بنقطة واحدة مباشرة من الفرونت إند عبر ST_MakePoint
                 console.log(`🏢 تحديث عقار/مضلع: Layer=[${layerName}], ID=[${targetIdValue}]`);
                 updateLayerQuery = `
-                    UPDATE public."${layerName}"
+                    UPDATE public.${tableName}
                     SET
                         status = $1,
                         x_coord = $2,
                         y_coord = $3
-                    WHERE ${idField} = $4
+                    WHERE ${idField} = $4${discriminatorWhere}
                 `;
                 queryParams = [parsedStatus, parsedXCoord, parsedYCoord, targetIdValue];
             } else {
-                // 🟢 [حالة الخدمات أو نقاط المواقع]: تحديث الأعمدة الرقمية وتحديث هندسة النقطة (Point) في الـ PostGIS
                 console.log(`🟢 تحديث نقطة/خدمة: Layer=[${layerName}], ID=[${targetIdValue}]`);
                 updateLayerQuery = `
-                    UPDATE public."${layerName}"
+                    UPDATE public.${tableName}
                     SET
                         status = $1,
                         x_coord = $2,
                         y_coord = $3,
                         geom = ST_SetSRID(ST_MakePoint($2, $3), 28191)
-                    WHERE ${idField} = $4
+                    WHERE ${idField} = $4${discriminatorWhere}
                 `;
                 queryParams = [parsedStatus, parsedXCoord, parsedYCoord, targetIdValue];
             }
         } else {
-            // 📍 تحديث الحالة فقط في حال عدم إرسال إحداثيات جديدة
             console.log(`📍 تحديث حالة فقط: Layer=[${layerName}], ID=[${targetIdValue}]`);
             updateLayerQuery = `
-                UPDATE public."${layerName}"
+                UPDATE public.${tableName}
                 SET status = $1
-                WHERE ${idField} = $2
+                WHERE ${idField} = $2${discriminatorWhere}
             `;
             queryParams = [parsedStatus, targetIdValue];
+        }
+
+        // 🆕 حقن رقم الـ parameter الصحيح لـ discriminator في نهاية القائمة (فقط للخدمات)
+        if (!isRealEstate) {
+            updateLayerQuery = updateLayerQuery.replace('$__DISC__', `$${queryParams.length + 1}`);
+            queryParams.push(layerName);
         }
 
         // تنفيذ استعلام التحديث على قاعدة البيانات الصحيحة (العقارات أو الخدمات)
@@ -1321,10 +1328,20 @@ app.get('/api/get-unique-values', async (req, res) => {
         if (!isValidSqlIdentifier(field)) return res.status(400).json({ error: 'اسم حقل غير صالح.' });
 
         const targetPool = workspace === 'realestate' ? realestatePool : servicesPool;
+        // 🆕 تحديد الجدول الفعلي: العقارات بجدولها الخاص، وكل الخدمات أصبحت service_all
+        const isRealEstate = REAL_ESTATE_LAYERS.includes(layer.trim());
+        const tableName = isRealEstate ? `"${layer}"` : `service_all`;
 
         // 🆕 فلترة تسلسلية اختيارية: filter_gov_a=... / filter_village_a=...
         let extraWhere = '';
         const extraParams = [];
+
+        // 🆕 كل الخدمات (وليس العقارات) لازم تُفلتر بعمود discriminator أولاً
+        if (!isRealEstate) {
+            extraParams.push(layer.trim());
+            extraWhere += ` AND discriminator = $${extraParams.length}`;
+        }
+
         Object.keys(req.query).forEach(key => {
             if (key.startsWith('filter_')) {
                 const filterField = key.substring('filter_'.length);
@@ -1336,7 +1353,7 @@ app.get('/api/get-unique-values', async (req, res) => {
             }
         });
 
-        const query = `SELECT DISTINCT "${field}" FROM public."${layer}" WHERE status = 0 AND auto_status = 0 AND "${field}" IS NOT NULL AND "${field}"::text != ''${extraWhere} ORDER BY "${field}" ASC LIMIT 10000`;
+        const query = `SELECT DISTINCT "${field}" FROM public.${tableName} WHERE status = 0 AND auto_status = 0 AND "${field}" IS NOT NULL AND "${field}"::text != ''${extraWhere} ORDER BY "${field}" ASC LIMIT 10000`;
         const result = await targetPool.query(query, extraParams);
         const values = result.rows.map(row => row[field]).filter(v => v != null && v !== '');
         res.json({ success: true, values });
@@ -1365,16 +1382,24 @@ app.get('/api/search-features', async (req, res) => {
         const targetPool = workspace === 'realestate' ? realestatePool : servicesPool;
         const isRealEstate = REAL_ESTATE_LAYERS.includes(layer);
         const isPolygonLayer = layer === 'LandSale'; // الأراضي هي مضلعات
+        // 🆕 اسم الجدول الفعلي: العقارات بجدولها الخاص، وكل الخدمات أصبحت service_all
+        const tableName = isRealEstate ? `"${layer}"` : `service_all`;
 
-       
         const ignoreStatusFilter = req.query.ignore_status === '1';
 
-        
-        let query = `SELECT *, ST_AsGeoJSON(geom) as geom_json FROM public."${layer}" WHERE 1=1`;
+        let query = `SELECT *, ST_AsGeoJSON(geom) as geom_json FROM public.${tableName} WHERE 1=1`;
+        const params = [];
+
+        // 🆕 استثناء خاص: layer === 'service_all' يعني طلب كل الخدمات دفعة واحدة
+        // (يُستخدم فقط بالبحث العالمي لتوحيد 66 طلباً منفصلاً بطلب واحد)
+        if (!isRealEstate && layer.trim() !== 'service_all') {
+            params.push(layer.trim());
+            query += ` AND discriminator = $${params.length}`;
+        }
+
         if (!ignoreStatusFilter) {
             query += ` AND status = 0 AND auto_status = 0`;
         }
-        const params = [];
 
         // إضافة فلترة مكانية BBOX إذا تم توفيرها
         if (bbox) {
@@ -1639,8 +1664,8 @@ app.get('/api/widgets-data', async (req, res) => {
             groups[row.group_key] = { items: row.data, updated_at: row.updated_at };
         });
 
-        const roadResult = await servicesPool.query(`SELECT MAX(updated_at) as last FROM public.road_barriers`);
-        const fuelResult = await servicesPool.query(`SELECT MAX(updated_at) as last FROM public.fuel_stations`);
+        const roadResult = await servicesPool.query(`SELECT MAX(updated_at) as last FROM public.service_all WHERE discriminator = 'road_barriers'`);
+        const fuelResult = await servicesPool.query(`SELECT MAX(updated_at) as last FROM public.service_all WHERE discriminator = 'fuel_stations'`);
 
         res.json({
             success: true,
@@ -1698,8 +1723,12 @@ app.post('/api/admin/widgets-data/:groupKey', requireAdmin, async (req, res) => 
 // 🔒 للمشرف: جلب معالم حواجز الطرق ومحطات الوقود لتعديلها من صفحة الإدارة
 app.get('/api/admin/road-fuel-features', requireAdmin, async (req, res) => {
     try {
-        const roadResult = await servicesPool.query(`SELECT id, name, stop, updated_at FROM public.road_barriers ORDER BY display_order NULLS LAST, id ASC`);
-        const fuelResult = await servicesPool.query(`SELECT id, name, diesel, banzen95, banzen98, updated_at FROM public.fuel_stations ORDER BY display_order NULLS LAST, id ASC`);
+        const roadResult = await servicesPool.query(
+            `SELECT id, name, stop, updated_at FROM public.service_all WHERE discriminator = 'road_barriers' ORDER BY display_order NULLS LAST, id ASC`
+        );
+        const fuelResult = await servicesPool.query(
+            `SELECT id, name, diesel, banzen95, banzen98, updated_at FROM public.service_all WHERE discriminator = 'fuel_stations' ORDER BY display_order NULLS LAST, id ASC`
+        );
         res.json({ success: true, roadBarriers: roadResult.rows, fuelStations: fuelResult.rows });
     } catch (err) {
         console.error('❌ خطأ أثناء جلب معالم الحواجز/المحطات:', err.message);
@@ -1713,9 +1742,14 @@ app.post('/api/admin/reorder-features', requireAdmin, async (req, res) => {
     if (!['road_barriers', 'fuel_stations'].includes(layer) || !Array.isArray(orderedIds)) {
         return res.status(400).json({ success: false, error: 'بيانات غير صالحة' });
     }
-    try {
+        try {
+        // 🆕 التحديث الآن على جدول service_all موحّد، مع فلترة discriminator + id معاً
+        // لضمان عدم التأثير على أي خدمة أخرى بنفس رقم id (الـ id أصبح فريداً عالمياً فعلاً، لكن هذا أمان إضافي)
         await Promise.all(orderedIds.map((id, index) =>
-            servicesPool.query(`UPDATE public."${layer}" SET display_order = $1 WHERE id = $2`, [index, id])
+            servicesPool.query(
+                `UPDATE public.service_all SET display_order = $1 WHERE id = $2 AND discriminator = $3`,
+                [index, id, layer]
+            )
         ));
         res.json({ success: true });
     } catch (err) {
@@ -1729,8 +1763,11 @@ app.post('/api/admin/update-road-barrier', requireAdmin, async (req, res) => {
     if (id === undefined || stop === undefined) {
         return res.status(400).json({ success: false, error: 'بيانات ناقصة' });
     }
-    try {
-        await servicesPool.query(`UPDATE public.road_barriers SET stop = $1, updated_at = NOW() WHERE id = $2`, [stop, id]);
+        try {
+        await servicesPool.query(
+            `UPDATE public.service_all SET stop = $1, updated_at = NOW() WHERE id = $2 AND discriminator = 'road_barriers'`,
+            [stop, id]
+        );
         res.json({ success: true });
     } catch (err) {
         console.error('❌ خطأ أثناء تحديث حالة الحاجز:', err.message);
@@ -1744,9 +1781,9 @@ app.post('/api/admin/update-fuel-station', requireAdmin, async (req, res) => {
     if (id === undefined) {
         return res.status(400).json({ success: false, error: 'بيانات ناقصة' });
     }
-    try {
+        try {
         await servicesPool.query(
-            `UPDATE public.fuel_stations SET diesel = $1, banzen95 = $2, banzen98 = $3, updated_at = NOW() WHERE id = $4`,
+            `UPDATE public.service_all SET diesel = $1, banzen95 = $2, banzen98 = $3, updated_at = NOW() WHERE id = $4 AND discriminator = 'fuel_stations'`,
             [diesel, banzen95, banzen98, id]
         );
         res.json({ success: true });
@@ -2163,11 +2200,16 @@ async function getProviderContactInfo(serviceLayer, featureId) {
         return { whatsapp: null, phone: null };
     }
     try {
+        const isRealEstate = REAL_ESTATE_LAYERS.includes(serviceLayer.trim());
         const targetPool = getPoolForLayer(serviceLayer);
-        const result = await targetPool.query(
-            `SELECT whatsapp, phone FROM public."${serviceLayer}" WHERE id = $1 LIMIT 1`,
-            [featureId]
-        );
+
+        // 🆕 الخدمات كلها بجدول service_all موحّد، فلازم فلترة إضافية بعمود discriminator
+        const query = isRealEstate
+            ? `SELECT whatsapp, phone FROM public."${serviceLayer}" WHERE id = $1 LIMIT 1`
+            : `SELECT whatsapp, phone FROM public.service_all WHERE id = $1 AND discriminator = $2 LIMIT 1`;
+        const queryParams = isRealEstate ? [featureId] : [featureId, serviceLayer.trim()];
+
+        const result = await targetPool.query(query, queryParams);
         if (result.rows.length === 0) return { whatsapp: null, phone: null };
 
         const rawWhatsapp = result.rows[0].whatsapp ? String(result.rows[0].whatsapp).trim() : null;

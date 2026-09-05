@@ -1,11 +1,10 @@
 /**
  * edit-core.js 
  */
-// متغيرات عالمية للاستخدام في edit-wfs.js
+
 let realEstateLayers, selectedLayerName, overlayLayersObj;
 let deactivatePointEditTools;
-// 🆕 escapeXml أصبحت معرّفة مرة واحدة فقط بملف shared-utils.js (window.escapeXml)
-// بدل تكرارها هنا وفي edit-wfs.js/editPolygons.js/editLines.js
+
 
 function initializeEditTools(map, overlayLayersObjParam) {
     overlayLayersObj = overlayLayersObjParam;
@@ -64,21 +63,37 @@ function initializeEditTools(map, overlayLayersObjParam) {
     const submitAttributesBtn = document.getElementById('submitAttributes');
     const cancelAttributesBtn = document.getElementById('cancelAttributes');
 
-    function populatePointLayers() {
+        function populatePointLayers() {
         if (!editLayerSelect) return;
         editLayerSelect.innerHTML = '<option value="">--- اختر طبقة للتحرير ---</option>';
         if (!overlayLayersObj) return;
 
+        // 🆕 أضفنا serviceAllLayer لقائمة الاستثناء لأننا لن نعرضها كخيار مباشر،
+        // بل نعرض كل نوع خدمة (discriminator) كخيار مستقل يرمز لها
+        const excluded = ['locationLayer', 'cityLayer', 'landLayer', 'governorateLayer','providerFlyToLayer', 'userLiveLocationLayer', 'roadsLayer', 'searchMarkerLayer', 'searchResultsHighlightLayer', 'landSaleLayer', 'villagesLayer', 'governoratesLayer', 'areasLayer', 'serviceAllLayer'];
+
+        // الطبقات الحقيقية المستقلة (العقارات: شقق إيجار/بيع)
         Object.keys(overlayLayersObj).forEach(key => {
             const layer = overlayLayersObj[key];
             if (!layer || !(layer.getSource() instanceof ol.source.Vector)) return;
-            const excluded = ['locationLayer', 'cityLayer', 'landLayer', 'governorateLayer', 'roadsLayer', 'searchMarkerLayer', 'searchResultsHighlightLayer', 'landSaleLayer', 'villagesLayer', 'governoratesLayer', 'areasLayer'];
             if (excluded.includes(key)) return;
             const opt = document.createElement('option');
             opt.value = key;
             opt.textContent = layer.get('title') || key;
             editLayerSelect.appendChild(opt);
         });
+
+        // 🆕 كل نوع خدمة (discriminator) يُعرض كخيار وهمي منفصل بنفس التسمية القديمة
+        // (مثلاً 'electricianLayer')، لكنه فعلياً يرمز لطبقة service_all الموحّدة
+        if (window.serviceSubtypes) {
+            Object.keys(window.serviceSubtypes).forEach(discriminator => {
+                const info = window.serviceSubtypes[discriminator];
+                const opt = document.createElement('option');
+                opt.value = discriminator + 'Layer';
+                opt.textContent = info.title;
+                editLayerSelect.appendChild(opt);
+            });
+        }
     }
 
     deactivatePointEditTools = function() {
@@ -132,14 +147,16 @@ function initializeEditTools(map, overlayLayersObjParam) {
         }
     });
 
-    function setupInteractions(mode) {
+        function setupInteractions(mode) {
         deactivatePointEditTools();
         selectedLayerName = editLayerSelect.value;
         if (!selectedLayerName) {
             alert('يرجى اختيار طبقة أولاً من القائمة المنسدلة قبل تفعيل أدوات الرسم أو التعديل.');
             return;
         }
-        const layer = overlayLayersObj[selectedLayerName];
+
+        const target = resolveEditTarget(selectedLayerName);
+        const layer = target.layer;
         if (!layer) return alert('خطأ: الطبقة البرمجية غير موجودة');
         selectedLayerSource = layer.getSource();
 
@@ -148,6 +165,11 @@ function initializeEditTools(map, overlayLayersObjParam) {
             draw = new ol.interaction.Draw({ source: selectedLayerSource, type: 'Point' });
             draw.on('drawend', (e) => {
                 currentFeature = e.feature;
+                // 🆕 وسم المعلم الجديد فوراً بنوعه الفرعي (discriminator) - إلزامي
+                // لكل معلم خدمة جديد بعد الدمج بجدول service_all الموحّد
+                if (target.isService) {
+                    currentFeature.set('discriminator', target.discriminator);
+                }
                 currentTransactionType = 'insert';
                 showAttributeModal(currentFeature);
             });
@@ -160,6 +182,14 @@ function initializeEditTools(map, overlayLayersObjParam) {
             select.on('select', (e) => {
                 if (e.selected.length === 0) return;
                 currentFeature = e.selected[0];
+                // 🆕 بما أن كل الخدمات صارت بطبقة واحدة، المستخدم قد يضغط على أي
+                // معلم بغض النظر عن الاختيار الحالي بالقائمة - نأخذ النوع الفعلي
+                // من discriminator المخزّن بالمعلم نفسه، ونحدّث selectedLayerName
+                // ليطابقه، حتى تبقى كل الفحوصات اللاحقة (حقول stop/diesel...) صحيحة
+                if (target.isService) {
+                    const actualDiscriminator = currentFeature.get('discriminator') || target.discriminator;
+                    selectedLayerName = actualDiscriminator + 'Layer';
+                }
                 if (mode === 'delete') {
                     if (confirm('هل أنت متأكد من حذف هذا المعلم نهائياً من السيرفر؟')) {
                         sendWFS_T(currentFeature, 'delete');
@@ -175,6 +205,20 @@ function initializeEditTools(map, overlayLayersObjParam) {
         }
         snap = new ol.interaction.Snap({ source: selectedLayerSource });
         map.addInteraction(snap);
+    }
+
+    // 🆕 تحديد الطبقة الحقيقية والنوع الفرعي بناءً على الاختيار من القائمة:
+    // - إذا كان الاختيار طبقة حقيقية موجودة فعلياً (عقارات) => استخدمها مباشرة
+    // - إذا لم توجد (يعني اختيار خدمة) => استخدم serviceAllLayer دائماً، مع تحديد discriminator
+    function resolveEditTarget(selectedKey) {
+        if (overlayLayersObj[selectedKey]) {
+            return { layer: overlayLayersObj[selectedKey], discriminator: null, isService: false };
+        }
+        const discriminator = selectedKey.replace(/Layer$/, '');
+        if (window.serviceSubtypes && window.serviceSubtypes[discriminator]) {
+            return { layer: overlayLayersObj['serviceAllLayer'], discriminator, isService: true };
+        }
+        return { layer: null, discriminator: null, isService: false };
     }
 
     function showAttributeModal(feature) {

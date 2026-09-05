@@ -111,8 +111,8 @@ function initializeQuickSearch(map, overlayLayersObj) {
     });
 
     // --- دالة البحث المحدثة لاستقبال العنوان والتعامل مع الخطأ ---
-    async function executeQuickSearch(layerKey, layerTitle) {
-        const layer = overlayLayersObj[layerKey];
+        async function executeQuickSearch(layerKey, layerTitle) {
+        const layer = window.getResolvedMapLayer(overlayLayersObj, layerKey);
 
         if (!layer) {
             console.warn(`الطبقة "${layerKey}" غير محملة.`);
@@ -181,7 +181,7 @@ function initializeQuickSearch(map, overlayLayersObj) {
 
             displayQuickResults(features, layer);
             if (window.setResultsShareState) {
-                window.setResultsShareState({ type: 'quick', layerKey, layerTitle });
+                window.setResultsShareState({ type: 'quick', layerKey, layerTitle, bbox });
             }
         } catch (error) {
             console.error("خطأ في البحث السريع:", error);
@@ -192,8 +192,7 @@ function initializeQuickSearch(map, overlayLayersObj) {
             }
 
             // Fallback للبحث المحلي
-            const source = layer.getSource();
-            const allFeatures = source.getFeatures();
+            const allFeatures = window.getLocalFeaturesForLayerKey(overlayLayersObj, layerKey);
             const features = allFeatures.filter(f => {
                 const geom = f.getGeometry();
                 if (!geom) return false;
@@ -237,12 +236,8 @@ function initializeQuickSearch(map, overlayLayersObj) {
         if (!resultsPanel || !resultsTableBody) return;
 
         // تخزين الاسم الإنجليزي في الطبقة لاستخدامه في generateFeatureHtml
-        const layerTitle = layer.get('title');
-        const layerKey = Object.keys(overlayLayersObj).find(key => overlayLayersObj[key] === layer);
-        if (layerKey) {
-            const englishName = layerKey.replace('Layer', '');
-            layer.set('englishName', englishName);
-        }
+        // 🆕 [إصلاح]: لم يعد هناك حاجة لضبط englishName هنا - popup.js أصبح
+        // يحدد اسم الخدمة من discriminator المخزّن بكل معلم مباشرة
 
         // الترتيب حسب الـ rating تنازلياً
         features.sort((a, b) => {
@@ -291,9 +286,9 @@ function initializeQuickSearch(map, overlayLayersObj) {
     }
 
     // 🆕 إعادة تنفيذ بحث "سريع" تمت مشاركته عبر رابط (نسخ رابط النتائج)
-    window.replayQuickSearch = async function (state) {
-        if (!state || !state.layerKey || !overlayLayersObj[state.layerKey]) return false;
-        const layer = overlayLayersObj[state.layerKey];
+        window.replayQuickSearch = async function (state) {
+        const layer = window.getResolvedMapLayer(overlayLayersObj, state.layerKey);
+        if (!state || !state.layerKey || !layer) return false;
         const isRealEstate = ['rentLayer', 'saleLayer', 'landLayer'].includes(state.layerKey);
         const workspace = isRealEstate ? 'realestate' : 'services';
         const layerNameMap = { 'rentLayer': 'ApartRent', 'saleLayer': 'ApartSale', 'landLayer': 'LandSale' };
@@ -302,6 +297,9 @@ function initializeQuickSearch(map, overlayLayersObj) {
         try {
             const baseUrl = window.MAP_CONFIG?.server?.proxyUrl || (window.location.origin + "/");
             const params = new URLSearchParams({ layer: layerName, workspace: workspace });
+            // 🆕 استخدام نفس النطاق المكاني (bbox) اللي كان معروض وقت إنشاء الرابط،
+            // حتى تظهر نفس المعالم بالضبط (3 مثلاً) وليس كل معالم الطبقة
+            if (state.bbox) params.append('bbox', state.bbox);
             const response = await fetch(`${baseUrl}api/search-features?${params.toString()}`);
             const data = await response.json();
             if (!data.features || data.features.length === 0) return false;

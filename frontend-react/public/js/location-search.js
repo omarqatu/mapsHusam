@@ -124,21 +124,33 @@ function initializeLocationSearch(map, overlayLayersObj) {
         searchLayerSelect.innerHTML = '<option value="">-- اختر الخدمة أو العقار --</option>';
         // 🆕 مطابقة دقيقة (Exact) وليس substring، لنفس سبب مشكلة "حواجز الطرق" بملف search.js
         const excludedTitles = ['المدن', 'المحافظات', 'الطرق', 'المناطق'];
-        const excludedKeys = ['cityLayer', 'governorateLayer', 'roadsLayer', 'locationLayer'];
+                // 🆕 استبعاد serviceAllLayer من القائمة العامة، سنعرض كل نوع خدمة كخيار مستقل تحتها
+        const excludedKeys = ['cityLayer', 'governorateLayer', 'roadsLayer', 'locationLayer', 'serviceAllLayer'];
 
         Object.keys(overlayLayersObj).forEach(key => {
             const lyr = overlayLayersObj[key];
             const title = lyr.get('title') || '';
-            // 🆕 التحقق من الاستثناءات العامة عبر الدالة الموحّدة (shared-utils.js)
             const isExcluded = excludedTitles.includes(title) || excludedKeys.includes(key) || window.isLayerGloballyExcluded(key);
 
-            if (title && !key.toLowerCase().includes('search') && !isExcluded) { // تم دمج شرط الاستثناءات
+            if (title && !key.toLowerCase().includes('search') && !isExcluded) {
                 const option = document.createElement('option');
                 option.value = key;
                 option.textContent = title;
                 searchLayerSelect.appendChild(option);
             }
         });
+
+        // 🆕 كل نوع خدمة فرعي (discriminator) يُعرض كخيار مستقل بنفس الاسم العربي القديم
+        if (window.serviceSubtypes) {
+            Object.keys(window.serviceSubtypes).forEach(discriminator => {
+                if (window.isLayerGloballyExcluded(discriminator)) return;
+                const info = window.serviceSubtypes[discriminator];
+                const option = document.createElement('option');
+                option.value = discriminator + 'Layer';
+                option.textContent = info.title;
+                searchLayerSelect.appendChild(option);
+            });
+        }
     };
 
     getMyLocationBtn?.addEventListener('click', () => {
@@ -199,7 +211,10 @@ function initializeLocationSearch(map, overlayLayersObj) {
         if (!selectedLayerKey) return alert("الرجاء اختيار نوع العقار أو الخدمة.");
 
         // 🆕 فحص حد الطلبات وتسجيله قبل تنفيذ البحث المكاني - يمنع التنفيذ فوراً عند التجاوز
-        const layerTitle = overlayLayersObj[selectedLayerKey]?.get('title') || selectedLayerKey;
+        const discriminatorForTitle = selectedLayerKey.replace(/Layer$/, '');
+        const layerTitle = overlayLayersObj[selectedLayerKey]?.get('title')
+            || (window.serviceSubtypes && window.serviceSubtypes[discriminatorForTitle]?.title)
+            || selectedLayerKey;
         if (window.checkAndLogMapEvent) {
             const quotaCheck = await window.checkAndLogMapEvent('location_search', null, layerTitle);
             if (!quotaCheck.allowed) return;
@@ -272,9 +287,9 @@ function initializeLocationSearch(map, overlayLayersObj) {
             searchResultsHighlightSource?.clear();
             const nearby = findMatchingNearby(features);
 
-                        if (nearby.length > 0) {
+                if (nearby.length > 0) {
                 searchResultsHighlightSource?.addFeatures(nearby);
-                displayResults(nearby, overlayLayersObj[selectedLayerKey]);
+                displayResults(nearby, window.getResolvedMapLayer(overlayLayersObj, selectedLayerKey));
                 if (window.setResultsShareState) {
                     window.setResultsShareState({
                         type: 'location',
@@ -293,9 +308,8 @@ function initializeLocationSearch(map, overlayLayersObj) {
             alert("حدث خطأ أثناء البحث. سيتم استخدام البحث المحلي.");
 
             // Fallback للبحث المحلي
-            const layer = overlayLayersObj[selectedLayerKey];
-            const source = layer.getSource();
-            const features = source.getFeatures();
+            const layer = window.getResolvedMapLayer(overlayLayersObj, selectedLayerKey);
+            const features = window.getLocalFeaturesForLayerKey(overlayLayersObj, selectedLayerKey);
 
             searchResultsHighlightSource?.clear();
             const nearby = findMatchingNearby(features);

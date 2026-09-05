@@ -331,10 +331,19 @@ setTimeout(() => {
     const urlParams = new URLSearchParams(window.location.search);
     const xParam = urlParams.get('x');
     const yParam = urlParams.get('y');
+    const resultsShareParam = urlParams.get('resultsShare'); // 🆕
 
     if (xParam && yParam) {
         document.getElementById('map').style.opacity = '1'; // إظهار الخريطة
         map.getView().animate({ center: [parseFloat(xParam), parseFloat(yParam)], zoom: 19, duration: 1000 });
+        return;
+    }
+
+    // 🆕 رابط نتيجة بحث مُشارك: أظهر الخريطة مباشرة بدون شاشة اختيار الموقع
+    // الافتراضي/GPS، لأن results-share.js هو من سيتولى تنفيذ البحث وتحديد
+    // موقع التركيز تلقائياً حسب نتيجة البحث المُعاد تشغيلها
+    if (resultsShareParam) {
+        document.getElementById('map').style.opacity = '1';
         return;
     }
 

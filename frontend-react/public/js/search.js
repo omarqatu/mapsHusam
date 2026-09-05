@@ -137,8 +137,8 @@
     let fieldSelect, operatorSelect, valueInputContainer, layerSelect, conditionsContainer;
     let allFieldValues = {}; // تخزين جميع القيم لكل حقل للفلترة المحلية
 
-    async function getUniqueValues(layerKey, fieldId) {
-    const layer = currentOverlayLayers[layerKey];
+        async function getUniqueValues(layerKey, fieldId) {
+    const layer = window.getResolvedMapLayer(currentOverlayLayers, layerKey);
     if (!layer) return [];
 
     const isRealEstate = ['rentLayer', 'saleLayer', 'landLayer'].includes(layerKey);
@@ -169,7 +169,7 @@
         console.error('Error fetching unique values from PostgreSQL:', err);
     }
 
-    const localValues = getUniqueValuesLocal(layer, fieldId);
+        const localValues = getUniqueValuesLocal(layer, fieldId, layerKey);
     updateValueUIWithData(localValues);
     return localValues;
 }
@@ -181,9 +181,13 @@
         return null;
     }
 
-    function getUniqueValuesLocal(layer, fieldId) {
+        function getUniqueValuesLocal(layer, fieldId, layerKey) {
         const source = layer.getSource();
-        const features = source ? source.getFeatures() : [];
+        let features = source ? source.getFeatures() : [];
+        if (layerKey && !currentOverlayLayers[layerKey]) {
+            const discriminator = layerKey.replace(/Layer$/, '');
+            features = features.filter(f => f.get('discriminator') === discriminator);
+        }
         const values = features.map(f => {
             const val = f.get(fieldId);
             return val != null ? String(val).trim() : null;
@@ -391,7 +395,7 @@
             return rB - rA;
         });
 
-        const layer = currentOverlayLayers[layerKey];
+        const layer = window.getResolvedMapLayer(currentOverlayLayers, layerKey);
         const extent = ol.extent.createEmpty();
 
         features.forEach((f, i) => {
@@ -444,17 +448,25 @@
             // 🆕 مطابقة دقيقة (Exact) وليس substring، لأن "حواجز الطرق" كانت تُستبعد
             // بالخطأ بسبب احتوائها على كلمة "الطرق" المخصصة لاستبعاد طبقة roadsLayer فقط
             const excludedTitles = ['المدن', 'المحافظات', 'الطرق', 'المناطق'];
-            const excludedKeys = ['cityLayer', 'governorateLayer', 'roadsLayer', 'locationLayer'];
+            const excludedKeys = ['cityLayer', 'governorateLayer', 'roadsLayer', 'locationLayer', 'serviceAllLayer'];
 
             Object.keys(overlayLayersObj).forEach(key => {
                 const lyr = overlayLayersObj[key];
                 const title = lyr?.get('title') || '';
 
-                // 🆕 التحقق من الاستثناءات العامة عبر الدالة الموحّدة (shared-utils.js)
                 if (title && !key.toLowerCase().includes('search') && !excludedTitles.includes(title) && !excludedKeys.includes(key) && !window.isLayerGloballyExcluded(key)) {
                     layerSelect.innerHTML += `<option value="${key}">${title}</option>`;
                 }
             });
+
+            // 🆕 كل نوع خدمة فرعي (discriminator) كخيار مستقل بنفس الاسم العربي القديم
+            if (window.serviceSubtypes) {
+                Object.keys(window.serviceSubtypes).forEach(discriminator => {
+                    if (window.isLayerGloballyExcluded(discriminator)) return;
+                    const info = window.serviceSubtypes[discriminator];
+                    layerSelect.innerHTML += `<option value="${discriminator}Layer">${info.title}</option>`;
+                });
+            }
                         layerSelect.onchange = () => {
                 const layerKey = layerSelect.value;
                 if (!layerKey) {
@@ -576,9 +588,8 @@
                 }
 
                 // الفallback للبحث المحلي
-                const source = currentOverlayLayers[layerKey]?.getSource();
-                if (!source) return;
-                let matched = source.getFeatures();
+                let matched = window.getLocalFeaturesForLayerKey(currentOverlayLayers, layerKey);
+                if (!matched.length) return;
                 matched = matched.filter(f => {
                     return finalConditions.every(c => {
                         const raw = f.get(c.field);
@@ -663,7 +674,7 @@
 
         // 🆕 إعادة تنفيذ بحث "ذكي" تمت مشاركته عبر رابط (نسخ رابط النتائج)
         window.replayAttributeSearch = async function (state) {
-            if (!state || !state.layerKey || !currentOverlayLayers || !currentOverlayLayers[state.layerKey]) return false;
+            if (!state || !state.layerKey || !currentOverlayLayers || !window.getResolvedMapLayer(currentOverlayLayers, state.layerKey)) return false;
             try {
                 layerSelect.value = state.layerKey;
                 layerSelect.dispatchEvent(new Event('change'));

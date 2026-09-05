@@ -254,13 +254,23 @@ function initializePopup(map) {
     const realEstateLayerNames = ['شقق الإيجار', 'شقق للبيع', 'الأراضي للبيع'];
     const areaLayerName = 'المناطق';
 
-    function isLayerAllowed(layer) {
+        function isLayerAllowed(layer, feature) {
         if (!layer) return false;
-        const layerTitle = layer.get('title');
         const layerKey = Object.keys(window.appLayers).find(key => window.appLayers[key] === layer);
+
+        // 🆕 طبقة الخدمات الموحّدة: التحقق يتم على مستوى المعلم نفسه عبر
+        // discriminator، وليس على عنوان الطبقة العام (الذي أصبح "كل الخدمات")
+        if (layerKey === 'serviceAllLayer') {
+            const discriminator = feature ? feature.get('discriminator') : null;
+            if (!discriminator) return false;
+            if (MAP_CONFIG.globalExclusions && MAP_CONFIG.globalExclusions.includes(discriminator)) return false;
+            return true;
+        }
+
+        const layerTitle = layer.get('title');
         const layerBaseName = layerKey ? layerKey.replace('Layer', '') : null;
 
-        return (serviceLayerNames.includes(layerTitle) || realEstateLayerNames.includes(layerTitle) || layerTitle === areaLayerName) && (!MAP_CONFIG.globalExclusions || !MAP_CONFIG.globalExclusions.includes(layerBaseName));
+        return (realEstateLayerNames.includes(layerTitle) || layerTitle === areaLayerName) && (!MAP_CONFIG.globalExclusions || !MAP_CONFIG.globalExclusions.includes(layerBaseName));
     }
 
     function cleanUrl(rawUrl) {
@@ -610,16 +620,24 @@ function initializePopup(map) {
         return symbols[code] || '';
     }
 
-    window.generateFeatureHtml = function(feature, layer) {
+        window.generateFeatureHtml = function(feature, layer) {
         const props = feature.getProperties();
-        const layerTitle = layer ? (layer.get('title') || 'معلم') : 'معلم';
-        // استخدام الاسم الإنجليزي من layer إذا كان موجوداً، وإلا استخدام الاسم العربي
-        const layerEnglishName = layer ? (layer.get('englishName') || layer.get('name') || arabicToEnglishLayerMap[layerTitle] || layerTitle) : layerTitle;
-        
+
+        // 🆕 تحديد اسم الطبقة الحقيقي: للخدمات (بعد الدمج) من discriminator
+        // المعلم نفسه عبر قاموس window.serviceSubtypes، وللعقارات/المناطق
+        // من عنوان الطبقة كالمعتاد (لم يتغيروا)
+        const rawLayerTitle = layer ? (layer.get('title') || 'معلم') : 'معلم';
+        const discriminator = feature.get('discriminator') || null;
+        const isServiceAllLayer = !!discriminator && window.serviceSubtypes && window.serviceSubtypes[discriminator];
+
+        const layerTitle = isServiceAllLayer ? window.serviceSubtypes[discriminator].title : rawLayerTitle;
+        // 🆕 الاسم الإنجليزي أصبح ببساطة قيمة discriminator نفسها لكل الخدمات
+        const layerEnglishName = isServiceAllLayer ? discriminator : (layer ? (layer.get('name') || arabicToEnglishLayerMap[layerTitle] || layerTitle) : layerTitle);
+
         const isRealEstate = realEstateLayerNames.includes(layerTitle);
-        const isService = serviceLayerNames.includes(layerTitle);
+        const isService = isServiceAllLayer;
         const isAreaLayer = layerTitle === areaLayerName; 
-        const isRoadBarriers = layerTitle === 'حواجز الطرق';
+        const isRoadBarriers = discriminator === 'road_barriers';
 
         let displayFeatureId = null;
         if (isRealEstate) {
@@ -718,16 +736,10 @@ function initializePopup(map) {
                 const providerName = props.name || (isRealEstate ? "المعلن" : "مزود الخدمة");
 
                 // 🆕 [عرض ذكي حسب ارتباط الخدمة بحساب مزود فعلي]: العقارات تبقى
-                // دائماً اتصال+واتساب. أما الخدمات: نتحقق أولاً هل هذا المعلم
-                // مرتبط فعلياً بحساب مزود خدمة مُفعّل (عبر public.users) - إن كان
-                // مرتبطاً نعرض "طلب الخدمة" (نظام الطلب والدردشة الحقيقي)، وإلا
-                // نعرض اتصال+واتساب مباشرة تماماً مثل العقارات، لأنه لا يوجد
-                // حساب حقيقي يستقبل طلب الدردشة لهذا المعلم بالذات.
+                
                 let layerDbName = layerEnglishName || '';
                 let isLinkedProvider = false;
                 if (isService) {
-                    const layerKeyForRequest = Object.keys(window.overlayLayersObj || {}).find(k => window.overlayLayersObj[k] === layer);
-                    layerDbName = layerKeyForRequest ? layerKeyForRequest.replace(/Layer$/i, '') : layerEnglishName || '';
                     isLinkedProvider = typeof window.isFeatureLinkedToProvider === 'function' && window.isFeatureLinkedToProvider(layerDbName, displayFeatureId);
                 }
 
@@ -830,18 +842,23 @@ function initializePopup(map) {
         return false;
     };
 
-    map.on('singleclick', function(event) {
+        map.on('singleclick', function(event) {
         if (!isPopupEnabled) return;
         let featureFound = false;
         map.forEachFeatureAtPixel(event.pixel, function(feature, layer) {
-            if (isLayerAllowed(layer)) {
+            if (isLayerAllowed(layer, feature)) {
                 featureFound = true;
                 window.currentPopupCoordinate = event.coordinate;
                 content.innerHTML = window.generateFeatureHtml(feature, layer);
                 overlay.setPosition(event.coordinate);
                 isPopupPinned = true;
 
-                const layerTitle = layer.get('title') || 'معلم';
+                // 🆕 اسم الطبقة الحقيقي للتسجيل: من discriminator المعلم عبر
+                // serviceSubtypes للخدمات، أو عنوان الطبقة العادي للعقارات/المناطق
+                const featureDiscriminator = feature.get('discriminator');
+                const layerTitle = (featureDiscriminator && window.serviceSubtypes && window.serviceSubtypes[featureDiscriminator])
+                    ? window.serviceSubtypes[featureDiscriminator].title
+                    : (layer.get('title') || 'معلم');
                 const props = feature.getProperties();
                 const providerName = props.name || (props.location_name || 'غير معروف');
                 logMapEvent('map_click', providerName, layerTitle);
@@ -852,12 +869,12 @@ function initializePopup(map) {
         if (!featureFound) window.hideFeaturePopup();
     });
 
-    map.on('pointermove', function(event) {
+        map.on('pointermove', function(event) {
         if (!isPopupEnabled || isPopupPinned || event.dragging) return;
         const pixel = map.getEventPixel(event.originalEvent);
         let featureFound = false;
         map.forEachFeatureAtPixel(pixel, function(feature, layer) {
-            if (isLayerAllowed(layer)) {
+            if (isLayerAllowed(layer, feature)) {
                 featureFound = true;
                 window.currentPopupCoordinate = event.coordinate;
                 content.innerHTML = window.generateFeatureHtml(feature, layer);

@@ -119,19 +119,56 @@ window.fetchGroupWFS = async function(groupKey, term) {
     if (!config) return [];
 
     const workspace = config.workspace;
-    const layers = config.layers;
     const unifiedFilter = buildUnifiedCQLFilter(term);
-
-    // البحث في جميع الطبقات في المجموعة
     const allFeatures = [];
 
+    // 🆕 [تحسين أداء أساسي بعد الدمج]: مجموعة الخدمات أصبحت طلباً واحداً فقط
+    // (layer=service_all بدون discriminator) بدل 66 طلباً منفصلاً كما كان سابقاً
+    if (groupKey === 'services') {
+        try {
+            const baseUrl = window.MAP_CONFIG?.server?.proxyUrl || (window.location.origin + "/");
+            const params = new URLSearchParams({
+                layer: 'service_all',
+                workspace: workspace,
+                field: 'search_tags',
+                operator: 'contains',
+                value: term
+            });
+
+            const response = await fetch(`${baseUrl}api/search-features?${params.toString()}`);
+            const data = await response.json();
+
+            if (data && data.features) {
+                data.features.forEach(f => {
+                    const discriminator = f.properties.discriminator;
+                    if (!discriminator) return;
+                    allFeatures.push({
+                        ...f,
+                        customTitle: layerAliases[discriminator] || discriminator,
+                        layerId: discriminator,
+                        workspace: workspace
+                    });
+                });
+            }
+        } catch (err) {
+            // تجاهل فشل الطلب الموحّد للخدمات
+        }
+
+        allFeatures.sort((a, b) => {
+            const ratingA = parseFloat(a.properties?.rating) || 0;
+            const ratingB = parseFloat(b.properties?.rating) || 0;
+            return ratingB - ratingA;
+        });
+        return allFeatures;
+    }
+
+    // العقارات فقط (3 طبقات مستقلة كما كانت دائماً - لم تُدمج)
+    const layers = config.layers;
+
     for (const layer of layers) {
-        // الحصول على الاسم العربي للطبقة من serviceTranslations
         const layerKey = layer.replace('Layer', '').toLowerCase();
         const layerNameAr = window.serviceTranslations && window.serviceTranslations[layerKey] ? window.serviceTranslations[layerKey].name : null;
 
-        // استخدام endpoint السيرفر للبحث (يدعم الآن OR بين كلمات الجملة وأعمدة
-        // search_tags/des/name بشكل مركزي من داخل السيرفر نفسه)
         try {
             const baseUrl = window.MAP_CONFIG?.server?.proxyUrl || (window.location.origin + "/");
             const params = new URLSearchParams({
@@ -161,12 +198,9 @@ window.fetchGroupWFS = async function(groupKey, term) {
                 });
                 allFeatures.push(...features);
             }
-        } catch (err) {
-            // تجاهل خطأ طبقة واحدة ومتابعة باقي الطبقات
-        }
+        } catch (err) {}
     }
 
-    // Fallback للبحث المباشر من GeoServer إذا لم توجد نتائج
     if (allFeatures.length === 0) {
         const typeNames = layers.map(l => `${workspace}:${l}`).join(',');
 
@@ -199,12 +233,9 @@ window.fetchGroupWFS = async function(groupKey, term) {
                     allFeatures.push(...features);
                 }
             }
-        } catch (fallbackErr) {
-            // تجاهل فشل المسار الاحتياطي
-        }
+        } catch (fallbackErr) {}
     }
 
-    // ترتيب النتائج حسب rating تنازلياً
     allFeatures.sort((a, b) => {
         const ratingA = parseFloat(a.properties?.rating) || 0;
         const ratingB = parseFloat(b.properties?.rating) || 0;

@@ -236,17 +236,39 @@ window.isLayerGloballyExcluded = function (layerIdentifier) {
         if (realEstateAliasMap[internalKey] === raw) candidates.add(internalKey);
     });
 
-    for (const candidate of candidates) {
+        for (const candidate of candidates) {
         if (exclusions.includes(candidate)) return true;
     }
     return false;
 };
 
 // ==========================================================================
-// 9) [نسخ رابط نتائج البحث]: حفظ آخر عملية بحث ناجحة من أي من أدوات البحث
-// الثلاث (البحث الذكي، البحث السريع، البحث من خلال الموقع) بشكل موحّد لبناء
-// رابط مشاركة يُعيد تنفيذ نفس البحث تلقائياً عند فتحه من متصفح/جهاز آخر.
+// 8-ب) [دمج طبقات الخدمات]: دوال مساعدة موحّدة تحل مشكلة أن كل الخدمات أصبحت
+// تشير لنفس كائن OpenLayers الواحد overlayLayersObj['serviceAllLayer']، بدل
+// كائن مستقل لكل خدمة كما كان سابقاً.
 // ==========================================================================
+
+// إرجاع كائن الطبقة الحقيقي بالخريطة: للعقارات نفس الطبقة كما هي (لم تتغيّر)،
+// ولأي مفتاح خدمة (مثل 'electricianLayer') يرجع دائماً serviceAllLayer الموحّدة
+window.getResolvedMapLayer = function (overlayLayersObj, selectedLayerKey) {
+    if (!overlayLayersObj || !selectedLayerKey) return null;
+    return overlayLayersObj[selectedLayerKey] || overlayLayersObj['serviceAllLayer'] || null;
+};
+
+// إرجاع فقط معالم الخدمة/العقار المطلوبة من مصدر الطبقة المحلي (المحمّل أصلاً
+// بالمتصفح)، مع فلترة إضافية بحسب discriminator عند التعامل مع طبقة الخدمات
+// الموحّدة. تُستخدم فقط كحل احتياطي (fallback) عند تعذّر الاتصال بالسيرفر.
+window.getLocalFeaturesForLayerKey = function (overlayLayersObj, selectedLayerKey) {
+    const layer = window.getResolvedMapLayer(overlayLayersObj, selectedLayerKey);
+    if (!layer) return [];
+    const allFeatures = layer.getSource().getFeatures();
+    if (overlayLayersObj[selectedLayerKey]) return allFeatures; // طبقة حقيقية مستقلة (عقار)
+    const discriminator = selectedLayerKey.replace(/Layer$/, '');
+    return allFeatures.filter(f => f.get('discriminator') === discriminator);
+};
+
+// ==========================================================================
+// 9) [نسخ رابط نتائج البحث]:
 window.__lastResultsShareState = null;
 
 window.setResultsShareState = function (state) {
