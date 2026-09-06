@@ -292,7 +292,7 @@ const JSON_GROUPS = {
             { key: 'unit',  label: 'الوحدة',            placeholder: 'شيكل' }
         ]
     },
-    transport_intra_city: {
+        transport_intra_city: {
         title: 'النقل الداخلي',
         icon: 'fa-bus',
         fields: [
@@ -300,6 +300,16 @@ const JSON_GROUPS = {
             { key: 'label', label: 'الاسم المعروض',     placeholder: 'البيرة - قلنديا' },
             { key: 'value', label: 'القيمة (تُعرض فعلياً)', placeholder: '4.5' },
             { key: 'unit',  label: 'الوحدة',            placeholder: 'شيكل' }
+        ]
+    },
+    events: {
+        title: 'المناسبات والمواعيد القادمة',
+        icon: 'fa-calendar-alt',
+        fields: [
+            { key: 'id',    label: 'المعرف (ID)',   placeholder: 'event-1' },
+            { key: 'date',  label: 'التاريخ',        placeholder: '', type: 'date' },
+            { key: 'label', label: 'اسم المناسبة',   placeholder: 'عيد الفطر' },
+            { key: 'notes', label: 'ملاحظات',        placeholder: 'اختياري' }
         ]
     }
 };
@@ -448,12 +458,12 @@ function renderJsonGroupPanel(groupKey) {
 
     const fieldsHtml = meta.fields.map(f => `<th>${f.label}</th>`).join('');
 
-    const rowsHtml = state.items.map(item => `
+        const rowsHtml = state.items.map(item => `
         <tr data-uid="${item._uid}">
             <td style="cursor:grab; color:#999; width:30px;">⋮⋮</td>
             ${meta.fields.map(f => `
                 <td>
-                    <input type="text" data-field="${f.field || f.key}" placeholder="${f.placeholder || ''}"
+                    <input type="${f.type === 'date' ? 'date' : 'text'}" data-field="${f.key}" placeholder="${f.placeholder || ''}"
                            value="${(item[f.key] !== undefined && item[f.key] !== null) ? String(item[f.key]).replace(/"/g, '&quot;') : ''}">
                 </td>
             `).join('')}

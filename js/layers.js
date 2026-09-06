@@ -354,67 +354,86 @@ if (MAP_CONFIG && MAP_CONFIG.layers && MAP_CONFIG.layers.realestate) {
     });
 }
 
-// ج) توليد كافة طبقات الخدمات الـ 59 آلياً وحقنها في أعلى الخريطة (Z-Index: 30)
+// ج) 🆕 طبقة خدمات واحدة موحّدة (service_all) بدل الـ 66 طبقة المنفصلة سابقاً
+// التمييز بين نوع كل خدمة يتم فقط عبر قيمة عمود "discriminator" بكل معلم
+// (مثال: 'electrician', 'road_barriers', 'fuel_stations'...)
 if (MAP_CONFIG && MAP_CONFIG.globalExclusions) {
-    Object.keys(serviceTranslations).forEach(key => {
-        if (window.isLayerGloballyExcluded(key)) return;
 
-        const info = serviceTranslations[key];
-        
-        // إعداد الستايل مع تخصيص مقياس ظهور الليبل حسب نوع الطبقة
-        const sStyle = (f, r) => {
-            let currentIcon = info.icon;
-            let labelFieldName = 'name'; 
+    // 🆕 دالة الستايل الموحّدة: تقرأ discriminator من كل معلم وتقرر شكله
+    // (أيقونة، تسمية، مقياس الظهور) بنفس منطق الطبقات المنفصلة سابقاً تماماً
+    const serviceAllStyle = (f, r) => {
+        const discriminator = f.get('discriminator');
+        if (!discriminator) return null; // معلم بلا تصنيف - لا يُعرض
 
-            if (key === 'road_barriers') {
-                const rawStop = f.get('stop');
-                const statusInfo = window.getRoadBarrierStopInfo(rawStop);
-                currentIcon = statusInfo.icon; 
-                
-                const featureName = f.get('name') || '';
-                if (featureName) {
-                    f.set('display_label', `${featureName} (${statusInfo.label})`);
-                    labelFieldName = 'display_label';
-                } else {
-                    f.set('display_label', statusInfo.label);
-                    labelFieldName = 'display_label';
-                }
+        if (window.isLayerGloballyExcluded(discriminator)) return null;
+
+                const info = serviceTranslations[discriminator];
+        if (!info) return null; // discriminator غير معروف بالقاموس
+
+        // 🆕 فحص إخفاء/إظهار هذا النوع تحديداً من لوحة "ظهور/إخفاء الخدمات"
+        if (window.hiddenServiceTypes && window.hiddenServiceTypes.has(discriminator)) return null;
+
+        let currentIcon = info.icon;
+        let labelFieldName = 'name';
+
+        if (discriminator === 'road_barriers') {
+            const rawStop = f.get('stop');
+            const statusInfo = window.getRoadBarrierStopInfo(rawStop);
+            currentIcon = statusInfo.icon;
+
+            const featureName = f.get('name') || '';
+            if (featureName) {
+                f.set('display_label', `${featureName} (${statusInfo.label})`);
+            } else {
+                f.set('display_label', statusInfo.label);
             }
-
-            // تحديد مقياس الليبل: الحواجز والمحطات تأخذ رقماً أكبر (مثل 2) لتظهر من مسافة أبعد
-            let zoomThreshold = 0.7; // القيمة الافتراضية لباقي الخدمات
-            if (key === 'road_barriers' || key === 'fuel_stations') {
-                zoomThreshold = 8; // ظهور أسرع وأوضح عند تصغير الخريطة
-            }
-
-            return window.createStyle(f, r, { 
-                emoji: currentIcon, 
-                labelField: labelFieldName, 
-                zoomThresholdForLabel: zoomThreshold 
-            });
-        };
-
-        // 1. المجموعات الأولى: تظهر على طول الخريطة (بدون قيود زووم)
-        const alwaysVisibleLayers = [
-            'road_barriers', 'fuel_stations', 'job_vacancies'
-        ];
-
-        // 2. المجموعات الثانية: تظهر عند مقياس متوسط (5)
-        const mediumZoomLayers = [
-             'schools_kindergartens', 'city_landmarks'
-        ];
-
-        // 3. تحديد قيمة مقياس الظهور (maxResolution) حسب القائمة
-        let layerMaxRes = 1; 
-        
-        if (alwaysVisibleLayers.includes(key)) {
-            layerMaxRes = 5000; 
-        } else if (mediumZoomLayers.includes(key)) {
-            layerMaxRes = 5;    
+            labelFieldName = 'display_label';
         }
 
-        // تمرير القيمة المحسوبة للدالة
-        window.appLayers[key + 'Layer'] = createWFSLayer('services', key, info.name, sStyle, layerMaxRes, true, 30); 
+        // نفس تصنيف مستويات الظهور الثلاثة المستخدم سابقاً لكل طبقة على حدة
+        const alwaysVisibleLayers = ['road_barriers', 'fuel_stations', 'job_vacancies'];
+        const mediumZoomLayers = ['schools_kindergartens', 'city_landmarks'];
+
+        let zoomThreshold = 0.7; // عتبة ظهور التسمية (label) الافتراضية
+        if (alwaysVisibleLayers.includes(discriminator)) {
+            zoomThreshold = 8;
+        }
+
+        // 🆕 بما أن الطبقة أصبحت واحدة، التحكم بـ "متى يظهر المعلم نفسه" (وليس
+        // فقط تسميته) أصبح يتم هنا داخل الستايل، بمقارنة دقة العرض الحالية r
+        // بالحد المسموح لهذا النوع تحديداً (بدل الاعتماد على maxResolution
+        // منفصل لكل طبقة كما كان سابقاً)
+        let featureMaxRes = 1; // الافتراضي لباقي الخدمات
+        if (alwaysVisibleLayers.includes(discriminator)) featureMaxRes = 5000;
+        else if (mediumZoomLayers.includes(discriminator)) featureMaxRes = 5;
+
+        if (r > featureMaxRes) return null; // خارج نطاق الظهور المسموح لهذا النوع
+
+        return window.createStyle(f, r, {
+            emoji: currentIcon,
+            labelField: labelFieldName,
+            zoomThresholdForLabel: zoomThreshold
+        });
+    };
+
+        // 🆕 مجموعة الأنواع المخفية حالياً من قِبل المستخدم عبر لوحة إدارة الطبقات
+    window.hiddenServiceTypes = window.hiddenServiceTypes || new Set();
+
+    window.appLayers.serviceAllLayer = createWFSLayer(
+        'services', 'service_all', 'كل الخدمات', serviceAllStyle, 5000, true, 30
+    );
+
+    // 🆕 [سجل وصفي]: معلومات كل نوع خدمة (بدون إنشاء أي طبقة خريطة فعلية لها) -
+    // ستُستخدم بالخطوات القادمة (البحث، الفلترة، إدارة الطبقات) بدل الاعتماد
+    // على 66 كائن ol.layer.Vector منفصل كما كان سابقاً
+    window.serviceSubtypes = {};
+    Object.keys(serviceTranslations).forEach(key => {
+        if (window.isLayerGloballyExcluded(key)) return;
+        window.serviceSubtypes[key] = {
+            discriminator: key,
+            title: serviceTranslations[key].name,
+            icon: serviceTranslations[key].icon
+        };
     });
 }
 

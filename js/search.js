@@ -22,13 +22,14 @@
         return localStorage.getItem('map_user_guid');
     }
 
-    window.checkAndLogMapEvent = async function (eventType, provider, service) {
+        window.checkAndLogMapEvent = async function (eventType, provider, service) {
         const userId = getSharedUserIdForQuota();
+        const source = window.location.pathname.includes('no-map-search') ? 'quick_search' : 'map'; // 🆕
         try {
             const res = await fetch(window.location.origin + '/api/log-map-event', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ user_id: userId, event_type: eventType, provider: provider || null, service: service || null })
+                body: JSON.stringify({ user_id: userId, event_type: eventType, provider: provider || null, service: service || null, source })
             });
 
             if (res.status === 429) {
@@ -136,8 +137,8 @@
     let fieldSelect, operatorSelect, valueInputContainer, layerSelect, conditionsContainer;
     let allFieldValues = {}; // تخزين جميع القيم لكل حقل للفلترة المحلية
 
-    async function getUniqueValues(layerKey, fieldId) {
-    const layer = currentOverlayLayers[layerKey];
+        async function getUniqueValues(layerKey, fieldId) {
+    const layer = window.getResolvedMapLayer(currentOverlayLayers, layerKey);
     if (!layer) return [];
 
     const isRealEstate = ['rentLayer', 'saleLayer', 'landLayer'].includes(layerKey);
@@ -168,7 +169,7 @@
         console.error('Error fetching unique values from PostgreSQL:', err);
     }
 
-    const localValues = getUniqueValuesLocal(layer, fieldId);
+        const localValues = getUniqueValuesLocal(layer, fieldId, layerKey);
     updateValueUIWithData(localValues);
     return localValues;
 }
@@ -180,9 +181,13 @@
         return null;
     }
 
-    function getUniqueValuesLocal(layer, fieldId) {
+        function getUniqueValuesLocal(layer, fieldId, layerKey) {
         const source = layer.getSource();
-        const features = source ? source.getFeatures() : [];
+        let features = source ? source.getFeatures() : [];
+        if (layerKey && !currentOverlayLayers[layerKey]) {
+            const discriminator = layerKey.replace(/Layer$/, '');
+            features = features.filter(f => f.get('discriminator') === discriminator);
+        }
         const values = features.map(f => {
             const val = f.get(fieldId);
             return val != null ? String(val).trim() : null;
@@ -359,7 +364,7 @@
         });
     }
 
-    function displaySearchResults(features, layerKey) {
+        function displaySearchResults(features, layerKey, conditionsUsed) {
         const tbody = document.querySelector('#results-table tbody');
         const countSpan = document.getElementById('results-count-span');
         const resultsPanel = document.getElementById('results-panel');
@@ -378,6 +383,11 @@
             return;
         }
 
+        // 🆕 حفظ حالة هذا البحث لبناء رابط مشاركة (زر "نسخ رابط النتائج")
+        if (window.setResultsShareState) {
+            window.setResultsShareState({ type: 'attribute', layerKey, conditions: conditionsUsed || [] });
+        }
+
         // ترتيب النتائج بناءً على التقييم rating تنازلياً
         features.sort((a, b) => {
             const rA = parseFloat(a.get('rating')) || 0;
@@ -385,7 +395,7 @@
             return rB - rA;
         });
 
-        const layer = currentOverlayLayers[layerKey];
+        const layer = window.getResolvedMapLayer(currentOverlayLayers, layerKey);
         const extent = ol.extent.createEmpty();
 
         features.forEach((f, i) => {
@@ -438,17 +448,25 @@
             // 🆕 مطابقة دقيقة (Exact) وليس substring، لأن "حواجز الطرق" كانت تُستبعد
             // بالخطأ بسبب احتوائها على كلمة "الطرق" المخصصة لاستبعاد طبقة roadsLayer فقط
             const excludedTitles = ['المدن', 'المحافظات', 'الطرق', 'المناطق'];
-            const excludedKeys = ['cityLayer', 'governorateLayer', 'roadsLayer', 'locationLayer'];
+            const excludedKeys = ['cityLayer', 'governorateLayer', 'roadsLayer', 'locationLayer', 'serviceAllLayer'];
 
             Object.keys(overlayLayersObj).forEach(key => {
                 const lyr = overlayLayersObj[key];
                 const title = lyr?.get('title') || '';
 
-                // 🆕 التحقق من الاستثناءات العامة عبر الدالة الموحّدة (shared-utils.js)
                 if (title && !key.toLowerCase().includes('search') && !excludedTitles.includes(title) && !excludedKeys.includes(key) && !window.isLayerGloballyExcluded(key)) {
                     layerSelect.innerHTML += `<option value="${key}">${title}</option>`;
                 }
             });
+
+            // 🆕 كل نوع خدمة فرعي (discriminator) كخيار مستقل بنفس الاسم العربي القديم
+            if (window.serviceSubtypes) {
+                Object.keys(window.serviceSubtypes).forEach(discriminator => {
+                    if (window.isLayerGloballyExcluded(discriminator)) return;
+                    const info = window.serviceSubtypes[discriminator];
+                    layerSelect.innerHTML += `<option value="${discriminator}Layer">${info.title}</option>`;
+                });
+            }
                         layerSelect.onchange = () => {
                 const layerKey = layerSelect.value;
                 if (!layerKey) {
@@ -560,7 +578,7 @@
                 const format = new ol.format.GeoJSON();
                 const features = data.features.map(f => format.readFeature(f));
 
-                displaySearchResults(features, layerKey);
+                displaySearchResults(features, layerKey, finalConditions);
             } catch (error) {
                 console.error("خطأ في البحث:", error);
                 if (window.toast) {
@@ -570,9 +588,8 @@
                 }
 
                 // الفallback للبحث المحلي
-                const source = currentOverlayLayers[layerKey]?.getSource();
-                if (!source) return;
-                let matched = source.getFeatures();
+                let matched = window.getLocalFeaturesForLayerKey(currentOverlayLayers, layerKey);
+                if (!matched.length) return;
                 matched = matched.filter(f => {
                     return finalConditions.every(c => {
                         const raw = f.get(c.field);
@@ -586,7 +603,7 @@
                         return false;
                     });
                 });
-                displaySearchResults(matched, layerKey);
+                displaySearchResults(matched, layerKey, finalConditions);
             }
         };
 
@@ -653,6 +670,41 @@
             newWin.print();
         });
 
-        if (layerSelect?.options.length > 0) layerSelect.dispatchEvent(new Event('change'));
+                if (layerSelect?.options.length > 0) layerSelect.dispatchEvent(new Event('change'));
+
+        // 🆕 إعادة تنفيذ بحث "ذكي" تمت مشاركته عبر رابط (نسخ رابط النتائج)
+        window.replayAttributeSearch = async function (state) {
+            if (!state || !state.layerKey || !currentOverlayLayers || !window.getResolvedMapLayer(currentOverlayLayers, state.layerKey)) return false;
+            try {
+                layerSelect.value = state.layerKey;
+                layerSelect.dispatchEvent(new Event('change'));
+
+                const isRealEstate = ['rentLayer', 'saleLayer', 'landLayer'].includes(state.layerKey);
+                const workspace = isRealEstate ? 'realestate' : 'services';
+                const layerNameMap = { 'rentLayer': 'ApartRent', 'saleLayer': 'ApartSale', 'landLayer': 'LandSale' };
+                const layerName = layerNameMap[state.layerKey] || state.layerKey.replace('Layer', '');
+
+                const baseUrl = window.MAP_CONFIG?.server?.proxyUrl || (window.location.origin + "/");
+                const params = new URLSearchParams({ layer: layerName, workspace: workspace });
+                (state.conditions || []).forEach((c, index) => {
+                    params.append(`field_${index}`, c.field);
+                    params.append(`operator_${index}`, c.operator);
+                    params.append(`value_${index}`, c.value);
+                });
+                if ((state.conditions || []).length > 0) params.append('conditions_count', state.conditions.length);
+
+                const response = await fetch(`${baseUrl}api/search-features?${params.toString()}`);
+                const data = await response.json();
+                if (!data.features || data.features.length === 0) return false;
+
+                const format = new ol.format.GeoJSON();
+                const features = data.features.map(f => format.readFeature(f));
+                displaySearchResults(features, state.layerKey, state.conditions || []);
+                return true;
+            } catch (err) {
+                console.warn('تعذر إعادة تنفيذ البحث الذكي المشترك:', err.message);
+                return false;
+            }
+        };
     };
 })();

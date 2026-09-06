@@ -382,7 +382,7 @@ if (typeof window.sanitize !== 'function') {
 
 if (typeof window.trackRequest !== 'function') {
     window.trackRequest = function(provider, service) {
-        const payload = JSON.stringify({ user_id: window.getRealUserId(), provider, service });
+        const payload = JSON.stringify({ user_id: window.getRealUserId(), provider, service, source: 'quick_search' }); // 🆕
         const baseUrl = window.MAP_CONFIG?.server?.proxyUrl || (window.location.origin + "/");
         const url = baseUrl + 'save-stat';
         if (navigator.sendBeacon) {
@@ -571,8 +571,13 @@ if (typeof window.renderMarketSearchResults !== 'function') {
             card.className = 'nms-result-card';
             card.style.setProperty('--i', Math.min(index, 20));
 
+            // 🆕 رقم معرف المعلم (نفس طريقة عرضه في بوب أب الخريطة: "التصنيف (رقم: X)")
+            const marketDisplayFeatureId = isRealEstate
+                ? ((p.fid !== undefined && p.fid !== null && p.fid !== '') ? p.fid : null)
+                : ((p.id !== undefined && p.id !== null && p.id !== '') ? p.id : null);
+
             let html = '';
-            html += `<div style="margin-bottom:8px;"><span style="background: #e8f0fe; color: #1a73e8; font-size: 11px; padding: 3px 8px; border-radius: 4px; font-weight: bold;">📌 ${window.sanitize(layerTitle)}</span></div>`;
+            html += `<div style="margin-bottom:8px;"><span style="background: #e8f0fe; color: #1a73e8; font-size: 11px; padding: 3px 8px; border-radius: 4px; font-weight: bold;">📌 ${window.sanitize(layerTitle)}</span>${marketDisplayFeatureId !== null ? ` <span style="color:#999; font-size:11px;">(رقم: ${window.sanitize(String(marketDisplayFeatureId))})</span>` : ''}</div>`;
 
             if (!isRealEstate) html += window.getStatusBadge(p.auto_status, p.work_hours);
             if (p.name) html += `<div class="nms-r-name"><i class="fas fa-user"></i> ${window.sanitize(p.name)}</div>`;

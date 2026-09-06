@@ -51,12 +51,14 @@
         return n.toLocaleString();
     }
 
-    function buildStatsHTML(stats) {
+        function buildStatsHTML(stats) {
         const usersTotal = stats.usersTotal ?? 0;
         const usersAdmin = stats.usersAdmin ?? 0;
         const usersUser = stats.usersUser ?? 0;
         const usersProvider = stats.usersProvider ?? 0;
-        const views = stats.viewsTotal ?? 0;
+        const viewsMap = stats.viewsMap ?? 0;
+        const viewsQuickSearch = stats.viewsQuickSearch ?? 0;
+        const viewsTotal = stats.viewsTotal ?? 0;
         const services = stats.servicesCount ?? 0;
         const features = stats.featuresCount ?? 0;
 
@@ -73,11 +75,25 @@
                     </div>
                 </div>
             </div>
-            <div class="pstats-card" data-stat="views">
+            <div class="pstats-card" data-stat="views-map">
+                <div class="pstats-icon"><i class="fas fa-map-marked-alt"></i></div>
+                <div class="pstats-info">
+                    <div class="pstats-value">${formatNum(viewsMap)}</div>
+                    <div class="pstats-label">عدد زيارات الخريطة</div>
+                </div>
+            </div>
+            <div class="pstats-card" data-stat="views-quick">
+                <div class="pstats-icon"><i class="fas fa-search-location"></i></div>
+                <div class="pstats-info">
+                    <div class="pstats-value">${formatNum(viewsQuickSearch)}</div>
+                    <div class="pstats-label">عدد زيارات البحث السريع</div>
+                </div>
+            </div>
+            <div class="pstats-card" data-stat="views-total">
                 <div class="pstats-icon"><i class="fas fa-eye"></i></div>
                 <div class="pstats-info">
-                    <div class="pstats-value">${formatNum(views)}</div>
-                    <div class="pstats-label">عدد المشاهدات</div>
+                    <div class="pstats-value">${formatNum(viewsTotal)}</div>
+                    <div class="pstats-label">عدد زيارات كامل المنصة</div>
                 </div>
             </div>
             <div class="pstats-card" data-stat="services">

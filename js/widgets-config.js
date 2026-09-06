@@ -79,17 +79,29 @@ const WIDGETS_MANUAL_DATA = {
 // ============================================
 
 const WIDGETS_API_CONFIG = {
-    // حالة الطقس (معطل مؤقتاً بسبب خطأ 401)
+        // حالة الطقس - Open-Meteo (مجاني بالكامل وبدون مفتاح API، دقيق جداً لدرجة الحرارة)
     weather: {
-        enabled: false,
-        url: 'https://api.openweathermap.org/data/2.5/weather',
-        updateInterval: 1800000 // 30 دقيقة
-    },
-    
-    // مواقيت الصلاة (API للقدس - Aladhan API)
-    prayer: {
         enabled: true,
-        url: 'https://api.aladhan.com/v1/timingsByCity?city=Jerusalem&country=Palestine&method=2',
+        updateInterval: 1800000, // 30 دقيقة
+        forecastDays: 3,
+        cities: {
+            ramallah:  { label: 'رام الله',  lat: 31.9038, lon: 35.2034 },
+            jerusalem: { label: 'القدس',     lat: 31.7683, lon: 35.2137 },
+            hebron:    { label: 'الخليل',    lat: 31.5326, lon: 35.0998 },
+            bethlehem: { label: 'بيت لحم',   lat: 31.7054, lon: 35.2024 },
+            jericho:   { label: 'أريحا',     lat: 31.8567, lon: 35.4436 },
+            nablus:    { label: 'نابلس',     lat: 32.2211, lon: 35.2544 },
+            jenin:     { label: 'جنين',      lat: 32.4611, lon: 35.3007 },
+            tulkarm:   { label: 'طولكرم',    lat: 32.3089, lon: 35.0286 },
+            tubas:     { label: 'طوباس',     lat: 32.3211, lon: 35.3689 },
+            salfit:    { label: 'سلفيت',     lat: 32.0836, lon: 35.1797 },
+            qalqilya:  { label: 'قلقيلية',   lat: 32.1894, lon: 34.9706 }
+        }
+    },
+    // مواقيت الصلاة (API للقدس - Aladhan API)
+            prayer: {
+        enabled: true,
+        url: 'https://api.aladhan.com/v1/timingsByCity?city=Jerusalem&country=Palestine&method=23&tune=0,7,14,28,42,38,0,47,0',
         updateInterval: 3600000 // ساعة واحدة
     },
     

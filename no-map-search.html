@@ -116,6 +116,14 @@
     </script>
 
     <meta charset="UTF-8">
+        <script>
+        // 🆕 منع المتصفح من استعادة موضع التمرير القديم عند عمل Refresh -
+        // نريد أن تبدأ الصفحة دائماً من الأعلى تماماً، تماماً كصفحة الخريطة
+        if ('scrollRestoration' in history) {
+            history.scrollRestoration = 'manual';
+        }
+        window.scrollTo(0, 0);
+    </script>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>البحث بدون خريطة - خريطة الخدمات الفلسطينية</title>
     <meta name="description" content="ابحث عن أي خدمة أو عقار في فلسطين بدون الحاجة لفتح الخريطة التفاعلية - أسرع وأخف على جميع الأجهزة">

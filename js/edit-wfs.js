@@ -12,7 +12,9 @@ async function sendWFS_T(feature, type) {
         : ['rentLayer', 'saleLayer'].includes(selectedLayerName);
 
     const workspace = isRealEstate ? 'realestate' : 'services';
-    const layer = overlayLayersObj[selectedLayerName];
+    // 🆕 العقارات لها طبقتها الحقيقية، وكل الخدمات (بعد الدمج) طبقتها الحقيقية
+    // الوحيدة صارت serviceAllLayer بغض النظر عن اسم selectedLayerName المعروض
+    const layer = isRealEstate ? overlayLayersObj[selectedLayerName] : overlayLayersObj['serviceAllLayer'];
     
     // ⚠️ روابط الـ Namespace URI المتطابقة مع إعدادات GeoServer حيث تعمل الطبقات الفعلية
     const namespaceUris = {
@@ -44,7 +46,7 @@ async function sendWFS_T(feature, type) {
     }
 
     // fallback للتأكد من عدم انقطاع التسمية للطبقات المحددة (شقق إيجار / شقق بيع)
-    if (!typeName) {
+        if (!typeName) {
         const layerNameMap = {
             'rentLayer': 'ApartRent',
             'saleLayer': 'ApartSale'
@@ -53,7 +55,8 @@ async function sendWFS_T(feature, type) {
             const directConfig = MAP_CONFIG.layers.realestate.find(l => l.id === selectedLayerName || l.name === selectedLayerName);
             if (directConfig) typeName = directConfig.name;
         }
-        typeName = typeName || layerNameMap[selectedLayerName] || selectedLayerName.replace('Layer', '').toLowerCase();
+        // 🆕 لكل الخدمات، اسم الجدول الحقيقي بالجيوسيرفر أصبح ثابتاً: service_all
+        typeName = typeName || layerNameMap[selectedLayerName] || (isRealEstate ? selectedLayerName.replace('Layer', '').toLowerCase() : 'service_all');
     }
 
     if (!layer) {
@@ -101,7 +104,7 @@ async function sendWFS_T(feature, type) {
         
         let allValuesMap = {};
 
-        // 1. معالجة وتجهيز قيم المدخلات اليدوية والافتراضية
+                // 1. معالجة وتجهيز قيم المدخلات اليدوية والافتراضية
         allowedPropsAdd.forEach(k => {
             let val = props[k];
             if (val === null || val === undefined || String(val).trim() === "") {
@@ -114,6 +117,11 @@ async function sendWFS_T(feature, type) {
             }
             allValuesMap[k] = val;
         });
+
+        // 🆕 وسم المعلم بنوعه الفرعي (discriminator) - إلزامي لكل خدمة بعد الدمج
+        if (!isRealEstate) {
+            allValuesMap['discriminator'] = props['discriminator'] || selectedLayerName.replace(/Layer$/, '');
+        }
 
         // 2. استخراج البيانات الإقليمية من طبقة Location تقاطع هندسي
         let regionalData = { gov_a: 'غير محدد', village_a: 'غير محدد', location: 'غير محدد' };
@@ -173,9 +181,18 @@ async function sendWFS_T(feature, type) {
         ];
 
             const servicesSchemaOrder = [
-            'geom', 'name', 'whatsapp', 'des', 'pic', 'video', 'rating', 'details_link_1', 'details_link_2', 'end_date', 'work_hours',
+            'geom', 'discriminator', 'name', 'whatsapp', 'phone', 'des', 'pic', 'video', 'rating', 'details_link_1', 'details_link_2', 'end_date', 'work_hours',
             'location_name', 'x_coord', 'y_coord', 'x_global', 'y_global', 'status', 'gov_a', 'village_a', 'start_date', 'auto_status', 'search_tags'
                 ];
+
+        
+        if (!isRealEstate) {
+            ['stop', 'diesel', 'banzen95', 'banzen98'].forEach(extraField => {
+                if (allowedPropsAdd.includes(extraField) && !servicesSchemaOrder.includes(extraField)) {
+                    servicesSchemaOrder.push(extraField);
+                }
+            });
+        }
 
         const finalExecutionOrder = isRealEstate ? realEstateSchemaOrder : servicesSchemaOrder;
 

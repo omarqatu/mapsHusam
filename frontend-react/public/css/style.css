@@ -229,25 +229,6 @@ body {
     touch-action: manipulation;
 }
 
-/* استثناء للوحات الرئيسية للسماح بالتحريك على الكمبيوتر */
-@media (min-width: 768px) {
-    #results-panel {
-        position: fixed !important;
-        top: auto !important;
-        right: auto !important;
-        left: auto !important;
-        bottom: auto !important;
-        transform: none !important;
-        transition: none !important;
-        width: auto !important;
-        height: auto !important;
-        max-width: none !important;
-        max-height: none !important;
-        min-width: 0 !important;
-        min-height: 0 !important;
-        margin: 0 !important;
-    }
-}
 
 .panel-right.dragging {
     will-change: transform !important;
@@ -795,5 +776,47 @@ body {
     }
     #nearby-apartments-panel#nearby-apartments-panel {
         top: 520px !important;   /* الموقع بيضل كما هو */
+    }
+}
+
+/* 🆕 زر "نسخ رابط النتائج" بلوحة النتائج: نص بدل أيقونة، بعرض تلقائي حسب النص
+   - أصبح عنصراً مستقلاً بين العنوان ومجموعة أزرار التحكم، فيظهر تلقائياً
+     بالمنتصف بينهم بفضل justify-content: space-between على .panel-header
+   - يعمل موحّد على الكمبيوتر والتابلت والموبايل لأنها نفس اللوحة/نفس الزر */
+#copy-results-link-btn {
+    width: auto !important;
+    height: 28px !important;
+    padding: 0 10px !important;
+    font-size: 11.5px !important;
+    font-weight: bold;
+    white-space: nowrap;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    border-radius: 14px !important;
+    background: #eef6ff !important;
+    color: #1a73e8 !important;
+    border: 1px solid #cfe3fb !important;
+    flex-shrink: 0;
+    margin: 0 6px;
+}
+
+#copy-results-link-btn:hover {
+    background: #1a73e8 !important;
+    color: #fff !important;
+}
+
+@media (max-width: 479px) {
+    #copy-results-link-btn {
+        font-size: 10px !important;
+        padding: 0 7px !important;
+        margin: 0 4px;
+    }
+}
+
+
+@media (min-width: 768px) {
+    #results-panel {
+        z-index: 999999 !important;
     }
 }

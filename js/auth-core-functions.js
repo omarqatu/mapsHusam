@@ -168,10 +168,12 @@ function enterPlatform(userData, isAutoboot = false) {
 // ==========================================
 window.sendTrackingRequest = function(provider, service) {
     const serverUrl = window.location.origin + '/save-stat';
+    const source = window.location.pathname.includes('no-map-search') ? 'quick_search' : 'map'; // 🆕
     const payload = {
         user_id: getRealUserId(),
         provider,
-        service
+        service,
+        source
     };
     const body = JSON.stringify(payload);
 

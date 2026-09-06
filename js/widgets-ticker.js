@@ -83,13 +83,9 @@
     // ============================================
     // البيانات من APIs (القسم الأول)
     // ============================================
-    let apiData = {
-    weather: {
-        ramallah: { label: 'رام الله', temp: 28, humidity: 65, wind: 12, condition: 'غائم جزئياً' },
-        gaza: { label: 'غزة', temp: 32, humidity: 70, wind: 15, condition: 'مشمس' },
-        jerusalem: { label: 'القدس', temp: 26, humidity: 60, wind: 10, condition: 'غائم' }
-    },
-    prayer: { fajr: '04:45', dhuhr: '12:30', asr: '15:45', maghrib: '18:45', isha: '20:15' },
+        let apiData = {
+    weather: {}, // 🆕 تُملأ بالكامل من Open-Meteo عند بدء التشغيل (11 مدينة × 3 أيام)
+        prayer: { fajr: '04:45', shuruq: '06:15', dhuhr: '12:30', asr: '15:45', maghrib: '18:45', isha: '20:15' },
     calendar: { hijri: '12 رجب 1446', gregorian: '2026-08-17', events: [] }
 };
 
@@ -115,12 +111,16 @@ function pickCurrencyFlag(item) {
 }
 const GOLD_ICONS = ['🥇', '🥈', '🥉', '💎', '⚪'];
 function pickGoldIcon(index) { return GOLD_ICONS[index % GOLD_ICONS.length]; }
-function pickWeatherIcon(condition) {
-    const c = (condition || '').trim();
-    if (c.includes('مشمس')) return '☀️';
-    if (c.includes('ممطر') || c.includes('مطر')) return '🌧️';
-    if (c.includes('غائم جزئياً')) return '🌤️';
-    if (c.includes('غائم')) return '☁️';
+function pickWeatherIconByCode(code) {
+    const n = parseInt(code, 10);
+    if (n === 0) return '☀️';
+    if (n === 1 || n === 2) return '🌤️';
+    if (n === 3) return '☁️';
+    if (n >= 45 && n <= 48) return '🌫️';
+    if (n >= 51 && n <= 67) return '🌦️';
+    if (n >= 71 && n <= 77) return '🌨️';
+    if (n >= 80 && n <= 82) return '🌧️';
+    if (n >= 95) return '⛈️';
     return '🌤️';
 }
 function pickFuelIcon(item) {
@@ -161,22 +161,28 @@ function renderGoldGridHTML(prefix) {
     `).join('');
 }
 
+const WEATHER_DAY_LABELS = ['اليوم', 'بكرا', 'بعد بكرا'];
+
 function renderWeatherGridHTML(prefix) {
     const entries = Object.entries(apiData.weather || {});
     if (!entries.length) return EMPTY_GROUP_MSG;
     return entries.map(([cityId, w]) => {
-        const label = w.label || (cityId.charAt(0).toUpperCase() + cityId.slice(1));
+        const label = w.label || cityId;
+        const days = w.days || [];
+        const daysHtml = days.map((d, i) => `
+            <div class="weather-day-block">
+                <div class="wd-label">${WEATHER_DAY_LABELS[i] || d.date}</div>
+                <div class="wd-icon">${d.icon || '🌤️'}</div>
+                <div class="wd-temps">
+                    <span class="wd-day" title="نهاراً">🌞 ${escWidgetText(d.max)}°</span>
+                    <span class="wd-night" title="ليلاً">🌙 ${escWidgetText(d.min)}°</span>
+                </div>
+            </div>
+        `).join('');
         return `
-        <div class="weather-city">
-            <div class="weather-icon">${pickWeatherIcon(w.condition)}</div>
-            <div class="weather-info">
-                <span class="weather-city-name">${escWidgetText(label)}</span>
-                <span class="weather-temp" id="${prefix}weather-${escWidgetText(cityId)}">${escWidgetText(w.temp)}°C</span>
-            </div>
-            <div class="weather-details">
-                <span>رطوبة: ${escWidgetText(w.humidity)}%</span>
-                <span>رياح: ${escWidgetText(w.wind)} كم/س</span>
-            </div>
+        <div class="weather-city-row" id="${prefix}weather-${escWidgetText(cityId)}">
+            <div class="weather-city-name">📍 ${escWidgetText(label)}</div>
+            <div class="weather-days">${daysHtml}</div>
         </div>`;
     }).join('');
 }
@@ -192,6 +198,21 @@ function renderFuelGridHTML(prefix) {
                 <span class="fuel-unit">${escWidgetText(f.unit)}</span>
             </div>
             <div class="fuel-value" id="${prefix}${escWidgetText(f.id)}">${escWidgetText(f.value)}</div>
+        </div>
+    `).join('');
+}
+
+function renderCalendarEventsHTML() {
+    const items = (MANUAL_DATA.events || []).slice().sort((a, b) => {
+        const da = a.date ? new Date(a.date).getTime() : 0;
+        const db = b.date ? new Date(b.date).getTime() : 0;
+        return da - db;
+    });
+    if (!items.length) return '<div style="padding:10px; text-align:center; color:#999; font-size:12px;">لا توجد مناسبات مسجّلة بعد</div>';
+    return items.map(e => `
+        <div class="event-item">
+            <span class="event-date">${escWidgetText(e.date || '')}</span>
+            <span class="event-name">${escWidgetText(e.label || '')}${e.notes ? ' — ' + escWidgetText(e.notes) : ''}</span>
         </div>
     `).join('');
 }
@@ -263,6 +284,11 @@ function renderManualGroupsInto(prefix) {
                     MANUAL_DATA[key] = remoteGroupsData[key].items;
                 }
             });
+
+                if (remoteGroupsData.events && Array.isArray(remoteGroupsData.events.items)) {
+                MANUAL_DATA.events = remoteGroupsData.events.items;
+            }
+
             if (remoteGroupsData.weather && remoteGroupsData.weather.items && remoteGroupsData.weather.items.length > 0) {
                 const weatherObj = {};
                 remoteGroupsData.weather.items.forEach(w => { weatherObj[w.id] = w; });
@@ -677,7 +703,6 @@ function renderManualGroupsInto(prefix) {
         MANUAL_DATA.events.forEach(e => setTickerValue(e.id, e.date));
 
         // تحديث البيانات من APIs
-        Object.entries(apiData.weather).forEach(([city, data]) => setTickerValue(`weather-${city}`, `${data.temp}°C`));
         Object.entries(apiData.prayer).forEach(([prayer, time]) => setTickerValue(`prayer-${prayer}`, time));
         Object.entries(apiData.calendar).forEach(([type, value]) => setTickerValue(`${type}-date`, value));
     }
@@ -699,10 +724,11 @@ function renderManualGroupsInto(prefix) {
                         if (apiData.weather[city]) apiData.weather[city] = data[city];
                     });
                     break;
-                case 'prayer':
+                    case 'prayer':
                     if (data.data && data.data.timings) {
                         const timings = data.data.timings;
                         apiData.prayer.fajr = timings.Fajr;
+                        apiData.prayer.shuruq = timings.Sunrise;
                         apiData.prayer.dhuhr = timings.Dhuhr;
                         apiData.prayer.asr = timings.Asr;
                         apiData.prayer.maghrib = timings.Maghrib;
@@ -721,7 +747,53 @@ function renderManualGroupsInto(prefix) {
         } catch (error) {
             console.error(`Error fetching ${type} data:`, error);
         }
+
     }
+
+        // 🆕 جلب حالة الطقس (نهار/ليل × 3 أيام) لكل المدن من Open-Meteo (مجاني، بدون مفتاح)
+    async function fetchWeatherData() {
+        const cfg = API_CONFIG.weather;
+        if (!cfg || !cfg.enabled || !cfg.cities) return;
+
+        const cityIds = Object.keys(cfg.cities);
+        const lats = cityIds.map(id => cfg.cities[id].lat).join(',');
+        const lons = cityIds.map(id => cfg.cities[id].lon).join(',');
+        const days = cfg.forecastDays || 3;
+
+        const url = `https://api.open-meteo.com/v1/forecast?latitude=${lats}&longitude=${lons}&daily=temperature_2m_max,temperature_2m_min,weathercode&timezone=Asia%2FHebron&forecast_days=${days}`;
+
+        try {
+            const res = await fetch(url);
+            const data = await res.json();
+            const resultsArray = Array.isArray(data) ? data : [data];
+
+            const newWeather = {};
+            cityIds.forEach((cityId, index) => {
+                const cityData = resultsArray[index];
+                const cityLabel = cfg.cities[cityId].label;
+                if (!cityData || !cityData.daily) {
+                    newWeather[cityId] = { label: cityLabel, days: [] };
+                    return;
+                }
+                const daily = cityData.daily;
+                const dayEntries = (daily.time || []).map((date, i) => ({
+                    date,
+                    max: Math.round(daily.temperature_2m_max[i]),
+                    min: Math.round(daily.temperature_2m_min[i]),
+                    icon: pickWeatherIconByCode(daily.weathercode ? daily.weathercode[i] : null)
+                }));
+                newWeather[cityId] = { label: cityLabel, days: dayEntries };
+            });
+
+            apiData.weather = newWeather;
+            updatePortalData();
+            updateMobilePortalData();
+        } catch (error) {
+            console.error('تعذر جلب بيانات الطقس من Open-Meteo:', error.message);
+        }
+    }
+
+
 
                 // ============================================
                 // دالة تحديث الشريط المتحرك
@@ -853,8 +925,11 @@ function renderManualGroupsInto(prefix) {
     // ============================================
     // دالة تحديث البيانات في تبويب الموبايل
     // ============================================
-    function updateMobilePortalData() {
+        function updateMobilePortalData() {
     renderManualGroupsInto('mobile-portal-');   // 🆕
+
+    const mobileEventsList = document.getElementById('mobile-portal-calendar-events-list');
+    if (mobileEventsList) mobileEventsList.innerHTML = renderCalendarEventsHTML();
 
     if (apiData.prayer) {
         Object.entries(apiData.prayer).forEach(([prayer, time]) => {
@@ -994,6 +1069,9 @@ function renderManualGroupsInto(prefix) {
     function updatePortalData() {
     renderManualGroupsInto('portal-');   // 🆕 يبني كل شيء ديناميكياً دفعة واحدة
 
+    const portalEventsList = document.getElementById('portal-calendar-events-list');
+    if (portalEventsList) portalEventsList.innerHTML = renderCalendarEventsHTML();
+
     // البقية تبقى كما هي (prayer + calendar فقط):
     if (apiData.prayer) {
         Object.entries(apiData.prayer).forEach(([prayer, time]) => {
@@ -1044,14 +1122,20 @@ function renderManualGroupsInto(prefix) {
         setInterval(refreshLiveFuelStations, 60000);
         setInterval(fetchRemoteWidgetsData, 60000);   // 🆕
         
-        // بدء التحديث التلقائي من APIs
+                // بدء التحديث التلقائي من APIs (الطقس له مسار خاص لأنه متعدد المدن)
         if (DISPLAY_CONFIG.autoUpdate) {
             Object.keys(API_CONFIG).forEach(type => {
+                if (type === 'weather') return; // 🆕 يُدار عبر fetchWeatherData أدناه
                 if (API_CONFIG[type].enabled) {
                     fetchFromAPI(type);
                     setInterval(() => fetchFromAPI(type), API_CONFIG[type].updateInterval);
                 }
             });
+
+            if (API_CONFIG.weather && API_CONFIG.weather.enabled) {
+                fetchWeatherData();
+                setInterval(fetchWeatherData, API_CONFIG.weather.updateInterval || 1800000);
+            }
         }
     }
 

@@ -32,7 +32,7 @@
 .ui-profile-toggle-btn {
     position: fixed;
     top: 5px;
-    right: 120px;
+    right: 220px;
     width: 46px;
     height: 46px;
     border-radius: 50%;
@@ -267,8 +267,8 @@
         width: 42px;
         height: 42px;
         font-size: 16px;
-        top: 5px;
-        right: 60px;
+        top: 120px;
+        right: 20px;
     }
 }
 

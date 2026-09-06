@@ -236,8 +236,64 @@ window.isLayerGloballyExcluded = function (layerIdentifier) {
         if (realEstateAliasMap[internalKey] === raw) candidates.add(internalKey);
     });
 
-    for (const candidate of candidates) {
+        for (const candidate of candidates) {
         if (exclusions.includes(candidate)) return true;
     }
     return false;
+};
+
+// ==========================================================================
+// 8-ب) [دمج طبقات الخدمات]: دوال مساعدة موحّدة تحل مشكلة أن كل الخدمات أصبحت
+// تشير لنفس كائن OpenLayers الواحد overlayLayersObj['serviceAllLayer']، بدل
+// كائن مستقل لكل خدمة كما كان سابقاً.
+// ==========================================================================
+
+// إرجاع كائن الطبقة الحقيقي بالخريطة: للعقارات نفس الطبقة كما هي (لم تتغيّر)،
+// ولأي مفتاح خدمة (مثل 'electricianLayer') يرجع دائماً serviceAllLayer الموحّدة
+window.getResolvedMapLayer = function (overlayLayersObj, selectedLayerKey) {
+    if (!overlayLayersObj || !selectedLayerKey) return null;
+    return overlayLayersObj[selectedLayerKey] || overlayLayersObj['serviceAllLayer'] || null;
+};
+
+// إرجاع فقط معالم الخدمة/العقار المطلوبة من مصدر الطبقة المحلي (المحمّل أصلاً
+// بالمتصفح)، مع فلترة إضافية بحسب discriminator عند التعامل مع طبقة الخدمات
+// الموحّدة. تُستخدم فقط كحل احتياطي (fallback) عند تعذّر الاتصال بالسيرفر.
+window.getLocalFeaturesForLayerKey = function (overlayLayersObj, selectedLayerKey) {
+    const layer = window.getResolvedMapLayer(overlayLayersObj, selectedLayerKey);
+    if (!layer) return [];
+    const allFeatures = layer.getSource().getFeatures();
+    if (overlayLayersObj[selectedLayerKey]) return allFeatures; // طبقة حقيقية مستقلة (عقار)
+    const discriminator = selectedLayerKey.replace(/Layer$/, '');
+    return allFeatures.filter(f => f.get('discriminator') === discriminator);
+};
+
+// ==========================================================================
+// 9) [نسخ رابط نتائج البحث]:
+window.__lastResultsShareState = null;
+
+window.setResultsShareState = function (state) {
+    window.__lastResultsShareState = state;
+};
+
+window.buildResultsShareLink = function () {
+    if (!window.__lastResultsShareState) return null;
+    try {
+        const json = JSON.stringify(window.__lastResultsShareState);
+        const encoded = encodeURIComponent(btoa(unescape(encodeURIComponent(json))));
+        return window.location.origin + window.location.pathname + '?resultsShare=' + encoded;
+    } catch (e) {
+        return null;
+    }
+};
+
+window.parseResultsShareParam = function () {
+    try {
+        const params = new URLSearchParams(window.location.search);
+        const raw = params.get('resultsShare');
+        if (!raw) return null;
+        const json = decodeURIComponent(escape(atob(decodeURIComponent(raw))));
+        return JSON.parse(json);
+    } catch (e) {
+        return null;
+    }
 };

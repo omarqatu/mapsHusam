@@ -60,7 +60,9 @@
     background: #1a73e8;
 }
 .pstats-card[data-stat="users"] .pstats-icon { background: linear-gradient(135deg, #1a73e8, #6c5ce7); }
-.pstats-card[data-stat="views"] .pstats-icon { background: linear-gradient(135deg, #34a853, #16a085); }
+.pstats-card[data-stat="views-map"] .pstats-icon,
+.pstats-card[data-stat="views-quick"] .pstats-icon,
+.pstats-card[data-stat="views-total"] .pstats-icon { background: linear-gradient(135deg, #34a853, #16a085); }
 .pstats-card[data-stat="services"] .pstats-icon { background: linear-gradient(135deg, #fbbc04, #e37400); }
 .pstats-card[data-stat="features"] .pstats-icon { background: linear-gradient(135deg, #ea4335, #c0392b); }
 

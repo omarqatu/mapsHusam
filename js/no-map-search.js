@@ -459,11 +459,14 @@ window.__nmsPageHandlesOwnAds = true;
             }
         }
 
-                function buildAdCardHtml(props, item) {
+            function buildAdCardHtml(props, item) {
             const isRealEstate = item.isRealEstate;
             const name = sanitize(props.name || props.location_name || props.location || '');
             const location = sanitize(props.location_name || props.location || '');
-
+            // 🆕 رقم معرف المعلم (نفس فكرة "رقم:" الظاهرة في بوب أب الخريطة)
+            const displayFeatureIdForBadge = isRealEstate
+                ? ((props.fid !== undefined && props.fid !== null && props.fid !== '') ? props.fid : null)
+                : ((props.id !== undefined && props.id !== null && props.id !== '') ? props.id : null);
             // 🆕 [إصلاح]: بدل شارة نجوم ثابتة بدون أي تفاعل، نستخدم ودجت التقييم
             
             const featureIdForRating = (!isRealEstate && props.id !== undefined && props.id !== null && props.id !== '') ? props.id : null;
@@ -536,7 +539,7 @@ window.__nmsPageHandlesOwnAds = true;
                 <div style="background:#fff; border:2px solid #fbc02d; border-radius:8px; padding:10px; box-shadow:0 2px 5px rgba(0,0,0,0.1); box-sizing:border-box; text-align:right; direction:rtl; width:100%;">
                     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
                         <span style="background:#fbc02d; color:#000; font-size:9px; padding:2px 5px; border-radius:4px; font-weight:bold;">${item.badgeText || '⭐ مميز'}</span>
-                        <span style="background:#e8f0fe; color:#1a73e8; font-size:10px; padding:2px 6px; border-radius:4px; font-weight:bold;">📌 ${item.label}</span>
+                        <span style="background:#e8f0fe; color:#1a73e8; font-size:10px; padding:2px 6px; border-radius:4px; font-weight:bold;">📌 ${item.label}${displayFeatureIdForBadge !== null ? ` <span style="color:#5f6368; font-weight:normal;">(رقم: ${sanitize(String(displayFeatureIdForBadge))})</span>` : ''}</span>
                     </div>
                     ${ratingBadgeHtml}
                     ${statusHtml}
@@ -548,45 +551,51 @@ window.__nmsPageHandlesOwnAds = true;
             `;
         }
 
-                async function loadFeaturedAds() {
+                                async function loadFeaturedAds() {
             const adSpaces = document.querySelectorAll('.nms-ad-space');
             if (!adSpaces.length) return;
 
             let allValidCards = [];
 
-            // 🆕 نبني قائمة الأهداف من نفس مصفوفة categories الموجودة أصلاً بالملف
-            // (62 فئة: عقارات + كل الخدمات)، بدل الاعتماد على MAP_CONFIG/serviceTranslations
-            // غير الموجودين أصلاً بهذه الصفحة
-            const allTargets = categories.map(cat => {
+            // 🆕 [تحسين أداء بعد الدمج]: العقارات فقط (3 طلبات مستقلة كما كانت
+            // دائماً - لم تُدمج)، وكل الخدمات الـ65 بطلب واحد فقط بدل 65 طلباً منفصلاً
+            const realEstateTargets = categories.filter(c => c.isRealEstate).map(cat => {
                 const { workspace, layerName, isRealEstate } = getWorkspaceAndName(cat.key);
                 return { layer: layerName, workspace, label: cat.title, isRealEstate };
             });
 
-            const batchSize = 10;
-            for (let i = 0; i < allTargets.length; i += batchSize) {
-                const batch = allTargets.slice(i, i + batchSize);
-                const promises = batch.map(async (item) => {
-                    try {
-                        const params = new URLSearchParams({
-                            layer: item.layer,
-                            workspace: item.workspace,
-                            field_0: 'rating',
-                            operator_0: '=',
-                            value_0: '10',
-                            conditions_count: '1'
-                        });
-                        const response = await fetch(`${baseUrl}api/search-features?${params.toString()}`);
-                        if (!response.ok) return [];
-                        const data = await response.json();
-                        const features = data.features || [];
-                        return features.map(f => buildAdCardHtml(f.properties || {}, item));
-                    } catch (err) {
-                        return [];
-                    }
-                });
-                const results = await Promise.all(promises);
-                results.forEach(cards => { if (cards.length) allValidCards.push(...cards); });
-            }
+            const realEstatePromises = realEstateTargets.map(async (item) => {
+                try {
+                    const params = new URLSearchParams({
+                        layer: item.layer, workspace: item.workspace,
+                        field_0: 'rating', operator_0: '=', value_0: '10', conditions_count: '1'
+                    });
+                    const response = await fetch(`${baseUrl}api/search-features?${params.toString()}`);
+                    if (!response.ok) return [];
+                    const data = await response.json();
+                    return (data.features || []).map(f => buildAdCardHtml(f.properties || {}, item));
+                } catch (err) { return []; }
+            });
+
+            const servicesPromise = (async () => {
+                try {
+                    const params = new URLSearchParams({
+                        layer: 'service_all', workspace: 'services',
+                        field_0: 'rating', operator_0: '=', value_0: '10', conditions_count: '1'
+                    });
+                    const response = await fetch(`${baseUrl}api/search-features?${params.toString()}`);
+                    if (!response.ok) return [];
+                    const data = await response.json();
+                    return (data.features || []).map(f => {
+                        const discriminator = f.properties.discriminator;
+                        const item = { layer: discriminator, workspace: 'services', label: serviceNames[discriminator] || discriminator, isRealEstate: false };
+                        return buildAdCardHtml(f.properties || {}, item);
+                    });
+                } catch (err) { return []; }
+            })();
+
+            const allBatchResults = await Promise.all([...realEstatePromises, servicesPromise]);
+            allBatchResults.forEach(cards => { if (cards && cards.length) allValidCards.push(...cards); });
 
             function shuffleArray(array) {
                 let arr = [...array];
@@ -967,7 +976,7 @@ window.__nmsPageHandlesOwnAds = true;
             if (!mediaHtml) return '';
 
             let infoHtml = `<div class="nms-gallery-card-body">`;
-            infoHtml += `<div class="nms-gallery-badge">🏆 ${item.label}</div>`;
+            infoHtml += `<div class="nms-gallery-badge">🏆 ${item.label}${featureId !== '' ? ` <span style="color:#888; font-weight:normal;">(رقم: ${sanitize(String(featureId))})</span>` : ''}</div>`;
             if (!isRealEstate) infoHtml += getStatusBadge(props.auto_status, props.work_hours);
             if (name) infoHtml += `<div class="nms-r-name"><i class="fas fa-user"></i> ${name}</div>`;
             if (location) infoHtml += `<div class="nms-r-loc"><i class="fas fa-map-marker-alt"></i> ${location}</div>`;
@@ -1021,7 +1030,7 @@ window.__nmsPageHandlesOwnAds = true;
             </div>`;
 
             let infoHtml = `<div class="nms-gallery-card-body">`;
-            infoHtml += `<div class="nms-gallery-badge">🏆 ${item.label}</div>`;
+            infoHtml += `<div class="nms-gallery-badge">🏆 ${item.label}${featureId !== '' ? ` <span style="color:#888; font-weight:normal;">(رقم: ${sanitize(String(featureId))})</span>` : ''}</div>`;
             infoHtml += getStatusBadge(props.auto_status, props.work_hours);
             if (name) infoHtml += `<div class="nms-r-name"><i class="fas fa-user"></i> ${name}</div>`;
             if (location) infoHtml += `<div class="nms-r-loc"><i class="fas fa-map-marker-alt"></i> ${location}</div>`;
@@ -1060,49 +1069,53 @@ window.__nmsPageHandlesOwnAds = true;
 
         // 🆕 تحميل قسم صور أو فيديوهات: فقط المعالم التي تُعتبر "الأعلى تقييماً"
         // (rating = 10 أو 9.9 بنفس منطق باقي أقسام الصفحة) وتملك وسائط حقيقية
-        async function loadGallerySection(fieldName, gridId, sectionId, mode, includeRealEstate) {
+                async function loadGallerySection(fieldName, gridId, sectionId, mode, includeRealEstate) {
             const grid = document.getElementById(gridId);
             const section = document.getElementById(sectionId);
             if (!grid || !section) return;
 
-            const targets = categories
-                .filter(cat => (cat.isRealEstate && includeRealEstate) || !cat.isRealEstate)
-                .map(cat => {
+            let collected = [];
+
+            const conditionParams = {
+                field_0: fieldName, operator_0: 'notempty', value_0: '1',
+                field_1: 'rating', operator_1: '=', value_1: '10',
+                field_2: 'rating', operator_2: '=', value_2: '9.9',
+                conditions_count: '3'
+            };
+
+            // العقارات (إن طُلبت) - طلبات مستقلة كما كانت دائماً
+            if (includeRealEstate) {
+                const realEstateTargets = categories.filter(c => c.isRealEstate).map(cat => {
                     const { workspace, layerName, isRealEstate } = getWorkspaceAndName(cat.key);
                     return { layer: layerName, workspace, label: cat.title, isRealEstate };
                 });
 
-            let collected = [];
-            const batchSize = 10;
-            for (let i = 0; i < targets.length; i += batchSize) {
-                const batch = targets.slice(i, i + batchSize);
-                const promises = batch.map(async (item) => {
+                const realEstateResults = await Promise.all(realEstateTargets.map(async (item) => {
                     try {
-                        const params = new URLSearchParams({
-                            layer: item.layer,
-                            workspace: item.workspace,
-                            field_0: fieldName,
-                            operator_0: 'notempty',
-                            value_0: '1',
-                            field_1: 'rating',
-                            operator_1: '=',
-                            value_1: '10',
-                            field_2: 'rating',
-                            operator_2: '=',
-                            value_2: '9.9',
-                            conditions_count: '3'
-                        });
+                        const params = new URLSearchParams({ layer: item.layer, workspace: item.workspace, ...conditionParams });
                         const response = await fetch(`${baseUrl}api/search-features?${params.toString()}`);
                         if (!response.ok) return [];
                         const data = await response.json();
                         return (data.features || []).map(f => ({ feature: f, item }));
-                    } catch (err) {
-                        return [];
-                    }
-                });
-                const results = await Promise.all(promises);
-                results.forEach(list => { if (list.length) collected.push(...list); });
+                    } catch (err) { return []; }
+                }));
+                realEstateResults.forEach(list => { if (list.length) collected.push(...list); });
             }
+
+            // 🆕 [تحسين أداء بعد الدمج]: كل الخدمات بطلب واحد فقط بدل طلب منفصل لكل خدمة
+            try {
+                const params = new URLSearchParams({ layer: 'service_all', workspace: 'services', ...conditionParams });
+                const response = await fetch(`${baseUrl}api/search-features?${params.toString()}`);
+                if (response.ok) {
+                    const data = await response.json();
+                    (data.features || []).forEach(f => {
+                        const discriminator = f.properties.discriminator;
+                        if (!discriminator) return;
+                        const item = { layer: discriminator, workspace: 'services', label: serviceNames[discriminator] || discriminator, isRealEstate: false };
+                        collected.push({ feature: f, item });
+                    });
+                }
+            } catch (err) { /* تجاهل */ }
 
             const validEntries = collected.filter(entry => galleryEntryHasMedia(entry.feature.properties || {}, mode));
 
@@ -1120,52 +1133,35 @@ window.__nmsPageHandlesOwnAds = true;
 
         // 🆕 تحميل قسم "قبل وبعد": خدمات فقط (لا عقارات إطلاقاً)، ويشترط أن
         // يكون rating = 10 أو 9.9، بالإضافة إلى وجود details_link_1 و details_link_2 معاً
-        async function loadBeforeAfterSection() {
+                async function loadBeforeAfterSection() {
             const grid = document.getElementById('nms-before-after-grid');
             const section = document.getElementById('nms-before-after-section');
             if (!grid || !section) return;
 
-            // 🆕 استبعاد صريح لطبقات العقارات (شقق الإيجار، شقق البيع، الأراضي)
-            // - هذا القسم للخدمات فقط كما طُلب
-            const targets = categories.filter(cat => !cat.isRealEstate).map(cat => {
-                const { workspace, layerName } = getWorkspaceAndName(cat.key);
-                return { layer: layerName, workspace, label: cat.title, isRealEstate: false };
-            });
-
+            // 🆕 [تحسين أداء بعد الدمج]: هذا القسم للخدمات فقط (بدون عقارات كما
+            // كان سابقاً)، وهلأ بطلب واحد فقط لكل الخدمات بدل طلب منفصل لكل خدمة
             let collected = [];
-            const batchSize = 10;
-            for (let i = 0; i < targets.length; i += batchSize) {
-                const batch = targets.slice(i, i + batchSize);
-                const promises = batch.map(async (item) => {
-                    try {
-                        const params = new URLSearchParams({
-                            layer: item.layer,
-                            workspace: item.workspace,
-                            field_0: 'details_link_1',
-                            operator_0: 'notempty',
-                            value_0: '1',
-                            field_1: 'details_link_2',
-                            operator_1: 'notempty',
-                            value_1: '1',
-                            field_2: 'rating',
-                            operator_2: '=',
-                            value_2: '10',
-                            field_3: 'rating',
-                            operator_3: '=',
-                            value_3: '9.9',
-                            conditions_count: '4'
-                        });
-                        const response = await fetch(`${baseUrl}api/search-features?${params.toString()}`);
-                        if (!response.ok) return [];
-                        const data = await response.json();
-                        return (data.features || []).map(f => ({ feature: f, item }));
-                    } catch (err) {
-                        return [];
-                    }
+
+            try {
+                const params = new URLSearchParams({
+                    layer: 'service_all', workspace: 'services',
+                    field_0: 'details_link_1', operator_0: 'notempty', value_0: '1',
+                    field_1: 'details_link_2', operator_1: 'notempty', value_1: '1',
+                    field_2: 'rating', operator_2: '=', value_2: '10',
+                    field_3: 'rating', operator_3: '=', value_3: '9.9',
+                    conditions_count: '4'
                 });
-                const results = await Promise.all(promises);
-                results.forEach(list => { if (list.length) collected.push(...list); });
-            }
+                const response = await fetch(`${baseUrl}api/search-features?${params.toString()}`);
+                if (response.ok) {
+                    const data = await response.json();
+                    (data.features || []).forEach(f => {
+                        const discriminator = f.properties.discriminator;
+                        if (!discriminator) return;
+                        const item = { layer: discriminator, workspace: 'services', label: serviceNames[discriminator] || discriminator, isRealEstate: false };
+                        collected.push({ feature: f, item });
+                    });
+                }
+            } catch (err) { /* تجاهل */ }
 
             if (collected.length === 0) {
                 section.dataset.hasData = '0';
@@ -1186,46 +1182,53 @@ window.__nmsPageHandlesOwnAds = true;
             window.open(`/original-index.html?x=${Number(x).toFixed(3)}&y=${Number(y).toFixed(3)}`, '_blank');
         };
 
-        async function loadRatedRow(gridId, sectionId, operator, ratingValue) {
+                async function loadRatedRow(gridId, sectionId, operator, ratingValue) {
             const grid = document.getElementById(gridId);
             const section = document.getElementById(sectionId);
             if (!grid || !section) return;
 
-            const allTargets = categories.map(cat => {
+            let collected = [];
+
+            // العقارات - طلبات مستقلة كما كانت دائماً
+            const realEstateTargets = categories.filter(c => c.isRealEstate).map(cat => {
                 const { workspace, layerName, isRealEstate } = getWorkspaceAndName(cat.key);
                 return { layer: layerName, workspace, label: cat.title, isRealEstate };
             });
 
-            let collected = [];
-            const batchSize = 10;
-            for (let i = 0; i < allTargets.length; i += batchSize) {
-                const batch = allTargets.slice(i, i + batchSize);
-                const promises = batch.map(async (item) => {
-                    try {
-                        const params = new URLSearchParams({
-                            layer: item.layer,
-                            workspace: item.workspace,
-                            field_0: 'rating',
-                            operator_0: operator,
-                            value_0: String(ratingValue),
-                            conditions_count: '1'
-                        });
-                        const response = await fetch(`${baseUrl}api/search-features?${params.toString()}`);
-                        if (!response.ok) return [];
-                        const data = await response.json();
-                        const features = data.features || [];
-                        return features.map(f => ({
-                            props: f.properties || {},
-                            item,
-                            rating: parseFloat((f.properties || {}).rating) || 0
-                        }));
-                    } catch (err) {
-                        return [];
-                    }
+            const realEstateResults = await Promise.all(realEstateTargets.map(async (item) => {
+                try {
+                    const params = new URLSearchParams({
+                        layer: item.layer, workspace: item.workspace,
+                        field_0: 'rating', operator_0: operator, value_0: String(ratingValue), conditions_count: '1'
+                    });
+                    const response = await fetch(`${baseUrl}api/search-features?${params.toString()}`);
+                    if (!response.ok) return [];
+                    const data = await response.json();
+                    return (data.features || []).map(f => ({
+                        props: f.properties || {}, item, rating: parseFloat((f.properties || {}).rating) || 0
+                    }));
+                } catch (err) { return []; }
+            }));
+            realEstateResults.forEach(list => { if (list.length) collected.push(...list); });
+
+            // 🆕 [تحسين أداء بعد الدمج]: كل الخدمات بطلب واحد فقط بدل طلب منفصل لكل خدمة
+            try {
+                const params = new URLSearchParams({
+                    layer: 'service_all', workspace: 'services',
+                    field_0: 'rating', operator_0: operator, value_0: String(ratingValue), conditions_count: '1'
                 });
-                const results = await Promise.all(promises);
-                results.forEach(list => { if (list.length) collected.push(...list); });
-            }
+                const response = await fetch(`${baseUrl}api/search-features?${params.toString()}`);
+                if (response.ok) {
+                    const data = await response.json();
+                    (data.features || []).forEach(f => {
+                        const props = f.properties || {};
+                        const discriminator = props.discriminator;
+                        if (!discriminator) return;
+                        const item = { layer: discriminator, workspace: 'services', label: serviceNames[discriminator] || discriminator, isRealEstate: false };
+                        collected.push({ props, item, rating: parseFloat(props.rating) || 0 });
+                    });
+                }
+            } catch (err) { /* تجاهل */ }
 
             collected.sort((a, b) => b.rating - a.rating);
 
@@ -1844,9 +1847,11 @@ window.__nmsPageHandlesOwnAds = true;
                 card.style.setProperty('--i', Math.min(index, 20));
 
                 // 🆕 حواجز الطرق: قالب مستقل بالكامل (حالة Stop + الاسم + المحافظة/المدينة/الموقع + زر الانتقال)
-                if (isRoadBarriers) {
+                    if (isRoadBarriers) {
                     const stopInfo = window.getRoadBarrierStopInfo(p.stop !== undefined ? p.stop : p.stop);
-                    let barrierHtml = `<div style="text-align:center; font-weight:bold; font-size:14px; color:${stopInfo.color}; border:1px dashed ${stopInfo.color}; border-radius:8px; padding:8px; margin-bottom:8px; background:${stopInfo.color}15;">${stopInfo.icon} ${stopInfo.label}</div>`;
+                    const barrierDisplayId = (p.id !== undefined && p.id !== null && p.id !== '') ? p.id : null;
+                    let barrierHtml = `<div style="font-size:11px; color:#999; margin-bottom:4px;">${barrierDisplayId !== null ? `(رقم: ${sanitize(String(barrierDisplayId))})` : ''}</div>`;
+                    barrierHtml += `<div style="text-align:center; font-weight:bold; font-size:14px; color:${stopInfo.color}; border:1px dashed ${stopInfo.color}; border-radius:8px; padding:8px; margin-bottom:8px; background:${stopInfo.color}15;">${stopInfo.icon} ${stopInfo.label}</div>`;
                     if (p.name) barrierHtml += `<div class="nms-r-name"><i class="fas fa-map-marker-alt"></i> ${sanitize(p.name)}</div>`;
                     if (p.gov_a) barrierHtml += `<div class="nms-r-line"><b>🌍 المحافظة:</b> ${sanitize(p.gov_a)}</div>`;
                     if (p.village_a) barrierHtml += `<div class="nms-r-line"><b>🏘️ المدينة:</b> ${sanitize(p.village_a)}</div>`;
@@ -1867,7 +1872,12 @@ window.__nmsPageHandlesOwnAds = true;
                     return; // تخطي بقية منطق الكرت القياسي (تقييم، وصف، اتصال...)
                 }
 
-                let html = '';
+                                let html = '';
+                // 🆕 رقم معرف المعلم (نفس طريقة عرضه في بوب أب الخريطة: "التصنيف (رقم: X)")
+                const displayFeatureIdForResult = isRealEstate
+                    ? ((p.fid !== undefined && p.fid !== null && p.fid !== '') ? p.fid : null)
+                    : ((p.id !== undefined && p.id !== null && p.id !== '') ? p.id : null);
+                html += `<div style="margin-bottom:6px; font-size:11px; color:#666;"><b style="color:#1a73e8;">🛠️ ${sanitize(layerTitle)}</b>${displayFeatureIdForResult !== null ? ` <span style="color:#999;">(رقم: ${sanitize(String(displayFeatureIdForResult))})</span>` : ''}</div>`;
                 if (!isRealEstate) html += getStatusBadge(p.auto_status, p.work_hours);
                 if (p.name) html += `<div class="nms-r-name"><i class="fas fa-user"></i> ${sanitize(p.name)}</div>`;
                 if (p.location_name || p.location) html += `<div class="nms-r-loc"><i class="fas fa-map-marker-alt"></i> ${sanitize(p.location_name || p.location)}</div>`;
@@ -2022,8 +2032,8 @@ window.__nmsPageHandlesOwnAds = true;
             });
         }
 
-        function trackRequest(provider, service) {
-            const payload = JSON.stringify({ user_id: getRealUserId(), provider, service });
+            function trackRequest(provider, service) {
+            const payload = JSON.stringify({ user_id: getRealUserId(), provider, service, source: 'quick_search' }); // 🆕
             const url = baseUrl + 'save-stat';
             if (navigator.sendBeacon) {
                 navigator.sendBeacon(url, new Blob([payload], { type: 'application/json' }));
