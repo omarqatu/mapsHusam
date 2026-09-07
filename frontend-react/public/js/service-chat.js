@@ -365,8 +365,8 @@
             }
             #open-my-service-chats.svc-requests-glow {
                 animation: svcRequestsGlow 1.7s ease-in-out infinite;
-                border: 2px solid #25d366 !important;
-                background: #eafaf0 !important;
+                border: 2px solid #f39c12 !important;
+                background: #fff5e6 !important;
             }
             .svc-request-card-glow {
                 animation: svcCardPulse 1.8s infinite ease-in-out !important;
@@ -434,8 +434,8 @@
         myRequestsBtn = document.createElement('button');
         myRequestsBtn.id = 'open-my-service-chats';
         myRequestsBtn.type = 'button';
-        myRequestsBtn.className = 'btn-guide-top'; 
-        myRequestsBtn.innerHTML = '<i class="fas fa-headset"></i> طلباتي';
+        myRequestsBtn.className = 'btn-my-requests-top';
+        myRequestsBtn.innerHTML = '<i class="fas fa-clipboard-list"></i> طلباتي';
         
         if (getUnseenActivityFlag()) {
             myRequestsBtn.classList.add('svc-requests-glow');

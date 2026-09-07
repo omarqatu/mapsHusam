@@ -137,7 +137,8 @@
 #user-top-badge-container .btn-logout-top,
 #user-top-badge-container .btn-guide-top,
 #user-top-badge-container .btn-fb-top,
-#user-top-badge-container .notification-btn {
+#user-top-badge-container .notification-btn,
+#user-top-badge-container .btn-my-requests-top {
     width: 100%;
     box-sizing: border-box;
     justify-content: center;
@@ -215,6 +216,25 @@
 
 #user-top-badge-container .notification-btn {
     position: relative;
+}
+
+/* 🆕 زر "طلباتي" داخل البوابة - بلون مميز */
+.btn-my-requests-top {
+    background: linear-gradient(135deg, #f39c12 0%, #e67e22 100%);
+    color: #ffffff;
+    border: none;
+    cursor: pointer;
+    font-weight: bold;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(243, 156, 18, 0.3);
+}
+.btn-my-requests-top:hover {
+    background: linear-gradient(135deg, #e67e22 0%, #d35400 100%);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(243, 156, 18, 0.4);
 }
 
 /* 🆕 إخفاء الغلاف العائم القديم لزرَي "دليل الاستخدام" و"تواصل معنا" بعد
