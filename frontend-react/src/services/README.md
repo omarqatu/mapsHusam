@@ -1,246 +1,102 @@
-# هيكلية الخدمات الموحدة (Unified Services Architecture)
+# توثيق الخدمات الحالية
 
-## 📋 نظرة عامة
+هذا المجلد يحتوي طبقة خدمات React المساندة. التطبيق الحالي ما زال يعمل أساسًا من ملفات `public` القديمة متعددة الصفحات، لذلك لا تفترض هذه الخدمات أنها تستبدل ملفات `public/js` تلقائيًا.
 
-هذا الهيكل يوفر طبقة موحدة للوظائف والـ API تخدم نسخة Desktop و Mobile معاً. أي تعديل في ملف واحد ينعكس تلقائياً على المنصتين.
+## خريطة المشروع
 
-## 🏗️ الهيكلية
+```text
+src/
+  services/
+    api.js          طلبات API المركزية المستخدمة من React
+    coreService.js  إحداثيات، مزودون مرتبطون، إحصائيات، تقييمات، بحث
+    mobileService.js خدمات تجريبية/مساندة للتنقل والإيماءات ووضع الهاتف
+    index.js        نقطة التصدير العامة
+  hooks/useApi.js   Hooks لجلب البيانات داخل React
 
-```
-frontend-react/
-├── src/
-│   ├── services/
-│   │   ├── api.js              # طبقة API مركزية (جميع الاتصالات بالسيرفر)
-│   │   ├── coreService.js      # طبقة الوظائف الأساسية (إحداثيات، مزودي خدمة، إحصائيات)
-│   │   ├── mobileService.js    # طبقة خدمات الموبايل (تبويبات، تنقل، إيماءات)
-│   │   └── index.js            # نقطة دخول موحدة
-│   ├── hooks/
-│   │   └── useApi.js           # Hooks موحدة للاستخدام في React
-│   └── utils/
-│       └── helpers.js          # دوال مساعدة (نصوص، وقت، روابط، أجهزة)
-└── public/
-    └── js/
-        └── services-bridge.js  # جسر ربط ملفات public/ بالخدمات الجديدة
+public/
+  js/services-bridge.js جسر اختياري لعرض بعض خدمات React عبر window.AppServices
 ```
 
-## 🎯 المبادئ الأساسية
+## حالة التشغيل الحالية
 
-### 1. فصل منطق الوظائف عن الواجهات
-- جميع الوظائف في `src/services/`
-- جميع الواجهات في `src/components/` و `public/`
-- لا يوجد كود منطقي في ملفات UI
+- صفحات الخريطة والبحث بدون خريطة تُحمّل من `public/original-index.html` و`public/no-map-search.html`.
+- منطق الخريطة الفعلي موجود في ملفات `public/js` مثل `main.js` و`layers.js` و`mobile-tabs.js`.
+- منطق البحث بدون خريطة موجود في `public/js/no-map-search.js` و`no-map-mobile.js`.
+- `services-bridge.js` محمّل في صفحة الخريطة ويحتوي fallback مباشر إلى API. صفحة البحث بدون خريطة لا تحمّله حاليًا.
+- `mobile-app-bridge.js` منفصل عن هذا المجلد، ومخصص لتواصل WebView المستقبلي مع تطبيق أصلي.
 
-### 2. خدمة Desktop و Mobile معاً
-- نفس الوظائف تعمل على المنصتين
-- خدمات الموبايل الخاصة في `mobileService.js`
-- اكتشاف تلقائي لنوع الجهاز
+## API المتوفر في React
 
-### 3. الحفاظ على آلية العمل الحالية
-- ملفات `public/` تعمل كما هي
-- `services-bridge.js` يربط الملفات القديمة بالخدمات الجديدة
-- يمكن الاستمرار في التعديل على ملفات `public/`
+في `src/services/api.js` توجد الدوال التالية:
 
-## 📚 الخدمات المتاحة
+- `API.ratings.getFeatureRatings(serviceLayer, featureId)`
+- `API.ratings.getPendingComments(userId)`
+- `API.providers.getLinkedFeatures()`
+- `API.stats.getPlatformStats()`
+- `API.auth.verifySession()`
+- `API.serviceRequests.getPending(providerUserId)`
+- `API.search.searchFeatures(params)`
 
-### API Service (`api.js`)
-جميع الاتصالات بالسيرفر مع retry mechanism:
+كلها تستخدم مسارات نسبية عبر `window.location.origin`، وتعيد JSON، وتحاول الطلب حتى ثلاث مرات عند الفشل. لا تضع كلمات مرور أو مفاتيح قواعد البيانات في الواجهة.
 
-```javascript
-import { API } from './services';
+## الخدمات الأساسية
 
-// التقييمات
-await API.ratings.getFeatureRatings(serviceLayer, featureId);
-await API.ratings.getPendingComments(userId);
+`coreService.js` يوفر:
 
-// مزودي الخدمة
-await API.providers.getLinkedFeatures();
+- `CoordinateUtils`: استخراج إحداثيات OpenLayers وإنشاء روابط مشاركة.
+- `ProviderService`: تحديث Cache للمعالم المرتبطة بمزودي الخدمة والتحقق منها.
+- `StatsService`: جلب إحصائيات المنصة وتنسيق الأرقام.
+- `RatingsService`: التقييمات والتعليقات المعلقة.
+- `SearchService`: استدعاء البحث المركزي.
 
-// الإحصائيات
-await API.stats.getPlatformStats();
+`mobileService.js` يوفر أدوات عامة، لكنه ليس المشغل الفعلي لنظام تبويبات الخريطة الحالي. النظام الفعلي هو `public/js/mobile-tabs.js`، لذلك يجب عدم تعديل خدمة React واعتبار ذلك تعديلًا للخريطة إلا بعد نقل الاستخدام إليها صراحة.
 
-// البحث
-await API.search.searchFeatures(params);
-```
+## الاستخدام داخل React
 
-### Core Service (`coreService.js`)
-الوظائف الأساسية المشتركة:
+```js
+import { API, CoordinateUtils, StatsService } from "../services";
 
-```javascript
-import { CoordinateUtils, ProviderService, StatsService, RatingsService, SearchService } from './services';
-
-// الإحداثيات
-const coords = CoordinateUtils.getFeatureCoords(feature);
-const text = CoordinateUtils.coordsToText(coords);
-const link = CoordinateUtils.createLocationLink(coords);
-
-// مزودي الخدمة
-await ProviderService.refreshLinkedFeatures();
-const isLinked = ProviderService.isFeatureLinked(layerDbName, featureId);
-
-// الإحصائيات
 const stats = await StatsService.getStats();
-const formatted = StatsService.formatNumber(1234);
-
-// التقييمات
-const ratings = await RatingsService.fetchFeatureRatings(serviceLayer, featureId);
-
-// البحث
-const results = await SearchService.searchFeatures(params);
+const ratings = await API.ratings.getFeatureRatings("electrician", 123);
+const coords = CoordinateUtils.getFeatureCoords(feature);
 ```
 
-### Mobile Service (`mobileService.js`)
-خدمات خاصة بالموبايل:
+بالنسبة إلى Hooks:
 
-```javascript
-import { TabService, NavigationService, MobileModeService } from './services';
+```js
+import { usePlatformStats, useRatings, useSearch } from "../hooks/useApi";
 
-// التبويبات
-const tabs = TabService.getTabs();
-const activeTab = TabService.getActiveTab();
-TabService.setActiveTab('map');
-
-// التنقل
-NavigationService.navigateTo('search', { query: 'فني' });
-NavigationService.goBack();
-
-// وضع الموبايل
-MobileModeService.enableMobileMode();
-const isMobile = MobileModeService.isMobileModeEnabled();
+const stats = usePlatformStats();
+const ratings = useRatings(serviceLayer, featureId);
+const results = useSearch(params, true);
 ```
 
-### Utils (`helpers.js`)
-دوال مساعدة متنوعة:
+## الاستخدام داخل public
 
-```javascript
-import { StringUtils, TimeUtils, URLUtils, DeviceUtils } from './utils/helpers';
+لا تعتمد ملفات `public/js` على import من React. عند تحميل `services-bridge.js` يمكن استخدام:
 
-// النصوص
-const clean = StringUtils.sanitizeHTML(dirtyString);
-const escaped = StringUtils.escapeForAttribute(str);
-const formatted = StringUtils.formatCurrency(1000, 'USD');
-
-// الوقت
-const date = TimeUtils.parseArabicTime('٩:٠٠ ص');
-const hours = TimeUtils.formatWorkHours(open, close);
-const status = TimeUtils.getServiceStatus(open, close);
-
-// الروابط
-const clean = URLUtils.cleanURL(url);
-await URLUtils.copyLocationLink(coords);
-
-// الأجهزة
-const device = DeviceUtils.getDeviceType(); // 'mobile' | 'tablet' | 'desktop'
-const isMobile = DeviceUtils.isMobile();
+```js
+const stats = await window.AppServices.StatsService.getStats();
+const linked = window.AppServices.ProviderService.isFeatureLinked(
+  "electrician",
+  123,
+);
 ```
 
-### Hooks (`useApi.js`)
-Hooks موحدة للاستخدام في React:
+ملاحظة مهمة: لا يوجد حاليًا تسجيل تلقائي لـ `window.CoreService` من تطبيق React، لذلك يعمل fallback المباشر في الجسر في النسخة الحالية. لا تعتبر إضافة خدمة إلى `src/services` كافية لتغيير ملفات `public` إلا بعد ربطها صراحة.
 
-```javascript
-import { useRatings, usePlatformStats, useSearch } from './hooks/useApi';
+## قواعد التعديل
 
-// التقييمات
-const { data, loading, error } = useRatings(serviceLayer, featureId);
+1. تعديل واجهة الخريطة أو البحث يتم في `public` ما دام التطبيق متعدد الصفحات الحالي هو المشغل الفعلي.
+2. إضافة وظيفة مشتركة لـ React تبدأ في `src/services` ثم تُصدّر من `src/services/index.js`.
+3. إذا احتاجتها صفحات `public`، أضف facade أو fallback في `public/js/services-bridge.js`.
+4. لا تعدّل `dist` يدويًا؛ شغّل `npm run build` بعد اختبار المصدر.
+5. بعد كل تغيير مشترك اختبر الخريطة، البحث بدون خريطة، ومقاسات الهاتف والتابلت.
 
-// الإحصائيات
-const { data: stats } = usePlatformStats();
+## أوامر التحقق
 
-// البحث
-const { data: results } = useSearch(params, true);
+```bash
+npm run build
 ```
 
-## 🔗 Services Bridge
-
-ملف `services-bridge.js` يربط ملفات `public/` بالخدمات الجديدة:
-
-```javascript
-// في ملفات public/js/
-// يمكن استخدام الخدمات الجديدة مباشرة
-const ratings = await window.AppServices.API.ratings.getFeatureRatings(layer, id);
-const coords = window.AppServices.CoordinateUtils.getFeatureCoords(feature);
-const isLinked = window.AppServices.ProviderService.isFeatureLinked(layer, id);
-```
-
-## 🚀 الاستخدام
-
-### في React Components
-
-```javascript
-import { API, CoordinateUtils } from '../services';
-
-function MyComponent() {
-  const fetchRatings = async () => {
-    const data = await API.ratings.getFeatureRatings('electrician', 123);
-  };
-  
-  const getCoords = (feature) => {
-    return CoordinateUtils.getFeatureCoords(feature);
-  };
-  
-  return <div>...</div>;
-}
-```
-
-### في ملفات public/js
-
-```javascript
-// الخدمات متاحة عبر window.AppServices
-const ratings = await window.AppServices.API.ratings.getFeatureRatings('electrician', 123);
-const coords = window.AppServices.CoordinateUtils.getFeatureCoords(feature);
-```
-
-## 🔄 التعديل والتحديث
-
-### تعديل وظيفة موجودة
-1. افتح الملف المناسب في `src/services/`
-2. عدل الوظيفة
-3. التغيير ينعكس تلقائياً على Desktop و Mobile
-
-### إضافة وظيفة جديدة
-1. أضف الوظيفة في الملف المناسب (`api.js`, `coreService.js`, إلخ)
-2. أضفها إلى `services/index.js`
-3. أضفها إلى `services-bridge.js` إذا لزم الأمر
-
-### إضافة خدمة موبايل جديدة
-1. أضف الوظيفة في `mobileService.js`
-2. أضفها إلى `services/index.js`
-3. أضفها إلى `services-bridge.js`
-
-## 📱 دعم الموبايل
-
-### ملفات الموبايل المدمجة
-- `mobile-tabs.js` - تم دمج وظائفه في `mobileService.js`
-- أي ملف موبايل آخر يمكن دمجه بنفس الطريقة
-
-### اكتشاف نوع الجهاز
-```javascript
-import { DeviceUtils } from './utils/helpers';
-
-if (DeviceUtils.isMobile()) {
-  // كود الموبايل
-} else if (DeviceUtils.isDesktop()) {
-  // كود الحاسوب
-}
-```
-
-## ⚠️ ملاحظات مهمة
-
-1. **عدم المساس بالواجهات**: لا تعدل ملفات HTML/CSS في `public/`
-2. **الخدمات فقط**: عدل فقط ملفات الخدمات في `src/services/`
-3. **الاختبار**: اختبر على Desktop و Mobile بعد كل تعديل
-4. **النسخ الاحتياطي**: د alltid نسخ احتياطية قبل التعديل
-
-## 🎯 الفوائد
-
-1. **كود موحد**: تعديل واحد يخدم المنصتين
-2. **صيانة أسهل**: الوظائف في مكان واحد
-3. **قابلية التوسع**: سهولة إضافة وظائف جديدة
-4. **اختبار أفضل**: اختبار الوظائف بشكل منفصل
-5. **دعم الموبايل**: هيكلية جاهزة للتطبيق الموبايل
-
-## 📞 الدعم
-
-لأي استفسار أو مشكلة، راجع:
-- ملفات الخدمات في `src/services/`
-- ملف الجسر في `public/js/services-bridge.js`
-- ملف README هذا
+هذا يبني React وينسخ ملفات `public` إلى `dist`. تشغيل `npm run dev` يخص Vite ويستخدم proxy لمسارات `/api` إلى السيرفر المحلي، بينما تشغيل backend يتم من مجلد `PSM` الأصلي عبر `npm start`.
