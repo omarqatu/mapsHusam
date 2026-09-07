@@ -528,6 +528,9 @@
                 <td style="white-space:nowrap;">${quotaDisplay}</td>
                 <td style="white-space:nowrap; font-size:11px;">${createdAtDisplay}</td>
                 <td class="actions-cell">
+                    <button class="action-btn" style="background:#16a085;color:white;" onclick="openReadOnlyView(${userId})" title="مشاهدة الحساب للقراءة فقط">
+                        <i class="fas fa-eye"></i>
+                    </button>
                     <button class="action-btn" style="background:#1a73e8;color:white;" onclick="openEditModal(${userId})" title="تعديل المستخدم">
                         <i class="fas fa-edit"></i>
                     </button>
@@ -541,6 +544,24 @@
             `;
             tbody.appendChild(tr);
         });
+    }
+
+    async function openReadOnlyView(userId) {
+        try {
+            const response = await fetch('/api/admin/view-session', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Accept': 'application/json', ...getAdminAuthHeaders() },
+                body: JSON.stringify({ user_id: userId })
+            });
+            const data = await response.json();
+            if (!response.ok || !data.success) {
+                showAlert('❌ ' + (data.error || 'تعذر فتح جلسة المشاهدة'), 'error');
+                return;
+            }
+            window.open('/admin-view-user.html?token=' + encodeURIComponent(data.token), '_blank', 'noopener');
+        } catch (err) {
+            showAlert('❌ خطأ في الاتصال: ' + err.message, 'error');
+        }
     }
 
     // ==========================================

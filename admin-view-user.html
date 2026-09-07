@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>مشاهدة حساب المستخدم</title>
+    <style>
+        :root { font-family: "Segoe UI", Tahoma, sans-serif; color: #243447; background: #f4f6f8; }
+        * { box-sizing: border-box; }
+        body { margin: 0; min-height: 100vh; }
+        .page { max-width: 1100px; margin: 0 auto; padding: 24px; }
+        .topbar, .panel { background: #fff; border: 1px solid #e1e6eb; border-radius: 10px; box-shadow: 0 3px 12px rgba(0,0,0,.06); }
+        .topbar { padding: 18px 20px; margin-bottom: 18px; display: flex; align-items: center; justify-content: space-between; gap: 14px; flex-wrap: wrap; }
+        h1, h2, p { margin-top: 0; }
+        h1 { margin-bottom: 6px; font-size: 21px; }
+        h2 { font-size: 17px; margin-bottom: 14px; }
+        .muted { color: #6c757d; font-size: 13px; }
+        .readonly-badge { color: #7a4b00; background: #fff3cd; border: 1px solid #ffe08a; border-radius: 6px; padding: 8px 12px; font-size: 12px; font-weight: 700; }
+        .back-btn, .request-btn { border: 0; border-radius: 6px; padding: 9px 13px; cursor: pointer; font: inherit; font-size: 13px; }
+        .back-btn { background: #34495e; color: #fff; }
+        .request-btn { background: #eaf3ff; color: #1a5da8; text-align: right; width: 100%; }
+        .profile { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
+        .profile-item { background: #f8fafc; border: 1px solid #e7ebef; border-radius: 7px; padding: 11px; min-width: 0; }
+        .profile-item strong { display: block; font-size: 11px; color: #73808c; margin-bottom: 5px; }
+        .profile-item span { display: block; overflow-wrap: anywhere; font-size: 13px; }
+        .panel { padding: 18px; margin-bottom: 18px; }
+        .request-list { display: grid; gap: 9px; }
+        .request { border: 1px solid #e1e6eb; border-radius: 7px; padding: 10px; }
+        .request-head { display: flex; justify-content: space-between; gap: 10px; align-items: center; }
+        .status { font-size: 11px; font-weight: 700; padding: 4px 8px; border-radius: 12px; background: #eef2f5; }
+        .messages { margin-top: 12px; border-top: 1px solid #e9ecef; padding-top: 10px; display: grid; gap: 7px; }
+        .message { border-radius: 7px; padding: 8px 10px; background: #f4f6f8; font-size: 13px; }
+        .message small { display: block; color: #7d8790; margin-top: 4px; font-size: 10px; }
+        .error { color: #a52834; background: #fbeaec; border: 1px solid #f1b8bf; padding: 10px; border-radius: 7px; }
+        @media (max-width: 800px) { .profile { grid-template-columns: repeat(2, minmax(0, 1fr)); } .page { padding: 14px; } }
+        @media (max-width: 480px) { .profile { grid-template-columns: 1fr; } .topbar { align-items: stretch; } }
+    </style>
+</head>
+<body>
+    <main class="page">
+        <section class="topbar">
+            <div>
+                <h1>مشاهدة حساب المستخدم</h1>
+                <p class="muted" id="session-expiry">جلسة مؤقتة للقراءة فقط</p>
+            </div>
+            <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+                <span class="readonly-badge">قراءة فقط: لا تعديل ولا إرسال</span>
+                <button class="back-btn" type="button" onclick="window.close()">إغلاق</button>
+            </div>
+        </section>
+
+        <section class="panel">
+            <h2>بيانات الحساب</h2>
+            <div id="profile" class="profile"><p class="muted">جارٍ التحميل...</p></div>
+        </section>
+
+        <section class="panel">
+            <h2>الطلبات والدردشات</h2>
+            <div id="requests" class="request-list"><p class="muted">جارٍ تحميل الطلبات...</p></div>
+        </section>
+    </main>
+
+<script>
+(function () {
+    'use strict';
+    const token = new URLSearchParams(window.location.search).get('token');
+    const headers = token ? { Authorization: 'Bearer ' + token } : {};
+    const profileEl = document.getElementById('profile');
+    const requestsEl = document.getElementById('requests');
+    const expiryEl = document.getElementById('session-expiry');
+
+    function text(value, fallback) { return value === null || value === undefined || value === '' ? (fallback || '—') : String(value); }
+    function item(label, value) {
+        const box = document.createElement('div');
+        box.className = 'profile-item';
+        const strong = document.createElement('strong');
+        strong.textContent = label;
+        const span = document.createElement('span');
+        span.textContent = text(value);
+        box.append(strong, span);
+        return box;
+    }
+    function showError(target, message) {
+        target.innerHTML = '';
+        const error = document.createElement('div');
+        error.className = 'error';
+        error.textContent = message;
+        target.appendChild(error);
+    }
+    async function getJson(url) {
+        const response = await fetch(url, { headers });
+        const data = await response.json();
+        if (!response.ok || !data.success) throw new Error(data.error || 'تعذر تحميل البيانات');
+        return data;
+    }
+    function renderProfile(user) {
+        profileEl.innerHTML = '';
+        profileEl.append(
+            item('الاسم', user.full_name), item('رقم المستخدم', user.user_id),
+            item('رقم الجوال', user.phone), item('البريد الإلكتروني', user.email),
+            item('الدور', user.role), item('الحساب', user.is_active ? 'مفعل' : 'غير مفعل'),
+            item('طبقة الخدمة', user.service_layer), item('معرف المعلم', user.feature_id)
+        );
+    }
+    function renderMessages(container, messages) {
+        container.innerHTML = '';
+        if (!messages.length) { container.textContent = 'لا توجد رسائل.'; return; }
+        messages.forEach(function (message) {
+            const row = document.createElement('div');
+            row.className = 'message';
+            row.textContent = (message.sender_role || 'طرف') + ': ' + text(message.message);
+            const date = document.createElement('small');
+            date.textContent = text(message.created_at);
+            row.appendChild(date);
+            container.appendChild(row);
+        });
+    }
+    async function showMessages(id, container) {
+        container.textContent = 'جارٍ تحميل الرسائل...';
+        try {
+            const data = await getJson('/api/admin/view-session/requests/' + encodeURIComponent(id) + '/messages');
+            renderMessages(container, data.messages || []);
+        } catch (error) { container.textContent = error.message; }
+    }
+    function renderRequests(requests) {
+        requestsEl.innerHTML = '';
+        if (!requests.length) { requestsEl.innerHTML = '<p class="muted">لا توجد طلبات.</p>'; return; }
+        requests.forEach(function (request) {
+            const box = document.createElement('article');
+            box.className = 'request';
+            const head = document.createElement('div');
+            head.className = 'request-head';
+            const title = document.createElement('strong');
+            title.textContent = text(request.service_type, 'طلب خدمة') + ' #' + request.id;
+            const status = document.createElement('span');
+            status.className = 'status';
+            status.textContent = text(request.status);
+            head.append(title, status);
+            const detail = document.createElement('p');
+            detail.className = 'muted';
+            detail.textContent = 'الطالب: ' + text(request.requester_name) + ' | المزود: ' + text(request.provider_full_name) + ' | التاريخ: ' + text(request.created_at);
+            const button = document.createElement('button');
+            button.className = 'request-btn';
+            button.type = 'button';
+            button.textContent = 'عرض الرسائل';
+            const messages = document.createElement('div');
+            messages.className = 'messages';
+            messages.hidden = true;
+            button.addEventListener('click', function () {
+                messages.hidden = !messages.hidden;
+                if (!messages.hidden && !messages.dataset.loaded) {
+                    messages.dataset.loaded = '1';
+                    showMessages(request.id, messages);
+                }
+            });
+            box.append(head, detail, button, messages);
+            requestsEl.appendChild(box);
+        });
+    }
+    async function init() {
+        if (!token) { showError(requestsEl, 'رابط المشاهدة غير صالح.'); return; }
+        try {
+            const profile = await getJson('/api/admin/view-session/profile');
+            renderProfile(profile.user);
+            const requests = await getJson('/api/admin/view-session/requests');
+            renderRequests(requests.requests || []);
+            expiryEl.textContent = 'جلسة مؤقتة للقراءة فقط، تنتهي خلال 30 دقيقة تقريبًا.';
+        } catch (error) {
+            showError(profileEl, error.message);
+            showError(requestsEl, error.message);
+        }
+    }
+    init();
+})();
+</script>
+</body>
+</html>

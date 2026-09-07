@@ -278,7 +278,6 @@
 
             updateFilterOptions(allData);
             applyFilters();
-            document.getElementById('totalInfo').innerText = `إجمالي السجلات: ${allData.length}`;
 
         } catch (err) {
             tbody.innerHTML = '<tr><td colspan="9" class="no-data" style="color:red;">خطأ في الاتصال بالسيرفر أو جلب البيانات</td></tr>';
@@ -418,6 +417,8 @@
     });
 
     renderTable(filteredData);
+    document.getElementById('totalInfo').innerText =
+        `السجلات المعروضة: ${filteredData.length} من أصل ${allData.length}`;
 }
 
             document.querySelectorAll('.filter-input').forEach(el => el.addEventListener('keyup', applyFilters));
