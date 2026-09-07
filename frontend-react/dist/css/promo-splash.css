@@ -1,0 +1,310 @@
+/* =============================================
+   promo-splash.css - شاشة التسويق الترحيبية المتحركة
+   ============================================= */
+
+#promo-splash-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 300000;
+    background: #0a0a1a;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    direction: rtl;
+    overflow: hidden;
+    transition: opacity 0.8s ease, visibility 0.8s ease;
+}
+
+#promo-splash-overlay.promo-hidden {
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+}
+
+/* حاوية الصور المتحركة - الخلفية */
+.promo-slideshow-bg {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 0;
+}
+
+.promo-slide-img {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    opacity: 0;
+    transition: opacity 1.5s ease;
+}
+
+.promo-slide-img.active {
+    opacity: 1;
+}
+
+/* طبقة التعتيم فوق الصور */
+.promo-overlay-dark {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(135deg, rgba(0,0,0,0.75) 0%, rgba(0,0,0,0.4) 50%, rgba(0,0,0,0.75) 100%);
+    z-index: 1;
+}
+
+/* المحتوى الرئيسي */
+.promo-content {
+    position: relative;
+    z-index: 2;
+    text-align: center;
+    max-width: 850px;
+    width: 90%;
+    padding: 30px 20px;
+    animation: promoFadeInUp 1.2s ease-out;
+}
+
+@keyframes promoFadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(40px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* الشعار / الأيقونة */
+.promo-logo-icon {
+    font-size: 60px;
+    color: #4fc3f7;
+    margin-bottom: 15px;
+    display: block;
+    animation: promoPulse 2s infinite ease-in-out;
+    text-shadow: 0 0 40px rgba(79, 195, 247, 0.5);
+}
+
+@keyframes promoPulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.1); }
+}
+
+/* العنوان الرئيسي */
+.promo-title {
+    font-size: clamp(28px, 6vw, 52px);
+    font-weight: 900;
+    color: #ffffff;
+    margin: 10px 0;
+    line-height: 1.3;
+    text-shadow: 0 4px 20px rgba(0,0,0,0.5);
+}
+
+.promo-title .highlight {
+    background: linear-gradient(135deg, #4fc3f7, #00e676);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+/* النص الوصفي */
+.promo-subtitle {
+    font-size: clamp(14px, 2.5vw, 20px);
+    color: rgba(255,255,255,0.85);
+    margin: 15px auto 25px;
+    line-height: 1.8;
+    max-width: 650px;
+}
+
+/* شبكة الميزات */
+.promo-features-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 15px;
+    margin: 25px 0;
+    text-align: center;
+}
+
+.promo-feature-item {
+    background: rgba(255,255,255,0.08);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255,255,255,0.12);
+    border-radius: 16px;
+    padding: 20px 12px;
+    transition: all 0.4s ease;
+}
+
+.promo-feature-item:hover {
+    background: rgba(255,255,255,0.15);
+    transform: translateY(-5px);
+    box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+}
+
+.promo-feature-item .icon {
+    font-size: 36px;
+    display: block;
+    margin-bottom: 10px;
+}
+
+.promo-feature-item .label {
+    font-size: 14px;
+    font-weight: bold;
+    color: #fff;
+    display: block;
+    line-height: 1.4;
+}
+
+.promo-feature-item .desc {
+    font-size: 12px;
+    color: rgba(255,255,255,0.7);
+    margin-top: 5px;
+    display: block;
+}
+
+/* أزرار الإجراء الرئيسية */
+.promo-action-buttons {
+    display: flex;
+    gap: 15px;
+    justify-content: center;
+    flex-wrap: wrap;
+    margin: 30px 0 15px;
+}
+
+.promo-action-btn {
+    padding: 16px 32px;
+    border: none;
+    border-radius: 50px;
+    font-size: 16px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    min-width: 200px;
+    justify-content: center;
+}
+
+.promo-btn-primary {
+    background: linear-gradient(135deg, #4fc3f7, #00e676);
+    color: #0a0a1a;
+    box-shadow: 0 4px 20px rgba(79, 195, 247, 0.4);
+}
+
+.promo-btn-primary:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 30px rgba(79, 195, 247, 0.6);
+}
+
+.promo-btn-secondary {
+    background: rgba(255,255,255,0.12);
+    color: #fff;
+    border: 2px solid rgba(255,255,255,0.3);
+}
+
+.promo-btn-secondary:hover {
+    background: rgba(255,255,255,0.2);
+    transform: translateY(-3px);
+    border-color: rgba(255,255,255,0.6);
+}
+
+/* النص السفلي */
+.promo-footer-text {
+    color: rgba(255,255,255,0.5);
+    font-size: 13px;
+    margin-top: 20px;
+    line-height: 1.6;
+}
+
+/* الكلمات المتطايرة (زينة) */
+.promo-floating-text {
+    position: absolute;
+    z-index: 1;
+    font-size: 14px;
+    font-weight: bold;
+    color: rgba(255,255,255,0.06);
+    animation: floatUp 15s linear infinite;
+    pointer-events: none;
+    user-select: none;
+}
+
+@keyframes floatUp {
+    0% { transform: translateY(100vh) rotate(0deg); opacity: 0; }
+    10% { opacity: 1; }
+    90% { opacity: 1; }
+    100% { transform: translateY(-100vh) rotate(360deg); opacity: 0; }
+}
+
+/* استجابة الموبايل */
+@media (max-width: 768px) {
+    .promo-features-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 10px;
+    }
+
+    .promo-feature-item {
+        padding: 14px 8px;
+    }
+
+    .promo-feature-item .icon {
+        font-size: 28px;
+    }
+
+    .promo-logo-icon {
+        font-size: 44px;
+    }
+
+    .promo-content {
+        padding: 15px;
+    }
+
+    .promo-subtitle {
+        font-size: 13px;
+        line-height: 1.6;
+    }
+
+    .promo-action-buttons {
+        flex-direction: column;
+        align-items: center;
+    }
+
+    .promo-action-btn {
+        min-width: 0;
+        width: 100%;
+        max-width: 300px;
+        padding: 14px 20px;
+        font-size: 14px;
+    }
+}
+
+@media (max-width: 480px) {
+    .promo-features-grid {
+        grid-template-columns: 1fr 1fr;
+        gap: 8px;
+    }
+
+    .promo-feature-item {
+        padding: 10px 6px;
+        border-radius: 10px;
+    }
+
+    .promo-feature-item .icon {
+        font-size: 22px;
+        margin-bottom: 5px;
+    }
+
+    .promo-feature-item .label {
+        font-size: 11px;
+    }
+
+    .promo-feature-item .desc {
+        display: none;
+    }
+}

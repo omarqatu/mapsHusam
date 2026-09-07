@@ -625,37 +625,46 @@ app.get('/api/get-provider-service', async (req, res) => {
         let layer = userRow.service_layer ? userRow.service_layer.trim() : null;
         let featId = userRow.feature_id;
 
+        // 🆕 استخراج discriminator الصحيح من service_layer
+        // service_layer قد يكون "services:electricianLayer" ونحتاج "electrician"
+        let discriminator = layer;
+        if (layer && layer.includes(':')) {
+            discriminator = layer.split(':')[1].replace(/Layer$/i, '').toLowerCase();
+        } else if (layer && layer.endsWith('Layer')) {
+            discriminator = layer.replace(/Layer$/i, '').toLowerCase();
+        }
+
         // [حماية SQL]: التحقق من أن الطبقة ضمن القائمة البيضاء
-        if (layer && !isValidLayer(layer)) {
+        if (discriminator && !isValidLayer(discriminator)) {
             return res.status(403).json({ success: false, error: 'محاولة وصول غير مصرح بها لجدول محمي' });
         }
 
         // 🛑 [تعديل حاسم]: تم حذف الإسناد التلقائي للنجار 14. إذا كانت الحقول فارغة، نرفض فتح اللوحة فوراً.
-        if (!layer || !featId) {
+        if (!discriminator || !featId) {
             console.log(`⚠️ مزود الخدمة رقم ${user_id} غير مربوط بأي طبقة جغرافية أو معلم. تم حظر اللوحة ومنع الإسناد الوهمي.`);
-            return res.json({ 
-                success: false, 
-                show_panel: false, 
-                message: 'الحساب ليس مزود خدمة مفعّل أو حقول المعالم الجغرافية فارغة تماماً.' 
+            return res.json({
+                success: false,
+                show_panel: false,
+                message: 'الحساب ليس مزود خدمة مفعّل أو حقول المعالم الجغرافية فارغة تماماً.'
             });
         }
 
         // 🔥 [تطوير استراتيجي]: جلب الإحداثيات الحالية مباشرة من جدول الطبقة الديناميكية
         let coordsData = { x_coord: null, y_coord: null, layer_status: userRow.status };
         try {
-            const targetPool = getPoolForLayer(layer);
-            const isRealEstate = ['ApartRent', 'ApartSale', 'LandSale', 'Location', 'RoadsTest'].includes(layer);
+            const targetPool = getPoolForLayer(discriminator);
+            const isRealEstate = ['ApartRent', 'ApartSale', 'LandSale', 'Location', 'RoadsTest'].includes(discriminator);
 
             // العقارات تستخدم fid، الخدمات تستخدم id
             const idField = isRealEstate ? 'fid' : 'id';
 
-            console.log(`🔍 جلب الإحداثيات: layer=${layer}, idField=${idField}, featId=${featId}, isRealEstate=${isRealEstate}`);
+            console.log(`🔍 جلب الإحداثيات: discriminator=${discriminator}, idField=${idField}, featId=${featId}, isRealEstate=${isRealEstate}`);
 
             // 🆕 كل الخدمات أصبحت بجدول service_all موحّد، ولازم فلترة إضافية بعمود discriminator
             const coordsQuery = isRealEstate
-                ? `SELECT x_coord, y_coord, status FROM public."${layer}" WHERE ${idField} = $1 LIMIT 1`
-                : `SELECT x_coord, y_coord, status FROM public.service_all WHERE id = $1 AND discriminator = $2 LIMIT 1`;
-            const coordsParams = isRealEstate ? [featId] : [featId, layer];
+                ? `SELECT x_coord, y_coord, status FROM public."${discriminator}" WHERE ${idField} = $1 LIMIT 1`
+                : `SELECT x_coord, y_coord, status, discriminator FROM public.service_all WHERE id = $1 AND discriminator = $2 LIMIT 1`;
+            const coordsParams = isRealEstate ? [featId] : [featId, discriminator];
 
             const coordsResult = await targetPool.query(coordsQuery, coordsParams);
             console.log(`🔍 نتيجة الاستعلام: ${coordsResult.rows.length} صفوف`);
@@ -684,9 +693,9 @@ app.get('/api/get-provider-service', async (req, res) => {
             show_panel: true,
             user_status: parseInt(userRow.status), // إرسال الحالة الإدارية (0 نشط، 1 مجمد)
             service: {
-                service_layer: layer,
-                feature_id: featId, 
-                id: featId,         
+                service_layer: discriminator, // 🆕 إرسال discriminator الصحيح بدلاً من layer القديم
+                feature_id: featId,
+                id: featId,
                 status: coordsData.layer_status !== null ? parseInt(coordsData.layer_status) : parseInt(userRow.status),
                 x_coord: coordsData.x_coord,
                 y_coord: coordsData.y_coord,
@@ -705,28 +714,37 @@ app.get('/api/get-provider-service', async (req, res) => {
 // مسار تحديث الحالة والموقع الجغرافي الذكي (يدعم الخدمات والعقارات)
 // =========================================================================
 app.post('/api/update-service-status', async (req, res) => {
-    const { 
-        user_id, 
-        service_layer, 
-        feature_id, 
-        id, 
-        status, 
-        x_coord, 
-        y_coord 
+    const {
+        user_id,
+        service_layer,
+        feature_id,
+        id,
+        status,
+        x_coord,
+        y_coord
     } = req.body;
+
+    console.log('📥 [update-service-status] Request body:', { user_id, service_layer, feature_id, id, status, x_coord, y_coord });
 
     const targetIdValue = feature_id || id;
     const layerName = service_layer ? service_layer.trim() : null;
 
+    console.log('📥 [update-service-status] Parsed values:', { targetIdValue, layerName });
+
     if (!user_id || !layerName || !targetIdValue) {
+        console.log('❌ [update-service-status] Missing required fields');
         return res.status(400).json({ success: false, error: 'بيانات التحديث غير مكتملة، المعرفات والطبقة الجغرافية حقول إجبارية.' });
     }
 
     if (!isValidLayer(layerName)) {
+        console.log('❌ [update-service-status] Invalid layer:', layerName);
         return res.status(403).json({ success: false, error: 'غير مسموح بالتعامل مع هذه الطبقة برمجياً' });
     }
 
-    const parsedStatus = status !== undefined ? parseInt(status) : 0;
+    const parsedStatus = status !== undefined ? parseInt(status, 10) : 0;
+    if (![0, 1].includes(parsedStatus)) {
+        return res.status(400).json({ success: false, error: 'قيمة الحالة يجب أن تكون 0 (متوفر) أو 1 (غير متوفر).' });
+    }
     const parsedXCoord = x_coord ? Number(x_coord) : null;
     const parsedYCoord = y_coord ? Number(y_coord) : null;
 
@@ -791,6 +809,10 @@ app.post('/api/update-service-status', async (req, res) => {
         // تنفيذ استعلام التحديث على قاعدة البيانات الصحيحة (العقارات أو الخدمات)
         const updateResult = await targetPool.query(updateLayerQuery, queryParams);
 
+        if (updateResult.rowCount === 0) {
+            return res.status(404).json({ success: false, error: 'لم يتم العثور على الخدمة المرتبطة بهذا الحساب.' });
+        }
+
         // 🔄 [مزامنة ذكية]: نقوم بتحديث جدول الـ users للخدمات والعقارات
         if (parsedXCoord && parsedYCoord) {
             const syncUserCoords = `UPDATE public.users SET x_coord = $1, y_coord = $2 WHERE user_id = $3`;
@@ -800,8 +822,9 @@ app.post('/api/update-service-status', async (req, res) => {
 
         console.log(`\x1b[36m%s\x1b[0m`, `🎯 [نجاح التحديث] تم تحديث البيانات بنجاح للطبقة [${layerName}] المعلم [${targetIdValue}]`);
 
-        res.json({ 
+        res.json({
             success: true, 
+            status: parsedStatus,
             message: `تم تحديث الطبقة [${layerName}] بنجاح وتفادي تعارض هندسة المضلعات.` 
         });
 
