@@ -1,4 +1,6 @@
-/* features.css - التحكم الحصري والكامل بالأزرار والبحث السريع والـ Modals */
+/* features.css - التحكم الحصري والكامل بالأزرار والبحث السريع والـ Modals
+   🎨 [مرحلة 2]: ألوان/ظلال موحّدة عبر design-system.css فقط - لم تتغيّر
+   أي مواضع (top/left) أو أحجام أو منطق !important المعتمد عليه بصفحات أخرى. */
 
 /* ملاحظة: تم حذف تعريف .user-top-badge-container من هنا لأنه (أ) يستهدف
    كلاس بينما العنصر الفعلي بالـ HTML هو #user-top-badge-container (id)،
@@ -40,7 +42,7 @@
     white-space: nowrap !important; 
     padding: 9px 20px !important; 
     background: #ffffff !important;
-    border-radius: 30px !important; 
+    border-radius: var(--radius-pill, 30px) !important; 
     border: 1px solid rgba(0, 0, 0, 0.1) !important;
     font-size: 13px !important; 
     font-weight: 700 !important; 
@@ -48,12 +50,12 @@
     display: flex !important; 
     align-items: center !important; 
     gap: 10px !important;
-    transition: all 0.3s ease !important; 
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15) !important;
+    transition: var(--transition-base, all 0.3s ease) !important; 
+    box-shadow: var(--shadow-sm, 0 4px 12px rgba(0, 0, 0, 0.15)) !important;
     cursor: pointer;
 }
-.quick-item i { color: #3b5bdb !important; font-size: 16px !important; }
-.quick-item:hover { background: #3b5bdb !important; color: white !important; transform: translateY(-4px) !important; }
+.quick-item i { color: var(--brand-600, #3b5bdb) !important; font-size: 16px !important; }
+.quick-item:hover { background: var(--brand-600, #3b5bdb) !important; color: white !important; transform: translateY(-4px) !important; }
 
 .scroll-btn {
     background: white !important; 
@@ -64,10 +66,12 @@
     display: flex !important; 
     justify-content: center !important;
     align-items: center !important; 
-    color: #3b5bdb !important; 
-    box-shadow: 0 4px 10px rgba(0,0,0,0.2) !important;
+    color: var(--brand-600, #3b5bdb) !important; 
+    box-shadow: var(--shadow-xs, 0 4px 10px rgba(0,0,0,0.2)) !important;
     border: none;
+    transition: var(--transition-fast, transform .15s ease) !important;
 }
+.scroll-btn:hover { transform: scale(1.08) !important; }
 
 /* --- طباعة ومخرجات الخريطة --- */
 .results-header-container { 
@@ -80,20 +84,21 @@
 }
 .header-actions-left { display: flex; align-items: center; gap: 20px; }
 .print-results-btn { 
-    background-color: #28a745; 
+    background-color: var(--color-success, #28a745); 
     color: white; 
     border: none; 
     padding: 5px 12px; 
-    border-radius: 4px; 
+    border-radius: var(--radius-sm, 4px); 
     cursor: pointer; 
     font-size: 13px; 
     font-weight: bold; 
     display: flex; 
     align-items: center; 
     gap: 5px; 
+    transition: var(--transition-fast, background-color .15s ease);
 }
-.print-results-btn:hover { background-color: #218838; }
-.close-results-btn { background: none; border: none; color: #ff4d4d; font-size: 18px; cursor: pointer; line-height: 1; }
+.print-results-btn:hover { background-color: var(--color-success-dark, #218838); }
+.close-results-btn { background: none; border: none; color: var(--color-danger, #ff4d4d); font-size: 18px; cursor: pointer; line-height: 1; }
 
 /* --- النوافذ المنبثقة والجداول الحيوية --- */
 .modal {
@@ -116,20 +121,20 @@
     background-color: #fefefe; 
     margin: auto; 
     padding: 20px; 
-    border-radius: 12px; 
+    border-radius: var(--radius-md, 12px); 
     width: 90%; 
     max-width: 480px; 
     position: relative; 
     text-align: right; 
     direction: rtl; 
-    box-shadow: 0 5px 25px rgba(0,0,0,0.3);
+    box-shadow: var(--shadow-lg, 0 5px 25px rgba(0,0,0,0.3));
     max-height: 85vh; 
     overflow-y: auto; 
 }
 
 #attributeForm label { display: block; margin-bottom: 5px; font-weight: bold; }
-#attributeForm input[type="text"], #attributeForm input[type="number"] { width: 100%; padding: 8px 10px; margin-bottom: 10px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
-#attributeModal button { background-color: #007bff; color: white; padding: 10px 15px; border: none; border-radius: 4px; cursor: pointer; margin-top: 10px; }
+#attributeForm input[type="text"], #attributeForm input[type="number"] { width: 100%; padding: 8px 10px; margin-bottom: 10px; border: 1px solid var(--neutral-400, #ccc); border-radius: var(--radius-sm, 4px); box-sizing: border-box; }
+#attributeModal button { background-color: var(--color-info, #007bff); color: white; padding: 10px 15px; border: none; border-radius: var(--radius-sm, 4px); cursor: pointer; margin-top: 10px; }
 
 
 
@@ -145,44 +150,44 @@
     z-index: 1000 !important;
     background: rgba(255, 255, 255, 0.9) !important;
     padding: 5px !important;
-    border-radius: 6px !important;
-    box-shadow: 0 3px 12px rgba(0,0,0,0.15) !important;
+    border-radius: var(--radius-sm, 6px) !important;
+    box-shadow: var(--shadow-xs, 0 3px 12px rgba(0,0,0,0.15)) !important;
     display: flex !important;
     flex-direction: column !important;
     gap: 5px !important;
-    border: 1px solid #ccc !important;
+    border: 1px solid var(--neutral-300, #ccc) !important;
 }
 
 .ol-zoom button {
     margin: 0 !important;
-    background-color: #1e3799 !important; 
+    background-color: var(--brand-800, #1e3799) !important; 
     color: white !important;
     font-size: 18px !important;
     font-weight: bold !important;
     border: none !important;
-    border-radius: 4px !important;
+    border-radius: var(--radius-sm, 4px) !important;
     width: 34px !important;
     height: 34px !important;
     cursor: pointer !important;
     display: flex !important;
     align-items: center !important;
     justify-content: center !important;
-    transition: background 0.2s ease !important;
+    transition: var(--transition-fast, background 0.2s ease) !important;
 }
 .ol-zoom button:hover {
-    background-color: #0a3d62 !important;
+    background-color: var(--brand-900, #0a3d62) !important;
 }
 
 .ol-zoom .ol-custom-location-btn {
     background-color: #ffffff !important;
     color: #333 !important;
-    border: 1px solid #ccc !important;
+    border: 1px solid var(--neutral-400, #ccc) !important;
     font-size: 15px !important;
     line-height: 34px !important;
     margin-top: 0 !important;
 }
 .ol-zoom .ol-custom-location-btn:hover {
-    background-color: #f1f2f6 !important;
+    background-color: var(--neutral-100, #f1f2f6) !important;
 }
 
 #custom-splash-overlay {
@@ -191,10 +196,10 @@
 #custom-splash-dialog {
     background-color: #ffffff;
     padding: 30px;
-    border-radius: 12px;
+    border-radius: var(--radius-md, 12px);
     width: 90%;
     max-width: 440px;
-    box-shadow: 0 15px 35px rgba(0,0,0,0.3);
+    box-shadow: var(--shadow-lg, 0 15px 35px rgba(0,0,0,0.3));
     text-align: center;
     font-family: system-ui, sans-serif;
     max-height: 85vh;

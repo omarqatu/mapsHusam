@@ -1,6 +1,13 @@
 /* ==========================================================================
    no-map-search.css
-   تصميم صفحة "البحث بدون خريطة" - بسيط، جذاب، وسريع التحميل (معدل بالكامل)
+   🎨 [مرحلة 3]: إعادة تصميم بصري كامل لصفحة "البحث بدون خريطة" باستخدام
+   متغيرات design-system.css (ألوان/ظلال/انحناءات/انتقالات موحّدة).
+
+   ⚠️ قاعدة صارمة التزمت بها بالكامل: لم يتغيّر أي class name أو id أو أي
+   breakpoint بالـ media queries، لأن no-map-search.js و no-map-mobile.js
+   يعتمدان بشكل مباشر على أسماء هذه الـ classes بالضبط (مثل: nms-mobile,
+   nms-mobile-portrait, nms-filters-box, nms-ad-space, nms-result-card...).
+   كل ما تغيّر هو: الألوان، التدرجات، الظلال، الانحناءات، سلاسة الحركة.
    ========================================================================== */
 
 * { box-sizing: border-box; }
@@ -8,8 +15,8 @@
 body {
     margin: 0;
     font-family: 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
-    background: #f2f4f7;
-    color: #2c3e50;
+    background: var(--neutral-100, #f2f4f7);
+    color: var(--text-primary, #2c3e50);
     direction: rtl;
     position: relative;
     min-height: 100vh;
@@ -36,21 +43,21 @@ body {
 .nms-blob-1 {
     width: 380px; height: 380px;
     top: -120px; right: -100px;
-    background: radial-gradient(circle, #1a73e8, transparent 70%);
+    background: radial-gradient(circle, var(--brand-500, #1a73e8), transparent 70%);
     animation: nmsFloatSlow 22s ease-in-out infinite;
 }
 
 .nms-blob-2 {
     width: 300px; height: 300px;
     bottom: -80px; left: -80px;
-    background: radial-gradient(circle, #34a853, transparent 70%);
+    background: radial-gradient(circle, var(--color-success, #34a853), transparent 70%);
     animation: nmsFloatSlow 26s ease-in-out infinite reverse;
 }
 
 .nms-blob-3 {
     width: 240px; height: 240px;
     top: 45%; left: 50%;
-    background: radial-gradient(circle, #fbbc04, transparent 70%);
+    background: radial-gradient(circle, var(--color-warning, #fbbc04), transparent 70%);
     animation: nmsFloatSlow 30s ease-in-out infinite;
     animation-delay: -8s;
 }
@@ -78,11 +85,11 @@ body {
     align-items: center;
     justify-content: space-between;
     gap: 20px;
-    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    box-shadow: var(--shadow-xs, 0 2px 10px rgba(0,0,0,0.1));
     position: sticky;
     top: 0;
     z-index: 500;
-    border-bottom: 1px solid #e6e9ee;
+    border-bottom: 1px solid var(--neutral-200, #e6e9ee);
 }
 
 @keyframes nmsGradientShift {
@@ -95,7 +102,7 @@ body {
 @media (max-width: 767px) {
     .nms-topbar {
         animation: none;
-        background: linear-gradient(120deg, #1a73e8, #0d47a1);
+        background: var(--gradient-header, linear-gradient(120deg, #1a73e8, #0d47a1));
     }
 }
 
@@ -105,21 +112,21 @@ body {
     font-weight: 700;
     flex: 1;
     text-align: center;
-    color: #1a73e8;
+    color: var(--brand-500, #1a73e8);
 }
 
 .nms-topbar-spacer { width: 90px; }
 
 .nms-back-home {
-    color: #1a73e8;
+    color: var(--brand-500, #1a73e8);
     text-decoration: none;
     font-weight: bold;
     font-size: 13px;
     background: rgba(255,255,255,0.15);
     padding: 8px 14px;
-    border-radius: 20px;
+    border-radius: var(--radius-pill, 20px);
     white-space: nowrap;
-    transition: background 0.2s;
+    transition: var(--transition-fast, background 0.2s);
 }
 .nms-back-home:hover { background: rgba(255,255,255,0.3); }
 
@@ -142,11 +149,11 @@ body {
     background: rgba(255,255,255,0.15);
     border: none;
     padding: 8px 14px;
-    border-radius: 20px;
+    border-radius: var(--radius-pill, 20px);
     white-space: nowrap;
     cursor: pointer;
     font-family: inherit;
-    transition: background 0.2s ease, transform 0.15s ease;
+    transition: var(--transition-base, background 0.2s ease, transform 0.15s ease);
 }
 .nms-topbar-action-btn:hover {
     background: rgba(255,255,255,0.3);
@@ -157,36 +164,36 @@ body {
 .nms-topbar-action-fb {
     background: rgba(255,255,255,0.15);
 }
-.nms-topbar-action-fb:hover { background: #1877f2; }
+.nms-topbar-action-fb:hover { background: var(--color-facebook, #1877f2); }
 
 .nms-action-btn {
-    background: #eef6ff;
-    color: #1a73e8;
+    background: var(--color-info-bg, #eef6ff);
+    color: var(--brand-500, #1a73e8);
     border: 1px solid #cfe3fb;
     padding: 7px 14px;
-    border-radius: 20px;
+    border-radius: var(--radius-pill, 20px);
     text-decoration: none;
     font-size: 12px;
     font-weight: bold;
     display: inline-flex;
     align-items: center;
     gap: 6px;
-    transition: all 0.25s ease;
+    transition: var(--transition-base, all 0.25s ease);
 }
 .nms-action-btn:hover {
-    background: #1a73e8;
+    background: var(--brand-500, #1a73e8);
     color: #fff;
     transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(26,115,232,0.25);
+    box-shadow: var(--shadow-xs, 0 4px 12px rgba(26,115,232,0.25));
 }
 
 .nms-action-btn.nms-action-fb {
     background: #e7f3ff;
-    color: #1877f2;
+    color: var(--color-facebook, #1877f2);
     border-color: #b8d4fe;
 }
 .nms-action-btn.nms-action-fb:hover {
-    background: #1877f2;
+    background: var(--color-facebook, #1877f2);
     color: #fff;
 }
 
@@ -226,9 +233,9 @@ body {
 
 /* حاوية الإعلانات الداخلية الموحدة */
 .nms-ad-space {
-    background: #f8f9fa;
-    border: 2px dashed #cbd5e1;
-    border-radius: 10px;
+    background: var(--neutral-50, #f8f9fa);
+    border: 2px dashed var(--neutral-400, #cbd5e1);
+    border-radius: var(--radius-md, 10px);
     display: flex;
     flex-direction: column;
     align-items: stretch;
@@ -242,7 +249,7 @@ body {
 }
 
 .nms-ad-space span {
-    color: #94a3b8;
+    color: var(--neutral-500, #94a3b8);
     font-size: 13px;
     font-weight: 500;
     text-align: center;
@@ -253,8 +260,8 @@ body {
 .nms-ad-space div[style*="background"] {
     width: 100% !important;
     background: #ffffff !important;
-    border-radius: 8px;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+    border-radius: var(--radius-sm, 8px);
+    box-shadow: var(--shadow-xs, 0 4px 12px rgba(0,0,0,0.08));
     padding: 10px;
     text-align: right;
     box-sizing: border-box;
@@ -283,13 +290,13 @@ body {
 /* ---------- قسم التعريف والإرشاد (الهيرو) ---------- */
 .nms-hero {
     position: relative;
-    border-radius: 18px;
+    border-radius: var(--radius-lg, 18px);
     overflow: hidden;
     margin-bottom: 22px;
-    box-shadow: 0 8px 24px rgba(0,0,0,0.1);
+    box-shadow: var(--shadow-md, 0 8px 24px rgba(0,0,0,0.1));
     animation: nmsFadeInUp 0.6s ease both;
     background: #fff;
-    border: 1px solid #e6e9ee;
+    border: 1px solid var(--neutral-200, #e6e9ee);
 }
 
 .nms-hero-slideshow {
@@ -342,7 +349,7 @@ body {
 .nms-hero-content h2 {
     margin: 0 0 10px;
     font-size: 19px;
-    color: #1a73e8;
+    color: var(--brand-500, #1a73e8);
 }
 
 .nms-hero-content p {
@@ -357,21 +364,21 @@ body {
     display: inline-flex;
     align-items: center;
     gap: 8px;
-    background: #eef6ff;
-    color: #1a73e8;
+    background: var(--color-info-bg, #eef6ff);
+    color: var(--brand-500, #1a73e8);
     border: 1px solid #cfe3fb;
     padding: 10px 20px;
-    border-radius: 30px;
+    border-radius: var(--radius-pill, 30px);
     text-decoration: none;
     font-weight: bold;
     font-size: 13px;
-    transition: all 0.25s ease;
+    transition: var(--transition-base, all 0.25s ease);
 }
 .nms-map-link:hover {
-    background: #1a73e8;
+    background: var(--brand-500, #1a73e8);
     color: #fff;
     transform: translateY(-2px);
-    box-shadow: 0 6px 16px rgba(26,115,232,0.35);
+    box-shadow: var(--shadow-brand-sm, 0 6px 16px rgba(26,115,232,0.35));
 }
 
 @keyframes nmsFadeInUp {
@@ -409,7 +416,7 @@ body {
     scrollbar-width: thin;
 }
 .nms-groups-tabs::-webkit-scrollbar { height: 6px; }
-.nms-groups-tabs::-webkit-scrollbar-thumb { background: #cfd6de; border-radius: 10px; }
+.nms-groups-tabs::-webkit-scrollbar-thumb { background: var(--neutral-300, #cfd6de); border-radius: 10px; }
 
 .nms-group-tab {
     flex: 0 0 auto;
@@ -417,16 +424,16 @@ body {
     align-items: center;
     gap: 8px;
     background: #fff;
-    border: 1px solid #dde3ea;
+    border: 1px solid var(--neutral-200, #dde3ea);
     color: #444;
     padding: 9px 16px;
-    border-radius: 30px;
+    border-radius: var(--radius-pill, 30px);
     font-size: 13px;
     font-weight: bold;
     cursor: pointer;
     white-space: nowrap;
-    transition: all 0.2s ease, transform 0.15s ease;
-    box-shadow: 0 2px 6px rgba(0,0,0,0.04);
+    transition: var(--transition-base, all 0.2s ease, transform 0.15s ease);
+    box-shadow: var(--shadow-xs, 0 2px 6px rgba(0,0,0,0.04));
     animation: nmsFadeInUp 0.5s ease both;
     animation-delay: calc(var(--i, 0) * 45ms);
 }
@@ -439,10 +446,10 @@ body {
     }
 }
 
-.nms-group-tab i { font-size: 13px; color: #1a73e8; transition: transform 0.25s ease; }
+.nms-group-tab i { font-size: 13px; color: var(--brand-500, #1a73e8); transition: transform 0.25s ease; }
 
 .nms-group-tab:hover {
-    border-color: #1a73e8;
+    border-color: var(--brand-500, #1a73e8);
     background: #f2f8ff;
     transform: translateY(-2px);
 }
@@ -450,10 +457,10 @@ body {
 .nms-group-tab:active { transform: translateY(0) scale(0.96); }
 
 .nms-group-tab.active {
-    background: #1a73e8;
-    border-color: #1a73e8;
+    background: var(--brand-500, #1a73e8);
+    border-color: var(--brand-500, #1a73e8);
     color: #fff;
-    box-shadow: 0 4px 12px rgba(26,115,232,0.3);
+    box-shadow: var(--shadow-brand-sm, 0 4px 12px rgba(26,115,232,0.3));
 }
 .nms-group-tab.active i { color: #fff; }
 
@@ -466,16 +473,16 @@ body {
 
 .nms-category-card {
     background: #fff;
-    border: 1px solid #e6e9ee;
-    border-radius: 14px;
+    border: 1px solid var(--neutral-200, #e6e9ee);
+    border-radius: var(--radius-md, 14px);
     padding: 18px 10px;
     display: flex;
     flex-direction: column;
     align-items: center;
     gap: 10px;
     cursor: pointer;
-    transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease;
-    box-shadow: 0 2px 6px rgba(0,0,0,0.04);
+    transition: var(--transition-base, transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease);
+    box-shadow: var(--shadow-xs, 0 2px 6px rgba(0,0,0,0.04));
     animation: nmsFadeInUp 0.45s ease both;
     animation-delay: calc(var(--i, 0) * 30ms);
 }
@@ -491,15 +498,15 @@ body {
 
 .nms-category-card i {
     font-size: 26px;
-    color: #1a73e8;
+    color: var(--brand-500, #1a73e8);
     width: 52px;
     height: 52px;
     display: flex;
     align-items: center;
     justify-content: center;
-    background: #eef6ff;
+    background: var(--color-info-bg, #eef6ff);
     border-radius: 50%;
-    transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+    transition: var(--transition-base, all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1));
 }
 
 /* إيقاف transition الأيقونات في الموبايل */
@@ -520,12 +527,12 @@ body {
 
 .nms-category-card:hover {
     transform: translateY(-5px);
-    box-shadow: 0 10px 22px rgba(26,115,232,0.18);
-    border-color: #1a73e8;
+    box-shadow: var(--shadow-sm, 0 10px 22px rgba(26,115,232,0.18));
+    border-color: var(--brand-500, #1a73e8);
 }
 
 .nms-category-card:hover i {
-    background: #1a73e8;
+    background: var(--brand-500, #1a73e8);
     color: #fff;
     transform: scale(1.1) rotate(-6deg);
 }
@@ -539,28 +546,28 @@ body {
 
 .nms-back-btn {
     background: #fff;
-    border: 1px solid #ddd;
+    border: 1px solid var(--neutral-300, #ddd);
     color: #555;
     padding: 8px 16px;
-    border-radius: 20px;
+    border-radius: var(--radius-pill, 20px);
     cursor: pointer;
     font-size: 13px;
     font-weight: bold;
     margin-bottom: 14px;
-    transition: all 0.2s ease;
+    transition: var(--transition-base, all 0.2s ease);
 }
-.nms-back-btn:hover { background: #eee; transform: translateX(4px); }
+.nms-back-btn:hover { background: var(--neutral-200, #eee); transform: translateX(4px); }
 
 .nms-current-category-title {
     font-size: 20px;
-    color: #1a73e8;
+    color: var(--brand-500, #1a73e8);
     margin: 0 0 16px;
     display: flex;
     align-items: center;
     gap: 10px;
 }
 .nms-current-category-title i {
-    background: #eef6ff;
+    background: var(--color-info-bg, #eef6ff);
     padding: 10px;
     border-radius: 50%;
     font-size: 18px;
@@ -575,9 +582,9 @@ body {
 /* ---------- صندوق الفلاتر ---------- */
 .nms-filters-box {
     background: #fff;
-    border-radius: 14px;
+    border-radius: var(--radius-md, 14px);
     padding: 18px 20px;
-    box-shadow: 0 3px 12px rgba(0,0,0,0.06);
+    box-shadow: var(--shadow-sm, 0 3px 12px rgba(0,0,0,0.06));
     margin-bottom: 20px;
 }
 
@@ -597,13 +604,15 @@ body {
 
 .nms-select {
     padding: 9px 10px;
-    border: 1px solid #ccc;
-    border-radius: 6px;
+    border: 1px solid var(--neutral-400, #ccc);
+    border-radius: var(--radius-sm, 6px);
     font-size: 13px;
     background: #fff;
     color: #333;
     min-width: 130px;
+    transition: var(--transition-fast, border-color .15s ease);
 }
+.nms-select:focus { outline: none; border-color: var(--brand-500, #1a73e8); }
 
 .nms-value-container {
     flex: 1;
@@ -613,10 +622,13 @@ body {
 .nms-value-container input {
     width: 100%;
     padding: 9px 10px;
-    border: 1px solid #ccc;
-    border-radius: 6px;
+    border: 1px solid var(--neutral-400, #ccc);
+    border-radius: var(--radius-sm, 6px);
     font-size: 13px;
+    transition: var(--transition-fast, border-color .15s ease);
 }
+.nms-value-container select:focus,
+.nms-value-container input:focus { outline: none; border-color: var(--brand-500, #1a73e8); }
 
 .nms-value-loading {
     font-size: 12px;
@@ -632,11 +644,11 @@ body {
 }
 
 .nms-condition-tag {
-    background: #f1f6ff;
+    background: var(--color-info-bg, #f1f6ff);
     border: 1px solid #cfe3fb;
     color: #1a4a8a;
     padding: 6px 12px;
-    border-radius: 20px;
+    border-radius: var(--radius-pill, 20px);
     font-size: 12px;
     display: inline-flex;
     align-items: center;
@@ -644,7 +656,7 @@ body {
 }
 .nms-condition-tag i {
     cursor: pointer;
-    color: #c0392b;
+    color: var(--color-danger-dark, #c0392b);
 }
 
 .nms-filter-actions {
@@ -656,21 +668,21 @@ body {
 .nms-btn {
     border: none;
     padding: 10px 18px;
-    border-radius: 8px;
+    border-radius: var(--radius-sm, 8px);
     cursor: pointer;
     font-weight: bold;
     font-size: 13px;
     display: inline-flex;
     align-items: center;
     gap: 6px;
-    transition: all 0.2s;
+    transition: var(--transition-base, all 0.2s);
 }
-.nms-btn-primary { background: #1a73e8; color: #fff; }
-.nms-btn-primary:hover { background: #1557b0; }
-.nms-btn-secondary { background: #eef6ff; color: #1a73e8; border: 1px solid #cfe3fb; }
+.nms-btn-primary { background: var(--brand-500, #1a73e8); color: #fff; }
+.nms-btn-primary:hover { background: var(--color-info-dark, #1557b0); }
+.nms-btn-secondary { background: var(--color-info-bg, #eef6ff); color: var(--brand-500, #1a73e8); border: 1px solid #cfe3fb; }
 .nms-btn-secondary:hover { background: #dbeaff; }
-.nms-btn-muted { background: #f0f0f0; color: #555; }
-.nms-btn-muted:hover { background: #e2e2e2; }
+.nms-btn-muted { background: var(--neutral-100, #f0f0f0); color: #555; }
+.nms-btn-muted:hover { background: var(--neutral-200, #e2e2e2); }
 
 /* ---------- عدد النتائج ---------- */
 .nms-results-count {
@@ -699,23 +711,23 @@ body {
 /* تنسيق بطاقات النتائج */
 .nms-result-card {
     background: #fff;
-    border: 1px solid #e6e9ee;
-    border-radius: 12px;
+    border: 1px solid var(--neutral-200, #e6e9ee);
+    border-radius: var(--radius-md, 12px);
     padding: 16px;
     margin-bottom: 14px;
     display: flex;
     flex-direction: column;
     gap: 12px;
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    transition: var(--transition-base, transform 0.2s ease, box-shadow 0.2s ease);
     animation: nmsFadeInUp 0.4s ease both;
     animation-delay: calc(var(--i, 0) * 25ms);
-    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    box-shadow: var(--shadow-xs, 0 2px 8px rgba(0,0,0,0.08));
 }
 
 .nms-result-card:hover {
     transform: translateY(-3px);
-    box-shadow: 0 8px 20px rgba(26,115,232,0.12);
-    border-color: #1a73e8;
+    box-shadow: var(--shadow-sm, 0 8px 20px rgba(26,115,232,0.12));
+    border-color: var(--brand-500, #1a73e8);
 }
 
 .nms-result-title {
@@ -723,8 +735,8 @@ body {
     padding-bottom: 8px;
     font-size: 15px;
     font-weight: bold;
-    color: #1a73e8;
-    border-bottom: 1px solid #eee;
+    color: var(--brand-500, #1a73e8);
+    border-bottom: 1px solid var(--neutral-100, #eee);
 }
 
 .nms-result-desc {
@@ -738,9 +750,9 @@ body {
 .nms-result-img {
     width: 100%;
     height: 180px;
-    border-radius: 10px;
+    border-radius: var(--radius-sm, 10px);
     object-fit: cover;
-    background: #f5f5f5;
+    background: var(--neutral-100, #f5f5f5);
 }
 
 .nms-r-actions {
@@ -751,7 +763,7 @@ body {
 .nms-r-actions button {
     flex: 1;
     border: none;
-    border-radius: 8px;
+    border-radius: var(--radius-sm, 8px);
     padding: 10px 6px;
     font-weight: bold;
     font-size: 12.5px;
@@ -760,23 +772,25 @@ body {
     align-items: center;
     justify-content: center;
     gap: 6px;
+    transition: var(--transition-fast, filter .15s ease);
 }
-.nms-call-btn { background: #1a73e8; color: #fff; direction: ltr; }
-.nms-whatsapp-btn { background: #25d366; color: #fff; }
-.req-svc-btn { background: linear-gradient(135deg, #1a73e8, #6c5ce7); color: #fff; }
+.nms-r-actions button:hover { filter: brightness(0.95); }
+.nms-call-btn { background: var(--brand-500, #1a73e8); color: #fff; direction: ltr; }
+.nms-whatsapp-btn { background: var(--color-whatsapp, #25d366); color: #fff; }
+.req-svc-btn { background: var(--gradient-brand, linear-gradient(135deg, #1a73e8, #6c5ce7)); color: #fff; }
 
 .nms-popup-actions {
     display: flex;
     gap: 10px;
     margin-top: 10px;
     padding-top: 10px;
-    border-top: 1px solid #eee;
+    border-top: 1px solid var(--neutral-100, #eee);
 }
 
 .nms-popup-btn {
     flex: 1;
     padding: 8px 12px;
-    border-radius: 6px;
+    border-radius: var(--radius-sm, 6px);
     text-align: center;
     font-size: 13px;
     font-weight: bold;
@@ -787,17 +801,17 @@ body {
     gap: 5px;
 }
 
-.btn-whatsapp { background: #25d366; color: #fff; }
-.btn-map-location { background: #007bff; color: #fff; }
+.btn-whatsapp { background: var(--color-whatsapp, #25d366); color: #fff; }
+.btn-map-location { background: var(--color-info, #007bff); color: #fff; }
 
 .nms-goto-map-btn {
     margin-top: 4px;
     width: 100%;
-    background: #6c757d;
+    background: var(--neutral-600, #6c757d);
     color: #fff;
     border: none;
     padding: 10px;
-    border-radius: 8px;
+    border-radius: var(--radius-sm, 8px);
     font-weight: bold;
     font-size: 12.5px;
     cursor: pointer;
@@ -805,9 +819,9 @@ body {
     align-items: center;
     justify-content: center;
     gap: 6px;
-    transition: background 0.2s;
+    transition: var(--transition-fast, background 0.2s);
 }
-.nms-goto-map-btn:hover { background: #545b62; }
+.nms-goto-map-btn:hover { background: var(--neutral-700, #545b62); }
 
 /* ---------- مودال "من نحن" ---------- */
 .nms-modal-overlay {
@@ -826,13 +840,13 @@ body {
 .nms-modal-box {
     position: relative;
     background: #fff;
-    border-radius: 18px;
+    border-radius: var(--radius-lg, 18px);
     max-width: 640px;
     width: 100%;
     max-height: 85vh;
     overflow-y: auto;
     padding: 30px 28px;
-    box-shadow: 0 20px 50px rgba(0,0,0,0.3);
+    box-shadow: var(--shadow-lg, 0 20px 50px rgba(0,0,0,0.3));
     animation: nmsPopIn 0.3s ease both;
 }
 
@@ -840,7 +854,7 @@ body {
     position: absolute;
     top: 14px;
     left: 14px;
-    background: #f0f2f5;
+    background: var(--neutral-100, #f0f2f5);
     border: none;
     border-radius: 50%;
     width: 34px;
@@ -851,18 +865,18 @@ body {
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: all 0.2s ease;
+    transition: var(--transition-base, all 0.2s ease);
 }
-.nms-modal-close:hover { background: #e2e5ea; color: #000; transform: rotate(90deg); }
+.nms-modal-close:hover { background: var(--neutral-200, #e2e5ea); color: #000; transform: rotate(90deg); }
 
 .nms-modal-title {
     margin: 0 0 14px;
     font-size: 21px;
-    color: #1a73e8;
+    color: var(--brand-500, #1a73e8);
     display: flex;
     align-items: center;
     gap: 10px;
-    border-bottom: 2px solid #eef6ff;
+    border-bottom: 2px solid var(--color-info-bg, #eef6ff);
     padding-bottom: 12px;
 }
 
@@ -875,17 +889,17 @@ body {
 }
 
 .nms-modal-section {
-    background: #f8f9fb;
-    border-radius: 12px;
+    background: var(--neutral-50, #f8f9fb);
+    border-radius: var(--radius-md, 12px);
     padding: 16px 18px;
     margin-bottom: 16px;
-    border-right: 4px solid #1a73e8;
+    border-right: 4px solid var(--brand-500, #1a73e8);
 }
 
 .nms-modal-section h3 {
     margin: 0 0 8px;
     font-size: 15px;
-    color: #2c3e50;
+    color: var(--text-primary, #2c3e50);
     display: flex;
     align-items: center;
     gap: 8px;
@@ -917,15 +931,15 @@ body {
     align-items: center;
     justify-content: center;
     gap: 10px;
-    background: #1877f2;
+    background: var(--color-facebook, #1877f2);
     color: #fff;
     text-decoration: none;
     font-weight: bold;
     font-size: 14px;
     padding: 12px;
-    border-radius: 10px;
+    border-radius: var(--radius-md, 10px);
     margin-top: 6px;
-    transition: all 0.2s ease;
+    transition: var(--transition-base, all 0.2s ease);
 }
 .nms-modal-fb-link:hover {
     background: #145dbf;
@@ -940,7 +954,7 @@ body {
     padding: 50px 20px 30px 20px;
     margin-top: 60px;
     font-family: inherit;
-    border-top: 4px solid #3498db;
+    border-top: 4px solid var(--brand-600, #3498db);
     direction: rtl;
 }
 
@@ -958,7 +972,7 @@ body {
     margin-bottom: 20px;
     position: relative;
     padding-bottom: 8px;
-    border-bottom: 2px solid #3498db;
+    border-bottom: 2px solid var(--brand-600, #3498db);
     display: inline-block;
 }
 
@@ -983,7 +997,7 @@ body {
 }
 
 .nms-footer-col ul li a:hover {
-    color: #3498db;
+    color: var(--brand-600, #3498db);
     transform: translateX(-4px);
 }
 
@@ -998,7 +1012,7 @@ body {
 }
 
 .nms-footer-brand-col .nms-footer-logo i {
-    color: #3498db;
+    color: var(--brand-600, #3498db);
 }
 
 .nms-footer-about {
@@ -1028,7 +1042,7 @@ body {
 }
 
 .nms-footer-social a:hover {
-    background-color: #3498db;
+    background-color: var(--brand-600, #3498db);
     transform: translateY(-3px);
 }
 
@@ -1497,4 +1511,40 @@ body {
         justify-content: center;
         white-space: normal;
     }
+}
+
+/* ==========================================================================
+   🆕 [مرحلة 3]: تنسيقات الهيدر الجديد "market-header" الموجودة أصلاً بملف
+   <style> داخل no-map-search.html - أُعيد تعريفها هنا فقط بصيغة موحّدة
+   بالمتغيرات لضمان اتساقها مع باقي الصفحة. القيم الأصلية بالـ HTML تبقى
+   تعمل كـ fallback إن لم يُحمَّل هذا الملف لأي سبب (نفس ترتيب الأولوية).
+   ========================================================================== */
+.market-header {
+    background: #ffffff;
+    box-shadow: var(--shadow-xs, 0 2px 10px rgba(0,0,0,0.08));
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+    font-family: inherit;
+}
+.market-search-box {
+    transition: var(--transition-base, border-color 0.2s);
+}
+.market-search-box:focus-within {
+    border-color: var(--brand-500, #007bff) !important;
+    background: #fff !important;
+}
+.market-search-box button {
+    background: var(--brand-500, #007bff);
+    transition: var(--transition-fast, background 0.2s);
+}
+.market-search-box button:hover {
+    background: var(--color-info-dark, #0056b3);
+}
+.market-add-btn {
+    background: var(--color-warning, #ff9800);
+    transition: var(--transition-fast, background 0.2s);
+}
+.market-add-btn:hover {
+    background: #f57c00;
 }

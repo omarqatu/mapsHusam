@@ -1,10 +1,12 @@
 /* ==========================================================================
    platform-stats.css
-   الأنماط الموحّدة لعرض إحصائيات المنصة (المستخدمين، المشاهدات، الخدمات،
-   ومزودي الخدمات) في ثلاثة أماكن مختلفة:
+   🎨 [مرحلة 3]: تحديث بصري لبطاقات إحصائيات المنصة الظاهرة في:
    1) صفحة البحث بدون خريطة (.pstats-inline) - داخل قسم الهيرو
    2) فوتر أسفل شاشة الكمبيوتر بصفحة الخريطة (#platform-stats-footer)
    3) تبويب "الرئيسية" على الموبايل بصفحة الخريطة (.pstats-mobile-home)
+
+   لم تتغيّر أي id/class أو breakpoints - platform-stats.js يستهدف
+   [data-platform-stats-target] وينشئ نفس الـ classes بالضبط.
    ========================================================================== */
 
 .pstats-wrap {
@@ -25,26 +27,26 @@
     font-size: 13px;
     color: #888;
 }
-.pstats-error { color: #c0392b; }
+.pstats-error { color: var(--color-danger-dark, #c0392b); }
 .pstats-loading i, .pstats-error i { margin-left: 6px; }
 
 .pstats-card {
     background: #fff;
-    border: 1px solid #e6e9ee;
-    border-radius: 14px;
+    border: 1px solid var(--neutral-200, #e6e9ee);
+    border-radius: var(--radius-md, 14px);
     padding: 14px 16px;
     display: flex;
     align-items: center;
     gap: 12px;
-    box-shadow: 0 3px 10px rgba(0,0,0,0.06);
+    box-shadow: var(--shadow-xs, 0 3px 10px rgba(0,0,0,0.06));
     flex: 1 1 200px;
     min-width: 190px;
     box-sizing: border-box;
-    transition: transform 0.25s ease, box-shadow 0.25s ease;
+    transition: var(--transition-base, transform 0.25s ease, box-shadow 0.25s ease);
 }
 .pstats-card:hover {
     transform: translateY(-3px);
-    box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+    box-shadow: var(--shadow-sm, 0 8px 20px rgba(0,0,0,0.1));
 }
 
 .pstats-icon {
@@ -57,14 +59,14 @@
     justify-content: center;
     font-size: 19px;
     color: #fff;
-    background: #1a73e8;
+    background: var(--brand-500, #1a73e8);
 }
-.pstats-card[data-stat="users"] .pstats-icon { background: linear-gradient(135deg, #1a73e8, #6c5ce7); }
+.pstats-card[data-stat="users"] .pstats-icon { background: var(--gradient-brand, linear-gradient(135deg, #1a73e8, #6c5ce7)); }
 .pstats-card[data-stat="views-map"] .pstats-icon,
 .pstats-card[data-stat="views-quick"] .pstats-icon,
-.pstats-card[data-stat="views-total"] .pstats-icon { background: linear-gradient(135deg, #34a853, #16a085); }
-.pstats-card[data-stat="services"] .pstats-icon { background: linear-gradient(135deg, #fbbc04, #e37400); }
-.pstats-card[data-stat="features"] .pstats-icon { background: linear-gradient(135deg, #ea4335, #c0392b); }
+.pstats-card[data-stat="views-total"] .pstats-icon { background: linear-gradient(135deg, var(--color-success, #34a853), #16a085); }
+.pstats-card[data-stat="services"] .pstats-icon { background: var(--gradient-warning, linear-gradient(135deg, #fbbc04, #e37400)); }
+.pstats-card[data-stat="features"] .pstats-icon { background: var(--gradient-danger, linear-gradient(135deg, #ea4335, #c0392b)); }
 
 .pstats-info { flex: 1; min-width: 0; }
 .pstats-value {
@@ -87,16 +89,16 @@
 }
 .pstats-breakdown span {
     font-size: 10.5px;
-    background: #f1f5fb;
+    background: var(--neutral-100, #f1f5fb);
     color: #444;
     padding: 2px 7px;
-    border-radius: 10px;
+    border-radius: var(--radius-pill, 10px);
     display: inline-flex;
     align-items: center;
     gap: 4px;
     white-space: nowrap;
 }
-.pstats-breakdown i { font-size: 10px; color: #1a73e8; }
+.pstats-breakdown i { font-size: 10px; color: var(--brand-500, #1a73e8); }
 
 /* ---------- 1) صفحة البحث بدون خريطة (ضمن الهيرو) ---------- */
 .pstats-inline {
@@ -128,8 +130,8 @@
     z-index: 1500;
     background: rgba(255, 255, 255, 0.97);
     backdrop-filter: blur(3px);
-    border-top: 1px solid #e0e0e0;
-    box-shadow: 0 -4px 18px rgba(0,0,0,0.12);
+    border-top: 1px solid var(--neutral-200, #e0e0e0);
+    box-shadow: var(--shadow-md, 0 -4px 18px rgba(0,0,0,0.12));
     padding: 8px 20px;
     display: flex;
     justify-content: center;
@@ -143,7 +145,7 @@
     padding: 8px 14px;
     gap: 10px;
     box-shadow: none;
-    border-color: #eee;
+    border-color: var(--neutral-100, #eee);
 }
 .pstats-footer-bar .pstats-icon { width: 36px; height: 36px; font-size: 15px; }
 .pstats-footer-bar .pstats-value { font-size: 16px; }

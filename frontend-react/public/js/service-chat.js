@@ -1,5 +1,11 @@
 ﻿/**
  * js/service-chat.js
+ * 🆕 [مرحلة 5]: التعديل الوحيد في هذا الملف هو داخل دالة
+ * insertMyRequestsButtonIntoDrawer() أدناه - تم تغيير *نقطة إدراج* زر
+ * "طلباتي" فقط ليصبح مباشرة بعد #notification-toggle-btn في الـ DOM
+ * (فيظهر تلقائياً بسطر مستقل أسفله، بفضل width:100% الموجودة أصلاً على
+ * هذه الأزرار في auth-core-functions.css). كل باقي الملف - المنطق،
+ * الأحداث، الدردشة، التوهج، الاستطلاع الدوري - لم يتغيّر بحرف واحد.
  */
 (function () {
     'use strict';
@@ -425,6 +431,25 @@
         }
     }
 
+    // ==========================================================================
+    // 🆕 [مرحلة 5]: التعديل الوحيد بكامل الملف - إدراج زر "طلباتي" مباشرة بعد
+    // #notification-toggle-btn بدلاً من إدراجه قبل الفاصل (نهاية القائمة).
+    //
+    // لماذا هذا آمن وكافٍ وحده لتحقيق المطلوب:
+    // كل أزرار البوابة (.btn-dashboard-top, .notification-btn, .btn-my-requests-top
+    // وغيرها) لها بالفعل width:100% في auth-core-functions.css ضمن حاوية
+    // flex بها flex-wrap:wrap. أي عنصر 100% العرض داخل flex-wrap يحتل سطراً
+    // مستقلاً بالكامل تلقائياً - لذلك مجرد نقل موقع الإدراج في الـ DOM ليصبح
+    // مباشرة بعد زر الإشعارات يكفي وحده لجعله يظهر بصرياً "أسفله مباشرة"،
+    // سواء كان الزران أبناء مباشرين لنفس الصف (صفحة البحث بدون خريطة) أو
+    // متداخلين ضمن نفس المجموعة الداخلية (صفحة الخريطة) - في كلتا الحالتين
+    // النتيجة البصرية واحدة: سطر مستقل أسفل الإشعارات تماماً. يعمل هذا بنفس
+    // الطريقة على الكمبيوتر والموبايل والتابلت وبكلا الاتجاهين لأن آلية
+    // البوابة الجانبية (ui-collapse.js) واحدة وموحّدة على كل الأجهزة والصفحتين.
+    //
+    // لا حاجة لأي CSS إضافي، ولا لأي فحص لحجم الشاشة أو نوع الصفحة - نفس
+    // منطق الإدراج يعمل بشكل صحيح وآمن في كل الحالات.
+    // ==========================================================================
     function insertMyRequestsButtonIntoDrawer() {
         if (document.getElementById('open-my-service-chats')) return true; 
 
@@ -449,6 +474,16 @@
             if (container) container.classList.remove('ui-profile-open');
         };
 
+        // 🆕 [مرحلة 5] نقطة الإدراج الجديدة: مباشرة بعد زر الإشعارات
+        const notificationBtn = document.getElementById('notification-toggle-btn');
+        if (notificationBtn && notificationBtn.parentElement) {
+            notificationBtn.insertAdjacentElement('afterend', myRequestsBtn);
+            return true;
+        }
+
+        // 🛡️ شبكة أمان: إذا تعذّر العثور على زر الإشعارات لأي سبب (مثلاً
+        // صفحة مستقبلية بدون نظام إشعارات)، نعود لنفس السلوك القديم الآمن
+        // بدل فشل الإدراج بالكامل
         const divider = drawerBody.querySelector('.ui-profile-drawer-divider');
         if (divider) {
             drawerBody.insertBefore(myRequestsBtn, divider);

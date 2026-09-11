@@ -453,6 +453,8 @@
         if (systemStarted) return;
         systemStarted = true;
 
+        if (window.MobileAppBridge) window.MobileAppBridge.ready('interactive-map');
+
         mqPortrait = window.matchMedia('(max-width: 767px) and (orientation: portrait)');
         mqLandscape = window.matchMedia('(max-width: 900px) and (orientation: landscape)');
 

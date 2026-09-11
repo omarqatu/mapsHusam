@@ -4,6 +4,13 @@
    كل لوحة تبقى بمكانها الأصلي في الـ DOM ولا يتم نقلها إطلاقاً؛ فقط يتم
    تغيير موقعها البصري (position: fixed) لتطابق صندوق التبويبات، وإخفاء أي
    لوحة غير نشطة حالياً. هذا يمنع أي تضارب مع أي كود آخر يتعامل مع اللوحات.
+
+   🎨 [مرحلة 4]: تحديث بصري بنظام design-system.css فقط (ألوان/ظلال/تدرجات).
+   ✅ مبني فوق نسختك المعدّلة بالضبط - تمت المحافظة على إضافتَي دعم
+   safe-area-inset (للحواف المنحنية/النوتش) في صندوق التبويبات كما وضعتهما،
+   ولم يتغيّر أي id/class/متغير CSS (--mt-size, --mt-header-height) أو أي
+   قيمة تعتمد عليها حسابات mobile-tabs.js (خصوصاً currentSizeNum/setSizeNum
+   التي تقرأ --mt-size مباشرة، ولا علاقة لها بأي تعديل بصري هنا).
    ========================================================================== */
 
 .swal2-container { z-index: 200000 !important; }
@@ -44,8 +51,8 @@ body.mobile-tabs-portrait #mobile-tab-area {
     height: var(--mt-size);
     background: linear-gradient(135deg, rgba(255, 255, 255, 0.98) 0%, rgba(248, 250, 252, 0.98) 100%);
     backdrop-filter: blur(10px);
-    box-shadow: 0 -8px 32px rgba(0,0,0,0.15), 0 -4px 12px rgba(0,0,0,0.08);
-    border-radius: 24px 24px 0 0;
+    box-shadow: var(--shadow-lg, 0 -8px 32px rgba(0,0,0,0.15)), 0 -4px 12px rgba(0,0,0,0.08);
+    border-radius: var(--radius-lg, 24px) var(--radius-lg, 24px) 0 0;
     z-index: 6000;
     overflow: hidden;
     direction: rtl;
@@ -64,7 +71,7 @@ body.mobile-tabs-landscape #mobile-tab-area {
     background: linear-gradient(135deg, rgba(255, 255, 255, 0.98) 0%, rgba(248, 250, 252, 0.98) 100%);
     backdrop-filter: blur(10px);
     box-shadow: -8px 0 32px rgba(0,0,0,0.15), -4px 0 12px rgba(0,0,0,0.08);
-    border-radius: 24px 0 0 24px;
+    border-radius: var(--radius-lg, 24px) 0 0 var(--radius-lg, 24px);
     z-index: 6000;
     overflow: hidden;
     direction: rtl;
@@ -79,7 +86,7 @@ body.mobile-tabs-landscape #mobile-tab-area {
     height: var(--mt-header-height);
     box-sizing: border-box;
     overflow: hidden;
-    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    background: linear-gradient(135deg, var(--neutral-50, #f8f9fa) 0%, var(--neutral-200, #e9ecef) 100%);
     border-bottom: 1px solid rgba(102, 126, 234, 0.1);
 }
 
@@ -98,16 +105,16 @@ body.mobile-tabs-landscape #mobile-tab-handle { cursor: ew-resize; }
     display: block;
     width: 44px;
     height: 5px;
-    border-radius: 4px;
-    background: linear-gradient(135deg, #cfd4da 0%, #b8c2cc 100%);
-    transition: all 0.3s ease;
+    border-radius: var(--radius-sm, 4px);
+    background: linear-gradient(135deg, var(--neutral-300, #cfd4da) 0%, var(--neutral-400, #b8c2cc) 100%);
+    transition: var(--transition-base, all 0.3s ease);
 }
 body.mobile-tabs-landscape .mt-handle-pill {
     width: 5px;
     height: 44px;
 }
 #mobile-tab-handle:active .mt-handle-pill { 
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: var(--gradient-brand, linear-gradient(135deg, #667eea 0%, #764ba2 100%));
     width: 50px;
 }
 
@@ -123,7 +130,7 @@ body.mobile-tabs-landscape .mt-handle-pill {
     white-space: nowrap;
 }
 #mobile-tab-bar::-webkit-scrollbar { height: 4px; }
-#mobile-tab-bar::-webkit-scrollbar-thumb { background: #ccc; border-radius: 4px; }
+#mobile-tab-bar::-webkit-scrollbar-thumb { background: var(--neutral-300, #ccc); border-radius: var(--radius-sm, 4px); }
 
 .mobile-tab-btn {
     display: inline-flex;
@@ -135,23 +142,23 @@ body.mobile-tabs-landscape .mt-handle-pill {
     font-size: 13px;
     font-weight: 600;
     padding: 8px 14px;
-    border-radius: 20px;
+    border-radius: var(--radius-pill, 20px);
     cursor: pointer;
     flex-shrink: 0;
-    transition: all 0.3s ease;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    transition: var(--transition-base, all 0.3s ease);
+    box-shadow: var(--shadow-xs, 0 2px 8px rgba(0,0,0,0.06));
 }
 .mobile-tab-btn:hover {
     background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);
-    border-color: #667eea;
-    color: #667eea;
+    border-color: var(--brand-500, #667eea);
+    color: var(--brand-500, #667eea);
     transform: translateY(-1px);
 }
 .mobile-tab-btn.active {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    border-color: #667eea;
+    background: var(--gradient-brand, linear-gradient(135deg, #667eea 0%, #764ba2 100%));
+    border-color: var(--brand-500, #667eea);
     color: #fff;
-    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+    box-shadow: var(--shadow-brand-sm, 0 4px 15px rgba(102, 126, 234, 0.3));
     transform: translateY(-1px);
 }
 .mobile-tab-btn .mobile-tab-close {
@@ -183,7 +190,7 @@ body.mobile-tabs-landscape .mt-handle-pill {
 }
 #mobile-tab-home .mth-icon { 
     font-size: 36px;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: var(--gradient-brand, linear-gradient(135deg, #667eea 0%, #764ba2 100%));
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
@@ -191,7 +198,7 @@ body.mobile-tabs-landscape .mt-handle-pill {
 #mobile-tab-home .mth-title { 
     font-size: 16px;
     font-weight: 700;
-    color: #2c3e50;
+    color: var(--text-primary, #2c3e50);
     margin-bottom: 8px;
 }
 #mobile-tab-home .mth-desc { 

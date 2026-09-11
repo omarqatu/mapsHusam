@@ -8,6 +8,12 @@ window.currentProviderService = null;
 window.isCoolingDown = false; // تتبع فترة الانتظار الإجبارية لمنع التلاعب وكثرة الطلبات
 window.isAccountFrozen = false; // تتبع حالة التجميد الإداري للحساب
 
+function getProviderApiBaseUrl() {
+    let baseUrl = window.MAP_CONFIG?.server?.apiUrl || window.location.origin + "/";
+    if (!baseUrl.endsWith('/')) baseUrl += '/';
+    return baseUrl;
+}
+
 document.addEventListener("DOMContentLoaded", function() {
     forceUnlockButtons();
     executeProviderInitializationPipeline();
@@ -135,17 +141,10 @@ function checkProviderStatusAndShowPanel(directUserObj = null) {
         statusIndicator.style.color = "#7f8c8d";
     }
 
-    window.currentProviderService = {
-        service_layer: currentUser.service_layer,
-        id: currentUser.feature_id,
-        feature_id: currentUser.feature_id
-    };
+    const baseUrl = getProviderApiBaseUrl();
 
-    let baseUrl = window.MAP_CONFIG?.server?.proxyUrl || (window.location.origin + "/");
-    if (!baseUrl.endsWith('/')) baseUrl += '/';
-    
     const userIdForQuery = currentUser.user_id || currentUser.id;
-    if (!userIdForQuery) return; 
+    if (!userIdForQuery) return;
 
     const url = `${baseUrl}api/get-provider-service?user_id=${userIdForQuery}`;
 
@@ -167,18 +166,23 @@ function checkProviderStatusAndShowPanel(directUserObj = null) {
             if (data.service) {
                 const fetchedStatus = parseInt(data.service.status);
 
-                // تحديث الكائن بالخلفية بكافة الأحوال
-                window.currentProviderService.status = fetchedStatus;
-                window.currentProviderService.x_coord = data.service.x_coord ? Number(data.service.x_coord) : null;
-                window.currentProviderService.y_coord = data.service.y_coord ? Number(data.service.y_coord) : null;
-
-                // تحديث بيانات المستخدم المحلية أيضاً
+                // 🆕 تحديث بيانات المستخدم المحلية أولاً
                 currentUser.status = fetchedStatus;
                 currentUser.x_coord = data.service.x_coord ? Number(data.service.x_coord) : null;
                 currentUser.y_coord = data.service.y_coord ? Number(data.service.y_coord) : null;
                 currentUser.service_layer = data.service.service_layer;
                 currentUser.feature_id = data.service.feature_id;
                 localStorage.setItem('map_user', JSON.stringify(currentUser));
+
+                // 🆕 ثم تحديث window.currentProviderService بالبيانات المحدثة
+                window.currentProviderService = {
+                    service_layer: data.service.service_layer,
+                    id: data.service.feature_id,
+                    feature_id: data.service.feature_id,
+                    status: fetchedStatus,
+                    x_coord: data.service.x_coord ? Number(data.service.x_coord) : null,
+                    y_coord: data.service.y_coord ? Number(data.service.y_coord) : null
+                };
 
 
                 // [إصلاح الحسم]: لا نحدث الـ UI أو نفك الأزرار إن كان هناك عد تنازلي نشط
@@ -345,7 +349,7 @@ function handleStatusChangeRequest(statusValue, updateGPS = false) {
             { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
         );
     } else {
-        sendDataToServer(parsedStatus, null, null, xPal, yPal);
+        sendDataToServer(parsedStatus, null, null, null, null);
     }
 }
 
@@ -356,12 +360,11 @@ function sendDataToServer(status, lat, lon, xPal, yPal) {
         let rawUser = JSON.parse(localStorage.getItem('map_user')) || JSON.parse(localStorage.getItem('user'));
         currentUser = normalizeUserObject(rawUser);
     } catch(e) {}
-    
+
     const activeUserId = currentUser ? currentUser.user_id : null;
     if (!activeUserId) { window.isCoolingDown = false; forceUnlockButtons(); return; }
 
-    let baseUrl = window.MAP_CONFIG?.server?.proxyUrl || window.location.origin + "/";
-    if (!baseUrl.endsWith('/')) baseUrl += '/';
+    const baseUrl = getProviderApiBaseUrl();
 
     const finalXPal = xPal ? Number(Number(xPal).toFixed(2)) : null;
     const finalYPal = yPal ? Number(Number(yPal).toFixed(2)) : null;
@@ -371,12 +374,25 @@ function sendDataToServer(status, lat, lon, xPal, yPal) {
         window.currentProviderService.y_coord = finalYPal;
     }
 
+    // 🆕 استخراج discriminator الصحيح من service_layer
+    // service_layer قد يكون "services:electricianLayer" ونحتاج "electrician"
+    let serviceLayer = window.currentProviderService.service_layer;
+    let discriminator = serviceLayer;
+
+    if (serviceLayer && serviceLayer.includes(':')) {
+        // استخراج الجزء بعد النقطتين وإزالة "Layer" من النهاية
+        discriminator = serviceLayer.split(':')[1].replace(/Layer$/i, '').toLowerCase();
+    } else if (serviceLayer && serviceLayer.endsWith('Layer')) {
+        // إذا كان ينتهي بـ Layer فقط
+        discriminator = serviceLayer.replace(/Layer$/i, '').toLowerCase();
+    }
+
     const payload = {
         user_id: parseInt(activeUserId),
-        service_layer: window.currentProviderService.service_layer, 
-        id: parseInt(window.currentProviderService.feature_id), 
-        feature_id: parseInt(window.currentProviderService.feature_id), 
-        x_coord: finalXPal, 
+        service_layer: discriminator, // 🆕 إرسال discriminator بدلاً من service_layer الكامل
+        id: parseInt(window.currentProviderService.feature_id),
+        feature_id: parseInt(window.currentProviderService.feature_id),
+        x_coord: finalXPal,
         y_coord: finalYPal,
         status: parsedStatus,
         account_status: parsedStatus,
@@ -388,7 +404,13 @@ function sendDataToServer(status, lat, lon, xPal, yPal) {
         headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
         body: JSON.stringify(payload)
     })
-    .then(response => response.json())
+    .then(async response => {
+        const data = await response.json();
+        if (!response.ok || !data.success) {
+            throw new Error(data.details || data.error || 'فشل تحديث حالة الخدمة');
+        }
+        return data;
+    })
     .then(data => {
 
         if(currentUser) {
@@ -424,10 +446,18 @@ function sendDataToServer(status, lat, lon, xPal, yPal) {
         startCoolDownTimer();
     })
     .catch(error => {
+        console.error('❌ فشل تحديث حالة مزود الخدمة:', error);
         window.isCoolingDown = false;
         if (window.currentProviderService) {
             updateProviderPanelUI(window.currentProviderService.status);
         }
+        const errorMessage = error && error.message ? error.message : 'تعذر الاتصال بالسيرفر.';
+        const statusIndicator = document.getElementById('provider-status-indicator');
+        if (statusIndicator) {
+            statusIndicator.innerText = `⚠️ ${errorMessage}`;
+            statusIndicator.style.setProperty('color', '#c0392b', 'important');
+        }
+        if (window.toast) window.toast(errorMessage, 'error');
     });
 }
 

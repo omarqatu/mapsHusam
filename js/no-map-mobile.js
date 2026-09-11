@@ -15,20 +15,29 @@
             body.nms-hide-ads .nms-ad-side { display: none !important; }
 
             body.nms-mobile .nms-layout { flex-direction: column !important; padding: 0 12px !important; }
+            body.nms-tablet .nms-layout { gap: 20px !important; padding: 0 15px !important; }
+            body.nms-tablet .nms-ad-side { display: none !important; }
+            body.nms-tablet .nms-main { width: 100% !important; }
             body.nms-mobile .nms-hero-content { padding: 20px 18px !important; }
             body.nms-mobile .nms-categories-grid { grid-template-columns: repeat(auto-fill, minmax(105px, 1fr)) !important; }
             body.nms-mobile .nms-category-card { padding: 14px 8px !important; }
             body.nms-mobile .nms-category-card i { width: 42px !important; height: 42px !important; font-size: 20px !important; }
             body.nms-mobile .nms-results-list { grid-template-columns: 1fr !important; }
+            body.nms-tablet .nms-results-list { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; }
             body.nms-mobile .nms-select, body.nms-mobile .nms-value-container { min-width: 0 !important; width: 100% !important; }
             body.nms-mobile .nms-site-footer { padding: 30px 15px !important; }
             body.nms-mobile .nms-footer-container { grid-template-columns: 1fr !important; gap: 30px !important; text-align: right !important; }
+            body.nms-mobile .nms-topbar { padding-top: calc(16px + env(safe-area-inset-top)) !important; padding-bottom: calc(16px + env(safe-area-inset-bottom)) !important; }
 
             body.nms-mobile .market-main-header { flex-direction: column !important; align-items: stretch !important; }
             body.nms-mobile .market-logo-area { justify-content: center !important; order: 1 !important; }
             body.nms-mobile .market-search-box { max-width: 100% !important; order: 2 !important; }
             body.nms-mobile .market-actions-area { order: 3 !important; justify-content: center !important; }
             body.nms-mobile .market-nav-container { justify-content: flex-start !important; }
+            body.nms-mobile .market-nav-links { overflow-x: auto !important; -webkit-overflow-scrolling: touch !important; }
+            body.nms-mobile .market-nav-container { flex-wrap: nowrap !important; width: max-content !important; min-width: 100% !important; }
+            body.nms-mobile .market-nav-container a { flex: 0 0 auto !important; white-space: nowrap !important; }
+            body.nms-mobile button, body.nms-mobile a { touch-action: manipulation; }
 
             /* 🆕 جعل شريط الخيارات في رأس الصفحة قابلاً للتمرير على الموبايل والتابلت */
             body.nms-mobile .market-top-strip > div:last-child {
@@ -153,7 +162,7 @@
     // ==========================================================================
     // 2) مراقبة حجم الشاشة (مُهدَّأة/debounced) وتحديث كلاسات body
     // ==========================================================================
-    let mqHideAds, mqMobile, mqSmall, mqPortrait;
+    let mqHideAds, mqMobile, mqTablet, mqSmall, mqPortrait;
     let applyScheduled = false;
 
     function scheduleApply() {
@@ -168,6 +177,7 @@
     function applyBodyClasses() {
         document.body.classList.toggle('nms-hide-ads', mqHideAds.matches);
         document.body.classList.toggle('nms-mobile', mqMobile.matches);
+        document.body.classList.toggle('nms-tablet', mqTablet.matches);
         document.body.classList.toggle('nms-mobile-sm', mqSmall.matches);
 
         const isMobile = mqMobile.matches;
@@ -329,12 +339,15 @@
     function init() {
         injectMobileStyles();
 
-        mqHideAds = window.matchMedia('(max-width: 992px)');
-        mqMobile = window.matchMedia('(max-width: 768px)');
+        if (window.MobileAppBridge) window.MobileAppBridge.ready('no-map-search');
+
+        mqHideAds = window.matchMedia('(max-width: 1024px)');
+        mqMobile = window.matchMedia('(max-width: 1024px)');
+        mqTablet = window.matchMedia('(min-width: 769px) and (max-width: 1024px)');
         mqSmall = window.matchMedia('(max-width: 560px)');
         mqPortrait = window.matchMedia('(orientation: portrait)');
 
-        [mqHideAds, mqMobile, mqSmall, mqPortrait].forEach(function (mq) {
+        [mqHideAds, mqMobile, mqTablet, mqSmall, mqPortrait].forEach(function (mq) {
             if (mq.addEventListener) mq.addEventListener('change', scheduleApply);
             else mq.addListener(scheduleApply);
         });
@@ -355,11 +368,20 @@
 
         // 🆕 إعادة تعيين التمرير إلى الأعلى عند تحميل الصفحة على الموبايل
         resetScrollOnLoad();
+
+        window.noMapMobile = {
+            refresh: scheduleApply,
+            isMobile: function () { return mqMobile.matches; },
+            isTablet: function () { return mqTablet.matches; },
+            getOrientation: function () {
+                return document.body.classList.contains('nms-mobile-portrait') ? 'portrait' : 'landscape';
+            }
+        };
     }
 
     // 🆕 إعادة تعيين التمرير إلى الأعلى عند تحميل الصفحة
     function resetScrollOnLoad() {
-        if (window.innerWidth <= 768) {
+        if (window.innerWidth <= 1024) {
             window.scrollTo(0, 0);
             document.documentElement.scrollTop = 0;
             document.body.scrollTop = 0;

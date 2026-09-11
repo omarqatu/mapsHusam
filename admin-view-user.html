@@ -48,18 +48,15 @@
                 <button class="back-btn" type="button" onclick="window.close()">إغلاق</button>
             </div>
         </section>
-
         <section class="panel">
             <h2>بيانات الحساب</h2>
             <div id="profile" class="profile"><p class="muted">جارٍ التحميل...</p></div>
         </section>
-
         <section class="panel">
             <h2>الطلبات والدردشات</h2>
             <div id="requests" class="request-list"><p class="muted">جارٍ تحميل الطلبات...</p></div>
         </section>
     </main>
-
 <script>
 (function () {
     'use strict';
@@ -68,107 +65,64 @@
     const profileEl = document.getElementById('profile');
     const requestsEl = document.getElementById('requests');
     const expiryEl = document.getElementById('session-expiry');
-
     function text(value, fallback) { return value === null || value === undefined || value === '' ? (fallback || '—') : String(value); }
     function item(label, value) {
-        const box = document.createElement('div');
-        box.className = 'profile-item';
-        const strong = document.createElement('strong');
-        strong.textContent = label;
-        const span = document.createElement('span');
-        span.textContent = text(value);
-        box.append(strong, span);
-        return box;
+        const box = document.createElement('div'); box.className = 'profile-item';
+        const strong = document.createElement('strong'); strong.textContent = label;
+        const span = document.createElement('span'); span.textContent = text(value);
+        box.append(strong, span); return box;
     }
     function showError(target, message) {
-        target.innerHTML = '';
-        const error = document.createElement('div');
-        error.className = 'error';
-        error.textContent = message;
-        target.appendChild(error);
+        target.innerHTML = ''; const error = document.createElement('div');
+        error.className = 'error'; error.textContent = message; target.appendChild(error);
     }
     async function getJson(url) {
-        const response = await fetch(url, { headers });
-        const data = await response.json();
-        if (!response.ok || !data.success) throw new Error(data.error || 'تعذر تحميل البيانات');
-        return data;
+        const response = await fetch(url, { headers }); const data = await response.json();
+        if (!response.ok || !data.success) throw new Error(data.error || 'تعذر تحميل البيانات'); return data;
     }
     function renderProfile(user) {
         profileEl.innerHTML = '';
-        profileEl.append(
-            item('الاسم', user.full_name), item('رقم المستخدم', user.user_id),
-            item('رقم الجوال', user.phone), item('البريد الإلكتروني', user.email),
-            item('الدور', user.role), item('الحساب', user.is_active ? 'مفعل' : 'غير مفعل'),
-            item('طبقة الخدمة', user.service_layer), item('معرف المعلم', user.feature_id)
-        );
+        profileEl.append(item('الاسم', user.full_name), item('رقم المستخدم', user.user_id), item('رقم الجوال', user.phone), item('البريد الإلكتروني', user.email), item('الدور', user.role), item('الحساب', user.is_active ? 'مفعل' : 'غير مفعل'), item('طبقة الخدمة', user.service_layer), item('معرف المعلم', user.feature_id));
     }
     function renderMessages(container, messages) {
         container.innerHTML = '';
         if (!messages.length) { container.textContent = 'لا توجد رسائل.'; return; }
         messages.forEach(function (message) {
-            const row = document.createElement('div');
-            row.className = 'message';
+            const row = document.createElement('div'); row.className = 'message';
             row.textContent = (message.sender_role || 'طرف') + ': ' + text(message.message);
-            const date = document.createElement('small');
-            date.textContent = text(message.created_at);
-            row.appendChild(date);
-            container.appendChild(row);
+            const date = document.createElement('small'); date.textContent = text(message.created_at);
+            row.appendChild(date); container.appendChild(row);
         });
     }
     async function showMessages(id, container) {
         container.textContent = 'جارٍ تحميل الرسائل...';
-        try {
-            const data = await getJson('/api/admin/view-session/requests/' + encodeURIComponent(id) + '/messages');
-            renderMessages(container, data.messages || []);
-        } catch (error) { container.textContent = error.message; }
+        try { const data = await getJson('/api/admin/view-session/requests/' + encodeURIComponent(id) + '/messages'); renderMessages(container, data.messages || []); }
+        catch (error) { container.textContent = error.message; }
     }
     function renderRequests(requests) {
         requestsEl.innerHTML = '';
         if (!requests.length) { requestsEl.innerHTML = '<p class="muted">لا توجد طلبات.</p>'; return; }
         requests.forEach(function (request) {
-            const box = document.createElement('article');
-            box.className = 'request';
-            const head = document.createElement('div');
-            head.className = 'request-head';
-            const title = document.createElement('strong');
-            title.textContent = text(request.service_type, 'طلب خدمة') + ' #' + request.id;
-            const status = document.createElement('span');
-            status.className = 'status';
-            status.textContent = text(request.status);
+            const box = document.createElement('article'); box.className = 'request';
+            const head = document.createElement('div'); head.className = 'request-head';
+            const title = document.createElement('strong'); title.textContent = text(request.service_type, 'طلب خدمة') + ' #' + request.id;
+            const status = document.createElement('span'); status.className = 'status'; status.textContent = text(request.status);
             head.append(title, status);
-            const detail = document.createElement('p');
-            detail.className = 'muted';
+            const detail = document.createElement('p'); detail.className = 'muted';
             detail.textContent = 'الطالب: ' + text(request.requester_name) + ' | المزود: ' + text(request.provider_full_name) + ' | التاريخ: ' + text(request.created_at);
-            const button = document.createElement('button');
-            button.className = 'request-btn';
-            button.type = 'button';
-            button.textContent = 'عرض الرسائل';
-            const messages = document.createElement('div');
-            messages.className = 'messages';
-            messages.hidden = true;
-            button.addEventListener('click', function () {
-                messages.hidden = !messages.hidden;
-                if (!messages.hidden && !messages.dataset.loaded) {
-                    messages.dataset.loaded = '1';
-                    showMessages(request.id, messages);
-                }
-            });
-            box.append(head, detail, button, messages);
-            requestsEl.appendChild(box);
+            const button = document.createElement('button'); button.className = 'request-btn'; button.type = 'button'; button.textContent = 'عرض الرسائل';
+            const messages = document.createElement('div'); messages.className = 'messages'; messages.hidden = true;
+            button.addEventListener('click', function () { messages.hidden = !messages.hidden; if (!messages.hidden && !messages.dataset.loaded) { messages.dataset.loaded = '1'; showMessages(request.id, messages); } });
+            box.append(head, detail, button, messages); requestsEl.appendChild(box);
         });
     }
     async function init() {
         if (!token) { showError(requestsEl, 'رابط المشاهدة غير صالح.'); return; }
         try {
-            const profile = await getJson('/api/admin/view-session/profile');
-            renderProfile(profile.user);
-            const requests = await getJson('/api/admin/view-session/requests');
-            renderRequests(requests.requests || []);
+            const profile = await getJson('/api/admin/view-session/profile'); renderProfile(profile.user);
+            const requests = await getJson('/api/admin/view-session/requests'); renderRequests(requests.requests || []);
             expiryEl.textContent = 'جلسة مؤقتة للقراءة فقط، تنتهي خلال 30 دقيقة تقريبًا.';
-        } catch (error) {
-            showError(profileEl, error.message);
-            showError(requestsEl, error.message);
-        }
+        } catch (error) { showError(profileEl, error.message); showError(requestsEl, error.message); }
     }
     init();
 })();
