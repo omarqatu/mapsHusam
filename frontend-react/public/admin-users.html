@@ -48,12 +48,12 @@
     <div id="alert-container"></div>
 
     <!-- Filter bar -->
-    <div class="filter-bar">
+        <div class="filter-bar">
         <label><i class="fas fa-search"></i> بحث:</label>
-        <input type="text" id="search-input" placeholder="اسم، بريد، رقم موبايل..." onkeyup="applyFilters()">
+        <input type="text" id="search-input" placeholder="اسم، بريد، رقم موبايل...">
 
         <label><i class="fas fa-filter"></i> الدور:</label>
-        <select id="role-filter" onchange="applyFilters()">
+        <select id="role-filter">
             <option value="">الكل</option>
             <option value="admin">مشرف</option>
             <option value="provider">مزود خدمة</option>
@@ -61,56 +61,56 @@
         </select>
 
         <label><i class="fas fa-toggle-on"></i> الحالة:</label>
-        <select id="status-filter" onchange="applyFilters()">
+        <select id="status-filter">
             <option value="">الكل</option>
             <option value="active">مفعل</option>
             <option value="inactive">غير مفعل</option>
         </select>
 
         <label><i class="fas fa-wifi"></i> الاتصال:</label>
-        <select id="online-filter" onchange="applyFilters()">
+        <select id="online-filter">
             <option value="">الكل</option>
             <option value="online">متصل الآن</option>
             <option value="offline">غير متصل</option>
         </select>
 
         <label><i class="fas fa-link"></i> مرتبط بخدمة:</label>
-        <select id="service-filter" onchange="applyFilters()">
+        <select id="service-filter">
             <option value="">الكل</option>
             <option value="linked">مرتبط</option>
             <option value="unlinked">غير مرتبط</option>
         </select>
 
         <label><i class="fas fa-calendar-alt"></i> تاريخ الإنشاء:</label>
-        <select id="date-filter" onchange="handleDateFilterChange()">
+        <select id="date-filter">
             <option value="">الكل</option>
             <option value="2days">آخر يومين</option>
             <option value="week">آخر أسبوع</option>
             <option value="month">آخر شهر</option>
             <option value="custom">تاريخ محدد</option>
         </select>
-        <input type="date" id="custom-date-input" style="display:none; padding:8px 12px; border:1px solid #ccc; border-radius:6px; font-size:13px;" onchange="applyFilters()">
+        <input type="date" id="custom-date-input" style="display:none; padding:8px 12px; border:1px solid #ccc; border-radius:6px; font-size:13px;">
     </div>
 
     <!-- Header actions -->
-    <div class="header-actions">
+        <div class="header-actions">
         <div class="btn-group">
-            <button class="btn btn-success" onclick="refreshUsersList()">
+            <button class="btn btn-success" id="btn-refresh-users">
                 <i class="fas fa-sync-alt"></i> تحديث القائمة
             </button>
         </div>
 
         <div class="btn-group">
-            <button class="btn btn-danger" onclick="forceLogoutAllUsers('all')" title="تسجيل خروج جميع المستخدمين">
+            <button class="btn btn-danger" id="btn-logout-all" title="تسجيل خروج جميع المستخدمين">
                 <i class="fas fa-user-slash"></i> تسجيل خروج الكل
             </button>
-            <button class="btn btn-warning" onclick="forceLogoutAllUsers('online')" title="تسجيل خروج المتصلين فقط">
+            <button class="btn btn-warning" id="btn-logout-online" title="تسجيل خروج المتصلين فقط">
                 <i class="fas fa-wifi"></i> تسجيل خروج المتصلين
             </button>
-            <button class="btn btn-secondary" onclick="forceLogoutAllUsers('offline')" title="تسجيل خروج غير المتصلين">
+            <button class="btn btn-secondary" id="btn-logout-offline" title="تسجيل خروج غير المتصلين">
                 <i class="fas fa-user-clock"></i> تسجيل خروج غير المتصلين
             </button>
-            <button class="btn btn-primary" onclick="forceLogoutSelectedUsers()" title="تسجيل خروج المستخدمين المختارين">
+            <button class="btn btn-primary" id="btn-logout-selected" title="تسجيل خروج المستخدمين المختارين">
                 <i class="fas fa-check-square"></i> تسجيل خروج المختارين (<span id="selected-count-badge">0</span>)
             </button>
         </div>
@@ -123,7 +123,7 @@
         <table id="users-table">
             <thead>
                 <tr>
-                    <th><input type="checkbox" id="select-all-users" onchange="toggleSelectAll()"></th>
+                    <th><input type="checkbox" id="select-all-users"></th>
                     <th>ID</th>
                     <th>الاسم الكامل</th>
                     <th>البريد الإلكتروني</th>
@@ -197,7 +197,7 @@
         <!-- Service provider binding -->
         <div class="form-group">
             <label for="modal-service-layer"><i class="fas fa-layer-group"></i> ربط كمزود خدمة - اسم الطبقة (service_layer):</label>
-            <select id="modal-service-layer" onchange="onServiceLayerChange()">
+            <select id="modal-service-layer">
                 <option value="">-- غير مرتبط --</option>
             </select>
             <small>اختر الطبقة لربط المستخدم كمزود خدمة.</small>
@@ -216,7 +216,7 @@
             <h3><i class="fas fa-stopwatch"></i> حد الطلبات (الأحداث)</h3>
             <div class="form-group">
                 <label for="modal-request-limit"><i class="fas fa-hashtag"></i> أقصى عدد طلبات مسموح (اتصال / واتساب):</label>
-                <input type="number" id="modal-request-limit" min="1" placeholder="اتركه فارغاً = مفتوح بدون حد (الوضع الافتراضي)" oninput="onRequestLimitChange()">
+                    <input type="number" id="modal-request-limit" min="1" placeholder="اتركه فارغاً = مفتوح بدون حد (الوضع الافتراضي)">
                 <small>كل طلب = نقرة اتصال أو واتساب واحدة على معلم بالخريطة. اتركه فارغاً ليبقى بدون أي حد.</small>
             </div>
             <div class="form-group">
@@ -250,11 +250,11 @@
         </div>
 
         <!-- Modal actions -->
-        <div class="modal-actions">
-            <button class="btn-save" onclick="saveUserChanges()">
+                <div class="modal-actions">
+            <button class="btn-save" id="btn-save-user">
                 <i class="fas fa-save"></i> حفظ التغييرات
             </button>
-            <button class="btn-cancel" onclick="closeUserModal()">
+            <button class="btn-cancel" id="btn-cancel-user">
                 <i class="fas fa-times"></i> إلغاء
             </button>
         </div>
@@ -501,15 +501,16 @@
                 ? `<span style="color:#e37400; font-weight:bold;">${requestLimit}</span> <span style="color:#999; font-size:11px;">/ ${requestPeriodLabel}</span>`
                 : '<span style="color:#34a853; font-weight:bold;">غير محدود</span>';
 
-            // اسم آمن للاستخدام داخل onclick (تفادي كسر الـ HTML لو الاسم فيه علامات اقتباس)
-            const safeUserName = userName.replace(/'/g, "\\'").replace(/"/g, '&quot;');
+                        // 🆕 [بعد إزالة onclick]: لم نعد نحقن الاسم داخل نص JS، فقط نحتاج
+            // تعقيم HTML عادي لأمان قيمة data-attribute
+            const safeUserName = userName.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 
             // 🆕 حالة التحديد المحفوظة مسبقاً (مستقلة عن الفلترة الحالية)
             const isChecked = selectedUserIds.has(userId);
 
-            const tr = document.createElement('tr');
+                        const tr = document.createElement('tr');
             tr.innerHTML = `
-                <td><input type="checkbox" class="user-checkbox" data-user-id="${userId}" ${isChecked ? 'checked' : ''} onchange="onUserCheckboxChange(${userId}, this.checked)"></td>
+                <td><input type="checkbox" class="user-checkbox" data-user-id="${userId}" ${isChecked ? 'checked' : ''}></td>
                 <td><strong>${userId}</strong></td>
                 <td style="text-align:right; font-weight:bold;">${userName}</td>
                 <td style="direction:ltr;">${userEmail}</td>
@@ -528,16 +529,16 @@
                 <td style="white-space:nowrap;">${quotaDisplay}</td>
                 <td style="white-space:nowrap; font-size:11px;">${createdAtDisplay}</td>
                 <td class="actions-cell">
-                    <button class="action-btn" style="background:#16a085;color:white;" onclick="openReadOnlyView(${userId})" title="مشاهدة الحساب للقراءة فقط">
+                    <button class="action-btn action-btn-view" data-user-id="${userId}" style="background:#16a085;color:white;" title="مشاهدة الحساب للقراءة فقط">
                         <i class="fas fa-eye"></i>
                     </button>
-                    <button class="action-btn" style="background:#1a73e8;color:white;" onclick="openEditModal(${userId})" title="تعديل المستخدم">
+                    <button class="action-btn action-btn-edit" data-user-id="${userId}" style="background:#1a73e8;color:white;" title="تعديل المستخدم">
                         <i class="fas fa-edit"></i>
                     </button>
-                    <button class="action-btn ${isActive ? 'btn-warning' : 'btn-success'}" onclick="toggleUserActive(${userId}, ${!isActive})" title="${isActive ? 'تعطيل' : 'تفعيل'} الحساب">
+                    <button class="action-btn action-btn-toggle-active ${isActive ? 'btn-warning' : 'btn-success'}" data-user-id="${userId}" data-new-status="${!isActive}" title="${isActive ? 'تعطيل' : 'تفعيل'} الحساب">
                         <i class="fas ${isActive ? 'fa-ban' : 'fa-check-circle'}"></i>
                     </button>
-                    <button class="action-btn" style="background:#c0392b;color:white;" onclick="forceLogoutUser(${userId}, '${safeUserName}')" title="تسجيل خروج فوري + تنبيه">
+                    <button class="action-btn action-btn-force-logout" data-user-id="${userId}" data-user-name="${safeUserName}" style="background:#c0392b;color:white;" title="تسجيل خروج فوري + تنبيه">
                         <i class="fas fa-user-slash"></i>
                     </button>
                 </td>
@@ -955,6 +956,67 @@
             showAlert('❌ خطأ في الاتصال: ' + err.message, 'error');
         }
     }
+    // ==========================================================================
+    // 🆕 [تشديد أمني CSP]: ربط كل الأحداث التي كانت onclick/onchange/onkeyup/
+    // oninput inline بالـ HTML، بدل الاعتماد على unsafe-inline
+    // ==========================================================================
+
+    // --- شريط الفلاتر العلوي ---
+    document.getElementById('search-input').addEventListener('keyup', applyFilters);
+    document.getElementById('role-filter').addEventListener('change', applyFilters);
+    document.getElementById('status-filter').addEventListener('change', applyFilters);
+    document.getElementById('online-filter').addEventListener('change', applyFilters);
+    document.getElementById('service-filter').addEventListener('change', applyFilters);
+    document.getElementById('date-filter').addEventListener('change', handleDateFilterChange);
+    document.getElementById('custom-date-input').addEventListener('change', applyFilters);
+
+    // --- أزرار رأس الصفحة ---
+    document.getElementById('btn-refresh-users').addEventListener('click', refreshUsersList);
+    document.getElementById('btn-logout-all').addEventListener('click', () => forceLogoutAllUsers('all'));
+    document.getElementById('btn-logout-online').addEventListener('click', () => forceLogoutAllUsers('online'));
+    document.getElementById('btn-logout-offline').addEventListener('click', () => forceLogoutAllUsers('offline'));
+    document.getElementById('btn-logout-selected').addEventListener('click', forceLogoutSelectedUsers);
+
+    // --- تحديد الكل (رأس الجدول) ---
+    document.getElementById('select-all-users').addEventListener('change', toggleSelectAll);
+
+    // --- نافذة التعديل (Modal) ---
+    document.getElementById('modal-service-layer').addEventListener('change', onServiceLayerChange);
+    document.getElementById('modal-request-limit').addEventListener('input', onRequestLimitChange);
+    document.getElementById('btn-save-user').addEventListener('click', saveUserChanges);
+    document.getElementById('btn-cancel-user').addEventListener('click', closeUserModal);
+
+    // --- تفويض أحداث موحّد لجدول المستخدمين (الصفوف مولّدة ديناميكياً بـ renderUsersTable) ---
+    document.getElementById('users-tbody').addEventListener('change', (e) => {
+        if (e.target.classList.contains('user-checkbox')) {
+            const userId = parseInt(e.target.dataset.userId, 10);
+            onUserCheckboxChange(userId, e.target.checked);
+        }
+    });
+
+    document.getElementById('users-tbody').addEventListener('click', (e) => {
+        const viewBtn = e.target.closest('.action-btn-view');
+        if (viewBtn) { openReadOnlyView(parseInt(viewBtn.dataset.userId, 10)); return; }
+
+        const editBtn = e.target.closest('.action-btn-edit');
+        if (editBtn) { openEditModal(parseInt(editBtn.dataset.userId, 10)); return; }
+
+        const toggleBtn = e.target.closest('.action-btn-toggle-active');
+        if (toggleBtn) {
+            const userId = parseInt(toggleBtn.dataset.userId, 10);
+            const newStatus = toggleBtn.dataset.newStatus === 'true';
+            toggleUserActive(userId, newStatus);
+            return;
+        }
+
+        const logoutBtn = e.target.closest('.action-btn-force-logout');
+        if (logoutBtn) {
+            const userId = parseInt(logoutBtn.dataset.userId, 10);
+            const userName = logoutBtn.dataset.userName;
+            forceLogoutUser(userId, userName);
+            return;
+        }
+    });
 
     // ==========================================
     // تحميل القائمة عند فتح الصفحة

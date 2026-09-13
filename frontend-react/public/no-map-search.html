@@ -96,7 +96,7 @@
     
     </style>
     <script>
-    (function () {
+        (function () {
         function getStoredUser() {
             try {
                 return JSON.parse(localStorage.getItem('map_user')) ||
@@ -105,16 +105,49 @@
                 return null;
             }
         }
+        function clearSession() {
+            localStorage.removeItem('map_user');
+            sessionStorage.removeItem('map_user');
+            localStorage.removeItem('user');
+            sessionStorage.removeItem('user');
+        }
+
         var user = getStoredUser();
         if (!user) {
-            // أي شخص غير مسجل دخول يُعاد توجيهه فوراً لصفحة الدخول الرئيسية
             window.location.replace('/original-index.html');
-        } else {
-            window.__nmsAuthenticatedUser = user;
-            document.addEventListener('DOMContentLoaded', function () {
-                document.documentElement.style.visibility = 'visible';
-            });
+            return;
         }
+
+        var userId = user.user_id || user.id;
+        if (!userId) {
+            clearSession();
+            window.location.replace('/original-index.html');
+            return;
+        }
+
+        // 🆕 [إصلاح ثغرة]: هذه الصفحة كانت تتحقق فقط من وجود جلسة محفوظة محلياً
+        // بلا أي تحقق فعلي من صلاحيتها بالسيرفر - فمستخدم تم تسجيل خروجه إجبارياً
+        // كان يقدر يدخل هذه الصفحة مباشرة بجلسته القديمة، متجاوزاً حماية صفحة الخريطة.
+        fetch('/api/auth/verify-session', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+            body: JSON.stringify({ user_id: userId })
+        })
+        .then(function (res) { return res.json(); })
+        .then(function (data) {
+            if (data && data.valid === false) {
+                clearSession();
+                window.location.replace('/original-index.html');
+                return;
+            }
+            window.__nmsAuthenticatedUser = user;
+            document.documentElement.style.visibility = 'visible';
+        })
+        .catch(function () {
+            // فشل اتصال مؤقت بالشبكة (Fail-open) - لا نحجب المستخدم بسبب عطل عابر
+            window.__nmsAuthenticatedUser = user;
+            document.documentElement.style.visibility = 'visible';
+        });
     })();
     </script>
 
