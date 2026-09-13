@@ -1268,54 +1268,59 @@ window.__nmsPageHandlesOwnAds = true;
 
                                 const KNOWN_SERVICE_KEYS = Object.keys(serviceNames || {});
 
-                const cardsPromises = data.items.map(async (ratingItem) => {
-                    const layerKey = ratingItem.service_layer;
-                    const featureId = ratingItem.feature_id;
-                    if (!layerKey || !featureId) return null;
+                // 🆕 [إصلاح N+1]: تجميع المعرّفات حسب الطبقة، ثم استعلام واحد
+                // فقط لكل طبقة بدل استعلام منفصل لكل معلم
+                const validItems = data.items.filter(it => {
+                    if (!it.service_layer || !it.feature_id) return false;
+                    const isRE = REAL_ESTATE_TABLE_NAMES.includes(it.service_layer);
+                    return isRE || KNOWN_SERVICE_KEYS.includes(it.service_layer);
+                });
 
+                const groupedByLayer = {};
+                validItems.forEach(it => {
+                    if (!groupedByLayer[it.service_layer]) groupedByLayer[it.service_layer] = [];
+                    groupedByLayer[it.service_layer].push(it);
+                });
+
+                const layerFetchPromises = Object.keys(groupedByLayer).map(async (layerKey) => {
+                    const itemsForLayer = groupedByLayer[layerKey];
                     const isRealEstateLayer = REAL_ESTATE_TABLE_NAMES.includes(layerKey);
-
-                    // 🆕 تجاهل أي سجل تقييم قديم/فاسد يحمل اسم طبقة غير معروف
-                    // (مثل تسمية عربية مخزّنة بالخطأ بدل اسم الجدول الحقيقي)
-                    if (!isRealEstateLayer && !KNOWN_SERVICE_KEYS.includes(layerKey)) {
-                        return null;
-                    }
-
                     const workspaceForLayer = isRealEstateLayer ? 'realestate' : 'services';
+                    const ids = itemsForLayer.map(it => it.feature_id);
 
                     try {
-                        const params = new URLSearchParams({
-                            layer: layerKey,
-                            workspace: workspaceForLayer,
-                            field_0: isRealEstateLayer ? 'fid' : 'id',
-                            operator_0: '=',
-                            value_0: String(featureId),
-                            conditions_count: '1',
-                            ignore_status: '1'
+                        const res = await fetch(`${baseUrl}api/search-features-batch`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ layer: layerKey, workspace: workspaceForLayer, ids })
                         });
-                        const fRes = await fetch(`${baseUrl}api/search-features?${params.toString()}`);
-                        if (!fRes.ok) return null;
-                        const fData = await fRes.json();
-                        const feature = (fData.features || [])[0];
-                        if (!feature) return null;
+                        if (!res.ok) return [];
+                        const fData = await res.json();
+                        const featuresById = {};
+                        (fData.features || []).forEach(f => {
+                            const fid = isRealEstateLayer ? f.properties.fid : f.properties.id;
+                            featuresById[fid] = f;
+                        });
 
-                        const label = isRealEstateLayer ? (REAL_ESTATE_LABELS[layerKey] || layerKey) : (serviceNames[layerKey] || layerKey);
-                        const cardItem = {
-                            layer: layerKey,
-                            workspace: workspaceForLayer,
-                            label,
-                            isRealEstate: isRealEstateLayer,
-                            avgRating: parseFloat(ratingItem.avg_rating) || 0,
-                            totalRatings: parseInt(ratingItem.total_ratings, 10) || 0,
-                            badgeText: '🏆 الأعلى تقييماً'
-                        };
-                        return buildAdCardHtml(feature.properties || {}, cardItem);
+                        return itemsForLayer.map(ratingItem => {
+                            const feature = featuresById[ratingItem.feature_id];
+                            if (!feature) return null;
+                            const label = isRealEstateLayer ? (REAL_ESTATE_LABELS[layerKey] || layerKey) : (serviceNames[layerKey] || layerKey);
+                            const cardItem = {
+                                layer: layerKey, workspace: workspaceForLayer, label,
+                                isRealEstate: isRealEstateLayer,
+                                avgRating: parseFloat(ratingItem.avg_rating) || 0,
+                                totalRatings: parseInt(ratingItem.total_ratings, 10) || 0,
+                                badgeText: '🏆 الأعلى تقييماً'
+                            };
+                            return buildAdCardHtml(feature.properties || {}, cardItem);
+                        }).filter(Boolean);
                     } catch (err) {
-                        return null;
+                        return [];
                     }
                 });
 
-                const cards = (await Promise.all(cardsPromises)).filter(Boolean);
+                const cards = (await Promise.all(layerFetchPromises)).flat();
 
                 if (cards.length === 0) {
                     section.dataset.hasData = '0';

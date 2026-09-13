@@ -952,44 +952,57 @@
         }
     };
 
-    function startPollingRequests() {
-        if (pollRequestsInterval) clearInterval(pollRequestsInterval);
+    // 🆕 [إصلاح أداء حرج]: يفحص هل المستخدم فعلاً مزود خدمة قبل تشغيل أي polling
+function isCurrentUserProvider() {
+    const u = getCurrentUser();
+    return !!(u && (u.role === 'provider' || u.account_type === 'provider'));
+}
 
-        const checkPendingForProvider = async () => {
-            const userId = getCurrentUserId();
-            if (!userId) return;
-            if (typeof navigator.onLine === 'boolean' && !navigator.onLine) return;
+function startPollingRequests() {
+    if (pollRequestsInterval) clearInterval(pollRequestsInterval);
 
-            // إذا كان polling معطل، لا نفعل شيئاً
-            const now = Date.now();
-            if (now < pollingDisabledUntil) {
-                return;
-            }
+    // 🆕 لا داعي لأي استعلام دوري إطلاقاً إذا لم يكن المستخدم مزود خدمة -
+    // كان هذا الـ polling يعمل سابقاً لكل زائر/مستخدم عادي بلا أي فائدة
+    if (!isCurrentUserProvider()) return;
 
-            try {
-                const resProvider = await fetch(`${window.location.origin}/api/service-requests?provider_user_id=${userId}&status=pending`);
-                if (!resProvider.ok) return;
-                
-                const dataProvider = await resProvider.json();
-                
-                if (dataProvider.success && dataProvider.requests && dataProvider.requests.length > 0) {
-                    const req = dataProvider.requests[0];
-                    // فقط إذا لم يكن البانر معروضاً بالفعل والطلب لم يتم معالجته
-                    if (incomingBanner && lastHandledPendingReqId !== req.id) {
-                        showIncomingRequestBanner(req);
-                        triggerPulseEffect(req.id);
-                        // تشغيل الرنة من polling فقط إذا لم يكن socket متصل
-                        playRequestRing();
-                        lastHandledPendingReqId = req.id;
-                    } else {
-                    }
+    const checkPendingForProvider = async () => {
+        const userId = getCurrentUserId();
+        if (!userId) return;
+        if (typeof navigator.onLine === 'boolean' && !navigator.onLine) return;
+        // 🆕 لا داعي للاستعلام إذا كان التبويب بالخلفية حالياً (توفير حمل سيرفر)
+        if (document.visibilityState !== 'visible') return;
+
+        const now = Date.now();
+        if (now < pollingDisabledUntil) return;
+
+        try {
+            const resProvider = await fetch(`${window.location.origin}/api/service-requests?provider_user_id=${userId}&status=pending`);
+            if (!resProvider.ok) return;
+
+            const dataProvider = await resProvider.json();
+
+            if (dataProvider.success && dataProvider.requests && dataProvider.requests.length > 0) {
+                const req = dataProvider.requests[0];
+                if (incomingBanner && lastHandledPendingReqId !== req.id) {
+                    showIncomingRequestBanner(req);
+                    triggerPulseEffect(req.id);
+                    playRequestRing();
+                    lastHandledPendingReqId = req.id;
                 }
-            } catch (e) {}
-        };
+            }
+        } catch (e) {}
+    };
 
-        checkPendingForProvider();
-        pollRequestsInterval = setInterval(checkPendingForProvider, 3000);
-    }
+    checkPendingForProvider();
+    // 🆕 من 3 ثوانٍ إلى 15 ثانية - Socket.io هو المصدر الأساسي للتنبيه الفوري
+    // (حدث service_request_new)، وهذا الـ polling مجرد شبكة أمان احتياطية فقط
+    pollRequestsInterval = setInterval(checkPendingForProvider, 15000);
+
+    // 🆕 تحديث فوري عند عودة المستخدم للتبويب بدل انتظار الدورة التالية
+    document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'visible') checkPendingForProvider();
+    });
+}
 
     function showIncomingRequestBanner(req) {
         

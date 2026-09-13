@@ -729,7 +729,7 @@ function initializePopup(map) {
                 
             } 
 
-            if (props.des && !isRealEstate) bodyHtml += `<div style="margin-top:5px; background:#f9f9f9; padding:5px; border-radius:4px; word-wrap:break-word; overflow-wrap:break-word; white-space:normal;"><b>📝 الوصف:</b> ${props.des}</div>`;
+            if (props.des && !isRealEstate) bodyHtml += `<div style="margin-top:5px; background:#f9f9f9; padding:5px; border-radius:4px; word-wrap:break-word; overflow-wrap:break-word; white-space:normal;"><b>📝 الوصف:</b> ${window.sanitizeHTML(props.des)}</div>`;
             
             if (props.whatsapp) {
                 const whatsappNumber = props.whatsapp.toString();

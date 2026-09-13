@@ -142,10 +142,28 @@ window.isFeatureLinkedToProvider = function (layerDbName, featureId) {
     return set.has(String(featureId));
 };
 
+// ==========================================================================
+// 10) [تحسين أداء عام]: أداة موحّدة لأي تحديث دوري بالمنصة - توقفه تلقائياً
+// حين يكون التبويب بالخلفية، وتحدّثه فوراً عند عودة المستخدم إليه، بدل
+// استهلاك موارد السيرفر والبطارية لتبويبات مفتوحة لا ينظر إليها أحد.
+// ==========================================================================
+window.createVisibilityAwareInterval = function (callback, intervalMs) {
+    let timerId = setInterval(() => {
+        if (document.visibilityState === 'visible') callback();
+    }, intervalMs);
+
+    document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'visible') callback();
+    });
+
+    return { stop: () => clearInterval(timerId) };
+};
+
 (function () {
     function startProviderLinksPolling() {
         window.refreshProviderLinkedFeatures();
-        setInterval(window.refreshProviderLinkedFeatures, 60000);
+        // 🆕 بدل setInterval العادي
+        window.createVisibilityAwareInterval(window.refreshProviderLinkedFeatures, 60000);
     }
     if (document.readyState !== 'loading') {
         startProviderLinksPolling();

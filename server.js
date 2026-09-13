@@ -28,6 +28,17 @@ const BCRYPT_HASH_REGEX = /^\$2[aby]\$\d{2}\$/;
 const REAL_ESTATE_LAYERS = ['ApartRent', 'ApartSale', 'LandSale', 'Location', 'RoadsTest'];
 const ADMIN_JWT_SECRET = process.env.JWT_SECRET || 'change_this_secret_in_env';
 
+// 🆕 [تشديد أمني حرج]: هذا المفتاح يوقّع توكنات صلاحية المشرف الكاملة.
+// لو بقي بالقيمة الافتراضية بالإنتاج، أي شخص يعرف هذا النص (موجود بأي نسخة
+// من الكود) يقدر يُصدّر توكن أدمن صالح لنفسه ويتحكم بكامل المنصة.
+if (ADMIN_JWT_SECRET === 'change_this_secret_in_env') {
+    console.error('❌ خطأ أمني: متغير البيئة JWT_SECRET غير مضبوط.');
+    console.error('📝 أضف بملف .env.local سطراً مثل: JWT_SECRET=' + require('crypto').randomBytes(32).toString('hex'));
+    // 🆕 [تراجع]: لا نوقف السيرفر تلقائياً بعد الآن حتى لو NODE_ENV=production،
+    // تجنباً لأي إغلاق غير متوقع أثناء التطوير أو النشر السريع. فقط تحذير قوي بالكونسول.
+    // اضبط JWT_SECRET بأقرب وقت ممكن قبل النشر الفعلي للمستخدمين.
+    console.warn('⚠️ السيرفر سيستمر بالعمل بمفتاح غير آمن مؤقتاً - يرجى ضبط JWT_SECRET قريباً.');
+}
 // =========================================================================
 // 🆕 [ترحيل آمن لكلمات المرور]: الحسابات القديمة محفوظة بكلمة مرور نصية
 // صريحة بقاعدة البيانات (قبل هذا التعديل). هذه الدالة تتحقق من كلمة المرور
@@ -85,7 +96,11 @@ if (process.env.ENABLE_HELMET !== 'false') {
                 imgSrc: ["'self'", "data:", "blob:", "https:"],
                 mediaSrc: ["'self'", "https:"],
                 fontSrc: ["'self'", "https://cdnjs.cloudflare.com", "data:"],
-                scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'", "https://cdnjs.cloudflare.com", "https://cdn.jsdelivr.net", "https://cdn.socket.io"],
+                // 🆕 [تشديد أمني تدريجي]: أُزيلت 'unsafe-eval' - أخطر توجيه بالـ CSP لأنه
+                // يسمح بتنفيذ أي نص كـ كود JS (eval/new Function). لم يعد ضرورياً لأي من
+                // مكتباتك الحالية. إن ظهر خطأ "unsafe-eval" بالـ Console لأي مكتبة بعد هذا
+                // التعديل، أعد 'unsafe-eval' مؤقتاً وأخبرني بالمكتبة المسبّبة لنعالجها بدقة.
+                scriptSrc: ["'self'", "'unsafe-inline'", "https://cdnjs.cloudflare.com", "https://cdn.jsdelivr.net", "https://cdn.socket.io"],
                 styleSrc: ["'self'", "'unsafe-inline'", "https://cdnjs.cloudflare.com"],
                 connectSrc: ["'self'", "ws:", "wss:", "https:"],
                 frameSrc: ["'self'", "https://www.youtube.com"]
@@ -155,11 +170,14 @@ const publicEventsLimiter = rateLimit({
     message: { success: false, error: 'طلبات كثيرة جداً من هذا الجهاز، يرجى الانتظار قليلاً.' }
 });
 
-// تعطيل Rate Limiting العام لتجنب منع الطلبات المهمة
-// سيتم تطبيقه فقط على endpoints حساسة (تسجيل الدخول، التسجيل)
+// 🆕 [تراجع]: تم إلغاء تطبيق apiLimiter على كل /api/ لأنه يُحسب بالـ IP
+// وليس بالمستخدم - في بيئة تحوي فقط مستخدمين مسجلين (بلا زوار)، الحماية
+// الصحيحة هي checkUserRequestQuota (لكل user_id على حدة، مفتوح افتراضياً).
+// حد الـ IP العام كان يجمع كل التبويبات/الصفحات المفتوحة من نفس الجهاز على
+// عداد واحد، فيصل للحد بسرعة أثناء الاستخدام أو الاختبار الطبيعي.
+// authLimiter يبقى مفعّلاً فقط على تسجيل الدخول/التسجيل (لا يؤثر على الاستخدام العادي).
 if (process.env.ENABLE_RATE_LIMITING !== 'false') {
-    // لا نطبق على جميع /api/ لتجنب منع الطلبات المهمة
-    // app.use('/api/', apiLimiter);
+    // app.use('/api/', apiLimiter); // مُعطَّل عمداً - راجع الشرح أعلاه
 }
 
 const io = new Server(server, {
@@ -839,7 +857,45 @@ app.post('/api/update-service-status', async (req, res) => {
 });
 // 3. إعداد البروكسي لـ GeoServer
 // [إجراء أمني 2]: تشفير وحماية البروكسي لمنع الحذف العشوائي (WFS-T protection)
+// 🆕 [تشديد أمني]: استخراج كل typeName/layer مذكور بالطلب (سواء GET query
+// params أو XML الخاص بـ WFS-T POST) والتحقق من أنه ضمن القائمة البيضاء
+// المعتمدة فعلياً بالتطبيق (ALLOWED_LAYERS) قبل السماح له بالوصول لـ GeoServer
+function extractRequestedLayerNames(req) {
+    const names = new Set();
+
+    ['typeName', 'typename', 'layers', 'LAYERS', 'TYPENAME'].forEach(key => {
+        if (req.query && req.query[key]) {
+            String(req.query[key]).split(',').forEach(tn => names.add(tn.trim()));
+        }
+    });
+
+    if (typeof req.body === 'string' && req.body.length > 0) {
+        const attrMatches = req.body.match(/typeName="([^"]+)"/g) || [];
+        attrMatches.forEach(m => {
+            const val = m.match(/typeName="([^"]+)"/)[1];
+            names.add(val.trim());
+        });
+        const elMatches = req.body.match(/<(?:\w+:)?TypeName>([^<]+)<\/(?:\w+:)?TypeName>/g) || [];
+        elMatches.forEach(m => {
+            const val = m.replace(/<[^>]+>/g, '').trim();
+            names.add(val);
+        });
+    }
+
+    return Array.from(names);
+}
+
 app.use('/geoserver-proxy', (req, res, next) => {
+    const requestedLayers = extractRequestedLayerNames(req);
+    for (const rawName of requestedLayers) {
+        const layerOnly = rawName.includes(':') ? rawName.split(':')[1] : rawName;
+        if (!isValidLayer(layerOnly)) {
+            console.warn(`🚫 [Proxy Guard] رُفض طلب لطبقة غير مصرح بها: ${rawName} من IP: ${req.ip}`);
+            return res.status(403).json({ error: 'الوصول لهذه الطبقة غير مسموح به.' });
+        }
+    }
+    next();
+}, (req, res, next) => {
     console.log(`[Proxy] Request to: ${req.url} from IP: ${req.ip}`);
     console.log(`[Proxy] GeoServer Target: ${GEOSERVER_TARGET}`);
     next();
@@ -1384,6 +1440,53 @@ app.get('/api/get-unique-values', async (req, res) => {
         res.status(500).json({ error: 'Database query failed', details: error.message });
     }
 });
+
+// 🆕 [تحسين أداء]: جلب عدة معالم من نفس الطبقة دفعة واحدة بمعرفاتهم،
+// بدل استعلام منفصل لكل معلم (يُستخدم بأقسام "الأعلى تقييماً"/"موصى بهم")
+app.post('/api/search-features-batch', async (req, res) => {
+    try {
+        const { layer, workspace, ids } = req.body;
+        if (!layer || !workspace || !Array.isArray(ids) || ids.length === 0) {
+            return res.status(400).json({ error: 'layer, workspace, ids مطلوبة' });
+        }
+        if (!isValidLayer(layer)) return res.status(403).json({ error: 'اسم طبقة غير مسموح به.' });
+
+        const targetPool = workspace === 'realestate' ? realestatePool : servicesPool;
+        const isRealEstate = REAL_ESTATE_LAYERS.includes(layer);
+        const tableName = isRealEstate ? `"${layer}"` : `service_all`;
+        const idField = isRealEstate ? 'fid' : 'id';
+
+        const cleanIds = ids.map(id => parseInt(id, 10)).filter(id => !isNaN(id));
+        if (cleanIds.length === 0) return res.json({ type: 'FeatureCollection', features: [] });
+
+        let query = `SELECT *, ST_AsGeoJSON(geom) as geom_json FROM public.${tableName} WHERE ${idField} = ANY($1)`;
+        const params = [cleanIds];
+
+        if (!isRealEstate) {
+            query += ` AND discriminator = $2`;
+            params.push(layer.trim());
+        }
+
+        const result = await targetPool.query(query, params);
+        const features = result.rows.map(row => {
+            const { x_coord, y_coord, geom, geom_json, ...properties } = row;
+            let geometry;
+            if (row.geom_json) {
+                try { geometry = JSON.parse(row.geom_json); } catch (e) { geometry = null; }
+            }
+            if (!geometry) {
+                geometry = { type: 'Point', coordinates: [Number(x_coord), Number(y_coord)] };
+            }
+            return { type: 'Feature', geometry, properties };
+        });
+
+        res.json({ type: 'FeatureCollection', features });
+    } catch (error) {
+        console.error('Batch Search API Error:', error.message);
+        res.status(500).json({ error: 'Database query failed', details: error.message });
+    }
+});
+
 
 // 9. API للبحث مع فلترة مكانية BBOX (لعمليات البحث الأربعة)
 app.get('/api/search-features', async (req, res) => {
