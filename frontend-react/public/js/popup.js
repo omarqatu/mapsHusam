@@ -273,17 +273,23 @@ function initializePopup(map) {
         return (realEstateLayerNames.includes(layerTitle) || layerTitle === areaLayerName) && (!MAP_CONFIG.globalExclusions || !MAP_CONFIG.globalExclusions.includes(layerBaseName));
     }
 
-    function cleanUrl(rawUrl) {
+        function cleanUrl(rawUrl) {
         if (!rawUrl || rawUrl === "" || rawUrl === "#" || rawUrl === "undefined") return null;
         let url = rawUrl.toString().trim();
         if (url.includes('<iframe')) {
             const match = url.match(/src="([^"]+)"/);
             if (match) url = match[1];
         }
-        url = url.replace(/["']/g, ""); 
+        url = url.replace(/["']/g, "");
+        // 🆕 [إصلاح مشكلة اختفاء الصور]: سياسة CSP بالسيرفر تسمح فقط بروابط
+        // https للصور (imgSrc: [...، "https:"]). أي رابط بصيغة http:// (شائع
+        // عند اللصق من مواقع صور قديمة) كان يُرفض بصمت من المتصفح، فيُخفيه
+        // onerror فوراً. نرفعه هنا تلقائياً لـ https بدل تعديل CSP وإضعافه.
+        if (url.startsWith('http://')) {
+            url = 'https://' + url.substring(7);
+        }
         return url;
     }
-
     const checkRequestQuotaOrAlert = window.checkRequestQuotaOrAlert;
 
     // 🆕 دالة للتحقق من الفاصل الزمني بين النقرات
@@ -413,19 +419,21 @@ function initializePopup(map) {
         }
     };
 
-    function createLink(url, text = "للتفاصيل انقر هنا") {
+        function createLink(url, text = "للتفاصيل انقر هنا") {
         const validatedUrl = cleanUrl(url);
         if (!validatedUrl) return '';
         let finalUrl = validatedUrl;
         if (!finalUrl.startsWith('http')) finalUrl = 'https://' + finalUrl;
-        return `<a href="${finalUrl}" target="_blank" class="popup-link">${text}</a>`;
+        // 🆕 rel="noopener noreferrer" يمنع الصفحة المفتوحة حديثاً (target="_blank")
+        // من الوصول لـ window.opener الخاص بصفحتنا - حماية قياسية ضد "tab-nabbing"
+        return `<a href="${finalUrl}" target="_blank" rel="noopener noreferrer" class="popup-link">${text}</a>`;
     }
 
-    function createImageElement(url) {
+        function createImageElement(url) {
         const validatedUrl = cleanUrl(url);
         if (!validatedUrl) return '';
         return `<div class="popup-img-container" style="margin-top:10px; text-align:center;">
-                    <img src="${validatedUrl}" class="popup-img" style="max-width:100%; border-radius:8px; display:block; margin:auto;" onerror="this.style.display='none'">
+                    <img src="${validatedUrl}" class="popup-img" style="max-width:100%; border-radius:8px; display:block; margin:auto;">
                 </div>`;
     }
 
@@ -506,6 +514,24 @@ function initializePopup(map) {
             }
         }
     };
+
+    // ==========================================================================
+    // 🆕 [تشديد أمني CSP]: تفويض حدث موحّد على مستوى document لزر "نسخ رابط
+    // الموقع" - نص الزر يظهر بعدة أماكن مختلفة (بوب أب الخريطة، جداول النتائج
+    // بالبحث الذكي/السريع/بالموقع) لأنها كلها تستخدم generateFeatureHtml نفسها،
+    // لذلك التفويض على document هو الأضمن ليغطي كل الحالات دفعة واحدة
+    document.addEventListener('click', function (e) {
+        const btn = e.target.closest('.copy-location-link-btn');
+        if (btn) window.copyLocationLink(window.currentPopupCoordinate);
+    });
+
+    // 🆕 [تشديد أمني CSP]: onerror لا يبثّ (bubble) بشكل طبيعي، لذلك نستخدم
+    // مرحلة الالتقاط (capture: true) لضمان وصول الحدث حتى مع التفويض من الأعلى
+    document.addEventListener('error', function (e) {
+        if (e.target && e.target.classList && e.target.classList.contains('popup-img')) {
+            e.target.style.display = 'none';
+        }
+    }, true);
     
     const overlay = new ol.Overlay({
         element: container,
@@ -705,9 +731,9 @@ function initializePopup(map) {
             if (props.village_a) bodyHtml += `<b>🏘️ المدينة:</b> ${window.sanitizeHTML(props.village_a)}<br>`;
             if (props.location_name || props.location) bodyHtml += `<b>📍 الموقع:</b> ${window.sanitizeHTML(props.location_name || props.location)}<br>`;
 
-            bodyHtml += `
+                        bodyHtml += `
             <div style="margin-top: 15px; border-top: 2px solid #eee; padding-top: 12px;">
-                <button onclick="copyLocationLink(window.currentPopupCoordinate)"
+                <button class="copy-location-link-btn"
                         style="width: 100%; background: #6c757d; color: white; border: none; padding: 10px; border-radius: 10px; cursor: pointer; font-weight: bold; display: flex; align-items: center; justify-content: center; gap: 6px; font-size: 12px; box-shadow: 0 4px 12px rgba(108,117,125,0.3);">
                     <i class="fas fa-link" style="font-size: 14px;"></i> نسخ رابط الموقع
                 </button>
@@ -792,9 +818,9 @@ function initializePopup(map) {
                 }
             }
 
-            bodyHtml += `
+                        bodyHtml += `
             <div style="margin-top: 15px; border-top: 2px solid #eee; padding-top: 12px;">
-                <button onclick="copyLocationLink(window.currentPopupCoordinate)"
+                <button class="copy-location-link-btn"
                         style="width: 100%; background: #6c757d; color: white; border: none; padding: 10px; border-radius: 10px; cursor: pointer; font-weight: bold; display: flex; align-items: center; justify-content: center; gap: 6px; font-size: 12px; box-shadow: 0 4px 12px rgba(108,117,125,0.3);">
                     <i class="fas fa-link" style="font-size: 14px;"></i> نسخ رابط الموقع
                 </button>
@@ -818,9 +844,9 @@ function initializePopup(map) {
                 bodyHtml += `<b>${label}:</b> ${props[key]}<br>`;
             });
 
-            bodyHtml += `
+                        bodyHtml += `
             <div style="margin-top: 15px; border-top: 2px solid #eee; padding-top: 12px;">
-                <button onclick="copyLocationLink(window.currentPopupCoordinate)"
+                <button class="copy-location-link-btn"
                         style="width: 100%; background: #6c757d; color: white; border: none; padding: 10px; border-radius: 10px; cursor: pointer; font-weight: bold; display: flex; align-items: center; justify-content: center; gap: 6px; font-size: 12px; box-shadow: 0 4px 12px rgba(108,117,125,0.3);">
                     <i class="fas fa-link" style="font-size: 14px;"></i> نسخ رابط الموقع
                 </button>

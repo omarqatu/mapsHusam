@@ -902,11 +902,11 @@ window.__nmsPageHandlesOwnAds = true;
         }
 
         // عرض صورة أو رابط ضمن عمود "قبل" أو "بعد"
-        function renderBeforeAfterMedia(url) {
+                function renderBeforeAfterMedia(url) {
             if (/\.(jpg|jpeg|png|gif|webp)(\?.*)?$/i.test(url)) {
-                return `<img src="${url}" loading="lazy" onerror="this.style.display='none'; this.insertAdjacentHTML('afterend', '<div class=\\'nms-ba-empty\\'>تعذر تحميل الصورة</div>');">`;
+                return `<img src="${url}" loading="lazy" class="nms-ba-photo-img">`;
             }
-            return `<a href="${url}" target="_blank" rel="noopener" class="nms-video-link-btn"><i class="fas fa-external-link-alt"></i> عرض</a>`;
+            return `<a href="${url}" target="_blank" rel="noopener noreferrer" class="nms-video-link-btn"><i class="fas fa-external-link-alt"></i> عرض</a>`;
         }
 
                 // 🆕 أزرار التواصل (اتصال/واتساب/طلب الخدمة) بنفس آلية تسجيل النقرات
@@ -967,9 +967,9 @@ window.__nmsPageHandlesOwnAds = true;
             const featureId = (props.id !== undefined && props.id !== null) ? props.id : (props.fid !== undefined ? props.fid : '');
 
             let mediaHtml = '';
-            if (mode === 'photo' && props.pic) {
+                if (mode === 'photo' && props.pic) {
                 const cleanPic = cleanExternalUrl(props.pic);
-                if (cleanPic) mediaHtml = `<div class="nms-gallery-media"><img src="${cleanPic}" alt="${name}" loading="lazy" onerror="this.parentElement.style.display='none'"></div>`;
+                if (cleanPic) mediaHtml = `<div class="nms-gallery-media"><img src="${cleanPic}" alt="${name}" loading="lazy" class="nms-gallery-photo-img"></div>`;
             } else if (mode === 'video' && props.video) {
                 mediaHtml = buildVideoEmbedHtml(props.video);
             }
@@ -1001,7 +1001,7 @@ window.__nmsPageHandlesOwnAds = true;
             const actionsHtml = buildGalleryContactActionsHtml(props, item);
             const coords = getFeatureCoords(feature);
             const gotoBtnHtml = coords
-                ? `<button type="button" class="nms-goto-map-btn" onclick="window.nmsGotoMapFromCoords(${coords[0]}, ${coords[1]})"><i class="fas fa-map-location-dot"></i> الانتقال إلى الخريطة</button>`
+                ? `<button type="button" class="nms-goto-map-btn js-goto-map-link" data-x="${coords[0]}" data-y="${coords[1]}"><i class="fas fa-map-location-dot"></i> الانتقال إلى الخريطة</button>`
                 : '';
 
             return `<div class="nms-gallery-card">${mediaHtml}${infoHtml}${actionsHtml}${gotoBtnHtml}</div>`;
@@ -1047,7 +1047,7 @@ window.__nmsPageHandlesOwnAds = true;
             const actionsHtml = buildGalleryContactActionsHtml(props, item);
             const coords = getFeatureCoords(feature);
             const gotoBtnHtml = coords
-                ? `<button type="button" class="nms-goto-map-btn" onclick="window.nmsGotoMapFromCoords(${coords[0]}, ${coords[1]})"><i class="fas fa-map-location-dot"></i> الانتقال إلى الخريطة</button>`
+                ? `<button type="button" class="nms-goto-map-btn js-goto-map-link" data-x="${coords[0]}" data-y="${coords[1]}"><i class="fas fa-map-location-dot"></i> الانتقال إلى الخريطة</button>`
                 : '';
 
             return `<div class="nms-gallery-card nms-before-after-card">${mediaHtml}${infoHtml}${actionsHtml}${gotoBtnHtml}</div>`;
@@ -1177,10 +1177,40 @@ window.__nmsPageHandlesOwnAds = true;
 
         // 🆕 دالة عامة للانتقال إلى موقع أي معلم على الخريطة من أزرار البطاقات
         // (نفس منطق goBtn.onclick الموجود بباقي الصفحة، لكن بصيغة onclick داخل HTML)
-        window.nmsGotoMapFromCoords = function (x, y) {
+                window.nmsGotoMapFromCoords = function (x, y) {
             if (x === undefined || y === undefined || x === null || y === null) return;
             window.open(`/original-index.html?x=${Number(x).toFixed(3)}&y=${Number(y).toFixed(3)}`, '_blank');
         };
+
+        // ==========================================================================
+        // 🆕 [تشديد أمني CSP]: تفويض حدث موحّد لزر "الانتقال إلى الخريطة" المولّد
+        // بأقسام المعرض/قبل وبعد (js-goto-map-link)، مع تمييزه عن أزرار
+        // nms-goto-map-btn الأخرى المربوطة أصلاً بـ .onclick property (renderResults)
+        // عبر اشتراط وجود data-x فعلياً، فلا يحدث أي تكرار لتنفيذ نفس الحدث
+        // ==========================================================================
+        document.addEventListener('click', function (e) {
+            const btn = e.target.closest('.js-goto-map-link[data-x]');
+            if (!btn) return;
+            window.nmsGotoMapFromCoords(parseFloat(btn.dataset.x), parseFloat(btn.dataset.y));
+        });
+
+        // 🆕 معالجة صور المعرض/قبل وبعد/النتائج عند فشل التحميل - onerror لا
+        // يبثّ (bubble) طبيعياً فنستخدم مرحلة الالتقاط (capture: true)
+        document.addEventListener('error', function (e) {
+            const img = e.target;
+            if (!img || img.tagName !== 'IMG') return;
+
+            if (img.classList.contains('nms-gallery-photo-img') || img.classList.contains('nms-result-img-el')) {
+                if (img.parentElement) img.parentElement.style.display = 'none';
+                return;
+            }
+
+            if (img.classList.contains('nms-ba-photo-img')) {
+                img.style.display = 'none';
+                img.insertAdjacentHTML('afterend', '<div class="nms-ba-empty">تعذر تحميل الصورة</div>');
+                return;
+            }
+        }, true);
 
                 async function loadRatedRow(gridId, sectionId, operator, ratingValue) {
             const grid = document.getElementById(gridId);
@@ -1918,7 +1948,7 @@ window.__nmsPageHandlesOwnAds = true;
                     if (p.gov_a) html += `<div class="nms-r-line"><b>🌍 المحافظة:</b> ${sanitize(p.gov_a)}</div>`;
                 }
                 if (p.des) html += `<div class="nms-r-desc"><b>📝 الوصف:</b> ${sanitize(p.des)}</div>`;
-                if (p.pic) html += `<div class="nms-r-img"><img src="${p.pic}" onerror="this.parentElement.style.display='none'"></div>`;
+                if (p.pic) html += `<div class="nms-r-img"><img src="${p.pic}" class="nms-result-img-el"></div>`;
                 if (p.video) {
                     const videoUrl = p.video.toString().trim().startsWith('http') ? p.video : 'https://' + p.video;
                     html += `<div style="margin-top:6px;"><a href="${videoUrl}" target="_blank" rel="noopener" style="color:#1a73e8; font-weight:bold; text-decoration:none; display:inline-flex; align-items:center; gap:5px; font-size:12px;"><i class="fas fa-video"></i> عرض الفيديو</a></div>`;
