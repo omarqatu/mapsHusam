@@ -467,7 +467,7 @@ function renderJsonGroupPanel(groupKey) {
                            value="${(item[f.key] !== undefined && item[f.key] !== null) ? String(item[f.key]).replace(/"/g, '&quot;') : ''}">
                 </td>
             `).join('')}
-            <td><button type="button" class="btn btn-danger btn-sm" onclick="removeJsonRow('${groupKey}', '${item._uid}')"><i class="fas fa-trash"></i></button></td>
+        <td><button type="button" class="btn btn-danger btn-sm btn-remove-json-row" data-group="${groupKey}" data-uid="${item._uid}"><i class="fas fa-trash"></i></button></td>
         </tr>
     `).join('');
 
@@ -487,9 +487,9 @@ function renderJsonGroupPanel(groupKey) {
         </div>
         ${state.items.length === 0 ? '<div class="no-data">لا توجد عناصر في هذه المجموعة بعد</div>' : ''}
         <div class="table-actions">
-            <button type="button" class="btn btn-secondary" onclick="addJsonRow('${groupKey}')"><i class="fas fa-plus"></i> إضافة عنصر جديد</button>
-            <button type="button" class="btn btn-success" onclick="saveJsonGroup('${groupKey}')"><i class="fas fa-save"></i> حفظ تعديلات هذه المجموعة</button>
-            <button type="button" class="btn btn-primary" onclick="loadEverything()"><i class="fas fa-sync-alt"></i> تحديث القائمة</button>
+            <button type="button" class="btn btn-secondary btn-add-json-row" data-group="${groupKey}"><i class="fas fa-plus"></i> إضافة عنصر جديد</button>
+            <button type="button" class="btn btn-success btn-save-json-group" data-group="${groupKey}"><i class="fas fa-save"></i> حفظ تعديلات هذه المجموعة</button>
+            <button type="button" class="btn btn-primary btn-reload-everything"><i class="fas fa-sync-alt"></i> تحديث القائمة</button>
         </div>
     `;
     makeTableRowsDraggable(document.getElementById('tbody-' + groupKey)); // 🆕
@@ -562,7 +562,7 @@ function renderRoadStatusPanel() {
                     ${ROAD_STOP_OPTIONS.map(o => `<option value="${o.value}" ${String(f.stop) === o.value ? 'selected' : ''}>${o.label}</option>`).join('')}
                 </select>
             </td>
-            <td><button type="button" class="btn btn-primary btn-sm" onclick="saveRoadBarrier(${f.id}, '${f._uid}')"><i class="fas fa-save"></i> حفظ</button></td>
+        <td><button type="button" class="btn btn-primary btn-sm btn-save-road-barrier" data-id="${f.id}" data-uid="${f._uid}"><i class="fas fa-save"></i> حفظ</button></td>
         </tr>
     `).join('');
 
@@ -581,9 +581,9 @@ function renderRoadStatusPanel() {
             </table>
         </div>
         ${roadBarriersState.length === 0 ? '<div class="no-data">لا توجد حواجز مسجّلة بعد</div>' : ''}
-        <div class="table-actions">
-            <button type="button" class="btn btn-success" onclick="saveRoadOrder()"><i class="fas fa-arrows-alt-v"></i> حفظ الترتيب</button>
-            <button type="button" class="btn btn-primary" onclick="loadEverything()"><i class="fas fa-sync-alt"></i> تحديث القائمة</button>
+                <div class="table-actions">
+            <button type="button" class="btn btn-success btn-save-road-order"><i class="fas fa-arrows-alt-v"></i> حفظ الترتيب</button>
+            <button type="button" class="btn btn-primary btn-reload-everything"><i class="fas fa-sync-alt"></i> تحديث القائمة</button>
         </div>
     `;
     makeTableRowsDraggable(panel.querySelector('tbody')); // 🆕
@@ -634,7 +634,7 @@ function renderFuelStatusPanel() {
             <td>${buildSelect(f._uid, 'diesel', f.diesel)}</td>
             <td>${buildSelect(f._uid, 'banzen95', f.banzen95)}</td>
             <td>${buildSelect(f._uid, 'banzen98', f.banzen98)}</td>
-            <td><button type="button" class="btn btn-primary btn-sm" onclick="saveFuelStation(${f.id}, '${f._uid}')"><i class="fas fa-save"></i> حفظ</button></td>
+            <td><button type="button" class="btn btn-primary btn-sm btn-save-fuel-station" data-id="${f.id}" data-uid="${f._uid}"><i class="fas fa-save"></i> حفظ</button></td>
         </tr>
     `).join('');
 
@@ -653,9 +653,9 @@ function renderFuelStatusPanel() {
             </table>
         </div>
         ${fuelStationsState.length === 0 ? '<div class="no-data">لا توجد محطات وقود مسجّلة بعد</div>' : ''}
-        <div class="table-actions">
-            <button type="button" class="btn btn-success" onclick="saveFuelOrder()"><i class="fas fa-arrows-alt-v"></i> حفظ الترتيب</button>
-            <button type="button" class="btn btn-primary" onclick="loadEverything()"><i class="fas fa-sync-alt"></i> تحديث القائمة</button>
+                <div class="table-actions">
+            <button type="button" class="btn btn-success btn-save-fuel-order"><i class="fas fa-arrows-alt-v"></i> حفظ الترتيب</button>
+            <button type="button" class="btn btn-primary btn-reload-everything"><i class="fas fa-sync-alt"></i> تحديث القائمة</button>
         </div>
     `;
     makeTableRowsDraggable(panel.querySelector('tbody')); // 🆕
@@ -686,6 +686,37 @@ async function saveFuelStation(id, uid) {
         showAlert('❌ خطأ في الاتصال: ' + err.message, 'error');
     }
 }
+
+// ==========================================================================
+// 🆕 [تشديد أمني CSP]: تفويض حدث نقر واحد على مستوى #panels-container يغطي
+// كل الأزرار المولّدة ديناميكياً بكل التبويبات (تُعاد كتابتها بالكامل عند كل
+// render)، بدل onclick inline بكل زر على حدة
+// ==========================================================================
+document.getElementById('panels-container').addEventListener('click', (e) => {
+    const removeBtn = e.target.closest('.btn-remove-json-row');
+    if (removeBtn) { removeJsonRow(removeBtn.dataset.group, removeBtn.dataset.uid); return; }
+
+    const addBtn = e.target.closest('.btn-add-json-row');
+    if (addBtn) { addJsonRow(addBtn.dataset.group); return; }
+
+    const saveGroupBtn = e.target.closest('.btn-save-json-group');
+    if (saveGroupBtn) { saveJsonGroup(saveGroupBtn.dataset.group); return; }
+
+    const reloadBtn = e.target.closest('.btn-reload-everything');
+    if (reloadBtn) { loadEverything(); return; }
+
+    const saveRoadBtn = e.target.closest('.btn-save-road-barrier');
+    if (saveRoadBtn) { saveRoadBarrier(parseInt(saveRoadBtn.dataset.id, 10), saveRoadBtn.dataset.uid); return; }
+
+    const saveRoadOrderBtn = e.target.closest('.btn-save-road-order');
+    if (saveRoadOrderBtn) { saveRoadOrder(); return; }
+
+    const saveFuelBtn = e.target.closest('.btn-save-fuel-station');
+    if (saveFuelBtn) { saveFuelStation(parseInt(saveFuelBtn.dataset.id, 10), saveFuelBtn.dataset.uid); return; }
+
+    const saveFuelOrderBtn = e.target.closest('.btn-save-fuel-order');
+    if (saveFuelOrderBtn) { saveFuelOrder(); return; }
+});
 
 // ==========================================================================
 // بدء التشغيل

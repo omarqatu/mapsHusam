@@ -77,7 +77,10 @@
             flex: 1; position: relative; aspect-ratio: 4 / 3; background: #f2f2f2;
             display: flex; align-items: center; justify-content: center; overflow: hidden;
         }
-        .nms-ba-col img { width: 100%; height: 100%; object-fit: cover; display: block; }
+                .nms-ba-col img { width: 100%; height: 100%; object-fit: cover; display: block; }
+        /* 🆕 دعم عرض فيديو مضمّن (يوتيوب/mp4) داخل صندوق قبل/بعد بنفس أبعاد الصورة */
+        .nms-ba-col iframe.nms-ba-video-frame,
+        .nms-ba-col video.nms-ba-video-frame { width: 100%; height: 100%; border: none; display: block; }
         .nms-ba-label {
             position: absolute; top: 8px; right: 8px; z-index: 2;
             background: rgba(0,0,0,0.65); color: #fff; font-size: 11px; font-weight: bold;

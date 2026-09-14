@@ -876,11 +876,13 @@ window.__nmsPageHandlesOwnAds = true;
         // ==========================================================================
 
         // تنظيف رابط خارجي (صورة/فيديو/رابط تفاصيل) قبل استخدامه في الصفحة
-        function cleanExternalUrl(rawUrl) {
+                function cleanExternalUrl(rawUrl) {
             if (!rawUrl) return '';
             let url = String(rawUrl).trim().replace(/["']/g, '');
             if (!url || url === '#' || url.toLowerCase() === 'undefined') return '';
             if (!url.startsWith('http')) url = 'https://' + url;
+            // 🆕 [إصلاح اختفاء الصور]: ترقية http:// إلى https:// (راجع الشرح بـ shared-utils.js)
+            url = window.upgradeToHttps(url);
             return url;
         }
 
@@ -902,11 +904,22 @@ window.__nmsPageHandlesOwnAds = true;
         }
 
         // عرض صورة أو رابط ضمن عمود "قبل" أو "بعد"
-        function renderBeforeAfterMedia(url) {
+            function renderBeforeAfterMedia(url) {
             if (/\.(jpg|jpeg|png|gif|webp)(\?.*)?$/i.test(url)) {
-                return `<img src="${url}" loading="lazy" onerror="this.style.display='none'; this.insertAdjacentHTML('afterend', '<div class=\\'nms-ba-empty\\'>تعذر تحميل الصورة</div>');">`;
+                return `<img src="${url}" loading="lazy" class="nms-ba-photo-img">`;
             }
-            return `<a href="${url}" target="_blank" rel="noopener" class="nms-video-link-btn"><i class="fas fa-external-link-alt"></i> عرض</a>`;
+            // 🆕 [إصلاح]: كشف روابط يوتيوب وعرضها مضمّنة (نفس أسلوب قسم
+            // "الفيديوهات") بدل زر "عرض" الذي كان يفتح الرابط بتبويب جديد فقط
+            // بدون أي معاينة داخل بطاقة "قبل/بعد" نفسها
+            const ytMatch = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([\w-]+)/);
+            if (ytMatch) {
+                return `<iframe class="nms-ba-video-frame" src="https://www.youtube.com/embed/${ytMatch[1]}" frameborder="0" allow="autoplay; encrypted-media" allowfullscreen loading="lazy"></iframe>`;
+            }
+            // 🆕 كشف روابط فيديو مباشرة (mp4/webm/ogg) وعرضها بمشغّل مضمّن أيضاً
+            if (/\.(mp4|webm|ogg)(\?.*)?$/i.test(url)) {
+                return `<video class="nms-ba-video-frame" controls preload="metadata" src="${url}"></video>`;
+            }
+            return `<a href="${url}" target="_blank" rel="noopener noreferrer" class="nms-video-link-btn"><i class="fas fa-external-link-alt"></i> عرض</a>`;
         }
 
                 // 🆕 أزرار التواصل (اتصال/واتساب/طلب الخدمة) بنفس آلية تسجيل النقرات
@@ -943,7 +956,10 @@ window.__nmsPageHandlesOwnAds = true;
         // 🆕 فحص وجود وسائط صالحة فقط (بدون أي آثار جانبية مثل جلب التقييم)،
         // يُستخدم لتصفية النتائج قبل البناء الفعلي لتفادي جلب التقييم مرتين
         function galleryEntryHasMedia(props, mode) {
-            if (mode === 'photo') return !!cleanExternalUrl(props.pic);
+            if (mode === 'photo') {
+                const picUrls = window.parseUrlList ? window.parseUrlList(props.pic) : (props.pic ? [props.pic] : []);
+                return picUrls.some(url => !!cleanExternalUrl(url));
+            }
             if (mode === 'video') return !!cleanExternalUrl(props.video);
             return false;
         }
@@ -967,9 +983,13 @@ window.__nmsPageHandlesOwnAds = true;
             const featureId = (props.id !== undefined && props.id !== null) ? props.id : (props.fid !== undefined ? props.fid : '');
 
             let mediaHtml = '';
-            if (mode === 'photo' && props.pic) {
-                const cleanPic = cleanExternalUrl(props.pic);
-                if (cleanPic) mediaHtml = `<div class="nms-gallery-media"><img src="${cleanPic}" alt="${name}" loading="lazy" onerror="this.parentElement.style.display='none'"></div>`;
+                if (mode === 'photo') {
+                const picUrls = window.parseUrlList ? window.parseUrlList(props.pic) : (props.pic ? [props.pic] : []);
+                const cleanPics = picUrls.map(url => cleanExternalUrl(url)).filter(Boolean);
+                if (cleanPics.length) {
+                    const displayUrl = cleanPics[0];
+                    mediaHtml = `<div class="nms-gallery-media"><img src="${displayUrl}" alt="${name}" loading="lazy" class="nms-gallery-photo-img"></div>`;
+                }
             } else if (mode === 'video' && props.video) {
                 mediaHtml = buildVideoEmbedHtml(props.video);
             }
@@ -1001,7 +1021,7 @@ window.__nmsPageHandlesOwnAds = true;
             const actionsHtml = buildGalleryContactActionsHtml(props, item);
             const coords = getFeatureCoords(feature);
             const gotoBtnHtml = coords
-                ? `<button type="button" class="nms-goto-map-btn" onclick="window.nmsGotoMapFromCoords(${coords[0]}, ${coords[1]})"><i class="fas fa-map-location-dot"></i> الانتقال إلى الخريطة</button>`
+                ? `<button type="button" class="nms-goto-map-btn js-goto-map-link" data-x="${coords[0]}" data-y="${coords[1]}"><i class="fas fa-map-location-dot"></i> الانتقال إلى الخريطة</button>`
                 : '';
 
             return `<div class="nms-gallery-card">${mediaHtml}${infoHtml}${actionsHtml}${gotoBtnHtml}</div>`;
@@ -1047,7 +1067,7 @@ window.__nmsPageHandlesOwnAds = true;
             const actionsHtml = buildGalleryContactActionsHtml(props, item);
             const coords = getFeatureCoords(feature);
             const gotoBtnHtml = coords
-                ? `<button type="button" class="nms-goto-map-btn" onclick="window.nmsGotoMapFromCoords(${coords[0]}, ${coords[1]})"><i class="fas fa-map-location-dot"></i> الانتقال إلى الخريطة</button>`
+                ? `<button type="button" class="nms-goto-map-btn js-goto-map-link" data-x="${coords[0]}" data-y="${coords[1]}"><i class="fas fa-map-location-dot"></i> الانتقال إلى الخريطة</button>`
                 : '';
 
             return `<div class="nms-gallery-card nms-before-after-card">${mediaHtml}${infoHtml}${actionsHtml}${gotoBtnHtml}</div>`;
@@ -1177,10 +1197,40 @@ window.__nmsPageHandlesOwnAds = true;
 
         // 🆕 دالة عامة للانتقال إلى موقع أي معلم على الخريطة من أزرار البطاقات
         // (نفس منطق goBtn.onclick الموجود بباقي الصفحة، لكن بصيغة onclick داخل HTML)
-        window.nmsGotoMapFromCoords = function (x, y) {
+                window.nmsGotoMapFromCoords = function (x, y) {
             if (x === undefined || y === undefined || x === null || y === null) return;
             window.open(`/original-index.html?x=${Number(x).toFixed(3)}&y=${Number(y).toFixed(3)}`, '_blank');
         };
+
+        // ==========================================================================
+        // 🆕 [تشديد أمني CSP]: تفويض حدث موحّد لزر "الانتقال إلى الخريطة" المولّد
+        // بأقسام المعرض/قبل وبعد (js-goto-map-link)، مع تمييزه عن أزرار
+        // nms-goto-map-btn الأخرى المربوطة أصلاً بـ .onclick property (renderResults)
+        // عبر اشتراط وجود data-x فعلياً، فلا يحدث أي تكرار لتنفيذ نفس الحدث
+        // ==========================================================================
+        document.addEventListener('click', function (e) {
+            const btn = e.target.closest('.js-goto-map-link[data-x]');
+            if (!btn) return;
+            window.nmsGotoMapFromCoords(parseFloat(btn.dataset.x), parseFloat(btn.dataset.y));
+        });
+
+        // 🆕 معالجة صور المعرض/قبل وبعد/النتائج عند فشل التحميل - onerror لا
+        // يبثّ (bubble) طبيعياً فنستخدم مرحلة الالتقاط (capture: true)
+        document.addEventListener('error', function (e) {
+            const img = e.target;
+            if (!img || img.tagName !== 'IMG') return;
+
+            if (img.classList.contains('nms-gallery-photo-img') || img.classList.contains('nms-result-img-el')) {
+                if (img.parentElement) img.parentElement.style.display = 'none';
+                return;
+            }
+
+            if (img.classList.contains('nms-ba-photo-img')) {
+                img.style.display = 'none';
+                img.insertAdjacentHTML('afterend', '<div class="nms-ba-empty">تعذر تحميل الصورة</div>');
+                return;
+            }
+        }, true);
 
                 async function loadRatedRow(gridId, sectionId, operator, ratingValue) {
             const grid = document.getElementById(gridId);
@@ -1268,54 +1318,59 @@ window.__nmsPageHandlesOwnAds = true;
 
                                 const KNOWN_SERVICE_KEYS = Object.keys(serviceNames || {});
 
-                const cardsPromises = data.items.map(async (ratingItem) => {
-                    const layerKey = ratingItem.service_layer;
-                    const featureId = ratingItem.feature_id;
-                    if (!layerKey || !featureId) return null;
+                // 🆕 [إصلاح N+1]: تجميع المعرّفات حسب الطبقة، ثم استعلام واحد
+                // فقط لكل طبقة بدل استعلام منفصل لكل معلم
+                const validItems = data.items.filter(it => {
+                    if (!it.service_layer || !it.feature_id) return false;
+                    const isRE = REAL_ESTATE_TABLE_NAMES.includes(it.service_layer);
+                    return isRE || KNOWN_SERVICE_KEYS.includes(it.service_layer);
+                });
 
+                const groupedByLayer = {};
+                validItems.forEach(it => {
+                    if (!groupedByLayer[it.service_layer]) groupedByLayer[it.service_layer] = [];
+                    groupedByLayer[it.service_layer].push(it);
+                });
+
+                const layerFetchPromises = Object.keys(groupedByLayer).map(async (layerKey) => {
+                    const itemsForLayer = groupedByLayer[layerKey];
                     const isRealEstateLayer = REAL_ESTATE_TABLE_NAMES.includes(layerKey);
-
-                    // 🆕 تجاهل أي سجل تقييم قديم/فاسد يحمل اسم طبقة غير معروف
-                    // (مثل تسمية عربية مخزّنة بالخطأ بدل اسم الجدول الحقيقي)
-                    if (!isRealEstateLayer && !KNOWN_SERVICE_KEYS.includes(layerKey)) {
-                        return null;
-                    }
-
                     const workspaceForLayer = isRealEstateLayer ? 'realestate' : 'services';
+                    const ids = itemsForLayer.map(it => it.feature_id);
 
                     try {
-                        const params = new URLSearchParams({
-                            layer: layerKey,
-                            workspace: workspaceForLayer,
-                            field_0: isRealEstateLayer ? 'fid' : 'id',
-                            operator_0: '=',
-                            value_0: String(featureId),
-                            conditions_count: '1',
-                            ignore_status: '1'
+                        const res = await fetch(`${baseUrl}api/search-features-batch`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ layer: layerKey, workspace: workspaceForLayer, ids })
                         });
-                        const fRes = await fetch(`${baseUrl}api/search-features?${params.toString()}`);
-                        if (!fRes.ok) return null;
-                        const fData = await fRes.json();
-                        const feature = (fData.features || [])[0];
-                        if (!feature) return null;
+                        if (!res.ok) return [];
+                        const fData = await res.json();
+                        const featuresById = {};
+                        (fData.features || []).forEach(f => {
+                            const fid = isRealEstateLayer ? f.properties.fid : f.properties.id;
+                            featuresById[fid] = f;
+                        });
 
-                        const label = isRealEstateLayer ? (REAL_ESTATE_LABELS[layerKey] || layerKey) : (serviceNames[layerKey] || layerKey);
-                        const cardItem = {
-                            layer: layerKey,
-                            workspace: workspaceForLayer,
-                            label,
-                            isRealEstate: isRealEstateLayer,
-                            avgRating: parseFloat(ratingItem.avg_rating) || 0,
-                            totalRatings: parseInt(ratingItem.total_ratings, 10) || 0,
-                            badgeText: '🏆 الأعلى تقييماً'
-                        };
-                        return buildAdCardHtml(feature.properties || {}, cardItem);
+                        return itemsForLayer.map(ratingItem => {
+                            const feature = featuresById[ratingItem.feature_id];
+                            if (!feature) return null;
+                            const label = isRealEstateLayer ? (REAL_ESTATE_LABELS[layerKey] || layerKey) : (serviceNames[layerKey] || layerKey);
+                            const cardItem = {
+                                layer: layerKey, workspace: workspaceForLayer, label,
+                                isRealEstate: isRealEstateLayer,
+                                avgRating: parseFloat(ratingItem.avg_rating) || 0,
+                                totalRatings: parseInt(ratingItem.total_ratings, 10) || 0,
+                                badgeText: '🏆 الأعلى تقييماً'
+                            };
+                            return buildAdCardHtml(feature.properties || {}, cardItem);
+                        }).filter(Boolean);
                     } catch (err) {
-                        return null;
+                        return [];
                     }
                 });
 
-                const cards = (await Promise.all(cardsPromises)).filter(Boolean);
+                const cards = (await Promise.all(layerFetchPromises)).flat();
 
                 if (cards.length === 0) {
                     section.dataset.hasData = '0';
@@ -1913,7 +1968,13 @@ window.__nmsPageHandlesOwnAds = true;
                     if (p.gov_a) html += `<div class="nms-r-line"><b>🌍 المحافظة:</b> ${sanitize(p.gov_a)}</div>`;
                 }
                 if (p.des) html += `<div class="nms-r-desc"><b>📝 الوصف:</b> ${sanitize(p.des)}</div>`;
-                if (p.pic) html += `<div class="nms-r-img"><img src="${p.pic}" onerror="this.parentElement.style.display='none'"></div>`;
+                                if (p.pic) {
+                    const picUrls = window.parseUrlList ? window.parseUrlList(p.pic) : [p.pic];
+                    const cleanPicUrl = picUrls.map(item => window.upgradeToHttps(String(item).trim())).find(Boolean);
+                    if (cleanPicUrl) {
+                        html += `<div class="nms-r-img"><img src="${cleanPicUrl}" class="nms-result-img-el" loading="lazy" onerror="this.parentElement.style.display='none'"></div>`;
+                    }
+                }
                 if (p.video) {
                     const videoUrl = p.video.toString().trim().startsWith('http') ? p.video : 'https://' + p.video;
                     html += `<div style="margin-top:6px;"><a href="${videoUrl}" target="_blank" rel="noopener" style="color:#1a73e8; font-weight:bold; text-decoration:none; display:inline-flex; align-items:center; gap:5px; font-size:12px;"><i class="fas fa-video"></i> عرض الفيديو</a></div>`;

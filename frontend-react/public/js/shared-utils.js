@@ -229,6 +229,46 @@ window.buildFuelAvailabilityHtml = function (props) {
 };
 
 // ==========================================================================
+// 11) [إصلاح شامل لصور CSP]: ترقية أي رابط http:// إلى https:// تلقائياً -
+// سياسة أمان المحتوى (CSP) بالسيرفر تسمح فقط بتحميل الصور عبر https، وأي
+// رابط أُدخل بصيغة http:// (شائع عند اللصق من مواقع رفع صور قديمة) كان
+// يُرفض بصمت من المتصفح. هذه الدالة موحّدة وتُستخدم من popup.js،
+// no-map-search.js، و market-search.js بدل تكرار نفس المنطق 3 مرات.
+// ==========================================================================
+window.upgradeToHttps = function (rawUrl) {
+    if (!rawUrl) return rawUrl;
+    let url = String(rawUrl).trim();
+    if (url.startsWith('http://')) {
+        url = 'https://' + url.substring(7);
+    } else if (!/^https:\/\//i.test(url)) {
+        // 🆕 إضافة https:// تلقائياً إذا لم يُكتب أي بروتوكول إطلاقاً
+        // (هذا كان السبب الرئيسي لعدم ظهور صور pic عند كتابتها بدون http/https)
+        url = 'https://' + url;
+    }
+    return url;
+};
+
+window.parseUrlList = function (rawValue) {
+    if (rawValue === null || rawValue === undefined || rawValue === '') return [];
+
+    if (Array.isArray(rawValue)) {
+        return rawValue.flatMap(value => window.parseUrlList(value));
+    }
+
+    let text = String(rawValue).trim();
+    if (!text || text === '#' || text.toLowerCase() === 'undefined' || text.toLowerCase() === 'null') return [];
+
+    text = text.replace(/\[(.*?)]/g, '$1');
+    const segments = text
+        .split(/[\r\n|,;]+/)
+        .map(segment => segment.trim().replace(/^['"]|['"]$/g, ''))
+        .filter(Boolean)
+        .filter(segment => segment !== '#' && segment.toLowerCase() !== 'undefined' && segment.toLowerCase() !== 'null');
+
+    return segments;
+};
+
+// ==========================================================================
 // 8) [استثناء الطبقات المركزي]: نقطة واحدة موحّدة للتحقق مما إذا كانت أي طبقة
 //    مستثناة عبر MAP_CONFIG.globalExclusions، تفهم كل الصيغ الشائعة لاسم نفس
 //    الطبقة (المفتاح الداخلي 'rentLayer'، اسمها بقاعدة البيانات 'ApartRent'،

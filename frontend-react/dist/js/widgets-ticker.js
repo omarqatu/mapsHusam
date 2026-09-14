@@ -1118,9 +1118,10 @@ function renderManualGroupsInto(prefix) {
         refreshLiveRoadBarriers();
         refreshLiveFuelStations();
         fetchRemoteWidgetsData();   // 🆕
-        setInterval(refreshLiveRoadBarriers, 60000);
-        setInterval(refreshLiveFuelStations, 60000);
-        setInterval(fetchRemoteWidgetsData, 60000);   // 🆕
+        // 🆕 توقف تلقائياً بالخلفية، وتُحدَّث فوراً عند عودة المستخدم للتبويب
+        window.createVisibilityAwareInterval(refreshLiveRoadBarriers, 60000);
+        window.createVisibilityAwareInterval(refreshLiveFuelStations, 60000);
+        window.createVisibilityAwareInterval(fetchRemoteWidgetsData, 60000);
         
                 // بدء التحديث التلقائي من APIs (الطقس له مسار خاص لأنه متعدد المدن)
         if (DISPLAY_CONFIG.autoUpdate) {

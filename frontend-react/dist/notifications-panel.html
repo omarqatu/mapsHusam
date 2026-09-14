@@ -263,7 +263,7 @@
     <form id="notification-form">
         <div class="form-group">
             <label for="target-type">نوع الاستهداف</label>
-            <select id="target-type" onchange="handleTargetTypeChange()">
+            <select id="target-type">
                 <option value="single">مستخدم واحد</option>
                 <option value="online">المتصلون حالياً فقط</option>
                 <option value="all_users">كل المستخدمين</option>
@@ -284,26 +284,26 @@
 
             <!-- فلاتر المستخدمين -->
             <div style="display: flex; gap: 10px; margin-bottom: 10px; flex-wrap: wrap;">
-                <button type="button" onclick="filterUsers('all')" class="filter-btn active" data-filter="all" style="flex: 1; min-width: 80px; padding: 8px; background: #667eea; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 12px;">
-                    الكل
-                </button>
-                <button type="button" onclick="filterUsers('user')" class="filter-btn" data-filter="user" style="flex: 1; min-width: 80px; padding: 8px; background: #f0f0f0; color: #333; border: none; border-radius: 6px; cursor: pointer; font-size: 12px;">
-                    عاديين
-                </button>
-                <button type="button" onclick="filterUsers('provider')" class="filter-btn" data-filter="provider" style="flex: 1; min-width: 80px; padding: 8px; background: #f0f0f0; color: #333; border: none; border-radius: 6px; cursor: pointer; font-size: 12px;">
-                    مزودين
-                </button>
-                <button type="button" onclick="filterUsers('admin')" class="filter-btn" data-filter="admin" style="flex: 1; min-width: 80px; padding: 8px; background: #f0f0f0; color: #333; border: none; border-radius: 6px; cursor: pointer; font-size: 12px;">
-                    مشرفين
-                </button>
+                    <button type="button" class="filter-btn active" data-filter="all" style="flex: 1; min-width: 80px; padding: 8px; background: #667eea; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 12px;">
+                        الكل
+                    </button>
+                    <button type="button" class="filter-btn" data-filter="user" style="flex: 1; min-width: 80px; padding: 8px; background: #f0f0f0; color: #333; border: none; border-radius: 6px; cursor: pointer; font-size: 12px;">
+                        عاديين
+                    </button>
+                    <button type="button" class="filter-btn" data-filter="provider" style="flex: 1; min-width: 80px; padding: 8px; background: #f0f0f0; color: #333; border: none; border-radius: 6px; cursor: pointer; font-size: 12px;">
+                        مزودين
+                    </button>
+                    <button type="button" class="filter-btn" data-filter="admin" style="flex: 1; min-width: 80px; padding: 8px; background: #f0f0f0; color: #333; border: none; border-radius: 6px; cursor: pointer; font-size: 12px;">
+                        مشرفين
+                    </button>
             </div>
 
             <!-- أزرار التحديد السريع -->
             <div style="display: flex; gap: 10px; margin-bottom: 10px;">
-                <button type="button" onclick="selectAllUsers()" style="flex: 1; padding: 8px; background: #34a853; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 12px;">
+                <button type="button" id="btn-select-all-users" style="flex: 1; padding: 8px; background: #34a853; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 12px;">
                     <i class="fas fa-check-double"></i> تحديد الكل
                 </button>
-                <button type="button" onclick="deselectAllUsers()" style="flex: 1; padding: 8px; background: #ea4335; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 12px;">
+                <button type="button" id="btn-deselect-all-users" style="flex: 1; padding: 8px; background: #ea4335; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 12px;">
                     <i class="fas fa-times"></i> إلغاء الكل
                 </button>
             </div>
@@ -318,7 +318,7 @@
                 تم اختيار <strong id="selected-count">0</strong> مستخدم
             </div>
 
-            <button type="button" onclick="loadUsers()" style="margin-top: 10px; background: #1a73e8;">
+            <button type="button" id="btn-refresh-users-list" style="margin-top: 10px; background: #1a73e8;">
                 <i class="fas fa-sync-alt"></i> تحديث قائمة المستخدمين
             </button>
         </div>
@@ -482,8 +482,8 @@
                 roleIcon = 'user';
             }
 
-            userDiv.innerHTML = `
-                <input type="checkbox" class="user-checkbox" value="${user.id}" id="user-${user.id}" data-role="${user.role || 'user'}" onchange="updateSelectionSummary()">
+                        userDiv.innerHTML = `
+                <input type="checkbox" class="user-checkbox" value="${user.id}" id="user-${user.id}" data-role="${user.role || 'user'}">
                 <label for="user-${user.id}" style="flex: 1; cursor: pointer; display: flex; align-items: center; gap: 10px;">
                     <div style="flex: 1;">
                         <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 4px;">
@@ -655,6 +655,30 @@
         sendBtn.innerHTML = '<i class="fas fa-paper-plane"></i> إرسال الإشعار';
         alert('❌ خطأ: ' + (error.error || 'حدث خطأ غير معروف'));
     });
+
+    // ==========================================================================
+// 🆕 [تشديد أمني CSP]: ربط كل الأحداث التي كانت onclick/onchange inline
+// بالـ HTML، بدل الاعتماد على unsafe-inline بسياسة أمان المحتوى (CSP)
+// ==========================================================================
+document.getElementById('target-type').addEventListener('change', handleTargetTypeChange);
+
+document.querySelectorAll('.filter-btn').forEach(btn => {
+    btn.addEventListener('click', () => filterUsers(btn.dataset.filter));
+});
+
+document.getElementById('btn-select-all-users').addEventListener('click', selectAllUsers);
+document.getElementById('btn-deselect-all-users').addEventListener('click', deselectAllUsers);
+document.getElementById('btn-refresh-users-list').addEventListener('click', loadUsers);
+
+// 🆕 تفويض حدث موحّد لكل checkboxes المستخدمين (مولّدة ديناميكياً بـ renderUsersList)
+// بدل ربط onchange لكل عنصر على حدة - يعمل تلقائياً حتى مع إعادة رسم القائمة بالفلترة
+document.getElementById('users-list').addEventListener('change', (e) => {
+    if (e.target.classList.contains('user-checkbox')) {
+        updateSelectionSummary();
+    }
+});
+
+
 </script>
 
 </body>

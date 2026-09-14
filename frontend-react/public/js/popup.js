@@ -273,7 +273,7 @@ function initializePopup(map) {
         return (realEstateLayerNames.includes(layerTitle) || layerTitle === areaLayerName) && (!MAP_CONFIG.globalExclusions || !MAP_CONFIG.globalExclusions.includes(layerBaseName));
     }
 
-        function cleanUrl(rawUrl) {
+            function cleanUrl(rawUrl) {
         if (!rawUrl || rawUrl === "" || rawUrl === "#" || rawUrl === "undefined") return null;
         let url = rawUrl.toString().trim();
         if (url.includes('<iframe')) {
@@ -281,13 +281,7 @@ function initializePopup(map) {
             if (match) url = match[1];
         }
         url = url.replace(/["']/g, "");
-        // 🆕 [إصلاح مشكلة اختفاء الصور]: سياسة CSP بالسيرفر تسمح فقط بروابط
-        // https للصور (imgSrc: [...، "https:"]). أي رابط بصيغة http:// (شائع
-        // عند اللصق من مواقع صور قديمة) كان يُرفض بصمت من المتصفح، فيُخفيه
-        // onerror فوراً. نرفعه هنا تلقائياً لـ https بدل تعديل CSP وإضعافه.
-        if (url.startsWith('http://')) {
-            url = 'https://' + url.substring(7);
-        }
+        url = window.upgradeToHttps(url);
         return url;
     }
     const checkRequestQuotaOrAlert = window.checkRequestQuotaOrAlert;
@@ -429,12 +423,50 @@ function initializePopup(map) {
         return `<a href="${finalUrl}" target="_blank" rel="noopener noreferrer" class="popup-link">${text}</a>`;
     }
 
-        function createImageElement(url) {
+            function createImageElement(url) {
+        const urlList = window.parseUrlList ? window.parseUrlList(url) : (cleanUrl(url) ? [cleanUrl(url)] : []);
+        if (!urlList.length) return '';
+
+        return urlList.map((item) => {
+            const validatedUrl = cleanUrl(item);
+            if (!validatedUrl) return '';
+            return `<div class="popup-img-container" style="margin-top:10px; text-align:center;">
+                        <img src="${validatedUrl}" class="popup-img" style="max-width:100%; border-radius:8px; display:block; margin:auto;" loading="lazy" onerror="this.style.display='none';">
+                    </div>`;
+        }).join('');
+    }
+
+    // 🆕 عرض الفيديو مضمّناً داخل البوب أب (يوتيوب أو mp4/webm) بدل فتح رابط خارجي فقط
+    function createVideoEmbedElement(url) {
         const validatedUrl = cleanUrl(url);
         if (!validatedUrl) return '';
-        return `<div class="popup-img-container" style="margin-top:10px; text-align:center;">
-                    <img src="${validatedUrl}" class="popup-img" style="max-width:100%; border-radius:8px; display:block; margin:auto;">
-                </div>`;
+        const ytMatch = validatedUrl.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([\w-]+)/);
+        if (ytMatch) {
+            return `<div class="popup-img-container" style="margin-top:10px;">
+                        <iframe src="https://www.youtube.com/embed/${ytMatch[1]}" style="width:100%; aspect-ratio:16/9; border:none; border-radius:8px; display:block;" allow="autoplay; encrypted-media" allowfullscreen loading="lazy"></iframe>
+                    </div>`;
+        }
+        if (/\.(mp4|webm|ogg)(\?.*)?$/i.test(validatedUrl)) {
+            return `<div class="popup-img-container" style="margin-top:10px; text-align:center;">
+                        <video controls preload="metadata" src="${validatedUrl}" style="max-width:100%; border-radius:8px; display:block; margin:auto;"></video>
+                    </div>`;
+        }
+        return `<div style="margin-top:8px;">🎥 ${createLink(validatedUrl, "عرض الفيديو")}</div>`;
+    }
+
+    // 🆕 details_link_1 و details_link_2: صورة مباشرة إذا كان الرابط صورة، فيديو
+    // مضمّن إذا كان يوتيوب/mp4، وإلا رابط عادي كما كان سابقاً
+    function createDetailsMediaElement(url, label) {
+        const validatedUrl = cleanUrl(url);
+        if (!validatedUrl) return '';
+        if (/\.(jpg|jpeg|png|gif|webp)(\?.*)?$/i.test(validatedUrl)) {
+            return createImageElement(validatedUrl);
+        }
+        const ytMatch = validatedUrl.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([\w-]+)/);
+        if (ytMatch || /\.(mp4|webm|ogg)(\?.*)?$/i.test(validatedUrl)) {
+            return createVideoEmbedElement(validatedUrl);
+        }
+        return `<div style="margin-top:8px;">🔗 ${createLink(validatedUrl, label)}</div>`;
     }
 
     window.copyLocationLink = function(coordinate) {
@@ -826,11 +858,12 @@ function initializePopup(map) {
                 </button>
             </div>`;
 
-            if (props.details_link_1 || props.pic || props.video) {
-            if (props.details_link_1) bodyHtml += `<div style="margin-top:8px;">🔗 ${createLink(props.details_link_1, "تفاصيل إضافية")}</div>`;
-            if (props.video) bodyHtml += `<div style="margin-top:8px;">🎥 ${createLink(props.video, "عرض الفيديو")}</div>`;
+            if (props.details_link_1 || props.details_link_2 || props.pic || props.video) {
             if (props.pic) bodyHtml += `<hr>${createImageElement(props.pic)}`;
-}
+            if (props.video) bodyHtml += createVideoEmbedElement(props.video);
+            if (props.details_link_1) bodyHtml += createDetailsMediaElement(props.details_link_1, "تفاصيل إضافية 1");
+            if (props.details_link_2) bodyHtml += createDetailsMediaElement(props.details_link_2, "تفاصيل إضافية 2");
+                }
               } else if (isAreaLayer) {
             const areaFieldLabels = {
                 'gov_a': '🌍 اسم المحافظة',

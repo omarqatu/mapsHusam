@@ -142,10 +142,28 @@ window.isFeatureLinkedToProvider = function (layerDbName, featureId) {
     return set.has(String(featureId));
 };
 
+// ==========================================================================
+// 10) [تحسين أداء عام]: أداة موحّدة لأي تحديث دوري بالمنصة - توقفه تلقائياً
+// حين يكون التبويب بالخلفية، وتحدّثه فوراً عند عودة المستخدم إليه، بدل
+// استهلاك موارد السيرفر والبطارية لتبويبات مفتوحة لا ينظر إليها أحد.
+// ==========================================================================
+window.createVisibilityAwareInterval = function (callback, intervalMs) {
+    let timerId = setInterval(() => {
+        if (document.visibilityState === 'visible') callback();
+    }, intervalMs);
+
+    document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'visible') callback();
+    });
+
+    return { stop: () => clearInterval(timerId) };
+};
+
 (function () {
     function startProviderLinksPolling() {
         window.refreshProviderLinkedFeatures();
-        setInterval(window.refreshProviderLinkedFeatures, 60000);
+        // 🆕 بدل setInterval العادي
+        window.createVisibilityAwareInterval(window.refreshProviderLinkedFeatures, 60000);
     }
     if (document.readyState !== 'loading') {
         startProviderLinksPolling();
@@ -208,6 +226,42 @@ window.buildFuelAvailabilityHtml = function (props) {
     });
     html += '</div>';
     return html;
+};
+
+// ==========================================================================
+// 11) [إصلاح شامل لصور CSP]: ترقية أي رابط http:// إلى https:// تلقائياً -
+// سياسة أمان المحتوى (CSP) بالسيرفر تسمح فقط بتحميل الصور عبر https، وأي
+// رابط أُدخل بصيغة http:// (شائع عند اللصق من مواقع رفع صور قديمة) كان
+// يُرفض بصمت من المتصفح. هذه الدالة موحّدة وتُستخدم من popup.js،
+// no-map-search.js، و market-search.js بدل تكرار نفس المنطق 3 مرات.
+// ==========================================================================
+window.upgradeToHttps = function (rawUrl) {
+    if (!rawUrl) return rawUrl;
+    let url = String(rawUrl);
+    if (url.startsWith('http://')) {
+        url = 'https://' + url.substring(7);
+    }
+    return url;
+};
+
+window.parseUrlList = function (rawValue) {
+    if (rawValue === null || rawValue === undefined || rawValue === '') return [];
+
+    if (Array.isArray(rawValue)) {
+        return rawValue.flatMap(value => window.parseUrlList(value));
+    }
+
+    let text = String(rawValue).trim();
+    if (!text || text === '#' || text.toLowerCase() === 'undefined' || text.toLowerCase() === 'null') return [];
+
+    text = text.replace(/\[(.*?)]/g, '$1');
+    const segments = text
+        .split(/[\r\n|,;]+/)
+        .map(segment => segment.trim().replace(/^['"]|['"]$/g, ''))
+        .filter(Boolean)
+        .filter(segment => segment !== '#' && segment.toLowerCase() !== 'undefined' && segment.toLowerCase() !== 'null');
+
+    return segments;
 };
 
 // ==========================================================================

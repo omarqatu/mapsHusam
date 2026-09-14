@@ -876,16 +876,18 @@ window.__nmsPageHandlesOwnAds = true;
         // ==========================================================================
 
         // تنظيف رابط خارجي (صورة/فيديو/رابط تفاصيل) قبل استخدامه في الصفحة
-        function cleanExternalUrl(rawUrl) {
+                function cleanExternalUrl(rawUrl) {
             if (!rawUrl) return '';
             let url = String(rawUrl).trim().replace(/["']/g, '');
             if (!url || url === '#' || url.toLowerCase() === 'undefined') return '';
             if (!url.startsWith('http')) url = 'https://' + url;
+            // 🆕 [إصلاح اختفاء الصور]: ترقية http:// إلى https:// (راجع الشرح بـ shared-utils.js)
+            url = window.upgradeToHttps(url);
             return url;
         }
 
         // تحويل رابط فيديو (يوتيوب أو ملف مباشر أو رابط عام) إلى عنصر عرض مناسب
-        function buildVideoEmbedHtml(rawUrl) {
+                function buildVideoEmbedHtml(rawUrl) {
             const url = cleanExternalUrl(rawUrl);
             if (!url) return '';
 
@@ -901,10 +903,36 @@ window.__nmsPageHandlesOwnAds = true;
             return `<div class="nms-gallery-media nms-gallery-video-link"><a href="${url}" target="_blank" rel="noopener" class="nms-video-link-btn"><i class="fas fa-play-circle"></i> مشاهدة الفيديو</a></div>`;
         }
 
+        // 🆕 عرض details_link_1/details_link_2 ببطاقات النتائج: صورة إذا كان الرابط
+        // صورة، فيديو مضمّن إذا كان يوتيوب/mp4، وإلا رابط عادي
+        function buildMediaBlockHtml(rawUrl, label) {
+            const url = cleanExternalUrl(rawUrl);
+            if (!url) return '';
+            if (/\.(jpg|jpeg|png|gif|webp)(\?.*)?$/i.test(url)) {
+                return `<div class="nms-r-img"><img src="${url}" class="nms-result-img-el" loading="lazy" onerror="this.parentElement.style.display='none'"></div>`;
+            }
+            const ytMatch = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([\w-]+)/);
+            if (ytMatch || /\.(mp4|webm|ogg)(\?.*)?$/i.test(url)) {
+                return buildVideoEmbedHtml(url);
+            }
+            return `<div style="margin-top:6px;"><a href="${url}" target="_blank" rel="noopener" style="color:#1a73e8; font-weight:bold; text-decoration:none; display:inline-flex; align-items:center; gap:5px; font-size:12px;"><i class="fas fa-link"></i> ${label}</a></div>`;
+        }
+
         // عرض صورة أو رابط ضمن عمود "قبل" أو "بعد"
-                function renderBeforeAfterMedia(url) {
+            function renderBeforeAfterMedia(url) {
             if (/\.(jpg|jpeg|png|gif|webp)(\?.*)?$/i.test(url)) {
                 return `<img src="${url}" loading="lazy" class="nms-ba-photo-img">`;
+            }
+            // 🆕 [إصلاح]: كشف روابط يوتيوب وعرضها مضمّنة (نفس أسلوب قسم
+            // "الفيديوهات") بدل زر "عرض" الذي كان يفتح الرابط بتبويب جديد فقط
+            // بدون أي معاينة داخل بطاقة "قبل/بعد" نفسها
+            const ytMatch = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([\w-]+)/);
+            if (ytMatch) {
+                return `<iframe class="nms-ba-video-frame" src="https://www.youtube.com/embed/${ytMatch[1]}" frameborder="0" allow="autoplay; encrypted-media" allowfullscreen loading="lazy"></iframe>`;
+            }
+            // 🆕 كشف روابط فيديو مباشرة (mp4/webm/ogg) وعرضها بمشغّل مضمّن أيضاً
+            if (/\.(mp4|webm|ogg)(\?.*)?$/i.test(url)) {
+                return `<video class="nms-ba-video-frame" controls preload="metadata" src="${url}"></video>`;
             }
             return `<a href="${url}" target="_blank" rel="noopener noreferrer" class="nms-video-link-btn"><i class="fas fa-external-link-alt"></i> عرض</a>`;
         }
@@ -943,7 +971,10 @@ window.__nmsPageHandlesOwnAds = true;
         // 🆕 فحص وجود وسائط صالحة فقط (بدون أي آثار جانبية مثل جلب التقييم)،
         // يُستخدم لتصفية النتائج قبل البناء الفعلي لتفادي جلب التقييم مرتين
         function galleryEntryHasMedia(props, mode) {
-            if (mode === 'photo') return !!cleanExternalUrl(props.pic);
+            if (mode === 'photo') {
+                const picUrls = window.parseUrlList ? window.parseUrlList(props.pic) : (props.pic ? [props.pic] : []);
+                return picUrls.some(url => !!cleanExternalUrl(url));
+            }
             if (mode === 'video') return !!cleanExternalUrl(props.video);
             return false;
         }
@@ -967,9 +998,13 @@ window.__nmsPageHandlesOwnAds = true;
             const featureId = (props.id !== undefined && props.id !== null) ? props.id : (props.fid !== undefined ? props.fid : '');
 
             let mediaHtml = '';
-                if (mode === 'photo' && props.pic) {
-                const cleanPic = cleanExternalUrl(props.pic);
-                if (cleanPic) mediaHtml = `<div class="nms-gallery-media"><img src="${cleanPic}" alt="${name}" loading="lazy" class="nms-gallery-photo-img"></div>`;
+                if (mode === 'photo') {
+                const picUrls = window.parseUrlList ? window.parseUrlList(props.pic) : (props.pic ? [props.pic] : []);
+                const cleanPics = picUrls.map(url => cleanExternalUrl(url)).filter(Boolean);
+                if (cleanPics.length) {
+                    const displayUrl = cleanPics[0];
+                    mediaHtml = `<div class="nms-gallery-media"><img src="${displayUrl}" alt="${name}" loading="lazy" class="nms-gallery-photo-img"></div>`;
+                }
             } else if (mode === 'video' && props.video) {
                 mediaHtml = buildVideoEmbedHtml(props.video);
             }
@@ -1948,10 +1983,21 @@ window.__nmsPageHandlesOwnAds = true;
                     if (p.gov_a) html += `<div class="nms-r-line"><b>🌍 المحافظة:</b> ${sanitize(p.gov_a)}</div>`;
                 }
                 if (p.des) html += `<div class="nms-r-desc"><b>📝 الوصف:</b> ${sanitize(p.des)}</div>`;
-                if (p.pic) html += `<div class="nms-r-img"><img src="${p.pic}" class="nms-result-img-el"></div>`;
+                    if (p.pic) {
+                    const picUrls = window.parseUrlList ? window.parseUrlList(p.pic) : [p.pic];
+                    const cleanPicUrl = picUrls.map(item => window.upgradeToHttps(String(item).trim())).find(Boolean);
+                    if (cleanPicUrl) {
+                        html += `<div class="nms-r-img"><img src="${cleanPicUrl}" class="nms-result-img-el" loading="lazy" onerror="this.parentElement.style.display='none'"></div>`;
+                    }
+                }
                 if (p.video) {
-                    const videoUrl = p.video.toString().trim().startsWith('http') ? p.video : 'https://' + p.video;
-                    html += `<div style="margin-top:6px;"><a href="${videoUrl}" target="_blank" rel="noopener" style="color:#1a73e8; font-weight:bold; text-decoration:none; display:inline-flex; align-items:center; gap:5px; font-size:12px;"><i class="fas fa-video"></i> عرض الفيديو</a></div>`;
+                    html += buildVideoEmbedHtml(p.video);
+                }
+                if (p.details_link_1) {
+                    html += buildMediaBlockHtml(p.details_link_1, 'تفاصيل إضافية 1');
+                }
+                if (p.details_link_2) {
+                    html += buildMediaBlockHtml(p.details_link_2, 'تفاصيل إضافية 2');
                 }
 
                 card.innerHTML = html;

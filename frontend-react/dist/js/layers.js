@@ -340,19 +340,7 @@ if (MAP_CONFIG && MAP_CONFIG.layers && MAP_CONFIG.layers.realestate) {
     });
 }
 
-// ب) توليد طبقات العقارات والأراضي آلياً (الأراضي Z-Index: 10، الشقق والعروض Z-Index: 20)
-if (MAP_CONFIG && MAP_CONFIG.layers && MAP_CONFIG.layers.realestate) {
-    MAP_CONFIG.layers.realestate.forEach(l => {
-        // [إضافة]: التحقق من الاستثناءات العالمية لطبقات العقارات (مثل rentLayer)
-        if (MAP_CONFIG.globalExclusions && MAP_CONFIG.globalExclusions.includes(l.id)) return;
 
-        let zIndex = 20; 
-        if (l.id.includes('land') || l.name.includes('land')) zIndex = 10;
-        
-        const targetStyle = getLayerStyle(l.style, '#ff5722');
-        window.appLayers[l.id] = createWFSLayer(l.workspace, l.name, l.title, targetStyle, l.maxRes || 10, true, zIndex);
-    });
-}
 
 // ج) 🆕 طبقة خدمات واحدة موحّدة (service_all) بدل الـ 66 طبقة المنفصلة سابقاً
 // التمييز بين نوع كل خدمة يتم فقط عبر قيمة عمود "discriminator" بكل معلم

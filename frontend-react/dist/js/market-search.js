@@ -613,7 +613,13 @@ if (typeof window.renderMarketSearchResults !== 'function') {
                 if (p.gov_a) html += `<div class="nms-r-line"><b>🌍 المحافظة:</b> ${window.sanitize(p.gov_a)}</div>`;
             }
             if (p.des) html += `<div class="nms-r-desc"><b>📝 الوصف:</b> ${window.sanitize(p.des)}</div>`;
-            if (p.pic) html += `<div class="nms-r-img"><img src="${p.pic}" onerror="this.parentElement.style.display='none'"></div>`;
+                        if (p.pic) {
+                const picUrls = window.parseUrlList ? window.parseUrlList(p.pic) : [p.pic];
+                const cleanPicUrl = picUrls.map((item) => window.upgradeToHttps(String(item).trim())).find(Boolean);
+                if (cleanPicUrl) {
+                    html += `<div class="nms-r-img"><img src="${cleanPicUrl}" onerror="this.parentElement.style.display='none'"></div>`;
+                }
+            }
             if (p.video) {
                     const videoUrl = p.video.toString().trim().startsWith('http') ? p.video : 'https://' + p.video;
                     html += `<div style="margin-top:6px;"><a href="${videoUrl}" target="_blank" rel="noopener" style="color:#1a73e8; font-weight:bold; text-decoration:none; display:inline-flex; align-items:center; gap:5px; font-size:12px;"><i class="fas fa-video"></i> عرض الفيديو</a></div>`;

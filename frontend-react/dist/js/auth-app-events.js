@@ -176,16 +176,23 @@ function verifySavedSessionThenEnter(parsedUser) {
     })
     .then(function (res) { return res.json(); })
     .then(function (data) {
+        // 🆕 [إصلاح ثغرة حقيقية]: كان enterPlatform() يُستدعى دائماً بغض النظر
+        // عن نتيجة التحقق، فيدخل المستخدم فعلياً للمنصة رغم مسح جلسته وعرض
+        // رسالة تحذير فقط. الآن أي جلسة غير صالحة تمنع الدخول فعلياً وتُعيد
+        // تحميل الصفحة لإظهار شاشة الترحيب/تسجيل الدخول من جديد.
         if (data && data.valid === false) {
             clearSavedSessionCompletely();
 
             if (data.reason === 'force_logout') {
-                window.showAuthMessage('🚨 تم تسجيل خروجك من قبل الإدارة. يرجى التواصل مع الإدارة عبر صفحة الفيسبوك قبل محاولة الدخول مجدداً.', 'warning');
+                window.showAuthMessage('🚨 تم تسجيل خروجك من قبل الإدارة. يرجى التواصل مع الإدارة عبر صفحة الفيسبوك قبل محاولة الدخول مجدداً.', 'warning', 6000);
             } else if (data.reason === 'inactive') {
-                window.showAuthMessage('⚠️ حسابك معطل حالياً. يرجى التواصل مع الإدارة عبر صفحة الفيسبوك.', 'warning');
+                window.showAuthMessage('⚠️ حسابك معطل حالياً. يرجى التواصل مع الإدارة عبر صفحة الفيسبوك.', 'warning', 6000);
             } else if (data.reason === 'not_found') {
-                window.showAuthMessage('⚠️ لم يتم العثور على هذا الحساب، يرجى تسجيل الدخول من جديد.', 'warning');
+                window.showAuthMessage('⚠️ لم يتم العثور على هذا الحساب، يرجى تسجيل الدخول من جديد.', 'warning', 6000);
             }
+
+            setTimeout(function () { window.location.reload(); }, 2500);
+            return;
         }
 
         enterPlatform(parsedUser, true);

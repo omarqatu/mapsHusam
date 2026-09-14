@@ -378,6 +378,27 @@ if (typeof window.sanitize !== 'function') {
     };
 }
 
+// 🆕 دالة موحّدة لعرض video/details_link_1/details_link_2 في نتائج مربع البحث:
+// صورة مباشرة، فيديو مضمّن (يوتيوب/mp4)، أو رابط عادي
+if (typeof window.buildMarketMediaBlockHtml !== 'function') {
+    window.buildMarketMediaBlockHtml = function (rawUrl, label) {
+        if (!rawUrl) return '';
+        const url = window.upgradeToHttps(String(rawUrl).trim());
+        if (!url) return '';
+        if (/\.(jpg|jpeg|png|gif|webp)(\?.*)?$/i.test(url)) {
+            return `<div class="nms-r-img"><img src="${url}" onerror="this.parentElement.style.display='none'"></div>`;
+        }
+        const ytMatch = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([\w-]+)/);
+        if (ytMatch) {
+            return `<div style="margin-top:6px;"><iframe src="https://www.youtube.com/embed/${ytMatch[1]}" style="width:100%; aspect-ratio:16/9; border:none; border-radius:8px;" allow="autoplay; encrypted-media" allowfullscreen loading="lazy"></iframe></div>`;
+        }
+        if (/\.(mp4|webm|ogg)(\?.*)?$/i.test(url)) {
+            return `<div style="margin-top:6px;"><video controls preload="metadata" src="${url}" style="max-width:100%; border-radius:8px;"></video></div>`;
+        }
+        return `<div style="margin-top:6px;"><a href="${url}" target="_blank" rel="noopener" style="color:#1a73e8; font-weight:bold; text-decoration:none; display:inline-flex; align-items:center; gap:5px; font-size:12px;"><i class="fas fa-link"></i> ${label}</a></div>`;
+    };
+}
+
 
 
 if (typeof window.trackRequest !== 'function') {
@@ -613,11 +634,22 @@ if (typeof window.renderMarketSearchResults !== 'function') {
                 if (p.gov_a) html += `<div class="nms-r-line"><b>🌍 المحافظة:</b> ${window.sanitize(p.gov_a)}</div>`;
             }
             if (p.des) html += `<div class="nms-r-desc"><b>📝 الوصف:</b> ${window.sanitize(p.des)}</div>`;
-            if (p.pic) html += `<div class="nms-r-img"><img src="${p.pic}" onerror="this.parentElement.style.display='none'"></div>`;
+            if (p.pic) {
+                const picUrls = window.parseUrlList ? window.parseUrlList(p.pic) : [p.pic];
+                const cleanPicUrl = picUrls.map((item) => window.upgradeToHttps(String(item).trim())).find(Boolean);
+                if (cleanPicUrl) {
+                    html += `<div class="nms-r-img"><img src="${cleanPicUrl}" onerror="this.parentElement.style.display='none'"></div>`;
+                }
+            }
             if (p.video) {
-                    const videoUrl = p.video.toString().trim().startsWith('http') ? p.video : 'https://' + p.video;
-                    html += `<div style="margin-top:6px;"><a href="${videoUrl}" target="_blank" rel="noopener" style="color:#1a73e8; font-weight:bold; text-decoration:none; display:inline-flex; align-items:center; gap:5px; font-size:12px;"><i class="fas fa-video"></i> عرض الفيديو</a></div>`;
-                }   
+                html += window.buildMarketMediaBlockHtml(p.video, 'عرض الفيديو');
+            }
+            if (p.details_link_1) {
+                html += window.buildMarketMediaBlockHtml(p.details_link_1, 'تفاصيل إضافية 1');
+            }
+            if (p.details_link_2) {
+                html += window.buildMarketMediaBlockHtml(p.details_link_2, 'تفاصيل إضافية 2');
+            }
 
             card.innerHTML = html;
 
