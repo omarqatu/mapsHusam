@@ -275,14 +275,10 @@ function initializePopup(map) {
 
             function cleanUrl(rawUrl) {
         if (!rawUrl || rawUrl === "" || rawUrl === "#" || rawUrl === "undefined") return null;
-        let url = rawUrl.toString().trim();
-        if (url.includes('<iframe')) {
-            const match = url.match(/src="([^"]+)"/);
-            if (match) url = match[1];
-        }
-        url = url.replace(/["']/g, "");
-        url = window.upgradeToHttps(url);
-        return url;
+        const url = window.getMediaUrlForDisplay
+            ? window.getMediaUrlForDisplay(rawUrl)
+            : rawUrl.toString().trim().replace(/["']/g, '');
+        return url || null;
     }
     const checkRequestQuotaOrAlert = window.checkRequestQuotaOrAlert;
 
@@ -423,7 +419,7 @@ function initializePopup(map) {
         return `<a href="${finalUrl}" target="_blank" rel="noopener noreferrer" class="popup-link">${text}</a>`;
     }
 
-        function createImageElement(url) {
+            function createImageElement(url) {
         const urlList = window.parseUrlList ? window.parseUrlList(url) : (cleanUrl(url) ? [cleanUrl(url)] : []);
         if (!urlList.length) return '';
 
@@ -434,6 +430,43 @@ function initializePopup(map) {
                         <img src="${validatedUrl}" class="popup-img" style="max-width:100%; border-radius:8px; display:block; margin:auto;" loading="lazy" onerror="this.style.display='none';">
                     </div>`;
         }).join('');
+    }
+
+    function resolvePopupMediaValue(props, fieldNames) {
+        return window.getFirstValidMediaValue ? window.getFirstValidMediaValue(props, fieldNames) : undefined;
+    }
+
+    // 🆕 عرض الفيديو مضمّناً داخل البوب أب (يوتيوب أو mp4/webm) بدل فتح رابط خارجي فقط
+    function createVideoEmbedElement(url) {
+        const validatedUrl = cleanUrl(url);
+        if (!validatedUrl) return '';
+        const ytMatch = validatedUrl.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([\w-]+)/);
+        if (ytMatch) {
+            return `<div class="popup-img-container" style="margin-top:10px;">
+                        <iframe src="https://www.youtube.com/embed/${ytMatch[1]}" style="width:100%; aspect-ratio:16/9; border:none; border-radius:8px; display:block;" allow="autoplay; encrypted-media" allowfullscreen loading="lazy"></iframe>
+                    </div>`;
+        }
+        if (/\.(mp4|webm|ogg)(\?.*)?$/i.test(validatedUrl)) {
+            return `<div class="popup-img-container" style="margin-top:10px; text-align:center;">
+                        <video controls preload="metadata" src="${validatedUrl}" style="max-width:100%; border-radius:8px; display:block; margin:auto;"></video>
+                    </div>`;
+        }
+        return `<div style="margin-top:8px;">🎥 ${createLink(validatedUrl, "عرض الفيديو")}</div>`;
+    }
+
+    // 🆕 details_link_1 و details_link_2: صورة مباشرة إذا كان الرابط صورة، فيديو
+    // مضمّن إذا كان يوتيوب/mp4، وإلا رابط عادي كما كان سابقاً
+    function createDetailsMediaElement(url, label) {
+        const validatedUrl = cleanUrl(url);
+        if (!validatedUrl) return '';
+        if (/\.(jpg|jpeg|png|gif|webp)(\?.*)?$/i.test(validatedUrl)) {
+            return createImageElement(validatedUrl);
+        }
+        const ytMatch = validatedUrl.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([\w-]+)/);
+        if (ytMatch || /\.(mp4|webm|ogg)(\?.*)?$/i.test(validatedUrl)) {
+            return createVideoEmbedElement(validatedUrl);
+        }
+        return `<div style="margin-top:8px;">🔗 ${createLink(validatedUrl, label)}</div>`;
     }
 
     window.copyLocationLink = function(coordinate) {
@@ -825,11 +858,6 @@ function initializePopup(map) {
                 </button>
             </div>`;
 
-            if (props.details_link_1 || props.pic || props.video) {
-            if (props.details_link_1) bodyHtml += `<div style="margin-top:8px;">🔗 ${createLink(props.details_link_1, "تفاصيل إضافية")}</div>`;
-            if (props.video) bodyHtml += `<div style="margin-top:8px;">🎥 ${createLink(props.video, "عرض الفيديو")}</div>`;
-            if (props.pic) bodyHtml += `<hr>${createImageElement(props.pic)}`;
-}
               } else if (isAreaLayer) {
             const areaFieldLabels = {
                 'gov_a': '🌍 اسم المحافظة',
@@ -850,6 +878,20 @@ function initializePopup(map) {
                     <i class="fas fa-link" style="font-size: 14px;"></i> نسخ رابط الموقع
                 </button>
             </div>`;
+        }
+
+        const popupPic = resolvePopupMediaValue(props, ['pic', 'Pic', 'PIC', 'image', 'images', 'photo', 'photos', 'img', 'imgs', 'picture', 'pictures', 'pic_url', 'image_url', 'img_url', 'photo_url', 'picture_url']);
+        const popupVideo = resolvePopupMediaValue(props, ['video', 'Video', 'VIDEO', 'vid', 'movie', 'video_url', 'clip', 'youtube']);
+        const popupDetails1 = resolvePopupMediaValue(props, ['details_link_1', 'detailsLink1', 'detailsLink_1', 'link_1', 'details_url_1', 'details1', 'details_1']);
+        const popupDetails2 = resolvePopupMediaValue(props, ['details_link_2', 'detailsLink2', 'detailsLink_2', 'link_2', 'details_url_2', 'details2', 'details_2']);
+
+        if (popupDetails1 || popupDetails2 || popupPic || popupVideo) {
+            bodyHtml += `<div style="margin-top: 12px; padding-top: 10px; border-top: 2px solid #eee;">`;
+            if (popupPic) bodyHtml += `<hr>${createImageElement(popupPic)}`;
+            if (popupVideo) bodyHtml += createVideoEmbedElement(popupVideo);
+            if (popupDetails1) bodyHtml += createDetailsMediaElement(popupDetails1, "تفاصيل إضافية 1");
+            if (popupDetails2) bodyHtml += createDetailsMediaElement(popupDetails2, "تفاصيل إضافية 2");
+            bodyHtml += `</div>`;
         }
 
         bodyHtml += `</div>`;

@@ -181,8 +181,24 @@ window.createVisibilityAwareInterval = function (callback, intervalMs) {
 window.getCaseInsensitiveProp = function (obj, keyName) {
     if (!obj) return undefined;
     if (obj[keyName] !== undefined) return obj[keyName];
-    const foundKey = Object.keys(obj).find(k => k.toLowerCase() === keyName.toLowerCase());
+
+    const normalizedTarget = String(keyName).toLowerCase().replace(/[^a-z0-9]/g, '');
+    const foundKey = Object.keys(obj).find(k => {
+        const normalizedCurrent = String(k).toLowerCase().replace(/[^a-z0-9]/g, '');
+        return normalizedCurrent === normalizedTarget;
+    });
     return foundKey !== undefined ? obj[foundKey] : undefined;
+};
+
+window.getFirstValidMediaValue = function (obj, keys) {
+    if (!obj || !Array.isArray(keys) || !keys.length) return undefined;
+    for (const key of keys) {
+        const value = window.getCaseInsensitiveProp(obj, key);
+        if (value !== undefined && value !== null && value !== '') {
+            return value;
+        }
+    }
+    return undefined;
 };
 
 window.getRoadBarrierStopInfo = function (rawStopValue) {
@@ -248,6 +264,28 @@ window.upgradeToHttps = function (rawUrl) {
     return url;
 };
 
+window.extractMediaUrl = function (rawValue) {
+    if (rawValue === null || rawValue === undefined) return '';
+    let value = String(rawValue).trim();
+    if (!value || value === '#' || /^(undefined|null)$/i.test(value)) return '';
+
+    const embeddedUrl = value.match(/(?:src|href)=["']([^"']+)["']/i);
+    if (embeddedUrl) value = embeddedUrl[1];
+    value = value.replace(/^['"]|['"]$/g, '').trim();
+    if (value.startsWith('//')) return 'https:' + value;
+    if (/^https?:\/\//i.test(value)) return value;
+    if (/^[a-z0-9.-]+\.[a-z]{2,}(?:\/|$)/i.test(value)) return 'https://' + value;
+    return '';
+};
+
+window.getMediaUrlForDisplay = function (rawValue) {
+    const extracted = window.extractMediaUrl(rawValue);
+    if (!extracted) return '';
+    // 🆕 سياسة الحماية CSP بالسيرفر تسمح فقط بتحميل الصور عبر https، فأي رابط
+    // http:// كان يُرفض بصمت من المتصفح فتختفي الصورة تماماً. نُرقّيه هنا تلقائياً.
+    return window.upgradeToHttps ? window.upgradeToHttps(extracted) : extracted;
+};
+
 window.parseUrlList = function (rawValue) {
     if (rawValue === null || rawValue === undefined || rawValue === '') return [];
 
@@ -257,6 +295,20 @@ window.parseUrlList = function (rawValue) {
 
     let text = String(rawValue).trim();
     if (!text || text === '#' || text.toLowerCase() === 'undefined' || text.toLowerCase() === 'null') return [];
+
+    // بعض خدمات WFS تعيد قيمة pic كـ JSON أو ضمن وسم صورة/iframe.
+    try {
+        const parsed = JSON.parse(text);
+        if (parsed && parsed !== rawValue) {
+            if (typeof parsed === 'string' || Array.isArray(parsed)) return window.parseUrlList(parsed);
+            if (typeof parsed === 'object') {
+                return window.parseUrlList(parsed.url || parsed.src || parsed.href || parsed.value || '');
+            }
+        }
+    } catch (e) { /* القيمة نص رابط عادي */ }
+
+    const embeddedUrl = text.match(/(?:src|href)=["']([^"']+)["']/i);
+    if (embeddedUrl) text = embeddedUrl[1];
 
     text = text.replace(/\[(.*?)]/g, '$1');
     const segments = text

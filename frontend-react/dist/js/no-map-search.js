@@ -492,6 +492,7 @@ window.__nmsPageHandlesOwnAds = true;
             if (props.des) {
                 detailsHtml += `<div style="background:#f9f9f9; padding:4px 6px; border-radius:5px; color:#555; font-size:10px; margin-bottom:2px; word-wrap: break-word; white-space: normal;">📝 ${sanitize(props.des)}</div>`;
             }
+            detailsHtml += buildFeatureMediaHtml(props);
 
             let actionHtml = '';
             if (props.whatsapp) {
@@ -878,16 +879,43 @@ window.__nmsPageHandlesOwnAds = true;
         // تنظيف رابط خارجي (صورة/فيديو/رابط تفاصيل) قبل استخدامه في الصفحة
                 function cleanExternalUrl(rawUrl) {
             if (!rawUrl) return '';
-            let url = String(rawUrl).trim().replace(/["']/g, '');
-            if (!url || url === '#' || url.toLowerCase() === 'undefined') return '';
-            if (!url.startsWith('http')) url = 'https://' + url;
-            // 🆕 [إصلاح اختفاء الصور]: ترقية http:// إلى https:// (راجع الشرح بـ shared-utils.js)
-            url = window.upgradeToHttps(url);
-            return url;
+            return window.getMediaUrlForDisplay
+                ? window.getMediaUrlForDisplay(rawUrl)
+                : String(rawUrl).trim().replace(/["']/g, '');
         }
 
+                const mediaFieldNames = {
+                    pic: ['pic', 'image', 'images', 'photo', 'photos', 'img', 'imgs', 'picture', 'pictures', 'pic_url', 'image_url', 'img_url', 'photo_url', 'picture_url'],
+                    video: ['video', 'vid', 'movie', 'video_url', 'clip', 'youtube'],
+                    details1: ['details_link_1', 'detailsLink1', 'link_1', 'details_url_1', 'details1', 'details_1'],
+                    details2: ['details_link_2', 'detailsLink2', 'link_2', 'details_url_2', 'details2', 'details_2']
+                };
+
+                function getMediaValue(props, field) {
+                    return window.getFirstValidMediaValue
+                        ? window.getFirstValidMediaValue(props, mediaFieldNames[field])
+                        : props[field === 'details1' ? 'details_link_1' : field === 'details2' ? 'details_link_2' : field];
+                }
+
+                function buildFeatureMediaHtml(props, includeDetails = true) {
+                    const picValue = getMediaValue(props, 'pic');
+                    const videoValue = getMediaValue(props, 'video');
+                    const details1Value = getMediaValue(props, 'details1');
+                    const details2Value = getMediaValue(props, 'details2');
+                    let html = '';
+                    const picUrls = window.parseUrlList ? window.parseUrlList(picValue) : (picValue ? [picValue] : []);
+                    const cleanPicUrl = picUrls.map(cleanExternalUrl).find(Boolean);
+                    if (cleanPicUrl) {
+                        html += `<div class="nms-r-img"><img src="${cleanPicUrl}" class="nms-result-img-el" loading="lazy" onerror="this.parentElement.style.display='none'"></div>`;
+                    }
+                    if (videoValue) html += buildVideoEmbedHtml(videoValue);
+                    if (includeDetails && details1Value) html += buildMediaBlockHtml(details1Value, 'تفاصيل إضافية 1');
+                    if (includeDetails && details2Value) html += buildMediaBlockHtml(details2Value, 'تفاصيل إضافية 2');
+                    return html;
+                }
+
         // تحويل رابط فيديو (يوتيوب أو ملف مباشر أو رابط عام) إلى عنصر عرض مناسب
-        function buildVideoEmbedHtml(rawUrl) {
+                function buildVideoEmbedHtml(rawUrl) {
             const url = cleanExternalUrl(rawUrl);
             if (!url) return '';
 
@@ -901,6 +929,21 @@ window.__nmsPageHandlesOwnAds = true;
             }
 
             return `<div class="nms-gallery-media nms-gallery-video-link"><a href="${url}" target="_blank" rel="noopener" class="nms-video-link-btn"><i class="fas fa-play-circle"></i> مشاهدة الفيديو</a></div>`;
+        }
+
+        // 🆕 عرض details_link_1/details_link_2 ببطاقات النتائج: صورة إذا كان الرابط
+        // صورة، فيديو مضمّن إذا كان يوتيوب/mp4، وإلا رابط عادي
+        function buildMediaBlockHtml(rawUrl, label) {
+            const url = cleanExternalUrl(rawUrl);
+            if (!url) return '';
+            if (/\.(jpg|jpeg|png|gif|webp)(\?.*)?$/i.test(url)) {
+                return `<div class="nms-r-img"><img src="${url}" class="nms-result-img-el" loading="lazy" onerror="this.parentElement.style.display='none'"></div>`;
+            }
+            const ytMatch = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([\w-]+)/);
+            if (ytMatch || /\.(mp4|webm|ogg)(\?.*)?$/i.test(url)) {
+                return buildVideoEmbedHtml(url);
+            }
+            return `<div style="margin-top:6px;"><a href="${url}" target="_blank" rel="noopener" style="color:#1a73e8; font-weight:bold; text-decoration:none; display:inline-flex; align-items:center; gap:5px; font-size:12px;"><i class="fas fa-link"></i> ${label}</a></div>`;
         }
 
         // عرض صورة أو رابط ضمن عمود "قبل" أو "بعد"
@@ -931,7 +974,9 @@ window.__nmsPageHandlesOwnAds = true;
             const isRealEstate = item.isRealEstate;
             const whatsappNumber = props.whatsapp.toString();
             const providerName = props.name || (isRealEstate ? 'المعلن' : 'مزود الخدمة');
-            const featureId = (props.id !== undefined && props.id !== null) ? props.id : (props.fid !== undefined ? props.fid : '');
+            const featureId = isRealEstate
+                ? ((props.fid !== undefined && props.fid !== null) ? props.fid : '')
+                : ((props.id !== undefined && props.id !== null) ? props.id : '');
 
             if (!isRealEstate) {
                 const isLinkedProvider = typeof window.isFeatureLinkedToProvider === 'function' && window.isFeatureLinkedToProvider(item.layer, featureId);
@@ -956,12 +1001,10 @@ window.__nmsPageHandlesOwnAds = true;
         // 🆕 فحص وجود وسائط صالحة فقط (بدون أي آثار جانبية مثل جلب التقييم)،
         // يُستخدم لتصفية النتائج قبل البناء الفعلي لتفادي جلب التقييم مرتين
         function galleryEntryHasMedia(props, mode) {
-            if (mode === 'photo') {
-                const picUrls = window.parseUrlList ? window.parseUrlList(props.pic) : (props.pic ? [props.pic] : []);
-                return picUrls.some(url => !!cleanExternalUrl(url));
-            }
-            if (mode === 'video') return !!cleanExternalUrl(props.video);
-            return false;
+            const picValue = window.getFirstValidMediaValue ? window.getFirstValidMediaValue(props, ['pic', 'Pic', 'PIC', 'image', 'images', 'photo', 'photos', 'img', 'imgs', 'picture', 'pictures', 'pic_url', 'image_url', 'img_url', 'photo_url', 'picture_url']) : props.pic;
+            const videoValue = window.getFirstValidMediaValue ? window.getFirstValidMediaValue(props, ['video', 'Video', 'VIDEO', 'vid', 'movie', 'video_url', 'clip', 'youtube']) : props.video;
+
+            return !!(picValue || videoValue || getMediaValue(props, 'details1') || getMediaValue(props, 'details2'));
         }
 
         // 🆕 حارس بسيط لمنع تكرار طلب نفس التقييم عدة مرات عند إعادة الرسم
@@ -980,19 +1023,11 @@ window.__nmsPageHandlesOwnAds = true;
             const isRealEstate = item.isRealEstate;
             const name = sanitize(props.name || '');
             const location = sanitize(props.location_name || props.location || '');
-            const featureId = (props.id !== undefined && props.id !== null) ? props.id : (props.fid !== undefined ? props.fid : '');
+            const featureId = isRealEstate
+                ? ((props.fid !== undefined && props.fid !== null) ? props.fid : '')
+                : ((props.id !== undefined && props.id !== null) ? props.id : '');
 
-            let mediaHtml = '';
-                if (mode === 'photo') {
-                const picUrls = window.parseUrlList ? window.parseUrlList(props.pic) : (props.pic ? [props.pic] : []);
-                const cleanPics = picUrls.map(url => cleanExternalUrl(url)).filter(Boolean);
-                if (cleanPics.length) {
-                    const displayUrl = cleanPics[0];
-                    mediaHtml = `<div class="nms-gallery-media"><img src="${displayUrl}" alt="${name}" loading="lazy" class="nms-gallery-photo-img"></div>`;
-                }
-            } else if (mode === 'video' && props.video) {
-                mediaHtml = buildVideoEmbedHtml(props.video);
-            }
+            const mediaHtml = buildFeatureMediaHtml(props);
             if (!mediaHtml) return '';
 
             let infoHtml = `<div class="nms-gallery-card-body">`;
@@ -1032,13 +1067,16 @@ window.__nmsPageHandlesOwnAds = true;
             const props = feature.properties || {};
             const name = sanitize(props.name || '');
             const location = sanitize(props.location_name || props.location || '');
-            const featureId = (props.id !== undefined && props.id !== null) ? props.id : '';
+            const featureId = item.isRealEstate
+                ? ((props.fid !== undefined && props.fid !== null) ? props.fid : '')
+                : ((props.id !== undefined && props.id !== null) ? props.id : '');
 
-            const beforeUrl = cleanExternalUrl(props.details_link_1);
-            const afterUrl = cleanExternalUrl(props.details_link_2);
-            if (!beforeUrl && !afterUrl) return '';
+            const beforeUrl = cleanExternalUrl(getMediaValue(props, 'details1'));
+            const afterUrl = cleanExternalUrl(getMediaValue(props, 'details2'));
+            const extraMediaHtml = buildFeatureMediaHtml(props, false);
+            if (!beforeUrl && !afterUrl && !extraMediaHtml) return '';
 
-            const mediaHtml = `<div class="nms-before-after-media">
+            const mediaHtml = (beforeUrl || afterUrl) ? `<div class="nms-before-after-media">
                 <div class="nms-ba-col">
                     <span class="nms-ba-label">قبل</span>
                     ${beforeUrl ? renderBeforeAfterMedia(beforeUrl) : '<div class="nms-ba-empty">لا يوجد</div>'}
@@ -1047,7 +1085,7 @@ window.__nmsPageHandlesOwnAds = true;
                     <span class="nms-ba-label">بعد</span>
                     ${afterUrl ? renderBeforeAfterMedia(afterUrl) : '<div class="nms-ba-empty">لا يوجد</div>'}
                 </div>
-            </div>`;
+            </div>${extraMediaHtml}` : extraMediaHtml;
 
             let infoHtml = `<div class="nms-gallery-card-body">`;
             infoHtml += `<div class="nms-gallery-badge">🏆 ${item.label}${featureId !== '' ? ` <span style="color:#888; font-weight:normal;">(رقم: ${sanitize(String(featureId))})</span>` : ''}</div>`;
@@ -1097,10 +1135,9 @@ window.__nmsPageHandlesOwnAds = true;
             let collected = [];
 
             const conditionParams = {
-                field_0: fieldName, operator_0: 'notempty', value_0: '1',
-                field_1: 'rating', operator_1: '=', value_1: '10',
-                field_2: 'rating', operator_2: '=', value_2: '9.9',
-                conditions_count: '3'
+                field_0: 'rating', operator_0: '=', value_0: '10',
+                field_1: 'rating', operator_1: '=', value_1: '9.9',
+                conditions_count: '2'
             };
 
             // العقارات (إن طُلبت) - طلبات مستقلة كما كانت دائماً
@@ -1165,11 +1202,9 @@ window.__nmsPageHandlesOwnAds = true;
             try {
                 const params = new URLSearchParams({
                     layer: 'service_all', workspace: 'services',
-                    field_0: 'details_link_1', operator_0: 'notempty', value_0: '1',
-                    field_1: 'details_link_2', operator_1: 'notempty', value_1: '1',
-                    field_2: 'rating', operator_2: '=', value_2: '10',
-                    field_3: 'rating', operator_3: '=', value_3: '9.9',
-                    conditions_count: '4'
+                    field_0: 'rating', operator_0: '=', value_0: '10',
+                    field_1: 'rating', operator_1: '=', value_1: '9.9',
+                    conditions_count: '2'
                 });
                 const response = await fetch(`${baseUrl}api/search-features?${params.toString()}`);
                 if (response.ok) {
@@ -1903,14 +1938,15 @@ window.__nmsPageHandlesOwnAds = true;
 
                 // 🆕 حواجز الطرق: قالب مستقل بالكامل (حالة Stop + الاسم + المحافظة/المدينة/الموقع + زر الانتقال)
                     if (isRoadBarriers) {
-                    const stopInfo = window.getRoadBarrierStopInfo(p.stop !== undefined ? p.stop : p.stop);
-                    const barrierDisplayId = (p.id !== undefined && p.id !== null && p.id !== '') ? p.id : null;
+                    const stopInfo = window.getRoadBarrierStopInfo(window.getCaseInsensitiveProp(p, 'stop'));
+                    const barrierDisplayId = (p.id !== undefined && p.id !== null && p.id !== '') ? p.id : (p.fid !== undefined ? p.fid : null);
                     let barrierHtml = `<div style="font-size:11px; color:#999; margin-bottom:4px;">${barrierDisplayId !== null ? `(رقم: ${sanitize(String(barrierDisplayId))})` : ''}</div>`;
                     barrierHtml += `<div style="text-align:center; font-weight:bold; font-size:14px; color:${stopInfo.color}; border:1px dashed ${stopInfo.color}; border-radius:8px; padding:8px; margin-bottom:8px; background:${stopInfo.color}15;">${stopInfo.icon} ${stopInfo.label}</div>`;
                     if (p.name) barrierHtml += `<div class="nms-r-name"><i class="fas fa-map-marker-alt"></i> ${sanitize(p.name)}</div>`;
                     if (p.gov_a) barrierHtml += `<div class="nms-r-line"><b>🌍 المحافظة:</b> ${sanitize(p.gov_a)}</div>`;
                     if (p.village_a) barrierHtml += `<div class="nms-r-line"><b>🏘️ المدينة:</b> ${sanitize(p.village_a)}</div>`;
                     if (p.location_name || p.location) barrierHtml += `<div class="nms-r-line"><b>📍 الموقع:</b> ${sanitize(p.location_name || p.location)}</div>`;
+                    barrierHtml += buildFeatureMediaHtml(p);
                     card.innerHTML = barrierHtml;
 
                     if (coords) {
@@ -1968,17 +2004,7 @@ window.__nmsPageHandlesOwnAds = true;
                     if (p.gov_a) html += `<div class="nms-r-line"><b>🌍 المحافظة:</b> ${sanitize(p.gov_a)}</div>`;
                 }
                 if (p.des) html += `<div class="nms-r-desc"><b>📝 الوصف:</b> ${sanitize(p.des)}</div>`;
-                                if (p.pic) {
-                    const picUrls = window.parseUrlList ? window.parseUrlList(p.pic) : [p.pic];
-                    const cleanPicUrl = picUrls.map(item => window.upgradeToHttps(String(item).trim())).find(Boolean);
-                    if (cleanPicUrl) {
-                        html += `<div class="nms-r-img"><img src="${cleanPicUrl}" class="nms-result-img-el" loading="lazy" onerror="this.parentElement.style.display='none'"></div>`;
-                    }
-                }
-                if (p.video) {
-                    const videoUrl = p.video.toString().trim().startsWith('http') ? p.video : 'https://' + p.video;
-                    html += `<div style="margin-top:6px;"><a href="${videoUrl}" target="_blank" rel="noopener" style="color:#1a73e8; font-weight:bold; text-decoration:none; display:inline-flex; align-items:center; gap:5px; font-size:12px;"><i class="fas fa-video"></i> عرض الفيديو</a></div>`;
-                }
+                html += buildFeatureMediaHtml(p);
 
                 card.innerHTML = html;
 

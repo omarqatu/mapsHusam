@@ -634,21 +634,26 @@ if (typeof window.renderMarketSearchResults !== 'function') {
                 if (p.gov_a) html += `<div class="nms-r-line"><b>🌍 المحافظة:</b> ${window.sanitize(p.gov_a)}</div>`;
             }
             if (p.des) html += `<div class="nms-r-desc"><b>📝 الوصف:</b> ${window.sanitize(p.des)}</div>`;
-            if (p.pic) {
-                const picUrls = window.parseUrlList ? window.parseUrlList(p.pic) : [p.pic];
-                const cleanPicUrl = picUrls.map((item) => window.upgradeToHttps(String(item).trim())).find(Boolean);
+            const picValue = window.getFirstValidMediaValue ? window.getFirstValidMediaValue(p, ['pic', 'Pic', 'PIC', 'image', 'images', 'photo', 'photos', 'img', 'imgs', 'picture', 'pictures', 'pic_url', 'image_url', 'img_url', 'photo_url', 'picture_url']) : p.pic;
+            const videoValue = window.getFirstValidMediaValue ? window.getFirstValidMediaValue(p, ['video', 'Video', 'VIDEO', 'vid', 'movie', 'video_url', 'clip', 'youtube']) : p.video;
+            const detailsLink1 = window.getFirstValidMediaValue ? window.getFirstValidMediaValue(p, ['details_link_1', 'detailsLink1', 'detailsLink_1', 'link_1', 'details_url_1', 'details1', 'details_1']) : p.details_link_1;
+            const detailsLink2 = window.getFirstValidMediaValue ? window.getFirstValidMediaValue(p, ['details_link_2', 'detailsLink2', 'detailsLink_2', 'link_2', 'details_url_2', 'details2', 'details_2']) : p.details_link_2;
+
+            if (picValue) {
+                const picUrls = window.parseUrlList ? window.parseUrlList(picValue) : [picValue];
+                const cleanPicUrl = picUrls.map((item) => window.getMediaUrlForDisplay ? window.getMediaUrlForDisplay(item) : String(item).trim()).find(Boolean);
                 if (cleanPicUrl) {
                     html += `<div class="nms-r-img"><img src="${cleanPicUrl}" onerror="this.parentElement.style.display='none'"></div>`;
                 }
             }
-            if (p.video) {
-                html += window.buildMarketMediaBlockHtml(p.video, 'عرض الفيديو');
+            if (videoValue) {
+                html += window.buildMarketMediaBlockHtml(videoValue, 'عرض الفيديو');
             }
-            if (p.details_link_1) {
-                html += window.buildMarketMediaBlockHtml(p.details_link_1, 'تفاصيل إضافية 1');
+            if (detailsLink1) {
+                html += window.buildMarketMediaBlockHtml(detailsLink1, 'تفاصيل إضافية 1');
             }
-            if (p.details_link_2) {
-                html += window.buildMarketMediaBlockHtml(p.details_link_2, 'تفاصيل إضافية 2');
+            if (detailsLink2) {
+                html += window.buildMarketMediaBlockHtml(detailsLink2, 'تفاصيل إضافية 2');
             }
 
             card.innerHTML = html;

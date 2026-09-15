@@ -697,6 +697,7 @@ body {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
     gap: 16px;
+    align-items: start;
 }
 
 .nms-loading, .nms-empty {
@@ -722,6 +723,10 @@ body {
     animation: nmsFadeInUp 0.4s ease both;
     animation-delay: calc(var(--i, 0) * 25ms);
     box-shadow: var(--shadow-xs, 0 2px 8px rgba(0,0,0,0.08));
+    box-sizing: border-box;
+    max-height: min(55vh, 560px);
+    overflow-y: auto;
+    overflow-x: hidden;
 }
 
 .nms-result-card:hover {

@@ -552,3 +552,56 @@ body.mobile-tabs-landscape #provider-mini-panel.mobile-tab-target .provider-pane
     box-sizing: border-box !important;
     background-color: #ffffff !important; /* ضمان عدم ظهور لون رمادي خلف المحتوى */
 }
+
+/* ========================================================================== 
+   تمرير محتوى بوب أب الخريطة على الموبايل والتابلت
+   ========================================================================== */
+body.mobile-tabs-portrait .ol-popup,
+body.mobile-tabs-landscape .ol-popup {
+    max-width: min(380px, 90vw) !important;
+    max-height: min(34vh, 300px) !important;
+    overflow: hidden !important;
+    box-sizing: border-box !important;
+}
+
+body.mobile-tabs-portrait #popup-content,
+body.mobile-tabs-landscape #popup-content {
+    display: block !important;
+    min-height: 0 !important;
+    max-height: min(30vh, 260px) !important;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+    -webkit-overflow-scrolling: touch !important;
+    overscroll-behavior: contain !important;
+    touch-action: pan-y !important;
+}
+
+body.mobile-tabs-portrait #popup-content .popup-body,
+body.mobile-tabs-landscape #popup-content .popup-body {
+    max-height: none !important;
+    overflow: visible !important;
+    touch-action: auto !important;
+}
+
+body.mobile-tabs-portrait .ol-popup img,
+body.mobile-tabs-portrait .ol-popup iframe,
+body.mobile-tabs-portrait .ol-popup video,
+body.mobile-tabs-landscape .ol-popup img,
+body.mobile-tabs-landscape .ol-popup iframe,
+body.mobile-tabs-landscape .ol-popup video {
+    max-width: 100% !important;
+    max-height: 130px !important;
+    height: auto !important;
+}
+
+@media (max-width: 767px) {
+    body.mobile-tabs-portrait .ol-popup {
+        max-width: 92vw !important;
+        max-height: 50vh !important;
+        padding: 10px !important;
+    }
+
+    body.mobile-tabs-portrait #popup-content {
+        max-height: calc(50vh - 30px) !important;
+    }
+}

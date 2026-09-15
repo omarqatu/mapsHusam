@@ -378,6 +378,27 @@ if (typeof window.sanitize !== 'function') {
     };
 }
 
+// 🆕 دالة موحّدة لعرض video/details_link_1/details_link_2 في نتائج مربع البحث:
+// صورة مباشرة، فيديو مضمّن (يوتيوب/mp4)، أو رابط عادي
+if (typeof window.buildMarketMediaBlockHtml !== 'function') {
+    window.buildMarketMediaBlockHtml = function (rawUrl, label) {
+        if (!rawUrl) return '';
+        const url = window.upgradeToHttps(String(rawUrl).trim());
+        if (!url) return '';
+        if (/\.(jpg|jpeg|png|gif|webp)(\?.*)?$/i.test(url)) {
+            return `<div class="nms-r-img"><img src="${url}" onerror="this.parentElement.style.display='none'"></div>`;
+        }
+        const ytMatch = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([\w-]+)/);
+        if (ytMatch) {
+            return `<div style="margin-top:6px;"><iframe src="https://www.youtube.com/embed/${ytMatch[1]}" style="width:100%; aspect-ratio:16/9; border:none; border-radius:8px;" allow="autoplay; encrypted-media" allowfullscreen loading="lazy"></iframe></div>`;
+        }
+        if (/\.(mp4|webm|ogg)(\?.*)?$/i.test(url)) {
+            return `<div style="margin-top:6px;"><video controls preload="metadata" src="${url}" style="max-width:100%; border-radius:8px;"></video></div>`;
+        }
+        return `<div style="margin-top:6px;"><a href="${url}" target="_blank" rel="noopener" style="color:#1a73e8; font-weight:bold; text-decoration:none; display:inline-flex; align-items:center; gap:5px; font-size:12px;"><i class="fas fa-link"></i> ${label}</a></div>`;
+    };
+}
+
 
 
 if (typeof window.trackRequest !== 'function') {
@@ -613,17 +634,27 @@ if (typeof window.renderMarketSearchResults !== 'function') {
                 if (p.gov_a) html += `<div class="nms-r-line"><b>🌍 المحافظة:</b> ${window.sanitize(p.gov_a)}</div>`;
             }
             if (p.des) html += `<div class="nms-r-desc"><b>📝 الوصف:</b> ${window.sanitize(p.des)}</div>`;
-                        if (p.pic) {
-                const picUrls = window.parseUrlList ? window.parseUrlList(p.pic) : [p.pic];
-                const cleanPicUrl = picUrls.map((item) => window.upgradeToHttps(String(item).trim())).find(Boolean);
+            const picValue = window.getFirstValidMediaValue ? window.getFirstValidMediaValue(p, ['pic', 'Pic', 'PIC', 'image', 'images', 'photo', 'photos', 'img', 'imgs', 'picture', 'pictures', 'pic_url', 'image_url', 'img_url', 'photo_url', 'picture_url']) : p.pic;
+            const videoValue = window.getFirstValidMediaValue ? window.getFirstValidMediaValue(p, ['video', 'Video', 'VIDEO', 'vid', 'movie', 'video_url', 'clip', 'youtube']) : p.video;
+            const detailsLink1 = window.getFirstValidMediaValue ? window.getFirstValidMediaValue(p, ['details_link_1', 'detailsLink1', 'detailsLink_1', 'link_1', 'details_url_1', 'details1', 'details_1']) : p.details_link_1;
+            const detailsLink2 = window.getFirstValidMediaValue ? window.getFirstValidMediaValue(p, ['details_link_2', 'detailsLink2', 'detailsLink_2', 'link_2', 'details_url_2', 'details2', 'details_2']) : p.details_link_2;
+
+            if (picValue) {
+                const picUrls = window.parseUrlList ? window.parseUrlList(picValue) : [picValue];
+                const cleanPicUrl = picUrls.map((item) => window.getMediaUrlForDisplay ? window.getMediaUrlForDisplay(item) : String(item).trim()).find(Boolean);
                 if (cleanPicUrl) {
                     html += `<div class="nms-r-img"><img src="${cleanPicUrl}" onerror="this.parentElement.style.display='none'"></div>`;
                 }
             }
-            if (p.video) {
-                    const videoUrl = p.video.toString().trim().startsWith('http') ? p.video : 'https://' + p.video;
-                    html += `<div style="margin-top:6px;"><a href="${videoUrl}" target="_blank" rel="noopener" style="color:#1a73e8; font-weight:bold; text-decoration:none; display:inline-flex; align-items:center; gap:5px; font-size:12px;"><i class="fas fa-video"></i> عرض الفيديو</a></div>`;
-                }   
+            if (videoValue) {
+                html += window.buildMarketMediaBlockHtml(videoValue, 'عرض الفيديو');
+            }
+            if (detailsLink1) {
+                html += window.buildMarketMediaBlockHtml(detailsLink1, 'تفاصيل إضافية 1');
+            }
+            if (detailsLink2) {
+                html += window.buildMarketMediaBlockHtml(detailsLink2, 'تفاصيل إضافية 2');
+            }
 
             card.innerHTML = html;
 

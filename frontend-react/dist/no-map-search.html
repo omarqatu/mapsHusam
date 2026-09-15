@@ -21,6 +21,10 @@
             flex: 0 0 calc(33.333% - 10px);
             scroll-snap-align: start;
             min-width: 240px;
+            max-height: min(65vh, 560px);
+            overflow-y: auto;
+            overflow-x: hidden;
+            box-sizing: border-box;
         }
         @media (max-width: 992px) {
             .nms-rated-scroll-row > div { flex: 0 0 80%; min-width: 220px; }
@@ -46,6 +50,9 @@
             box-shadow: 0 3px 10px rgba(0,0,0,0.06);
             display: flex;
             flex-direction: column;
+            max-height: min(65vh, 560px);
+            overflow-y: auto;
+            overflow-x: hidden;
         }
         .nms-gallery-media { width: 100%; aspect-ratio: 4 / 3; background: #f2f2f2; overflow: hidden; }
         .nms-gallery-media img { width: 100%; height: 100%; object-fit: cover; display: block; }
