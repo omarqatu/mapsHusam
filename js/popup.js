@@ -273,17 +273,13 @@ function initializePopup(map) {
         return (realEstateLayerNames.includes(layerTitle) || layerTitle === areaLayerName) && (!MAP_CONFIG.globalExclusions || !MAP_CONFIG.globalExclusions.includes(layerBaseName));
     }
 
-    function cleanUrl(rawUrl) {
+            function cleanUrl(rawUrl) {
         if (!rawUrl || rawUrl === "" || rawUrl === "#" || rawUrl === "undefined") return null;
-        let url = rawUrl.toString().trim();
-        if (url.includes('<iframe')) {
-            const match = url.match(/src="([^"]+)"/);
-            if (match) url = match[1];
-        }
-        url = url.replace(/["']/g, ""); 
-        return url;
+        const url = window.getMediaUrlForDisplay
+            ? window.getMediaUrlForDisplay(rawUrl)
+            : rawUrl.toString().trim().replace(/["']/g, '');
+        return url || null;
     }
-
     const checkRequestQuotaOrAlert = window.checkRequestQuotaOrAlert;
 
     // 🆕 دالة للتحقق من الفاصل الزمني بين النقرات
@@ -413,20 +409,66 @@ function initializePopup(map) {
         }
     };
 
-    function createLink(url, text = "للتفاصيل انقر هنا") {
+        function createLink(url, text = "للتفاصيل انقر هنا") {
         const validatedUrl = cleanUrl(url);
         if (!validatedUrl) return '';
         let finalUrl = validatedUrl;
         if (!finalUrl.startsWith('http')) finalUrl = 'https://' + finalUrl;
-        return `<a href="${finalUrl}" target="_blank" class="popup-link">${text}</a>`;
+        // 🆕 rel="noopener noreferrer" يمنع الصفحة المفتوحة حديثاً (target="_blank")
+        // من الوصول لـ window.opener الخاص بصفحتنا - حماية قياسية ضد "tab-nabbing"
+        return `<a href="${finalUrl}" target="_blank" rel="noopener noreferrer" class="popup-link">${text}</a>`;
     }
 
     function createImageElement(url) {
+    const urlList = window.parseUrlList ? window.parseUrlList(url) : (cleanUrl(url) ? [cleanUrl(url)] : []);
+    if (!urlList.length) return '';
+
+    return urlList.map((item) => {
+        const validatedUrl = cleanUrl(item);
+        if (!validatedUrl) return '';
+        // 🆕 [تشديد أمني CSP]: onerror الآن معالَج مركزياً عبر تفويض حدث
+        // document-level على كلاس popup-img (مضاف بمرحلة 4-أ سابقاً)
+        return `<div class="popup-img-container" style="margin-top:10px; text-align:center;">
+                    <img src="${validatedUrl}" class="popup-img" style="max-width:100%; border-radius:8px; display:block; margin:auto;" loading="lazy">
+                </div>`;
+    }).join('');
+}
+
+    function resolvePopupMediaValue(props, fieldNames) {
+        return window.getFirstValidMediaValue ? window.getFirstValidMediaValue(props, fieldNames) : undefined;
+    }
+
+    // 🆕 عرض الفيديو مضمّناً داخل البوب أب (يوتيوب أو mp4/webm) بدل فتح رابط خارجي فقط
+    function createVideoEmbedElement(url) {
         const validatedUrl = cleanUrl(url);
         if (!validatedUrl) return '';
-        return `<div class="popup-img-container" style="margin-top:10px; text-align:center;">
-                    <img src="${validatedUrl}" class="popup-img" style="max-width:100%; border-radius:8px; display:block; margin:auto;" onerror="this.style.display='none'">
-                </div>`;
+        const ytMatch = validatedUrl.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([\w-]+)/);
+        if (ytMatch) {
+            return `<div class="popup-img-container" style="margin-top:10px;">
+                        <iframe src="https://www.youtube.com/embed/${ytMatch[1]}" style="width:100%; aspect-ratio:16/9; border:none; border-radius:8px; display:block;" allow="autoplay; encrypted-media" allowfullscreen loading="lazy"></iframe>
+                    </div>`;
+        }
+        if (/\.(mp4|webm|ogg)(\?.*)?$/i.test(validatedUrl)) {
+            return `<div class="popup-img-container" style="margin-top:10px; text-align:center;">
+                        <video controls preload="metadata" src="${validatedUrl}" style="max-width:100%; border-radius:8px; display:block; margin:auto;"></video>
+                    </div>`;
+        }
+        return `<div style="margin-top:8px;">🎥 ${createLink(validatedUrl, "عرض الفيديو")}</div>`;
+    }
+
+    // 🆕 details_link_1 و details_link_2: صورة مباشرة إذا كان الرابط صورة، فيديو
+    // مضمّن إذا كان يوتيوب/mp4، وإلا رابط عادي كما كان سابقاً
+    function createDetailsMediaElement(url, label) {
+        const validatedUrl = cleanUrl(url);
+        if (!validatedUrl) return '';
+        if (/\.(jpg|jpeg|png|gif|webp)(\?.*)?$/i.test(validatedUrl)) {
+            return createImageElement(validatedUrl);
+        }
+        const ytMatch = validatedUrl.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([\w-]+)/);
+        if (ytMatch || /\.(mp4|webm|ogg)(\?.*)?$/i.test(validatedUrl)) {
+            return createVideoEmbedElement(validatedUrl);
+        }
+        return `<div style="margin-top:8px;">🔗 ${createLink(validatedUrl, label)}</div>`;
     }
 
     window.copyLocationLink = function(coordinate) {
@@ -506,6 +548,34 @@ function initializePopup(map) {
             }
         }
     };
+
+    // ==========================================================================
+    // 🆕 [تشديد أمني CSP]: تفويض حدث موحّد على مستوى document لزر "نسخ رابط
+    // الموقع" - نص الزر يظهر بعدة أماكن مختلفة (بوب أب الخريطة، جداول النتائج
+    // بالبحث الذكي/السريع/بالموقع) لأنها كلها تستخدم generateFeatureHtml نفسها،
+    // لذلك التفويض على document هو الأضمن ليغطي كل الحالات دفعة واحدة
+    document.addEventListener('click', function (e) {
+        const btn = e.target.closest('.copy-location-link-btn');
+        if (btn) window.copyLocationLink(window.currentPopupCoordinate);
+    });
+
+    // 🆕 [تشديد أمني CSP]: onerror لا يبثّ (bubble) بشكل طبيعي، لذلك نستخدم
+    // مرحلة الالتقاط (capture: true) لضمان وصول الحدث حتى مع التفويض من الأعلى
+        document.addEventListener('error', function (e) {
+        const img = e.target;
+        if (!img || !img.classList || !img.classList.contains('popup-img')) return;
+        // 🆕 [تحسين تجربة]: بدل إخفاء الصورة بصمت عند فشل تحميلها (غالباً لأن
+        // الرابط المُدخل صفحة وليس صورة مباشرة - مثل رابط فيسبوك أو يوتيوب)،
+        // نستبدلها برابط نصي قابل للنقر يفتح نفس الرابط بتبويب جديد
+        const link = document.createElement('a');
+        link.href = img.src;
+        link.target = '_blank';
+        link.rel = 'noopener noreferrer';
+        link.textContent = '🔗 انقر هنا لعرض الصور';
+        link.style.cssText = 'display:block; padding:10px; text-align:center; color:#1a73e8; font-weight:bold; text-decoration:underline; background:#f8f9fa; border-radius:8px; margin-top:10px;';
+        const container = img.closest('.popup-img-container') || img.parentElement;
+        if (container) container.replaceWith(link);
+    }, true);
     
     const overlay = new ol.Overlay({
         element: container,
@@ -704,10 +774,14 @@ function initializePopup(map) {
             if (props.gov_a) bodyHtml += `<b>🌍 المحافظة:</b> ${window.sanitizeHTML(props.gov_a)}<br>`;
             if (props.village_a) bodyHtml += `<b>🏘️ المدينة:</b> ${window.sanitizeHTML(props.village_a)}<br>`;
             if (props.location_name || props.location) bodyHtml += `<b>📍 الموقع:</b> ${window.sanitizeHTML(props.location_name || props.location)}<br>`;
+            // 🆕 [إصلاح]: حقل الوصف لم يكن يُعرض إطلاقاً لحواجز الطرق (كان مفقوداً
+            // بهذا الفرع تحديداً بعكس باقي الخدمات) - يُستخدم لتوضيح تفاصيل إضافية
+            // عن الحاجز أو الأزمة (مثال: "تفتيش دقيق، طابور طويل" أو غيره)
+            if (props.des) bodyHtml += `<div style="margin-top:5px; background:#f9f9f9; padding:5px; border-radius:4px; word-wrap:break-word; overflow-wrap:break-word; white-space:normal;"><b>📝 ملاحظات:</b> ${window.sanitizeHTML(props.des)}</div>`;
 
-            bodyHtml += `
+                        bodyHtml += `
             <div style="margin-top: 15px; border-top: 2px solid #eee; padding-top: 12px;">
-                <button onclick="copyLocationLink(window.currentPopupCoordinate)"
+                <button class="copy-location-link-btn"
                         style="width: 100%; background: #6c757d; color: white; border: none; padding: 10px; border-radius: 10px; cursor: pointer; font-weight: bold; display: flex; align-items: center; justify-content: center; gap: 6px; font-size: 12px; box-shadow: 0 4px 12px rgba(108,117,125,0.3);">
                     <i class="fas fa-link" style="font-size: 14px;"></i> نسخ رابط الموقع
                 </button>
@@ -729,7 +803,7 @@ function initializePopup(map) {
                 
             } 
 
-            if (props.des && !isRealEstate) bodyHtml += `<div style="margin-top:5px; background:#f9f9f9; padding:5px; border-radius:4px; word-wrap:break-word; overflow-wrap:break-word; white-space:normal;"><b>📝 الوصف:</b> ${props.des}</div>`;
+            if (props.des && !isRealEstate) bodyHtml += `<div style="margin-top:5px; background:#f9f9f9; padding:5px; border-radius:4px; word-wrap:break-word; overflow-wrap:break-word; white-space:normal;"><b>📝 الوصف:</b> ${window.sanitizeHTML(props.des)}</div>`;
             
             if (props.whatsapp) {
                 const whatsappNumber = props.whatsapp.toString();
@@ -792,19 +866,14 @@ function initializePopup(map) {
                 }
             }
 
-            bodyHtml += `
+                        bodyHtml += `
             <div style="margin-top: 15px; border-top: 2px solid #eee; padding-top: 12px;">
-                <button onclick="copyLocationLink(window.currentPopupCoordinate)"
+                <button class="copy-location-link-btn"
                         style="width: 100%; background: #6c757d; color: white; border: none; padding: 10px; border-radius: 10px; cursor: pointer; font-weight: bold; display: flex; align-items: center; justify-content: center; gap: 6px; font-size: 12px; box-shadow: 0 4px 12px rgba(108,117,125,0.3);">
                     <i class="fas fa-link" style="font-size: 14px;"></i> نسخ رابط الموقع
                 </button>
             </div>`;
 
-            if (props.details_link_1 || props.pic || props.video) {
-            if (props.details_link_1) bodyHtml += `<div style="margin-top:8px;">🔗 ${createLink(props.details_link_1, "تفاصيل إضافية")}</div>`;
-            if (props.video) bodyHtml += `<div style="margin-top:8px;">🎥 ${createLink(props.video, "عرض الفيديو")}</div>`;
-            if (props.pic) bodyHtml += `<hr>${createImageElement(props.pic)}`;
-}
               } else if (isAreaLayer) {
             const areaFieldLabels = {
                 'gov_a': '🌍 اسم المحافظة',
@@ -818,13 +887,27 @@ function initializePopup(map) {
                 bodyHtml += `<b>${label}:</b> ${props[key]}<br>`;
             });
 
-            bodyHtml += `
+                        bodyHtml += `
             <div style="margin-top: 15px; border-top: 2px solid #eee; padding-top: 12px;">
-                <button onclick="copyLocationLink(window.currentPopupCoordinate)"
+                <button class="copy-location-link-btn"
                         style="width: 100%; background: #6c757d; color: white; border: none; padding: 10px; border-radius: 10px; cursor: pointer; font-weight: bold; display: flex; align-items: center; justify-content: center; gap: 6px; font-size: 12px; box-shadow: 0 4px 12px rgba(108,117,125,0.3);">
                     <i class="fas fa-link" style="font-size: 14px;"></i> نسخ رابط الموقع
                 </button>
             </div>`;
+        }
+
+        const popupPic = resolvePopupMediaValue(props, ['pic', 'Pic', 'PIC', 'image', 'images', 'photo', 'photos', 'img', 'imgs', 'picture', 'pictures', 'pic_url', 'image_url', 'img_url', 'photo_url', 'picture_url']);
+        const popupVideo = resolvePopupMediaValue(props, ['video', 'Video', 'VIDEO', 'vid', 'movie', 'video_url', 'clip', 'youtube']);
+        const popupDetails1 = resolvePopupMediaValue(props, ['details_link_1', 'detailsLink1', 'detailsLink_1', 'link_1', 'details_url_1', 'details1', 'details_1']);
+        const popupDetails2 = resolvePopupMediaValue(props, ['details_link_2', 'detailsLink2', 'detailsLink_2', 'link_2', 'details_url_2', 'details2', 'details_2']);
+
+        if (popupDetails1 || popupDetails2 || popupPic || popupVideo) {
+            bodyHtml += `<div style="margin-top: 12px; padding-top: 10px; border-top: 2px solid #eee;">`;
+            if (popupPic) bodyHtml += `<hr>${createImageElement(popupPic)}`;
+            if (popupVideo) bodyHtml += createVideoEmbedElement(popupVideo);
+            if (popupDetails1) bodyHtml += createDetailsMediaElement(popupDetails1, "تفاصيل إضافية 1");
+            if (popupDetails2) bodyHtml += createDetailsMediaElement(popupDetails2, "تفاصيل إضافية 2");
+            bodyHtml += `</div>`;
         }
 
         bodyHtml += `</div>`;

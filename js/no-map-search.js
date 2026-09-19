@@ -459,7 +459,7 @@ window.__nmsPageHandlesOwnAds = true;
             }
         }
 
-            function buildAdCardHtml(props, item) {
+            function buildAdCardHtml(props, item, geometry) {
             const isRealEstate = item.isRealEstate;
             const name = sanitize(props.name || props.location_name || props.location || '');
             const location = sanitize(props.location_name || props.location || '');
@@ -492,6 +492,7 @@ window.__nmsPageHandlesOwnAds = true;
             if (props.des) {
                 detailsHtml += `<div style="background:#f9f9f9; padding:4px 6px; border-radius:5px; color:#555; font-size:10px; margin-bottom:2px; word-wrap: break-word; white-space: normal;">📝 ${sanitize(props.des)}</div>`;
             }
+            detailsHtml += buildFeatureMediaHtml(props);
 
             let actionHtml = '';
             if (props.whatsapp) {
@@ -532,8 +533,18 @@ window.__nmsPageHandlesOwnAds = true;
                                 <button class="ad-whatsapp-btn" data-whatsapp="${whatsappNumber}" data-provider="${escapeAdAttr(providerName)}" data-service="${escapeAdAttr(item.label)}" data-layer="${escapeAdAttr(item.layer)}" data-feature-id="${escapeAdAttr(String(props.id || ''))}" style="flex:${hasPhone ? '1' : '1'}; background:#25d366; color:#fff; border:none; padding:6px 4px; border-radius:6px; font-size:10px; font-weight:bold; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:4px;"><i class="fab fa-whatsapp"></i> واتساب</button>
                             </div>`;
                     }
+
+                    
+                
+                
                 }
             }
+
+            // 🆕 زر الانتقال إلى الخريطة (يظهر فقط إذا توفرت هندسة المعلم)
+            const adGotoCoords = geometry ? getFeatureCoords({ geometry }) : null;
+            const adGotoMapBtnHtml = adGotoCoords
+                ? `<button type="button" class="nms-goto-map-btn js-goto-map-link" data-x="${adGotoCoords[0]}" data-y="${adGotoCoords[1]}"><i class="fas fa-map-location-dot"></i> الانتقال إلى الخريطة</button>`
+                : '';
 
                         return `
                 <div style="background:#fff; border:2px solid #fbc02d; border-radius:8px; padding:10px; box-shadow:0 2px 5px rgba(0,0,0,0.1); box-sizing:border-box; text-align:right; direction:rtl; width:100%;">
@@ -547,11 +558,14 @@ window.__nmsPageHandlesOwnAds = true;
                     ${location ? `<div style="color:#555; font-size:11px; margin-bottom:3px;"><i class="fas fa-map-marker-alt" style="color:#e74c3c;"></i> ${location}</div>` : ''}
                     ${detailsHtml}
                     ${actionHtml}
+                    ${adGotoMapBtnHtml}
                 </div>
             `;
         }
 
-                                async function loadFeaturedAds() {
+        
+
+            async function loadFeaturedAds() {
             const adSpaces = document.querySelectorAll('.nms-ad-space');
             if (!adSpaces.length) return;
 
@@ -564,7 +578,7 @@ window.__nmsPageHandlesOwnAds = true;
                 return { layer: layerName, workspace, label: cat.title, isRealEstate };
             });
 
-            const realEstatePromises = realEstateTargets.map(async (item) => {
+                        const realEstatePromises = realEstateTargets.map(async (item) => {
                 try {
                     const params = new URLSearchParams({
                         layer: item.layer, workspace: item.workspace,
@@ -573,7 +587,7 @@ window.__nmsPageHandlesOwnAds = true;
                     const response = await fetch(`${baseUrl}api/search-features?${params.toString()}`);
                     if (!response.ok) return [];
                     const data = await response.json();
-                    return (data.features || []).map(f => buildAdCardHtml(f.properties || {}, item));
+                    return (data.features || []).map(f => buildAdCardHtml(f.properties || {}, item, f.geometry));
                 } catch (err) { return []; }
             });
 
@@ -589,13 +603,15 @@ window.__nmsPageHandlesOwnAds = true;
                     return (data.features || []).map(f => {
                         const discriminator = f.properties.discriminator;
                         const item = { layer: discriminator, workspace: 'services', label: serviceNames[discriminator] || discriminator, isRealEstate: false };
-                        return buildAdCardHtml(f.properties || {}, item);
+                        return buildAdCardHtml(f.properties || {}, item, f.geometry);
                     });
                 } catch (err) { return []; }
             })();
 
             const allBatchResults = await Promise.all([...realEstatePromises, servicesPromise]);
             allBatchResults.forEach(cards => { if (cards && cards.length) allValidCards.push(...cards); });
+
+            
 
             function shuffleArray(array) {
                 let arr = [...array];
@@ -876,16 +892,45 @@ window.__nmsPageHandlesOwnAds = true;
         // ==========================================================================
 
         // تنظيف رابط خارجي (صورة/فيديو/رابط تفاصيل) قبل استخدامه في الصفحة
-        function cleanExternalUrl(rawUrl) {
+                function cleanExternalUrl(rawUrl) {
             if (!rawUrl) return '';
-            let url = String(rawUrl).trim().replace(/["']/g, '');
-            if (!url || url === '#' || url.toLowerCase() === 'undefined') return '';
-            if (!url.startsWith('http')) url = 'https://' + url;
-            return url;
+            return window.getMediaUrlForDisplay
+                ? window.getMediaUrlForDisplay(rawUrl)
+                : String(rawUrl).trim().replace(/["']/g, '');
         }
 
+                const mediaFieldNames = {
+                    pic: ['pic', 'image', 'images', 'photo', 'photos', 'img', 'imgs', 'picture', 'pictures', 'pic_url', 'image_url', 'img_url', 'photo_url', 'picture_url'],
+                    video: ['video', 'vid', 'movie', 'video_url', 'clip', 'youtube'],
+                    details1: ['details_link_1', 'detailsLink1', 'link_1', 'details_url_1', 'details1', 'details_1'],
+                    details2: ['details_link_2', 'detailsLink2', 'link_2', 'details_url_2', 'details2', 'details_2']
+                };
+
+                function getMediaValue(props, field) {
+                    return window.getFirstValidMediaValue
+                        ? window.getFirstValidMediaValue(props, mediaFieldNames[field])
+                        : props[field === 'details1' ? 'details_link_1' : field === 'details2' ? 'details_link_2' : field];
+                }
+
+                function buildFeatureMediaHtml(props, includeDetails = true) {
+                    const picValue = getMediaValue(props, 'pic');
+                    const videoValue = getMediaValue(props, 'video');
+                    const details1Value = getMediaValue(props, 'details1');
+                    const details2Value = getMediaValue(props, 'details2');
+                    let html = '';
+                    const picUrls = window.parseUrlList ? window.parseUrlList(picValue) : (picValue ? [picValue] : []);
+                    const cleanPicUrl = picUrls.map(cleanExternalUrl).find(Boolean);
+                    if (cleanPicUrl) {
+                        html += `<div class="nms-r-img"><img src="${cleanPicUrl}" class="nms-result-img-el" loading="lazy" onerror="this.parentElement.style.display='none'"></div>`;
+                    }
+                    if (videoValue) html += buildVideoEmbedHtml(videoValue);
+                    if (includeDetails && details1Value) html += buildMediaBlockHtml(details1Value, 'تفاصيل إضافية 1');
+                    if (includeDetails && details2Value) html += buildMediaBlockHtml(details2Value, 'تفاصيل إضافية 2');
+                    return html;
+                }
+
         // تحويل رابط فيديو (يوتيوب أو ملف مباشر أو رابط عام) إلى عنصر عرض مناسب
-        function buildVideoEmbedHtml(rawUrl) {
+                function buildVideoEmbedHtml(rawUrl) {
             const url = cleanExternalUrl(rawUrl);
             if (!url) return '';
 
@@ -901,12 +946,38 @@ window.__nmsPageHandlesOwnAds = true;
             return `<div class="nms-gallery-media nms-gallery-video-link"><a href="${url}" target="_blank" rel="noopener" class="nms-video-link-btn"><i class="fas fa-play-circle"></i> مشاهدة الفيديو</a></div>`;
         }
 
-        // عرض صورة أو رابط ضمن عمود "قبل" أو "بعد"
-        function renderBeforeAfterMedia(url) {
+        // 🆕 عرض details_link_1/details_link_2 ببطاقات النتائج: صورة إذا كان الرابط
+        // صورة، فيديو مضمّن إذا كان يوتيوب/mp4، وإلا رابط عادي
+        function buildMediaBlockHtml(rawUrl, label) {
+            const url = cleanExternalUrl(rawUrl);
+            if (!url) return '';
             if (/\.(jpg|jpeg|png|gif|webp)(\?.*)?$/i.test(url)) {
-                return `<img src="${url}" loading="lazy" onerror="this.style.display='none'; this.insertAdjacentHTML('afterend', '<div class=\\'nms-ba-empty\\'>تعذر تحميل الصورة</div>');">`;
+                return `<div class="nms-r-img"><img src="${url}" class="nms-result-img-el" loading="lazy" onerror="this.parentElement.style.display='none'"></div>`;
             }
-            return `<a href="${url}" target="_blank" rel="noopener" class="nms-video-link-btn"><i class="fas fa-external-link-alt"></i> عرض</a>`;
+            const ytMatch = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([\w-]+)/);
+            if (ytMatch || /\.(mp4|webm|ogg)(\?.*)?$/i.test(url)) {
+                return buildVideoEmbedHtml(url);
+            }
+            return `<div style="margin-top:6px;"><a href="${url}" target="_blank" rel="noopener" style="color:#1a73e8; font-weight:bold; text-decoration:none; display:inline-flex; align-items:center; gap:5px; font-size:12px;"><i class="fas fa-link"></i> ${label}</a></div>`;
+        }
+
+        // عرض صورة أو رابط ضمن عمود "قبل" أو "بعد"
+            function renderBeforeAfterMedia(url) {
+            if (/\.(jpg|jpeg|png|gif|webp)(\?.*)?$/i.test(url)) {
+                return `<img src="${url}" loading="lazy" class="nms-ba-photo-img">`;
+            }
+            // 🆕 [إصلاح]: كشف روابط يوتيوب وعرضها مضمّنة (نفس أسلوب قسم
+            // "الفيديوهات") بدل زر "عرض" الذي كان يفتح الرابط بتبويب جديد فقط
+            // بدون أي معاينة داخل بطاقة "قبل/بعد" نفسها
+            const ytMatch = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([\w-]+)/);
+            if (ytMatch) {
+                return `<iframe class="nms-ba-video-frame" src="https://www.youtube.com/embed/${ytMatch[1]}" frameborder="0" allow="autoplay; encrypted-media" allowfullscreen loading="lazy"></iframe>`;
+            }
+            // 🆕 كشف روابط فيديو مباشرة (mp4/webm/ogg) وعرضها بمشغّل مضمّن أيضاً
+            if (/\.(mp4|webm|ogg)(\?.*)?$/i.test(url)) {
+                return `<video class="nms-ba-video-frame" controls preload="metadata" src="${url}"></video>`;
+            }
+            return `<a href="${url}" target="_blank" rel="noopener noreferrer" class="nms-video-link-btn"><i class="fas fa-external-link-alt"></i> عرض</a>`;
         }
 
                 // 🆕 أزرار التواصل (اتصال/واتساب/طلب الخدمة) بنفس آلية تسجيل النقرات
@@ -918,7 +989,9 @@ window.__nmsPageHandlesOwnAds = true;
             const isRealEstate = item.isRealEstate;
             const whatsappNumber = props.whatsapp.toString();
             const providerName = props.name || (isRealEstate ? 'المعلن' : 'مزود الخدمة');
-            const featureId = (props.id !== undefined && props.id !== null) ? props.id : (props.fid !== undefined ? props.fid : '');
+            const featureId = isRealEstate
+                ? ((props.fid !== undefined && props.fid !== null) ? props.fid : '')
+                : ((props.id !== undefined && props.id !== null) ? props.id : '');
 
             if (!isRealEstate) {
                 const isLinkedProvider = typeof window.isFeatureLinkedToProvider === 'function' && window.isFeatureLinkedToProvider(item.layer, featureId);
@@ -943,9 +1016,10 @@ window.__nmsPageHandlesOwnAds = true;
         // 🆕 فحص وجود وسائط صالحة فقط (بدون أي آثار جانبية مثل جلب التقييم)،
         // يُستخدم لتصفية النتائج قبل البناء الفعلي لتفادي جلب التقييم مرتين
         function galleryEntryHasMedia(props, mode) {
-            if (mode === 'photo') return !!cleanExternalUrl(props.pic);
-            if (mode === 'video') return !!cleanExternalUrl(props.video);
-            return false;
+            const picValue = window.getFirstValidMediaValue ? window.getFirstValidMediaValue(props, ['pic', 'Pic', 'PIC', 'image', 'images', 'photo', 'photos', 'img', 'imgs', 'picture', 'pictures', 'pic_url', 'image_url', 'img_url', 'photo_url', 'picture_url']) : props.pic;
+            const videoValue = window.getFirstValidMediaValue ? window.getFirstValidMediaValue(props, ['video', 'Video', 'VIDEO', 'vid', 'movie', 'video_url', 'clip', 'youtube']) : props.video;
+
+            return !!(picValue || videoValue || getMediaValue(props, 'details1') || getMediaValue(props, 'details2'));
         }
 
         // 🆕 حارس بسيط لمنع تكرار طلب نفس التقييم عدة مرات عند إعادة الرسم
@@ -964,15 +1038,11 @@ window.__nmsPageHandlesOwnAds = true;
             const isRealEstate = item.isRealEstate;
             const name = sanitize(props.name || '');
             const location = sanitize(props.location_name || props.location || '');
-            const featureId = (props.id !== undefined && props.id !== null) ? props.id : (props.fid !== undefined ? props.fid : '');
+            const featureId = isRealEstate
+                ? ((props.fid !== undefined && props.fid !== null) ? props.fid : '')
+                : ((props.id !== undefined && props.id !== null) ? props.id : '');
 
-            let mediaHtml = '';
-            if (mode === 'photo' && props.pic) {
-                const cleanPic = cleanExternalUrl(props.pic);
-                if (cleanPic) mediaHtml = `<div class="nms-gallery-media"><img src="${cleanPic}" alt="${name}" loading="lazy" onerror="this.parentElement.style.display='none'"></div>`;
-            } else if (mode === 'video' && props.video) {
-                mediaHtml = buildVideoEmbedHtml(props.video);
-            }
+            const mediaHtml = buildFeatureMediaHtml(props);
             if (!mediaHtml) return '';
 
             let infoHtml = `<div class="nms-gallery-card-body">`;
@@ -1001,7 +1071,7 @@ window.__nmsPageHandlesOwnAds = true;
             const actionsHtml = buildGalleryContactActionsHtml(props, item);
             const coords = getFeatureCoords(feature);
             const gotoBtnHtml = coords
-                ? `<button type="button" class="nms-goto-map-btn" onclick="window.nmsGotoMapFromCoords(${coords[0]}, ${coords[1]})"><i class="fas fa-map-location-dot"></i> الانتقال إلى الخريطة</button>`
+                ? `<button type="button" class="nms-goto-map-btn js-goto-map-link" data-x="${coords[0]}" data-y="${coords[1]}"><i class="fas fa-map-location-dot"></i> الانتقال إلى الخريطة</button>`
                 : '';
 
             return `<div class="nms-gallery-card">${mediaHtml}${infoHtml}${actionsHtml}${gotoBtnHtml}</div>`;
@@ -1012,13 +1082,16 @@ window.__nmsPageHandlesOwnAds = true;
             const props = feature.properties || {};
             const name = sanitize(props.name || '');
             const location = sanitize(props.location_name || props.location || '');
-            const featureId = (props.id !== undefined && props.id !== null) ? props.id : '';
+            const featureId = item.isRealEstate
+                ? ((props.fid !== undefined && props.fid !== null) ? props.fid : '')
+                : ((props.id !== undefined && props.id !== null) ? props.id : '');
 
-            const beforeUrl = cleanExternalUrl(props.details_link_1);
-            const afterUrl = cleanExternalUrl(props.details_link_2);
-            if (!beforeUrl && !afterUrl) return '';
+            const beforeUrl = cleanExternalUrl(getMediaValue(props, 'details1'));
+            const afterUrl = cleanExternalUrl(getMediaValue(props, 'details2'));
+            const extraMediaHtml = buildFeatureMediaHtml(props, false);
+            if (!beforeUrl && !afterUrl && !extraMediaHtml) return '';
 
-            const mediaHtml = `<div class="nms-before-after-media">
+            const mediaHtml = (beforeUrl || afterUrl) ? `<div class="nms-before-after-media">
                 <div class="nms-ba-col">
                     <span class="nms-ba-label">قبل</span>
                     ${beforeUrl ? renderBeforeAfterMedia(beforeUrl) : '<div class="nms-ba-empty">لا يوجد</div>'}
@@ -1027,7 +1100,7 @@ window.__nmsPageHandlesOwnAds = true;
                     <span class="nms-ba-label">بعد</span>
                     ${afterUrl ? renderBeforeAfterMedia(afterUrl) : '<div class="nms-ba-empty">لا يوجد</div>'}
                 </div>
-            </div>`;
+            </div>${extraMediaHtml}` : extraMediaHtml;
 
             let infoHtml = `<div class="nms-gallery-card-body">`;
             infoHtml += `<div class="nms-gallery-badge">🏆 ${item.label}${featureId !== '' ? ` <span style="color:#888; font-weight:normal;">(رقم: ${sanitize(String(featureId))})</span>` : ''}</div>`;
@@ -1047,7 +1120,7 @@ window.__nmsPageHandlesOwnAds = true;
             const actionsHtml = buildGalleryContactActionsHtml(props, item);
             const coords = getFeatureCoords(feature);
             const gotoBtnHtml = coords
-                ? `<button type="button" class="nms-goto-map-btn" onclick="window.nmsGotoMapFromCoords(${coords[0]}, ${coords[1]})"><i class="fas fa-map-location-dot"></i> الانتقال إلى الخريطة</button>`
+                ? `<button type="button" class="nms-goto-map-btn js-goto-map-link" data-x="${coords[0]}" data-y="${coords[1]}"><i class="fas fa-map-location-dot"></i> الانتقال إلى الخريطة</button>`
                 : '';
 
             return `<div class="nms-gallery-card nms-before-after-card">${mediaHtml}${infoHtml}${actionsHtml}${gotoBtnHtml}</div>`;
@@ -1077,10 +1150,9 @@ window.__nmsPageHandlesOwnAds = true;
             let collected = [];
 
             const conditionParams = {
-                field_0: fieldName, operator_0: 'notempty', value_0: '1',
-                field_1: 'rating', operator_1: '=', value_1: '10',
-                field_2: 'rating', operator_2: '=', value_2: '9.9',
-                conditions_count: '3'
+                field_0: 'rating', operator_0: '=', value_0: '10',
+                field_1: 'rating', operator_1: '=', value_1: '9.9',
+                conditions_count: '2'
             };
 
             // العقارات (إن طُلبت) - طلبات مستقلة كما كانت دائماً
@@ -1145,11 +1217,9 @@ window.__nmsPageHandlesOwnAds = true;
             try {
                 const params = new URLSearchParams({
                     layer: 'service_all', workspace: 'services',
-                    field_0: 'details_link_1', operator_0: 'notempty', value_0: '1',
-                    field_1: 'details_link_2', operator_1: 'notempty', value_1: '1',
-                    field_2: 'rating', operator_2: '=', value_2: '10',
-                    field_3: 'rating', operator_3: '=', value_3: '9.9',
-                    conditions_count: '4'
+                    field_0: 'rating', operator_0: '=', value_0: '10',
+                    field_1: 'rating', operator_1: '=', value_1: '9.9',
+                    conditions_count: '2'
                 });
                 const response = await fetch(`${baseUrl}api/search-features?${params.toString()}`);
                 if (response.ok) {
@@ -1177,12 +1247,53 @@ window.__nmsPageHandlesOwnAds = true;
 
         // 🆕 دالة عامة للانتقال إلى موقع أي معلم على الخريطة من أزرار البطاقات
         // (نفس منطق goBtn.onclick الموجود بباقي الصفحة، لكن بصيغة onclick داخل HTML)
-        window.nmsGotoMapFromCoords = function (x, y) {
+                window.nmsGotoMapFromCoords = function (x, y) {
             if (x === undefined || y === undefined || x === null || y === null) return;
             window.open(`/original-index.html?x=${Number(x).toFixed(3)}&y=${Number(y).toFixed(3)}`, '_blank');
         };
 
-                async function loadRatedRow(gridId, sectionId, operator, ratingValue) {
+        // ==========================================================================
+        // 🆕 [تشديد أمني CSP]: تفويض حدث موحّد لزر "الانتقال إلى الخريطة" المولّد
+        // بأقسام المعرض/قبل وبعد (js-goto-map-link)، مع تمييزه عن أزرار
+        // nms-goto-map-btn الأخرى المربوطة أصلاً بـ .onclick property (renderResults)
+        // عبر اشتراط وجود data-x فعلياً، فلا يحدث أي تكرار لتنفيذ نفس الحدث
+        // ==========================================================================
+        document.addEventListener('click', function (e) {
+            const btn = e.target.closest('.js-goto-map-link[data-x]');
+            if (!btn) return;
+            window.nmsGotoMapFromCoords(parseFloat(btn.dataset.x), parseFloat(btn.dataset.y));
+        });
+
+        // 🆕 معالجة صور المعرض/قبل وبعد/النتائج عند فشل التحميل - onerror لا
+        // يبثّ (bubble) طبيعياً فنستخدم مرحلة الالتقاط (capture: true)
+                // 🆕 [تحسين تجربة]: بدل إخفاء الصورة/إظهار "تعذر التحميل" بصمت، نستبدلها
+        // برابط نصي قابل للنقر - نفس المنطق المطبّق بـ popup.js بالخريطة
+        function replaceImageWithFallbackLink(imgEl, wrapperEl) {
+            const link = document.createElement('a');
+            link.href = imgEl.src;
+            link.target = '_blank';
+            link.rel = 'noopener noreferrer';
+            link.textContent = '🔗 انقر هنا لعرض الصور';
+            link.style.cssText = 'display:block; padding:10px; text-align:center; color:#1a73e8; font-weight:bold; text-decoration:underline; background:#f8f9fa; border-radius:8px;';
+            (wrapperEl || imgEl).replaceWith(link);
+        }
+
+        document.addEventListener('error', function (e) {
+            const img = e.target;
+            if (!img || img.tagName !== 'IMG') return;
+
+            if (img.classList.contains('nms-gallery-photo-img') || img.classList.contains('nms-result-img-el')) {
+                replaceImageWithFallbackLink(img, img.parentElement);
+                return;
+            }
+
+            if (img.classList.contains('nms-ba-photo-img')) {
+                replaceImageWithFallbackLink(img, img);
+                return;
+            }
+        }, true);
+
+                   async function loadRatedRow(gridId, sectionId, operator, ratingValue) {
             const grid = document.getElementById(gridId);
             const section = document.getElementById(sectionId);
             if (!grid || !section) return;
@@ -1205,7 +1316,7 @@ window.__nmsPageHandlesOwnAds = true;
                     if (!response.ok) return [];
                     const data = await response.json();
                     return (data.features || []).map(f => ({
-                        props: f.properties || {}, item, rating: parseFloat((f.properties || {}).rating) || 0
+                        props: f.properties || {}, item, rating: parseFloat((f.properties || {}).rating) || 0, geometry: f.geometry
                     }));
                 } catch (err) { return []; }
             }));
@@ -1225,7 +1336,7 @@ window.__nmsPageHandlesOwnAds = true;
                         const discriminator = props.discriminator;
                         if (!discriminator) return;
                         const item = { layer: discriminator, workspace: 'services', label: serviceNames[discriminator] || discriminator, isRealEstate: false };
-                        collected.push({ props, item, rating: parseFloat(props.rating) || 0 });
+                        collected.push({ props, item, rating: parseFloat(props.rating) || 0, geometry: f.geometry });
                     });
                 }
             } catch (err) { /* تجاهل */ }
@@ -1240,11 +1351,10 @@ window.__nmsPageHandlesOwnAds = true;
             }
 
             section.dataset.hasData = '1';
-            grid.innerHTML = collected.slice(0, 15).map(c => buildAdCardHtml(c.props, c.item)).join('');
+            grid.innerHTML = collected.slice(0, 15).map(c => buildAdCardHtml(c.props, c.item, c.geometry)).join('');
             wireAdActionButtons(grid);
             refreshHomeSectionsVisibility();
         }
-
                 // 🆕 قسم "الأعلى تقييماً" الحقيقي: يعتمد على جدول service_ratings الفعلي
     
         async function loadTopRatedFromRealRatings() {
@@ -1263,59 +1373,66 @@ window.__nmsPageHandlesOwnAds = true;
                     return;
                 }
 
-                                const REAL_ESTATE_TABLE_NAMES = ['ApartRent', 'ApartSale', 'LandSale'];
+                 const REAL_ESTATE_TABLE_NAMES = ['ApartRent', 'ApartSale', 'LandSale'];
                 const REAL_ESTATE_LABELS = { 'ApartRent': 'شقة للإيجار', 'ApartSale': 'شقة للبيع', 'LandSale': 'أرض للبيع' };
 
-                                const KNOWN_SERVICE_KEYS = Object.keys(serviceNames || {});
+                const KNOWN_SERVICE_KEYS = Object.keys(serviceNames || {});
 
-                const cardsPromises = data.items.map(async (ratingItem) => {
-                    const layerKey = ratingItem.service_layer;
-                    const featureId = ratingItem.feature_id;
-                    if (!layerKey || !featureId) return null;
+                // 🆕 [إصلاح N+1]: تجميع المعرّفات حسب الطبقة، ثم استعلام واحد
+                // فقط لكل طبقة بدل استعلام منفصل لكل معلم
+                // 🆕 استبعاد العقارات نهائياً من قسم "الأعلى تقييماً" بناءً على الطلب
+                const validItems = data.items.filter(it => {
+                    if (!it.service_layer || !it.feature_id) return false;
+                    const isRE = REAL_ESTATE_TABLE_NAMES.includes(it.service_layer);
+                    if (isRE) return false;
+                    return KNOWN_SERVICE_KEYS.includes(it.service_layer);
+                });
 
+                const groupedByLayer = {};
+                validItems.forEach(it => {
+                    if (!groupedByLayer[it.service_layer]) groupedByLayer[it.service_layer] = [];
+                    groupedByLayer[it.service_layer].push(it);
+                });
+
+                const layerFetchPromises = Object.keys(groupedByLayer).map(async (layerKey) => {
+                    const itemsForLayer = groupedByLayer[layerKey];
                     const isRealEstateLayer = REAL_ESTATE_TABLE_NAMES.includes(layerKey);
-
-                    // 🆕 تجاهل أي سجل تقييم قديم/فاسد يحمل اسم طبقة غير معروف
-                    // (مثل تسمية عربية مخزّنة بالخطأ بدل اسم الجدول الحقيقي)
-                    if (!isRealEstateLayer && !KNOWN_SERVICE_KEYS.includes(layerKey)) {
-                        return null;
-                    }
-
                     const workspaceForLayer = isRealEstateLayer ? 'realestate' : 'services';
+                    const ids = itemsForLayer.map(it => it.feature_id);
 
                     try {
-                        const params = new URLSearchParams({
-                            layer: layerKey,
-                            workspace: workspaceForLayer,
-                            field_0: isRealEstateLayer ? 'fid' : 'id',
-                            operator_0: '=',
-                            value_0: String(featureId),
-                            conditions_count: '1',
-                            ignore_status: '1'
+                        const res = await fetch(`${baseUrl}api/search-features-batch`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ layer: layerKey, workspace: workspaceForLayer, ids })
                         });
-                        const fRes = await fetch(`${baseUrl}api/search-features?${params.toString()}`);
-                        if (!fRes.ok) return null;
-                        const fData = await fRes.json();
-                        const feature = (fData.features || [])[0];
-                        if (!feature) return null;
+                        if (!res.ok) return [];
+                        const fData = await res.json();
+                        const featuresById = {};
+                        (fData.features || []).forEach(f => {
+                            const fid = isRealEstateLayer ? f.properties.fid : f.properties.id;
+                            featuresById[fid] = f;
+                        });
 
-                        const label = isRealEstateLayer ? (REAL_ESTATE_LABELS[layerKey] || layerKey) : (serviceNames[layerKey] || layerKey);
-                        const cardItem = {
-                            layer: layerKey,
-                            workspace: workspaceForLayer,
-                            label,
-                            isRealEstate: isRealEstateLayer,
-                            avgRating: parseFloat(ratingItem.avg_rating) || 0,
-                            totalRatings: parseInt(ratingItem.total_ratings, 10) || 0,
-                            badgeText: '🏆 الأعلى تقييماً'
-                        };
-                        return buildAdCardHtml(feature.properties || {}, cardItem);
+                            return itemsForLayer.map(ratingItem => {
+                            const feature = featuresById[ratingItem.feature_id];
+                            if (!feature) return null;
+                            const label = isRealEstateLayer ? (REAL_ESTATE_LABELS[layerKey] || layerKey) : (serviceNames[layerKey] || layerKey);
+                            const cardItem = {
+                                layer: layerKey, workspace: workspaceForLayer, label,
+                                isRealEstate: isRealEstateLayer,
+                                avgRating: parseFloat(ratingItem.avg_rating) || 0,
+                                totalRatings: parseInt(ratingItem.total_ratings, 10) || 0,
+                                badgeText: '🏆 الأعلى تقييماً'
+                            };
+                            return buildAdCardHtml(feature.properties || {}, cardItem, feature.geometry);
+                        }).filter(Boolean);
                     } catch (err) {
-                        return null;
+                        return [];
                     }
                 });
 
-                const cards = (await Promise.all(cardsPromises)).filter(Boolean);
+                const cards = (await Promise.all(layerFetchPromises)).flat();
 
                 if (cards.length === 0) {
                     section.dataset.hasData = '0';
@@ -1848,14 +1965,17 @@ window.__nmsPageHandlesOwnAds = true;
 
                 // 🆕 حواجز الطرق: قالب مستقل بالكامل (حالة Stop + الاسم + المحافظة/المدينة/الموقع + زر الانتقال)
                     if (isRoadBarriers) {
-                    const stopInfo = window.getRoadBarrierStopInfo(p.stop !== undefined ? p.stop : p.stop);
-                    const barrierDisplayId = (p.id !== undefined && p.id !== null && p.id !== '') ? p.id : null;
+                    const stopInfo = window.getRoadBarrierStopInfo(window.getCaseInsensitiveProp(p, 'stop'));
+                    const barrierDisplayId = (p.id !== undefined && p.id !== null && p.id !== '') ? p.id : (p.fid !== undefined ? p.fid : null);
                     let barrierHtml = `<div style="font-size:11px; color:#999; margin-bottom:4px;">${barrierDisplayId !== null ? `(رقم: ${sanitize(String(barrierDisplayId))})` : ''}</div>`;
                     barrierHtml += `<div style="text-align:center; font-weight:bold; font-size:14px; color:${stopInfo.color}; border:1px dashed ${stopInfo.color}; border-radius:8px; padding:8px; margin-bottom:8px; background:${stopInfo.color}15;">${stopInfo.icon} ${stopInfo.label}</div>`;
                     if (p.name) barrierHtml += `<div class="nms-r-name"><i class="fas fa-map-marker-alt"></i> ${sanitize(p.name)}</div>`;
                     if (p.gov_a) barrierHtml += `<div class="nms-r-line"><b>🌍 المحافظة:</b> ${sanitize(p.gov_a)}</div>`;
                     if (p.village_a) barrierHtml += `<div class="nms-r-line"><b>🏘️ المدينة:</b> ${sanitize(p.village_a)}</div>`;
                     if (p.location_name || p.location) barrierHtml += `<div class="nms-r-line"><b>📍 الموقع:</b> ${sanitize(p.location_name || p.location)}</div>`;
+                    // 🆕 [إصلاح]: حقل الوصف لم يكن يُعرض إطلاقاً بنتائج حواجز الطرق هنا أيضاً
+                    if (p.des) barrierHtml += `<div class="nms-r-desc"><b>📝 ملاحظات:</b> ${sanitize(p.des)}</div>`;
+                    barrierHtml += buildFeatureMediaHtml(p);
                     card.innerHTML = barrierHtml;
 
                     if (coords) {
@@ -1913,11 +2033,7 @@ window.__nmsPageHandlesOwnAds = true;
                     if (p.gov_a) html += `<div class="nms-r-line"><b>🌍 المحافظة:</b> ${sanitize(p.gov_a)}</div>`;
                 }
                 if (p.des) html += `<div class="nms-r-desc"><b>📝 الوصف:</b> ${sanitize(p.des)}</div>`;
-                if (p.pic) html += `<div class="nms-r-img"><img src="${p.pic}" onerror="this.parentElement.style.display='none'"></div>`;
-                if (p.video) {
-                    const videoUrl = p.video.toString().trim().startsWith('http') ? p.video : 'https://' + p.video;
-                    html += `<div style="margin-top:6px;"><a href="${videoUrl}" target="_blank" rel="noopener" style="color:#1a73e8; font-weight:bold; text-decoration:none; display:inline-flex; align-items:center; gap:5px; font-size:12px;"><i class="fas fa-video"></i> عرض الفيديو</a></div>`;
-                }
+                html += buildFeatureMediaHtml(p);
 
                 card.innerHTML = html;
 

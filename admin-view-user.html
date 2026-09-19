@@ -45,7 +45,7 @@
             </div>
             <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
                 <span class="readonly-badge">قراءة فقط: لا تعديل ولا إرسال</span>
-                <button class="back-btn" type="button" onclick="window.close()">إغلاق</button>
+                <button class="back-btn" type="button" id="btn-close-view">إغلاق</button>
             </div>
         </section>
         <section class="panel">
@@ -58,6 +58,11 @@
         </section>
     </main>
 <script>
+
+    const expiryEl = document.getElementById('session-expiry');
+    // 🆕 [تشديد أمني CSP]: ربط زر الإغلاق بدل onclick inline بالـ HTML
+    document.getElementById('btn-close-view').addEventListener('click', () => window.close());
+
 (function () {
     'use strict';
     const token = new URLSearchParams(window.location.search).get('token');

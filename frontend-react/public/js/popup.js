@@ -774,6 +774,10 @@ function initializePopup(map) {
             if (props.gov_a) bodyHtml += `<b>🌍 المحافظة:</b> ${window.sanitizeHTML(props.gov_a)}<br>`;
             if (props.village_a) bodyHtml += `<b>🏘️ المدينة:</b> ${window.sanitizeHTML(props.village_a)}<br>`;
             if (props.location_name || props.location) bodyHtml += `<b>📍 الموقع:</b> ${window.sanitizeHTML(props.location_name || props.location)}<br>`;
+            // 🆕 [إصلاح]: حقل الوصف لم يكن يُعرض إطلاقاً لحواجز الطرق (كان مفقوداً
+            // بهذا الفرع تحديداً بعكس باقي الخدمات) - يُستخدم لتوضيح تفاصيل إضافية
+            // عن الحاجز أو الأزمة (مثال: "تفتيش دقيق، طابور طويل" أو غيره)
+            if (props.des) bodyHtml += `<div style="margin-top:5px; background:#f9f9f9; padding:5px; border-radius:4px; word-wrap:break-word; overflow-wrap:break-word; white-space:normal;"><b>📝 ملاحظات:</b> ${window.sanitizeHTML(props.des)}</div>`;
 
                         bodyHtml += `
             <div style="margin-top: 15px; border-top: 2px solid #eee; padding-top: 12px;">

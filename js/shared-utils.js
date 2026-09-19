@@ -142,10 +142,28 @@ window.isFeatureLinkedToProvider = function (layerDbName, featureId) {
     return set.has(String(featureId));
 };
 
+// ==========================================================================
+// 10) [تحسين أداء عام]: أداة موحّدة لأي تحديث دوري بالمنصة - توقفه تلقائياً
+// حين يكون التبويب بالخلفية، وتحدّثه فوراً عند عودة المستخدم إليه، بدل
+// استهلاك موارد السيرفر والبطارية لتبويبات مفتوحة لا ينظر إليها أحد.
+// ==========================================================================
+window.createVisibilityAwareInterval = function (callback, intervalMs) {
+    let timerId = setInterval(() => {
+        if (document.visibilityState === 'visible') callback();
+    }, intervalMs);
+
+    document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'visible') callback();
+    });
+
+    return { stop: () => clearInterval(timerId) };
+};
+
 (function () {
     function startProviderLinksPolling() {
         window.refreshProviderLinkedFeatures();
-        setInterval(window.refreshProviderLinkedFeatures, 60000);
+        // 🆕 بدل setInterval العادي
+        window.createVisibilityAwareInterval(window.refreshProviderLinkedFeatures, 60000);
     }
     if (document.readyState !== 'loading') {
         startProviderLinksPolling();
@@ -163,8 +181,24 @@ window.isFeatureLinkedToProvider = function (layerDbName, featureId) {
 window.getCaseInsensitiveProp = function (obj, keyName) {
     if (!obj) return undefined;
     if (obj[keyName] !== undefined) return obj[keyName];
-    const foundKey = Object.keys(obj).find(k => k.toLowerCase() === keyName.toLowerCase());
+
+    const normalizedTarget = String(keyName).toLowerCase().replace(/[^a-z0-9]/g, '');
+    const foundKey = Object.keys(obj).find(k => {
+        const normalizedCurrent = String(k).toLowerCase().replace(/[^a-z0-9]/g, '');
+        return normalizedCurrent === normalizedTarget;
+    });
     return foundKey !== undefined ? obj[foundKey] : undefined;
+};
+
+window.getFirstValidMediaValue = function (obj, keys) {
+    if (!obj || !Array.isArray(keys) || !keys.length) return undefined;
+    for (const key of keys) {
+        const value = window.getCaseInsensitiveProp(obj, key);
+        if (value !== undefined && value !== null && value !== '') {
+            return value;
+        }
+    }
+    return undefined;
 };
 
 window.getRoadBarrierStopInfo = function (rawStopValue) {
@@ -208,6 +242,84 @@ window.buildFuelAvailabilityHtml = function (props) {
     });
     html += '</div>';
     return html;
+};
+
+// ==========================================================================
+// 11) [إصلاح شامل لصور CSP]: ترقية أي رابط http:// إلى https:// تلقائياً -
+// سياسة أمان المحتوى (CSP) بالسيرفر تسمح فقط بتحميل الصور عبر https، وأي
+// رابط أُدخل بصيغة http:// (شائع عند اللصق من مواقع رفع صور قديمة) كان
+// يُرفض بصمت من المتصفح. هذه الدالة موحّدة وتُستخدم من popup.js،
+// no-map-search.js، و market-search.js بدل تكرار نفس المنطق 3 مرات.
+// ==========================================================================
+window.upgradeToHttps = function (rawUrl) {
+    if (!rawUrl) return rawUrl;
+    let url = String(rawUrl).trim();
+    if (url.startsWith('http://')) {
+        url = 'https://' + url.substring(7);
+    } else if (!/^https:\/\//i.test(url)) {
+        // 🆕 إضافة https:// تلقائياً إذا لم يُكتب أي بروتوكول إطلاقاً
+        // (هذا كان السبب الرئيسي لعدم ظهور صور pic عند كتابتها بدون http/https)
+        url = 'https://' + url;
+    }
+    return url;
+};
+
+window.extractMediaUrl = function (rawValue) {
+    if (rawValue === null || rawValue === undefined) return '';
+    let value = String(rawValue).trim();
+    if (!value || value === '#' || /^(undefined|null)$/i.test(value)) return '';
+
+    const embeddedUrl = value.match(/(?:src|href)=["']([^"']+)["']/i);
+    if (embeddedUrl) value = embeddedUrl[1];
+    value = value.replace(/^['"]|['"]$/g, '').trim();
+    if (value.startsWith('//')) return 'https:' + value;
+    if (/^https?:\/\//i.test(value)) return value;
+    // 🆕 [إصلاح جذري]: بدل نمط دومين صارم كان يُسقط روابط صالحة كثيرة بصمت
+    // تام بلا أي تحذير (لا سطر console، لا خطأ) - أي نص متبقٍ غير فارغ نعتبره
+    // رابطاً ناقص البروتوكول ونضيف https:// له مباشرة
+    if (/^[a-z0-9.-]+\.[a-z]{2,}(?:\/|$)/i.test(value)) return 'https://' + value;
+    return 'https://' + value;
+};
+window.getMediaUrlForDisplay = function (rawValue) {
+    const extracted = window.extractMediaUrl(rawValue);
+    if (!extracted) return '';
+    // 🆕 سياسة الحماية CSP بالسيرفر تسمح فقط بتحميل الصور عبر https، فأي رابط
+    // http:// كان يُرفض بصمت من المتصفح فتختفي الصورة تماماً. نُرقّيه هنا تلقائياً.
+    return window.upgradeToHttps ? window.upgradeToHttps(extracted) : extracted;
+};
+
+window.parseUrlList = function (rawValue) {
+    if (rawValue === null || rawValue === undefined || rawValue === '') return [];
+
+    if (Array.isArray(rawValue)) {
+        return rawValue.flatMap(value => window.parseUrlList(value));
+    }
+
+    let text = String(rawValue).trim();
+    if (!text || text === '#' || text.toLowerCase() === 'undefined' || text.toLowerCase() === 'null') return [];
+
+    // بعض خدمات WFS تعيد قيمة pic كـ JSON أو ضمن وسم صورة/iframe.
+    try {
+        const parsed = JSON.parse(text);
+        if (parsed && parsed !== rawValue) {
+            if (typeof parsed === 'string' || Array.isArray(parsed)) return window.parseUrlList(parsed);
+            if (typeof parsed === 'object') {
+                return window.parseUrlList(parsed.url || parsed.src || parsed.href || parsed.value || '');
+            }
+        }
+    } catch (e) { /* القيمة نص رابط عادي */ }
+
+    const embeddedUrl = text.match(/(?:src|href)=["']([^"']+)["']/i);
+    if (embeddedUrl) text = embeddedUrl[1];
+
+    text = text.replace(/\[(.*?)]/g, '$1');
+    const segments = text
+        .split(/[\r\n|,;]+/)
+        .map(segment => segment.trim().replace(/^['"]|['"]$/g, ''))
+        .filter(Boolean)
+        .filter(segment => segment !== '#' && segment.toLowerCase() !== 'undefined' && segment.toLowerCase() !== 'null');
+
+    return segments;
 };
 
 // ==========================================================================

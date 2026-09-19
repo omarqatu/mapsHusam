@@ -1973,6 +1973,8 @@ window.__nmsPageHandlesOwnAds = true;
                     if (p.gov_a) barrierHtml += `<div class="nms-r-line"><b>🌍 المحافظة:</b> ${sanitize(p.gov_a)}</div>`;
                     if (p.village_a) barrierHtml += `<div class="nms-r-line"><b>🏘️ المدينة:</b> ${sanitize(p.village_a)}</div>`;
                     if (p.location_name || p.location) barrierHtml += `<div class="nms-r-line"><b>📍 الموقع:</b> ${sanitize(p.location_name || p.location)}</div>`;
+                    // 🆕 [إصلاح]: حقل الوصف لم يكن يُعرض إطلاقاً بنتائج حواجز الطرق هنا أيضاً
+                    if (p.des) barrierHtml += `<div class="nms-r-desc"><b>📝 ملاحظات:</b> ${sanitize(p.des)}</div>`;
                     barrierHtml += buildFeatureMediaHtml(p);
                     card.innerHTML = barrierHtml;
 

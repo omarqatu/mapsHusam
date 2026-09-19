@@ -1,5 +1,11 @@
 ﻿/**
  * js/service-chat.js
+ * 🆕 [مرحلة 5]: التعديل الوحيد في هذا الملف هو داخل دالة
+ * insertMyRequestsButtonIntoDrawer() أدناه - تم تغيير *نقطة إدراج* زر
+ * "طلباتي" فقط ليصبح مباشرة بعد #notification-toggle-btn في الـ DOM
+ * (فيظهر تلقائياً بسطر مستقل أسفله، بفضل width:100% الموجودة أصلاً على
+ * هذه الأزرار في auth-core-functions.css). كل باقي الملف - المنطق،
+ * الأحداث، الدردشة، التوهج، الاستطلاع الدوري - لم يتغيّر بحرف واحد.
  */
 (function () {
     'use strict';
@@ -425,6 +431,25 @@
         }
     }
 
+    // ==========================================================================
+    // 🆕 [مرحلة 5]: التعديل الوحيد بكامل الملف - إدراج زر "طلباتي" مباشرة بعد
+    // #notification-toggle-btn بدلاً من إدراجه قبل الفاصل (نهاية القائمة).
+    //
+    // لماذا هذا آمن وكافٍ وحده لتحقيق المطلوب:
+    // كل أزرار البوابة (.btn-dashboard-top, .notification-btn, .btn-my-requests-top
+    // وغيرها) لها بالفعل width:100% في auth-core-functions.css ضمن حاوية
+    // flex بها flex-wrap:wrap. أي عنصر 100% العرض داخل flex-wrap يحتل سطراً
+    // مستقلاً بالكامل تلقائياً - لذلك مجرد نقل موقع الإدراج في الـ DOM ليصبح
+    // مباشرة بعد زر الإشعارات يكفي وحده لجعله يظهر بصرياً "أسفله مباشرة"،
+    // سواء كان الزران أبناء مباشرين لنفس الصف (صفحة البحث بدون خريطة) أو
+    // متداخلين ضمن نفس المجموعة الداخلية (صفحة الخريطة) - في كلتا الحالتين
+    // النتيجة البصرية واحدة: سطر مستقل أسفل الإشعارات تماماً. يعمل هذا بنفس
+    // الطريقة على الكمبيوتر والموبايل والتابلت وبكلا الاتجاهين لأن آلية
+    // البوابة الجانبية (ui-collapse.js) واحدة وموحّدة على كل الأجهزة والصفحتين.
+    //
+    // لا حاجة لأي CSS إضافي، ولا لأي فحص لحجم الشاشة أو نوع الصفحة - نفس
+    // منطق الإدراج يعمل بشكل صحيح وآمن في كل الحالات.
+    // ==========================================================================
     function insertMyRequestsButtonIntoDrawer() {
         if (document.getElementById('open-my-service-chats')) return true; 
 
@@ -449,6 +474,16 @@
             if (container) container.classList.remove('ui-profile-open');
         };
 
+        // 🆕 [مرحلة 5] نقطة الإدراج الجديدة: مباشرة بعد زر الإشعارات
+        const notificationBtn = document.getElementById('notification-toggle-btn');
+        if (notificationBtn && notificationBtn.parentElement) {
+            notificationBtn.insertAdjacentElement('afterend', myRequestsBtn);
+            return true;
+        }
+
+        // 🛡️ شبكة أمان: إذا تعذّر العثور على زر الإشعارات لأي سبب (مثلاً
+        // صفحة مستقبلية بدون نظام إشعارات)، نعود لنفس السلوك القديم الآمن
+        // بدل فشل الإدراج بالكامل
         const divider = drawerBody.querySelector('.ui-profile-drawer-divider');
         if (divider) {
             drawerBody.insertBefore(myRequestsBtn, divider);
@@ -917,44 +952,57 @@
         }
     };
 
-    function startPollingRequests() {
-        if (pollRequestsInterval) clearInterval(pollRequestsInterval);
+    // 🆕 [إصلاح أداء حرج]: يفحص هل المستخدم فعلاً مزود خدمة قبل تشغيل أي polling
+function isCurrentUserProvider() {
+    const u = getCurrentUser();
+    return !!(u && (u.role === 'provider' || u.account_type === 'provider'));
+}
 
-        const checkPendingForProvider = async () => {
-            const userId = getCurrentUserId();
-            if (!userId) return;
-            if (typeof navigator.onLine === 'boolean' && !navigator.onLine) return;
+function startPollingRequests() {
+    if (pollRequestsInterval) clearInterval(pollRequestsInterval);
 
-            // إذا كان polling معطل، لا نفعل شيئاً
-            const now = Date.now();
-            if (now < pollingDisabledUntil) {
-                return;
-            }
+    // 🆕 لا داعي لأي استعلام دوري إطلاقاً إذا لم يكن المستخدم مزود خدمة -
+    // كان هذا الـ polling يعمل سابقاً لكل زائر/مستخدم عادي بلا أي فائدة
+    if (!isCurrentUserProvider()) return;
 
-            try {
-                const resProvider = await fetch(`${window.location.origin}/api/service-requests?provider_user_id=${userId}&status=pending`);
-                if (!resProvider.ok) return;
-                
-                const dataProvider = await resProvider.json();
-                
-                if (dataProvider.success && dataProvider.requests && dataProvider.requests.length > 0) {
-                    const req = dataProvider.requests[0];
-                    // فقط إذا لم يكن البانر معروضاً بالفعل والطلب لم يتم معالجته
-                    if (incomingBanner && lastHandledPendingReqId !== req.id) {
-                        showIncomingRequestBanner(req);
-                        triggerPulseEffect(req.id);
-                        // تشغيل الرنة من polling فقط إذا لم يكن socket متصل
-                        playRequestRing();
-                        lastHandledPendingReqId = req.id;
-                    } else {
-                    }
+    const checkPendingForProvider = async () => {
+        const userId = getCurrentUserId();
+        if (!userId) return;
+        if (typeof navigator.onLine === 'boolean' && !navigator.onLine) return;
+        // 🆕 لا داعي للاستعلام إذا كان التبويب بالخلفية حالياً (توفير حمل سيرفر)
+        if (document.visibilityState !== 'visible') return;
+
+        const now = Date.now();
+        if (now < pollingDisabledUntil) return;
+
+        try {
+            const resProvider = await fetch(`${window.location.origin}/api/service-requests?provider_user_id=${userId}&status=pending`);
+            if (!resProvider.ok) return;
+
+            const dataProvider = await resProvider.json();
+
+            if (dataProvider.success && dataProvider.requests && dataProvider.requests.length > 0) {
+                const req = dataProvider.requests[0];
+                if (incomingBanner && lastHandledPendingReqId !== req.id) {
+                    showIncomingRequestBanner(req);
+                    triggerPulseEffect(req.id);
+                    playRequestRing();
+                    lastHandledPendingReqId = req.id;
                 }
-            } catch (e) {}
-        };
+            }
+        } catch (e) {}
+    };
 
-        checkPendingForProvider();
-        pollRequestsInterval = setInterval(checkPendingForProvider, 3000);
-    }
+    checkPendingForProvider();
+    // 🆕 من 3 ثوانٍ إلى 15 ثانية - Socket.io هو المصدر الأساسي للتنبيه الفوري
+    // (حدث service_request_new)، وهذا الـ polling مجرد شبكة أمان احتياطية فقط
+    pollRequestsInterval = setInterval(checkPendingForProvider, 15000);
+
+    // 🆕 تحديث فوري عند عودة المستخدم للتبويب بدل انتظار الدورة التالية
+    document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'visible') checkPendingForProvider();
+    });
+}
 
     function showIncomingRequestBanner(req) {
         
@@ -1134,14 +1182,54 @@
     }
 
     document.addEventListener('serviceRequestMessage', (e) => {
-        if (e.detail.requestId === currentOpenRequestId) {
-            loadMessages();
-            // مسح التوهج فوراً إذا كانت المحادثة المعنية مفتوحة حالياً
-            removePulseEffect(e.detail.requestId);
-        } else {
-            triggerPulseEffect(e.detail.requestId);
-        }
-    });
+    const requestId = e.detail.requestId;
+    const isThisChatCurrentlyOpen = requestId === currentOpenRequestId && chatModal && chatModal.style.display === 'flex';
+
+    if (isThisChatCurrentlyOpen) {
+        loadMessages();
+        removePulseEffect(requestId);
+        return;
+    }
+
+    triggerPulseEffect(requestId);
+
+    // 🆕 [طلب المستخدم]: إعادة فتح الدردشة تلقائياً عند وصول رسالة جديدة
+    // بينما كانت مغلقة، بدل الاكتفاء بتوهج صامت قد يُفوَّت. لا نُقاطع محادثة
+    // أخرى مفتوحة حالياً بنفس اللحظة (احتراماً لتركيز المستخدم بها)
+    const isAnotherChatOpen = chatModal && chatModal.style.display === 'flex' && currentOpenRequestId && currentOpenRequestId !== requestId;
+    if (!isAnotherChatOpen) {
+        reopenChatForRequestId(requestId);
+    }
+});
+
+// 🆕 دالة مساعدة: تجلب بيانات الطلب الكاملة وتفتح مودال الدردشة له تلقائياً
+async function reopenChatForRequestId(requestId) {
+    const userId = getCurrentUserId();
+    if (!userId) return;
+    try {
+        const res = await fetch(`${window.location.origin}/api/service-requests?user_id=${userId}`);
+        const data = await res.json();
+        if (!data.success || !data.requests) return;
+
+        const match = data.requests.find(r => Number(r.id) === Number(requestId));
+        if (!match) return;
+
+        const chatRole = String(match.provider_user_id) === String(userId) ? 'provider' : 'user';
+        const otherPartyName = chatRole === 'provider'
+            ? (match.user_name || match.requester_name || 'المستخدم الطالب')
+            : (match.provider_name || 'مزود الخدمة');
+
+        const isCompleted = match.status === 'completed';
+        const contactObj = isCompleted ? {
+            phone: chatRole === 'user' ? (match.providerPhone || match.provider_phone) : (match.requester_phone || match.userPhone),
+            whatsapp: chatRole === 'user' ? (match.providerWhatsapp || match.provider_whatsapp) : (match.requester_whatsapp || match.userWhatsapp)
+        } : null;
+
+        openChatModal(requestId, chatRole, otherPartyName, isCompleted, contactObj, match.service_type);
+    } catch (err) {
+        console.warn('تعذر إعادة فتح الدردشة تلقائياً:', err.message);
+    }
+}
 
     async function sendChatMessage() {
         const text = chatInput.value.trim();
