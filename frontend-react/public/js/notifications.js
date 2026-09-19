@@ -185,11 +185,15 @@ class NotificationSystem {
     }
 
     // عرض إشعار مخصص في الواجهة
-    showCustomNotification(notification) {
+        showCustomNotification(notification) {
         const container = document.getElementById('notification-container');
         if (!container) {
             return;
         }
+
+        // 🆕 [طلب المستخدم]: عرض آخر إشعار فقط بالمقدمة - نزيل أي إشعار سابق
+        // ظاهر حالياً قبل إضافة الجديد
+        container.innerHTML = '';
 
         const notificationEl = document.createElement('div');
         notificationEl.className = `notification-item notification-${notification.type || 'info'}`;
@@ -199,17 +203,16 @@ class NotificationSystem {
                 <p>${notification.message}</p>
                 <small>${new Date(notification.created_at).toLocaleString('ar')}</small>
             </div>
-            <button class="notification-close" onclick="this.parentElement.remove()">×</button>
+            <button class="notification-close">×</button>
         `;
 
-        container.appendChild(notificationEl);
+        // 🆕 [طلب المستخدم]: يبقى ظاهراً حتى يُغلَق يدوياً - لا اختفاء تلقائي
+        // بعد 5 ثوانٍ كما كان سابقاً (كان هذا سبب "الاختفاء قبل ما ينتبه له")
+        notificationEl.querySelector('.notification-close').addEventListener('click', () => {
+            notificationEl.remove();
+        });
 
-        // إزالة الإشعار تلقائياً بعد 5 ثواني
-        setTimeout(() => {
-            if (notificationEl.parentElement) {
-                notificationEl.remove();
-            }
-        }, 5000);
+        container.appendChild(notificationEl);
     }
 
     // تحديث عداد الإشعارات

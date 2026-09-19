@@ -1266,18 +1266,29 @@ window.__nmsPageHandlesOwnAds = true;
 
         // 🆕 معالجة صور المعرض/قبل وبعد/النتائج عند فشل التحميل - onerror لا
         // يبثّ (bubble) طبيعياً فنستخدم مرحلة الالتقاط (capture: true)
+                // 🆕 [تحسين تجربة]: بدل إخفاء الصورة/إظهار "تعذر التحميل" بصمت، نستبدلها
+        // برابط نصي قابل للنقر - نفس المنطق المطبّق بـ popup.js بالخريطة
+        function replaceImageWithFallbackLink(imgEl, wrapperEl) {
+            const link = document.createElement('a');
+            link.href = imgEl.src;
+            link.target = '_blank';
+            link.rel = 'noopener noreferrer';
+            link.textContent = '🔗 انقر هنا لعرض الصور';
+            link.style.cssText = 'display:block; padding:10px; text-align:center; color:#1a73e8; font-weight:bold; text-decoration:underline; background:#f8f9fa; border-radius:8px;';
+            (wrapperEl || imgEl).replaceWith(link);
+        }
+
         document.addEventListener('error', function (e) {
             const img = e.target;
             if (!img || img.tagName !== 'IMG') return;
 
             if (img.classList.contains('nms-gallery-photo-img') || img.classList.contains('nms-result-img-el')) {
-                if (img.parentElement) img.parentElement.style.display = 'none';
+                replaceImageWithFallbackLink(img, img.parentElement);
                 return;
             }
 
             if (img.classList.contains('nms-ba-photo-img')) {
-                img.style.display = 'none';
-                img.insertAdjacentHTML('afterend', '<div class="nms-ba-empty">تعذر تحميل الصورة</div>');
+                replaceImageWithFallbackLink(img, img);
                 return;
             }
         }, true);

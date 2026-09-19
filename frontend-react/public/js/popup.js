@@ -419,18 +419,20 @@ function initializePopup(map) {
         return `<a href="${finalUrl}" target="_blank" rel="noopener noreferrer" class="popup-link">${text}</a>`;
     }
 
-            function createImageElement(url) {
-        const urlList = window.parseUrlList ? window.parseUrlList(url) : (cleanUrl(url) ? [cleanUrl(url)] : []);
-        if (!urlList.length) return '';
+    function createImageElement(url) {
+    const urlList = window.parseUrlList ? window.parseUrlList(url) : (cleanUrl(url) ? [cleanUrl(url)] : []);
+    if (!urlList.length) return '';
 
-        return urlList.map((item) => {
-            const validatedUrl = cleanUrl(item);
-            if (!validatedUrl) return '';
-            return `<div class="popup-img-container" style="margin-top:10px; text-align:center;">
-                        <img src="${validatedUrl}" class="popup-img" style="max-width:100%; border-radius:8px; display:block; margin:auto;" loading="lazy" onerror="this.style.display='none';">
-                    </div>`;
-        }).join('');
-    }
+    return urlList.map((item) => {
+        const validatedUrl = cleanUrl(item);
+        if (!validatedUrl) return '';
+        // 🆕 [تشديد أمني CSP]: onerror الآن معالَج مركزياً عبر تفويض حدث
+        // document-level على كلاس popup-img (مضاف بمرحلة 4-أ سابقاً)
+        return `<div class="popup-img-container" style="margin-top:10px; text-align:center;">
+                    <img src="${validatedUrl}" class="popup-img" style="max-width:100%; border-radius:8px; display:block; margin:auto;" loading="lazy">
+                </div>`;
+    }).join('');
+}
 
     function resolvePopupMediaValue(props, fieldNames) {
         return window.getFirstValidMediaValue ? window.getFirstValidMediaValue(props, fieldNames) : undefined;
@@ -559,10 +561,20 @@ function initializePopup(map) {
 
     // 🆕 [تشديد أمني CSP]: onerror لا يبثّ (bubble) بشكل طبيعي، لذلك نستخدم
     // مرحلة الالتقاط (capture: true) لضمان وصول الحدث حتى مع التفويض من الأعلى
-    document.addEventListener('error', function (e) {
-        if (e.target && e.target.classList && e.target.classList.contains('popup-img')) {
-            e.target.style.display = 'none';
-        }
+        document.addEventListener('error', function (e) {
+        const img = e.target;
+        if (!img || !img.classList || !img.classList.contains('popup-img')) return;
+        // 🆕 [تحسين تجربة]: بدل إخفاء الصورة بصمت عند فشل تحميلها (غالباً لأن
+        // الرابط المُدخل صفحة وليس صورة مباشرة - مثل رابط فيسبوك أو يوتيوب)،
+        // نستبدلها برابط نصي قابل للنقر يفتح نفس الرابط بتبويب جديد
+        const link = document.createElement('a');
+        link.href = img.src;
+        link.target = '_blank';
+        link.rel = 'noopener noreferrer';
+        link.textContent = '🔗 انقر هنا لعرض الصور';
+        link.style.cssText = 'display:block; padding:10px; text-align:center; color:#1a73e8; font-weight:bold; text-decoration:underline; background:#f8f9fa; border-radius:8px; margin-top:10px;';
+        const container = img.closest('.popup-img-container') || img.parentElement;
+        if (container) container.replaceWith(link);
     }, true);
     
     const overlay = new ol.Overlay({

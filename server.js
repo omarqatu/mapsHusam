@@ -100,7 +100,7 @@ if (process.env.ENABLE_HELMET !== 'false') {
                 // يسمح بتنفيذ أي نص كـ كود JS (eval/new Function). لم يعد ضرورياً لأي من
                 // مكتباتك الحالية. إن ظهر خطأ "unsafe-eval" بالـ Console لأي مكتبة بعد هذا
                 // التعديل، أعد 'unsafe-eval' مؤقتاً وأخبرني بالمكتبة المسبّبة لنعالجها بدقة.
-                scriptSrc: ["'self'", "'unsafe-inline'", "https://cdnjs.cloudflare.com", "https://cdn.jsdelivr.net", "https://cdn.socket.io"],
+                scriptSrc: ["'self'", "https://cdnjs.cloudflare.com", "https://cdn.jsdelivr.net", "https://cdn.socket.io"],
                 styleSrc: ["'self'", "'unsafe-inline'", "https://cdnjs.cloudflare.com"],
                 connectSrc: ["'self'", "ws:", "wss:", "https:"],
                 frameSrc: ["'self'", "https://www.youtube.com"]
@@ -233,6 +233,10 @@ const servicesPool = new Pool({
     port: PG_PORT,
 });
 
+servicesPool.on('error', (err) => {
+    console.error('⚠️ [Pool Error - services_db] خطأ غير متوقع باتصال خامل، السيرفر سيستمر بالعمل:', err.message);
+});
+
 // 🔵 الاتصال الثاني: قاعدة بيانات العقارات (realestate)
 const realestatePool = new Pool({
     user: PG_USER,
@@ -240,6 +244,10 @@ const realestatePool = new Pool({
     database: REAL_ESTATE_DB_NAME,
     password: PG_PASSWORD,
     port: PG_PORT,
+});
+
+realestatePool.on('error', (err) => {
+    console.error('⚠️ [Pool Error - realestate] خطأ غير متوقع باتصال خامل، السيرفر سيستمر بالعمل:', err.message);
 });
 
 // فحص الاتصال بقاعدة الخدمات عند بدء التشغيل
@@ -3639,4 +3647,14 @@ server.listen(PORT, () => {
     console.log(`📡 GeoServer target: ${GEOSERVER_TARGET}`);
     console.log(`🔌 Socket.io مفعل وجاهز للإشعارات`);
     console.log('==============================================');
+});
+
+// 🆕 [شبكة أمان أخيرة]: تسجيل أي خطأ غير مُعالَج بدل انهيار العملية بالكامل.
+// هذا لا يخفي الأخطاء - يطبعها بالكونسول بوضوح - لكنه يمنع توقف كامل السيرفر
+// بسبب استثناء واحد لم نتوقعه بجزء بعيد من الكود.
+process.on('unhandledRejection', (reason) => {
+    console.error('🚨 [Unhandled Rejection] لم تتم معالجة هذا الخطأ:', reason);
+});
+process.on('uncaughtException', (err) => {
+    console.error('🚨 [Uncaught Exception] خطأ غير متوقع بالكود:', err);
 });

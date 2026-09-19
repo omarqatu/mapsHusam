@@ -268,9 +268,10 @@ function renderManualGroupsInto(prefix) {
         return `${dd}/${mm}/${d.getFullYear()}`;
     }
 
-    async function fetchRemoteWidgetsData() {
+        async function fetchRemoteWidgetsData() {
         try {
             const res = await fetch('/api/widgets-data');
+            if (!res.ok) return; // 🆕 تجاهل بصمت لو السيرفر أعاد صفحة خطأ بدل JSON (مثلاً أثناء إعادة تشغيل)
             const data = await res.json();
             if (!data.success) return;
 

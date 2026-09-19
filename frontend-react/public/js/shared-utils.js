@@ -274,10 +274,12 @@ window.extractMediaUrl = function (rawValue) {
     value = value.replace(/^['"]|['"]$/g, '').trim();
     if (value.startsWith('//')) return 'https:' + value;
     if (/^https?:\/\//i.test(value)) return value;
+    // 🆕 [إصلاح جذري]: بدل نمط دومين صارم كان يُسقط روابط صالحة كثيرة بصمت
+    // تام بلا أي تحذير (لا سطر console، لا خطأ) - أي نص متبقٍ غير فارغ نعتبره
+    // رابطاً ناقص البروتوكول ونضيف https:// له مباشرة
     if (/^[a-z0-9.-]+\.[a-z]{2,}(?:\/|$)/i.test(value)) return 'https://' + value;
-    return '';
+    return 'https://' + value;
 };
-
 window.getMediaUrlForDisplay = function (rawValue) {
     const extracted = window.extractMediaUrl(rawValue);
     if (!extracted) return '';

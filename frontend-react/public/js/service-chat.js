@@ -1182,14 +1182,54 @@ function startPollingRequests() {
     }
 
     document.addEventListener('serviceRequestMessage', (e) => {
-        if (e.detail.requestId === currentOpenRequestId) {
-            loadMessages();
-            // مسح التوهج فوراً إذا كانت المحادثة المعنية مفتوحة حالياً
-            removePulseEffect(e.detail.requestId);
-        } else {
-            triggerPulseEffect(e.detail.requestId);
-        }
-    });
+    const requestId = e.detail.requestId;
+    const isThisChatCurrentlyOpen = requestId === currentOpenRequestId && chatModal && chatModal.style.display === 'flex';
+
+    if (isThisChatCurrentlyOpen) {
+        loadMessages();
+        removePulseEffect(requestId);
+        return;
+    }
+
+    triggerPulseEffect(requestId);
+
+    // 🆕 [طلب المستخدم]: إعادة فتح الدردشة تلقائياً عند وصول رسالة جديدة
+    // بينما كانت مغلقة، بدل الاكتفاء بتوهج صامت قد يُفوَّت. لا نُقاطع محادثة
+    // أخرى مفتوحة حالياً بنفس اللحظة (احتراماً لتركيز المستخدم بها)
+    const isAnotherChatOpen = chatModal && chatModal.style.display === 'flex' && currentOpenRequestId && currentOpenRequestId !== requestId;
+    if (!isAnotherChatOpen) {
+        reopenChatForRequestId(requestId);
+    }
+});
+
+// 🆕 دالة مساعدة: تجلب بيانات الطلب الكاملة وتفتح مودال الدردشة له تلقائياً
+async function reopenChatForRequestId(requestId) {
+    const userId = getCurrentUserId();
+    if (!userId) return;
+    try {
+        const res = await fetch(`${window.location.origin}/api/service-requests?user_id=${userId}`);
+        const data = await res.json();
+        if (!data.success || !data.requests) return;
+
+        const match = data.requests.find(r => Number(r.id) === Number(requestId));
+        if (!match) return;
+
+        const chatRole = String(match.provider_user_id) === String(userId) ? 'provider' : 'user';
+        const otherPartyName = chatRole === 'provider'
+            ? (match.user_name || match.requester_name || 'المستخدم الطالب')
+            : (match.provider_name || 'مزود الخدمة');
+
+        const isCompleted = match.status === 'completed';
+        const contactObj = isCompleted ? {
+            phone: chatRole === 'user' ? (match.providerPhone || match.provider_phone) : (match.requester_phone || match.userPhone),
+            whatsapp: chatRole === 'user' ? (match.providerWhatsapp || match.provider_whatsapp) : (match.requester_whatsapp || match.userWhatsapp)
+        } : null;
+
+        openChatModal(requestId, chatRole, otherPartyName, isCompleted, contactObj, match.service_type);
+    } catch (err) {
+        console.warn('تعذر إعادة فتح الدردشة تلقائياً:', err.message);
+    }
+}
 
     async function sendChatMessage() {
         const text = chatInput.value.trim();
