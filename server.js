@@ -1987,7 +1987,7 @@ app.post('/api/admin/widgets-data/:groupKey', requireAdmin, async (req, res) => 
 app.get('/api/admin/road-fuel-features', requireAdmin, async (req, res) => {
     try {
         const roadResult = await servicesPool.query(
-            `SELECT id, name, stop, updated_at FROM public.service_all WHERE discriminator = 'road_barriers' ORDER BY display_order NULLS LAST, id ASC`
+            `SELECT id, name, stop, stop2, updated_at FROM public.service_all WHERE discriminator = 'road_barriers' ORDER BY display_order NULLS LAST, id ASC`
         );
         const fuelResult = await servicesPool.query(
             `SELECT id, name, diesel, banzen95, banzen98, updated_at FROM public.service_all WHERE discriminator = 'fuel_stations' ORDER BY display_order NULLS LAST, id ASC`
@@ -2020,21 +2020,121 @@ app.post('/api/admin/reorder-features', requireAdmin, async (req, res) => {
         res.status(500).json({ success: false, error: 'فشل حفظ الترتيب', details: err.message });
     }
 });
+// 🆕 قيم الحالة المسموحة (حالة الحاجز: 0..4، توفر الوقود: 0/1) + تنقية قائمة المعرّفات
+const ROAD_STOP_VALUES = ['0', '1', '2', '3', '4'];
+const FUEL_AVAIL_VALUES = ['0', '1'];
+function parseIdList(rawIds) {
+    if (!Array.isArray(rawIds)) return [];
+    const ids = rawIds.map(v => parseInt(v, 10)).filter(n => Number.isInteger(n) && n > 0);
+    return Array.from(new Set(ids)).slice(0, 5000);
+}
+function hasStatusValue(v) {
+    return v !== undefined && v !== null && String(v).trim() !== '';
+}
+
 // 🔒 للمشرف: تحديث حالة حاجز طريق واحد
+// stop = الحالة للداخل، stop2 = الحالة للخارج (كلاهما اختياري، لكن واحد منهما على الأقل مطلوب)
 app.post('/api/admin/update-road-barrier', requireAdmin, async (req, res) => {
-    const { id, stop } = req.body;
-    if (id === undefined || stop === undefined) {
+    const { id, stop, stop2 } = req.body;
+    const hasStop = hasStatusValue(stop);
+    const hasStop2 = hasStatusValue(stop2);
+
+    if (id === undefined || (!hasStop && !hasStop2)) {
         return res.status(400).json({ success: false, error: 'بيانات ناقصة' });
     }
-        try {
-        await servicesPool.query(
-            `UPDATE public.service_all SET stop = $1, updated_at = NOW() WHERE id = $2 AND discriminator = 'road_barriers'`,
-            [stop, id]
+    if ((hasStop && !ROAD_STOP_VALUES.includes(String(stop))) || (hasStop2 && !ROAD_STOP_VALUES.includes(String(stop2)))) {
+        return res.status(400).json({ success: false, error: 'قيمة الحالة غير صالحة' });
+    }
+
+    try {
+        const sets = [];
+        const params = [];
+        if (hasStop) { params.push(String(stop)); sets.push(`stop = $${params.length}`); }
+        if (hasStop2) { params.push(String(stop2)); sets.push(`stop2 = $${params.length}`); }
+        sets.push('updated_at = NOW()');
+        params.push(id);
+
+        const result = await servicesPool.query(
+            `UPDATE public.service_all SET ${sets.join(', ')} WHERE id = $${params.length} AND discriminator = 'road_barriers'`,
+            params
         );
+        if (result.rowCount === 0) {
+            return res.status(404).json({ success: false, error: 'الحاجز غير موجود' });
+        }
         res.json({ success: true });
     } catch (err) {
         console.error('❌ خطأ أثناء تحديث حالة الحاجز:', err.message);
         res.status(500).json({ success: false, error: 'فشل التحديث', details: err.message });
+    }
+});
+
+// 🆕 🔒 للمشرف: تعديل جماعي لحالة عدة حواجز دفعة واحدة (المحددة فقط أو كلها)
+app.post('/api/admin/bulk-update-road-barriers', requireAdmin, async (req, res) => {
+    const { stop, stop2 } = req.body;
+    const ids = parseIdList(req.body.ids);
+    const hasStop = hasStatusValue(stop);
+    const hasStop2 = hasStatusValue(stop2);
+
+    if (ids.length === 0) {
+        return res.status(400).json({ success: false, error: 'لم يتم تحديد أي حاجز' });
+    }
+    if (!hasStop && !hasStop2) {
+        return res.status(400).json({ success: false, error: 'اختر حالة للداخل و/أو للخارج' });
+    }
+    if ((hasStop && !ROAD_STOP_VALUES.includes(String(stop))) || (hasStop2 && !ROAD_STOP_VALUES.includes(String(stop2)))) {
+        return res.status(400).json({ success: false, error: 'قيمة الحالة غير صالحة' });
+    }
+
+    try {
+        const params = [ids];
+        const sets = [];
+        if (hasStop) { params.push(String(stop)); sets.push(`stop = $${params.length}`); }
+        if (hasStop2) { params.push(String(stop2)); sets.push(`stop2 = $${params.length}`); }
+        sets.push('updated_at = NOW()');
+
+        const result = await servicesPool.query(
+            `UPDATE public.service_all SET ${sets.join(', ')} WHERE discriminator = 'road_barriers' AND id = ANY($1)`,
+            params
+        );
+        res.json({ success: true, updated: result.rowCount });
+    } catch (err) {
+        console.error('❌ خطأ أثناء التعديل الجماعي لحواجز الطرق:', err.message);
+        res.status(500).json({ success: false, error: 'فشل التحديث الجماعي', details: err.message });
+    }
+});
+
+// 🆕 🔒 للمشرف: تعديل جماعي لتوفر الوقود لعدة محطات دفعة واحدة (المحددة فقط أو كلها)
+app.post('/api/admin/bulk-update-fuel-stations', requireAdmin, async (req, res) => {
+    const ids = parseIdList(req.body.ids);
+    if (ids.length === 0) {
+        return res.status(400).json({ success: false, error: 'لم يتم تحديد أي محطة' });
+    }
+
+    const params = [ids];
+    const sets = [];
+    for (const col of ['diesel', 'banzen95', 'banzen98']) { // أسماء أعمدة ثابتة (ليست من المستخدم)
+        const val = req.body[col];
+        if (!hasStatusValue(val)) continue;
+        if (!FUEL_AVAIL_VALUES.includes(String(val))) {
+            return res.status(400).json({ success: false, error: 'قيمة التوفر غير صالحة' });
+        }
+        params.push(String(val));
+        sets.push(`${col} = $${params.length}`);
+    }
+    if (sets.length === 0) {
+        return res.status(400).json({ success: false, error: 'اختر توفر نوع وقود واحد على الأقل' });
+    }
+    sets.push('updated_at = NOW()');
+
+    try {
+        const result = await servicesPool.query(
+            `UPDATE public.service_all SET ${sets.join(', ')} WHERE discriminator = 'fuel_stations' AND id = ANY($1)`,
+            params
+        );
+        res.json({ success: true, updated: result.rowCount });
+    } catch (err) {
+        console.error('❌ خطأ أثناء التعديل الجماعي لمحطات الوقود:', err.message);
+        res.status(500).json({ success: false, error: 'فشل التحديث الجماعي', details: err.message });
     }
 });
 
