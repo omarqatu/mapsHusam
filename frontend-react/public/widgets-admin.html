@@ -136,6 +136,16 @@
         .bulk-toolbar select { padding: 7px; border: 1px solid #ccc; border-radius: 5px; font-size: 12.5px; }
         .bulk-toolbar .bulk-count { color: #1a73e8; font-weight: bold; }
         td input[type="checkbox"], th input[type="checkbox"] { width: auto; cursor: pointer; transform: scale(1.15); }
+
+        /* 🆕 حفظ الكل: تمييز الصفوف المعدَّلة وغير المحفوظة */
+        tr.row-dirty { background: #fff8e1; }
+        tr.row-dirty:hover { background: #fff3cd; }
+        .dirty-badge {
+            background: #fff3cd; color: #7a4b00; border: 1px solid #ffe08a;
+            padding: 6px 12px; border-radius: 20px; font-size: 12px; font-weight: bold; align-items: center;
+        }
+        .panel-header-tools { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+        .alert-info { background: #e8f0fe; color: #1a5fb4; border-right: 4px solid #1a73e8; }
     </style>
 </head>
 <body>
@@ -581,14 +591,16 @@ function buildBulkSelect(elemId, options) {
         `</select>`;
 }
 
-function setSelectValue(elemId, val) {
+function setSelectValue(elemId, val, markSaved) {
     const el = document.getElementById(elemId);
-    if (el) el.value = String(val);
+    if (!el) return;
+    el.value = String(val);
+    if (markSaved) el.dataset.initial = String(val); // القيمة صارت محفوظة بقاعدة البيانات
 }
 
 const BULK_GROUPS = {
-    road: { panelId: 'panel-road_status', countId: 'bulk-count-road' },
-    fuel: { panelId: 'panel-fuel_status', countId: 'bulk-count-fuel' }
+    road: { panelId: 'panel-road_status', countId: 'bulk-count-road', dirtyId: 'dirty-count-road' },
+    fuel: { panelId: 'panel-fuel_status', countId: 'bulk-count-fuel', dirtyId: 'dirty-count-fuel' }
 };
 
 function getCheckedFeatureIds(group) {
@@ -629,6 +641,119 @@ async function refreshStatusTimestamps() {
     } catch (e) { /* تجاهل - الحفظ نفسه نجح */ }
 }
 
+// ==========================================================================
+// 🆕 تتبع التعديلات غير المحفوظة + "حفظ الكل"
+// كل قائمة داخل جدول الطرق/الوقود تحفظ قيمتها المحفوظة الأخيرة في data-initial،
+// وأي قائمة تختلف قيمتها الحالية عنها تعتبر "معدَّلة" (يظهر صفها بلون مميز).
+// ==========================================================================
+const SAVE_ALL_FIELDS = {
+    road: [['stop', 'stop-select-'], ['stop2', 'stop2-select-']],
+    fuel: [['diesel', 'fuel-diesel-'], ['banzen95', 'fuel-banzen95-'], ['banzen98', 'fuel-banzen98-']]
+};
+
+function isSelectDirty(sel) {
+    return sel.dataset.initial !== undefined && sel.value !== '' && sel.value !== sel.dataset.initial;
+}
+
+function markInitialValues(group) {
+    const cfg = BULK_GROUPS[group];
+    if (!cfg) return;
+    document.querySelectorAll('#' + cfg.panelId + ' tbody select').forEach(s => { s.dataset.initial = s.value; });
+    syncDirtyState(group);
+}
+
+function commitRowInitials(row) {
+    if (!row) return;
+    row.querySelectorAll('select').forEach(s => { s.dataset.initial = s.value; });
+}
+
+function syncDirtyState(group) {
+    const cfg = BULK_GROUPS[group];
+    if (!cfg) return 0;
+    const panel = document.getElementById(cfg.panelId);
+    if (!panel) return 0;
+    let dirtyRows = 0;
+    panel.querySelectorAll('tbody tr').forEach(row => {
+        const dirty = Array.from(row.querySelectorAll('select')).some(isSelectDirty);
+        row.classList.toggle('row-dirty', dirty);
+        if (dirty) dirtyRows++;
+    });
+    const badge = document.getElementById(cfg.dirtyId);
+    if (badge) {
+        badge.textContent = dirtyRows > 0 ? ('⚠️ تعديلات غير محفوظة: ' + dirtyRows) : '';
+        badge.style.display = dirtyRows > 0 ? 'inline-flex' : 'none';
+    }
+    return dirtyRows;
+}
+
+function hasUnsavedChanges() {
+    return document.querySelectorAll('#panel-road_status tr.row-dirty, #panel-fuel_status tr.row-dirty').length > 0;
+}
+
+// يجمع فقط الصفوف المعدَّلة، وفي كل صف فقط القيم التي تغيّرت فعلاً
+function collectDirtyItems(group) {
+    const cfg = BULK_GROUPS[group];
+    const fields = SAVE_ALL_FIELDS[group];
+    const items = [];
+    if (!cfg || !fields) return items;
+    document.querySelectorAll('#' + cfg.panelId + ' tbody tr').forEach(row => {
+        const uid = row.dataset.uid;
+        const id = parseInt(row.dataset.featureId, 10);
+        if (isNaN(id)) return;
+        const item = { id };
+        let any = false;
+        fields.forEach(pair => {
+            const sel = document.getElementById(pair[1] + uid);
+            if (sel && isSelectDirty(sel)) { item[pair[0]] = sel.value; any = true; }
+        });
+        if (any) items.push(item);
+    });
+    return items;
+}
+
+function setSaveAllButtonsDisabled(group, disabled) {
+    document.querySelectorAll('.btn-save-all-' + group).forEach(b => { b.disabled = disabled; });
+}
+
+async function saveAllGroup(group) {
+    const isRoad = group === 'road';
+    const items = collectDirtyItems(group);
+    if (items.length === 0) {
+        showAlert('ℹ️ لا توجد تعديلات غير محفوظة.', 'info');
+        return;
+    }
+
+    setSaveAllButtonsDisabled(group, true);
+    try {
+        const res = await fetch(isRoad ? '/api/admin/batch-update-road-barriers' : '/api/admin/batch-update-fuel-stations', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', ...getAdminAuthHeaders() },
+            body: JSON.stringify({ items })
+        });
+        const data = await res.json();
+        if (!data.success) {
+            showAlert('❌ ' + (data.error || 'فشل الحفظ') + ' — لم يُحفظ أي تعديل.', 'error');
+            return;
+        }
+
+        const stateList = isRoad ? roadBarriersState : fuelStationsState;
+        const cfg = BULK_GROUPS[group];
+        items.forEach(item => {
+            const st = stateList.find(f => String(f.id) === String(item.id));
+            if (st) SAVE_ALL_FIELDS[group].forEach(pair => { if (item[pair[0]] !== undefined) st[pair[0]] = item[pair[0]]; });
+            const row = document.querySelector('#' + cfg.panelId + ' tbody tr[data-feature-id="' + item.id + '"]');
+            commitRowInitials(row);
+        });
+        syncDirtyState(group);
+        showAlert('✅ تم حفظ ' + items.length + (isRoad ? ' حاجز' : ' محطة') + ' دفعة واحدة.', 'success');
+        refreshStatusTimestamps();
+    } catch (err) {
+        showAlert('❌ خطأ في الاتصال: ' + err.message, 'error');
+    } finally {
+        setSaveAllButtonsDisabled(group, false);
+    }
+}
+
 function renderRoadStatusPanel() {
     const panel = document.getElementById('panel-road_status');
 
@@ -647,7 +772,11 @@ function renderRoadStatusPanel() {
     panel.innerHTML = `
         <div class="panel-header">
             <h2><i class="fas fa-road"></i> حالة الطرق (حواجز)</h2>
-            <span class="last-updated-badge" id="last-updated-road_status"><i class="fas fa-clock"></i> آخر تحديث: ${formatDate(roadStatusUpdatedAt)}</span>
+            <div class="panel-header-tools">
+                <span class="dirty-badge" id="dirty-count-road" style="display:none;"></span>
+                <button type="button" class="btn btn-success btn-save-all-road"><i class="fas fa-save"></i> حفظ الكل</button>
+                <span class="last-updated-badge" id="last-updated-road_status"><i class="fas fa-clock"></i> آخر تحديث: ${formatDate(roadStatusUpdatedAt)}</span>
+            </div>
         </div>
         <p style="font-size:12.5px; color:#777; margin-bottom:10px;">
             <b>الحالة للداخل</b> = عمود <code>stop</code> (الحركة باتجاه الداخل) | <b>الحالة للخارج</b> = عمود <code>stop2</code> (الحركة باتجاه الخارج).<br>
@@ -679,11 +808,13 @@ function renderRoadStatusPanel() {
         </div>
         ${roadBarriersState.length === 0 ? '<div class="no-data">لا توجد حواجز مسجّلة بعد</div>' : ''}
         <div class="table-actions">
+            <button type="button" class="btn btn-success btn-save-all-road"><i class="fas fa-save"></i> حفظ الكل</button>
             <button type="button" class="btn btn-success btn-save-road-order"><i class="fas fa-arrows-alt-v"></i> حفظ الترتيب</button>
             <button type="button" class="btn btn-primary btn-reload-everything"><i class="fas fa-sync-alt"></i> تحديث القائمة</button>
         </div>
     `;
     makeTableRowsDraggable(panel.querySelector('tbody'));
+    markInitialValues('road');
 }
 
 async function saveRoadBarrier(id, uid) {
@@ -713,6 +844,8 @@ async function saveRoadBarrier(id, uid) {
                 if (stop !== '') st.stop = stop;
                 if (stop2 !== '') st.stop2 = stop2;
             }
+            commitRowInitials(document.getElementById('stop-select-' + uid).closest('tr'));
+            syncDirtyState('road');
             refreshStatusTimestamps();
         } else {
             showAlert('❌ ' + (data.error || 'فشل التحديث'), 'error');
@@ -768,14 +901,15 @@ async function applyBulkRoad() {
             const row = document.querySelector('#panel-road_status tbody tr[data-feature-id="' + id + '"]');
             if (!row) return;
             const uid = row.dataset.uid;
-            if (stop !== '') setSelectValue('stop-select-' + uid, stop);
-            if (stop2 !== '') setSelectValue('stop2-select-' + uid, stop2);
+            if (stop !== '') setSelectValue('stop-select-' + uid, stop, true);
+            if (stop2 !== '') setSelectValue('stop2-select-' + uid, stop2, true);
             const cb = row.querySelector('.bulk-row-check');
             if (cb) cb.checked = false;
         });
         document.getElementById('bulk-road-stop').value = '';
         document.getElementById('bulk-road-stop2').value = '';
         updateBulkCount('road');
+        syncDirtyState('road');
         showAlert('✅ تم تحديث ' + (data.updated !== undefined ? data.updated : ids.length) + ' حاجز بنجاح.', 'success');
         refreshStatusTimestamps();
     } catch (err) {
@@ -805,7 +939,11 @@ function renderFuelStatusPanel() {
     panel.innerHTML = `
         <div class="panel-header">
             <h2><i class="fas fa-gas-pump"></i> حالة محطات الوقود</h2>
-            <span class="last-updated-badge" id="last-updated-fuel_status"><i class="fas fa-clock"></i> آخر تحديث: ${formatDate(fuelStatusUpdatedAt)}</span>
+            <div class="panel-header-tools">
+                <span class="dirty-badge" id="dirty-count-fuel" style="display:none;"></span>
+                <button type="button" class="btn btn-success btn-save-all-fuel"><i class="fas fa-save"></i> حفظ الكل</button>
+                <span class="last-updated-badge" id="last-updated-fuel_status"><i class="fas fa-clock"></i> آخر تحديث: ${formatDate(fuelStatusUpdatedAt)}</span>
+            </div>
         </div>
         <p style="font-size:12.5px; color:#777; margin-bottom:10px;">
             لإضافة محطة جديدة استخدم أداة "تحرير النقاط" على الخريطة التفاعلية. اسحب ⋮⋮ لإعادة الترتيب، ثم اضغط "حفظ الترتيب".
@@ -838,11 +976,13 @@ function renderFuelStatusPanel() {
         </div>
         ${fuelStationsState.length === 0 ? '<div class="no-data">لا توجد محطات وقود مسجّلة بعد</div>' : ''}
         <div class="table-actions">
+            <button type="button" class="btn btn-success btn-save-all-fuel"><i class="fas fa-save"></i> حفظ الكل</button>
             <button type="button" class="btn btn-success btn-save-fuel-order"><i class="fas fa-arrows-alt-v"></i> حفظ الترتيب</button>
             <button type="button" class="btn btn-primary btn-reload-everything"><i class="fas fa-sync-alt"></i> تحديث القائمة</button>
         </div>
     `;
     makeTableRowsDraggable(panel.querySelector('tbody'));
+    markInitialValues('fuel');
 }
 
 async function saveFuelStation(id, uid) {
@@ -860,6 +1000,8 @@ async function saveFuelStation(id, uid) {
             showAlert('✅ تم تحديث توفر الوقود لهذه المحطة بنجاح.', 'success');
             const st = fuelStationsState.find(f => String(f.id) === String(id));
             if (st) { st.diesel = diesel; st.banzen95 = banzen95; st.banzen98 = banzen98; }
+            commitRowInitials(document.getElementById('fuel-diesel-' + uid).closest('tr'));
+            syncDirtyState('fuel');
             refreshStatusTimestamps();
         } else {
             showAlert('❌ ' + (data.error || 'فشل التحديث'), 'error');
@@ -917,7 +1059,7 @@ async function applyBulkFuel() {
             fields.forEach(f => {
                 if (payload[f.key] === undefined) return;
                 if (st) st[f.key] = payload[f.key];
-                if (uid) setSelectValue('fuel-' + f.key + '-' + uid, payload[f.key]);
+                if (uid) setSelectValue('fuel-' + f.key + '-' + uid, payload[f.key], true);
             });
             if (row) {
                 const cb = row.querySelector('.bulk-row-check');
@@ -926,6 +1068,7 @@ async function applyBulkFuel() {
         });
         fields.forEach(f => { document.getElementById('bulk-fuel-' + f.key).value = ''; });
         updateBulkCount('fuel');
+        syncDirtyState('fuel');
         showAlert('✅ تم تحديث ' + (data.updated !== undefined ? data.updated : ids.length) + ' محطة بنجاح.', 'success');
         refreshStatusTimestamps();
     } catch (err) {
@@ -949,7 +1092,11 @@ document.getElementById('panels-container').addEventListener('click', (e) => {
     if (saveGroupBtn) { saveJsonGroup(saveGroupBtn.dataset.group); return; }
 
     const reloadBtn = e.target.closest('.btn-reload-everything');
-    if (reloadBtn) { loadEverything(); return; }
+    if (reloadBtn) {
+        if (hasUnsavedChanges() && !confirm('توجد تعديلات غير محفوظة وستضيع عند تحديث القائمة. هل تريد المتابعة؟')) return;
+        loadEverything();
+        return;
+    }
 
     const saveRoadBtn = e.target.closest('.btn-save-road-barrier');
     if (saveRoadBtn) { saveRoadBarrier(parseInt(saveRoadBtn.dataset.id, 10), saveRoadBtn.dataset.uid); return; }
@@ -968,10 +1115,23 @@ document.getElementById('panels-container').addEventListener('click', (e) => {
 
     const bulkFuelBtn = e.target.closest('.btn-bulk-apply-fuel');
     if (bulkFuelBtn) { applyBulkFuel(); return; }
+
+    const saveAllRoadBtn = e.target.closest('.btn-save-all-road');
+    if (saveAllRoadBtn) { saveAllGroup('road'); return; }
+
+    const saveAllFuelBtn = e.target.closest('.btn-save-all-fuel');
+    if (saveAllFuelBtn) { saveAllGroup('fuel'); return; }
 });
 
 // 🆕 تفويض حدث change لمربعات التحديد (تحديد الكل + مربع كل صف) وتحديث عدّاد المحدد
 document.getElementById('panels-container').addEventListener('change', (e) => {
+    // تغيير أي قائمة حالة داخل جدول الطرق/الوقود => تحديث تمييز الصفوف غير المحفوظة
+    if (e.target.tagName === 'SELECT' && e.target.closest('tbody')) {
+        const owner = e.target.closest('.tab-panel');
+        if (owner && owner.id === 'panel-road_status') syncDirtyState('road');
+        else if (owner && owner.id === 'panel-fuel_status') syncDirtyState('fuel');
+        return;
+    }
     const selectAll = e.target.closest('.bulk-select-all');
     if (selectAll) {
         const group = selectAll.dataset.group;

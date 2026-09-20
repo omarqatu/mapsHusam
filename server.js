@@ -2156,6 +2156,113 @@ app.post('/api/admin/update-fuel-station', requireAdmin, async (req, res) => {
     }
 });
 
+// 🆕 🔒 للمشرف: "حفظ الكل" لحواجز الطرق - كل حاجز معدَّل بقيمه الخاصة، ضمن معاملة واحدة (كلها أو لا شيء)
+// body: { items: [ { id, stop?, stop2? }, ... ] }
+app.post('/api/admin/batch-update-road-barriers', requireAdmin, async (req, res) => {
+    const rawItems = Array.isArray(req.body.items) ? req.body.items.slice(0, 2000) : [];
+    const clean = [];
+
+    for (const it of rawItems) {
+        const id = parseInt(it && it.id, 10);
+        if (!Number.isInteger(id) || id <= 0) {
+            return res.status(400).json({ success: false, error: 'معرّف حاجز غير صالح' });
+        }
+        const hasStop = hasStatusValue(it.stop);
+        const hasStop2 = hasStatusValue(it.stop2);
+        if (!hasStop && !hasStop2) continue; // لا شيء لتحديثه لهذا الحاجز
+        if ((hasStop && !ROAD_STOP_VALUES.includes(String(it.stop))) || (hasStop2 && !ROAD_STOP_VALUES.includes(String(it.stop2)))) {
+            return res.status(400).json({ success: false, error: 'قيمة الحالة غير صالحة' });
+        }
+        clean.push({ id, stop: hasStop ? String(it.stop) : null, stop2: hasStop2 ? String(it.stop2) : null });
+    }
+
+    if (clean.length === 0) {
+        return res.status(400).json({ success: false, error: 'لا توجد تعديلات للحفظ' });
+    }
+
+    const client = await servicesPool.connect();
+    try {
+        await client.query('BEGIN');
+        let updated = 0;
+        for (const it of clean) {
+            const sets = [];
+            const params = [];
+            if (it.stop !== null) { params.push(it.stop); sets.push(`stop = $${params.length}`); }
+            if (it.stop2 !== null) { params.push(it.stop2); sets.push(`stop2 = $${params.length}`); }
+            sets.push('updated_at = NOW()');
+            params.push(it.id);
+            const r = await client.query(
+                `UPDATE public.service_all SET ${sets.join(', ')} WHERE id = $${params.length} AND discriminator = 'road_barriers'`,
+                params
+            );
+            updated += r.rowCount;
+        }
+        await client.query('COMMIT');
+        res.json({ success: true, updated });
+    } catch (err) {
+        try { await client.query('ROLLBACK'); } catch (e) { /* تجاهل */ }
+        console.error('❌ خطأ أثناء حفظ الكل لحواجز الطرق:', err.message);
+        res.status(500).json({ success: false, error: 'فشل الحفظ، لم يُحفظ أي تعديل', details: err.message });
+    } finally {
+        client.release();
+    }
+});
+
+// 🆕 🔒 للمشرف: "حفظ الكل" لمحطات الوقود - كل محطة معدَّلة بقيمها الخاصة، ضمن معاملة واحدة
+// body: { items: [ { id, diesel?, banzen95?, banzen98? }, ... ] }
+app.post('/api/admin/batch-update-fuel-stations', requireAdmin, async (req, res) => {
+    const rawItems = Array.isArray(req.body.items) ? req.body.items.slice(0, 2000) : [];
+    const FUEL_COLS = ['diesel', 'banzen95', 'banzen98']; // أسماء أعمدة ثابتة (ليست من المستخدم)
+    const clean = [];
+
+    for (const it of rawItems) {
+        const id = parseInt(it && it.id, 10);
+        if (!Number.isInteger(id) || id <= 0) {
+            return res.status(400).json({ success: false, error: 'معرّف محطة غير صالح' });
+        }
+        const values = {};
+        for (const col of FUEL_COLS) {
+            if (!hasStatusValue(it[col])) continue;
+            if (!FUEL_AVAIL_VALUES.includes(String(it[col]))) {
+                return res.status(400).json({ success: false, error: 'قيمة التوفر غير صالحة' });
+            }
+            values[col] = String(it[col]);
+        }
+        if (Object.keys(values).length === 0) continue;
+        clean.push({ id, values });
+    }
+
+    if (clean.length === 0) {
+        return res.status(400).json({ success: false, error: 'لا توجد تعديلات للحفظ' });
+    }
+
+    const client = await servicesPool.connect();
+    try {
+        await client.query('BEGIN');
+        let updated = 0;
+        for (const it of clean) {
+            const sets = [];
+            const params = [];
+            Object.keys(it.values).forEach(col => { params.push(it.values[col]); sets.push(`${col} = $${params.length}`); });
+            sets.push('updated_at = NOW()');
+            params.push(it.id);
+            const r = await client.query(
+                `UPDATE public.service_all SET ${sets.join(', ')} WHERE id = $${params.length} AND discriminator = 'fuel_stations'`,
+                params
+            );
+            updated += r.rowCount;
+        }
+        await client.query('COMMIT');
+        res.json({ success: true, updated });
+    } catch (err) {
+        try { await client.query('ROLLBACK'); } catch (e) { /* تجاهل */ }
+        console.error('❌ خطأ أثناء حفظ الكل لمحطات الوقود:', err.message);
+        res.status(500).json({ success: false, error: 'فشل الحفظ، لم يُحفظ أي تعديل', details: err.message });
+    } finally {
+        client.release();
+    }
+});
+
 // 1. جلب جميع المستخدمين مع خيارات البحث والتصفية
 app.get('/api/admin/users', requireAdmin, async (req, res) => {
     try {
