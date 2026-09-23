@@ -764,10 +764,25 @@ function initializePopup(map) {
         
                 if (!isAreaLayer && !isRoadBarriers) bodyHtml += getStatusHtml(props.auto_status, props.work_hours);
 
-                if (isRoadBarriers) {
-            const stopInfo = window.getRoadBarrierStopInfo(window.getCaseInsensitiveProp(props, 'stop'));
-            bodyHtml += `<div style="margin: 10px 0; padding: 10px; border-radius: 8px; background: ${stopInfo.color}15; border: 1px dashed ${stopInfo.color}; text-align: center;">
-                <span style="color: ${stopInfo.color}; font-weight: bold; font-size: 15px;">${stopInfo.icon} ${stopInfo.label}</span>
+                                if (isRoadBarriers) {
+            // 🆕 [stop2]: عرض حالتين منفصلتين - للداخل (stop) وللخارج (stop2) - كل
+            // اتجاه بلونه وأيقونته الخاصة حسب قيمته، بدل حالة واحدة كما كان سابقاً
+            const inInfo = window.getRoadBarrierStopInfo(window.getCaseInsensitiveProp(props, 'stop'));
+            const rawStop2 = window.getCaseInsensitiveProp(props, 'stop2');
+            const hasStop2 = rawStop2 !== undefined && rawStop2 !== null && String(rawStop2).trim() !== '';
+            const outInfo = hasStop2
+                ? window.getRoadBarrierStopInfo(rawStop2)
+                : { label: 'غير محدد', color: '#6c757d', icon: '⚪' };
+
+            bodyHtml += `<div style="margin: 10px 0; display: flex; gap: 8px; flex-wrap: wrap;">
+                <div style="flex: 1; min-width: 130px; padding: 10px; border-radius: 8px; background: ${inInfo.color}15; border: 1px dashed ${inInfo.color}; text-align: center;">
+                    <div style="font-size: 11px; color: #666; margin-bottom: 4px;"><i class="fas fa-sign-in-alt"></i> للداخل</div>
+                    <span style="color: ${inInfo.color}; font-weight: bold; font-size: 14px;">${inInfo.icon} ${inInfo.label}</span>
+                </div>
+                <div style="flex: 1; min-width: 130px; padding: 10px; border-radius: 8px; background: ${outInfo.color}15; border: 1px dashed ${outInfo.color}; text-align: center;">
+                    <div style="font-size: 11px; color: #666; margin-bottom: 4px;"><i class="fas fa-sign-out-alt"></i> للخارج</div>
+                    <span style="color: ${outInfo.color}; font-weight: bold; font-size: 14px;">${outInfo.icon} ${outInfo.label}</span>
+                </div>
             </div>`;
             if (props.name) bodyHtml += `<b>📍 الاسم:</b> ${window.sanitizeHTML(props.name)}<br>`;
             // 🆕 عرض المحافظة والمدينة والموقع

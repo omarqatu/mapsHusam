@@ -18,8 +18,8 @@ import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
-import crypto from 'crypto';
 import compression from 'compression';
+import crypto from 'crypto';
 
 // تعريف __dirname لـ ES modules
 const __filename = fileURLToPath(import.meta.url);
@@ -31,9 +31,6 @@ const IS_PROD = process.env.NODE_ENV === 'production';
 const debugLog = (...args) => { if (process.env.DEBUG_LOGS === '1') console.log(...args); };
 const BCRYPT_HASH_REGEX = /^\$2[aby]\$\d{2}\$/;
 const REAL_ESTATE_LAYERS = ['ApartRent', 'ApartSale', 'LandSale', 'Location', 'RoadsTest'];
-// 🔒 إن لم يُضبط JWT_SECRET بملف .env نولّد مفتاحاً عشوائياً (بدل النص الافتراضي المعروف
-// الذي كان يسمح لأي شخص بتزوير توكن مشرف). السيرفر يستمر بالعمل كما طلبت.
-// ملاحظة: بدون JWT_SECRET ثابت، المشرفون يحتاجون تسجيل دخول جديد بعد كل إعادة تشغيل.
 const JWT_SECRET_FROM_ENV = !!process.env.JWT_SECRET
     && process.env.JWT_SECRET.length >= 32
     && !/change_this|your_|secret_key|changeme/i.test(process.env.JWT_SECRET); // يرفض القيم النموذجية
@@ -171,7 +168,7 @@ const apiLimiter = rateLimit({
 const authLimiter = rateLimit({
     windowMs: 15 * 60 * 1000, // 15 دقيقة
     max: parseInt(process.env.AUTH_RATE_LIMIT) || 10, // زيادة الحد إلى 10
-        message: { success: false, error: 'محاولات تسجيل دخول كثيرة، يرجى المحاولة لاحقاً' }
+    message: { success: false, error: 'محاولات تسجيل دخول كثيرة، يرجى المحاولة لاحقاً' }
 });
 
 // 🔒 قفل مؤقت لكل رقم جوال بعد محاولات دخول فاشلة كثيرة (يحمي الحساب حتى لو تغيّرت عناوين IP)
@@ -287,10 +284,10 @@ const realestatePool = new Pool({
     database: REAL_ESTATE_DB_NAME,
     password: PG_PASSWORD,
     port: PG_PORT,
-    max: Number(process.env.PG_POOL_MAX || 25),   // كان الافتراضي 10
+    max: Number(process.env.PG_POOL_MAX || 25),
     idleTimeoutMillis: 30000,
-    connectionTimeoutMillis: 8000,   // بدل الانتظار للأبد: يفشل الطلب برسالة خطأ
-    statement_timeout: 30000,        // استعلام عالق أكثر من 30 ثانية يُلغى
+    connectionTimeoutMillis: 8000,
+    statement_timeout: 30000,
     query_timeout: 35000,
 });
 
@@ -328,6 +325,8 @@ realestatePool.connect((err, client, release) => {
 async function ensureSchemaColumns() {
     try {
         await servicesPool.query(`ALTER TABLE public.users ADD COLUMN IF NOT EXISTS force_logout_flag BOOLEAN DEFAULT false`);
+        // 🔒 رقم نسخة الجلسة: كل توكن يحمل رقمه، وأي تغيير أمني بالحساب يرفع الرقم فتموت التوكنات القديمة فوراً
+        await servicesPool.query(`ALTER TABLE public.users ADD COLUMN IF NOT EXISTS token_version INTEGER NOT NULL DEFAULT 0`);
         await servicesPool.query(`ALTER TABLE public.users ADD COLUMN IF NOT EXISTS whatsapp_number TEXT`);
         // 🆕 عمود مصدر الحدث (map / quick_search) لتمييز زيارات الخريطة عن زيارات
         // صفحة البحث السريع ضمن إحصائيات المنصة
@@ -502,7 +501,7 @@ async function getAuthStatus(uid) {
     const cached = authStatusCache.get(uid);
     if (cached && Date.now() - cached.at < AUTH_STATUS_TTL_MS) return cached;
     const r = await servicesPool.query(
-        'SELECT role, is_active, force_logout_flag FROM public.users WHERE user_id = $1',
+        'SELECT role, is_active, force_logout_flag, token_version FROM public.users WHERE user_id = $1',
         [uid]
     );
     const row = r.rows[0] || null;
@@ -510,6 +509,7 @@ async function getAuthStatus(uid) {
         at: Date.now(),
         exists: !!row,
         role: row ? row.role : null,
+        tokenVersion: row ? (Number(row.token_version) || 0) : 0,
         active: !!(row && row.is_active && row.force_logout_flag !== true)
     };
     authStatusCache.set(uid, entry);
@@ -525,7 +525,7 @@ async function requireAuth(req, res, next) {
 
     let decoded;
     try {
-        decoded = jwt.verify(token, ADMIN_JWT_SECRET);
+        decoded = jwt.verify(token, ADMIN_JWT_SECRET, { algorithms: ['HS256'] });
     } catch (e) {
         return res.status(401).json({ success: false, error: 'انتهت الجلسة، يرجى تسجيل الدخول من جديد.', code: 'TOKEN_INVALID' });
     }
@@ -539,6 +539,10 @@ async function requireAuth(req, res, next) {
         if (!status.exists || !status.active) {
             return res.status(401).json({ success: false, error: 'تم إنهاء جلستك أو تعطيل حسابك، يرجى تسجيل الدخول من جديد.', code: 'SESSION_REVOKED' });
         }
+        // 🔒 التوكن يجب أن يطابق رقم نسخة الجلسة الحالي بقاعدة البيانات (توكنات ما قبل هذا التعديل بلا tv = 0)
+        if ((Number(decoded.tv) || 0) !== status.tokenVersion) {
+            return res.status(401).json({ success: false, error: 'تم إنهاء جلستك، يرجى تسجيل الدخول من جديد.', code: 'SESSION_REVOKED' });
+        }
         req.auth = { uid, role: status.role };
 
         // 🔄 تجديد تلقائي للجلسة: المستخدم النشط لا تنتهي جلسته. إذا مرّ وقت كافٍ على إصدار التوكن
@@ -546,7 +550,7 @@ async function requireAuth(req, res, next) {
         const tokenAgeSeconds = Math.floor(Date.now() / 1000) - (Number(decoded.iat) || 0);
         const renewAfterSeconds = status.role === 'admin' ? 60 * 60 : 24 * 60 * 60;
         if (tokenAgeSeconds > renewAfterSeconds) {
-            res.setHeader('X-New-Token', jwt.sign({ uid, role: status.role }, ADMIN_JWT_SECRET, { expiresIn: status.role === 'admin' ? '12h' : '30d' }));
+            res.setHeader('X-New-Token', jwt.sign({ uid, role: status.role, tv: status.tokenVersion }, ADMIN_JWT_SECRET, { expiresIn: status.role === 'admin' ? '12h' : '30d' }));
         }
         next();
     } catch (err) {
@@ -563,6 +567,7 @@ async function isActiveAdmin(uid) {
         return false;
     }
 }
+
 
 // 🆕 [إصلاح عرض اسم الطبقة بالعربي]: قاموس ترجمة موحّد يُستخدم عند تسجيل نقرات
 // الاتصال/الواتساب (log-contact-click) لتخزين service_type بالعربي بدل الاسم
@@ -623,7 +628,7 @@ let platformStatsRefreshStartedAt = 0;
 app.get('/api/platform-stats', async (req, res) => {
     try {
         // ⚡ كاش بسيط بالذاكرة لمدة 60 ثانية لتفادي ضغط الاستعلامات مع كل زائر
-                if (platformStatsCache.data && Date.now() < platformStatsCache.expiresAt) {
+        if (platformStatsCache.data && Date.now() < platformStatsCache.expiresAt) {
             return res.json({ success: true, data: platformStatsCache.data });
         }
         // 🔒 إذا كان طلب آخر يعيد الحساب الآن نُرجع النسخة السابقة بدل تكرار الاستعلامات الثقيلة
@@ -866,7 +871,7 @@ app.get('/api/get-provider-service', requireAuth, async (req, res) => {
 
     } catch (err) {
         console.error('❌ خطأ أثناء جلب بيانات خدمة المزود:', err.message);
-        res.status(500).json({ success: false, error: 'خطأ داخلي في الخادم', details: err.message });
+        res.status(500).json({ success: false, error: 'خطأ داخلي في الخادم', details: IS_PROD ? undefined : err.message });
     }
 });
 
@@ -912,7 +917,7 @@ app.post('/api/update-service-status', requireAuth, async (req, res) => {
     const isRealEstate = REAL_ESTATE_LAYERS.includes(layerName);
 
         try {
-                // 🔒 لا يستطيع المستخدم تعديل إلا المعلم المربوط بحسابه فعلاً
+        // 🔒 لا يستطيع المستخدم تعديل إلا المعلم المربوط بحسابه فعلاً
         if (Number(user_id) !== req.auth.uid) {
             return res.status(403).json({ success: false, error: 'غير مصرح.' });
         }
@@ -1009,7 +1014,7 @@ app.post('/api/update-service-status', requireAuth, async (req, res) => {
         res.status(500).json({ 
             success: false, 
             error: 'فشل تحديث قاعدة البيانات الخلفية', 
-            details: err.message 
+            details: IS_PROD ? undefined : err.message 
         });
     }
 });
@@ -1043,6 +1048,9 @@ function extractRequestedLayerNames(req) {
     return Array.from(names);
 }
 
+// طبقات مسموحة عبر البروكسي فقط (ليست جزءاً من قائمة API): الصورة الجوية
+const PROXY_EXTRA_LAYERS = ['WB_2023_10_18mbt'];
+
 // 🔒 واجهات إدارة GeoServer التي لا يجب الوصول لها عبر البروكسي (REST / الواجهة الإدارية / WPS / الدخول)
 const GEOSERVER_BLOCKED_PATHS = /(^|\/)(rest|web|wps|monitor|j_spring_security_check|j_spring_security_logout|logout)(\/|$)/i;
 
@@ -1057,7 +1065,7 @@ app.use('/geoserver-proxy', (req, res, next) => {
     const requestedLayers = extractRequestedLayerNames(req);
     for (const rawName of requestedLayers) {
         const layerOnly = rawName.includes(':') ? rawName.split(':')[1] : rawName;
-        if (!isValidLayer(layerOnly)) {
+        if (!isValidLayer(layerOnly) && !PROXY_EXTRA_LAYERS.includes(layerOnly)) {
             console.warn(`🚫 [Proxy Guard] رُفض طلب لطبقة غير مصرح بها: ${rawName} من IP: ${req.ip}`);
             return res.status(403).json({ error: 'الوصول لهذه الطبقة غير مسموح به.' });
         }
@@ -1098,7 +1106,7 @@ app.use('/geoserver-proxy', (req, res, next) => {
         }
     },
     onError: (err, req, res) => {
-                console.error('[Proxy] Error:', err.message, '| url:', req.url);
+        console.error('[Proxy] Error:', err.message, '| url:', req.url);
         if (!res.headersSent) {
             // 🔒 لا نكشف عنوان GeoServer الداخلي للعميل
             res.status(502).json({ error: 'GeoServer connection failed' });
@@ -1151,7 +1159,7 @@ app.post('/api/log-map-event', requireAuth, async (req, res) => {
         console.error('❌ خطأ داخلي في SQL أثناء تسجيل الحدث:', err.message);
         res.status(500).json({ 
             error: 'Internal Server Error', 
-            details: err.message 
+            details: IS_PROD ? undefined : err.message 
         });
     }
 });
@@ -1194,14 +1202,13 @@ app.post('/save-stat', publicEventsLimiter, async (req, res) => {
         console.error('❌ خطأ داخلي في SQL أثناء الحفظ:', err.message);
         res.status(500).json({ 
             error: 'Internal Server Error', 
-            details: err.message 
+            details: IS_PROD ? undefined : err.message 
         });
     }
 });
 
 // 5. مسار جلب السجلات التفصيلية مع التصفح الصفحي (Pagination)
 app.get('/api/stats-detailed', requireAdmin, async (req, res) => {
-
     try {
         const page = parseInt(req.query.page) || 1;
         const limit = 10; 
@@ -1246,13 +1253,12 @@ app.get('/api/stats-detailed', requireAdmin, async (req, res) => {
         });
     } catch (err) {
         console.error('❌ خطأ أثناء جلب البيانات التفصيلية:', err.message);
-        res.status(500).json({ error: 'Failed to fetch logs', details: err.message });
+        res.status(500).json({ error: 'Failed to fetch logs', details: IS_PROD ? undefined : err.message });
     }
 });
 
 // 6. مسار حذف سجل معين (DELETE)
 app.delete('/api/delete-stat/:id', requireAdmin, async (req, res) => {
-
     const { id } = req.params;
     try {
         const query = 'DELETE FROM "public"."map_service_stats" WHERE id = $1';
@@ -1262,7 +1268,7 @@ app.delete('/api/delete-stat/:id', requireAdmin, async (req, res) => {
         res.status(200).json({ status: 'success', message: `Record ${id} deleted` });
     } catch (err) {
         console.error('❌ خطأ أثناء حذف السجل:', err.message);
-        res.status(500).json({ error: 'Failed to delete record', details: err.message });
+        res.status(500).json({ error: 'Failed to delete record', details: IS_PROD ? undefined : err.message });
     }
 });
 
@@ -1294,6 +1300,9 @@ app.post('/api/auth/register', authLimiter, async (req, res) => {
     if (!cleanName || cleanName.length > 100 || typeof phone !== 'string' || !phone.trim() ||
         typeof password !== 'string' || !password || password.length > 128) {
         return res.status(400).json({ error: 'الرجاء تعبئة جميع الحقول المطلوبة بما فيها رقم الجوال' });
+    }
+    if (password.length < 6) {
+        return res.status(400).json({ error: 'كلمة المرور يجب أن تتكون من 6 أحرف على الأقل.' });
     }
     if (whatsapp_number && !normalizedWhatsapp) {
         return res.status(400).json({ error: 'رقم واتساب غير صالح، يرجى إدخال رقم صحيح مع رمز الدولة.' });
@@ -1332,7 +1341,7 @@ app.post('/api/auth/register', authLimiter, async (req, res) => {
             RETURNING user_id, full_name, email, phone, role, whatsapp_number
         `;
 
-            const result = await servicesPool.query(insertUserQuery, [
+        const result = await servicesPool.query(insertUserQuery, [
             cleanName,
             normalizedEmail,
             phone.trim(),
@@ -1351,7 +1360,7 @@ app.post('/api/auth/register', authLimiter, async (req, res) => {
         });
 
     } catch (err) {
-                console.error('❌ خطأ أثناء تسجيل المستخدم في قاعدة البيانات:', err.message);
+        console.error('❌ خطأ أثناء تسجيل المستخدم في قاعدة البيانات:', err.message);
 
         if (err.code === '23505') { // 🔒 تكرار رقم الجوال (فهرس UNIQUE)
             return res.status(400).json({ error: 'رقم الجوال هذا مستخدم بالفعل من قبل حساب آخر!' });
@@ -1360,20 +1369,20 @@ app.post('/api/auth/register', authLimiter, async (req, res) => {
         if (err.code === '28P01') {
             return res.status(401).json({
                 error: 'فشل مصادقة قاعدة البيانات. تحقق من اسم المستخدم وكلمة المرور الخاصة بقاعدة PostgreSQL.',
-                details: err.message
+                details: IS_PROD ? undefined : err.message
             });
         }
 
         if (err.code === '3D000' || err.code === 'ECONNREFUSED' || err.code === 'ENOTFOUND') {
             return res.status(502).json({
                 error: 'تعذر الوصول إلى خادم PostgreSQL أو قاعدة البيانات غير موجودة.',
-                details: err.message
+                details: IS_PROD ? undefined : err.message
             });
         }
 
         res.status(500).json({ 
             error: 'حدث خطأ داخلي بالسيرفر أثناء إنشاء الحساب',
-            details: err.message 
+            details: IS_PROD ? undefined : err.message 
         });
     }
 }); 
@@ -1420,10 +1429,17 @@ app.post('/api/auth/change-password', authLimiter, requireAuth, async (req, res)
         const hashedNewPassword = await bcrypt.hash(newPassword, BCRYPT_SALT_ROUNDS);
         const updatePasswordQuery = `
             UPDATE public.users 
-            SET password_hash = $1 
+            SET password_hash = $1, token_version = token_version + 1
             WHERE user_id = $2
+            RETURNING token_version, role
         `;
-        await servicesPool.query(updatePasswordQuery, [hashedNewPassword, userId]);
+        const pwUpdate = await servicesPool.query(updatePasswordQuery, [hashedNewPassword, userId]);
+        authStatusCache.delete(Number(userId));
+        // 🔒 الجلسات الأخرى تنتهي، وهذه الجلسة تستلم توكناً جديداً تلقائياً (auth-fetch.js يحفظ X-New-Token)
+        if (pwUpdate.rows[0]) {
+            const pwRole = pwUpdate.rows[0].role;
+            res.setHeader('X-New-Token', jwt.sign({ uid: Number(userId), role: pwRole, tv: Number(pwUpdate.rows[0].token_version) || 0 }, ADMIN_JWT_SECRET, { expiresIn: pwRole === 'admin' ? '12h' : '30d' }));
+        }
 
         console.log(`✅ تم تحديث كلمة المرور بنجاح للمستخدم رقم: ${userId}`);
 
@@ -1436,7 +1452,7 @@ app.post('/api/auth/change-password', authLimiter, requireAuth, async (req, res)
         console.error('❌ خطأ أثناء تغيير كلمة المرور في قاعدة البيانات:', err.message);
         res.status(500).json({ 
             error: 'حدث خطأ داخلي بالسيرفر أثناء تعديل كلمة المرور',
-            details: err.message 
+            details: IS_PROD ? undefined : err.message 
         });
     }
 }); 
@@ -1487,7 +1503,7 @@ app.post('/api/auth/verify-session', async (req, res) => {
 app.post('/api/auth/login', authLimiter, async (req, res) => {
     const requestBody = req.body || {};
     const { email = '', phone, password } = requestBody;
-        const normalizedEmail = String(email || '').toLowerCase().trim();
+    const normalizedEmail = String(email || '').toLowerCase().trim();
     const normalizedPhone = phone ? String(phone).trim() : '';
 
     if (!normalizedPhone || !password || typeof password !== 'string') {
@@ -1496,7 +1512,7 @@ app.post('/api/auth/login', authLimiter, async (req, res) => {
     }
 
     try {
-                if (isLoginLocked(normalizedPhone)) {
+        if (isLoginLocked(normalizedPhone)) {
             return res.status(429).json({ message: 'تم إيقاف تسجيل الدخول مؤقتاً لكثرة المحاولات الخاطئة. حاول بعد 15 دقيقة.' });
         }
 
@@ -1526,7 +1542,7 @@ app.post('/api/auth/login', authLimiter, async (req, res) => {
         // ترحيل شفاف للحسابات القديمة (كانت مخزَّنة كنص صريح) إلى bcrypt فور
         // أول تسجيل دخول ناجح لها، بدل مقارنة نصية مباشرة كما كان سابقاً.
         const { valid: passwordValid, needsRehash } = await verifyPasswordWithMigration(password, user.password_hash);
-                if (!passwordValid) {
+        if (!passwordValid) {
             recordLoginFailure(normalizedPhone);
             return res.status(401).json({ message: 'رقم الجوال أو كلمة المرور غير صحيحة.' });
         }
@@ -1549,13 +1565,13 @@ app.post('/api/auth/login', authLimiter, async (req, res) => {
         const finalId = user.feature_id ? user.feature_id : null;
 
         // 🆕 إصدار توكن موقّع للمشرفين فقط، يحل محل الثقة بأي رقم يرسله المتصفح
-                let adminToken = null;
+        let adminToken = null;
         if (user.role === 'admin') {
-            adminToken = jwt.sign({ uid: user.user_id, role: 'admin' }, ADMIN_JWT_SECRET, { expiresIn: '12h' });
+            adminToken = jwt.sign({ uid: user.user_id, role: 'admin', tv: Number(user.token_version) || 0 }, ADMIN_JWT_SECRET, { expiresIn: '12h' });
         }
 
         // 🔒 توكن الجلسة لكل المستخدمين (المشرف 12 ساعة، والبقية 30 يوماً)
-        const sessionToken = adminToken || jwt.sign({ uid: user.user_id, role: user.role }, ADMIN_JWT_SECRET, { expiresIn: '90d' });
+        const sessionToken = adminToken || jwt.sign({ uid: user.user_id, role: user.role, tv: Number(user.token_version) || 0 }, ADMIN_JWT_SECRET, { expiresIn: '30d' });
 
         res.status(200).json({
             message: 'تم تسجيل الدخول بنجاح بالمطابقة الكاملة الثلاثية المشروطة ببيانات قاعدة البيانات الحقيقية',
@@ -1619,16 +1635,12 @@ app.get('/api/get-unique-values', async (req, res) => {
             }
         });
 
-        // 🆕 [تعديل]: العقارات تبقى مقيّدة بشرط status/auto_status كما كانت، أما
-        // الخدمات فأصبحت قوائم فلاترها (المحافظة/المدينة/الاسم...) تُبنى من كل
-        // المعالم بغض النظر عن حالة التوفر، حتى لا تختفي قيم فلترة بسبب معلم مغلق.
-        const statusClause = isRealEstate ? `status = 0 AND auto_status = 0 AND ` : '';
-        const query = `SELECT DISTINCT "${field}" FROM public.${tableName} WHERE ${statusClause}"${field}" IS NOT NULL AND "${field}"::text != ''${extraWhere} ORDER BY "${field}" ASC LIMIT 10000`;
+        const query = `SELECT DISTINCT "${field}" FROM public.${tableName} WHERE status = 0 AND auto_status = 0 AND "${field}" IS NOT NULL AND "${field}"::text != ''${extraWhere} ORDER BY "${field}" ASC LIMIT 10000`;
         const result = await targetPool.query(query, extraParams);
         const values = result.rows.map(row => row[field]).filter(v => v != null && v !== '');
         res.json({ success: true, values });
     } catch (error) {
-        res.status(500).json({ error: 'Database query failed', details: IS_PROD ? undefined :error.message });
+        res.status(500).json({ error: 'Database query failed', details: IS_PROD ? undefined : error.message });
     }
 });
 
@@ -1674,7 +1686,7 @@ app.post('/api/search-features-batch', async (req, res) => {
         res.json({ type: 'FeatureCollection', features });
     } catch (error) {
         console.error('Batch Search API Error:', error.message);
-        res.status(500).json({ error: 'Database query failed', details: error.message });
+        res.status(500).json({ error: 'Database query failed', details: IS_PROD ? undefined : error.message });
     }
 });
 
@@ -1702,7 +1714,7 @@ app.get('/api/search-features', async (req, res) => {
         // 🆕 اسم الجدول الفعلي: العقارات بجدولها الخاص، وكل الخدمات أصبحت service_all
         const tableName = isRealEstate ? `"${layer}"` : `service_all`;
 
-                const ignoreStatusFilter = req.query.ignore_status === '1';
+        const ignoreStatusFilter = req.query.ignore_status === '1';
 
         let query = `SELECT *, ST_AsGeoJSON(geom) as geom_json FROM public.${tableName} WHERE 1=1`;
         const params = [];
@@ -1714,13 +1726,8 @@ app.get('/api/search-features', async (req, res) => {
             query += ` AND discriminator = $${params.length}`;
         }
 
-        // 🆕 [تعديل]: العقارات (شقق إيجار/بيع، أراضي) تبقى مقيّدة بالحالة كما كانت
-        // دائماً (status=0 AND auto_status=0). الخدمات فقط أصبحت تُجلب بالكامل بغض
-        // النظر عن حالتها (متاح/مغلق)، والواجهة تعرض الشارة المناسبة لكل معلم على حدة.
-        if (isRealEstate) {
-            if (!ignoreStatusFilter) {
-                query += ` AND status = 0 AND auto_status = 0`;
-            }
+        if (!ignoreStatusFilter) {
+            query += ` AND status = 0 AND auto_status = 0`;
         }
 
         // إضافة فلترة مكانية BBOX إذا تم توفيرها
@@ -1884,7 +1891,7 @@ app.get('/api/search-features', async (req, res) => {
         console.error('Search API Error:', error);
         console.error('Error details:', error.message);
         console.error('Error stack:', error.stack);
-        res.status(500).json({ error: 'Database query failed', details: error.message });
+        res.status(500).json({ error: 'Database query failed', details: IS_PROD ? undefined : error.message });
     }
 });
 
@@ -1904,7 +1911,7 @@ app.get('/api/users', requireAdmin, async (req, res) => {
         });
     } catch (error) {
         console.error('Error fetching users:', error);
-        res.status(500).json({ error: 'Failed to fetch users', details: error.message });
+        res.status(500).json({ error: 'Failed to fetch users', details: IS_PROD ? undefined : error.message });
     }
 });
 
@@ -1934,7 +1941,7 @@ async function requireAdmin(req, res, next) {
 
     let decoded;
     try {
-        decoded = jwt.verify(token, ADMIN_JWT_SECRET);
+        decoded = jwt.verify(token, ADMIN_JWT_SECRET, { algorithms: ['HS256'] });
     } catch (e) {
         return res.status(401).json({ success: false, error: 'جلسة المشرف منتهية أو غير صالحة، يرجى تسجيل الدخول من جديد.' });
     }
@@ -1945,7 +1952,7 @@ async function requireAdmin(req, res, next) {
 
     try {
         const result = await servicesPool.query(
-            'SELECT role, is_active, force_logout_flag FROM public.users WHERE user_id = $1',
+            'SELECT role, is_active, force_logout_flag, token_version FROM public.users WHERE user_id = $1',
             [decoded.uid]
         );
 
@@ -1953,9 +1960,9 @@ async function requireAdmin(req, res, next) {
             return res.status(403).json({ success: false, error: 'حساب المشرف غير موجود.' });
         }
 
-        const { role, is_active, force_logout_flag } = result.rows[0];
+        const { role, is_active, force_logout_flag, token_version } = result.rows[0];
 
-        if (role !== 'admin' || !is_active || force_logout_flag === true) {
+        if (role !== 'admin' || !is_active || force_logout_flag === true || (Number(decoded.tv) || 0) !== (Number(token_version) || 0)) {
             return res.status(403).json({ success: false, error: 'لا تملك صلاحية المشرف اللازمة لهذا الإجراء.' });
         }
 
@@ -1979,7 +1986,7 @@ async function requireReadOnlyView(req, res, next) {
 
     let decoded;
     try {
-        decoded = jwt.verify(token, ADMIN_JWT_SECRET);
+        decoded = jwt.verify(token, ADMIN_JWT_SECRET, { algorithms: ['HS256'] });
     } catch (e) {
         return res.status(401).json({ success: false, error: 'انتهت جلسة المشاهدة أو أصبحت غير صالحة.' });
     }
@@ -2126,7 +2133,7 @@ app.get('/api/widgets-data', async (req, res) => {
         });
     } catch (err) {
         console.error('❌ خطأ أثناء جلب بيانات مركز المعلومات الحية:', err.message);
-        res.status(500).json({ success: false, error: 'فشل جلب البيانات', details: err.message });
+        res.status(500).json({ success: false, error: 'فشل جلب البيانات', details: IS_PROD ? undefined : err.message });
     }
 });
 
@@ -2141,7 +2148,7 @@ app.get('/api/admin/widgets-data', requireAdmin, async (req, res) => {
         res.json({ success: true, groups });
     } catch (err) {
         console.error('❌ خطأ أثناء جلب مجموعات widgets للمشرف:', err.message);
-        res.status(500).json({ success: false, error: 'فشل جلب البيانات', details: err.message });
+        res.status(500).json({ success: false, error: 'فشل جلب البيانات', details: IS_PROD ? undefined : err.message });
     }
 });
 
@@ -2167,7 +2174,7 @@ app.post('/api/admin/widgets-data/:groupKey', requireAdmin, async (req, res) => 
         res.json({ success: true, message: 'تم حفظ التعديلات بنجاح' });
     } catch (err) {
         console.error('❌ خطأ أثناء حفظ مجموعة widgets:', err.message);
-        res.status(500).json({ success: false, error: 'فشل الحفظ', details: err.message });
+        res.status(500).json({ success: false, error: 'فشل الحفظ', details: IS_PROD ? undefined : err.message });
     }
 });
 
@@ -2183,7 +2190,7 @@ app.get('/api/admin/road-fuel-features', requireAdmin, async (req, res) => {
         res.json({ success: true, roadBarriers: roadResult.rows, fuelStations: fuelResult.rows });
     } catch (err) {
         console.error('❌ خطأ أثناء جلب معالم الحواجز/المحطات:', err.message);
-        res.status(500).json({ success: false, error: 'فشل جلب البيانات', details: err.message });
+        res.status(500).json({ success: false, error: 'فشل جلب البيانات', details: IS_PROD ? undefined : err.message });
     }
 });
 
@@ -2205,7 +2212,7 @@ app.post('/api/admin/reorder-features', requireAdmin, async (req, res) => {
         res.json({ success: true });
     } catch (err) {
         console.error('❌ خطأ أثناء حفظ الترتيب:', err.message);
-        res.status(500).json({ success: false, error: 'فشل حفظ الترتيب', details: err.message });
+        res.status(500).json({ success: false, error: 'فشل حفظ الترتيب', details: IS_PROD ? undefined : err.message });
     }
 });
 // 🆕 قيم الحالة المسموحة (حالة الحاجز: 0..4، توفر الوقود: 0/1) + تنقية قائمة المعرّفات
@@ -2252,7 +2259,7 @@ app.post('/api/admin/update-road-barrier', requireAdmin, async (req, res) => {
         res.json({ success: true });
     } catch (err) {
         console.error('❌ خطأ أثناء تحديث حالة الحاجز:', err.message);
-        res.status(500).json({ success: false, error: 'فشل التحديث', details: err.message });
+        res.status(500).json({ success: false, error: 'فشل التحديث', details: IS_PROD ? undefined : err.message });
     }
 });
 
@@ -2287,7 +2294,7 @@ app.post('/api/admin/bulk-update-road-barriers', requireAdmin, async (req, res) 
         res.json({ success: true, updated: result.rowCount });
     } catch (err) {
         console.error('❌ خطأ أثناء التعديل الجماعي لحواجز الطرق:', err.message);
-        res.status(500).json({ success: false, error: 'فشل التحديث الجماعي', details: err.message });
+        res.status(500).json({ success: false, error: 'فشل التحديث الجماعي', details: IS_PROD ? undefined : err.message });
     }
 });
 
@@ -2322,7 +2329,7 @@ app.post('/api/admin/bulk-update-fuel-stations', requireAdmin, async (req, res) 
         res.json({ success: true, updated: result.rowCount });
     } catch (err) {
         console.error('❌ خطأ أثناء التعديل الجماعي لمحطات الوقود:', err.message);
-        res.status(500).json({ success: false, error: 'فشل التحديث الجماعي', details: err.message });
+        res.status(500).json({ success: false, error: 'فشل التحديث الجماعي', details: IS_PROD ? undefined : err.message });
     }
 });
 
@@ -2340,7 +2347,7 @@ app.post('/api/admin/update-fuel-station', requireAdmin, async (req, res) => {
         res.json({ success: true });
     } catch (err) {
         console.error('❌ خطأ أثناء تحديث حالة المحطة:', err.message);
-        res.status(500).json({ success: false, error: 'فشل التحديث', details: err.message });
+        res.status(500).json({ success: false, error: 'فشل التحديث', details: IS_PROD ? undefined : err.message });
     }
 });
 
@@ -2390,7 +2397,7 @@ app.post('/api/admin/batch-update-road-barriers', requireAdmin, async (req, res)
     } catch (err) {
         try { await client.query('ROLLBACK'); } catch (e) { /* تجاهل */ }
         console.error('❌ خطأ أثناء حفظ الكل لحواجز الطرق:', err.message);
-        res.status(500).json({ success: false, error: 'فشل الحفظ، لم يُحفظ أي تعديل', details: err.message });
+        res.status(500).json({ success: false, error: 'فشل الحفظ، لم يُحفظ أي تعديل', details: IS_PROD ? undefined : err.message });
     } finally {
         client.release();
     }
@@ -2445,7 +2452,7 @@ app.post('/api/admin/batch-update-fuel-stations', requireAdmin, async (req, res)
     } catch (err) {
         try { await client.query('ROLLBACK'); } catch (e) { /* تجاهل */ }
         console.error('❌ خطأ أثناء حفظ الكل لمحطات الوقود:', err.message);
-        res.status(500).json({ success: false, error: 'فشل الحفظ، لم يُحفظ أي تعديل', details: err.message });
+        res.status(500).json({ success: false, error: 'فشل الحفظ، لم يُحفظ أي تعديل', details: IS_PROD ? undefined : err.message });
     } finally {
         client.release();
     }
@@ -2546,7 +2553,7 @@ app.get('/api/admin/users', requireAdmin, async (req, res) => {
         });
     } catch (error) {
         console.error('❌ خطأ في جلب المستخدمين:', error.message);
-        res.status(500).json({ success: false, error: 'فشل جلب المستخدمين', details: error.message });
+        res.status(500).json({ success: false, error: 'فشل جلب المستخدمين', details: IS_PROD ? undefined : error.message });
     }
 });
 
@@ -2557,7 +2564,7 @@ app.get('/api/admin/online-users', requireAdmin, (req, res) => {
         res.json({ success: true, onlineUserIds });
     } catch (error) {
         console.error('❌ خطأ في جلب حالة الاتصال:', error.message);
-        res.status(500).json({ success: false, error: 'فشل جلب حالة الاتصال', details: error.message });
+        res.status(500).json({ success: false, error: 'فشل جلب حالة الاتصال', details: IS_PROD ? undefined : error.message });
     }
 });
 
@@ -2582,7 +2589,7 @@ app.post('/api/admin/users/force-logout', requireAdmin, async (req, res) => {
         // هذا يضمن أن المستخدم لن يستطيع الدخول تلقائياً بجلسته المحفوظة محلياً
         // حتى لو كان غير متصل الآن، لأن /api/auth/verify-session سيرفض جلسته
         // في المرة القادمة التي يفتح فيها الصفحة.
-                await servicesPool.query('UPDATE public.users SET force_logout_flag = true WHERE user_id = $1', [user_id]);
+        await servicesPool.query('UPDATE public.users SET force_logout_flag = true, token_version = token_version + 1 WHERE user_id = $1', [user_id]);
         authStatusCache.delete(Number(user_id)); // 🔒 يسري إبطال الجلسة فوراً
 
         // حفظ الإشعار بقاعدة البيانات (يظهر له لاحقاً حتى لو كان غير متصل الآن)
@@ -2612,7 +2619,7 @@ app.post('/api/admin/users/force-logout', requireAdmin, async (req, res) => {
         });
     } catch (error) {
         console.error('❌ خطأ في تسجيل الخروج الإجباري:', error.message);
-        res.status(500).json({ success: false, error: 'فشل تنفيذ تسجيل الخروج الإجباري', details: error.message });
+        res.status(500).json({ success: false, error: 'فشل تنفيذ تسجيل الخروج الإجباري', details: IS_PROD ? undefined : error.message });
     }
 });
 
@@ -2670,7 +2677,7 @@ app.post('/api/admin/users/force-logout-all', requireAdmin, async (req, res) => 
         // 🆕 [إصلاح الثغرة]: تفعيل علامة إبطال الجلسة دفعة واحدة لكل المستخدمين
         // المستهدفين، بغض النظر عن كونهم متصلين الآن أم لا. هذا يمنعهم من
         // الدخول التلقائي بجلسة محفوظة قديمة عبر /api/auth/verify-session.
-                await servicesPool.query('UPDATE public.users SET force_logout_flag = true WHERE user_id = ANY($1)', [targetUsers]);
+        await servicesPool.query('UPDATE public.users SET force_logout_flag = true, token_version = token_version + 1 WHERE user_id = ANY($1)', [targetUsers]);
         authStatusCache.clear(); // 🔒 يسري إبطال الجلسات فوراً
 
         let onlineCount = 0;
@@ -2710,7 +2717,7 @@ app.post('/api/admin/users/force-logout-all', requireAdmin, async (req, res) => 
         });
     } catch (error) {
         console.error('❌ خطأ في تسجيل الخروج الجماعي:', error.message);
-        res.status(500).json({ success: false, error: 'فشل تنفيذ تسجيل الخروج الجماعي', details: error.message });
+        res.status(500).json({ success: false, error: 'فشل تنفيذ تسجيل الخروج الجماعي', details: IS_PROD ? undefined : error.message });
     }
 });
 
@@ -2724,7 +2731,7 @@ app.post('/api/admin/users/update', requireAdmin, async (req, res) => {
 
     try {
         // التحقق من وجود المستخدم
-        const checkUser = await servicesPool.query('SELECT user_id, role FROM public.users WHERE user_id = $1', [user_id]);
+        const checkUser = await servicesPool.query('SELECT user_id, role, is_active FROM public.users WHERE user_id = $1', [user_id]);
         if (checkUser.rows.length === 0) {
             return res.status(404).json({ success: false, error: 'المستخدم غير موجود' });
         }
@@ -2784,6 +2791,14 @@ app.post('/api/admin/users/update', requireAdmin, async (req, res) => {
             updateValues.push(normalizedPeriod);
         }
 
+        // 🔒 تغيير الدور أو التفعيل أو كلمة المرور يُبطل توكنات المستخدم القديمة فوراً (إلا إذا كان المشرف يعدّل حسابه هو)
+        const roleChanged = role !== undefined && String(role).toLowerCase().trim() !== currentUser.role;
+        const activeChanged = is_active !== undefined && (is_active === true) !== !!currentUser.is_active;
+        const passwordChanged = !!(new_password && new_password.trim().length >= 6);
+        if ((roleChanged || activeChanged || passwordChanged) && Number(user_id) !== Number(req.adminUserId)) {
+            updateFields.push('token_version = token_version + 1');
+        }
+
         if (updateFields.length === 0) {
             return res.status(400).json({ success: false, error: 'لا توجد تغييرات للحفظ' });
         }
@@ -2832,7 +2847,7 @@ app.post('/api/admin/users/update', requireAdmin, async (req, res) => {
 
     } catch (error) {
         console.error('❌ خطأ في تحديث المستخدم:', error.message);
-        res.status(500).json({ success: false, error: 'فشل تحديث بيانات المستخدم', details: error.message });
+        res.status(500).json({ success: false, error: 'فشل تحديث بيانات المستخدم', details: IS_PROD ? undefined : error.message });
     }
 });
 // =========================================================================
@@ -2929,7 +2944,11 @@ app.post('/api/service-requests', requireAuth, async (req, res) => {
         // الخام بالإنجليزية كما كان سابقاً، حتى يظهر بشكل صحيح لاحقاً في "طلباتي"
         const arabicServiceType = LAYER_AR_NAMES[service_layer] || service_layer;
 
-        
+        // 🆕 [إصلاح حرج]: هذا الاستعلام كان يستخدم متغيرات غير معرّفة إطلاقاً
+        // (provider_user_id, final_provider_name, contact_type) منسوخة بالخطأ من
+        // مسار /api/log-contact-click، وهذا كان يسبب ReferenceError وخطأ 500 فوري
+        // مع كل ضغطة على زر "طلب الخدمة". كما أن حالة الطلب الجديد يجب أن تكون
+        // 'pending' (بانتظار رد مزود الخدمة)، وليست 'completed' مباشرة.
         // 🔒 تنظيف القيم القادمة من العميل قبل تخزينها أو إرسالها
         const cleanClientName = (provider_name === undefined || provider_name === null)
             ? '' : String(provider_name).replace(/[<>]/g, '').trim().slice(0, 100);
@@ -2966,11 +2985,11 @@ app.post('/api/service-requests', requireAuth, async (req, res) => {
 
         res.json({ success: true, requestId: newRequest.id, status: newRequest.status });
     } catch (err) {
-                console.error('❌ خطأ أثناء إنشاء طلب الخدمة:', err.message);
+        console.error('❌ خطأ أثناء إنشاء طلب الخدمة:', err.message);
         if (err.code === '23505') { // 🔒 فهرس UNIQUE للطلبات القائمة
             return res.status(409).json({ success: false, error: 'لديك طلب قائم بالفعل لهذا المزود.' });
         }
-        res.status(500).json({ success: false, error: 'فشل إنشاء طلب الخدمة', details: err.message });
+        res.status(500).json({ success: false, error: 'فشل إنشاء طلب الخدمة', details: IS_PROD ? undefined : err.message });
     }
 });
 
@@ -3026,7 +3045,7 @@ app.get('/api/service-requests', requireAuth, async (req, res) => {
         // - رقم واتساب المستخدم الطالب: من عمود whatsapp_number بجدول users.
         // - رقم هاتف وواتساب مزود الخدمة: من جدول طبقة الخدمة نفسها (عمود whatsapp)
         await Promise.all(requests.map(async (r) => {
-                        if (r.status === 'completed') {
+            if (r.status === 'completed') {
                 const providerContact = await getProviderContactInfo(r.service_layer, r.feature_id);
                 r.userPhone = r.requester_phone || null;
                 r.userWhatsapp = r.requester_whatsapp || null;
@@ -3046,7 +3065,7 @@ app.get('/api/service-requests', requireAuth, async (req, res) => {
         res.json({ success: true, requests });
     } catch (err) {
         console.error('❌ خطأ أثناء جلب طلبات الخدمة:', err.message);
-        res.status(500).json({ success: false, error: 'فشل جلب الطلبات', details: err.message });
+        res.status(500).json({ success: false, error: 'فشل جلب الطلبات', details: IS_PROD ? undefined : err.message });
     }
 });
 
@@ -3073,7 +3092,7 @@ app.post('/api/service-requests/:id/respond', requireAuth, async (req, res) => {
         }
 
         const newStatus = action === 'accept' ? 'accepted' : 'rejected';
-                const upd = await servicesPool.query(
+        const upd = await servicesPool.query(
             "UPDATE public.service_requests SET status = $1, updated_at = NOW() WHERE id = $2 AND status = 'pending'",
             [newStatus, id]
         );
@@ -3109,7 +3128,7 @@ app.post('/api/service-requests/:id/respond', requireAuth, async (req, res) => {
         res.json({ success: true, status: newStatus });
     } catch (err) {
         console.error('❌ خطأ أثناء الرد على طلب الخدمة:', err.message);
-        res.status(500).json({ success: false, error: 'فشل تنفيذ الرد', details: err.message });
+        res.status(500).json({ success: false, error: 'فشل تنفيذ الرد', details: IS_PROD ? undefined : err.message });
     }
 });
 
@@ -3117,7 +3136,7 @@ app.post('/api/service-requests/:id/respond', requireAuth, async (req, res) => {
 app.post('/api/service-requests/:id/cancel', requireAuth, async (req, res) => {
     const requestId = req.params.id;
     const { cancellation_reason } = req.body;
-    const user_id = req.auth.uid; // 🔒 من التوكن
+    const user_id = req.auth.uid; // 🔒 من التوكن 
 
     if (!user_id) {
         return res.status(400).json({ success: false, error: 'معرف المستخدم مطلوب' });
@@ -3125,7 +3144,7 @@ app.post('/api/service-requests/:id/cancel', requireAuth, async (req, res) => {
 
     // 🆕 [فرض إجباري]: خط دفاع أخير على مستوى السيرفر - لا يُقبل إلغاء أي
     // طلب بدون سبب حقيقي، حتى لو تم تجاوز الواجهة الأمامية بأي شكل
-        const reasonText = cancellation_reason ? String(cancellation_reason).replace(/[<>]/g, '').trim().slice(0, 300) : '';
+    const reasonText = cancellation_reason ? String(cancellation_reason).replace(/[<>]/g, '').trim().slice(0, 300) : '';
     if (!reasonText) {
         return res.status(400).json({ success: false, error: 'يجب كتابة سبب إلغاء الطلب، لا يمكن إتمام الإلغاء بدونه.' });
     }
@@ -3176,7 +3195,7 @@ app.post('/api/service-requests/:id/cancel', requireAuth, async (req, res) => {
         res.json({ success: true, request: updateRes.rows[0] });
     } catch (err) {
         console.error('❌ خطأ أثناء إلغاء الطلب:', err.message);
-        res.status(500).json({ success: false, error: 'تعذر إلغاء الطلب', details: err.message });
+        res.status(500).json({ success: false, error: 'تعذر إلغاء الطلب', details: IS_PROD ? undefined : err.message });
     }
 });
 
@@ -3196,7 +3215,7 @@ app.get('/api/admin/all-service-requests-logs', requireAdmin, async (req, res) =
         res.json({ success: true, logs: result.rows });
     } catch (err) {
         console.error('❌ خطأ أثناء جلب سجلات الطلبات التفصيلية:', err.message);
-        res.status(500).json({ success: false, error: 'فشل جلب السجلات', details: err.message });
+        res.status(500).json({ success: false, error: 'فشل جلب السجلات', details: IS_PROD ? undefined : err.message });
     }
 });
 
@@ -3247,7 +3266,7 @@ app.get('/api/service-requests/:id/messages', requireAuth, async (req, res) => {
 
         res.json(responsePayload);
     } catch (err) {
-        res.status(500).json({ success: false, error: 'فشل جلب الرسائل', details: err.message });
+        res.status(500).json({ success: false, error: 'فشل جلب الرسائل', details: IS_PROD ? undefined : err.message });
     }
 });
 // 5) إرسال رسالة دردشة جديدة ضمن طلب مقبول
@@ -3295,7 +3314,7 @@ app.post('/api/service-requests/:id/message', requireAuth, async (req, res) => {
         res.json({ success: true, message: savedMessage });
     } catch (err) {
         console.error('❌ خطأ أثناء إرسال رسالة الدردشة:', err.message);
-        res.status(500).json({ success: false, error: 'فشل إرسال الرسالة', details: err.message });
+        res.status(500).json({ success: false, error: 'فشل إرسال الرسالة', details: IS_PROD ? undefined : err.message });
     }
 });
 
@@ -3392,10 +3411,10 @@ app.post('/api/service-requests/:id/confirm', requireAuth, async (req, res) => {
 
         await client.query('COMMIT');
         res.json({ success: true, status: refreshed.status, waitingOtherSide: true });
-        } catch (err) {
+    } catch (err) {
         if (!clientReleased) { try { await client.query('ROLLBACK'); } catch (e) { /* تجاهل */ } }
         console.error('❌ خطأ أثناء تأكيد طلب الخدمة:', err.message);
-        res.status(500).json({ success: false, error: 'فشل تنفيذ التأكيد', details: err.message });
+        res.status(500).json({ success: false, error: 'فشل تنفيذ التأكيد', details: IS_PROD ? undefined : err.message });
     } finally {
         if (!clientReleased) client.release();
     }
@@ -3460,7 +3479,7 @@ app.post('/api/service-requests/:id/rating', requireAuth, async (req, res) => {
     } catch (err) {
         await client.query('ROLLBACK');
         console.error('❌ خطأ أثناء إرسال التقييم:', err.message);
-        res.status(500).json({ success: false, error: 'فشل إرسال التقييم', details: err.message });
+        res.status(500).json({ success: false, error: 'فشل إرسال التقييم', details: IS_PROD ? undefined : err.message });
     } finally {
         client.release();
     }
@@ -3498,7 +3517,7 @@ app.get('/api/service-ratings', async (req, res) => {
         });
     } catch (err) {
         console.error('❌ خطأ أثناء جلب التقييمات:', err.message);
-        res.status(500).json({ success: false, error: 'فشل جلب التقييمات', details: err.message });
+        res.status(500).json({ success: false, error: 'فشل جلب التقييمات', details: IS_PROD ? undefined : err.message });
     }
 });
 
@@ -3523,7 +3542,7 @@ app.get('/api/service-ratings', async (req, res) => {
                 res.json({ success: true, items: result.rows });
             } catch (err) {
                 console.error('❌ خطأ أثناء جلب أفضل مزودي الخدمة تقييماً:', err.message);
-                res.status(500).json({ success: false, error: 'فشل جلب البيانات', details: err.message });
+                res.status(500).json({ success: false, error: 'فشل جلب البيانات', details: IS_PROD ? undefined : err.message });
             }
         });
 
@@ -3539,7 +3558,7 @@ app.put('/api/service-ratings/:id/comment', requireAuth, async (req, res) => {
         return res.status(400).json({ success: false, error: 'معرف المستخدم مطلوب.' });
     }
 
-        if (typeof comment !== 'string' || comment.trim() === '') {
+    if (typeof comment !== 'string' || comment.trim() === '') {
         return res.status(400).json({ success: false, error: 'التعليق مطلوب.' });
     }
 
@@ -3576,7 +3595,7 @@ app.put('/api/service-ratings/:id/comment', requireAuth, async (req, res) => {
     } catch (err) {
         await client.query('ROLLBACK');
         console.error('❌ خطأ أثناء إضافة التعليق:', err.message);
-        res.status(500).json({ success: false, error: 'فشل إضافة التعليق', details: err.message });
+        res.status(500).json({ success: false, error: 'فشل إضافة التعليق', details: IS_PROD ? undefined : err.message });
     } finally {
         client.release();
     }
@@ -3605,7 +3624,7 @@ app.get('/api/service-requests/:id/rating-check', requireAuth, async (req, res) 
         });
     } catch (err) {
         console.error('❌ خطأ أثناء التحقق من التقييم:', err.message);
-        res.status(500).json({ success: false, error: 'فشل التحقق من التقييم', details: err.message });
+        res.status(500).json({ success: false, error: 'فشل التحقق من التقييم', details: IS_PROD ? undefined : err.message });
     }
 });
 
@@ -3634,7 +3653,7 @@ app.get('/api/service-ratings/pending-comments', requireAuth, async (req, res) =
         });
     } catch (err) {
         console.error('❌ خطأ أثناء جلب التقييمات التي تنقصها تعليق:', err.message);
-        res.status(500).json({ success: false, error: 'فشل جلب التقييمات', details: err.message });
+        res.status(500).json({ success: false, error: 'فشل جلب التقييمات', details: IS_PROD ? undefined : err.message });
     }
 });
 
@@ -3663,7 +3682,7 @@ app.get('/api/service-requests/pending-ratings', requireAuth, async (req, res) =
         });
     } catch (err) {
         console.error('❌ خطأ أثناء جلب الطلبات المكتملة التي لم يتم تقييمها:', err.message);
-        res.status(500).json({ success: false, error: 'فشل جلب الطلبات', details: err.message });
+        res.status(500).json({ success: false, error: 'فشل جلب الطلبات', details: IS_PROD ? undefined : err.message });
     }
 });
 
@@ -3697,12 +3716,13 @@ app.post('/api/log-contact-click', requireAuth, async (req, res) => {
     if (!user_id || !service_layer || !feature_id || !contact_type) {
         return res.status(400).json({ success: false, error: 'بيانات غير مكتملة.' });
     }
-        if (!['call', 'whatsapp'].includes(contact_type)) {
+    if (!['call', 'whatsapp'].includes(contact_type)) {
         return res.status(400).json({ success: false, error: 'نوع التواصل غير صالح.' });
     }
     if (/[<>]/.test(String(service_layer))) {
         return res.status(400).json({ success: false, error: 'قيمة غير صالحة.' });
     }
+
     try {
         // محاولة العثور على مزود خدمة مرتبط
         const providerResult = await servicesPool.query(
@@ -3717,7 +3737,7 @@ app.post('/api/log-contact-click', requireAuth, async (req, res) => {
         // (وهو اسم مزود الخدمة الحقيقي كما أُدخل بحقل "name" بالمعلم على
         // الخريطة)، وليس اسم الطبقة. اسم الطبقة يبقى فقط كحل أخير جداً في
         // حال لم يصل أي اسم من الواجهة لأي سبب.
-                // 🔒 تنظيف الاسم القادم من العميل (منع رموز HTML + تحديد الطول)
+        // 🔒 تنظيف الاسم القادم من العميل (منع رموز HTML + تحديد الطول)
         const cleanProviderName = (provider_name === undefined || provider_name === null)
             ? '' : String(provider_name).replace(/[<>]/g, '').trim().slice(0, 100);
         let final_provider_name = cleanProviderName !== '' ? cleanProviderName : null;
@@ -3749,7 +3769,7 @@ app.post('/api/log-contact-click', requireAuth, async (req, res) => {
         res.json({ success: true, id: insertResult.rows[0].id });
     } catch (err) {
         console.error('❌ خطأ أثناء تسجيل النقرة:', err.message);
-        res.status(500).json({ success: false, error: 'فشل تسجيل النقرة', details: err.message });
+        res.status(500).json({ success: false, error: 'فشل تسجيل النقرة', details: IS_PROD ? undefined : err.message });
     }
 });
 
@@ -3802,7 +3822,7 @@ app.get('/api/provider-linked-features', async (req, res) => {
         res.json({ success: true, linked });
     } catch (err) {
         console.error('❌ خطأ أثناء جلب قائمة مزودي الخدمة المرتبطين:', err.message);
-        res.status(500).json({ success: false, error: 'فشل جلب البيانات', details: err.message });
+        res.status(500).json({ success: false, error: 'فشل جلب البيانات', details: IS_PROD ? undefined : err.message });
     }
 });
 
@@ -3822,6 +3842,13 @@ app.use('/api', (req, res) => {
 });
 
 // 9. تقديم الملفات الثابتة
+// 🔒 قائمة سماح للملفات الثابتة: لا يُقدَّم إلا مجلدات الموقع المعروفة وصفحات .html بالجذر.
+// STATIC_ALLOWLIST_MODE=report (الافتراضي): يقدّم كل شيء كما كان ويطبع تحذيراً لكل مسار غير مدرج.
+// بعد تجربة كل صفحات الموقع دون أي تحذير، اضبط STATIC_ALLOWLIST_MODE=enforce ليُحجب غير المدرج بـ404.
+const STATIC_ALLOWLIST_MODE = (process.env.STATIC_ALLOWLIST_MODE || 'report').toLowerCase();
+const STATIC_ALLOWED = /^\/(?:(?:js|css|pic|ol|proj4|icons|sounds|fonts|images|img|assets)\/|[A-Za-z0-9_.\-]+\.html$|favicon\.ico$|robots\.txt$)/i;
+const staticReportedPaths = new Set();
+
 app.use((req, res, next) => {
     // 🔒 فك الترميز وتطبيع المسار قبل الفحص (كان /%73erver.js و //server.js يتجاوزان الحظر)
     let decodedPath;
@@ -3848,6 +3875,13 @@ app.use((req, res, next) => {
     ];
     if (forbiddenPatterns.some((re) => re.test(decodedPath))) {
         return res.status(404).end();
+    }
+    if (decodedPath !== '/' && !STATIC_ALLOWED.test(decodedPath)) {
+        if (STATIC_ALLOWLIST_MODE === 'enforce') return res.status(404).end();
+        if (staticReportedPaths.size < 500 && !staticReportedPaths.has(decodedPath)) {
+            staticReportedPaths.add(decodedPath);
+            console.warn(`⚠️ [Static allowlist] مسار غير مدرج (سيُحجب عند enforce): ${decodedPath}`);
+        }
     }
     next();
 });
@@ -3880,14 +3914,19 @@ app.use((err, req, res, next) => {
 const connectedUsers = new Map();
 
 // 🔒 لا يُقبل اتصال Socket بدون توكن صالح
-io.use((socket, next) => {
+io.use(async (socket, next) => {
     try {
         const token = socket.handshake.auth && socket.handshake.auth.token;
         if (!token) return next(new Error('unauthorized'));
-        const decoded = jwt.verify(token, ADMIN_JWT_SECRET);
+        const decoded = jwt.verify(token, ADMIN_JWT_SECRET, { algorithms: ['HS256'] });
         const uid = Number(decoded.uid);
         if (!Number.isInteger(uid) || uid <= 0) return next(new Error('unauthorized'));
-        socket.auth = { uid, role: decoded.role };
+        // 🔒 الحالة والدور ورقم النسخة من قاعدة البيانات (وليس من التوكن وحده)
+        const status = await getAuthStatus(uid);
+        if (!status.exists || !status.active || (Number(decoded.tv) || 0) !== status.tokenVersion) {
+            return next(new Error('unauthorized'));
+        }
+        socket.auth = { uid, role: status.role };
         next();
     } catch (e) {
         next(new Error('unauthorized'));
@@ -3908,7 +3947,7 @@ io.on('connection', (socket) => {
     });
 
     // عند تسجيل دخول المستخدم، نقوم بربط Socket ID بمعرف المستخدم
-        socket.on('user_connected', () => {
+    socket.on('user_connected', () => {
         const userId = socket.auth.uid; // 🔒 الهوية من التوكن وليس مما يرسله العميل
         console.log(`👤 المستخدم ${userId} متصل بـ Socket ID: ${socket.id}`);
         connectedUsers.set(userId, socket.id);
@@ -3919,7 +3958,7 @@ io.on('connection', (socket) => {
     });
 
     // عند فصل المستخدم
-        socket.on('disconnect', () => {
+    socket.on('disconnect', () => {
         if (socket.userId) {
             console.log(`🔌 المستخدم ${socket.userId} انقطع اتصاله`);
             // 🔒 لا نحذف إلا إذا كان الاتصال المسجّل هو هذا الاتصال (وإلا نمسح اتصال التبويب الجديد)
@@ -3930,7 +3969,7 @@ io.on('connection', (socket) => {
     });
 
     // استقبال إشعار من لوحة التحكم وإرساله للمستخدم المستهدف
-        socket.on('send_notification', async (data) => {
+    socket.on('send_notification', async (data) => {
         console.log('📨 استلام طلب إرسال إشعار:', data);
 
         // 🔒 الإرسال للمشرفين فقط (مع التحقق من الدور الحالي بقاعدة البيانات)
@@ -4105,7 +4144,7 @@ io.on('connection', (socket) => {
     socket.on('get_unread_notifications', async (data) => {
         console.log('📨 طلب الإشعارات غير المقروءة:', data);
 
-                const userId = socket.auth.uid; // 🔒 لا يُقرأ إلا إشعارات صاحب التوكن
+        const userId = socket.auth.uid; // 🔒 لا يُقرأ إلا إشعارات صاحب التوكن
 
         if (!userId) {
             console.error('❌ معرف المستخدم مطلوب');
@@ -4135,7 +4174,12 @@ io.on('connection', (socket) => {
     socket.on('mark_notification_read', async (notificationId) => {
         try {
             console.log('📖 تعليم الإشعار كمقروء:', notificationId);
-                await servicesPool.query(
+            const query = `
+                UPDATE "public"."notifications"
+                SET is_read = true, read_at = NOW()
+                WHERE id = $1
+            `;
+            await servicesPool.query(
                 'UPDATE "public"."notifications" SET is_read = true, read_at = NOW() WHERE id = $1 AND user_id = $2',
                 [notificationId, socket.auth.uid]
             ); // 🔒 لا يُعلَّم إلا إشعار يخص صاحب التوكن

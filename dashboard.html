@@ -215,6 +215,13 @@
         'ApartRent': 'شقة للإيجار', 'ApartSale': 'شقة للبيع', 'LandSale': 'أرض للبيع'
     };
 
+    // 🔒 تعقيم أي نص قادم من قاعدة البيانات قبل وضعه بـ innerHTML
+    function escapeHtml(v) {
+        return String(v === null || v === undefined ? '' : v)
+            .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+    }
+
     let allData = [];
 
     async function loadProviderSuccessStats() {
@@ -352,14 +359,14 @@
 
             const tr = document.createElement('tr');
                         tr.innerHTML = `
-                <td><b>${row.username}</b></td>
-                <td><b>${row.provider_name}</b></td>
-                <td><span style="color:#1a73e8; font-weight:bold;">${row.layer_ar}</span></td>
-                <td><small style="direction:ltr; display:inline-block;">${row.provider_phone}</small></td>
+                <td><b>${escapeHtml(row.username)}</b></td>
+                <td><b>${escapeHtml(row.provider_name)}</b></td>
+                <td><span style="color:#1a73e8; font-weight:bold;">${escapeHtml(row.layer_ar)}</span></td>
+                <td><small style="direction:ltr; display:inline-block;">${escapeHtml(row.provider_phone)}</small></td>
                 <td>${row.formatted_date}</td>
                 <td><span style="font-size:16px;">${contactIcon}</span> ${row.contact_type}</td>
                 <td><span class="status-badge ${statusClass}">${row.status}</span></td>
-                <td><small>${row.cancel_reason}</small></td>
+                <td><small>${escapeHtml(row.cancel_reason)}</small></td>
                 <td>
                     <button class="delete-record-btn" data-id="${row.id}" style="background:#dc3545; color:white; border:none; padding:5px 10px; border-radius:5px; cursor:pointer;">
                         <i class="fas fa-trash"></i> حذف

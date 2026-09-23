@@ -1097,6 +1097,19 @@ body {
     .nms-hero-content p {
         font-size: 13px;
     }
+
+    /* 🆕 حجم افتراضي ثابت مناسب لشاشة التابلت لكروت النتائج/المعرض/الأعلى
+       تقييماً/موصى بهم، مع سكرول داخلي لأي محتوى أطول (نفس مبدأ الكمبيوتر
+       لكن بمساحة أنسب). الإعلانات الجانبية (nms-ad-side) غير متأثرة إطلاقاً. */
+    #nms-results-list .nms-result-card,
+    .nms-rated-scroll-row > div,
+    .nms-gallery-card {
+        height: 340px;
+    }
+        .nms-ad-bottom > .nms-ad-card {
+        width: 45%;
+        height: 340px;
+    }
 }
 
 /* موبايل أفقي (480px - 767px) */
@@ -1207,9 +1220,20 @@ body {
         font-size: 13px;
     }
     
-    .nms-r-actions button {
+        .nms-r-actions button {
         font-size: 11px;
         padding: 8px 5px;
+    }
+
+    /* 🆕 حجم افتراضي ثابت مناسب لشاشة الموبايل الأفقي، مع سكرول داخلي */
+    #nms-results-list .nms-result-card,
+    .nms-rated-scroll-row > div,
+    .nms-gallery-card {
+        height: 300px;
+    }
+        .nms-ad-bottom > .nms-ad-card {
+        width: 80%;
+        height: 300px;
     }
 }
 
@@ -1488,13 +1512,39 @@ body {
         font-size: 15px;
     }
     
-    .nms-footer-col ul li a {
+       .nms-footer-col ul li a {
         font-size: 12px;
     }
     
     .nms-footer-about {
         font-size: 11px;
     }
+
+    /* 🆕 حجم افتراضي ثابت مناسب لأصغر الشاشات، مع سكرول داخلي لأي محتوى أطول */
+    #nms-results-list .nms-result-card,
+    .nms-rated-scroll-row > div,
+    .nms-gallery-card {
+        height: 270px;
+    }
+        .nms-ad-bottom > .nms-ad-card {
+        width: 88%;
+        height: 270px;
+    }
+
+
+}
+
+/* 🆕 حجم افتراضي ثابت لكل بطاقة إعلان بقسم الإعلانات بالأسفل فقط (وليس
+   يميناً وشمالاً - تلك تبقى كما هي تماماً)، مع سكرول داخلي لأي محتوى أطول
+   بدل تمدد البطاقة القصيرة لارتفاع جارتها الأطول */
+.nms-ad-bottom > .nms-ad-card {
+    flex-shrink: 0;
+    width: 24%;
+    min-width: 240px;
+    height: 380px;
+    overflow-y: auto;
+    overflow-x: hidden;
+    box-sizing: border-box;
 }
 
 @media (max-width: 768px) {
@@ -1552,4 +1602,40 @@ body {
 }
 .market-add-btn:hover {
     background: #f57c00;
+}
+
+/* 🆕 طبقة نقر شفافة تغطي كامل مساحة الفيديو المضمّن (يوتيوب أو ملف مباشر)
+   بقسمي الصور/الفيديو وقسم قبل/بعد - النقر بأي نقطة داخل الفيديو ينقل
+   مباشرة لصفحته الأصلية بتبويب جديد. الأيقونة الصغيرة بالزاوية مجرد إشارة
+   بصرية توضح أن العنصر قابل للنقر، وليست هي فقط منطقة النقر. */
+.nms-video-click-overlay {
+    position: absolute;
+    inset: 0;
+    z-index: 2;
+    display: flex;
+    align-items: flex-end;
+    justify-content: flex-start;
+    padding: 8px;
+    box-sizing: border-box;
+    text-decoration: none;
+    background: transparent;
+    transition: background 0.2s ease;
+}
+.nms-video-click-overlay:hover {
+    background: rgba(0, 0, 0, 0.15);
+}
+.nms-video-click-overlay i {
+    background: rgba(0, 0, 0, 0.65);
+    color: #fff;
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+    transition: background 0.2s ease;
+}
+.nms-video-click-overlay:hover i {
+    background: rgba(26, 115, 232, 0.9);
 }

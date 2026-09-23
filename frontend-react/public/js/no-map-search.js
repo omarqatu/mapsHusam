@@ -938,25 +938,27 @@ window.__nmsPageHandlesOwnAds = true;
                 }
 
         // تحويل رابط فيديو (يوتيوب أو ملف مباشر أو رابط عام) إلى عنصر عرض مناسب
-            function buildVideoEmbedHtml(rawUrl) {
+                    function buildVideoEmbedHtml(rawUrl) {
             const url = cleanExternalUrl(rawUrl);
             if (!url) return '';
 
             const ytMatch = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([\w-]+)/);
             if (ytMatch) {
-                // 🆕 زر صغير ثابت فوق الفيديو دائماً يفتح رابط الفيديو الأصلي
-                // بتبويب جديد، بحيث يضمن إمكانية "النقر والانتقال" دائماً حتى لو
-                // كان الفيديو نفسه قابلاً للتشغيل المباشر داخل الإطار (iframe)
+                // 🆕 طبقة شفافة (nms-video-click-overlay) تغطي كامل مساحة الفيديو
+                // وتفتح الرابط الأصلي عند النقر بأي نقطة داخلها، بدل الاكتفاء
+                // بزر صغير بزاوية الفيديو فقط. ملاحظة: هذا يجعل الفيديو معاينة
+                // بصرية فقط داخل البطاقة (بدون تشغيل مباشر)، والنقر ينقل مباشرة
+                // لصفحة الفيديو الأصلية حيث يمكن تشغيله هناك.
                 return `<div class="nms-gallery-media nms-gallery-video" style="position:relative;">
                     <iframe src="https://www.youtube.com/embed/${ytMatch[1]}" frameborder="0" allow="autoplay; encrypted-media" allowfullscreen loading="lazy"></iframe>
-                    <a href="${url}" target="_blank" rel="noopener" class="nms-video-open-link" title="فتح الفيديو في صفحته الأصلية"><i class="fas fa-up-right-from-square"></i></a>
+                    <a href="${url}" target="_blank" rel="noopener" class="nms-video-click-overlay" title="فتح الفيديو في صفحته الأصلية"><i class="fas fa-up-right-from-square"></i></a>
                 </div>`;
             }
 
             if (/\.(mp4|webm|ogg)(\?.*)?$/i.test(url)) {
                 return `<div class="nms-gallery-media nms-gallery-video" style="position:relative;">
                     <video controls preload="metadata" src="${url}"></video>
-                    <a href="${url}" target="_blank" rel="noopener" class="nms-video-open-link" title="فتح الفيديو في صفحته الأصلية"><i class="fas fa-up-right-from-square"></i></a>
+                    <a href="${url}" target="_blank" rel="noopener" class="nms-video-click-overlay" title="فتح الفيديو في صفحته الأصلية"><i class="fas fa-up-right-from-square"></i></a>
                 </div>`;
             }
 
@@ -983,21 +985,17 @@ window.__nmsPageHandlesOwnAds = true;
             if (/\.(jpg|jpeg|png|gif|webp)(\?.*)?$/i.test(url)) {
                 return `<img src="${url}" loading="lazy" class="nms-ba-photo-img">`;
             }
-            // 🆕 [إصلاح]: كشف روابط يوتيوب وعرضها مضمّنة (نفس أسلوب قسم
-            // "الفيديوهات") بدل زر "عرض" الذي كان يفتح الرابط بتبويب جديد فقط
-            // بدون أي معاينة داخل بطاقة "قبل/بعد" نفسها
+            // 🆕 نفس طبقة النقر الشفافة الكاملة المستخدمة بقسمي الصور والفيديو،
+            // بدل زر صغير بالزاوية فقط. .nms-ba-col أصلاً بها position:relative
+            // بملف CSS فلا حاجة لإضافتها هنا.
             const ytMatch = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([\w-]+)/);
             if (ytMatch) {
-                // 🆕 إضافة زر صغير ثابت يفتح رابط الفيديو الأصلي بتبويب جديد،
-                // نفس الفكرة المطبَّقة بقسمي الصور والفيديو (.nms-ba-col أصلاً
-                // بها position:relative بملف CSS فلا حاجة لإضافتها هنا)
                 return `<iframe class="nms-ba-video-frame" src="https://www.youtube.com/embed/${ytMatch[1]}" frameborder="0" allow="autoplay; encrypted-media" allowfullscreen loading="lazy"></iframe>
-                    <a href="${url}" target="_blank" rel="noopener" class="nms-video-open-link" title="فتح الفيديو في صفحته الأصلية"><i class="fas fa-up-right-from-square"></i></a>`;
+                    <a href="${url}" target="_blank" rel="noopener" class="nms-video-click-overlay" title="فتح الفيديو في صفحته الأصلية"><i class="fas fa-up-right-from-square"></i></a>`;
             }
-            // 🆕 كشف روابط فيديو مباشرة (mp4/webm/ogg) وعرضها بمشغّل مضمّن أيضاً
             if (/\.(mp4|webm|ogg)(\?.*)?$/i.test(url)) {
                 return `<video class="nms-ba-video-frame" controls preload="metadata" src="${url}"></video>
-                    <a href="${url}" target="_blank" rel="noopener" class="nms-video-open-link" title="فتح الفيديو في صفحته الأصلية"><i class="fas fa-up-right-from-square"></i></a>`;
+                    <a href="${url}" target="_blank" rel="noopener" class="nms-video-click-overlay" title="فتح الفيديو في صفحته الأصلية"><i class="fas fa-up-right-from-square"></i></a>`;
             }
             return `<a href="${url}" target="_blank" rel="noopener noreferrer" class="nms-video-link-btn"><i class="fas fa-external-link-alt"></i> عرض</a>`;
         }

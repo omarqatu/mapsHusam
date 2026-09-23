@@ -454,7 +454,8 @@ function initAuthAppEvents() {
                         feature_id: data.user.target_id ? parseInt(data.user.target_id) : null,
                         targetLayer: data.user.target_layer || null,
                         targetId: data.user.target_id ? parseInt(data.user.target_id) : null,
-                        admin_token: data.user.admin_token || null
+                        admin_token: data.user.admin_token || null,
+                        token: data.user.token || null   // 🔒 توكن الجلسة لكل المستخدمين
                     };
 
                     if (finalUserData.role === "admin") {
