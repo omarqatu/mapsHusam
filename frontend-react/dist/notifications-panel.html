@@ -351,7 +351,7 @@
 
 <script src="/socket.io/socket.io.js"></script>
 <script>
-    const socket = io();
+    const socket = io({ auth: { token: (getAdminAuthHeaders().Authorization || '').replace('Bearer ', '') } });
     const statusDot = document.getElementById('status-dot');
     const statusText = document.getElementById('status-text');
     const form = document.getElementById('notification-form');

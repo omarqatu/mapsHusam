@@ -268,9 +268,10 @@ function renderManualGroupsInto(prefix) {
         return `${dd}/${mm}/${d.getFullYear()}`;
     }
 
-    async function fetchRemoteWidgetsData() {
+        async function fetchRemoteWidgetsData() {
         try {
             const res = await fetch('/api/widgets-data');
+            if (!res.ok) return; // 🆕 تجاهل بصمت لو السيرفر أعاد صفحة خطأ بدل JSON (مثلاً أثناء إعادة تشغيل)
             const data = await res.json();
             if (!data.success) return;
 
@@ -398,15 +399,26 @@ function renderManualGroupsInto(prefix) {
     }
 
     // 🆕 بناء قوائم البوابة التفصيلية (Portal) لحواجز الطرق ومحطات الوقود
+    // 🆕 حواجز الطرق: كل حاجز يعرض حالتين - "للداخل" (عمود stop) و"للخارج" (عمود stop2)
     function buildPortalTrafficItemsHtml() {
         if (!liveRoadBarriers.length) return '<div style="padding:10px; text-align:center; color:#999;">لا توجد بيانات حالياً</div>';
         return liveRoadBarriers.map(f => {
             const props = f.properties || {};
-            const stopInfo = window.getRoadBarrierStopInfo(window.getCaseInsensitiveProp(props, 'stop'));
             const name = props.name || 'حاجز';
+            const inInfo = window.getRoadBarrierStopInfo(window.getCaseInsensitiveProp(props, 'stop'));
+            const rawOut = window.getCaseInsensitiveProp(props, 'stop2');
+            const hasOut = rawOut !== undefined && rawOut !== null && String(rawOut).trim() !== '';
+            const outInfo = hasOut
+                ? window.getRoadBarrierStopInfo(rawOut)
+                : { label: 'غير محدد', color: '#6c757d', icon: '⚪' };
+            const badge = (iconClass, dirLabel, info) =>
+                `<span class="traffic-status" style="color:${info.color}; background:${info.color}15;"><i class="fas ${iconClass}"></i> ${dirLabel}: ${info.icon} ${info.label}</span>`;
             return `<div class="traffic-item">
-                <div class="traffic-location">${name}</div>
-                <div class="traffic-status" style="color:${stopInfo.color};">${stopInfo.icon} ${stopInfo.label}</div>
+                <div class="traffic-location">${escWidgetText(name)}</div>
+                <div style="display:flex; flex-wrap:wrap; gap:8px;">
+                    ${badge('fa-sign-in-alt', 'للداخل', inInfo)}
+                    ${badge('fa-sign-out-alt', 'للخارج', outInfo)}
+                </div>
             </div>`;
         }).join('');
     }

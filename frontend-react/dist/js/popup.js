@@ -419,18 +419,20 @@ function initializePopup(map) {
         return `<a href="${finalUrl}" target="_blank" rel="noopener noreferrer" class="popup-link">${text}</a>`;
     }
 
-            function createImageElement(url) {
-        const urlList = window.parseUrlList ? window.parseUrlList(url) : (cleanUrl(url) ? [cleanUrl(url)] : []);
-        if (!urlList.length) return '';
+    function createImageElement(url) {
+    const urlList = window.parseUrlList ? window.parseUrlList(url) : (cleanUrl(url) ? [cleanUrl(url)] : []);
+    if (!urlList.length) return '';
 
-        return urlList.map((item) => {
-            const validatedUrl = cleanUrl(item);
-            if (!validatedUrl) return '';
-            return `<div class="popup-img-container" style="margin-top:10px; text-align:center;">
-                        <img src="${validatedUrl}" class="popup-img" style="max-width:100%; border-radius:8px; display:block; margin:auto;" loading="lazy" onerror="this.style.display='none';">
-                    </div>`;
-        }).join('');
-    }
+    return urlList.map((item) => {
+        const validatedUrl = cleanUrl(item);
+        if (!validatedUrl) return '';
+        // 🆕 [تشديد أمني CSP]: onerror الآن معالَج مركزياً عبر تفويض حدث
+        // document-level على كلاس popup-img (مضاف بمرحلة 4-أ سابقاً)
+        return `<div class="popup-img-container" style="margin-top:10px; text-align:center;">
+                    <img src="${validatedUrl}" class="popup-img" style="max-width:100%; border-radius:8px; display:block; margin:auto;" loading="lazy">
+                </div>`;
+    }).join('');
+}
 
     function resolvePopupMediaValue(props, fieldNames) {
         return window.getFirstValidMediaValue ? window.getFirstValidMediaValue(props, fieldNames) : undefined;
@@ -559,10 +561,20 @@ function initializePopup(map) {
 
     // 🆕 [تشديد أمني CSP]: onerror لا يبثّ (bubble) بشكل طبيعي، لذلك نستخدم
     // مرحلة الالتقاط (capture: true) لضمان وصول الحدث حتى مع التفويض من الأعلى
-    document.addEventListener('error', function (e) {
-        if (e.target && e.target.classList && e.target.classList.contains('popup-img')) {
-            e.target.style.display = 'none';
-        }
+        document.addEventListener('error', function (e) {
+        const img = e.target;
+        if (!img || !img.classList || !img.classList.contains('popup-img')) return;
+        // 🆕 [تحسين تجربة]: بدل إخفاء الصورة بصمت عند فشل تحميلها (غالباً لأن
+        // الرابط المُدخل صفحة وليس صورة مباشرة - مثل رابط فيسبوك أو يوتيوب)،
+        // نستبدلها برابط نصي قابل للنقر يفتح نفس الرابط بتبويب جديد
+        const link = document.createElement('a');
+        link.href = img.src;
+        link.target = '_blank';
+        link.rel = 'noopener noreferrer';
+        link.textContent = '🔗 انقر هنا لعرض الصور';
+        link.style.cssText = 'display:block; padding:10px; text-align:center; color:#1a73e8; font-weight:bold; text-decoration:underline; background:#f8f9fa; border-radius:8px; margin-top:10px;';
+        const container = img.closest('.popup-img-container') || img.parentElement;
+        if (container) container.replaceWith(link);
     }, true);
     
     const overlay = new ol.Overlay({
@@ -752,16 +764,35 @@ function initializePopup(map) {
         
                 if (!isAreaLayer && !isRoadBarriers) bodyHtml += getStatusHtml(props.auto_status, props.work_hours);
 
-                if (isRoadBarriers) {
-            const stopInfo = window.getRoadBarrierStopInfo(window.getCaseInsensitiveProp(props, 'stop'));
-            bodyHtml += `<div style="margin: 10px 0; padding: 10px; border-radius: 8px; background: ${stopInfo.color}15; border: 1px dashed ${stopInfo.color}; text-align: center;">
-                <span style="color: ${stopInfo.color}; font-weight: bold; font-size: 15px;">${stopInfo.icon} ${stopInfo.label}</span>
+                                if (isRoadBarriers) {
+            // 🆕 [stop2]: عرض حالتين منفصلتين - للداخل (stop) وللخارج (stop2) - كل
+            // اتجاه بلونه وأيقونته الخاصة حسب قيمته، بدل حالة واحدة كما كان سابقاً
+            const inInfo = window.getRoadBarrierStopInfo(window.getCaseInsensitiveProp(props, 'stop'));
+            const rawStop2 = window.getCaseInsensitiveProp(props, 'stop2');
+            const hasStop2 = rawStop2 !== undefined && rawStop2 !== null && String(rawStop2).trim() !== '';
+            const outInfo = hasStop2
+                ? window.getRoadBarrierStopInfo(rawStop2)
+                : { label: 'غير محدد', color: '#6c757d', icon: '⚪' };
+
+            bodyHtml += `<div style="margin: 10px 0; display: flex; gap: 8px; flex-wrap: wrap;">
+                <div style="flex: 1; min-width: 130px; padding: 10px; border-radius: 8px; background: ${inInfo.color}15; border: 1px dashed ${inInfo.color}; text-align: center;">
+                    <div style="font-size: 11px; color: #666; margin-bottom: 4px;"><i class="fas fa-sign-in-alt"></i> للداخل</div>
+                    <span style="color: ${inInfo.color}; font-weight: bold; font-size: 14px;">${inInfo.icon} ${inInfo.label}</span>
+                </div>
+                <div style="flex: 1; min-width: 130px; padding: 10px; border-radius: 8px; background: ${outInfo.color}15; border: 1px dashed ${outInfo.color}; text-align: center;">
+                    <div style="font-size: 11px; color: #666; margin-bottom: 4px;"><i class="fas fa-sign-out-alt"></i> للخارج</div>
+                    <span style="color: ${outInfo.color}; font-weight: bold; font-size: 14px;">${outInfo.icon} ${outInfo.label}</span>
+                </div>
             </div>`;
             if (props.name) bodyHtml += `<b>📍 الاسم:</b> ${window.sanitizeHTML(props.name)}<br>`;
             // 🆕 عرض المحافظة والمدينة والموقع
             if (props.gov_a) bodyHtml += `<b>🌍 المحافظة:</b> ${window.sanitizeHTML(props.gov_a)}<br>`;
             if (props.village_a) bodyHtml += `<b>🏘️ المدينة:</b> ${window.sanitizeHTML(props.village_a)}<br>`;
             if (props.location_name || props.location) bodyHtml += `<b>📍 الموقع:</b> ${window.sanitizeHTML(props.location_name || props.location)}<br>`;
+            // 🆕 [إصلاح]: حقل الوصف لم يكن يُعرض إطلاقاً لحواجز الطرق (كان مفقوداً
+            // بهذا الفرع تحديداً بعكس باقي الخدمات) - يُستخدم لتوضيح تفاصيل إضافية
+            // عن الحاجز أو الأزمة (مثال: "تفتيش دقيق، طابور طويل" أو غيره)
+            if (props.des) bodyHtml += `<div style="margin-top:5px; background:#f9f9f9; padding:5px; border-radius:4px; word-wrap:break-word; overflow-wrap:break-word; white-space:normal;"><b>📝 ملاحظات:</b> ${window.sanitizeHTML(props.des)}</div>`;
 
                         bodyHtml += `
             <div style="margin-top: 15px; border-top: 2px solid #eee; padding-top: 12px;">

@@ -243,16 +243,18 @@ function initializeEditTools(map, overlayLayersObjParam) {
                 const isRealEstate = realEstateLayers.some(layer => selectedLayerName.includes(layer));
         let activeFields = isRealEstate ? fieldsRealEstate : fieldsServices;
 
-        // 🆕 حقول إضافية حسب الطبقة: حالة الحاجز لحواجز الطرق، وتوفر الوقود لمحطات الوقود
+        // 🆕 حقول إضافية حسب الطبقة: حالة الحاجز (اتجاهين) لحواجز الطرق، وتوفر الوقود لمحطات الوقود
         if (selectedLayerName === 'road_barriersLayer') {
+            const stopOptions = [
+                { value: '0', label: '🟢 مفتوح' },
+                { value: '1', label: '🔴 مغلق' },
+                { value: '2', label: '🟠 أزمة خفيفة' },
+                { value: '3', label: '🟤 أزمة خانقة' },
+                { value: '4', label: '🟣 تفتيش وأزمة خانقة' }
+            ];
             activeFields = activeFields.concat([
-                { name: 'stop', label: 'حالة الحاجز', type: 'select', options: [
-                    { value: '0', label: '🟢 مفتوح' },
-                    { value: '1', label: '🔴 مغلق' },
-                    { value: '2', label: '🟠 أزمة خفيفة' },
-                    { value: '3', label: '🟤 أزمة خانقة' },
-                    { value: '4', label: '🟣 تفتيش وأزمة خانقة' }
-                ]}
+                { name: 'stop', label: 'حالة الحاجز (للداخل)', type: 'select', options: stopOptions },
+                { name: 'stop2', label: 'حالة الحاجز (للخارج)', type: 'select', options: stopOptions }
             ]);
         } else if (selectedLayerName === 'fuel_stationsLayer') {
             const fuelOptions = [
@@ -311,8 +313,11 @@ function initializeEditTools(map, overlayLayersObjParam) {
                 const isRealEstate = realEstateLayers.some(layer => selectedLayerName.includes(layer));
         let activeFields = isRealEstate ? fieldsRealEstate : fieldsServices;
 
-        if (selectedLayerName === 'road_barriersLayer') {
-            activeFields = activeFields.concat([{ name: 'stop', label: 'حالة الحاجز', type: 'select' }]);
+                if (selectedLayerName === 'road_barriersLayer') {
+            activeFields = activeFields.concat([
+                { name: 'stop', label: 'حالة الحاجز (للداخل)', type: 'select' },
+                { name: 'stop2', label: 'حالة الحاجز (للخارج)', type: 'select' }
+            ]);
         } else if (selectedLayerName === 'fuel_stationsLayer') {
             activeFields = activeFields.concat([
                 { name: 'diesel', label: 'ديزل (سولار)', type: 'select' },

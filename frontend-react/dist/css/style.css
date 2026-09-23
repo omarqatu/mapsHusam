@@ -586,7 +586,7 @@ body {
     border: 1px solid var(--neutral-300, #cccccc);
     min-width: 280px;
     max-width: min(380px, 82vw);
-    max-height: min(45vh, 560px);
+    max-height: min(70vh, 620px);
     z-index: 1000;
     overflow: hidden;
     

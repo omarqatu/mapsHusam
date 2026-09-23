@@ -97,13 +97,21 @@
             { id: 'location_name', name: 'الموقع', type: 'dropdown' },
             { id: 'name', name: 'الاسم', type: 'dropdown' }
         ],
-        // 🆕 حقول خاصة بطبقة حواجز الطرق: بحث حسب حالة الحاجز (عمود stop)
+                // 🆕 حقول خاصة بطبقة حواجز الطرق: بحث حسب حالة الحاجز - اتجاهين منفصلين
+        // (stop = للداخل، stop2 = للخارج)
         roadBarriers: [
             { id: 'gov_a', name: 'المحافظة', type: 'dropdown' },
             { id: 'village_a', name: 'المدينة/القرية', type: 'dropdown' },
             { id: 'location_name', name: 'الموقع', type: 'dropdown' },
             { id: 'name', name: 'اسم الحاجز', type: 'dropdown' },
-            { id: 'stop', name: 'حالة الحاجز', type: 'fixedSelect', options: [
+            { id: 'stop', name: 'حالة الحاجز (للداخل)', type: 'fixedSelect', options: [
+                { value: '0', label: '🟢 مفتوح' },
+                { value: '1', label: '🔴 مغلق' },
+                { value: '2', label: '🟠 أزمة خفيفة' },
+                { value: '3', label: '🟤 أزمة خانقة' },
+                { value: '4', label: '🟣 تفتيش وأزمة خانقة' }
+            ]},
+            { id: 'stop2', name: 'حالة الحاجز (للخارج)', type: 'fixedSelect', options: [
                 { value: '0', label: '🟢 مفتوح' },
                 { value: '1', label: '🔴 مغلق' },
                 { value: '2', label: '🟠 أزمة خفيفة' },

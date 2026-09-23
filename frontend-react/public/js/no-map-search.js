@@ -477,7 +477,12 @@ window.__nmsPageHandlesOwnAds = true;
                 const isAvailable = parseInt(props.auto_status) === 0;
                 const color = isAvailable ? '#28a745' : '#dc3545';
                 const text = isAvailable ? 'متاح الآن' : 'مغلق حالياً';
-                statusHtml = `<div style="font-size:10px; font-weight:bold; color:${color}; border:1px dashed ${color}; border-radius:6px; padding:3px 6px; display:inline-block; margin-bottom:4px;">${isAvailable ? '🟢' : '🔴'} ${text}</div>`;
+                // 🆕 إضافة ساعات الدوام أسفل الحالة (24 ساعة أو الصيغة العربية المقروءة)
+                // بنفس منطق البوب أب تماماً، بدل الاكتفاء بعرض الحالة فقط بدون توقيت
+                statusHtml = `<div style="font-size:10px; font-weight:bold; color:${color}; border:1px dashed ${color}; border-radius:6px; padding:3px 6px; display:inline-block; margin-bottom:4px;">
+                    ${isAvailable ? '🟢' : '🔴'} ${text}
+                    <div style="font-size:9px; font-weight:normal; color:#555; margin-top:2px;">${formatWorkHours(props.work_hours)}</div>
+                </div>`;
             }
 
             let detailsHtml = '';
@@ -546,8 +551,8 @@ window.__nmsPageHandlesOwnAds = true;
                 ? `<button type="button" class="nms-goto-map-btn js-goto-map-link" data-x="${adGotoCoords[0]}" data-y="${adGotoCoords[1]}"><i class="fas fa-map-location-dot"></i> الانتقال إلى الخريطة</button>`
                 : '';
 
-                        return `
-                <div style="background:#fff; border:2px solid #fbc02d; border-radius:8px; padding:10px; box-shadow:0 2px 5px rgba(0,0,0,0.1); box-sizing:border-box; text-align:right; direction:rtl; width:100%;">
+                return `
+                <div class="nms-ad-card" style="background:#fff; border:2px solid #fbc02d; border-radius:8px; padding:10px; box-shadow:0 2px 5px rgba(0,0,0,0.1); box-sizing:border-box; text-align:right; direction:rtl; width:100%;">
                     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
                         <span style="background:#fbc02d; color:#000; font-size:9px; padding:2px 5px; border-radius:4px; font-weight:bold;">${item.badgeText || '⭐ مميز'}</span>
                         <span style="background:#e8f0fe; color:#1a73e8; font-size:10px; padding:2px 6px; border-radius:4px; font-weight:bold;">📌 ${item.label}${displayFeatureIdForBadge !== null ? ` <span style="color:#5f6368; font-weight:normal;">(رقم: ${sanitize(String(displayFeatureIdForBadge))})</span>` : ''}</span>
@@ -637,11 +642,12 @@ window.__nmsPageHandlesOwnAds = true;
 
                 const randomizedCards = shuffleArray(allValidCards);
 
-                if (space.classList.contains('nms-ad-bottom')) {
+                                    if (space.classList.contains('nms-ad-bottom')) {
                     const selectedCards = randomizedCards.slice(0, 4);
                     space.style.cssText += `
                         display: flex;
                         flex-direction: row;
+                        align-items: flex-start;
                         justify-content: flex-start;
                         gap: 15px;
                         overflow-x: auto;
@@ -650,8 +656,10 @@ window.__nmsPageHandlesOwnAds = true;
                         box-sizing: border-box;
                         width: 100%;
                     `;
-                    const styledCards = selectedCards.map(card => card.replace('width: 100%;', 'width: 24%; min-width: 240px;'));
-                    space.innerHTML = styledCards.join('');
+                    // 🆕 الحجم لم يعد يُفرض هنا بالجافاسكريبت، أصبح محكوماً بالكامل
+                    // عبر CSS (.nms-ad-card ضمن .nms-ad-bottom) ليتجاوب تلقائياً
+                    // مع كل حجم شاشة (كمبيوتر/تابلت/موبايل) بنفس آلية باقي الأقسام
+                    space.innerHTML = selectedCards.join('');
                     wireAdActionButtons(space);
                                 } else {
                     // 🆕 الإصلاح الجذري لمشكلة الفراغ (شكل حرف U المطلوب): لا نستخدم
@@ -930,17 +938,26 @@ window.__nmsPageHandlesOwnAds = true;
                 }
 
         // تحويل رابط فيديو (يوتيوب أو ملف مباشر أو رابط عام) إلى عنصر عرض مناسب
-                function buildVideoEmbedHtml(rawUrl) {
+            function buildVideoEmbedHtml(rawUrl) {
             const url = cleanExternalUrl(rawUrl);
             if (!url) return '';
 
             const ytMatch = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([\w-]+)/);
             if (ytMatch) {
-                return `<div class="nms-gallery-media nms-gallery-video"><iframe src="https://www.youtube.com/embed/${ytMatch[1]}" frameborder="0" allow="autoplay; encrypted-media" allowfullscreen loading="lazy"></iframe></div>`;
+                // 🆕 زر صغير ثابت فوق الفيديو دائماً يفتح رابط الفيديو الأصلي
+                // بتبويب جديد، بحيث يضمن إمكانية "النقر والانتقال" دائماً حتى لو
+                // كان الفيديو نفسه قابلاً للتشغيل المباشر داخل الإطار (iframe)
+                return `<div class="nms-gallery-media nms-gallery-video" style="position:relative;">
+                    <iframe src="https://www.youtube.com/embed/${ytMatch[1]}" frameborder="0" allow="autoplay; encrypted-media" allowfullscreen loading="lazy"></iframe>
+                    <a href="${url}" target="_blank" rel="noopener" class="nms-video-open-link" title="فتح الفيديو في صفحته الأصلية"><i class="fas fa-up-right-from-square"></i></a>
+                </div>`;
             }
 
             if (/\.(mp4|webm|ogg)(\?.*)?$/i.test(url)) {
-                return `<div class="nms-gallery-media nms-gallery-video"><video controls preload="metadata" src="${url}"></video></div>`;
+                return `<div class="nms-gallery-media nms-gallery-video" style="position:relative;">
+                    <video controls preload="metadata" src="${url}"></video>
+                    <a href="${url}" target="_blank" rel="noopener" class="nms-video-open-link" title="فتح الفيديو في صفحته الأصلية"><i class="fas fa-up-right-from-square"></i></a>
+                </div>`;
             }
 
             return `<div class="nms-gallery-media nms-gallery-video-link"><a href="${url}" target="_blank" rel="noopener" class="nms-video-link-btn"><i class="fas fa-play-circle"></i> مشاهدة الفيديو</a></div>`;
@@ -971,11 +988,16 @@ window.__nmsPageHandlesOwnAds = true;
             // بدون أي معاينة داخل بطاقة "قبل/بعد" نفسها
             const ytMatch = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([\w-]+)/);
             if (ytMatch) {
-                return `<iframe class="nms-ba-video-frame" src="https://www.youtube.com/embed/${ytMatch[1]}" frameborder="0" allow="autoplay; encrypted-media" allowfullscreen loading="lazy"></iframe>`;
+                // 🆕 إضافة زر صغير ثابت يفتح رابط الفيديو الأصلي بتبويب جديد،
+                // نفس الفكرة المطبَّقة بقسمي الصور والفيديو (.nms-ba-col أصلاً
+                // بها position:relative بملف CSS فلا حاجة لإضافتها هنا)
+                return `<iframe class="nms-ba-video-frame" src="https://www.youtube.com/embed/${ytMatch[1]}" frameborder="0" allow="autoplay; encrypted-media" allowfullscreen loading="lazy"></iframe>
+                    <a href="${url}" target="_blank" rel="noopener" class="nms-video-open-link" title="فتح الفيديو في صفحته الأصلية"><i class="fas fa-up-right-from-square"></i></a>`;
             }
             // 🆕 كشف روابط فيديو مباشرة (mp4/webm/ogg) وعرضها بمشغّل مضمّن أيضاً
             if (/\.(mp4|webm|ogg)(\?.*)?$/i.test(url)) {
-                return `<video class="nms-ba-video-frame" controls preload="metadata" src="${url}"></video>`;
+                return `<video class="nms-ba-video-frame" controls preload="metadata" src="${url}"></video>
+                    <a href="${url}" target="_blank" rel="noopener" class="nms-video-open-link" title="فتح الفيديو في صفحته الأصلية"><i class="fas fa-up-right-from-square"></i></a>`;
             }
             return `<a href="${url}" target="_blank" rel="noopener noreferrer" class="nms-video-link-btn"><i class="fas fa-external-link-alt"></i> عرض</a>`;
         }
@@ -1032,8 +1054,29 @@ window.__nmsPageHandlesOwnAds = true;
             setTimeout(() => fetchRatingsForFeature(layerKey, featureId), Math.floor(Math.random() * 500));
         }
 
+        // 🆕 دالة تفصل كل نوع وسائط لوحده (صورة/فيديو/رابط1/رابط2)، لنقدر نعيد ترتيبها
+        // حسب القسم (صور تُقدَّم الصورة، فيديو يُقدَّم الفيديو) بدل ترتيب ثابت واحد للكل
+        function getMediaPiecesForGallery(props) {
+            const picValue = getMediaValue(props, 'pic');
+            const videoValue = getMediaValue(props, 'video');
+            const details1Value = getMediaValue(props, 'details1');
+            const details2Value = getMediaValue(props, 'details2');
+
+            const picUrls = window.parseUrlList ? window.parseUrlList(picValue) : (picValue ? [picValue] : []);
+            const cleanPicUrl = picUrls.map(cleanExternalUrl).find(Boolean);
+            const picHtml = cleanPicUrl
+                ? `<div class="nms-r-img"><img src="${cleanPicUrl}" class="nms-result-img-el" loading="lazy" onerror="this.parentElement.style.display='none'"></div>`
+                : '';
+
+            const videoHtml = videoValue ? buildVideoEmbedHtml(videoValue) : '';
+            const details1Html = details1Value ? buildMediaBlockHtml(details1Value, 'تفاصيل إضافية 1') : '';
+            const details2Html = details2Value ? buildMediaBlockHtml(details2Value, 'تفاصيل إضافية 2') : '';
+
+            return { picHtml, videoHtml, details1Html, details2Html };
+        }
+
         // بطاقة شبكية مفصّلة (صور / فيديوهات)
-        function buildGalleryDetailCardHtml(feature, item, mode) {
+                function buildGalleryDetailCardHtml(feature, item, mode) {
             const props = feature.properties || {};
             const isRealEstate = item.isRealEstate;
             const name = sanitize(props.name || '');
@@ -1042,8 +1085,8 @@ window.__nmsPageHandlesOwnAds = true;
                 ? ((props.fid !== undefined && props.fid !== null) ? props.fid : '')
                 : ((props.id !== undefined && props.id !== null) ? props.id : '');
 
-            const mediaHtml = buildFeatureMediaHtml(props);
-            if (!mediaHtml) return '';
+            const pieces = getMediaPiecesForGallery(props);
+            if (!pieces.picHtml && !pieces.videoHtml && !pieces.details1Html && !pieces.details2Html) return '';
 
             let infoHtml = `<div class="nms-gallery-card-body">`;
             infoHtml += `<div class="nms-gallery-badge">🏆 ${item.label}${featureId !== '' ? ` <span style="color:#888; font-weight:normal;">(رقم: ${sanitize(String(featureId))})</span>` : ''}</div>`;
@@ -1074,11 +1117,23 @@ window.__nmsPageHandlesOwnAds = true;
                 ? `<button type="button" class="nms-goto-map-btn js-goto-map-link" data-x="${coords[0]}" data-y="${coords[1]}"><i class="fas fa-map-location-dot"></i> الانتقال إلى الخريطة</button>`
                 : '';
 
-            return `<div class="nms-gallery-card">${mediaHtml}${infoHtml}${actionsHtml}${gotoBtnHtml}</div>`;
+            // 🆕 ترتيب مختلف حسب القسم:
+            // - قسم الصور (mode='photo'): الصورة أولاً، ثم المعلومات، ثم الفيديو والروابط
+            // - قسم الفيديو (mode='video'): الفيديو أولاً، ثم المعلومات، ثم الصورة والروابط
+            let topMediaHtml, restMediaHtml;
+            if (mode === 'video') {
+                topMediaHtml = pieces.videoHtml;
+                restMediaHtml = pieces.picHtml + pieces.details1Html + pieces.details2Html;
+            } else {
+                topMediaHtml = pieces.picHtml;
+                restMediaHtml = pieces.videoHtml + pieces.details1Html + pieces.details2Html;
+            }
+
+            return `<div class="nms-gallery-card">${topMediaHtml}${infoHtml}${restMediaHtml}${actionsHtml}${gotoBtnHtml}</div>`;
         }
 
         // بطاقة "قبل وبعد" (خدمات فقط - details_link_1 و details_link_2)
-        function buildBeforeAfterCardHtml(feature, item) {
+                function buildBeforeAfterCardHtml(feature, item) {
             const props = feature.properties || {};
             const name = sanitize(props.name || '');
             const location = sanitize(props.location_name || props.location || '');
@@ -1088,10 +1143,12 @@ window.__nmsPageHandlesOwnAds = true;
 
             const beforeUrl = cleanExternalUrl(getMediaValue(props, 'details1'));
             const afterUrl = cleanExternalUrl(getMediaValue(props, 'details2'));
-            const extraMediaHtml = buildFeatureMediaHtml(props, false);
+            const extraMediaHtml = buildFeatureMediaHtml(props, false); // 🆕 صورة + فيديو فقط
             if (!beforeUrl && !afterUrl && !extraMediaHtml) return '';
 
-            const mediaHtml = (beforeUrl || afterUrl) ? `<div class="nms-before-after-media">
+            // 🆕 [إصلاح]: قبل كان extraMediaHtml (الصورة والفيديو) يُحذف تماماً لو
+            // وُجد رابط قبل/بعد، الآن يظهر دائماً أسفل شبكة قبل/بعد بدل حذفه
+            const beforeAfterGridHtml = (beforeUrl || afterUrl) ? `<div class="nms-before-after-media">
                 <div class="nms-ba-col">
                     <span class="nms-ba-label">قبل</span>
                     ${beforeUrl ? renderBeforeAfterMedia(beforeUrl) : '<div class="nms-ba-empty">لا يوجد</div>'}
@@ -1100,7 +1157,7 @@ window.__nmsPageHandlesOwnAds = true;
                     <span class="nms-ba-label">بعد</span>
                     ${afterUrl ? renderBeforeAfterMedia(afterUrl) : '<div class="nms-ba-empty">لا يوجد</div>'}
                 </div>
-            </div>${extraMediaHtml}` : extraMediaHtml;
+            </div>` : '';
 
             let infoHtml = `<div class="nms-gallery-card-body">`;
             infoHtml += `<div class="nms-gallery-badge">🏆 ${item.label}${featureId !== '' ? ` <span style="color:#888; font-weight:normal;">(رقم: ${sanitize(String(featureId))})</span>` : ''}</div>`;
@@ -1123,7 +1180,8 @@ window.__nmsPageHandlesOwnAds = true;
                 ? `<button type="button" class="nms-goto-map-btn js-goto-map-link" data-x="${coords[0]}" data-y="${coords[1]}"><i class="fas fa-map-location-dot"></i> الانتقال إلى الخريطة</button>`
                 : '';
 
-            return `<div class="nms-gallery-card nms-before-after-card">${mediaHtml}${infoHtml}${actionsHtml}${gotoBtnHtml}</div>`;
+            // 🆕 الترتيب المطلوب: قبل/بعد أولاً، ثم المعلومات، ثم الصورة والفيديو
+            return `<div class="nms-gallery-card nms-before-after-card">${beforeAfterGridHtml}${infoHtml}${extraMediaHtml}${actionsHtml}${gotoBtnHtml}</div>`;
         }
 
                     // 🆕 عرض كل النتائج ضمن شريط أفقي قابل للسكرول (نفس أسلوب "الأعلى تقييماً"
@@ -1904,9 +1962,31 @@ window.__nmsPageHandlesOwnAds = true;
         // ==========================================================================
         // 4) عرض النتائج
         // ==========================================================================
+                // 🆕 نفس منطق تحويل الساعة إلى صيغة عربية مقروءة المستخدم بالضبط ببوب أب
+        // الخريطة (popup.js -> parseArabicTime)، بدل عرض النص الخام "08:00-22:00"
+        function parseArabicTime(timeStr) {
+            if (!timeStr) return "";
+            let [hours, minutes] = timeStr.split(':').map(Number);
+            const hoursArabic = {
+                0: "الثانية عشرة", 1: "الواحدة", 2: "الثانية", 3: "الثالثة", 4: "الرابعة",
+                5: "الخامسة", 6: "السادسة", 7: "السابعة", 8: "الثامنة", 9: "التاسعة",
+                10: "العاشرة", 11: "الحادية عشرة", 12: "الثانية عشرة"
+            };
+            let period = hours >= 12 ? "مساءً" : "صباحاً";
+            let hourIn12 = hours % 12 || 12;
+            if (hours === 12) period = "ظهراً";
+            if (hours === 0) period = "منتصف الليل";
+            let minuteName = (minutes > 0) ? ` و ${minutes} دقيقة` : "";
+            return `${hoursArabic[hourIn12]}${minuteName} ${period}`;
+        }
+
         function formatWorkHours(workHours) {
             if (!workHours || workHours.trim() === '' || workHours === '00:00-23:59') return 'دوام 24 ساعة';
-            return workHours;
+            const parts = workHours.split('-');
+            if (parts.length !== 2) return workHours;
+            try {
+                return `متاح من ${parseArabicTime(parts[0].trim())} حتى ${parseArabicTime(parts[1].trim())}`;
+            } catch (e) { return workHours; }
         }
 
         function getStatusBadge(autoStatus, workHours) {

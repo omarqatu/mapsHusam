@@ -262,6 +262,14 @@
 </div>
 
 <script>
+
+        function escapeHtml(v) {
+        return String(v === null || v === undefined ? '' : v)
+            .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+    }
+
+
     let allUsers = [];
     let currentEditUserId = null;
     let onlineUserIds = new Set(); // 🟢 معرفات المستخدمين المتصلين الآن (يتم تحديثها دورياً)
@@ -512,9 +520,9 @@
             tr.innerHTML = `
                 <td><input type="checkbox" class="user-checkbox" data-user-id="${userId}" ${isChecked ? 'checked' : ''}></td>
                 <td><strong>${userId}</strong></td>
-                <td style="text-align:right; font-weight:bold;">${userName}</td>
-                <td style="direction:ltr;">${userEmail}</td>
-                <td style="direction:ltr;">${userPhone}</td>
+                <td style="text-align:right; font-weight:bold;">${escapeHtml(userName)}</td></td>
+                <td style="direction:ltr;">${escapeHtml(userEmail)}</td>
+                <td style="direction:ltr;">${escapeHtml(userPhone)}</td>
                 <td><span class="role-badge ${roleBadgeClass}">${roleLabel}</span></td>
                 <td>
                     <span style="display:inline-flex; align-items:center; gap:6px; font-size:11.5px; font-weight:bold; color:${onlineTextColor};">
@@ -524,7 +532,7 @@
                 </td>
                 <td><span class="user-status-badge ${statusBadgeClass}">${statusLabel}</span></td>
             
-                <td>${serviceLayer ? '<span style="color:#1a73e8;font-weight:bold;">' + serviceLayer + '</span>' : '<span style="color:#999;">—</span>'}</td>
+                <td>${serviceLayer ? '<span style="color:#1a73e8;font-weight:bold;">' + escapeHtml(serviceLayer) + '</span>' : '<span style="color:#999;">—</span>'}</td>
                 <td>${featureId ? '<span style="font-weight:bold;direction:ltr;display:inline-block;">' + featureId + '</span>' : '<span style="color:#999;">—</span>'}</td>
                 <td style="white-space:nowrap;">${quotaDisplay}</td>
                 <td style="white-space:nowrap; font-size:11px;">${createdAtDisplay}</td>

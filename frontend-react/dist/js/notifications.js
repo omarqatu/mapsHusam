@@ -1,5 +1,23 @@
 ﻿// js/notifications.js - نظام الإشعارات في الوقت الفعلي
 
+// 🔒 تعقيم النص قبل وضعه داخل innerHTML (العنوان والرسالة قد تحتوي رموزاً خطرة)
+function escapeNotificationText(value) {
+    return String(value === null || value === undefined ? '' : value)
+        .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
+
+// 🔑 آخر توكن محفوظ للجلسة (يُقرأ عند كل اتصال/إعادة اتصال، فيلتقط التوكن المُجدَّد تلقائياً)
+function getStoredAuthToken() {
+    try {
+        const raw = localStorage.getItem('map_user') || sessionStorage.getItem('map_user') ||
+                    localStorage.getItem('user') || sessionStorage.getItem('user');
+        if (!raw) return null;
+        const u = JSON.parse(raw);
+        return u.token || u.admin_token || null;
+    } catch (e) { return null; }
+}
+
 class NotificationSystem {
     constructor() {
         this.socket = null;
@@ -23,7 +41,10 @@ class NotificationSystem {
 
         // الاتصال بالسيرفر
         // استخدام نفس النطاق للاتصال
-        this.socket = io(window.location.origin);
+        // 🔒 السيرفر يتحقق من التوكن عند الاتصال. نمرّره كدالة ليُقرأ من جديد عند كل إعادة اتصال
+        this.socket = io(window.location.origin, {
+            auth: (cb) => { cb({ token: getStoredAuthToken() }); }
+        });
 
         // عند الاتصال الناجح
         this.socket.on('connect', () => {
@@ -116,6 +137,12 @@ class NotificationSystem {
         this.socket.on('connect_error', (error) => {
             this.isConnected = false;
             this.updateConnectionStatus(false);
+
+            // 🔒 التوكن مرفوض (منتهي/غير صالح): لا فائدة من إعادة المحاولة كل 5 ثوانٍ
+            if (error && error.message === 'unauthorized') {
+                if (this.socket) this.socket.disconnect();
+                return;
+            }
             
             // إضافة retry mechanism للاتصال
             if (!this.retryTimeout) {
@@ -185,31 +212,34 @@ class NotificationSystem {
     }
 
     // عرض إشعار مخصص في الواجهة
-    showCustomNotification(notification) {
+        showCustomNotification(notification) {
         const container = document.getElementById('notification-container');
         if (!container) {
             return;
         }
 
+        // 🆕 [طلب المستخدم]: عرض آخر إشعار فقط بالمقدمة - نزيل أي إشعار سابق
+        // ظاهر حالياً قبل إضافة الجديد
+        container.innerHTML = '';
+
         const notificationEl = document.createElement('div');
         notificationEl.className = `notification-item notification-${notification.type || 'info'}`;
         notificationEl.innerHTML = `
             <div class="notification-content">
-                <strong>${notification.title}</strong>
-                <p>${notification.message}</p>
+                <strong>${escapeNotificationText(notification.title)}</strong>
+                <p>${escapeNotificationText(notification.message)}</p>
                 <small>${new Date(notification.created_at).toLocaleString('ar')}</small>
             </div>
-            <button class="notification-close" onclick="this.parentElement.remove()">×</button>
+            <button class="notification-close">×</button>
         `;
 
-        container.appendChild(notificationEl);
+        // 🆕 [طلب المستخدم]: يبقى ظاهراً حتى يُغلَق يدوياً - لا اختفاء تلقائي
+        // بعد 5 ثوانٍ كما كان سابقاً (كان هذا سبب "الاختفاء قبل ما ينتبه له")
+        notificationEl.querySelector('.notification-close').addEventListener('click', () => {
+            notificationEl.remove();
+        });
 
-        // إزالة الإشعار تلقائياً بعد 5 ثواني
-        setTimeout(() => {
-            if (notificationEl.parentElement) {
-                notificationEl.remove();
-            }
-        }, 5000);
+        container.appendChild(notificationEl);
     }
 
     // تحديث عداد الإشعارات
@@ -269,8 +299,8 @@ class NotificationSystem {
             item.className = isUnread ? 'notification-dropdown-item unread' : 'notification-dropdown-item';
             item.dataset.id = notification.id;
             item.innerHTML = `
-                <h4>${notification.title}</h4>
-                <p>${notification.message}</p>
+                <h4>${escapeNotificationText(notification.title)}</h4>
+                <p>${escapeNotificationText(notification.message)}</p>
                 <small>${new Date(notification.created_at).toLocaleString('ar')}</small>
             `;
             item.onclick = () => {

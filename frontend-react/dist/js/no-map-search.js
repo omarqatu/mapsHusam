@@ -459,7 +459,7 @@ window.__nmsPageHandlesOwnAds = true;
             }
         }
 
-            function buildAdCardHtml(props, item) {
+            function buildAdCardHtml(props, item, geometry) {
             const isRealEstate = item.isRealEstate;
             const name = sanitize(props.name || props.location_name || props.location || '');
             const location = sanitize(props.location_name || props.location || '');
@@ -477,7 +477,12 @@ window.__nmsPageHandlesOwnAds = true;
                 const isAvailable = parseInt(props.auto_status) === 0;
                 const color = isAvailable ? '#28a745' : '#dc3545';
                 const text = isAvailable ? 'متاح الآن' : 'مغلق حالياً';
-                statusHtml = `<div style="font-size:10px; font-weight:bold; color:${color}; border:1px dashed ${color}; border-radius:6px; padding:3px 6px; display:inline-block; margin-bottom:4px;">${isAvailable ? '🟢' : '🔴'} ${text}</div>`;
+                // 🆕 إضافة ساعات الدوام أسفل الحالة (24 ساعة أو الصيغة العربية المقروءة)
+                // بنفس منطق البوب أب تماماً، بدل الاكتفاء بعرض الحالة فقط بدون توقيت
+                statusHtml = `<div style="font-size:10px; font-weight:bold; color:${color}; border:1px dashed ${color}; border-radius:6px; padding:3px 6px; display:inline-block; margin-bottom:4px;">
+                    ${isAvailable ? '🟢' : '🔴'} ${text}
+                    <div style="font-size:9px; font-weight:normal; color:#555; margin-top:2px;">${formatWorkHours(props.work_hours)}</div>
+                </div>`;
             }
 
             let detailsHtml = '';
@@ -533,11 +538,21 @@ window.__nmsPageHandlesOwnAds = true;
                                 <button class="ad-whatsapp-btn" data-whatsapp="${whatsappNumber}" data-provider="${escapeAdAttr(providerName)}" data-service="${escapeAdAttr(item.label)}" data-layer="${escapeAdAttr(item.layer)}" data-feature-id="${escapeAdAttr(String(props.id || ''))}" style="flex:${hasPhone ? '1' : '1'}; background:#25d366; color:#fff; border:none; padding:6px 4px; border-radius:6px; font-size:10px; font-weight:bold; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:4px;"><i class="fab fa-whatsapp"></i> واتساب</button>
                             </div>`;
                     }
+
+                    
+                
+                
                 }
             }
 
-                        return `
-                <div style="background:#fff; border:2px solid #fbc02d; border-radius:8px; padding:10px; box-shadow:0 2px 5px rgba(0,0,0,0.1); box-sizing:border-box; text-align:right; direction:rtl; width:100%;">
+            // 🆕 زر الانتقال إلى الخريطة (يظهر فقط إذا توفرت هندسة المعلم)
+            const adGotoCoords = geometry ? getFeatureCoords({ geometry }) : null;
+            const adGotoMapBtnHtml = adGotoCoords
+                ? `<button type="button" class="nms-goto-map-btn js-goto-map-link" data-x="${adGotoCoords[0]}" data-y="${adGotoCoords[1]}"><i class="fas fa-map-location-dot"></i> الانتقال إلى الخريطة</button>`
+                : '';
+
+                return `
+                <div class="nms-ad-card" style="background:#fff; border:2px solid #fbc02d; border-radius:8px; padding:10px; box-shadow:0 2px 5px rgba(0,0,0,0.1); box-sizing:border-box; text-align:right; direction:rtl; width:100%;">
                     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
                         <span style="background:#fbc02d; color:#000; font-size:9px; padding:2px 5px; border-radius:4px; font-weight:bold;">${item.badgeText || '⭐ مميز'}</span>
                         <span style="background:#e8f0fe; color:#1a73e8; font-size:10px; padding:2px 6px; border-radius:4px; font-weight:bold;">📌 ${item.label}${displayFeatureIdForBadge !== null ? ` <span style="color:#5f6368; font-weight:normal;">(رقم: ${sanitize(String(displayFeatureIdForBadge))})</span>` : ''}</span>
@@ -548,11 +563,14 @@ window.__nmsPageHandlesOwnAds = true;
                     ${location ? `<div style="color:#555; font-size:11px; margin-bottom:3px;"><i class="fas fa-map-marker-alt" style="color:#e74c3c;"></i> ${location}</div>` : ''}
                     ${detailsHtml}
                     ${actionHtml}
+                    ${adGotoMapBtnHtml}
                 </div>
             `;
         }
 
-                                async function loadFeaturedAds() {
+        
+
+            async function loadFeaturedAds() {
             const adSpaces = document.querySelectorAll('.nms-ad-space');
             if (!adSpaces.length) return;
 
@@ -565,7 +583,7 @@ window.__nmsPageHandlesOwnAds = true;
                 return { layer: layerName, workspace, label: cat.title, isRealEstate };
             });
 
-            const realEstatePromises = realEstateTargets.map(async (item) => {
+                        const realEstatePromises = realEstateTargets.map(async (item) => {
                 try {
                     const params = new URLSearchParams({
                         layer: item.layer, workspace: item.workspace,
@@ -574,7 +592,7 @@ window.__nmsPageHandlesOwnAds = true;
                     const response = await fetch(`${baseUrl}api/search-features?${params.toString()}`);
                     if (!response.ok) return [];
                     const data = await response.json();
-                    return (data.features || []).map(f => buildAdCardHtml(f.properties || {}, item));
+                    return (data.features || []).map(f => buildAdCardHtml(f.properties || {}, item, f.geometry));
                 } catch (err) { return []; }
             });
 
@@ -590,13 +608,15 @@ window.__nmsPageHandlesOwnAds = true;
                     return (data.features || []).map(f => {
                         const discriminator = f.properties.discriminator;
                         const item = { layer: discriminator, workspace: 'services', label: serviceNames[discriminator] || discriminator, isRealEstate: false };
-                        return buildAdCardHtml(f.properties || {}, item);
+                        return buildAdCardHtml(f.properties || {}, item, f.geometry);
                     });
                 } catch (err) { return []; }
             })();
 
             const allBatchResults = await Promise.all([...realEstatePromises, servicesPromise]);
             allBatchResults.forEach(cards => { if (cards && cards.length) allValidCards.push(...cards); });
+
+            
 
             function shuffleArray(array) {
                 let arr = [...array];
@@ -622,11 +642,12 @@ window.__nmsPageHandlesOwnAds = true;
 
                 const randomizedCards = shuffleArray(allValidCards);
 
-                if (space.classList.contains('nms-ad-bottom')) {
+                                    if (space.classList.contains('nms-ad-bottom')) {
                     const selectedCards = randomizedCards.slice(0, 4);
                     space.style.cssText += `
                         display: flex;
                         flex-direction: row;
+                        align-items: flex-start;
                         justify-content: flex-start;
                         gap: 15px;
                         overflow-x: auto;
@@ -635,8 +656,10 @@ window.__nmsPageHandlesOwnAds = true;
                         box-sizing: border-box;
                         width: 100%;
                     `;
-                    const styledCards = selectedCards.map(card => card.replace('width: 100%;', 'width: 24%; min-width: 240px;'));
-                    space.innerHTML = styledCards.join('');
+                    // 🆕 الحجم لم يعد يُفرض هنا بالجافاسكريبت، أصبح محكوماً بالكامل
+                    // عبر CSS (.nms-ad-card ضمن .nms-ad-bottom) ليتجاوب تلقائياً
+                    // مع كل حجم شاشة (كمبيوتر/تابلت/موبايل) بنفس آلية باقي الأقسام
+                    space.innerHTML = selectedCards.join('');
                     wireAdActionButtons(space);
                                 } else {
                     // 🆕 الإصلاح الجذري لمشكلة الفراغ (شكل حرف U المطلوب): لا نستخدم
@@ -915,17 +938,26 @@ window.__nmsPageHandlesOwnAds = true;
                 }
 
         // تحويل رابط فيديو (يوتيوب أو ملف مباشر أو رابط عام) إلى عنصر عرض مناسب
-                function buildVideoEmbedHtml(rawUrl) {
+            function buildVideoEmbedHtml(rawUrl) {
             const url = cleanExternalUrl(rawUrl);
             if (!url) return '';
 
             const ytMatch = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([\w-]+)/);
             if (ytMatch) {
-                return `<div class="nms-gallery-media nms-gallery-video"><iframe src="https://www.youtube.com/embed/${ytMatch[1]}" frameborder="0" allow="autoplay; encrypted-media" allowfullscreen loading="lazy"></iframe></div>`;
+                // 🆕 زر صغير ثابت فوق الفيديو دائماً يفتح رابط الفيديو الأصلي
+                // بتبويب جديد، بحيث يضمن إمكانية "النقر والانتقال" دائماً حتى لو
+                // كان الفيديو نفسه قابلاً للتشغيل المباشر داخل الإطار (iframe)
+                return `<div class="nms-gallery-media nms-gallery-video" style="position:relative;">
+                    <iframe src="https://www.youtube.com/embed/${ytMatch[1]}" frameborder="0" allow="autoplay; encrypted-media" allowfullscreen loading="lazy"></iframe>
+                    <a href="${url}" target="_blank" rel="noopener" class="nms-video-open-link" title="فتح الفيديو في صفحته الأصلية"><i class="fas fa-up-right-from-square"></i></a>
+                </div>`;
             }
 
             if (/\.(mp4|webm|ogg)(\?.*)?$/i.test(url)) {
-                return `<div class="nms-gallery-media nms-gallery-video"><video controls preload="metadata" src="${url}"></video></div>`;
+                return `<div class="nms-gallery-media nms-gallery-video" style="position:relative;">
+                    <video controls preload="metadata" src="${url}"></video>
+                    <a href="${url}" target="_blank" rel="noopener" class="nms-video-open-link" title="فتح الفيديو في صفحته الأصلية"><i class="fas fa-up-right-from-square"></i></a>
+                </div>`;
             }
 
             return `<div class="nms-gallery-media nms-gallery-video-link"><a href="${url}" target="_blank" rel="noopener" class="nms-video-link-btn"><i class="fas fa-play-circle"></i> مشاهدة الفيديو</a></div>`;
@@ -956,11 +988,16 @@ window.__nmsPageHandlesOwnAds = true;
             // بدون أي معاينة داخل بطاقة "قبل/بعد" نفسها
             const ytMatch = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([\w-]+)/);
             if (ytMatch) {
-                return `<iframe class="nms-ba-video-frame" src="https://www.youtube.com/embed/${ytMatch[1]}" frameborder="0" allow="autoplay; encrypted-media" allowfullscreen loading="lazy"></iframe>`;
+                // 🆕 إضافة زر صغير ثابت يفتح رابط الفيديو الأصلي بتبويب جديد،
+                // نفس الفكرة المطبَّقة بقسمي الصور والفيديو (.nms-ba-col أصلاً
+                // بها position:relative بملف CSS فلا حاجة لإضافتها هنا)
+                return `<iframe class="nms-ba-video-frame" src="https://www.youtube.com/embed/${ytMatch[1]}" frameborder="0" allow="autoplay; encrypted-media" allowfullscreen loading="lazy"></iframe>
+                    <a href="${url}" target="_blank" rel="noopener" class="nms-video-open-link" title="فتح الفيديو في صفحته الأصلية"><i class="fas fa-up-right-from-square"></i></a>`;
             }
             // 🆕 كشف روابط فيديو مباشرة (mp4/webm/ogg) وعرضها بمشغّل مضمّن أيضاً
             if (/\.(mp4|webm|ogg)(\?.*)?$/i.test(url)) {
-                return `<video class="nms-ba-video-frame" controls preload="metadata" src="${url}"></video>`;
+                return `<video class="nms-ba-video-frame" controls preload="metadata" src="${url}"></video>
+                    <a href="${url}" target="_blank" rel="noopener" class="nms-video-open-link" title="فتح الفيديو في صفحته الأصلية"><i class="fas fa-up-right-from-square"></i></a>`;
             }
             return `<a href="${url}" target="_blank" rel="noopener noreferrer" class="nms-video-link-btn"><i class="fas fa-external-link-alt"></i> عرض</a>`;
         }
@@ -1017,8 +1054,29 @@ window.__nmsPageHandlesOwnAds = true;
             setTimeout(() => fetchRatingsForFeature(layerKey, featureId), Math.floor(Math.random() * 500));
         }
 
+        // 🆕 دالة تفصل كل نوع وسائط لوحده (صورة/فيديو/رابط1/رابط2)، لنقدر نعيد ترتيبها
+        // حسب القسم (صور تُقدَّم الصورة، فيديو يُقدَّم الفيديو) بدل ترتيب ثابت واحد للكل
+        function getMediaPiecesForGallery(props) {
+            const picValue = getMediaValue(props, 'pic');
+            const videoValue = getMediaValue(props, 'video');
+            const details1Value = getMediaValue(props, 'details1');
+            const details2Value = getMediaValue(props, 'details2');
+
+            const picUrls = window.parseUrlList ? window.parseUrlList(picValue) : (picValue ? [picValue] : []);
+            const cleanPicUrl = picUrls.map(cleanExternalUrl).find(Boolean);
+            const picHtml = cleanPicUrl
+                ? `<div class="nms-r-img"><img src="${cleanPicUrl}" class="nms-result-img-el" loading="lazy" onerror="this.parentElement.style.display='none'"></div>`
+                : '';
+
+            const videoHtml = videoValue ? buildVideoEmbedHtml(videoValue) : '';
+            const details1Html = details1Value ? buildMediaBlockHtml(details1Value, 'تفاصيل إضافية 1') : '';
+            const details2Html = details2Value ? buildMediaBlockHtml(details2Value, 'تفاصيل إضافية 2') : '';
+
+            return { picHtml, videoHtml, details1Html, details2Html };
+        }
+
         // بطاقة شبكية مفصّلة (صور / فيديوهات)
-        function buildGalleryDetailCardHtml(feature, item, mode) {
+                function buildGalleryDetailCardHtml(feature, item, mode) {
             const props = feature.properties || {};
             const isRealEstate = item.isRealEstate;
             const name = sanitize(props.name || '');
@@ -1027,8 +1085,8 @@ window.__nmsPageHandlesOwnAds = true;
                 ? ((props.fid !== undefined && props.fid !== null) ? props.fid : '')
                 : ((props.id !== undefined && props.id !== null) ? props.id : '');
 
-            const mediaHtml = buildFeatureMediaHtml(props);
-            if (!mediaHtml) return '';
+            const pieces = getMediaPiecesForGallery(props);
+            if (!pieces.picHtml && !pieces.videoHtml && !pieces.details1Html && !pieces.details2Html) return '';
 
             let infoHtml = `<div class="nms-gallery-card-body">`;
             infoHtml += `<div class="nms-gallery-badge">🏆 ${item.label}${featureId !== '' ? ` <span style="color:#888; font-weight:normal;">(رقم: ${sanitize(String(featureId))})</span>` : ''}</div>`;
@@ -1059,11 +1117,23 @@ window.__nmsPageHandlesOwnAds = true;
                 ? `<button type="button" class="nms-goto-map-btn js-goto-map-link" data-x="${coords[0]}" data-y="${coords[1]}"><i class="fas fa-map-location-dot"></i> الانتقال إلى الخريطة</button>`
                 : '';
 
-            return `<div class="nms-gallery-card">${mediaHtml}${infoHtml}${actionsHtml}${gotoBtnHtml}</div>`;
+            // 🆕 ترتيب مختلف حسب القسم:
+            // - قسم الصور (mode='photo'): الصورة أولاً، ثم المعلومات، ثم الفيديو والروابط
+            // - قسم الفيديو (mode='video'): الفيديو أولاً، ثم المعلومات، ثم الصورة والروابط
+            let topMediaHtml, restMediaHtml;
+            if (mode === 'video') {
+                topMediaHtml = pieces.videoHtml;
+                restMediaHtml = pieces.picHtml + pieces.details1Html + pieces.details2Html;
+            } else {
+                topMediaHtml = pieces.picHtml;
+                restMediaHtml = pieces.videoHtml + pieces.details1Html + pieces.details2Html;
+            }
+
+            return `<div class="nms-gallery-card">${topMediaHtml}${infoHtml}${restMediaHtml}${actionsHtml}${gotoBtnHtml}</div>`;
         }
 
         // بطاقة "قبل وبعد" (خدمات فقط - details_link_1 و details_link_2)
-        function buildBeforeAfterCardHtml(feature, item) {
+                function buildBeforeAfterCardHtml(feature, item) {
             const props = feature.properties || {};
             const name = sanitize(props.name || '');
             const location = sanitize(props.location_name || props.location || '');
@@ -1073,10 +1143,12 @@ window.__nmsPageHandlesOwnAds = true;
 
             const beforeUrl = cleanExternalUrl(getMediaValue(props, 'details1'));
             const afterUrl = cleanExternalUrl(getMediaValue(props, 'details2'));
-            const extraMediaHtml = buildFeatureMediaHtml(props, false);
+            const extraMediaHtml = buildFeatureMediaHtml(props, false); // 🆕 صورة + فيديو فقط
             if (!beforeUrl && !afterUrl && !extraMediaHtml) return '';
 
-            const mediaHtml = (beforeUrl || afterUrl) ? `<div class="nms-before-after-media">
+            // 🆕 [إصلاح]: قبل كان extraMediaHtml (الصورة والفيديو) يُحذف تماماً لو
+            // وُجد رابط قبل/بعد، الآن يظهر دائماً أسفل شبكة قبل/بعد بدل حذفه
+            const beforeAfterGridHtml = (beforeUrl || afterUrl) ? `<div class="nms-before-after-media">
                 <div class="nms-ba-col">
                     <span class="nms-ba-label">قبل</span>
                     ${beforeUrl ? renderBeforeAfterMedia(beforeUrl) : '<div class="nms-ba-empty">لا يوجد</div>'}
@@ -1085,7 +1157,7 @@ window.__nmsPageHandlesOwnAds = true;
                     <span class="nms-ba-label">بعد</span>
                     ${afterUrl ? renderBeforeAfterMedia(afterUrl) : '<div class="nms-ba-empty">لا يوجد</div>'}
                 </div>
-            </div>${extraMediaHtml}` : extraMediaHtml;
+            </div>` : '';
 
             let infoHtml = `<div class="nms-gallery-card-body">`;
             infoHtml += `<div class="nms-gallery-badge">🏆 ${item.label}${featureId !== '' ? ` <span style="color:#888; font-weight:normal;">(رقم: ${sanitize(String(featureId))})</span>` : ''}</div>`;
@@ -1108,7 +1180,8 @@ window.__nmsPageHandlesOwnAds = true;
                 ? `<button type="button" class="nms-goto-map-btn js-goto-map-link" data-x="${coords[0]}" data-y="${coords[1]}"><i class="fas fa-map-location-dot"></i> الانتقال إلى الخريطة</button>`
                 : '';
 
-            return `<div class="nms-gallery-card nms-before-after-card">${mediaHtml}${infoHtml}${actionsHtml}${gotoBtnHtml}</div>`;
+            // 🆕 الترتيب المطلوب: قبل/بعد أولاً، ثم المعلومات، ثم الصورة والفيديو
+            return `<div class="nms-gallery-card nms-before-after-card">${beforeAfterGridHtml}${infoHtml}${extraMediaHtml}${actionsHtml}${gotoBtnHtml}</div>`;
         }
 
                     // 🆕 عرض كل النتائج ضمن شريط أفقي قابل للسكرول (نفس أسلوب "الأعلى تقييماً"
@@ -1251,23 +1324,34 @@ window.__nmsPageHandlesOwnAds = true;
 
         // 🆕 معالجة صور المعرض/قبل وبعد/النتائج عند فشل التحميل - onerror لا
         // يبثّ (bubble) طبيعياً فنستخدم مرحلة الالتقاط (capture: true)
+                // 🆕 [تحسين تجربة]: بدل إخفاء الصورة/إظهار "تعذر التحميل" بصمت، نستبدلها
+        // برابط نصي قابل للنقر - نفس المنطق المطبّق بـ popup.js بالخريطة
+        function replaceImageWithFallbackLink(imgEl, wrapperEl) {
+            const link = document.createElement('a');
+            link.href = imgEl.src;
+            link.target = '_blank';
+            link.rel = 'noopener noreferrer';
+            link.textContent = '🔗 انقر هنا لعرض الصور';
+            link.style.cssText = 'display:block; padding:10px; text-align:center; color:#1a73e8; font-weight:bold; text-decoration:underline; background:#f8f9fa; border-radius:8px;';
+            (wrapperEl || imgEl).replaceWith(link);
+        }
+
         document.addEventListener('error', function (e) {
             const img = e.target;
             if (!img || img.tagName !== 'IMG') return;
 
             if (img.classList.contains('nms-gallery-photo-img') || img.classList.contains('nms-result-img-el')) {
-                if (img.parentElement) img.parentElement.style.display = 'none';
+                replaceImageWithFallbackLink(img, img.parentElement);
                 return;
             }
 
             if (img.classList.contains('nms-ba-photo-img')) {
-                img.style.display = 'none';
-                img.insertAdjacentHTML('afterend', '<div class="nms-ba-empty">تعذر تحميل الصورة</div>');
+                replaceImageWithFallbackLink(img, img);
                 return;
             }
         }, true);
 
-                async function loadRatedRow(gridId, sectionId, operator, ratingValue) {
+                   async function loadRatedRow(gridId, sectionId, operator, ratingValue) {
             const grid = document.getElementById(gridId);
             const section = document.getElementById(sectionId);
             if (!grid || !section) return;
@@ -1290,7 +1374,7 @@ window.__nmsPageHandlesOwnAds = true;
                     if (!response.ok) return [];
                     const data = await response.json();
                     return (data.features || []).map(f => ({
-                        props: f.properties || {}, item, rating: parseFloat((f.properties || {}).rating) || 0
+                        props: f.properties || {}, item, rating: parseFloat((f.properties || {}).rating) || 0, geometry: f.geometry
                     }));
                 } catch (err) { return []; }
             }));
@@ -1310,7 +1394,7 @@ window.__nmsPageHandlesOwnAds = true;
                         const discriminator = props.discriminator;
                         if (!discriminator) return;
                         const item = { layer: discriminator, workspace: 'services', label: serviceNames[discriminator] || discriminator, isRealEstate: false };
-                        collected.push({ props, item, rating: parseFloat(props.rating) || 0 });
+                        collected.push({ props, item, rating: parseFloat(props.rating) || 0, geometry: f.geometry });
                     });
                 }
             } catch (err) { /* تجاهل */ }
@@ -1325,11 +1409,10 @@ window.__nmsPageHandlesOwnAds = true;
             }
 
             section.dataset.hasData = '1';
-            grid.innerHTML = collected.slice(0, 15).map(c => buildAdCardHtml(c.props, c.item)).join('');
+            grid.innerHTML = collected.slice(0, 15).map(c => buildAdCardHtml(c.props, c.item, c.geometry)).join('');
             wireAdActionButtons(grid);
             refreshHomeSectionsVisibility();
         }
-
                 // 🆕 قسم "الأعلى تقييماً" الحقيقي: يعتمد على جدول service_ratings الفعلي
     
         async function loadTopRatedFromRealRatings() {
@@ -1348,17 +1431,19 @@ window.__nmsPageHandlesOwnAds = true;
                     return;
                 }
 
-                                const REAL_ESTATE_TABLE_NAMES = ['ApartRent', 'ApartSale', 'LandSale'];
+                 const REAL_ESTATE_TABLE_NAMES = ['ApartRent', 'ApartSale', 'LandSale'];
                 const REAL_ESTATE_LABELS = { 'ApartRent': 'شقة للإيجار', 'ApartSale': 'شقة للبيع', 'LandSale': 'أرض للبيع' };
 
-                                const KNOWN_SERVICE_KEYS = Object.keys(serviceNames || {});
+                const KNOWN_SERVICE_KEYS = Object.keys(serviceNames || {});
 
                 // 🆕 [إصلاح N+1]: تجميع المعرّفات حسب الطبقة، ثم استعلام واحد
                 // فقط لكل طبقة بدل استعلام منفصل لكل معلم
+                // 🆕 استبعاد العقارات نهائياً من قسم "الأعلى تقييماً" بناءً على الطلب
                 const validItems = data.items.filter(it => {
                     if (!it.service_layer || !it.feature_id) return false;
                     const isRE = REAL_ESTATE_TABLE_NAMES.includes(it.service_layer);
-                    return isRE || KNOWN_SERVICE_KEYS.includes(it.service_layer);
+                    if (isRE) return false;
+                    return KNOWN_SERVICE_KEYS.includes(it.service_layer);
                 });
 
                 const groupedByLayer = {};
@@ -1387,7 +1472,7 @@ window.__nmsPageHandlesOwnAds = true;
                             featuresById[fid] = f;
                         });
 
-                        return itemsForLayer.map(ratingItem => {
+                            return itemsForLayer.map(ratingItem => {
                             const feature = featuresById[ratingItem.feature_id];
                             if (!feature) return null;
                             const label = isRealEstateLayer ? (REAL_ESTATE_LABELS[layerKey] || layerKey) : (serviceNames[layerKey] || layerKey);
@@ -1398,7 +1483,7 @@ window.__nmsPageHandlesOwnAds = true;
                                 totalRatings: parseInt(ratingItem.total_ratings, 10) || 0,
                                 badgeText: '🏆 الأعلى تقييماً'
                             };
-                            return buildAdCardHtml(feature.properties || {}, cardItem);
+                            return buildAdCardHtml(feature.properties || {}, cardItem, feature.geometry);
                         }).filter(Boolean);
                     } catch (err) {
                         return [];
@@ -1877,9 +1962,31 @@ window.__nmsPageHandlesOwnAds = true;
         // ==========================================================================
         // 4) عرض النتائج
         // ==========================================================================
+                // 🆕 نفس منطق تحويل الساعة إلى صيغة عربية مقروءة المستخدم بالضبط ببوب أب
+        // الخريطة (popup.js -> parseArabicTime)، بدل عرض النص الخام "08:00-22:00"
+        function parseArabicTime(timeStr) {
+            if (!timeStr) return "";
+            let [hours, minutes] = timeStr.split(':').map(Number);
+            const hoursArabic = {
+                0: "الثانية عشرة", 1: "الواحدة", 2: "الثانية", 3: "الثالثة", 4: "الرابعة",
+                5: "الخامسة", 6: "السادسة", 7: "السابعة", 8: "الثامنة", 9: "التاسعة",
+                10: "العاشرة", 11: "الحادية عشرة", 12: "الثانية عشرة"
+            };
+            let period = hours >= 12 ? "مساءً" : "صباحاً";
+            let hourIn12 = hours % 12 || 12;
+            if (hours === 12) period = "ظهراً";
+            if (hours === 0) period = "منتصف الليل";
+            let minuteName = (minutes > 0) ? ` و ${minutes} دقيقة` : "";
+            return `${hoursArabic[hourIn12]}${minuteName} ${period}`;
+        }
+
         function formatWorkHours(workHours) {
             if (!workHours || workHours.trim() === '' || workHours === '00:00-23:59') return 'دوام 24 ساعة';
-            return workHours;
+            const parts = workHours.split('-');
+            if (parts.length !== 2) return workHours;
+            try {
+                return `متاح من ${parseArabicTime(parts[0].trim())} حتى ${parseArabicTime(parts[1].trim())}`;
+            } catch (e) { return workHours; }
         }
 
         function getStatusBadge(autoStatus, workHours) {
@@ -1946,6 +2053,8 @@ window.__nmsPageHandlesOwnAds = true;
                     if (p.gov_a) barrierHtml += `<div class="nms-r-line"><b>🌍 المحافظة:</b> ${sanitize(p.gov_a)}</div>`;
                     if (p.village_a) barrierHtml += `<div class="nms-r-line"><b>🏘️ المدينة:</b> ${sanitize(p.village_a)}</div>`;
                     if (p.location_name || p.location) barrierHtml += `<div class="nms-r-line"><b>📍 الموقع:</b> ${sanitize(p.location_name || p.location)}</div>`;
+                    // 🆕 [إصلاح]: حقل الوصف لم يكن يُعرض إطلاقاً بنتائج حواجز الطرق هنا أيضاً
+                    if (p.des) barrierHtml += `<div class="nms-r-desc"><b>📝 ملاحظات:</b> ${sanitize(p.des)}</div>`;
                     barrierHtml += buildFeatureMediaHtml(p);
                     card.innerHTML = barrierHtml;
 

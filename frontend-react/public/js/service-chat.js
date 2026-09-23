@@ -1,11 +1,10 @@
 ﻿/**
- * js/service-chat.js
- * 🆕 [مرحلة 5]: التعديل الوحيد في هذا الملف هو داخل دالة
- * insertMyRequestsButtonIntoDrawer() أدناه - تم تغيير *نقطة إدراج* زر
- * "طلباتي" فقط ليصبح مباشرة بعد #notification-toggle-btn في الـ DOM
- * (فيظهر تلقائياً بسطر مستقل أسفله، بفضل width:100% الموجودة أصلاً على
- * هذه الأزرار في auth-core-functions.css). كل باقي الملف - المنطق،
- * الأحداث، الدردشة، التوهج، الاستطلاع الدوري - لم يتغيّر بحرف واحد.
+ * js/service-chat.js  (نسخة كاملة معدّلة)
+ * - نظام طلب الخدمة والدردشة والتقييم.
+ * - قائمة انتظار للطلبات الواردة عند المزود (الشريط يعرض أقدم طلب ثم التالي بعد الرد).
+ * - رنة واحدة مضبوطة المدة (8 ثوانٍ) بلا أصوات عالقة.
+ * - أزرار قبول/رفض للطلبات المعلّقة داخل "طلباتي".
+ * - لا استعلامات دورية للزائر غير المسجّل (تمنع أخطاء 401 بالكونسول).
  */
 (function () {
     'use strict';
@@ -21,52 +20,61 @@
     let lastRequestTimestamp = 0; // لتتبع وقت آخر طلب تم استلامه
     let pollingDisabledUntil = 0; // لتعطيل polling حتى وقت معين
     let handledRequests = new Map(); // لتتبع الطلبات التي تم معالجتها مع timestamp
+    let incomingQueue = [];            // 🆕 طلبات واردة بانتظار رد المزود (الأقدم أولاً)
+    const respondedIds = new Set();    // 🆕 طلبات تم الرد عليها بهذه الجلسة
+    let ringSession = 0;               // 🆕 يُبطل أي محاولة تشغيل قديمة عند بدء رنة جديدة أو إيقافها
+    const RING_DURATION_MS = 8000;     // 🆕 مدة الرنة
 
     function playRequestRing() {
-        // إيقاف أي رنة سابقة
+        // إيقاف أي رنة سابقة (وإبطال محاولات التشغيل المعلّقة الخاصة بها)
         stopRequestRing();
+        const session = ++ringSession;
 
-        // إنشاء صوت الرنة
         try {
-            // استخدام ملف محلي في مجلد sounds
-            // إذا لم يكن الملف موجوداً، سيتم استخدام رابط من الإنترنت كبديل
-            requestRingAudio = new Audio('/sounds/notification-ring.mp3');
-            requestRingAudio.loop = true;
-            requestRingAudio.volume = 0.5;
-            requestRingAudio.preload = 'auto';
-            
-            // محاولة تشغيل الصوت مع معالجة سياسة المتصفح
-            const playPromise = requestRingAudio.play();
-            
+            // ملف محلي بمجلد sounds، وإذا فشل نجرّب رابطاً بديلاً من الإنترنت
+            const audio = new Audio('/sounds/notification-ring.mp3');
+            audio.loop = true;
+            audio.volume = 0.5;
+            audio.preload = 'auto';
+            requestRingAudio = audio;
+
+            const playPromise = audio.play();
             if (playPromise !== undefined) {
-                playPromise.then(() => {
-                }).catch(err => {
-                    // استخدام رنين من الإنترنت كبديل
-                    requestRingAudio = new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3');
-                    requestRingAudio.loop = true;
-                    requestRingAudio.volume = 0.5;
+                playPromise.catch(err => {
+                    // 🔒 هذه الرنة انتهت أو بدأت رنة أحدث أو أُوقفت: لا نلمس أي شيء
+                    // (سابقاً كان هذا الـcatch يستبدل مرجع الصوت فتبقى الرنة القديمة تدور للأبد)
+                    if (session !== ringSession) return;
+                    if (err && err.name === 'AbortError') return;
+                    const fallback = new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3');
+                    fallback.loop = true;
+                    fallback.volume = 0.5;
+                    requestRingAudio = fallback;
+                    fallback.play().catch(() => {});
                 });
             }
 
-            // إيقاف الرنة بعد 5 ثوانٍ
             requestRingTimeout = setTimeout(() => {
                 stopRequestRing();
-            }, 5000);
+            }, RING_DURATION_MS);
         } catch (err) {
         }
     }
 
     function stopRequestRing() {
+        ringSession++; // يبطل أي محاولة تشغيل معلّقة
         if (requestRingAudio) {
-            requestRingAudio.pause();
-            requestRingAudio.currentTime = 0;
+            try {
+                requestRingAudio.pause();
+                requestRingAudio.currentTime = 0;
+            } catch (e) { /* تجاهل */ }
             requestRingAudio = null;
         }
         if (requestRingTimeout) {
             clearTimeout(requestRingTimeout);
             requestRingTimeout = null;
         }
-    } 
+    }
+
     let currentOtherPartyName = ''; 
     let currentServiceTypeLabel = ''; 
 
@@ -510,7 +518,7 @@
             incomingBanner = document.createElement('div');
             incomingBanner.id = 'service-incoming-banner';
             incomingBanner.style.cssText = `
-                display: none; position: fixed; top: 20px; right: 20px; z-index: 200400;
+                display: none; position: fixed; top: 20px; right: 20px; z-index: 200600;
                 background: #fff; border: 1px solid #ccd0d5; border-radius: 10px;
                 padding: 15px; width: 320px; box-shadow: 0 5px 20px rgba(0,0,0,0.2); direction: rtl;
                 animation: svcToastIn 0.3s ease;
@@ -815,6 +823,26 @@
                     }
                 }
 
+                // 🆕 المزود يستطيع قبول/رفض الطلب المعلّق مباشرة من هنا (بدل الاعتماد على الشريط المنبثق فقط)
+                if (isPending && chatRole === 'provider') {
+                    const respondRow = document.createElement('div');
+                    respondRow.style.cssText = 'display:flex; gap:8px; margin-top:4px;';
+
+                    const acceptBtn = document.createElement('button');
+                    acceptBtn.innerHTML = '<i class="fas fa-check"></i> قبول';
+                    acceptBtn.style.cssText = 'flex:1; background:#28a745; color:#fff; border:none; padding:8px; border-radius:6px; cursor:pointer; font-size:12px; font-weight:bold;';
+                    acceptBtn.onclick = () => { modalWrapper.remove(); respondToRequest(r.id, 'accept', r.service_type); };
+
+                    const rejectBtn = document.createElement('button');
+                    rejectBtn.innerHTML = '<i class="fas fa-times"></i> رفض';
+                    rejectBtn.style.cssText = 'flex:1; background:#6c757d; color:#fff; border:none; padding:8px; border-radius:6px; cursor:pointer; font-size:12px; font-weight:bold;';
+                    rejectBtn.onclick = () => { modalWrapper.remove(); respondToRequest(r.id, 'reject', r.service_type); };
+
+                    respondRow.appendChild(acceptBtn);
+                    respondRow.appendChild(rejectBtn);
+                    card.appendChild(respondRow);
+                }
+
                 // [حل الثغرة الثانية] حظر تام لزر الإلغاء في القائمة إذا كانت الحالة مكتملة (isCompleted)
                 if (!isCompleted && (isPending || isAccepted) && (isMyRequest || chatRole === 'provider')) {
                     const cancelBtn = document.createElement('button');
@@ -981,14 +1009,16 @@ function startPollingRequests() {
 
             const dataProvider = await resProvider.json();
 
-            if (dataProvider.success && dataProvider.requests && dataProvider.requests.length > 0) {
-                const req = dataProvider.requests[0];
-                if (incomingBanner && lastHandledPendingReqId !== req.id) {
-                    showIncomingRequestBanner(req);
-                    triggerPulseEffect(req.id);
-                    playRequestRing();
-                    lastHandledPendingReqId = req.id;
-                }
+            if (dataProvider.success) {
+                const pendingList = dataProvider.requests || [];
+                // نضيف كل الطلبات المعلّقة (الأقدم أولاً) وليس أحدثها فقط
+                let addedAny = false;
+                pendingList.slice().reverse().forEach(r => {
+                    if (enqueueIncomingRequest(r)) { addedAny = true; triggerPulseEffect(r.id); }
+                });
+                if (addedAny) playRequestRing();
+                // نزيل من الشريط أي طلب لم يعد معلّقاً
+                syncIncomingQueue(new Set(pendingList.map(r => Number(r.id))));
             }
         } catch (e) {}
     };
@@ -1004,39 +1034,41 @@ function startPollingRequests() {
     });
 }
 
-    function showIncomingRequestBanner(req) {
-        
+    // 🆕 قائمة انتظار للطلبات الواردة: الشريط يعرض أقدم طلب ويبيّن عدد الطلبات الأخرى، وبعد الرد يظهر التالي
+    function escapeBannerText(v) {
+        return String(v === null || v === undefined ? '' : v)
+            .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+    }
+
+    function enqueueIncomingRequest(req) {
+        if (!req || req.id === undefined || req.id === null) return false;
+        const id = Number(req.id);
+        if (respondedIds.has(id)) return false;               // تم الرد عليه سابقاً
+        if (incomingQueue.some(q => q.id === id)) return false; // موجود بالقائمة أصلاً
+        incomingQueue.push({ id, service_type: req.service_type || req.serviceType || '', at: Date.now() });
+        lastHandledPendingReqId = id;
+        lastRequestTimestamp = Date.now();
+        renderIncomingBanner();
+        return true;
+    }
+
+    function renderIncomingBanner() {
         buildUI();
-        if (!incomingBanner) {
+        if (!incomingBanner) return;
+
+        if (incomingQueue.length === 0) {
+            incomingBanner.style.display = 'none';
+            incomingBanner.innerHTML = '';
             return;
         }
-        
-        // تجنب عرض نفس الطلب مرتين
-        if (handledRequests.has(req.id)) {
-            return;
-        }
-        
-        // إذا كان البانر معروضاً بالفعل، لا تعرضه مرة أخرى
-        if (incomingBanner.style.display === 'block') {
-            return;
-        }
-        
-        // تنظيف الطلبات القديمة من Map (أكبر من دقيقة)
-        const now = Date.now();
-        for (const [reqId, timestamp] of handledRequests.entries()) {
-            if (now - timestamp > 60000) {
-                handledRequests.delete(reqId);
-            }
-        }
-        
-        // إضافة الطلب إلى Map
-        handledRequests.set(req.id, now);
-        lastHandledPendingReqId = req.id;
-        lastRequestTimestamp = now;
-        
+
+        const req = incomingQueue[0];
+        const others = incomingQueue.length - 1;
         incomingBanner.innerHTML = `
             <div style="font-weight:bold; color:#1a73e8; margin-bottom:8px; font-size:14px;"><i class="fas fa-bell"></i> طلب خدمة جديد</div>
-            <div style="font-size:13px; color:#333; margin-bottom:12px;">طلب (${req.service_type || 'خدمة'}). هل ترغب بقبوله؟</div>
+            <div style="font-size:13px; color:#333; margin-bottom:12px;">طلب (${escapeBannerText(req.service_type || 'خدمة')}). هل ترغب بقبوله؟</div>
+            ${others > 0 ? `<div style="font-size:12px; color:#e67e22; font-weight:bold; margin-bottom:10px;">⏳ يوجد ${others} طلب آخر بانتظارك بعد هذا الطلب</div>` : ''}
             <div style="display:flex; gap:8px;">
                 <button id="svc-accept-${req.id}" style="flex:1; background:#28a745; color:#fff; border:none; padding:9px; border-radius:8px; cursor:pointer; font-weight:bold;">قبول</button>
                 <button id="svc-reject-${req.id}" style="flex:1; background:#dc3545; color:#fff; border:none; padding:9px; border-radius:8px; cursor:pointer; font-weight:bold;">رفض</button>
@@ -1046,32 +1078,44 @@ function startPollingRequests() {
 
         const acceptBtn = document.getElementById(`svc-accept-${req.id}`);
         const rejectBtn = document.getElementById(`svc-reject-${req.id}`);
-        if (acceptBtn) acceptBtn.onclick = () => respondToRequest(req.id, 'accept', req.service_type);
-        if (rejectBtn) rejectBtn.onclick = () => respondToRequest(req.id, 'reject', req.service_type);
+        const lockButtons = () => { if (acceptBtn) acceptBtn.disabled = true; if (rejectBtn) rejectBtn.disabled = true; };
+        if (acceptBtn) acceptBtn.onclick = () => { lockButtons(); respondToRequest(req.id, 'accept', req.service_type); };
+        if (rejectBtn) rejectBtn.onclick = () => { lockButtons(); respondToRequest(req.id, 'reject', req.service_type); };
+    }
+
+    // إزالة الطلبات التي لم تعد معلّقة (ألغاها صاحبها أو حذفها المشرف). نتجاهل الطلبات الأحدث من 20 ثانية
+    // حتى لا نحذف طلباً وصل بالسوكيت قبل أن يظهر بنتيجة الاستعلام الدوري.
+    function syncIncomingQueue(pendingIds) {
+        const before = incomingQueue.length;
+        const now = Date.now();
+        incomingQueue = incomingQueue.filter(q => pendingIds.has(q.id) || (now - q.at) < 20000);
+        if (incomingQueue.length !== before) {
+            renderIncomingBanner();
+            if (incomingQueue.length === 0) stopRequestRing();
+        }
+    }
+
+    // للتوافق مع أي استدعاء قديم
+    function showIncomingRequestBanner(req) {
+        return enqueueIncomingRequest(req);
     }
 
     document.addEventListener('serviceRequestNew', (e) => {
-        
         const requestId = e.detail.id || e.detail.requestId;
         if (!requestId) {
             return;
         }
-        
-        
-        // منع التكرار: إذا تم معالجة هذا الطلب بالفعل، لا تفعل شيئاً
-        if (lastHandledPendingReqId === requestId) {
+
+        buildUI();
+        // نفس الطلب قد يصل مرتين (سوكيت + استعلام دوري): نتجاهل المكرر
+        const isNew = enqueueIncomingRequest({ id: requestId, service_type: e.detail.serviceType });
+        if (!isNew) {
             return;
         }
-        
-        buildUI();
-        showIncomingRequestBanner({
-            id: requestId,
-            service_type: e.detail.serviceType
-        });
         triggerPulseEffect(requestId);
-        // تشغيل رنة 5 ثوانٍ لمزود الخدمة
+        // رنة واحدة تُعاد من جديد عند وصول طلب إضافي (بدون أن تتراكم أصوات)
         playRequestRing();
-        
+
         // تعطيل polling لمدة 30 ثانية عند استقبال إشعار من socket
         pollingDisabledUntil = Date.now() + 30000;
         lastHandledPendingReqId = requestId;
@@ -1086,20 +1130,37 @@ function startPollingRequests() {
                 body: JSON.stringify({ provider_user_id: userId, action })
             });
             const data = await res.json();
-            if (incomingBanner) incomingBanner.style.display = 'none';
+
+            // نُخرج الطلب من القائمة إذا نجح الرد أو كان قد رُدّ عليه مسبقاً (409)
+            if (data.success || res.status === 409) {
+                respondedIds.add(Number(requestId));
+                incomingQueue = incomingQueue.filter(q => q.id !== Number(requestId));
+            }
+            renderIncomingBanner(); // يعرض الطلب التالي إن وُجد، أو يُخفي الشريط
 
             removePulseEffect(requestId);
-            // إيقاف الرنة عند الرد على الطلب
-            stopRequestRing();
+            // نوقف الرنة فقط إذا لم يبقَ أي طلب بانتظار الرد
+            if (incomingQueue.length === 0) stopRequestRing();
 
             if (data.success && action === 'accept') {
                 // التأكد من بناء UI قبل فتح الدردشة
                 buildUI();
-                openChatModal(requestId, 'provider', 'المستخدم الطالب', false, null, serviceType);
-            } else if (action === 'reject') {
+                const anotherChatOpen = chatModal && chatModal.style.display === 'flex'
+                    && currentOpenRequestId && Number(currentOpenRequestId) !== Number(requestId);
+                if (anotherChatOpen) {
+                    // لا نقطع محادثة مفتوحة حالياً: نبلّغ المزود ونتركه يفتح الطلب الجديد من "طلباتي"
+                    toast('✅ تم قبول الطلب. يمكنك فتح دردشته من زر "طلباتي" بعد إنهاء المحادثة الحالية.', 'success');
+                    triggerPulseEffect(requestId);
+                } else {
+                    openChatModal(requestId, 'provider', 'المستخدم الطالب', false, null, serviceType);
+                }
+            } else if (data.success && action === 'reject') {
                 toast('تم رفض الطلب.', 'info');
+            } else if (!data.success) {
+                toast('❌ ' + (data.error || 'تعذر تنفيذ الرد.'), res.status === 409 ? 'warning' : 'error');
             }
         } catch (err) {
+            renderIncomingBanner(); // يعيد تفعيل الأزرار لإعادة المحاولة
             toast('تعذر إرسال الرد، حاول مجدداً.', 'error');
         }
     }
@@ -1350,6 +1411,7 @@ async function reopenChatForRequestId(requestId) {
     // دالة التحقق من وجود تعليقات معلقة أو تقييمات معلقة للمستخدم
     async function checkPendingComments() {
         try {
+            if (!getCurrentUser()) return; // زائر غير مسجّل: لا استعلامات (كانت تسبب 401 بالكونسول)
             const userId = getCurrentUserId();
             if (!userId) return;
             

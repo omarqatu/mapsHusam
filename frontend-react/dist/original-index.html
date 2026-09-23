@@ -162,7 +162,7 @@
     <div style="display: flex; gap: 8px; align-items: center; margin-right: 15px; flex-wrap: wrap; justify-content: flex-end;">
 
         <!-- 1. لوحة التحكم (للأدمن فقط) -->
-        <button id="dashboard-btn" class="btn-dashboard-top" onclick="window.openDashboard()" style="display: none;">
+        <button id="dashboard-btn" class="btn-dashboard-top" style="display: none;">
             <i class="fas fa-chart-line"></i> لوحة التحكم
         </button>
 
@@ -173,12 +173,12 @@
         </button>
 
         <!-- 3. تغيير كلمة المرور -->
-        <button class="btn-change-pwd-top" id="btn-change-password" onclick="window.changeUserPassword(event)">
+        <button class="btn-change-pwd-top" id="btn-change-password">
             <i class="fas fa-key"></i> تغيير كلمة المرور
         </button>
 
         <!-- 4. تسجيل الخروج -->
-        <button class="btn-logout-top" onclick="window.logoutPlatform()">
+        <button class="btn-logout-top" id="btn-logout-platform">
             <i class="fas fa-sign-out-alt"></i> تسجيل الخروج
         </button>
 
@@ -221,7 +221,7 @@
 <div id="notification-dropdown" class="notification-dropdown">
     <div class="notification-dropdown-header">
         <h3>الإشعارات</h3>
-        <button onclick="window.notificationSystem.getUnreadNotifications(window.currentUser?.user_id)">تحديث</button>
+        <button id="btn-refresh-notifications">تحديث</button>
     </div>
     <div class="notification-dropdown-body" id="notification-list">
         <p style="text-align: center; color: #999; padding: 20px;">لا توجد إشعارات</p>
@@ -762,16 +762,17 @@
 
     
     <!-- زر الإغلاق المؤقت (×) - أعلى اليمين -->
-    <button type="button" id="closeBannerBtn" class="banner-close-btn" title="إغلاق مؤقت" onclick="closeBannerTemporarily()">×</button>
+    <button type="button" id="closeBannerBtn" class="banner-close-btn" title="إغلاق مؤقت">×</button>
+
 
     <!-- زر التكبير والتصغير (+) - بجانب زر الإغلاق -->
-    <button type="button" id="toggleBannerBtn" class="banner-toggle-btn" title="تكبير البنر" onclick="handleBannerToggle(event, this)">+</button>
+    <button type="button" id="toggleBannerBtn" class="banner-toggle-btn" title="تكبير البنر">+</button>
 
     <!-- زر التحريك والسحب (⋮⋮) - أعلى اليسار -->
     <button type="button" id="dragBannerBtn" class="banner-drag-btn" title="تحريك">⋮⋮</button>
 
     <!-- البنر الرئيسي (يبدأ مصغراً minimized) -->
-    <a href="https://www.facebook.com/MapServesPalestine" target="_blank" class="feedback-banner minimized" id="feedbackBanner" onclick="handleBannerLinkClick(event, this)">
+    <a href="https://www.facebook.com/MapServesPalestine" target="_blank" rel="noopener" class="feedback-banner minimized" id="feedbackBanner">
         <div class="banner-full-content">
             <p>هل لديك استفسار أو تود تقديم شكوى ؟؟   </p>
             <p>أو إذا كنت مزود خدمة، تواصل معنا عبر رسائل الصفحة
@@ -824,6 +825,7 @@
 <script src="https://cdn.jsdelivr.net/npm/ol-ext@4.0.0/dist/ol-ext.min.js"></script>
 <script src="/proj4/proj4.js"></script>
 
+<script src="/js/auth-fetch.js"></script>
 <script src="/js/auth-core-functions.js"></script>
 <script src="/js/legal-content.js"></script>
 
@@ -1066,6 +1068,17 @@ function checkBannerStatus() {
 }
 
 // تشغيل الفحص فور تحميل وتجهيز عناصر الصفحة
+// 🆕 [تشديد أمني CSP]: ربط الأزرار الثابتة التي كانت onclick inline بالـ HTML
+document.getElementById('dashboard-btn')?.addEventListener('click', () => window.openDashboard());
+document.getElementById('btn-change-password')?.addEventListener('click', (e) => window.changeUserPassword(e));
+document.getElementById('btn-logout-platform')?.addEventListener('click', () => window.logoutPlatform());
+document.getElementById('btn-refresh-notifications')?.addEventListener('click', () => {
+    window.notificationSystem.getUnreadNotifications(window.currentAppUser?.user_id);
+});
+document.getElementById('closeBannerBtn')?.addEventListener('click', closeBannerTemporarily);
+document.getElementById('toggleBannerBtn')?.addEventListener('click', function (e) { handleBannerToggle(e, this); });
+document.getElementById('feedbackBanner')?.addEventListener('click', function (e) { handleBannerLinkClick(e, this); });
+
 document.addEventListener('DOMContentLoaded', checkBannerStatus);
 </script>
 

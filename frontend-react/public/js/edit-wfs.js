@@ -86,9 +86,9 @@ async function sendWFS_T(feature, type) {
 
     // 🆕 عمود "stop" الخاص بحالة حاجز الطرق (0=مفتوح، 1=مغلق، 2=أزمة خفيفة،
     // 3=أزمة خانقة، 4=تفتيش) - يُضاف فقط عند تحرير طبقة حواجز الطرق
-    if (selectedLayerName === 'road_barriersLayer') {
-        allowedPropsAdd.push('stop');
-        allowedPropsUpdate.push('stop');
+        if (selectedLayerName === 'road_barriersLayer') {
+        allowedPropsAdd.push('stop', 'stop2');
+        allowedPropsUpdate.push('stop', 'stop2');
     }
 
     // 🆕 أعمدة توفر الوقود الخاصة بطبقة محطات الوقود (0=متوفر، 1=غير متوفر)
@@ -187,7 +187,7 @@ async function sendWFS_T(feature, type) {
 
         
         if (!isRealEstate) {
-            ['stop', 'diesel', 'banzen95', 'banzen98'].forEach(extraField => {
+            ['stop', 'stop2', 'diesel', 'banzen95', 'banzen98'].forEach(extraField => {
                 if (allowedPropsAdd.includes(extraField) && !servicesSchemaOrder.includes(extraField)) {
                     servicesSchemaOrder.push(extraField);
                 }
