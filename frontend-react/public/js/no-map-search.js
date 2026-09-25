@@ -66,29 +66,33 @@ window.__nmsPageHandlesOwnAds = true;
         // من enterPlatform() ليصبح الملف الشخصي مطابقاً تماماً لما يظهر بصفحة الخريطة.
         // ==========================================================================
         (function initTopUserBadgeForNoMapPage() {
-            const authenticatedUser = window.__nmsAuthenticatedUser;
-            if (!authenticatedUser) return;
+    function getStoredUser() {
+        try {
+            return JSON.parse(localStorage.getItem('map_user')) ||
+                   JSON.parse(sessionStorage.getItem('map_user'));
+        } catch (e) { return null; }
+    }
 
-            window.currentAppUser = authenticatedUser;
+    // 🆕 لا نعتمد على __nmsAuthenticatedUser وحدها لأنها تُعبَّأ بعد رد السيرفر (async)
+    const authenticatedUser = window.__nmsAuthenticatedUser || getStoredUser();
+    if (!authenticatedUser) return;
 
-            // showTopUserBadge معرّفة عالمياً بملف auth-core-functions.js (يُحمَّل
-            // قبل هذا الملف بالصفحة) - تملأ الاسم والرتبة وتُظهر زر لوحة التحكم للمشرف
-            if (typeof showTopUserBadge === 'function') {
-                showTopUserBadge(authenticatedUser);
-            }
+    window.currentAppUser = authenticatedUser;
 
-            const userId = authenticatedUser.user_id || authenticatedUser.id;
-            if (window.notificationSystem && userId) {
-                window.notificationSystem.init(userId);
-            }
+    if (typeof showTopUserBadge === 'function') {
+        showTopUserBadge(authenticatedUser);
+    }
 
-            const notificationBtn = document.getElementById('notification-toggle-btn');
-            if (notificationBtn) notificationBtn.style.display = 'flex';
+    const userId = authenticatedUser.user_id || authenticatedUser.id;
+    if (window.notificationSystem && userId) {
+        window.notificationSystem.init(userId);
+    }
 
-            // نفس الحدث الذي تُطلقه enterPlatform() بعد الدخول الفعلي بصفحة الخريطة،
-            // ليبقى سلوك بقية الملفات (مثل ui-collapse.js وبوابة الملف الشخصي) متطابقاً
-            document.dispatchEvent(new CustomEvent('userLoggedIn', { detail: authenticatedUser }));
-        })();
+    const notificationBtn = document.getElementById('notification-toggle-btn');
+    if (notificationBtn) notificationBtn.style.display = 'flex';
+
+    document.dispatchEvent(new CustomEvent('userLoggedIn', { detail: authenticatedUser }));
+})();
 
         // ==========================================================================
         // 0-أ) مودال "من نحن"
@@ -938,28 +942,22 @@ window.__nmsPageHandlesOwnAds = true;
                 }
 
         // تحويل رابط فيديو (يوتيوب أو ملف مباشر أو رابط عام) إلى عنصر عرض مناسب
-                    function buildVideoEmbedHtml(rawUrl) {
+            function buildVideoEmbedHtml(rawUrl) {
             const url = cleanExternalUrl(rawUrl);
             if (!url) return '';
 
             const ytMatch = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([\w-]+)/);
-            if (ytMatch) {
-                // 🆕 طبقة شفافة (nms-video-click-overlay) تغطي كامل مساحة الفيديو
-                // وتفتح الرابط الأصلي عند النقر بأي نقطة داخلها، بدل الاكتفاء
-                // بزر صغير بزاوية الفيديو فقط. ملاحظة: هذا يجعل الفيديو معاينة
-                // بصرية فقط داخل البطاقة (بدون تشغيل مباشر)، والنقر ينقل مباشرة
-                // لصفحة الفيديو الأصلية حيث يمكن تشغيله هناك.
-                return `<div class="nms-gallery-media nms-gallery-video" style="position:relative;">
-                    <iframe src="https://www.youtube.com/embed/${ytMatch[1]}" frameborder="0" allow="autoplay; encrypted-media" allowfullscreen loading="lazy"></iframe>
-                    <a href="${url}" target="_blank" rel="noopener" class="nms-video-click-overlay" title="فتح الفيديو في صفحته الأصلية"><i class="fas fa-up-right-from-square"></i></a>
-                </div>`;
-            }
+if (ytMatch) {
+    return `<div class="nms-gallery-media nms-gallery-video nms-yt-facade" data-yt-id="${ytMatch[1]}"
+                 style="position:relative; cursor:pointer; background:#000 url('https://img.youtube.com/vi/${ytMatch[1]}/hqdefault.jpg') center/cover no-repeat;">
+                <span style="position:absolute; inset:0; display:flex; align-items:center; justify-content:center; color:#fff; font-size:48px; text-shadow:0 2px 8px rgba(0,0,0,.6);">
+                    <i class="fas fa-play-circle"></i>
+                </span>
+            </div>`;
+}
 
             if (/\.(mp4|webm|ogg)(\?.*)?$/i.test(url)) {
-                return `<div class="nms-gallery-media nms-gallery-video" style="position:relative;">
-                    <video controls preload="metadata" src="${url}"></video>
-                    <a href="${url}" target="_blank" rel="noopener" class="nms-video-click-overlay" title="فتح الفيديو في صفحته الأصلية"><i class="fas fa-up-right-from-square"></i></a>
-                </div>`;
+                return `<div class="nms-gallery-media nms-gallery-video"><video controls preload="metadata" src="${url}"></video></div>`;
             }
 
             return `<div class="nms-gallery-media nms-gallery-video-link"><a href="${url}" target="_blank" rel="noopener" class="nms-video-link-btn"><i class="fas fa-play-circle"></i> مشاهدة الفيديو</a></div>`;
@@ -985,21 +983,21 @@ window.__nmsPageHandlesOwnAds = true;
             if (/\.(jpg|jpeg|png|gif|webp)(\?.*)?$/i.test(url)) {
                 return `<img src="${url}" loading="lazy" class="nms-ba-photo-img">`;
             }
-            // 🆕 نفس طبقة النقر الشفافة الكاملة المستخدمة بقسمي الصور والفيديو،
-            // بدل زر صغير بالزاوية فقط. .nms-ba-col أصلاً بها position:relative
-            // بملف CSS فلا حاجة لإضافتها هنا.
+            // 🆕 [رجوع للوضع الطبيعي]: iframe/video مباشر بدون أي رابط خارجي فوقه
             const ytMatch = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([\w-]+)/);
-            if (ytMatch) {
-                return `<iframe class="nms-ba-video-frame" src="https://www.youtube.com/embed/${ytMatch[1]}" frameborder="0" allow="autoplay; encrypted-media" allowfullscreen loading="lazy"></iframe>
-                    <a href="${url}" target="_blank" rel="noopener" class="nms-video-click-overlay" title="فتح الفيديو في صفحته الأصلية"><i class="fas fa-up-right-from-square"></i></a>`;
-            }
+if (ytMatch) {
+    return `<div class="nms-yt-facade" data-yt-id="${ytMatch[1]}"
+                 style="position:relative; width:100%; height:100%; cursor:pointer; background:#000 url('https://img.youtube.com/vi/${ytMatch[1]}/hqdefault.jpg') center/cover no-repeat;">
+                <span style="position:absolute; inset:0; display:flex; align-items:center; justify-content:center; color:#fff; font-size:36px; text-shadow:0 2px 8px rgba(0,0,0,.6);">
+                    <i class="fas fa-play-circle"></i>
+                </span>
+            </div>`;
+}
             if (/\.(mp4|webm|ogg)(\?.*)?$/i.test(url)) {
-                return `<video class="nms-ba-video-frame" controls preload="metadata" src="${url}"></video>
-                    <a href="${url}" target="_blank" rel="noopener" class="nms-video-click-overlay" title="فتح الفيديو في صفحته الأصلية"><i class="fas fa-up-right-from-square"></i></a>`;
+                return `<video class="nms-ba-video-frame" controls preload="metadata" src="${url}"></video>`;
             }
             return `<a href="${url}" target="_blank" rel="noopener noreferrer" class="nms-video-link-btn"><i class="fas fa-external-link-alt"></i> عرض</a>`;
         }
-
                 // 🆕 أزرار التواصل (اتصال/واتساب/طلب الخدمة) بنفس آلية تسجيل النقرات
         // المستخدمة بقسم "موصى بهم" و"الأعلى تقييماً" تماماً (نفس الألوان: أزرق
         // للاتصال، أخضر للواتساب، تدرّج بنفسجي/أزرق لطلب الخدمة) + عرض رقم
@@ -1307,6 +1305,15 @@ window.__nmsPageHandlesOwnAds = true;
             if (x === undefined || y === undefined || x === null || y === null) return;
             window.open(`/original-index.html?x=${Number(x).toFixed(3)}&y=${Number(y).toFixed(3)}`, '_blank');
         };
+
+        document.addEventListener('click', function (e) {
+    const facade = e.target.closest('.nms-yt-facade');
+    if (!facade) return;
+    const id = facade.dataset.ytId;
+    facade.classList.remove('nms-yt-facade');
+    facade.style.background = '#000';
+    facade.innerHTML = `<iframe src="https://www.youtube.com/embed/${id}?autoplay=1" frameborder="0" allow="autoplay; encrypted-media" allowfullscreen style="width:100%; height:100%; border:none;"></iframe>`;
+});
 
         // ==========================================================================
         // 🆕 [تشديد أمني CSP]: تفويض حدث موحّد لزر "الانتقال إلى الخريطة" المولّد

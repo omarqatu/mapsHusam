@@ -66,28 +66,7 @@
             background: #1a73e8; color: #fff; padding: 10px 18px;
             border-radius: 20px; text-decoration: none; font-size: 13px; font-weight: bold;
         }
-            .nms-video-open-link {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            z-index: 2;
-            background: rgba(0, 0, 0, 0.65);
-            color: #fff;
-            width: 42px;
-            height: 42px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            text-decoration: none;
-            font-size: 17px;
-            transition: background 0.2s ease, transform 0.2s ease;
-        }
-        .nms-video-open-link:hover {
-            background: rgba(26, 115, 232, 0.9);
-            transform: translate(-50%, -50%) scale(1.1);
-        }
+            
         .nms-gallery-card-body { padding: 12px; direction: rtl; text-align: right; flex: 1; }
         .nms-gallery-badge {
             display: inline-block; background: #e8f0fe; color: #1a73e8;
@@ -324,6 +303,16 @@
         }
         .market-add-btn:hover {
             background: #f57c00;
+        }
+
+        /* أزرار دليل الاستخدام وتواصل معنا داخل بوابة الملف الشخصي: أزرق بدل الأخضر */
+        #user-top-badge-container #btn-user-guide,
+        .ui-profile-drawer-body #btn-user-guide {
+            background-color: #1a73e8;
+        }
+        #user-top-badge-container #btn-user-guide:hover,
+        .ui-profile-drawer-body #btn-user-guide:hover {
+            background-color: #1557b0;
         }
         
         /* زر طلباتي بلون برتقالي مميز */
@@ -726,6 +715,9 @@
     <button id="btn-user-guide" title="دليل الاستخدام">
         <i class="fas fa-book"></i> دليل الاستخدام
     </button>
+    <a href="https://www.facebook.com/MapServesPalestine" target="_blank" rel="noopener">
+        <i class="fab fa-facebook-f"></i> تواصل معنا عبر فيسبوك
+    </a>
 </div>
 
 <!-- ملفات البرمجيات والنصوص الأساسية -->

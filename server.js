@@ -525,8 +525,10 @@ async function requireAuth(req, res, next) {
 
     let decoded;
     try {
-        decoded = jwt.verify(token, ADMIN_JWT_SECRET, { algorithms: ['HS256'] });
+        // جلسة الدخول لا تنتهي زمنياً؛ الإبطال يتم عبر token_version أو حالة الحساب.
+        decoded = jwt.verify(token, ADMIN_JWT_SECRET, { algorithms: ['HS256'], ignoreExpiration: true });
     } catch (e) {
+        console.warn('[AUTH] رفض JWT:', e.name, e.message);
         return res.status(401).json({ success: false, error: 'انتهت الجلسة، يرجى تسجيل الدخول من جديد.', code: 'TOKEN_INVALID' });
     }
     const uid = Number(decoded.uid);
@@ -545,13 +547,6 @@ async function requireAuth(req, res, next) {
         }
         req.auth = { uid, role: status.role };
 
-        // 🔄 تجديد تلقائي للجلسة: المستخدم النشط لا تنتهي جلسته. إذا مرّ وقت كافٍ على إصدار التوكن
-        // نرسل توكناً جديداً بهيدر X-New-Token (المشرف: كل ساعة لتوكن 12 ساعة، وغيره: كل يوم لتوكن 30 يوماً)
-        const tokenAgeSeconds = Math.floor(Date.now() / 1000) - (Number(decoded.iat) || 0);
-        const renewAfterSeconds = status.role === 'admin' ? 60 * 60 : 24 * 60 * 60;
-        if (tokenAgeSeconds > renewAfterSeconds) {
-            res.setHeader('X-New-Token', jwt.sign({ uid, role: status.role, tv: status.tokenVersion }, ADMIN_JWT_SECRET, { expiresIn: status.role === 'admin' ? '12h' : '30d' }));
-        }
         next();
     } catch (err) {
         console.error('❌ خطأ أثناء التحقق من هوية المستخدم:', err.message);
@@ -1438,7 +1433,7 @@ app.post('/api/auth/change-password', authLimiter, requireAuth, async (req, res)
         // 🔒 الجلسات الأخرى تنتهي، وهذه الجلسة تستلم توكناً جديداً تلقائياً (auth-fetch.js يحفظ X-New-Token)
         if (pwUpdate.rows[0]) {
             const pwRole = pwUpdate.rows[0].role;
-            res.setHeader('X-New-Token', jwt.sign({ uid: Number(userId), role: pwRole, tv: Number(pwUpdate.rows[0].token_version) || 0 }, ADMIN_JWT_SECRET, { expiresIn: pwRole === 'admin' ? '12h' : '30d' }));
+            res.setHeader('X-New-Token', jwt.sign({ uid: Number(userId), role: pwRole, tv: Number(pwUpdate.rows[0].token_version) || 0 }, ADMIN_JWT_SECRET));
         }
 
         console.log(`✅ تم تحديث كلمة المرور بنجاح للمستخدم رقم: ${userId}`);
@@ -1567,11 +1562,11 @@ app.post('/api/auth/login', authLimiter, async (req, res) => {
         // 🆕 إصدار توكن موقّع للمشرفين فقط، يحل محل الثقة بأي رقم يرسله المتصفح
         let adminToken = null;
         if (user.role === 'admin') {
-            adminToken = jwt.sign({ uid: user.user_id, role: 'admin', tv: Number(user.token_version) || 0 }, ADMIN_JWT_SECRET, { expiresIn: '12h' });
+            adminToken = jwt.sign({ uid: user.user_id, role: 'admin', tv: Number(user.token_version) || 0 }, ADMIN_JWT_SECRET);
         }
 
-        // 🔒 توكن الجلسة لكل المستخدمين (المشرف 12 ساعة، والبقية 30 يوماً)
-        const sessionToken = adminToken || jwt.sign({ uid: user.user_id, role: user.role, tv: Number(user.token_version) || 0 }, ADMIN_JWT_SECRET, { expiresIn: '30d' });
+        // 🔒 توكن الجلسة لجميع الأدوار بلا انتهاء زمني؛ الإبطال عبر token_version
+        const sessionToken = adminToken || jwt.sign({ uid: user.user_id, role: user.role, tv: Number(user.token_version) || 0 }, ADMIN_JWT_SECRET);
 
         res.status(200).json({
             message: 'تم تسجيل الدخول بنجاح بالمطابقة الكاملة الثلاثية المشروطة ببيانات قاعدة البيانات الحقيقية',
@@ -1941,7 +1936,7 @@ async function requireAdmin(req, res, next) {
 
     let decoded;
     try {
-        decoded = jwt.verify(token, ADMIN_JWT_SECRET, { algorithms: ['HS256'] });
+        decoded = jwt.verify(token, ADMIN_JWT_SECRET, { algorithms: ['HS256'], ignoreExpiration: true });
     } catch (e) {
         return res.status(401).json({ success: false, error: 'جلسة المشرف منتهية أو غير صالحة، يرجى تسجيل الدخول من جديد.' });
     }
