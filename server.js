@@ -245,10 +245,10 @@ if (missingEnvVars.length > 0) {
         console.error(`   - ${varName}`);
     });
     console.error('\n📝 للحل، قم بإنشاء ملف .env.local في جذر المشروع بالمحتوى التالي:');
-    console.error('   POSTGRES_HOST=144.91.84.168');
+    console.error('   POSTGRES_HOST=your_db_host');
     console.error('   POSTGRES_PORT=5432');
-    console.error('   POSTGRES_USER=Husam');
-    console.error('   POSTGRES_PASSWORD=Husam');
+    console.error('   POSTGRES_USER=your_db_user');
+    console.error('   POSTGRES_PASSWORD=your_db_password');
     console.error('   SERVICES_DB_NAME=services_db');
     console.error('   REAL_ESTATE_DB_NAME=realestate');
     console.error('   GEOSERVER_TARGET=http://194.163.174.162:8080/geoserver');
