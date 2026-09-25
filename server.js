@@ -3421,6 +3421,10 @@ app.post('/api/service-requests/:id/rating', requireAuth, async (req, res) => {
     const { rating, comment } = req.body;
     const user_id = req.auth.uid; // 🔒 من التوكن
 
+    if (!/^\d+$/.test(id) || !Number.isSafeInteger(Number(id)) || Number(id) <= 0) {
+        return res.status(400).json({ success: false, error: 'رقم طلب الخدمة غير صالح.' });
+    }
+
     if (!user_id || !rating || rating < 1 || rating > 5) {
         return res.status(400).json({ success: false, error: 'بيانات التقييم غير صالحة.' });
     }

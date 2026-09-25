@@ -1180,8 +1180,11 @@ function startPollingRequests() {
 
     async function loadMessages() {
         if (!currentOpenRequestId) return;
+        // احتفظ بمعرف هذه المحادثة؛ قد تُغلق أو تتغير أثناء انتظار الشبكة.
+        const requestId = Number(currentOpenRequestId);
+        if (!Number.isSafeInteger(requestId) || requestId <= 0) return;
         try {
-            const res = await fetch(`${window.location.origin}/api/service-requests/${currentOpenRequestId}/messages`);
+            const res = await fetch(`${window.location.origin}/api/service-requests/${requestId}/messages`);
             const data = await res.json();
             if (data.success) {
                 renderMessages(data.messages);
@@ -1207,10 +1210,14 @@ function startPollingRequests() {
                         const existingModal = document.getElementById('rating-modal');
                         if (!existingModal) {
                             // التحقق من عدم وجود تقييم سابق
-                            const ratingRes = await fetch(`${window.location.origin}/api/service-requests/${currentOpenRequestId}/rating-check?user_id=${getCurrentUserId()}`);
+                            const ratingRes = await fetch(`${window.location.origin}/api/service-requests/${requestId}/rating-check?user_id=${getCurrentUserId()}`);
                             const ratingData = await ratingRes.json();
-                            if (!ratingData.hasRated) {
-                                setTimeout(() => showRatingModal(currentOpenRequestId, currentOtherPartyName, currentServiceTypeLabel), 1000);
+                            if (!ratingData.hasRated && currentOpenRequestId === requestId) {
+                                const providerName = currentOtherPartyName;
+                                const serviceType = currentServiceTypeLabel;
+                                setTimeout(() => {
+                                    if (currentOpenRequestId === requestId) showRatingModal(requestId, providerName, serviceType);
+                                }, 1000);
                             }
                         }
                     }
@@ -1311,12 +1318,17 @@ async function reopenChatForRequestId(requestId) {
 
     async function confirmAgreement() {
         if (!currentOpenRequestId) return;
+        const requestId = Number(currentOpenRequestId);
+        if (!Number.isSafeInteger(requestId) || requestId <= 0) {
+            toast('تعذر تأكيد الاتفاق لأن رقم الطلب غير صالح. أغلق الدردشة وافتح الطلب مجدداً.', 'warning');
+            return;
+        }
         const userId = getCurrentUserId();
         const confirmed = await confirmDialog('هل أنت متأكد من إتمام الاتفاق؟ سيتم عرض وسائل التواصل (اتصال + واتساب) فور تأكيد الطرف الآخر.', { okText: 'نعم، تم الاتفاق' });
         if (!confirmed) return;
 
         try {
-            const res = await fetch(`${window.location.origin}/api/service-requests/${currentOpenRequestId}/confirm`, {
+            const res = await fetch(`${window.location.origin}/api/service-requests/${requestId}/confirm`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ role: currentUserRoleInChat, user_id: userId })
@@ -1339,11 +1351,16 @@ async function reopenChatForRequestId(requestId) {
                     if (inputArea) inputArea.style.display = 'none';
                     if (chatCancelBtn) chatCancelBtn.style.display = 'none'; // إخفاء الإلغاء فور الاكتمال
                     toast('🎉 تم إتمام الاتفاق بنجاح وظهرت أرقام التواصل!', 'success');
-                    removePulseEffect(currentOpenRequestId);
+                    removePulseEffect(requestId);
                     
                     // فتح واجهة التقييم بعد اكتمال الاتفاق - فقط للمستخدم الطالب
                     if (currentUserRoleInChat === 'user') {
-                        setTimeout(() => showRatingModal(currentOpenRequestId, currentOtherPartyName, currentServiceTypeLabel), 1500);
+                        const completedRequestId = requestId;
+                        const providerName = currentOtherPartyName;
+                        const serviceType = currentServiceTypeLabel;
+                        if (Number.isSafeInteger(completedRequestId) && completedRequestId > 0) {
+                            setTimeout(() => showRatingModal(completedRequestId, providerName, serviceType), 1500);
+                        }
                     }
                 } else {
                     toast('✅ تم تسجيل تأكيدك بنجاح، بانتظار تأكيد الطرف الآخر لتفعيل أرقام التواصل.', 'success');
@@ -1531,6 +1548,11 @@ async function reopenChatForRequestId(requestId) {
     }
 
     function showRatingModal(requestId, providerName, serviceType) {
+        requestId = Number(requestId);
+        if (!Number.isSafeInteger(requestId) || requestId <= 0) {
+            toast('تعذر فتح التقييم لأن رقم الطلب غير متوفر. افتح الطلب من قائمة طلباتي وحاول مجدداً.', 'warning');
+            return;
+        }
         const existingModal = document.getElementById('rating-modal');
         if (existingModal) return; // لا تزيل المودال الموجود، فقط عد
 
@@ -1627,6 +1649,10 @@ async function reopenChatForRequestId(requestId) {
             const comment = document.getElementById('rating-comment').value.trim();
             // التعليق اختياري الآن
             const userId = getCurrentUserId();
+            const submitButton = document.getElementById('submit-rating');
+            if (submitButton.disabled) return;
+            submitButton.disabled = true;
+            submitButton.textContent = 'جارٍ إرسال التقييم...';
 
             try {
                 const res = await fetch(`${window.location.origin}/api/service-requests/${requestId}/rating`, {
@@ -1656,9 +1682,13 @@ async function reopenChatForRequestId(requestId) {
                         showActiveRequestsList();
                     }
                 } else {
+                    submitButton.disabled = false;
+                    submitButton.textContent = 'إرسال التقييم';
                     toast('❌ ' + (data.error || 'تعذر إرسال التقييم.'), 'error');
                 }
             } catch (err) {
+                submitButton.disabled = false;
+                submitButton.textContent = 'إرسال التقييم';
                 toast('حدث خطأ أثناء الاتصال بالسيرفر.', 'error');
             }
         };
