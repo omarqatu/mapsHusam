@@ -360,20 +360,21 @@ function renderManualGroupsInto(prefix) {
 
         // 🆕 حواجز الطرق: عرض كل المعالم مباشرة من الطبقة الحية (عمود stop)
     function renderTrafficTicker() {
-        if (!liveRoadBarriers.length) {
-            return '<div class="ticker-item traffic-item" data-type="traffic"><i class="fas fa-road"></i><span class="ticker-label">حالة الطرق</span><span class="ticker-value">جاري التحميل...</span></div>';
-        }
-        return liveRoadBarriers.map(f => {
-            const props = f.properties || {};
-            const stopInfo = window.getRoadBarrierStopInfo(window.getCaseInsensitiveProp(props, 'stop'));
-            const name = props.name || 'حاجز';
-            return `<div class="ticker-item traffic-item" data-type="traffic">
-                <i class="fas fa-road"></i>
-                <span class="ticker-label">${name}</span>
-                <span class="ticker-value" style="color:${stopInfo.color};">${stopInfo.icon} ${stopInfo.label}</span>
-            </div>`;
-        }).join('');
+    if (!liveRoadBarriers.length) {
+        return '<div class="ticker-item traffic-item" data-type="traffic"><i class="fas fa-road"></i><span class="ticker-label">حالة الطرق</span><span class="ticker-value">جاري التحميل...</span></div>';
     }
+    return liveRoadBarriers.map(f => {
+        const props = f.properties || {};
+        const stopInfo = window.getRoadBarrierStopInfo(window.getCaseInsensitiveProp(props, 'stop'));
+        const desText = (props.des && String(props.des).trim()) ? ` (${escWidgetText(props.des)})` : '';
+        const name = escWidgetText(props.name || 'حاجز') + desText;
+        return `<div class="ticker-item traffic-item" data-type="traffic">
+            <i class="fas fa-road"></i>
+            <span class="ticker-label">${name}</span>
+            <span class="ticker-value" style="color:${stopInfo.color};">${stopInfo.icon} ${stopInfo.label}</span>
+        </div>`;
+    }).join('');
+}
 
     // 🆕 محطات الوقود: عرض كل المعالم مباشرة من الطبقة الحية (ديزل/بنزين95/بنزين98)
     function renderFuelStationsStatusTicker() {
@@ -401,27 +402,28 @@ function renderManualGroupsInto(prefix) {
     // 🆕 بناء قوائم البوابة التفصيلية (Portal) لحواجز الطرق ومحطات الوقود
     // 🆕 حواجز الطرق: كل حاجز يعرض حالتين - "للداخل" (عمود stop) و"للخارج" (عمود stop2)
     function buildPortalTrafficItemsHtml() {
-        if (!liveRoadBarriers.length) return '<div style="padding:10px; text-align:center; color:#999;">لا توجد بيانات حالياً</div>';
-        return liveRoadBarriers.map(f => {
-            const props = f.properties || {};
-            const name = props.name || 'حاجز';
-            const inInfo = window.getRoadBarrierStopInfo(window.getCaseInsensitiveProp(props, 'stop'));
-            const rawOut = window.getCaseInsensitiveProp(props, 'stop2');
-            const hasOut = rawOut !== undefined && rawOut !== null && String(rawOut).trim() !== '';
-            const outInfo = hasOut
-                ? window.getRoadBarrierStopInfo(rawOut)
-                : { label: 'غير محدد', color: '#6c757d', icon: '⚪' };
-            const badge = (iconClass, dirLabel, info) =>
-                `<span class="traffic-status" style="color:${info.color}; background:${info.color}15;"><i class="fas ${iconClass}"></i> ${dirLabel}: ${info.icon} ${info.label}</span>`;
-            return `<div class="traffic-item">
-                <div class="traffic-location">${escWidgetText(name)}</div>
-                <div style="display:flex; flex-wrap:wrap; gap:8px;">
-                    ${badge('fa-sign-in-alt', 'للداخل', inInfo)}
-                    ${badge('fa-sign-out-alt', 'للخارج', outInfo)}
-                </div>
-            </div>`;
-        }).join('');
-    }
+    if (!liveRoadBarriers.length) return '<div style="padding:10px; text-align:center; color:#999;">لا توجد بيانات حالياً</div>';
+    return liveRoadBarriers.map(f => {
+        const props = f.properties || {};
+        const desText = (props.des && String(props.des).trim()) ? ` (${props.des})` : '';
+        const name = (props.name || 'حاجز') + desText;
+        const inInfo = window.getRoadBarrierStopInfo(window.getCaseInsensitiveProp(props, 'stop'));
+        const rawOut = window.getCaseInsensitiveProp(props, 'stop2');
+        const hasOut = rawOut !== undefined && rawOut !== null && String(rawOut).trim() !== '';
+        const outInfo = hasOut
+            ? window.getRoadBarrierStopInfo(rawOut)
+            : { label: 'غير محدد', color: '#6c757d', icon: '⚪' };
+        const badge = (iconClass, dirLabel, info) =>
+            `<span class="traffic-status" style="color:${info.color}; background:${info.color}15;"><i class="fas ${iconClass}"></i> ${dirLabel}: ${info.icon} ${info.label}</span>`;
+        return `<div class="traffic-item">
+            <div class="traffic-location">${escWidgetText(name)}</div>
+            <div style="display:flex; flex-wrap:wrap; gap:8px;">
+                ${badge('fa-sign-in-alt', 'للداخل', inInfo)}
+                ${badge('fa-sign-out-alt', 'للخارج', outInfo)}
+            </div>
+        </div>`;
+    }).join('');
+}
 
     function buildPortalFuelStatusItemsHtml() {
         if (!liveFuelStations.length) return '<div style="padding:10px; text-align:center; color:#999;">لا توجد بيانات حالياً</div>';
@@ -565,30 +567,77 @@ function renderManualGroupsInto(prefix) {
         return `${dd}/${mm}/${yyyy}`;
     }
 
-        function setLastUpdatedValue(id, value) {
+                function setLastUpdatedValue(id, value) {
         ['', 'mobile-'].forEach(function (prefix) {
             const el = document.getElementById(prefix + id);
             if (el) el.textContent = value;
         });
     }
 
+    // 🆕 صياغة "منذ كم" بدل التاريخ الكامل: أقل من 10 دقائق => "الآن" (أخضر)،
+    // بعدها تقريب لأقرب 5 دقائق وعرض يوم/ساعة/دقيقة بقواعد الجمع العربي
+    // الصحيحة (1: مفرد، 2: مثنى، 3-10: جمع، 11+: رقم + مفرد)
+    function arabicCountUnit(n, singular, dual, plural) {
+        if (n === 1) return singular;
+        if (n === 2) return dual;
+        if (n >= 3 && n <= 10) return n + ' ' + plural;
+        return n + ' ' + singular;
+    }
+
+    function formatRelativeUpdateTime(isoStr) {
+        if (!isoStr) return { text: 'لا يوجد تحديث بعد', recent: false };
+        let normalized = String(isoStr).trim().replace(' ', 'T').replace(/(\.\d{3})\d+/, '$1');
+        const d = new Date(normalized);
+        if (isNaN(d.getTime())) return { text: 'غير معروف', recent: false };
+
+        let diffMs = Date.now() - d.getTime();
+        if (diffMs < 0) diffMs = 0;
+        const diffMin = Math.floor(diffMs / 60000);
+
+        if (diffMin < 10) return { text: 'الآن', recent: true };
+
+        const rounded = Math.round(diffMin / 5) * 5;
+        const days = Math.floor(rounded / 1440);
+        const remAfterDays = rounded % 1440;
+        const hours = Math.floor(remAfterDays / 60);
+        const minutes = remAfterDays % 60;
+
+        const parts = [];
+        if (days > 0) parts.push(arabicCountUnit(days, 'يوم', 'يومين', 'أيام'));
+        if (hours > 0) parts.push(arabicCountUnit(hours, 'ساعة', 'ساعتين', 'ساعات'));
+        if (minutes > 0 || parts.length === 0) parts.push(arabicCountUnit(minutes, 'دقيقة', 'دقيقتين', 'دقائق'));
+
+        return { text: 'منذ ' + parts.join(' و'), recent: false };
+    }
+
+    function setLastUpdatedRelative(id, isoStr) {
+        const result = formatRelativeUpdateTime(isoStr);
+        ['', 'mobile-'].forEach(function (prefix) {
+            const el = document.getElementById(prefix + id);
+            if (!el) return;
+            el.textContent = result.text;
+            el.style.color = result.recent ? '#28a745' : '';
+            el.style.fontWeight = result.recent ? 'bold' : '';
+        });
+    }
+
     function updateLastUpdatedTimestamps() {
         const todayStr = formatDateDMY(new Date().toISOString());
 
-        setLastUpdatedValue('currency-update-time', formatDateDMY(remoteGroupsData.currency?.updated_at));
-        setLastUpdatedValue('gold-update-time', formatDateDMY(remoteGroupsData.gold?.updated_at));
-        setLastUpdatedValue('weather-update-time', formatDateDMY(remoteGroupsData.weather?.updated_at));
-        setLastUpdatedValue('fuel-update-time', formatDateDMY(remoteGroupsData.fuel?.updated_at));
-        setLastUpdatedValue('transport-inter-city-update-time', formatDateDMY(remoteGroupsData.transport_inter_city?.updated_at));
-        setLastUpdatedValue('transport-intra-city-update-time', formatDateDMY(remoteGroupsData.transport_intra_city?.updated_at));
+        setLastUpdatedRelative('currency-update-time', remoteGroupsData.currency?.updated_at);
+        setLastUpdatedRelative('gold-update-time', remoteGroupsData.gold?.updated_at);
+        setLastUpdatedRelative('weather-update-time', remoteGroupsData.weather?.updated_at);
+        setLastUpdatedRelative('fuel-update-time', remoteGroupsData.fuel?.updated_at);
+        setLastUpdatedRelative('transport-inter-city-update-time', remoteGroupsData.transport_inter_city?.updated_at);
+        setLastUpdatedRelative('transport-intra-city-update-time', remoteGroupsData.transport_intra_city?.updated_at);
 
-        // مجموعتان أوتوماتيك (API): تاريخ اليوم دائماً
+        // مجموعتان أوتوماتيك (API): تاريخ اليوم الفعلي دائماً (ليست "آخر تحديث منذ")
         setLastUpdatedValue('prayer-date', todayStr);
         setLastUpdatedValue('calendar-today', todayStr);
 
         // حالة الطرق ومحطات الوقود: آخر تحديث فعلي من قاعدة البيانات
-        setLastUpdatedValue('traffic-update-time', formatDateDMY(remoteRoadStatusUpdatedAt));
-        setLastUpdatedValue('fuel-status-update-time', formatDateDMY(remoteFuelStatusUpdatedAt));
+        setLastUpdatedRelative('traffic-update-time', remoteRoadStatusUpdatedAt);
+        setLastUpdatedRelative('fuel-status-update-time', remoteFuelStatusUpdatedAt);
     }
         // ============================================
     // 🆕 بحث نصي مرن (يتجاهل فروقات الحروف العربية المتشابهة) لكل مجموعة

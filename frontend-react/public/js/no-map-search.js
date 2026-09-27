@@ -1157,7 +1157,8 @@ if (ytMatch) {
 
             let infoHtml = `<div class="nms-gallery-card-body">`;
             infoHtml += `<div class="nms-gallery-badge">🏆 ${item.label}${featureId !== '' ? ` <span style="color:#888; font-weight:normal;">(رقم: ${sanitize(String(featureId))})</span>` : ''}</div>`;
-            infoHtml += getStatusBadge(props.auto_status, props.work_hours);
+            if (item.layer === 'road_barriers') infoHtml += buildRoadBarrierDirectionsHtml(props);
+            else infoHtml += getStatusBadge(props.auto_status, props.work_hours);
             if (name) infoHtml += `<div class="nms-r-name"><i class="fas fa-user"></i> ${name}</div>`;
             if (location) infoHtml += `<div class="nms-r-loc"><i class="fas fa-map-marker-alt"></i> ${location}</div>`;
             if (featureId !== '') {
@@ -2050,10 +2051,23 @@ if (ytMatch) {
 
                 // 🆕 حواجز الطرق: قالب مستقل بالكامل (حالة Stop + الاسم + المحافظة/المدينة/الموقع + زر الانتقال)
                     if (isRoadBarriers) {
-                    const stopInfo = window.getRoadBarrierStopInfo(window.getCaseInsensitiveProp(p, 'stop'));
+                    // 🆕 [stop2]: عرض حالتين منفصلتين (للداخل/للخارج) بنفس أسلوب البوب أب
+                    const inInfo = window.getRoadBarrierStopInfo(window.getCaseInsensitiveProp(p, 'stop'));
+                    const rawStop2 = window.getCaseInsensitiveProp(p, 'stop2');
+                    const hasStop2 = rawStop2 !== undefined && rawStop2 !== null && String(rawStop2).trim() !== '';
+                    const outInfo = hasStop2
+                        ? window.getRoadBarrierStopInfo(rawStop2)
+                        : { label: 'غير محدد', color: '#6c757d', icon: '⚪' };
                     const barrierDisplayId = (p.id !== undefined && p.id !== null && p.id !== '') ? p.id : (p.fid !== undefined ? p.fid : null);
                     let barrierHtml = `<div style="font-size:11px; color:#999; margin-bottom:4px;">${barrierDisplayId !== null ? `(رقم: ${sanitize(String(barrierDisplayId))})` : ''}</div>`;
-                    barrierHtml += `<div style="text-align:center; font-weight:bold; font-size:14px; color:${stopInfo.color}; border:1px dashed ${stopInfo.color}; border-radius:8px; padding:8px; margin-bottom:8px; background:${stopInfo.color}15;">${stopInfo.icon} ${stopInfo.label}</div>`;
+                    barrierHtml += `<div style="display:flex; gap:6px; margin-bottom:8px;">
+                        <div style="flex:1; text-align:center; font-weight:bold; font-size:12.5px; color:${inInfo.color}; border:1px dashed ${inInfo.color}; border-radius:8px; padding:6px 4px; background:${inInfo.color}15;">
+                            <div style="font-size:10px; color:#777; margin-bottom:2px;">للداخل</div>${inInfo.icon} ${inInfo.label}
+                        </div>
+                        <div style="flex:1; text-align:center; font-weight:bold; font-size:12.5px; color:${outInfo.color}; border:1px dashed ${outInfo.color}; border-radius:8px; padding:6px 4px; background:${outInfo.color}15;">
+                            <div style="font-size:10px; color:#777; margin-bottom:2px;">للخارج</div>${outInfo.icon} ${outInfo.label}
+                        </div>
+                    </div>`;
                     if (p.name) barrierHtml += `<div class="nms-r-name"><i class="fas fa-map-marker-alt"></i> ${sanitize(p.name)}</div>`;
                     if (p.gov_a) barrierHtml += `<div class="nms-r-line"><b>🌍 المحافظة:</b> ${sanitize(p.gov_a)}</div>`;
                     if (p.village_a) barrierHtml += `<div class="nms-r-line"><b>🏘️ المدينة:</b> ${sanitize(p.village_a)}</div>`;
