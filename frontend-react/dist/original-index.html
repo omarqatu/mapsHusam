@@ -48,6 +48,7 @@
     <link rel="stylesheet" href="/css/platform-stats.css">
     <link rel="stylesheet" href="/css/social-links.css">
     <link rel="stylesheet" href="/css/mobile-tabs.css">
+    <link rel="stylesheet" href="/css/featured-services-portal.css">
     <link rel="stylesheet" href="/css/widgets-ticker.css">
     <link rel="stylesheet" href="/css/widgets-portal.css">
 
@@ -247,6 +248,13 @@
         <i class="fas fa-list"></i> الانتقال إلى البحث بدون خريطة
     </a>
 
+    <button type="button" id="open-featured-services-desktop"
+       style="display: inline-flex; align-items:center; justify-content:center; gap:8px; background: linear-gradient(135deg, #20a05a, #138a4a); color: white;
+              padding: 12px 20px; border-radius: 25px; font-size: 14px; font-weight: 600;
+              box-shadow: 0 4px 15px rgba(32, 160, 90, 0.3); border: 2px solid #fff; white-space: nowrap; cursor:pointer;">
+        <i class="fas fa-star"></i> خدمات مميزة
+    </button>
+
     <!-- زر حالة الطرق (سيكون في الوسط) -->
     <button type="button" id="btn-open-road-status"
        style="display: inline-flex; align-items:center; justify-content:center; gap:8px; background: linear-gradient(135deg, #e67e22, #d35400); color: white;
@@ -336,6 +344,20 @@
 
 
 <div id="map" class="map"></div>
+
+<div id="featured-services-panel" class="hidden panel-right">
+    <div class="panel-header">
+        <h3><i class="fas fa-star" style="color:#d99b00;"></i> خدمات مميزة</h3>
+        <div class="panel-controls">
+            <button class="panel-close-btn" id="close-featured-services-panel" title="إغلاق">✕</button>
+        </div>
+    </div>
+    <div class="panel-body">
+        <div id="featured-services-content" data-loaded="0">
+            <div class="featured-services-empty">جاري تحميل الخدمات المميزة...</div>
+        </div>
+    </div>
+</div>
 
 <div id="shareLocationPanel" class="hidden panel-right">
     <div class="panel-header">
@@ -1102,6 +1124,7 @@ document.addEventListener('DOMContentLoaded', checkBannerStatus);
 <div id="notification-container"></div>
 <script src="/js/platform-stats.js"></script>
 <script src="/js/mobile-tabs.js"></script>
+<script src="/js/featured-services-portal.js"></script>
 
 <!-- نظام العناصر الحيوية -->
 <script src="/js/widgets-config.js"></script>

@@ -25,6 +25,7 @@ async function logMapEvent(eventType, provider = null, service = null) {
         console.warn('فشل تسجيل الحدث:', err.message);
     }
 }
+window.logMapEvent = logMapEvent;
 
 // خريطة تحويل الأسماء العربية إلى الإنجليزية للطبقات
 const arabicToEnglishLayerMap = {

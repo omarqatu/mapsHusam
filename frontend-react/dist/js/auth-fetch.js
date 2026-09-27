@@ -41,14 +41,20 @@
         return null;
     }
 
-    function handleExpiredSession() {
+    function handleExpiredSession(apiPath, responseData) {
         if (expiredHandled) return;
         expiredHandled = true;
+        // سجل سبب الرفض دون طباعة Authorization أو قيمة التوكن.
+        console.error('[auth-fetch] رفض السيرفر الجلسة:', {
+            path: apiPath,
+            code: responseData && responseData.code,
+            error: responseData && responseData.error
+        });
         SESSION_KEYS.forEach(function (k) {
             try { localStorage.removeItem(k); sessionStorage.removeItem(k); } catch (e) { /* تجاهل */ }
         });
-        if (window.toast) window.toast('انتهت جلستك، يرجى تسجيل الدخول من جديد.', 'warning', 4000);
-        setTimeout(function () { window.location.reload(); }, 1800);
+        if (window.toast) window.toast('رفض السيرفر الجلسة. التفاصيل في Console، ستتم إعادة تحميل الصفحة بعد 15 ثانية.', 'warning', 12000);
+        setTimeout(function () { window.location.reload(); }, 15000);
     }
 
     // 🔄 حفظ التوكن المُجدَّد الذي يرسله السيرفر (في نفس مكان الجلسة الحالية)
@@ -87,7 +93,18 @@
             // نُنهي الجلسة فقط إذا كان هناك جلسة محفوظة أصلاً (يمنع حلقة إعادة التحميل للزوار)
             if (apiPath && res.status === 401 && !NO_LOGOUT_PATHS.includes(apiPath) && readSession()) {
                 res.clone().json().then(function (d) {
-                    if (d && ['AUTH_REQUIRED', 'TOKEN_INVALID', 'SESSION_REVOKED'].includes(d.code)) handleExpiredSession();
+                    if (!d || !['AUTH_REQUIRED', 'TOKEN_INVALID', 'SESSION_REVOKED'].includes(d.code)) return;
+                    if (d.code === 'SESSION_REVOKED') {
+                        handleExpiredSession(apiPath, d);
+                        return;
+                    }
+                    // لا نمسح جلسة المستخدم بسبب نقص/رفض مؤقت للتوكن؛ الخروج التلقائي
+                    // محصور بإبطال الجلسة من الخادم (مثل تسجيل الخروج القسري).
+                    console.error('[auth-fetch] تعذر اعتماد الجلسة دون إبطالها:', {
+                        path: apiPath,
+                        code: d.code,
+                        error: d.error
+                    });
                 }).catch(function () { /* تجاهل */ });
             }
             return res;

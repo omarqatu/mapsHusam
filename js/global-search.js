@@ -275,24 +275,34 @@ window.fetchSpecialStatusMatches = async function(term) {
         if (normalized.includes(normalizeArabic(keyword))) matchedStops = ROAD_BARRIER_STATUS_KEYWORDS[keyword];
     });
 
-    if (matchedStops) {
+        if (matchedStops) {
+        // 🆕 [stop2]: نبحث الآن بكلا العمودين (stop للداخل، stop2 للخارج) عبر
+        // طلبين منفصلين لكل قيمة، وندمج النتائج مع إزالة التكرار حتى لا يظهر
+        // نفس الحاجز مرتين لو طابقت حالته الاتجاهين معاً بنفس القيمة المطلوبة
+        const seenBarrierIds = new Set();
         for (const stopVal of matchedStops) {
-            try {
-                const params = new URLSearchParams({
-                    layer: 'road_barriers', workspace: 'services',
-                    field_0: 'stop', operator_0: '=', value_0: stopVal, conditions_count: '1'
-                });
-                const response = await fetch(`${baseUrl}api/search-features?${params.toString()}`);
-                if (response.ok) {
-                    const data = await response.json();
-                    if (data && data.features) {
-                        const stopInfo = window.getRoadBarrierStopInfo ? window.getRoadBarrierStopInfo(stopVal) : { label: 'حاجز طرق' };
-                        data.features.forEach(f => {
-                            results.push({ ...f, customTitle: `حواجز الطرق - ${stopInfo.label}`, layerId: 'road_barriers', workspace: 'services' });
-                        });
+            const stopInfo = window.getRoadBarrierStopInfo ? window.getRoadBarrierStopInfo(stopVal) : { label: 'حاجز طرق' };
+            for (const fieldName of ['stop', 'stop2']) {
+                try {
+                    const params = new URLSearchParams({
+                        layer: 'road_barriers', workspace: 'services',
+                        field_0: fieldName, operator_0: '=', value_0: stopVal, conditions_count: '1'
+                    });
+                    const response = await fetch(`${baseUrl}api/search-features?${params.toString()}`);
+                    if (response.ok) {
+                        const data = await response.json();
+                        if (data && data.features) {
+                            const directionLabel = fieldName === 'stop' ? 'للداخل' : 'للخارج';
+                            data.features.forEach(f => {
+                                const dedupeKey = String(f.id || (f.properties && f.properties.id));
+                                if (seenBarrierIds.has(dedupeKey)) return;
+                                seenBarrierIds.add(dedupeKey);
+                                results.push({ ...f, customTitle: `حواجز الطرق - ${stopInfo.label} (${directionLabel})`, layerId: 'road_barriers', workspace: 'services' });
+                            });
+                        }
                     }
-                }
-            } catch (err) { /* تجاهل */ }
+                } catch (err) { /* تجاهل */ }
+            }
         }
     }
 

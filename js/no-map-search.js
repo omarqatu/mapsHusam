@@ -66,29 +66,33 @@ window.__nmsPageHandlesOwnAds = true;
         // من enterPlatform() ليصبح الملف الشخصي مطابقاً تماماً لما يظهر بصفحة الخريطة.
         // ==========================================================================
         (function initTopUserBadgeForNoMapPage() {
-            const authenticatedUser = window.__nmsAuthenticatedUser;
-            if (!authenticatedUser) return;
+    function getStoredUser() {
+        try {
+            return JSON.parse(localStorage.getItem('map_user')) ||
+                   JSON.parse(sessionStorage.getItem('map_user'));
+        } catch (e) { return null; }
+    }
 
-            window.currentAppUser = authenticatedUser;
+    // 🆕 لا نعتمد على __nmsAuthenticatedUser وحدها لأنها تُعبَّأ بعد رد السيرفر (async)
+    const authenticatedUser = window.__nmsAuthenticatedUser || getStoredUser();
+    if (!authenticatedUser) return;
 
-            // showTopUserBadge معرّفة عالمياً بملف auth-core-functions.js (يُحمَّل
-            // قبل هذا الملف بالصفحة) - تملأ الاسم والرتبة وتُظهر زر لوحة التحكم للمشرف
-            if (typeof showTopUserBadge === 'function') {
-                showTopUserBadge(authenticatedUser);
-            }
+    window.currentAppUser = authenticatedUser;
 
-            const userId = authenticatedUser.user_id || authenticatedUser.id;
-            if (window.notificationSystem && userId) {
-                window.notificationSystem.init(userId);
-            }
+    if (typeof showTopUserBadge === 'function') {
+        showTopUserBadge(authenticatedUser);
+    }
 
-            const notificationBtn = document.getElementById('notification-toggle-btn');
-            if (notificationBtn) notificationBtn.style.display = 'flex';
+    const userId = authenticatedUser.user_id || authenticatedUser.id;
+    if (window.notificationSystem && userId) {
+        window.notificationSystem.init(userId);
+    }
 
-            // نفس الحدث الذي تُطلقه enterPlatform() بعد الدخول الفعلي بصفحة الخريطة،
-            // ليبقى سلوك بقية الملفات (مثل ui-collapse.js وبوابة الملف الشخصي) متطابقاً
-            document.dispatchEvent(new CustomEvent('userLoggedIn', { detail: authenticatedUser }));
-        })();
+    const notificationBtn = document.getElementById('notification-toggle-btn');
+    if (notificationBtn) notificationBtn.style.display = 'flex';
+
+    document.dispatchEvent(new CustomEvent('userLoggedIn', { detail: authenticatedUser }));
+})();
 
         // ==========================================================================
         // 0-أ) مودال "من نحن"
@@ -498,6 +502,10 @@ window.__nmsPageHandlesOwnAds = true;
                 detailsHtml += `<div style="background:#f9f9f9; padding:4px 6px; border-radius:5px; color:#555; font-size:10px; margin-bottom:2px; word-wrap: break-word; white-space: normal;">📝 ${sanitize(props.des)}</div>`;
             }
             detailsHtml += buildFeatureMediaHtml(props);
+            if (!isRealEstate) {
+                detailsHtml += buildMediaBlockHtml(getMediaValue(props, 'details1'), 'تفاصيل إضافية 1');
+                detailsHtml += buildMediaBlockHtml(getMediaValue(props, 'details2'), 'تفاصيل إضافية 2');
+            }
 
             let actionHtml = '';
             if (props.whatsapp) {
@@ -938,28 +946,22 @@ window.__nmsPageHandlesOwnAds = true;
                 }
 
         // تحويل رابط فيديو (يوتيوب أو ملف مباشر أو رابط عام) إلى عنصر عرض مناسب
-                    function buildVideoEmbedHtml(rawUrl) {
+            function buildVideoEmbedHtml(rawUrl) {
             const url = cleanExternalUrl(rawUrl);
             if (!url) return '';
 
             const ytMatch = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([\w-]+)/);
-            if (ytMatch) {
-                // 🆕 طبقة شفافة (nms-video-click-overlay) تغطي كامل مساحة الفيديو
-                // وتفتح الرابط الأصلي عند النقر بأي نقطة داخلها، بدل الاكتفاء
-                // بزر صغير بزاوية الفيديو فقط. ملاحظة: هذا يجعل الفيديو معاينة
-                // بصرية فقط داخل البطاقة (بدون تشغيل مباشر)، والنقر ينقل مباشرة
-                // لصفحة الفيديو الأصلية حيث يمكن تشغيله هناك.
-                return `<div class="nms-gallery-media nms-gallery-video" style="position:relative;">
-                    <iframe src="https://www.youtube.com/embed/${ytMatch[1]}" frameborder="0" allow="autoplay; encrypted-media" allowfullscreen loading="lazy"></iframe>
-                    <a href="${url}" target="_blank" rel="noopener" class="nms-video-click-overlay" title="فتح الفيديو في صفحته الأصلية"><i class="fas fa-up-right-from-square"></i></a>
-                </div>`;
-            }
+if (ytMatch) {
+    return `<div class="nms-gallery-media nms-gallery-video nms-yt-facade" data-yt-id="${ytMatch[1]}"
+                 style="position:relative; cursor:pointer; --nms-video-thumb:url('https://img.youtube.com/vi/${ytMatch[1]}/hqdefault.jpg');">
+                <span style="position:absolute; inset:0; display:flex; align-items:center; justify-content:center; color:#fff; font-size:48px; text-shadow:0 2px 8px rgba(0,0,0,.6);">
+                    <i class="fas fa-play-circle"></i>
+                </span>
+            </div>`;
+}
 
             if (/\.(mp4|webm|ogg)(\?.*)?$/i.test(url)) {
-                return `<div class="nms-gallery-media nms-gallery-video" style="position:relative;">
-                    <video controls preload="metadata" src="${url}"></video>
-                    <a href="${url}" target="_blank" rel="noopener" class="nms-video-click-overlay" title="فتح الفيديو في صفحته الأصلية"><i class="fas fa-up-right-from-square"></i></a>
-                </div>`;
+                return `<div class="nms-gallery-media nms-gallery-video"><video controls preload="metadata" src="${url}"></video></div>`;
             }
 
             return `<div class="nms-gallery-media nms-gallery-video-link"><a href="${url}" target="_blank" rel="noopener" class="nms-video-link-btn"><i class="fas fa-play-circle"></i> مشاهدة الفيديو</a></div>`;
@@ -985,21 +987,21 @@ window.__nmsPageHandlesOwnAds = true;
             if (/\.(jpg|jpeg|png|gif|webp)(\?.*)?$/i.test(url)) {
                 return `<img src="${url}" loading="lazy" class="nms-ba-photo-img">`;
             }
-            // 🆕 نفس طبقة النقر الشفافة الكاملة المستخدمة بقسمي الصور والفيديو،
-            // بدل زر صغير بالزاوية فقط. .nms-ba-col أصلاً بها position:relative
-            // بملف CSS فلا حاجة لإضافتها هنا.
+            // 🆕 [رجوع للوضع الطبيعي]: iframe/video مباشر بدون أي رابط خارجي فوقه
             const ytMatch = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([\w-]+)/);
-            if (ytMatch) {
-                return `<iframe class="nms-ba-video-frame" src="https://www.youtube.com/embed/${ytMatch[1]}" frameborder="0" allow="autoplay; encrypted-media" allowfullscreen loading="lazy"></iframe>
-                    <a href="${url}" target="_blank" rel="noopener" class="nms-video-click-overlay" title="فتح الفيديو في صفحته الأصلية"><i class="fas fa-up-right-from-square"></i></a>`;
-            }
+if (ytMatch) {
+    return `<div class="nms-yt-facade" data-yt-id="${ytMatch[1]}"
+                 style="position:relative; width:100%; height:100%; cursor:pointer; background:#000 url('https://img.youtube.com/vi/${ytMatch[1]}/hqdefault.jpg') center/cover no-repeat;">
+                <span style="position:absolute; inset:0; display:flex; align-items:center; justify-content:center; color:#fff; font-size:36px; text-shadow:0 2px 8px rgba(0,0,0,.6);">
+                    <i class="fas fa-play-circle"></i>
+                </span>
+            </div>`;
+}
             if (/\.(mp4|webm|ogg)(\?.*)?$/i.test(url)) {
-                return `<video class="nms-ba-video-frame" controls preload="metadata" src="${url}"></video>
-                    <a href="${url}" target="_blank" rel="noopener" class="nms-video-click-overlay" title="فتح الفيديو في صفحته الأصلية"><i class="fas fa-up-right-from-square"></i></a>`;
+                return `<video class="nms-ba-video-frame" controls preload="metadata" src="${url}"></video>`;
             }
             return `<a href="${url}" target="_blank" rel="noopener noreferrer" class="nms-video-link-btn"><i class="fas fa-external-link-alt"></i> عرض</a>`;
         }
-
                 // 🆕 أزرار التواصل (اتصال/واتساب/طلب الخدمة) بنفس آلية تسجيل النقرات
         // المستخدمة بقسم "موصى بهم" و"الأعلى تقييماً" تماماً (نفس الألوان: أزرق
         // للاتصال، أخضر للواتساب، تدرّج بنفسجي/أزرق لطلب الخدمة) + عرض رقم
@@ -1159,7 +1161,8 @@ window.__nmsPageHandlesOwnAds = true;
 
             let infoHtml = `<div class="nms-gallery-card-body">`;
             infoHtml += `<div class="nms-gallery-badge">🏆 ${item.label}${featureId !== '' ? ` <span style="color:#888; font-weight:normal;">(رقم: ${sanitize(String(featureId))})</span>` : ''}</div>`;
-            infoHtml += getStatusBadge(props.auto_status, props.work_hours);
+            if (item.layer === 'road_barriers') infoHtml += buildRoadBarrierDirectionsHtml(props);
+            else infoHtml += getStatusBadge(props.auto_status, props.work_hours);
             if (name) infoHtml += `<div class="nms-r-name"><i class="fas fa-user"></i> ${name}</div>`;
             if (location) infoHtml += `<div class="nms-r-loc"><i class="fas fa-map-marker-alt"></i> ${location}</div>`;
             if (featureId !== '') {
@@ -1307,6 +1310,15 @@ window.__nmsPageHandlesOwnAds = true;
             if (x === undefined || y === undefined || x === null || y === null) return;
             window.open(`/original-index.html?x=${Number(x).toFixed(3)}&y=${Number(y).toFixed(3)}`, '_blank');
         };
+
+        document.addEventListener('click', function (e) {
+    const facade = e.target.closest('.nms-yt-facade');
+    if (!facade) return;
+    const id = facade.dataset.ytId;
+    facade.classList.remove('nms-yt-facade');
+    facade.style.background = '#000';
+    facade.innerHTML = `<iframe src="https://www.youtube.com/embed/${id}?autoplay=1" frameborder="0" allow="autoplay; encrypted-media" allowfullscreen style="width:100%; height:100%; border:none;"></iframe>`;
+});
 
         // ==========================================================================
         // 🆕 [تشديد أمني CSP]: تفويض حدث موحّد لزر "الانتقال إلى الخريطة" المولّد
@@ -2043,10 +2055,23 @@ window.__nmsPageHandlesOwnAds = true;
 
                 // 🆕 حواجز الطرق: قالب مستقل بالكامل (حالة Stop + الاسم + المحافظة/المدينة/الموقع + زر الانتقال)
                     if (isRoadBarriers) {
-                    const stopInfo = window.getRoadBarrierStopInfo(window.getCaseInsensitiveProp(p, 'stop'));
+                    // 🆕 [stop2]: عرض حالتين منفصلتين (للداخل/للخارج) بنفس أسلوب البوب أب
+                    const inInfo = window.getRoadBarrierStopInfo(window.getCaseInsensitiveProp(p, 'stop'));
+                    const rawStop2 = window.getCaseInsensitiveProp(p, 'stop2');
+                    const hasStop2 = rawStop2 !== undefined && rawStop2 !== null && String(rawStop2).trim() !== '';
+                    const outInfo = hasStop2
+                        ? window.getRoadBarrierStopInfo(rawStop2)
+                        : { label: 'غير محدد', color: '#6c757d', icon: '⚪' };
                     const barrierDisplayId = (p.id !== undefined && p.id !== null && p.id !== '') ? p.id : (p.fid !== undefined ? p.fid : null);
                     let barrierHtml = `<div style="font-size:11px; color:#999; margin-bottom:4px;">${barrierDisplayId !== null ? `(رقم: ${sanitize(String(barrierDisplayId))})` : ''}</div>`;
-                    barrierHtml += `<div style="text-align:center; font-weight:bold; font-size:14px; color:${stopInfo.color}; border:1px dashed ${stopInfo.color}; border-radius:8px; padding:8px; margin-bottom:8px; background:${stopInfo.color}15;">${stopInfo.icon} ${stopInfo.label}</div>`;
+                    barrierHtml += `<div style="display:flex; gap:6px; margin-bottom:8px;">
+                        <div style="flex:1; text-align:center; font-weight:bold; font-size:12.5px; color:${inInfo.color}; border:1px dashed ${inInfo.color}; border-radius:8px; padding:6px 4px; background:${inInfo.color}15;">
+                            <div style="font-size:10px; color:#777; margin-bottom:2px;">للداخل</div>${inInfo.icon} ${inInfo.label}
+                        </div>
+                        <div style="flex:1; text-align:center; font-weight:bold; font-size:12.5px; color:${outInfo.color}; border:1px dashed ${outInfo.color}; border-radius:8px; padding:6px 4px; background:${outInfo.color}15;">
+                            <div style="font-size:10px; color:#777; margin-bottom:2px;">للخارج</div>${outInfo.icon} ${outInfo.label}
+                        </div>
+                    </div>`;
                     if (p.name) barrierHtml += `<div class="nms-r-name"><i class="fas fa-map-marker-alt"></i> ${sanitize(p.name)}</div>`;
                     if (p.gov_a) barrierHtml += `<div class="nms-r-line"><b>🌍 المحافظة:</b> ${sanitize(p.gov_a)}</div>`;
                     if (p.village_a) barrierHtml += `<div class="nms-r-line"><b>🏘️ المدينة:</b> ${sanitize(p.village_a)}</div>`;
