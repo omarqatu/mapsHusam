@@ -1547,6 +1547,47 @@ body {
     box-sizing: border-box;
 }
 
+/* بطاقات الأسفل تعرض المعلومات كاملة داخل تمرير داخلي مثل قسم الأعلى تقييماً */
+.nms-ad-bottom > .nms-ad-card {
+    height: 380px;
+    max-height: 380px;
+    overflow-y: auto;
+}
+
+/* بطاقة الأسفل لها تخطيط مستقل عن بطاقة الإعلان الجانبية */
+.nms-ad-space.nms-ad-bottom > .nms-ad-card {
+    flex: 0 0 380px;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    align-items: stretch;
+}
+
+@media (max-width: 992px) and (min-width: 768px) {
+    .nms-ad-bottom > .nms-ad-card {
+        height: 340px;
+        max-height: 340px;
+    }
+    .nms-ad-space.nms-ad-bottom > .nms-ad-card { flex-basis: 340px; }
+}
+
+@media (max-width: 767px) and (min-width: 480px) {
+    .nms-ad-bottom > .nms-ad-card {
+        height: 300px;
+        max-height: 300px;
+    }
+    .nms-ad-space.nms-ad-bottom > .nms-ad-card { flex-basis: 300px; }
+}
+
+@media (max-width: 479px) {
+    .nms-ad-bottom > .nms-ad-card {
+        height: 270px;
+        max-height: 270px;
+    }
+    .nms-ad-space.nms-ad-bottom > .nms-ad-card { flex-basis: 270px; }
+}
+
 @media (max-width: 768px) {
     body { overflow-x: hidden; }
     .market-main-header { flex-wrap: wrap; }

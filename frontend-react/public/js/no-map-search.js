@@ -502,6 +502,10 @@ window.__nmsPageHandlesOwnAds = true;
                 detailsHtml += `<div style="background:#f9f9f9; padding:4px 6px; border-radius:5px; color:#555; font-size:10px; margin-bottom:2px; word-wrap: break-word; white-space: normal;">📝 ${sanitize(props.des)}</div>`;
             }
             detailsHtml += buildFeatureMediaHtml(props);
+            if (!isRealEstate) {
+                detailsHtml += buildMediaBlockHtml(getMediaValue(props, 'details1'), 'تفاصيل إضافية 1');
+                detailsHtml += buildMediaBlockHtml(getMediaValue(props, 'details2'), 'تفاصيل إضافية 2');
+            }
 
             let actionHtml = '';
             if (props.whatsapp) {
@@ -949,7 +953,7 @@ window.__nmsPageHandlesOwnAds = true;
             const ytMatch = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([\w-]+)/);
 if (ytMatch) {
     return `<div class="nms-gallery-media nms-gallery-video nms-yt-facade" data-yt-id="${ytMatch[1]}"
-                 style="position:relative; cursor:pointer; background:#000 url('https://img.youtube.com/vi/${ytMatch[1]}/hqdefault.jpg') center/cover no-repeat;">
+                 style="position:relative; cursor:pointer; --nms-video-thumb:url('https://img.youtube.com/vi/${ytMatch[1]}/hqdefault.jpg');">
                 <span style="position:absolute; inset:0; display:flex; align-items:center; justify-content:center; color:#fff; font-size:48px; text-shadow:0 2px 8px rgba(0,0,0,.6);">
                     <i class="fas fa-play-circle"></i>
                 </span>
