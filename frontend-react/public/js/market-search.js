@@ -605,7 +605,7 @@ if (typeof window.renderMarketSearchResults !== 'function') {
             if (p.location_name || p.location) html += `<div class="nms-r-loc"><i class="fas fa-map-marker-alt"></i> ${window.sanitize(p.location_name || p.location)}</div>`;
 
             // إضافة عرض النجوم للخدمات فقط
-            if (!isRealEstate) {
+                if (!isRealEstate && f.layerId !== 'fuel_stations' && f.layerId !== 'road_barriers') {
                 const layerDbName = f.layerId || '';
                 const featureId = (p.id !== undefined && p.id !== null) ? p.id : '';
                 if (layerDbName && featureId) {

@@ -747,7 +747,8 @@ function initializePopup(map) {
         bodyHtml += `<div style="margin-bottom: 8px; border-bottom: 1px solid #eee; padding-bottom: 5px;"><b style="color: #007bff;">🛠️ التصنيف:</b> <b>${layerTitle}</b>${displayFeatureId !== null ? ` <span style="color:#888; font-size:12px;">(رقم: ${window.sanitizeHTML(String(displayFeatureId))})</span>` : ''}</div>`;
         
         // إضافة عرض النجوم للخدمات فقط (باستثناء حواجز الطرق - لا تقييمات لها)
-        if (isService && displayFeatureId && !isRoadBarriers) {
+        const isFuelStations = discriminator === 'fuel_stations';
+        if (isService && displayFeatureId && !isRoadBarriers && !isFuelStations) {
             // استخدام الاسم الإنجليزي من layer مباشرة لقاعدة البيانات
             const layerDbName = layerEnglishName;
             if (layerDbName) {

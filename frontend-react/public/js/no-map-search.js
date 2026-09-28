@@ -474,8 +474,8 @@ window.__nmsPageHandlesOwnAds = true;
             // 🆕 [إصلاح]: بدل شارة نجوم ثابتة بدون أي تفاعل، نستخدم ودجت التقييم
             
             const featureIdForRating = (!isRealEstate && props.id !== undefined && props.id !== null && props.id !== '') ? props.id : null;
-            const ratingBadgeHtml = featureIdForRating !== null ? buildRatingWidgetHtml(item.layer, featureIdForRating) : '';
-
+            const ratingBadgeHtml = (featureIdForRating !== null && item.layer !== 'fuel_stations' && item.layer !== 'road_barriers')
+                ? buildRatingWidgetHtml(item.layer, featureIdForRating) : '';
             let statusHtml = '';
             if (!isRealEstate) {
                 const isAvailable = parseInt(props.auto_status) === 0;
@@ -1100,7 +1100,7 @@ if (ytMatch) {
                     infoHtml += `<div class="nms-r-line"><b>💰 السعر:</b> ${Number(props.price).toLocaleString()} ${symbols[props.currency] || ''}</div>`;
                 }
                 if (props.area) infoHtml += `<div class="nms-r-line"><b>📐 المساحة:</b> ${props.area} م²</div>`;
-            } else if (featureId !== '') {
+                } else if (featureId !== '' && item.layer !== 'fuel_stations' && item.layer !== 'road_barriers') {
                 infoHtml += `<div id="rating-display-${item.layer}-${featureId}" class="nms-rating-display">
                     <span style="color:#f57c00;">⭐</span>
                     <span id="rating-text-${item.layer}-${featureId}" style="color:#666; font-size:12px;">جاري تحميل التقييم...</span>
@@ -1165,9 +1165,8 @@ if (ytMatch) {
             else infoHtml += getStatusBadge(props.auto_status, props.work_hours);
             if (name) infoHtml += `<div class="nms-r-name"><i class="fas fa-user"></i> ${name}</div>`;
             if (location) infoHtml += `<div class="nms-r-loc"><i class="fas fa-map-marker-alt"></i> ${location}</div>`;
-            if (featureId !== '') {
+            if (featureId !== '' && item.layer !== 'fuel_stations' && item.layer !== 'road_barriers') {
                 infoHtml += `<div id="rating-display-${item.layer}-${featureId}" class="nms-rating-display">
-                    <span style="color:#f57c00;">⭐</span>
                     <span id="rating-text-${item.layer}-${featureId}" style="color:#666; font-size:12px;">جاري تحميل التقييم...</span>
                 </div>`;
                 scheduleRatingFetchOnce(item.layer, featureId);
@@ -2109,8 +2108,8 @@ if (ytMatch) {
                     html += window.buildFuelAvailabilityHtml(p);
                 }
 
-                // إضافة عرض النجوم للخدمات فقط
-                if (!isRealEstate) {
+                // إضافة عرض النجوم للخدمات فقط (باستثناء محطات الوقود)
+                if (!isRealEstate && currentCategory.key !== 'fuel_stationsLayer') {
                     // استخدام layerTitle مباشرة لأنه هو الاسم المستخدم في قاعدة البيانات
                     const layerDbName = layerTitle;
                     const featureId = (p.id !== undefined && p.id !== null) ? p.id : '';
