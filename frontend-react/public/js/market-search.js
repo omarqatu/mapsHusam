@@ -600,21 +600,17 @@ if (typeof window.renderMarketSearchResults !== 'function') {
             let html = '';
             html += `<div style="margin-bottom:8px;"><span style="background: #e8f0fe; color: #1a73e8; font-size: 11px; padding: 3px 8px; border-radius: 4px; font-weight: bold;">📌 ${window.sanitize(layerTitle)}</span>${marketDisplayFeatureId !== null ? ` <span style="color:#999; font-size:11px;">(رقم: ${window.sanitize(String(marketDisplayFeatureId))})</span>` : ''}</div>`;
 
-            if (!isRealEstate) html += window.getStatusBadge(p.auto_status, p.work_hours);
-            if (p.name) html += `<div class="nms-r-name"><i class="fas fa-user"></i> ${window.sanitize(p.name)}</div>`;
-            if (p.location_name || p.location) html += `<div class="nms-r-loc"><i class="fas fa-map-marker-alt"></i> ${window.sanitize(p.location_name || p.location)}</div>`;
-
-            // إضافة عرض النجوم للخدمات فقط
-                if (!isRealEstate && f.layerId !== 'fuel_stations' && f.layerId !== 'road_barriers') {
-                const layerDbName = f.layerId || '';
+                        // التقييم (للخدمات فقط - ليس للعقارات ولا حواجز الطرق ولا محطات الوقود)
+            let ratingHtml = '';
+            const ratingLayerKey = f.layerId || (p.discriminator || '');
+            if (window.shouldShowRating(ratingLayerKey, isRealEstate)) {
+                const layerDbName = ratingLayerKey;
                 const featureId = (p.id !== undefined && p.id !== null) ? p.id : '';
-                if (layerDbName && featureId) {
-                    html += `<div id="rating-display-${layerDbName}-${featureId}" class="nms-rating-display">
+                if (layerDbName && featureId !== '') {
+                    ratingHtml = `<div id="rating-display-${layerDbName}-${featureId}" class="nms-rating-display">
                         <span style="color: #f57c00;">⭐</span>
                         <span id="rating-text-${layerDbName}-${featureId}" style="color: #666; font-size: 12px;">جاري تحميل التقييم...</span>
                     </div>`;
-                    
-                    // جلب التقييم بشكل غير متزامن
                     setTimeout(() => {
                         if (typeof window.fetchRatingsForFeature === 'function') {
                             window.fetchRatingsForFeature(layerDbName, featureId);
@@ -623,17 +619,8 @@ if (typeof window.renderMarketSearchResults !== 'function') {
                 }
             }
 
-            if (isRealEstate) {
-                if (p.price) {
-                    const symbols = { USD: 'دولار', ILS: 'شيقل', JOD: 'دينار' };
-                    const sym = symbols[p.currency] || '';
-                    html += `<div class="nms-r-line"><b>💰 السعر:</b> ${Number(p.price).toLocaleString()} ${sym}</div>`;
-                }
-                if (p.area) html += `<div class="nms-r-line"><b>📐 المساحة:</b> ${p.area} م²</div>`;
-                if (p.village_a) html += `<div class="nms-r-line"><b>🏘️ البلدة:</b> ${window.sanitize(p.village_a)}</div>`;
-                if (p.gov_a) html += `<div class="nms-r-line"><b>🌍 المحافظة:</b> ${window.sanitize(p.gov_a)}</div>`;
-            }
-            if (p.des) html += `<div class="nms-r-desc"><b>📝 الوصف:</b> ${window.sanitize(p.des)}</div>`;
+            // نفس معلومات بوب أب الخريطة
+            html += window.buildPopupInfoBlock(p, { layer: f.layerId, isRealEstate, ratingHtml });
             const picValue = window.getFirstValidMediaValue ? window.getFirstValidMediaValue(p, ['pic', 'Pic', 'PIC', 'image', 'images', 'photo', 'photos', 'img', 'imgs', 'picture', 'pictures', 'pic_url', 'image_url', 'img_url', 'photo_url', 'picture_url']) : p.pic;
             const videoValue = window.getFirstValidMediaValue ? window.getFirstValidMediaValue(p, ['video', 'Video', 'VIDEO', 'vid', 'movie', 'video_url', 'clip', 'youtube']) : p.video;
             const detailsLink1 = window.getFirstValidMediaValue ? window.getFirstValidMediaValue(p, ['details_link_1', 'detailsLink1', 'detailsLink_1', 'link_1', 'details_url_1', 'details1', 'details_1']) : p.details_link_1;

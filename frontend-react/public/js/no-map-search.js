@@ -474,37 +474,15 @@ window.__nmsPageHandlesOwnAds = true;
             // 🆕 [إصلاح]: بدل شارة نجوم ثابتة بدون أي تفاعل، نستخدم ودجت التقييم
             
             const featureIdForRating = (!isRealEstate && props.id !== undefined && props.id !== null && props.id !== '') ? props.id : null;
-            const ratingBadgeHtml = (featureIdForRating !== null && item.layer !== 'fuel_stations' && item.layer !== 'road_barriers')
+                const ratingBadgeHtml = (featureIdForRating !== null && window.shouldShowRating(item.layer, isRealEstate))
                 ? buildRatingWidgetHtml(item.layer, featureIdForRating) : '';
-            let statusHtml = '';
-            if (!isRealEstate) {
-                const isAvailable = parseInt(props.auto_status) === 0;
-                const color = isAvailable ? '#28a745' : '#dc3545';
-                const text = isAvailable ? 'متاح الآن' : 'مغلق حالياً';
-                // 🆕 إضافة ساعات الدوام أسفل الحالة (24 ساعة أو الصيغة العربية المقروءة)
-                // بنفس منطق البوب أب تماماً، بدل الاكتفاء بعرض الحالة فقط بدون توقيت
-                statusHtml = `<div style="font-size:10px; font-weight:bold; color:${color}; border:1px dashed ${color}; border-radius:6px; padding:3px 6px; display:inline-block; margin-bottom:4px;">
-                    ${isAvailable ? '🟢' : '🔴'} ${text}
-                    <div style="font-size:9px; font-weight:normal; color:#555; margin-top:2px;">${formatWorkHours(props.work_hours)}</div>
-                </div>`;
-            }
+                        // نفس معلومات بوب أب الخريطة (حالة/اتجاهات الحاجز/وقود/عقار/وصف)
+            const infoBlockHtml = window.buildPopupInfoBlock(props, { layer: item.layer, isRealEstate, compact: true });
 
-            let detailsHtml = '';
-            if (isRealEstate) {
-                if (props.price) {
-                    const symbols = { USD: 'دولار', ILS: 'شيكل', JOD: 'دينار' };
-                    detailsHtml += `<div style="color:#2e7d32; font-weight:bold; font-size:11px; margin-bottom:2px;">💰 ${Number(props.price).toLocaleString()} ${symbols[props.currency] || ''}</div>`;
-                }
-                if (props.area) detailsHtml += `<div style="color:#666; font-size:10px; margin-bottom:2px;">📐 ${props.area} م²</div>`;
-                if (props.village_a) detailsHtml += `<div style="color:#555; font-size:10px; margin-bottom:2px;">🏘️ ${sanitize(props.village_a)}</div>`;
-            }
-            if (props.des) {
-                detailsHtml += `<div style="background:#f9f9f9; padding:4px 6px; border-radius:5px; color:#555; font-size:10px; margin-bottom:2px; word-wrap: break-word; white-space: normal;">📝 ${sanitize(props.des)}</div>`;
-            }
-            detailsHtml += buildFeatureMediaHtml(props);
+            let mediaHtml = buildFeatureMediaHtml(props);
             if (!isRealEstate) {
-                detailsHtml += buildMediaBlockHtml(getMediaValue(props, 'details1'), 'تفاصيل إضافية 1');
-                detailsHtml += buildMediaBlockHtml(getMediaValue(props, 'details2'), 'تفاصيل إضافية 2');
+                mediaHtml += buildMediaBlockHtml(getMediaValue(props, 'details1'), 'تفاصيل إضافية 1');
+                mediaHtml += buildMediaBlockHtml(getMediaValue(props, 'details2'), 'تفاصيل إضافية 2');
             }
 
             let actionHtml = '';
@@ -566,10 +544,8 @@ window.__nmsPageHandlesOwnAds = true;
                         <span style="background:#e8f0fe; color:#1a73e8; font-size:10px; padding:2px 6px; border-radius:4px; font-weight:bold;">📌 ${item.label}${displayFeatureIdForBadge !== null ? ` <span style="color:#5f6368; font-weight:normal;">(رقم: ${sanitize(String(displayFeatureIdForBadge))})</span>` : ''}</span>
                     </div>
                     ${ratingBadgeHtml}
-                    ${statusHtml}
-                    ${name ? `<div style="font-weight:bold; color:#202124; font-size:12px; margin-bottom:4px;"><i class="fas fa-user" style="color:#1a73e8;"></i> ${name}</div>` : ''}
-                    ${location ? `<div style="color:#555; font-size:11px; margin-bottom:3px;"><i class="fas fa-map-marker-alt" style="color:#e74c3c;"></i> ${location}</div>` : ''}
-                    ${detailsHtml}
+                    ${infoBlockHtml}
+                    ${mediaHtml}
                     ${actionHtml}
                     ${adGotoMapBtnHtml}
                 </div>
@@ -1090,25 +1066,11 @@ if (ytMatch) {
 
             let infoHtml = `<div class="nms-gallery-card-body">`;
             infoHtml += `<div class="nms-gallery-badge">🏆 ${item.label}${featureId !== '' ? ` <span style="color:#888; font-weight:normal;">(رقم: ${sanitize(String(featureId))})</span>` : ''}</div>`;
-            if (!isRealEstate) infoHtml += getStatusBadge(props.auto_status, props.work_hours);
-            if (name) infoHtml += `<div class="nms-r-name"><i class="fas fa-user"></i> ${name}</div>`;
-            if (location) infoHtml += `<div class="nms-r-loc"><i class="fas fa-map-marker-alt"></i> ${location}</div>`;
+                        // ودجت التقييم الموحّد: يعمل حتى لو تكرر المعلم بأكثر من قسم (صور + فيديو + قبل/بعد)
+                const galleryRatingHtml = (featureId !== '' && window.shouldShowRating(item.layer, isRealEstate))
+                ? buildRatingWidgetHtml(item.layer, featureId) : '';
 
-            if (isRealEstate) {
-                if (props.price) {
-                    const symbols = { USD: 'دولار', ILS: 'شيقل', JOD: 'دينار' };
-                    infoHtml += `<div class="nms-r-line"><b>💰 السعر:</b> ${Number(props.price).toLocaleString()} ${symbols[props.currency] || ''}</div>`;
-                }
-                if (props.area) infoHtml += `<div class="nms-r-line"><b>📐 المساحة:</b> ${props.area} م²</div>`;
-                } else if (featureId !== '' && item.layer !== 'fuel_stations' && item.layer !== 'road_barriers') {
-                infoHtml += `<div id="rating-display-${item.layer}-${featureId}" class="nms-rating-display">
-                    <span style="color:#f57c00;">⭐</span>
-                    <span id="rating-text-${item.layer}-${featureId}" style="color:#666; font-size:12px;">جاري تحميل التقييم...</span>
-                </div>`;
-                scheduleRatingFetchOnce(item.layer, featureId);
-            }
-
-            if (props.des) infoHtml += `<div class="nms-r-desc"><b>📝 الوصف:</b> ${sanitize(props.des)}</div>`;
+            infoHtml += window.buildPopupInfoBlock(props, { layer: item.layer, isRealEstate, ratingHtml: galleryRatingHtml });
             infoHtml += `</div>`;
 
             const actionsHtml = buildGalleryContactActionsHtml(props, item);
@@ -1161,17 +1123,10 @@ if (ytMatch) {
 
             let infoHtml = `<div class="nms-gallery-card-body">`;
             infoHtml += `<div class="nms-gallery-badge">🏆 ${item.label}${featureId !== '' ? ` <span style="color:#888; font-weight:normal;">(رقم: ${sanitize(String(featureId))})</span>` : ''}</div>`;
-            if (item.layer === 'road_barriers') infoHtml += buildRoadBarrierDirectionsHtml(props);
-            else infoHtml += getStatusBadge(props.auto_status, props.work_hours);
-            if (name) infoHtml += `<div class="nms-r-name"><i class="fas fa-user"></i> ${name}</div>`;
-            if (location) infoHtml += `<div class="nms-r-loc"><i class="fas fa-map-marker-alt"></i> ${location}</div>`;
-            if (featureId !== '' && item.layer !== 'fuel_stations' && item.layer !== 'road_barriers') {
-                infoHtml += `<div id="rating-display-${item.layer}-${featureId}" class="nms-rating-display">
-                    <span id="rating-text-${item.layer}-${featureId}" style="color:#666; font-size:12px;">جاري تحميل التقييم...</span>
-                </div>`;
-                scheduleRatingFetchOnce(item.layer, featureId);
-            }
-            if (props.des) infoHtml += `<div class="nms-r-desc"><b>📝 الوصف:</b> ${sanitize(props.des)}</div>`;
+            const baRatingHtml = (featureId !== '' && window.shouldShowRating(item.layer, !!item.isRealEstate))
+                ? buildRatingWidgetHtml(item.layer, featureId) : '';
+
+            infoHtml += window.buildPopupInfoBlock(props, { layer: item.layer, isRealEstate: !!item.isRealEstate, ratingHtml: baRatingHtml });
             infoHtml += `</div>`;
 
             const actionsHtml = buildGalleryContactActionsHtml(props, item);
@@ -1191,7 +1146,10 @@ if (ytMatch) {
                     const grid = document.getElementById(gridId);
                     if (!grid) return;
 
-                    const cardsHtml = allEntries.map(entry => buildCardFn(entry.feature, entry.item)).filter(h => h !== '');
+                    const cardsHtml = allEntries.map(entry => {
+                        try { return buildCardFn(entry.feature, entry.item); }
+                        catch (err) { console.warn('تعذر بناء بطاقة:', err); return ''; }
+                    }).filter(h => h !== '');
                     grid.innerHTML = cardsHtml.length
                         ? cardsHtml.join('')
                         : '<div class="nms-empty">لا توجد نتائج</div>';
@@ -2100,41 +2058,22 @@ if (ytMatch) {
                     ? ((p.fid !== undefined && p.fid !== null && p.fid !== '') ? p.fid : null)
                     : ((p.id !== undefined && p.id !== null && p.id !== '') ? p.id : null);
                 html += `<div style="margin-bottom:6px; font-size:11px; color:#666;"><b style="color:#1a73e8;">🛠️ ${sanitize(layerTitle)}</b>${displayFeatureIdForResult !== null ? ` <span style="color:#999;">(رقم: ${sanitize(String(displayFeatureIdForResult))})</span>` : ''}</div>`;
-                if (!isRealEstate) html += getStatusBadge(p.auto_status, p.work_hours);
-                if (p.name) html += `<div class="nms-r-name"><i class="fas fa-user"></i> ${sanitize(p.name)}</div>`;
-                if (p.location_name || p.location) html += `<div class="nms-r-loc"><i class="fas fa-map-marker-alt"></i> ${sanitize(p.location_name || p.location)}</div>`;
-
-                if (layerTitle === 'محطات الوقود') {
-                    html += window.buildFuelAvailabilityHtml(p);
-                }
-
-                // إضافة عرض النجوم للخدمات فقط (باستثناء محطات الوقود)
-                if (!isRealEstate && currentCategory.key !== 'fuel_stationsLayer') {
-                    // استخدام layerTitle مباشرة لأنه هو الاسم المستخدم في قاعدة البيانات
-                    const layerDbName = layerTitle;
+                                // التقييم بالاسم الإنجليزي للطبقة (بدل الاسم العربي الذي كان يفشل بطبقات كثيرة)
+                const catLayerKey = (currentCategory.key || '').replace(/Layer$/i, '');
+                let ratingHtml = '';
+                    if (window.shouldShowRating(catLayerKey, isRealEstate)) {
                     const featureId = (p.id !== undefined && p.id !== null) ? p.id : '';
-                    if (layerDbName && featureId) {
-                        html += `<div id="rating-display-${layerDbName}-${featureId}" class="nms-rating-display">
+                    if (featureId !== '') {
+                        ratingHtml = `<div id="rating-display-${catLayerKey}-${featureId}" class="nms-rating-display">
                             <span style="color: #f57c00;">⭐</span>
-                            <span id="rating-text-${layerDbName}-${featureId}" style="color: #666; font-size: 12px;">جاري تحميل التقييم...</span>
+                            <span id="rating-text-${catLayerKey}-${featureId}" style="color: #666; font-size: 12px;">جاري تحميل التقييم...</span>
                         </div>`;
-                        
-                        // جلب التقييم بشكل غير متزامن
-                        setTimeout(() => fetchRatingsForFeature(layerDbName, featureId), index * 100);
+                        setTimeout(() => fetchRatingsForFeature(catLayerKey, featureId), index * 100);
                     }
                 }
 
-                if (isRealEstate) {
-                    if (p.price) {
-                        const symbols = { USD: 'دولار', ILS: 'شيقل', JOD: 'دينار' };
-                        const sym = symbols[p.currency] || '';
-                        html += `<div class="nms-r-line"><b>💰 السعر:</b> ${Number(p.price).toLocaleString()} ${sym}</div>`;
-                    }
-                    if (p.area) html += `<div class="nms-r-line"><b>📐 المساحة:</b> ${p.area} م²</div>`;
-                    if (p.village_a) html += `<div class="nms-r-line"><b>🏘️ البلدة:</b> ${sanitize(p.village_a)}</div>`;
-                    if (p.gov_a) html += `<div class="nms-r-line"><b>🌍 المحافظة:</b> ${sanitize(p.gov_a)}</div>`;
-                }
-                if (p.des) html += `<div class="nms-r-desc"><b>📝 الوصف:</b> ${sanitize(p.des)}</div>`;
+                // نفس معلومات بوب أب الخريطة
+                html += window.buildPopupInfoBlock(p, { layer: catLayerKey, isRealEstate, ratingHtml });
                 html += buildFeatureMediaHtml(p);
 
                 card.innerHTML = html;

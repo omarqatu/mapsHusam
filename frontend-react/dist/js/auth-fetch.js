@@ -29,8 +29,20 @@
     }
 
     function getToken() {
-        const u = readSession();
-        return u ? (u.token || u.admin_token || null) : null;
+        // قد تحتوي map_user على بيانات قديمة بلا توكن بينما user أو
+        // sessionStorage يحتويان الجلسة الأحدث. افحص جميع النسخ قبل الفشل.
+        for (const key of SESSION_KEYS) {
+            for (const store of [localStorage, sessionStorage]) {
+                try {
+                    const raw = store.getItem(key);
+                    if (!raw) continue;
+                    const u = JSON.parse(raw);
+                    const token = u && (u.token || u.admin_token);
+                    if (token) return token;
+                } catch (e) { /* تجاهل الجلسة التالفة */ }
+            }
+        }
+        return null;
     }
 
     // يرجع مسار الـ API (بدون query) إذا كان الطلب لنفس الموقع، وإلا null
@@ -53,24 +65,43 @@
         SESSION_KEYS.forEach(function (k) {
             try { localStorage.removeItem(k); sessionStorage.removeItem(k); } catch (e) { /* تجاهل */ }
         });
-        if (window.toast) window.toast('رفض السيرفر الجلسة. التفاصيل في Console، ستتم إعادة تحميل الصفحة بعد 15 ثانية.', 'warning', 12000);
-        setTimeout(function () { window.location.reload(); }, 15000);
+        if (window.toast) window.toast('انتهت صلاحية جلسة الدخول أو لم يعد التوكن صالحاً. سجّل الدخول مجدداً.', 'warning', 6000);
+        setTimeout(function () { window.location.reload(); }, 2500);
     }
 
     // 🔄 حفظ التوكن المُجدَّد الذي يرسله السيرفر (في نفس مكان الجلسة الحالية)
     function saveRenewedToken(newToken) {
+        let saved = false;
         SESSION_KEYS.forEach(function (key) {
             [localStorage, sessionStorage].forEach(function (store) {
                 try {
                     const raw = store.getItem(key);
                     if (!raw) return;
                     const u = JSON.parse(raw);
+                    if (!(u.token || u.admin_token)) return;
                     u.token = newToken;
                     if (u.admin_token) u.admin_token = newToken;
                     store.setItem(key, JSON.stringify(u));
+                    saved = true;
                 } catch (e) { /* تجاهل */ }
             });
         });
+        // عند وجود جلسة واحدة فقط، احفظ التجديد فيها حتى إن كان التوكن
+        // القديم ممسوحاً أو غير موجود داخل كائن المستخدم.
+        if (!saved) {
+            for (const key of SESSION_KEYS) {
+                for (const store of [localStorage, sessionStorage]) {
+                    try {
+                        const raw = store.getItem(key);
+                        if (!raw) continue;
+                        const u = JSON.parse(raw);
+                        u.token = newToken;
+                        store.setItem(key, JSON.stringify(u));
+                        return;
+                    } catch (e) { /* تجاهل الجلسة التالفة */ }
+                }
+            }
+        }
     }
 
     window.fetch = function (input, init) {
@@ -94,17 +125,9 @@
             if (apiPath && res.status === 401 && !NO_LOGOUT_PATHS.includes(apiPath) && readSession()) {
                 res.clone().json().then(function (d) {
                     if (!d || !['AUTH_REQUIRED', 'TOKEN_INVALID', 'SESSION_REVOKED'].includes(d.code)) return;
-                    if (d.code === 'SESSION_REVOKED') {
+                    if (['AUTH_REQUIRED', 'TOKEN_INVALID', 'SESSION_REVOKED'].includes(d.code)) {
                         handleExpiredSession(apiPath, d);
-                        return;
                     }
-                    // لا نمسح جلسة المستخدم بسبب نقص/رفض مؤقت للتوكن؛ الخروج التلقائي
-                    // محصور بإبطال الجلسة من الخادم (مثل تسجيل الخروج القسري).
-                    console.error('[auth-fetch] تعذر اعتماد الجلسة دون إبطالها:', {
-                        path: apiPath,
-                        code: d.code,
-                        error: d.error
-                    });
                 }).catch(function () { /* تجاهل */ });
             }
             return res;
