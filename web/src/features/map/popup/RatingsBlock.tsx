@@ -1,16 +1,9 @@
 import { useState } from 'react';
-import { MessageSquare, Star } from 'lucide-react';
+import { MessageSquare } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useServiceRatings } from '@/api/mapEvents';
+import StarRating from '@/components/ui/StarRating';
 import { formatDate } from '@/lib/format';
-
-const Stars = ({ value }: { value: number }) => (
-  <span className="inline-flex text-amber-400" aria-label={`${value}/5`}>
-    {[1, 2, 3, 4, 5].map((n) => (
-      <Star key={n} className="h-4 w-4" fill={n <= Math.round(value) ? 'currentColor' : 'none'} aria-hidden />
-    ))}
-  </span>
-);
 
 /** Average stars + expandable comments. Comment text is rendered as text only (legacy injected it as HTML). */
 export default function RatingsBlock({ layer, featureId }: { layer: string; featureId: string }) {
@@ -28,7 +21,7 @@ export default function RatingsBlock({ layer, featureId }: { layer: string; feat
       ) : (
         <>
           <div className="flex items-center gap-2 text-sm">
-            <Stars value={data.averageRating} />
+            <StarRating value={data.averageRating} />
             <b className="text-slate-800">{data.averageRating}</b>
             <span className="text-slate-500">{t('popup.rating.count', { count: data.totalRatings })}</span>
           </div>
@@ -51,7 +44,7 @@ export default function RatingsBlock({ layer, featureId }: { layer: string; feat
                     <span className="text-xs font-bold text-slate-700">
                       {r.user_name || t('popup.rating.user')}
                     </span>
-                    <Stars value={r.rating} />
+                    <StarRating value={r.rating} />
                   </div>
                   {r.comment && <p className="mt-1 text-xs leading-relaxed text-slate-600">{r.comment}</p>}
                   <p className="mt-1 text-[10px] text-slate-400">{formatDate(r.created_at, i18n.language)}</p>

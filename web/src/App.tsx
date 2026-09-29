@@ -10,6 +10,7 @@ import AuthLayout from '@/features/auth/AuthLayout';
 import LoginPage from '@/features/auth/LoginPage';
 import RegisterPage from '@/features/auth/RegisterPage';
 import WelcomePage from '@/features/auth/WelcomePage';
+import RequestsHost from '@/features/requests/RequestsHost';
 import LegalPage from '@/features/legal/LegalPage';
 import { ProtectedRoute, RoleRoute } from '@/routes/guards';
 import NotFoundPage from '@/routes/NotFoundPage';
@@ -69,6 +70,7 @@ export default function App() {
       <QueryClientProvider client={queryClient}>
         <SocketConnector />
         <SessionVerifier />
+        <RequestsHost />
         <RouterProvider router={router} />
       </QueryClientProvider>
     </ErrorBoundary>

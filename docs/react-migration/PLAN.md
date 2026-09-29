@@ -231,7 +231,23 @@ Split `index.html` into features, in this order:
    - Live-tracking ticks are silent (no success toast); a failed tick shows the error in the panel.
    - The "no service layer linked" click error of legacy is impossible: the buttons stay locked until the account has loaded.
    **Not ported:** `services-bridge.js` (dead code, see above); dragging/minimising the panel.
-7. ⬜ Service requests & chat: `service-chat.js` (1.7k lines), `notifications.js`
+7. 🟨 (typecheck, lint, live tests pass; browser walk pending) Service requests & chat: `service-chat.js` (1.7k lines), `notifications.js`
+   **Done (`features/requests/`, `features/notifications/`, `api/{requests,notifications,socket}.ts`):**
+   - "Request service" on the details card and on search / featured rows (was disabled) → confirm dialog → `POST /api/service-requests`; an open pending request is not duplicated, an accepted one reopens its chat.
+   - "My requests" list (status, accept/reject for the provider, cancel with a mandatory reason, open chat / archive, rate, write comment), chat (messages, polling + socket push, "agreed" confirmation from both sides, then call / WhatsApp with the legacy greeting), star rating + later comment, provider's incoming banner with ring and queue counter.
+   - Live: `service_request_new/response/message/completed/cancelled` refresh the query cache; unseen-activity marks per user in localStorage (`svc_unseen_<uid>`).
+   - Notifications over socket.io only (`get_unread_notifications`, `mark_notification_read`, `new_notification`): bell with unread badge, list, mark read / all, refresh, toast + system notification when the tab is hidden.
+   - Entry points: bell and "My requests" icon in `UserMenu` (map bar and shell).
+   - `dev/seed-users.mjs`: the dev provider is now linked to plumber #900001 so the live test can create requests.
+   Tests: `requests/model.test.ts` (rules, numbers, notification list, unseen marks), `requests/requests.live.test.ts` (real backend: create, duplicate 409, accept, chat, both agree, rating, comment, reject, cancel).
+   **Changed on purpose:**
+   - Popups built with `innerHTML` (chat, list, rating, banner) are dialogs / a banner in JSX; all user text (names, messages, reasons, comments) is plain text.
+   - Browser notification permission is asked from the bell menu ("enable browser notifications"), not on page load.
+   - Notification badge counts only unread rows (legacy counted the list, read rows included).
+   - The "My requests" button lives in the top bar next to the bell (legacy: under the notifications button in the profile area); a green dot marks new activity.
+   - Rating and comment prompts are plain dialogs with clickable stars (keyboard accessible); the star labels are unchanged.
+   - Some Arabic toast texts lost their leading emoji; error texts from the server are still shown as is.
+   **Not ported / open:** `notifications-panel.html` (standalone page, route `/notifications` stays a placeholder: the bell list covers it; decision below); legacy `js/service-chat.js` and `js/notifications.js` are still loaded by the legacy pages and stay until the map page switch; layout-level mobile placement of the bell (item 9). Not verified: real-time socket flows between two browsers (covered by unit/live REST tests only), visual pass at 390 px.
 8. ✅ Auth UI: `auth-core-functions.js`, `auth-app-events.js`, `auth-fetch.js`, `legal-content.js`
    **Parity checklist (from the legacy code).**
    - ✅ Promo splash → `/welcome` (pitch, 6 feature cards, "create account" / "log in", terms + privacy links).

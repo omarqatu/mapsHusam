@@ -1,6 +1,7 @@
-import { Copy, Info, Link2, MapPin, Send } from 'lucide-react';
+import { Copy, Info, Link2, MapPin } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useProviderLinked } from '@/api/mapEvents';
+import RequestServiceButton from '@/features/requests/RequestServiceButton';
 import Button from '@/components/ui/Button';
 import DataField from '@/components/ui/DataField';
 
@@ -212,15 +213,16 @@ export default function FeatureCard({ feature, onClose, className }: Props) {
         {kind.kind !== 'location' &&
           !isBarrier &&
           (isLinkedProvider ? (
-            // Registered providers are contacted through a service request (chat) — ported with the requests feature.
-            <Button
+            // Registered providers are contacted through a service request (chat).
+            <RequestServiceButton
               className="w-full"
-              startIcon={<Send className="h-4 w-4" />}
-              disabled
-              title={t('popup.requestSoon')}
-            >
-              {t('popup.requestService')}
-            </Button>
+              target={{
+                serviceLayer: kind.kind === 'service' ? kind.discriminator : '',
+                featureId: id ?? '',
+                providerName,
+                serviceType: typeTitle,
+              }}
+            />
           ) : (
             <ContactButtons
               layout="card"

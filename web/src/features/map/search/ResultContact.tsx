@@ -1,7 +1,6 @@
-import { Send } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useProviderLinked } from '@/api/mapEvents';
-import Button from '@/components/ui/Button';
+import RequestServiceButton from '@/features/requests/RequestServiceButton';
 import ContactButtons from '../popup/ContactButtons';
 import { text } from '../popup/featureModel';
 import { useContactActions } from '../popup/useContactActions';
@@ -12,7 +11,7 @@ interface Props {
   r: SearchResult;
   /** Wrapper classes (layout differs between a result row and a featured card). */
   className?: string;
-  /** A provider with a registered account is contacted through a service request; show that (disabled until ported). */
+  /** A provider with a registered account is contacted through a service request; show that (opens the request flow). */
   showRequest?: boolean;
 }
 
@@ -33,14 +32,15 @@ export default function ResultContact({ r, className, showRequest }: Props) {
     if (!showRequest) return null;
     return (
       <div className={className}>
-        <Button
+        <RequestServiceButton
           size="sm"
-          disabled
-          title={t('popup.requestSoon')}
-          startIcon={<Send className="h-3.5 w-3.5" aria-hidden />}
-        >
-          {t('popup.requestService')}
-        </Button>
+          target={{
+            serviceLayer: r.target.kind === 'service' ? r.target.discriminator : '',
+            featureId: r.id ?? '',
+            providerName: text(p.name) || t('popup.provider'),
+            serviceType: t(targetLabelKey(r.target)),
+          }}
+        />
       </div>
     );
   }
