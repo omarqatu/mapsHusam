@@ -4,10 +4,10 @@ Status legend: ⬜ not started · 🟨 in progress · ✅ ported & verified · �
 
 ## Phase −1 — Repo hygiene (before any React code)
 
-- ⬜ Untrack build/deps that are committed despite `.gitignore`: `node_modules/` (1152 files),
+- ✅ Untrack build/deps that are committed despite `.gitignore`: `node_modules/` (1152 files),
   `dist/`, `frontend-react/dist/` — `git rm -r --cached`, own commit. Add `dist/` to `.gitignore`.
-- ⬜ Review `frontend-react/` before deleting — it is **not** empty (src, docs,
-  `MOBILE-APP-READINESS.md`). Salvage anything useful into PLAN.md/`web/`, then delete.
+- ✅ Review `frontend-react/` before deleting — it is **not** empty (src, docs,
+  `MOBILE-APP-READINESS.md`). Done: its docs were 1–2KB stubs of the fuller root `docs/`; the 3 unique files moved to `docs/`, the rest (React 18 JS skeleton, HTML copies) deleted.
 - ⬜ `docs/react-migration/HOUSE-STYLE.md`: a ≤2-page digest of `../pwa-1/clients/web` conventions
   (folder layout, ui-kit component APIs, query/mutation hooks, forms, i18n, test style), so sessions
   read the digest instead of the reference repo.
