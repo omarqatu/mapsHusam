@@ -2213,6 +2213,21 @@ app.get('/api/platform-content', async (req, res) => {
     }
 });
 
+// قيمة واحدة بمفتاحها (عام): الواجهة تحتاج إعداداً صغيراً (مثل settings.visibility) دون تنزيل كل نصوص المنصة (~140KB).
+app.get('/api/platform-content/:key', async (req, res) => {
+    try {
+        const result = await servicesPool.query(
+            'SELECT content_key, label, content_value, updated_at FROM public.platform_content WHERE content_key = $1',
+            [String(req.params.key || '')]
+        );
+        if (!result.rows.length) return res.status(404).json({ success: false, error: 'غير موجود.' });
+        res.json({ success: true, item: result.rows[0] });
+    } catch (err) {
+        console.error('تعذر جلب محتوى المنصة:', err.message);
+        res.status(500).json({ success: false, error: 'تعذر جلب محتوى المنصة.' });
+    }
+});
+
 app.put('/api/admin/platform-content/:key', requireAdmin, async (req, res) => {
     const key = String(req.params.key || '').trim();
     const label = typeof req.body?.label === 'string' ? req.body.label.trim() : '';
