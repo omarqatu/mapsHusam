@@ -19,12 +19,44 @@ const MAP_CONFIG = {
         labelOutline: "#ffffff"
     },
 
-    // 5. طبقات مستثناة عالمياً من العرض والبحث
-    // ملاحظة: يجب استخدام "المفتاح البرمجي" (Key) المستخدم في ملف layers.js
-    globalExclusions: [ 'cityLayer', 'locationLayer', 'roadsLayer', 'governorateLayer'
-        
-       
-        
+    // طبقات وفئات مستثناة عالمياً من العرض والبحث.
+    // استخدم المعرّف الداخلي أو اسم طبقة WFS؛ والعقارات تقبل أيضاً الاسم العربي.
+    // أمثلة متكافئة: saleLayer / ApartSale / شقق للبيع.
+    // نبدأ بإظهار العقارات الثلاثة فقط. لإعادة خدمة للاختبار احذف اسمها
+    // من هذه القائمة؛ لا تحذف saleLayer أو rentLayer أو landLayer.
+    globalExclusions: [
+        // طبقات مساعدة لا نحتاجها حالياً في نسخة العقارات فقط
+        'cityLayer', 'locationLayer', 'roadsLayer', 'governorateLayer',
+
+        // حواجز الطرق ومحطات الوقود
+        'road_barriers', 'fuel_stations',
+
+        // الفنيون والصيانة المنزلية
+        'electrician', 'ac_technician', 'plumber', 'general_maintenance', 'painter',
+        'Finisher', 'carpenter', 'blacksmith', 'builder', 'house_cleaner', 'aluminum_tech',
+        'glass_tech', 'cctv_installer', 'gardener', 'security_firms', 'furniture_buyer',
+
+        // الصحة والرعاية
+        'home_nurse', 'masseur', 'cupping_specialist', 'nutritionist', 'pharmacies_on_call',
+        'emergency_hospitals', 'clinics', 'doctors_on_call', 'ambulances_on_call', 'pet_care',
+
+        // المركبات والتوصيل
+        'car_mechanic', 'car_electrician', 'tire_tech', 'car_wash', 'motorcycle_repair',
+        'taxi_driver', 'delivery_services', 'tow_truck', 'truck_driver', 'taxis_on_call',
+        'car_delivery_on_call', 'motorcycle_delivery_on_call', 'bicycle_delivery_on_call',
+
+        // المهن الحرة والتعليم الخصوصي
+        'lawyers', 'land_surveyors', 'real_estate_valuers', 'private_tutors', 'programmers',
+        'music_training', 'student_research_assist',
+
+        // المناسبات والترفيه والضيافة
+        'party_planner', 'zaffa_bands', 'music_bands', 'party_rental', 'clown_entertainer',
+        'martial_arts_gymnastics', 'public_parks_recreation', 'hotels', 'villas_rent',
+        'barber_shop', 'video_design_ads', 'photographers',
+
+        // المتاجر والمطاعم والتعليم والمعالم والوظائف وباقي الخدمات
+        'online_stores', 'free_distribution', 'supermarket', 'commercial_shops', 'restaurants',
+        'schools_kindergartens', 'job_vacancies', 'city_landmarks'
     ],
 
     // مصفوفة الصلاحيات (التحكم في ظهور العناصر)

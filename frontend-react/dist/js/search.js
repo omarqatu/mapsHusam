@@ -40,13 +40,12 @@
                 if (window.toast) {
                     window.toast(`⛔ لقد تجاوزت الحد المسموح من الطلبات (${quota.limit || ''}) ${periodText}. يرجى المحاولة لاحقاً أو التواصل مع الإدارة.`, 'warning', 6000);
                 } else {
-                    alert(`⛔ لقد تجاوزت الحد المسموح من الطلبات (${quota.limit || ''}) ${periodText}. يرجى المحاولة لاحقاً أو التواصل مع الإدارة.`);
+                    window.toast(`⛔ لقد تجاوزت الحد المسموح من الطلبات (${quota.limit || ''}, 'info') ${periodText}. يرجى المحاولة لاحقاً أو التواصل مع الإدارة.`);
                 }
                 return { allowed: false };
             }
             return { allowed: true };
         } catch (err) {
-            console.warn('تعذر التحقق من حد الطلبات، سيتم السماح بالطلب:', err.message);
             return { allowed: true }; // Fail-open فقط عند تعذر الاتصال بالشبكة
         }
     };
@@ -174,8 +173,7 @@
             return uniqueValues;
         }
     } catch (err) {
-        console.error('Error fetching unique values from PostgreSQL:', err);
-    }
+        }
 
         const localValues = getUniqueValuesLocal(layer, fieldId, layerKey);
     updateValueUIWithData(localValues);
@@ -386,7 +384,7 @@
             if (window.toast) {
                 window.toast('لا توجد نتائج.', 'info');
             } else {
-                alert("لا توجد نتائج.");
+                window.toast("لا توجد نتائج.", 'info');
             }
             return;
         }
@@ -512,7 +510,7 @@
                 if (window.toast) {
                     window.toast('اختر الطبقة للبحث أولاً.', 'warning');
                 } else {
-                    alert('اختر الطبقة للبحث أولاً.');
+                    window.toast('اختر الطبقة للبحث أولاً.', 'info');
                 }
                 return;
             }
@@ -541,7 +539,7 @@
                 if (window.toast) {
                     window.toast('حدد معايير البحث.', 'warning');
                 } else {
-                    alert('حدد معايير البحث.');
+                    window.toast('حدد معايير البحث.', 'info');
                 }
                 return;
             }
@@ -577,7 +575,7 @@
                     if (window.toast) {
                         window.toast('لا توجد نتائج.', 'info');
                     } else {
-                        alert('لا توجد نتائج.');
+                        window.toast('لا توجد نتائج.', 'info');
                     }
                     return;
                 }
@@ -588,11 +586,10 @@
 
                 displaySearchResults(features, layerKey, finalConditions);
             } catch (error) {
-                console.error("خطأ في البحث:", error);
                 if (window.toast) {
                     window.toast('حدث خطأ أثناء البحث. سيتم استخدام البحث المحلي.', 'warning');
                 } else {
-                    alert('حدث خطأ أثناء البحث. سيتم استخدام البحث المحلي.');
+                    window.toast('حدث خطأ أثناء البحث. سيتم استخدام البحث المحلي.', 'info');
                 }
 
                 // الفallback للبحث المحلي
@@ -710,7 +707,6 @@
                 displaySearchResults(features, state.layerKey, state.conditions || []);
                 return true;
             } catch (err) {
-                console.warn('تعذر إعادة تنفيذ البحث الذكي المشترك:', err.message);
                 return false;
             }
         };

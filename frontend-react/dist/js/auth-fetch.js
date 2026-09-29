@@ -57,11 +57,6 @@
         if (expiredHandled) return;
         expiredHandled = true;
         // سجل سبب الرفض دون طباعة Authorization أو قيمة التوكن.
-        console.error('[auth-fetch] رفض السيرفر الجلسة:', {
-            path: apiPath,
-            code: responseData && responseData.code,
-            error: responseData && responseData.error
-        });
         SESSION_KEYS.forEach(function (k) {
             try { localStorage.removeItem(k); sessionStorage.removeItem(k); } catch (e) { /* تجاهل */ }
         });

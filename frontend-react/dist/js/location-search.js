@@ -166,8 +166,7 @@ function initializeLocationSearch(map, overlayLayersObj) {
             selectedLocationDisplay.textContent = 'تم تحديد موقعك بنجاح';
             selectedLocationDisplay.style.color = '#28a745';
         }, (error) => {
-            console.error('GPS search failed:', error);
-            alert(error.message || 'فشل الوصول للموقع. تأكد من تفعيل GPS.');
+            window.toast(error.message || 'فشل الوصول للموقع. تأكد من تفعيل GPS.', 'info');
             selectedLocationDisplay.textContent = 'فشل تحديد الموقع.';
             selectedLocationDisplay.style.color = '#dc3545';
         });
@@ -206,9 +205,9 @@ function initializeLocationSearch(map, overlayLayersObj) {
     });
 
         executeLocationSearchBtn?.addEventListener('click', async () => {
-        if (!searchCenterLocation) return alert("الرجاء تحديد موقع البحث أولاً.");
+        if (!searchCenterLocation) return window.toast("الرجاء تحديد موقع البحث أولاً.", 'info');
         const selectedLayerKey = searchLayerSelect.value;
-        if (!selectedLayerKey) return alert("الرجاء اختيار نوع العقار أو الخدمة.");
+        if (!selectedLayerKey) return window.toast("الرجاء اختيار نوع العقار أو الخدمة.", 'info');
 
         // 🆕 فحص حد الطلبات وتسجيله قبل تنفيذ البحث المكاني - يمنع التنفيذ فوراً عند التجاوز
         const discriminatorForTitle = selectedLayerKey.replace(/Layer$/, '');
@@ -275,7 +274,7 @@ function initializeLocationSearch(map, overlayLayersObj) {
             const data = await response.json();
 
             if (!data.features || data.features.length === 0) {
-                alert("لا توجد نتائج.");
+                window.toast("لا توجد نتائج.", 'info');
                 resultsPanel?.classList.add('hidden');
                 return;
             }
@@ -300,12 +299,11 @@ function initializeLocationSearch(map, overlayLayersObj) {
                     });
                 }
             } else {
-                alert("لا توجد نتائج تطابق معايير البحث.");
+                window.toast("لا توجد نتائج تطابق معايير البحث.", 'info');
                 resultsPanel?.classList.add('hidden');
             }
         } catch (error) {
-            console.error("خطأ في البحث المكاني:", error);
-            alert("حدث خطأ أثناء البحث. سيتم استخدام البحث المحلي.");
+            window.toast("حدث خطأ أثناء البحث. سيتم استخدام البحث المحلي.", 'info');
 
             // Fallback للبحث المحلي
             const layer = window.getResolvedMapLayer(overlayLayersObj, selectedLayerKey);
@@ -327,7 +325,7 @@ function initializeLocationSearch(map, overlayLayersObj) {
                     });
                 }
             } else {
-                alert("لا توجد نتائج تطابق معايير البحث.");
+                window.toast("لا توجد نتائج تطابق معايير البحث.", 'info');
                 resultsPanel?.classList.add('hidden');
             }
         }

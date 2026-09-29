@@ -275,8 +275,6 @@ window.initMapPlatform = function () {
         window.userLocationWatchId = window.watchGeolocationPosition(
             (position) => {
                 const currentTime = Date.now();
-                console.log("📍 تم استلام إحداثيات GPS جديدة بدقة:", position.coords.accuracy);
-
                 if (currentTime - lastUpdateTime < 10000) return;
                 
                 lastUpdateTime = currentTime;
@@ -298,7 +296,6 @@ window.initMapPlatform = function () {
                 if (targetButton) targetButton.innerHTML = '📡';
             },
             (error) => {
-                console.error("Geolocation Tracking Error:", error);
                 if (targetButton) {
                     targetButton.innerHTML = '🎯';
                     targetButton.style.setProperty("background-color", "rgba(0, 60, 136, 0.85)", "important");
@@ -307,14 +304,14 @@ window.initMapPlatform = function () {
                     navigator.geolocation.clearWatch(window.userLocationWatchId);
                 }
                 window.userLocationWatchId = null;
-                alert(window.getGeolocationErrorMessage(error));
+                window.toast(window.getGeolocationErrorMessage(error, 'info'));
             },
             { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
         );
     };
 
            // --- 3. بناء واجهة الاختيار المطور وحقن زر الموقع والنافذة المنبثقة لإقلاع الخريطة ---
-setTimeout(() => {
+setTimeout(async () => {
     const zoomContainer = document.querySelector('.ol-zoom');
     if (zoomContainer) {
         if (!document.querySelector('.ol-custom-location-btn')) {
@@ -360,30 +357,8 @@ setTimeout(() => {
         dialogBox.id = 'custom-splash-dialog';
         dialogBox.style.cssText = "background: #fff; padding: 25px; border-radius: 16px; max-width: 450px; width: 100%; box-shadow: 0 10px 25px rgba(0,0,0,0.2); border: 1px solid #e0e0e0;";
 
-        dialogBox.innerHTML = `
-            <div style="font-family: sans-serif; color: #2c3e50;">
-                <h3 style="margin-top:0; margin-bottom:15px; font-size:20px; font-weight:700; text-align:center;">منصة خريطة الخدمات الفلسطينية</h3>
-                <p style="margin-bottom:20px; color:#1a5276; font-size:13px; text-align:center; font-weight:600; background:#f0f7ff; padding:12px; border-radius:8px; border: 1px solid #d1e7ff;">
-                    ✨ النسخة التجريبية - و لإعادة ترتيب الواجهات واللوحات قم بتحديث المتصفح (يمكن تصغير/تكبير او تحريك أي لوحة او قائمة).
-                </p>
-                <p style="font-size: 14px; text-align: center; font-weight: 600; margin-bottom: 15px; line-height: 1.6;">
-                    إذا تفضل البحث عن أي خدمة بدون خريطة ومن خلال الفلاتر أو كتابة أي كلمة دلالية بمربع البحث مثل شقة بيع، كهربائي، استاذ خصوصي اضغط هنا للانتقال إلى صفحة البحث بدون خريطة
-                </p>
-                <div style="text-align: center; margin-bottom: 20px;">
-                    <a href="/no-map-search.html" id="no-map-link" style="display: inline-block; padding: 12px 25px; background: #27ae60; color: #ffffff; border-radius: 6px; font-weight: 700; text-decoration: none; font-size: 14px;">⇽ الانتقال إلى صفحة البحث بدون خريطة</a>
-                </div>
-                <p style="font-size: 14px; text-align: center; font-weight: 600; margin-bottom: 15px; line-height: 1.6;">
-                    أما إذا بدك خريطة اختار تفتح موقع افتراضي ميدان المنارة وسط مدينتي رام الله والبيرة أو موقعك الجغرافي
-                </p>
-                <div id="splash-options-container" style="display:flex; flex-direction:column; gap:10px;">
-                    <button class="splash-opt-btn" data-type="default" style="padding:12px; font-size:14px; background:#2c3e50; color:white; border:none; border-radius:4px; cursor:pointer; font-weight:500; text-align:right; transition:background 0.2s;">📍 فتح موقع افتراضي (ميدان المنارة - رام الله والبيرة)</button>
-                    <button class="splash-opt-btn" data-type="gps" style="padding:12px; font-size:14px; background:#2c3e50; color:white; border:none; border-radius:4px; cursor:pointer; font-weight:500; text-align:right; transition:background 0.2s;">🎯 فتح موقعي الجغرافي (انتظر قليلاً لتحديد موقعك بدقة)</button>
-                </div>
-                <p style="font-size: 13px; text-align: center; font-weight: 600; margin-top: 20px; color: #1a5276; background: #f0f7ff; padding: 12px; border-radius: 8px; border: 1px solid #d1e7ff; line-height: 1.6;">
-                    💡 ملاحظة: يمكن الانتقال بين الصفحتين بكل سهولة ويمكن الانتقال إلى أي خدمة لموقعها ومشاركة أي موقع
-                </p>
-            </div>
-        `;
+        const entryChoice = await window.getAppLegalContent('mapEntryChoice');
+        dialogBox.innerHTML = entryChoice.html;
 
 
         splashOverlay.appendChild(dialogBox);

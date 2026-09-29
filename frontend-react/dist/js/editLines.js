@@ -90,7 +90,7 @@ window.initializeLineEditTools = function (map, overlayLayersObj) {
     function setupInteractions(mode) {
         window.deactivateLineEditTools();
         const source = getSource();
-        if (!source) return alert('خطأ: طبقة الطرق غير محملة');
+        if (!source) return window.toast('خطأ: طبقة الطرق غير محملة', 'info');
         const layer = overlayLayersObj[roadsLayerKey];
 
         if (mode === 'add') {
@@ -242,11 +242,9 @@ window.initializeLineEditTools = function (map, overlayLayersObj) {
             fieldsXML += `</${fullQualifiedName}>`;
             payload = `<wfs:Insert>${fieldsXML}</wfs:Insert>`;
 
-            console.log('[Line Insert] Payload:', payload);
-
-        } else if (type === 'update') {
+            } else if (type === 'update') {
             if (!fidValue) {
-                alert('❌ خطأ: لم يتم العثور على معرف الطريق للتحديث');
+                window.toast('❌ خطأ: لم يتم العثور على معرف الطريق للتحديث', 'info');
                 return;
             }
             let propsXML = '';
@@ -260,7 +258,7 @@ window.initializeLineEditTools = function (map, overlayLayersObj) {
 
         } else if (type === 'delete') {
             if (!fidValue) {
-                alert('❌ خطأ: لا يمكن الحذف بدون معرف الطريق');
+                window.toast('❌ خطأ: لا يمكن الحذف بدون معرف الطريق', 'info');
                 return;
             }
             payload = `<wfs:Delete typeName="${fullQualifiedName}" xmlns:${workspace}="${featureNS}"><ogc:Filter><ogc:FeatureId fid="${fidValue}"/></ogc:Filter></wfs:Delete>`;
@@ -276,8 +274,6 @@ window.initializeLineEditTools = function (map, overlayLayersObj) {
     xsi:schemaLocation="http://www.opengis.net/wfs http://schemas.opengis.net/wfs/1.1.0/wfs.xsd">
     ${payload}
 </wfs:Transaction>`;
-
-        console.log("📤 WFS-T Lines Request:", requestXML);
 
         // طلب بيانات التوثيق من المشرف
         const { value: usernameInput } = await Swal.fire({
@@ -333,7 +329,6 @@ window.initializeLineEditTools = function (map, overlayLayersObj) {
                 if (source) source.refresh();
                 window.deactivateLineEditTools();
             } else {
-                console.error("GeoServer Lines Error:", text);
                 const match = text.match(/<ows:ExceptionText>(.*?)<\/ows:ExceptionText>/s);
                 Swal.fire({
                     icon: 'error',
@@ -344,7 +339,6 @@ window.initializeLineEditTools = function (map, overlayLayersObj) {
                 window.deactivateLineEditTools();
             }
         }).catch(err => {
-            console.error("Network Error:", err);
             Swal.fire({ icon: 'error', title: 'خطأ في الاتصال', text: err.message });
             window.deactivateLineEditTools();
         });

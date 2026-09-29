@@ -81,7 +81,6 @@ window.AppServices = {
                 }
                 return null;
             } catch (error) {
-                console.error('Error getting feature coordinates:', error);
                 return null;
             }
         },
@@ -123,7 +122,6 @@ window.AppServices = {
                 }
                 return false;
             } catch (e) {
-                console.warn('تعذر تحديث قائمة مزودي الخدمة المرتبطين:', e.message);
                 return false;
             }
         },
@@ -155,7 +153,6 @@ window.AppServices = {
                 }
                 return null;
             } catch (err) {
-                console.warn('تعذر جلب إحصائيات المنصة:', err.message);
                 return null;
             }
         },
@@ -295,7 +292,6 @@ window.AppServices = {
                 await navigator.clipboard.writeText(link);
                 return true;
             } catch (err) {
-                console.error('Failed to copy link:', err);
                 return false;
             }
         }

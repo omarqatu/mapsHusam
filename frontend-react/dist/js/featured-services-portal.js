@@ -1,13 +1,14 @@
-﻿/* بوابة الخدمات المميزة للخريطة */
+/* بوابة الخدمات المميزة للخريطة */
 (function () {
     'use strict';
 
     const API_ROOT = window.location.origin + '/';
+    const isGloballyExcluded = layer => Boolean(window.isLayerGloballyExcluded?.(layer));
     const REAL_ESTATE_TARGETS = [
         { layer: 'ApartRent', label: 'شقق الإيجار' },
         { layer: 'ApartSale', label: 'شقق للبيع' },
         { layer: 'LandSale', label: 'الأراضي للبيع' }
-    ];
+    ].filter(item => !isGloballyExcluded(item.layer));
     const NEARBY_GROUPS = [
         { id: 'roads', title: 'حواجز الطرق', icon: 'fa-signs-post' },
         { id: 'fuel', title: 'محطات الوقود', icon: 'fa-gas-pump' },
@@ -254,7 +255,6 @@
                 });
             if (typeof entry.geometry.getClosestPoint === 'function') feature.setGeometry(entry.geometry);
         } catch (error) {
-            console.warn('تعذر تحديد موقع المعلم على الخريطة:', error);
             return false;
         }
         const highlightLayer = window.searchResultsHighlightLayer || window.overlayLayersObj?.searchResultsHighlightLayer;
@@ -330,7 +330,8 @@
     }
 
     function rowMarkup(items, mode, label) {
-        const propertyLayers = ['ApartRent', 'ApartSale', 'LandSale'];
+        items = items.filter(item => !isGloballyExcluded(item.properties?.discriminator));
+        const propertyLayers = REAL_ESTATE_TARGETS.map(item => item.layer);
         const selected = propertyLayers.map(layer => items.find(item => item.properties?.discriminator === layer)).filter(Boolean);
         const selectedIds = new Set(selected);
         selected.push(...items.filter(item => !selectedIds.has(item)).slice(0, Math.max(0, 10 - selected.length)));
@@ -341,9 +342,7 @@
     async function fetchRatingServices(value) {
         const targets = [
             { layer: 'service_all', workspace: 'services' },
-            { layer: 'ApartRent', workspace: 'realestate' },
-            { layer: 'ApartSale', workspace: 'realestate' },
-            { layer: 'LandSale', workspace: 'realestate' }
+            ...REAL_ESTATE_TARGETS.map(item => ({ layer: item.layer, workspace: 'realestate' }))
         ];
         const results = await Promise.all(targets.map(async target => {
             const params = new URLSearchParams({ ...target, field_0: 'rating', operator_0: '=', value_0: String(value), conditions_count: '1' });
@@ -351,7 +350,9 @@
                 const response = await fetch(`${API_ROOT}api/search-features?${params}`);
                 if (!response.ok) return [];
                 const data = await response.json();
-                return (data.features || []).map(feature => {
+                return (data.features || []).filter(feature =>
+                    !isGloballyExcluded(feature.properties?.discriminator || target.layer)
+                ).map(feature => {
                     feature.properties = { ...(feature.properties || {}) };
                     if (target.workspace === 'realestate') feature.properties.discriminator = target.layer;
                     return feature;
@@ -369,7 +370,7 @@
             const knownServices = new Set(Object.keys(window.serviceSubtypes || {}));
             const items = (data.items || []).filter(item =>
                 item.service_layer && item.feature_id !== undefined && item.feature_id !== null &&
-                knownServices.has(String(item.service_layer))
+                knownServices.has(String(item.service_layer)) && !isGloballyExcluded(item.service_layer)
             );
             const grouped = new Map();
             items.forEach(item => {
@@ -410,7 +411,6 @@
             }));
             return layerResults.flat();
         } catch (error) {
-            console.warn('تعذر جلب الخدمات الأعلى تقييماً:', error);
             return [];
         }
     }
@@ -442,8 +442,8 @@
         return `<div class="featured-nearby-controls">
             <div class="featured-nearby-location-actions">
                 <button type="button" class="featured-nearby-location-btn"><i class="fas fa-location-crosshairs"></i> تحديد موقعي</button>
-                <button type="button" class="featured-nearby-shortcut" data-preset-layer="road_barriers"><i class="fas fa-signs-post"></i> حواجز الطرق</button>
-                <button type="button" class="featured-nearby-shortcut" data-preset-layer="fuel_stations"><i class="fas fa-gas-pump"></i> محطات الوقود</button>
+                ${!isGloballyExcluded('road_barriers') ? '<button type="button" class="featured-nearby-shortcut" data-preset-layer="road_barriers"><i class="fas fa-signs-post"></i> حواجز الطرق</button>' : ''}
+                ${!isGloballyExcluded('fuel_stations') ? '<button type="button" class="featured-nearby-shortcut" data-preset-layer="fuel_stations"><i class="fas fa-gas-pump"></i> محطات الوقود</button>' : ''}
             </div>
             <div class="featured-nearby-status" aria-live="polite">فعّل الموقع لعرض أقرب الخدمات والعقارات.</div>
             <details class="featured-nearby-filters" hidden>
@@ -464,7 +464,7 @@
             const response = await fetch(`${API_ROOT}api/search-features?${params}`);
             if (!response.ok) throw new Error('تعذر تحميل الخدمات القريبة');
             const data = await response.json();
-            return (data.features || []).map(item => ({ properties: item.properties || {}, geometry: item.geometry }));
+            return (data.features || []).filter(item => !isGloballyExcluded(item.properties?.discriminator)).map(item => ({ properties: item.properties || {}, geometry: item.geometry }));
         })();
         const propertyPromises = REAL_ESTATE_TARGETS.map(async target => {
             try {
@@ -603,8 +603,7 @@
         } catch (error) {
             root.dataset.loaded = '0';
             root.innerHTML = '<div class="featured-services-empty">تعذر تحميل الخدمات المميزة حالياً</div>';
-            console.warn('featured-services-portal:', error);
-        }
+            }
     }
 
     function activateVideo(facade) {

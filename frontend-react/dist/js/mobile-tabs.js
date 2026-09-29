@@ -46,7 +46,7 @@
     function safe(fn) {
         return function () {
             try { return fn.apply(this, arguments); }
-            catch (err) { console.warn('mobile-tabs.js: تم تجاهل خطأ غير متوقع لمنع تعطل الصفحة:', err); }
+            catch (err) { }
         };
     }
 
@@ -121,8 +121,8 @@
             '<div class="pstats-wrap pstats-mobile-home" data-platform-stats-target></div>' +
             '<a href="/no-map-search.html" target="_blank" style="display:inline-flex; align-items:center; gap:8px; margin-top:16px; background:linear-gradient(135deg,#28a745,#20c997); color:#fff; padding:12px 20px; border-radius:25px; text-decoration:none; font-size:14px; font-weight:600; box-shadow:0 4px 15px rgba(40,167,69,0.3); border:2px solid #fff; white-space:nowrap;"><i class="fas fa-list"></i> الانتقال إلى البحث بدون خريطة</a>' +
             // 🆕 زرا حالة الطرق وحالة محطات الوقود - نسخة الموبايل/التابلت
-            '<button type="button" id="mobile-btn-open-road-status" style="display:inline-flex; align-items:center; justify-content:center; gap:8px; margin-top:10px; background:linear-gradient(135deg,#e67e22,#d35400); color:#fff; padding:12px 20px; border-radius:25px; font-size:14px; font-weight:600; box-shadow:0 4px 15px rgba(230,126,34,0.3); border:2px solid #fff; white-space:nowrap; cursor:pointer;"><i class="fas fa-road"></i> حالة الطرق</button>' +
-            '<button type="button" id="mobile-btn-open-fuel-status" style="display:inline-flex; align-items:center; justify-content:center; gap:8px; margin-top:10px; background:linear-gradient(135deg,#2980b9,#1a5276); color:#fff; padding:12px 20px; border-radius:25px; font-size:14px; font-weight:600; box-shadow:0 4px 15px rgba(41,128,185,0.3); border:2px solid #fff; white-space:nowrap; cursor:pointer;"><i class="fas fa-gas-pump"></i> حالة محطات الوقود</button>';
+            '<button type="button" id="mobile-btn-open-road-status" data-global-layer-exclusion="road_barriers" style="display:inline-flex; align-items:center; justify-content:center; gap:8px; margin-top:10px; background:linear-gradient(135deg,#e67e22,#d35400); color:#fff; padding:12px 20px; border-radius:25px; font-size:14px; font-weight:600; box-shadow:0 4px 15px rgba(230,126,34,0.3); border:2px solid #fff; white-space:nowrap; cursor:pointer;"><i class="fas fa-road"></i> حالة الطرق</button>' +
+            '<button type="button" id="mobile-btn-open-fuel-status" data-global-layer-exclusion="fuel_stations" style="display:inline-flex; align-items:center; justify-content:center; gap:8px; margin-top:10px; background:linear-gradient(135deg,#2980b9,#1a5276); color:#fff; padding:12px 20px; border-radius:25px; font-size:14px; font-weight:600; box-shadow:0 4px 15px rgba(41,128,185,0.3); border:2px solid #fff; white-space:nowrap; cursor:pointer;"><i class="fas fa-gas-pump"></i> حالة محطات الوقود</button>';
 
         tabContent.appendChild(tabHome);
 
@@ -150,6 +150,7 @@
         tabArea.appendChild(header);
         tabArea.appendChild(tabContent);
         document.body.appendChild(tabArea);
+        window.applyGlobalExclusionsToDom?.(tabArea);
 
         // 🆕 استدعاء تعبئة الإحصائيات بعد إلحاق العنصر فعلياً بالـ DOM، وإلا فإن
         // querySelectorAll('[data-platform-stats-target]') داخل platform-stats.js

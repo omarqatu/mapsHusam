@@ -66,10 +66,22 @@
     border: 1px solid #e9ecef; 
     border-radius: 6px;
     padding: 12px 25px 12px 12px; 
-    max-height: 130px; 
+    max-height: 280px;
     overflow-y: auto; 
     margin-bottom: 20px;
 }
+
+.auth-inline-legal-section + .auth-inline-legal-section {
+    border-top: 1px solid #d9e0e7;
+    margin-top: 12px;
+    padding-top: 12px;
+}
+
+.auth-inline-legal-section .auth-section-title { margin-bottom: 7px; }
+.auth-inline-legal-section p,
+.auth-inline-legal-section li { font-size: 12px; line-height: 1.55; text-align: right; }
+.auth-inline-legal-section ul,
+.auth-inline-legal-section ol { padding-right: 22px; }
 
 .auth-terms-container ul {
     margin: 0; 
@@ -246,7 +258,7 @@
     .auth-divider { margin: 12px 0; }
     .auth-section-title { font-size: 13px; margin-bottom: 6px; }
     .auth-terms-container {
-        max-height: 100px; 
+        max-height: 220px;
         padding: 8px 20px 8px 8px;
         margin-bottom: 12px;
     }

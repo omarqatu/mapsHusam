@@ -12,7 +12,7 @@ window.showAuthMessage = function(message, type = 'info', duration = 5000) {
     if (window.toast) {
         window.toast(message, type, duration);
     } else {
-        alert(message);
+        window.toast(message, 'info');
     }
 };
 
@@ -139,7 +139,6 @@ window.changeUserPassword = function (e) {
             }
 
         } catch (error) {
-            console.error('❌ خطأ أثناء الاتصال بالسيرفر لتغيير كلمة المرور:', error);
             window.showAuthMessage(error.message || 'حدث خطأ أثناء الاتصال بالسيرفر، يرجى المحاولة لاحقاً.', 'error');
             submitBtn.disabled = false;
             submitBtn.innerText = "تحديث";
@@ -198,7 +197,6 @@ function verifySavedSessionThenEnter(parsedUser) {
         enterPlatform(parsedUser, true);
     })
     .catch(function (err) {
-        console.warn('تعذر التحقق من صلاحية الجلسة، سيتم الدخول مؤقتاً (Fail-open):', err.message);
         enterPlatform(parsedUser, true);
     });
 }
@@ -217,6 +215,11 @@ function initAuthAppEvents() {
 
     const btnGoToRegisterEmail = document.getElementById("btn-go-to-register-email");
 
+    // الموافقة والإعجاب صالحان لهذه الزيارة فقط؛ المتصفح قد يعيد استرجاع
+    // حالة مربعات الاختيار بعد التحديث أو الرجوع من ذاكرة الصفحة.
+    if (agreeCheckbox) agreeCheckbox.checked = false;
+    if (likedCheckbox) likedCheckbox.checked = false;
+
     if (typeof hideAllEditPanelsAndButtonsGlobally === 'function') {
         hideAllEditPanelsAndButtonsGlobally();
     }
@@ -228,7 +231,6 @@ function initAuthAppEvents() {
             verifySavedSessionThenEnter(parsedUser);
             return; 
         } catch (e) {
-            console.error("خطأ في قراءة بيانات الجلسة المخزنة:", e);
             localStorage.removeItem('map_user');
         }
     }
@@ -244,6 +246,14 @@ function initAuthAppEvents() {
                 buttonsGroup.classList.add("auth-buttons-disabled");
             }
         }
+    }
+
+    if (authOverlay && agreeCheckbox && likedCheckbox && buttonsGroup) {
+        window.addEventListener('pageshow', function resetWelcomeAcknowledgements() {
+            agreeCheckbox.checked = false;
+            likedCheckbox.checked = false;
+            validateWelcomeTerms();
+        });
     }
 
     if (!authOverlay || !agreeCheckbox || !likedCheckbox || !buttonsGroup) {
@@ -337,7 +347,6 @@ function initAuthAppEvents() {
                 }
 
             } catch (error) {
-                console.error('❌ خطأ في عملية التسجيل:', error);
                 window.showAuthMessage(error.message || 'حدث خطأ أثناء التسجيل، يرجى المحاولة لاحقاً.', 'error');
                 if (submitButton) submitButton.disabled = false;
             }
@@ -468,14 +477,12 @@ function initAuthAppEvents() {
 
                     if (window.notificationSystem && finalUserData.user_id) {
                         window.notificationSystem.init(finalUserData.user_id);
-                        console.log('✅ تم تهيئة نظام الإشعارات للمستخدم:', finalUserData.user_id);
-                    }
+                        }
 
                 } else {
                     window.showAuthMessage(`خطأ في الدخول: ${data.message || data.error || 'بيانات الاعتماد غير صحيحة'}`, 'error');
                 }
             } catch (error) {
-                console.error('❌ خطأ في الاتصال بسيرفر التحقق:', error);
                 window.showAuthMessage(error.message || 'حدث خطأ أثناء الاتصال بالسيرفر، يرجى المحاولة لاحقاً.', 'error');
             } finally {
                 if (submitBtn) {

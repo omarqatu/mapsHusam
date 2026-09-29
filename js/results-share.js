@@ -18,7 +18,7 @@
             const link = window.buildResultsShareLink ? window.buildResultsShareLink() : null;
             if (!link) {
                 if (window.toast) window.toast('لا توجد نتيجة بحث حالية لمشاركتها.', 'warning');
-                else alert('لا توجد نتيجة بحث حالية لمشاركتها.');
+                else window.toast('لا توجد نتيجة بحث حالية لمشاركتها.', 'info');
                 return;
             }
 
@@ -36,10 +36,10 @@
                     document.body.removeChild(ta);
                 }
                 if (window.toast) window.toast('✅ تم نسخ رابط النتائج، يمكنك مشاركته الآن.', 'success');
-                else alert('تم نسخ رابط النتائج، يمكنك مشاركته الآن.');
+                else window.toast('تم نسخ رابط النتائج، يمكنك مشاركته الآن.', 'info');
             } catch (err) {
                 if (window.toast) window.toast('تعذر نسخ الرابط، يرجى المحاولة يدوياً.', 'error');
-                else alert('تعذر نسخ الرابط: ' + link);
+                else window.toast('تعذر نسخ الرابط: ' + link, 'info');
             }
         });
     }
@@ -62,8 +62,7 @@
                     ok = await window.replayLocationSearch(state);
                 }
             } catch (err) {
-                console.warn('تعذر إعادة تنفيذ البحث المشترك:', err.message);
-            }
+                }
 
             if (!ok && attempts < maxAttempts) {
                 setTimeout(tryReplay, 200);

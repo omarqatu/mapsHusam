@@ -115,11 +115,10 @@ function initializeQuickSearch(map, overlayLayersObj) {
         const layer = window.getResolvedMapLayer(overlayLayersObj, layerKey);
 
         if (!layer) {
-            console.warn(`الطبقة "${layerKey}" غير محملة.`);
             if (window.toast) {
                 window.toast(`الطبقة "${layerTitle}" غير محملة حالياً.`, 'warning');
             } else {
-                alert(`الطبقة "${layerTitle}" غير محملة حالياً.`);
+                window.toast(`الطبقة "${layerTitle}" غير محملة حالياً.`, 'info');
             }
             return;
         }
@@ -156,7 +155,7 @@ function initializeQuickSearch(map, overlayLayersObj) {
                 if (window.toast) {
                     window.toast(`عذراً، لا تتوفر نتائج لـ "${layerTitle}" في المنطقة الحالية.`, 'info');
                 } else {
-                    alert(`عذراً، لا تتوفر نتائج لـ "${layerTitle}" في المنطقة الحالية.`);
+                    window.toast(`عذراً، لا تتوفر نتائج لـ "${layerTitle}" في المنطقة الحالية.`, 'info');
                 }
                 if (resultsPanel) resultsPanel.classList.add('hidden');
                 return;
@@ -184,11 +183,10 @@ function initializeQuickSearch(map, overlayLayersObj) {
                 window.setResultsShareState({ type: 'quick', layerKey, layerTitle, bbox });
             }
         } catch (error) {
-            console.error("خطأ في البحث السريع:", error);
             if (window.toast) {
                 window.toast('حدث خطأ أثناء البحث. سيتم استخدام البحث المحلي.', 'warning');
             } else {
-                alert('حدث خطأ أثناء البحث. سيتم استخدام البحث المحلي.');
+                window.toast('حدث خطأ أثناء البحث. سيتم استخدام البحث المحلي.', 'info');
             }
 
             // Fallback للبحث المحلي
@@ -204,7 +202,7 @@ function initializeQuickSearch(map, overlayLayersObj) {
                 if (window.toast) {
                     window.toast(`عذراً، لا تتوفر نتائج لـ "${layerTitle}" في المنطقة التي تشاهدها حالياً.`, 'info');
                 } else {
-                    alert(`عذراً، لا تتوفر نتائج لـ "${layerTitle}" في المنطقة التي تشاهدها حالياً.`);
+                    window.toast(`عذراً، لا تتوفر نتائج لـ "${layerTitle}" في المنطقة التي تشاهدها حالياً.`, 'info');
                 }
                 if (resultsPanel) resultsPanel.classList.add('hidden');
                 return;
@@ -318,7 +316,6 @@ function initializeQuickSearch(map, overlayLayersObj) {
             window.setResultsShareState(state);
             return true;
         } catch (err) {
-            console.warn('تعذر إعادة تنفيذ البحث السريع المشترك:', err.message);
             return false;
         }
     };

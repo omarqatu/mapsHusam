@@ -189,8 +189,7 @@ window.sendTrackingRequest = function(provider, service) {
         body,
         keepalive: true
     }).catch(err => {
-        console.error('خطأ في تسجيل الإحصائية:', err);
-    });
+        });
 };
 
 // ==========================================

@@ -1,4 +1,4 @@
-﻿// js/notifications.js - نظام الإشعارات في الوقت الفعلي
+// js/notifications.js - نظام الإشعارات في الوقت الفعلي
 
 // 🔒 تعقيم النص قبل وضعه داخل innerHTML (العنوان والرسالة قد تحتوي رموزاً خطرة)
 function escapeNotificationText(value) {
@@ -80,19 +80,19 @@ class NotificationSystem {
         // تأكيد إرسال الإشعار
         this.socket.on('notification_sent', (data) => {
             if (data.success) {
-                alert('تم إرسال الإشعار بنجاح!');
+                window.toast('تم إرسال الإشعار بنجاح!', 'info');
             }
         });
 
         // خطأ في الإشعارات
         this.socket.on('notification_error', (error) => {
-            alert('خطأ: ' + (error.error || 'حدث خطأ غير معروف'));
+            window.toast('خطأ: ' + (error.error || 'حدث خطأ غير معروف', 'info'));
         });
 
         // استقبال أمر إعادة تسجيل الدخول من المشرف (force_relogin)
         this.socket.on('force_relogin', (data) => {
             const message = data.message || 'تم تحديث حسابك من قبل الإدارة. يرجى تسجيل الدخول مرة أخرى.';
-            alert('🚨 ' + message);
+            window.toast('🚨 ' + message, 'info');
             // مسح الجلسة المحفوظة
             localStorage.removeItem('map_user');
             sessionStorage.removeItem('map_user');
@@ -157,7 +157,7 @@ class NotificationSystem {
     // إرسال إشعار لمستخدم معين
     sendNotification(targetUserId, title, message, type = 'info') {
         if (!this.socket || !this.isConnected) {
-            alert('غير متصل بالسيرفر. يرجى المحاولة لاحقاً.');
+            window.toast('غير متصل بالسيرفر. يرجى المحاولة لاحقاً.', 'info');
             return;
         }
 

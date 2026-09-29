@@ -31,8 +31,7 @@
             DISPLAY_CONFIG = WIDGETS_DISPLAY_CONFIG;
         }
     } catch (e) {
-        console.warn('Could not load widgets config, using defaults');
-    }
+        }
 
     // ============================================
     // البيانات الافتراضية (في حال عدم تحميل التكوين)
@@ -302,8 +301,7 @@ function renderManualGroupsInto(prefix) {
             updateMobilePortalData();
             updateLastUpdatedTimestamps();
         } catch (err) {
-            console.warn('تعذر جلب بيانات مركز المعلومات الحية:', err.message);
-        }
+            }
     }
 
         // ============================================
@@ -314,13 +312,13 @@ function renderManualGroupsInto(prefix) {
     let liveFuelStations = [];
 
     async function fetchLiveLayerFeatures(layerName) {
+        if (window.isLayerGloballyExcluded?.(layerName)) return [];
         try {
             const params = new URLSearchParams({ layer: layerName, workspace: 'services' });
             const res = await fetch('/api/search-features?' + params.toString());
             const data = await res.json();
             return (data && data.features) ? data.features : [];
         } catch (err) {
-            console.error('خطأ في جلب بيانات الطبقة ' + layerName + ':', err);
             return [];
         }
     }
@@ -806,8 +804,7 @@ function renderManualGroupsInto(prefix) {
             
             updateAllData();
         } catch (error) {
-            console.error(`Error fetching ${type} data:`, error);
-        }
+            }
 
     }
 
@@ -825,6 +822,11 @@ function renderManualGroupsInto(prefix) {
 
         try {
             const res = await fetch(url);
+            if (!res.ok) {
+                // تعطيل ويدجت الطقس مؤقتاً إذا فشل الطلب
+                cfg.enabled = false;
+                return;
+            }
             const data = await res.json();
             const resultsArray = Array.isArray(data) ? data : [data];
 
@@ -850,8 +852,7 @@ function renderManualGroupsInto(prefix) {
             updatePortalData();
             updateMobilePortalData();
         } catch (error) {
-            console.error('تعذر جلب بيانات الطقس من Open-Meteo:', error.message);
-        }
+            }
     }
 
 
@@ -873,7 +874,11 @@ function renderManualGroupsInto(prefix) {
             ];
 
             function renderTickerGroupsHTML() {
-                return TICKER_GROUPS.map(g => `
+                return TICKER_GROUPS.filter(g => {
+                    const layer = g.id === 'portal-road-status-card' ? 'road_barriers'
+                        : g.id === 'portal-fuel-status-card' ? 'fuel_stations' : null;
+                    return !layer || !window.isLayerGloballyExcluded?.(layer);
+                }).map(g => `
                     <div class="ticker-item ticker-group-item" data-target="${g.id}">
                         <i class="fas ${g.icon}"></i>
                         <span class="ticker-label">${g.label}</span>
@@ -928,8 +933,7 @@ function renderManualGroupsInto(prefix) {
                 initTickerManualScroll();
             })
             .catch(err => {
-                console.error('خطأ في تحميل الشريط المتحرك:', err);
-            });
+                });
     }
 
     // ============================================
@@ -952,11 +956,13 @@ function renderManualGroupsInto(prefix) {
             .then(portalHtml => {
                 const container = document.createElement('div');
                 container.innerHTML = portalHtml;
+                window.applyGlobalExclusionsToDom?.(container);
                 
                 const grid = container.querySelector('.widgets-portal-grid');
                 if (!grid) return;
                 
                                 const clonedGrid = grid.cloneNode(true);
+                window.applyGlobalExclusionsToDom?.(clonedGrid);
                 // تسمية كل id بادئة mobile- لعزلها عن نسخة المودال الأصلية
                 clonedGrid.querySelectorAll('[id]').forEach(function (el) {
                     el.id = 'mobile-' + el.id;
@@ -981,7 +987,7 @@ function renderManualGroupsInto(prefix) {
                 updateLastUpdatedTimestamps();
                 wireWidgetSearchInputs(tabContent); // 🆕
             })
-            .catch(err => console.error('خطأ في تحميل محتوى البوابة للموبايل:', err));
+            .catch(() => {});
     }
     // ============================================
     // دالة تحديث البيانات في تبويب الموبايل
@@ -1112,6 +1118,7 @@ function renderManualGroupsInto(prefix) {
             .then(response => response.text())
             .then(html => {
                 contentArea.innerHTML = html;
+                window.applyGlobalExclusionsToDom?.(contentArea);
                 updatePortalData();
                 updatePortalTrafficList();
                 updatePortalFuelStatusList();
@@ -1119,7 +1126,6 @@ function renderManualGroupsInto(prefix) {
                 wireWidgetSearchInputs(contentArea); // 🆕
             })
             .catch(err => {
-                console.error('خطأ في تحميل محتوى البوابة:', err);
                 contentArea.innerHTML = '<p>حدث خطأ في تحميل المحتوى</p>';
             });
     }

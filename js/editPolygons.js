@@ -332,8 +332,6 @@ function initializePolygonEditTools(map, overlayLayersObj) {
         let cleanId = (rawId && String(rawId).includes('.')) ? rawId.split('.').pop() : rawId;
         const fidValue = cleanId ? `${typeName}.${cleanId}` : "";
 
-        console.log(`[Polygon Edit] Feature ID extraction: rawId=${rawId}, cleanId=${cleanId}, fidValue=${fidValue}, typeName=${typeName}`);
-
         const geom = feature.getGeometry();
         
         // 🛠️ الحل الحاسم: استخراج نقطة داخلية (Centroid/Interior Point) للمضلع لحساب الإحداثيات الإقليمية بدون انهيار برمي
@@ -497,8 +495,6 @@ function initializePolygonEditTools(map, overlayLayersObj) {
             ? '/geoserver-proxy/wfs'
             : '/geoserver-proxy/wfs';
 
-        console.log("📤 Sending Polygon WFS-T Request:", requestXML);
-
         // 🔑 المرحلة الأولى: طلب اسم المستخدم مع تثبيت "Husam" كقيمة افتراضية مسبقة
         const { value: usernameInput } = await Swal.fire({
             title: '🔑 حساب المسؤول',
@@ -578,7 +574,6 @@ function initializePolygonEditTools(map, overlayLayersObj) {
                 }
                 window.deactivatePolygonEditTools();
             } else {
-                console.error("GeoServer Polygon Response Error Exception:", text);
                 Swal.fire({
                     icon: 'error',
                     title: 'فشل معالجة المضلع بالسيرفر',
@@ -588,7 +583,6 @@ function initializePolygonEditTools(map, overlayLayersObj) {
                 window.deactivatePolygonEditTools();
             }
         }).catch(err => {
-            console.error("Fetch Connection error for Polygons:", err);
             Swal.fire({
                 icon: 'error',
                 title: 'خطأ اتصال بالشبكة',

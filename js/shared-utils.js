@@ -58,14 +58,13 @@ window.checkRequestQuotaOrAlert = async function (userId, popupRef) {
             if (window.toast) {
                 window.toast(`⛔ لقد تجاوزت الحد المسموح من الطلبات (${data.limit}) ${periodText}. يرجى المحاولة لاحقاً أو التواصل مع الإدارة.`, 'warning', 6000);
             } else {
-                alert(`⛔ لقد تجاوزت الحد المسموح من الطلبات (${data.limit}) ${periodText}. يرجى المحاولة لاحقاً أو التواصل مع الإدارة.`);
+                window.toast(`⛔ لقد تجاوزت الحد المسموح من الطلبات (${data.limit}, 'info') ${periodText}. يرجى المحاولة لاحقاً أو التواصل مع الإدارة.`);
             }
             return { allowed: false };
         }
         return { allowed: true };
     } catch (err) {
         // فشل الفحص لأي سبب (شبكة/سيرفر) => لا نمنع المستخدم من استخدام الخدمة الأساسية (Fail-open)
-        console.warn('تعذر التحقق من حد الطلبات، سيتم السماح بالطلب:', err.message);
         return { allowed: true };
     }
 };
@@ -128,8 +127,7 @@ window.refreshProviderLinkedFeatures = async function () {
             if (retryCount < maxRetries) {
                 await new Promise(resolve => setTimeout(resolve, 1000 * retryCount)); // تأخير متزايد
             } else {
-                console.warn('تعذر تحديث قائمة مزودي الخدمة المرتبطين بعد عدة محاولات:', e.message);
-            }
+                }
         }
     }
 };
@@ -335,24 +333,47 @@ window.isLayerGloballyExcluded = function (layerIdentifier) {
     const config = (typeof MAP_CONFIG !== 'undefined' && MAP_CONFIG) || window.MAP_CONFIG;
     if (!config || !Array.isArray(config.globalExclusions) || config.globalExclusions.length === 0) return false;
 
-    const exclusions = config.globalExclusions;
-    const raw = String(layerIdentifier).trim();
-    const withoutLayerSuffix = raw.replace(/Layer$/i, '');
-
-    // خريطة الأسماء البديلة لطبقات العقارات (المفتاح الداخلي <-> الاسم الفعلي بقاعدة البيانات)
-    const realEstateAliasMap = { rentLayer: 'ApartRent', saleLayer: 'ApartSale', landLayer: 'LandSale' };
-
-    const candidates = new Set([raw, withoutLayerSuffix]);
-    if (realEstateAliasMap[raw]) candidates.add(realEstateAliasMap[raw]);
-    Object.keys(realEstateAliasMap).forEach(function (internalKey) {
-        if (realEstateAliasMap[internalKey] === raw) candidates.add(internalKey);
-    });
-
-        for (const candidate of candidates) {
-        if (exclusions.includes(candidate)) return true;
+    // أسماء العقارات التي تمثل الفئة نفسها بين إعداد الخريطة وWFS والواجهات.
+    const realEstateAliases = {
+        rentLayer: ['ApartRent', 'rent', 'شقق الإيجار', 'شقق للايجار'],
+        saleLayer: ['ApartSale', 'sale', 'شقق للبيع'],
+        landLayer: ['LandSale', 'land', 'الأراضي للبيع', 'اراضي للبيع', 'أرض للبيع']
+    };
+    function identifiers(value) {
+        const raw = String(value || '').trim();
+        if (!raw) return new Set();
+        const values = new Set([raw.toLocaleLowerCase(), raw.replace(/Layer$/i, '').toLocaleLowerCase()]);
+        Object.keys(realEstateAliases).forEach(function (internalKey) {
+            const aliases = [internalKey, internalKey.replace(/Layer$/i, '')].concat(realEstateAliases[internalKey]);
+            if (aliases.some(alias => String(alias).trim().toLocaleLowerCase() === raw.toLocaleLowerCase())) {
+                aliases.forEach(alias => values.add(String(alias).trim().toLocaleLowerCase()));
+            }
+        });
+        return values;
     }
-    return false;
+
+    const requestedIdentifiers = identifiers(layerIdentifier);
+    return config.globalExclusions.some(function (excluded) {
+        const excludedIdentifiers = identifiers(excluded);
+        return Array.from(requestedIdentifiers).some(identifier => excludedIdentifiers.has(identifier));
+    });
 };
+
+// تطبيق استثناءات config.js على عناصر الواجهة الثابتة والمحمّلة ديناميكياً.
+window.applyGlobalExclusionsToDom = function (root) {
+    const scope = root || document;
+    if (!scope?.querySelectorAll) return;
+    scope.querySelectorAll('[data-global-layer-exclusion]').forEach(function (element) {
+        if (!window.isLayerGloballyExcluded(element.dataset.globalLayerExclusion)) return;
+        element.hidden = true;
+        element.style.setProperty('display', 'none', 'important');
+    });
+};
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', () => window.applyGlobalExclusionsToDom());
+} else {
+    window.applyGlobalExclusionsToDom();
+}
 
 // ==========================================================================
 // 8-ب) [دمج طبقات الخدمات]: دوال مساعدة موحّدة تحل مشكلة أن كل الخدمات أصبحت
@@ -408,4 +429,138 @@ window.parseResultsShareParam = function () {
     } catch (e) {
         return null;
     }
+};
+
+// ==========================================================================
+// 12) [بلوك معلومات المعلم الموحّد] نفس معلومات بوب أب الخريطة لكل أقسام
+//     صفحة البحث بدون خريطة (مربع البحث، التصنيفات، الإعلانات، الصور، ...)
+// ==========================================================================
+window.nmsEscape = function (v) {
+    if (v === null || v === undefined) return '';
+    const d = document.createElement('div');
+    d.textContent = String(v);
+    return d.innerHTML;
+};
+
+window.nmsParseArabicTime = function (timeStr) {
+    if (!timeStr) return '';
+    const parts = String(timeStr).split(':').map(Number);
+    const hours = parts[0], minutes = parts[1] || 0;
+    if (isNaN(hours)) return String(timeStr);
+    const hoursArabic = {
+        1: 'الواحدة', 2: 'الثانية', 3: 'الثالثة', 4: 'الرابعة', 5: 'الخامسة', 6: 'السادسة',
+        7: 'السابعة', 8: 'الثامنة', 9: 'التاسعة', 10: 'العاشرة', 11: 'الحادية عشرة', 12: 'الثانية عشرة'
+    };
+    let period = hours >= 12 ? 'مساءً' : 'صباحاً';
+    const hourIn12 = hours % 12 || 12;
+    if (hours === 12) period = 'ظهراً';
+    if (hours === 0) period = 'منتصف الليل';
+    const minuteName = minutes > 0 ? ` و ${minutes} دقيقة` : '';
+    return `${hoursArabic[hourIn12]}${minuteName} ${period}`;
+};
+
+window.nmsFormatWorkHours = function (workHours) {
+    if (!workHours || String(workHours).trim() === '' || workHours === '00:00-23:59') return 'دوام 24 ساعة';
+    const parts = String(workHours).split('-');
+    if (parts.length !== 2) return workHours;
+    try {
+        return `متاح من ${window.nmsParseArabicTime(parts[0].trim())} حتى ${window.nmsParseArabicTime(parts[1].trim())}`;
+    } catch (e) { return workHours; }
+};
+
+window.nmsStatusBadgeHtml = function (autoStatus, workHours, compact) {
+    const isAvailable = parseInt(autoStatus, 10) === 0;
+    const color = isAvailable ? '#28a745' : '#dc3545';
+    const text = isAvailable ? 'متاح الآن' : 'مغلق حالياً';
+    const icon = isAvailable ? '🟢' : '🔴';
+    const hours = window.nmsFormatWorkHours(workHours);
+    if (compact) {
+        return `<div style="font-size:10px; font-weight:bold; color:${color}; border:1px dashed ${color}; border-radius:6px; padding:3px 6px; display:inline-block; margin-bottom:4px;">
+            ${icon} ${text}
+            <div style="font-size:9px; font-weight:normal; color:#555; margin-top:2px;">${hours}</div>
+        </div>`;
+    }
+    return `<div class="nms-status-badge" style="color:${color}; border-color:${color};">${icon} ${text}<span class="nms-status-hours">${hours}</span></div>`;
+};
+
+// حالة حاجز الطرق باتجاهين (كانت مستدعاة بقسم "قبل وبعد" وغير معرّفة أصلاً)
+window.buildRoadBarrierDirectionsHtml = function (props) {
+    props = props || {};
+    const inInfo = window.getRoadBarrierStopInfo(window.getCaseInsensitiveProp(props, 'stop'));
+    const rawOut = window.getCaseInsensitiveProp(props, 'stop2');
+    const hasOut = rawOut !== undefined && rawOut !== null && String(rawOut).trim() !== '';
+    const outInfo = hasOut
+        ? window.getRoadBarrierStopInfo(rawOut)
+        : { label: 'غير محدد', color: '#6c757d', icon: '⚪' };
+    const box = (dirLabel, info) => `
+        <div style="flex:1; text-align:center; font-weight:bold; font-size:12px; color:${info.color}; border:1px dashed ${info.color}; border-radius:8px; padding:6px 4px; background:${info.color}15;">
+            <div style="font-size:10px; color:#777; margin-bottom:2px;">${dirLabel}</div>${info.icon} ${info.label}
+        </div>`;
+    return `<div style="display:flex; gap:6px; margin-bottom:8px;">${box('للداخل', inInfo)}${box('للخارج', outInfo)}</div>`;
+};
+
+/**
+ * يولّد نفس معلومات البوب أب بالترتيب: (التقييم) → الحالة/اتجاهات الحاجز → الاسم → الموقع
+ * → (المحافظة/المدينة للحواجز) → توفر الوقود → (سعر/مساحة/بلدة/محافظة للعقارات) → الوصف.
+ * opts: { layer, isRealEstate, compact, ratingHtml }
+ */
+window.buildPopupInfoBlock = function (props, opts) {
+    props = props || {};
+    opts = opts || {};
+    const esc = window.nmsEscape;
+    const layer = opts.layer || props.discriminator || '';
+    const isRealEstate = !!opts.isRealEstate;
+    const compact = !!opts.compact;
+    const isRoad = layer === 'road_barriers';
+    const isFuel = layer === 'fuel_stations';
+
+    const S = {
+        name: 'font-weight:bold; color:#202124; font-size:12px; margin-bottom:4px;',
+        loc: 'color:#555; font-size:11px; margin-bottom:3px;',
+        line: 'color:#555; font-size:10px; margin-bottom:2px;',
+        desc: 'background:#f9f9f9; padding:4px 6px; border-radius:5px; color:#555; font-size:10px; margin-bottom:2px; word-wrap:break-word; white-space:normal;'
+    };
+    const row = (kind, inner) => compact
+        ? `<div style="${S[kind]}">${inner}</div>`
+        : `<div class="nms-r-${kind}">${inner}</div>`;
+
+    let html = opts.ratingHtml || '';
+
+    if (isRoad) html += window.buildRoadBarrierDirectionsHtml(props);
+    else if (!isRealEstate) html += window.nmsStatusBadgeHtml(props.auto_status, props.work_hours, compact);
+
+    if (props.name) html += row('name', `<i class="fas ${isRoad ? 'fa-road' : 'fa-user'}" style="color:#1a73e8;"></i> ${esc(props.name)}`);
+    const loc = props.location_name || props.location;
+    if (loc) html += row('loc', `<i class="fas fa-map-marker-alt" style="color:#e74c3c;"></i> ${esc(loc)}`);
+
+    if (isRoad) {
+        if (props.gov_a) html += row('line', `<b>🌍 المحافظة:</b> ${esc(props.gov_a)}`);
+        if (props.village_a) html += row('line', `<b>🏘️ المدينة:</b> ${esc(props.village_a)}`);
+    }
+
+    if (isFuel && typeof window.buildFuelAvailabilityHtml === 'function') {
+        html += window.buildFuelAvailabilityHtml(props);
+    }
+
+    if (isRealEstate) {
+        if (props.price) {
+            const symbols = { USD: 'دولار', ILS: 'شيقل', JOD: 'دينار' };
+            html += row('line', `<b>💰 السعر:</b> ${Number(props.price).toLocaleString()} ${symbols[props.currency] || ''}`);
+        }
+        if (props.area) html += row('line', `<b>📐 المساحة:</b> ${esc(props.area)} م²`);
+        if (props.village_a) html += row('line', `<b>🏘️ البلدة:</b> ${esc(props.village_a)}`);
+        if (props.gov_a) html += row('line', `<b>🌍 المحافظة:</b> ${esc(props.gov_a)}`);
+    }
+
+    if (props.des) html += row('desc', `<b>📝 ${isRoad ? 'ملاحظات' : 'الوصف'}:</b> ${esc(props.des)}`);
+
+    return html;
+};
+
+// هل يُعرض التقييم لهذا النوع؟ (لا تقييم للعقارات ولا لحواجز الطرق ولا لمحطات الوقود)
+window.shouldShowRating = function (layer, isRealEstate) {
+    if (isRealEstate) return false;
+    const key = String(layer || '').replace(/Layer$/i, '');
+    if (!key) return false;
+    return key !== 'road_barriers' && key !== 'fuel_stations';
 };

@@ -32,7 +32,6 @@
                     if (retryCount < maxRetries) {
                         await new Promise(resolve => setTimeout(resolve, 1000 * retryCount)); // تأخير متزايد
                     } else {
-                        console.warn('تعذر جلب إحصائيات المنصة بعد عدة محاولات:', err.message);
                         return null;
                     }
                 } finally {

@@ -122,6 +122,8 @@ window.fetchGroupWFS = async function(groupKey, term) {
     const unifiedFilter = buildUnifiedCQLFilter(term);
     const allFeatures = [];
 
+    if (groupKey === 'realestate' && config.layers.length === 0) return allFeatures;
+
     // 🆕 [تحسين أداء أساسي بعد الدمج]: مجموعة الخدمات أصبحت طلباً واحداً فقط
     // (layer=service_all بدون discriminator) بدل 66 طلباً منفصلاً كما كان سابقاً
     if (groupKey === 'services') {
@@ -142,6 +144,7 @@ window.fetchGroupWFS = async function(groupKey, term) {
                 data.features.forEach(f => {
                     const discriminator = f.properties.discriminator;
                     if (!discriminator) return;
+                    if (window.isLayerGloballyExcluded(discriminator)) return;
                     allFeatures.push({
                         ...f,
                         customTitle: layerAliases[discriminator] || discriminator,
@@ -187,7 +190,7 @@ window.fetchGroupWFS = async function(groupKey, term) {
             const data = await response.json();
 
             if (data && data.features) {
-                const features = data.features.map(f => {
+                        const features = data.features.filter(f => !window.isLayerGloballyExcluded(f.properties.layerId || layer)).map(f => {
                     const layerName = f.properties.layerId || layer;
                     return {
                         ...f,
@@ -221,7 +224,7 @@ window.fetchGroupWFS = async function(groupKey, term) {
             if (response.ok) {
                 const data = await response.json();
                 if (data && data.features) {
-                    const features = data.features.map(f => {
+                    const features = data.features.filter(f => !window.isLayerGloballyExcluded(f.id.split('.')[0])).map(f => {
                         const layerName = f.id.split('.')[0];
                         return {
                             ...f,
@@ -275,7 +278,7 @@ window.fetchSpecialStatusMatches = async function(term) {
         if (normalized.includes(normalizeArabic(keyword))) matchedStops = ROAD_BARRIER_STATUS_KEYWORDS[keyword];
     });
 
-        if (matchedStops) {
+    if (matchedStops && !window.isLayerGloballyExcluded('road_barriers')) {
         // 🆕 [stop2]: نبحث الآن بكلا العمودين (stop للداخل، stop2 للخارج) عبر
         // طلبين منفصلين لكل قيمة، وندمج النتائج مع إزالة التكرار حتى لا يظهر
         // نفس الحاجز مرتين لو طابقت حالته الاتجاهين معاً بنفس القيمة المطلوبة
@@ -311,7 +314,7 @@ window.fetchSpecialStatusMatches = async function(term) {
         if (normalized.includes(normalizeArabic(keyword))) matchedFuelField = FUEL_AVAILABILITY_KEYWORDS[keyword];
     });
 
-    if (matchedFuelField) {
+    if (matchedFuelField && !window.isLayerGloballyExcluded('fuel_stations')) {
         try {
             const params = new URLSearchParams({
                 layer: 'fuel_stations', workspace: 'services',
@@ -348,9 +351,9 @@ window.initializeGlobalSearch = function() {
                         layer.getSource().refresh();
                     }
                 });
-                alert('تم تحديث بيانات الخريطة بنجاح.');
+                window.toast('تم تحديث البيانات بنجاح', 'info');
             } else {
-                alert('لم يتم العثور على الطبقات للتحديث.');
+                window.toast('لم يتم العثور على الطبقات للتحديث.', 'info');
             }
         };
     }

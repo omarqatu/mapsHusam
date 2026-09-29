@@ -60,8 +60,7 @@ function initializeShareLocationTools(map) {
                 wgsDisplay.innerText = `Lat: ${lonLat[1].toFixed(6)} , Lon: ${lonLat[0].toFixed(6)}`;
             }
         } catch (err) {
-            console.error("خطأ في تحويل الإحداثيات:", err);
-        }
+            }
 
         // 3. إنشاء الرابط ومشاركته
         const zoom = map.getView().getZoom();
@@ -110,7 +109,7 @@ function initializeShareLocationTools(map) {
             if (window.toast) {
                 window.toast('يرجى تحديد موقع على الخريطة أولاً.', 'warning');
             } else {
-                alert('يرجى تحديد موقع على الخريطة أولاً.');
+                window.toast('يرجى تحديد موقع على الخريطة أولاً.', 'info');
             }
             return;
         }
@@ -147,11 +146,10 @@ function initializeShareLocationTools(map) {
                 }
             }
         } catch (err) {
-            console.error('خطأ في النسخ:', err);
             if (window.toast) {
                 window.toast('فشل نسخ الرابط. يرجى نسخه يدوياً.', 'error');
             } else {
-                alert('فشل نسخ الرابط. يرجى نسخه يدوياً.');
+                window.toast('فشل نسخ الرابط. يرجى نسخه يدوياً.', 'info');
             }
         }
 
@@ -174,7 +172,7 @@ function initializeShareLocationTools(map) {
             if (window.toast) {
                 window.toast('يرجى تحديد موقع على الخريطة أولاً.', 'warning');
             } else {
-                alert('يرجى تحديد موقع على الخريطة أولاً.');
+                window.toast('يرجى تحديد موقع على الخريطة أولاً.', 'info');
             }
             return;
         }
@@ -201,11 +199,10 @@ function initializeShareLocationTools(map) {
                 setTimeout(() => { copyPalBtn.innerHTML = originalText; }, 2000);
             }
         } catch (err) {
-            console.error('خطأ في النسخ:', err);
             if (window.toast) {
                 window.toast('فشل نسخ الإحداثيات.', 'error');
             } else {
-                alert('فشل نسخ الإحداثيات.');
+                window.toast('فشل نسخ الإحداثيات.', 'info');
             }
         }
     });
@@ -218,7 +215,7 @@ function initializeShareLocationTools(map) {
             if (window.toast) {
                 window.toast('يرجى تحديد موقع على الخريطة أولاً.', 'warning');
             } else {
-                alert('يرجى تحديد موقع على الخريطة أولاً.');
+                window.toast('يرجى تحديد موقع على الخريطة أولاً.', 'info');
             }
             return;
         }
@@ -245,11 +242,10 @@ function initializeShareLocationTools(map) {
                 setTimeout(() => { copyWgsBtn.innerHTML = originalText; }, 2000);
             }
         } catch (err) {
-            console.error('خطأ في النسخ:', err);
             if (window.toast) {
                 window.toast('فشل نسخ الإحداثيات.', 'error');
             } else {
-                alert('فشل نسخ الإحداثيات.');
+                window.toast('فشل نسخ الإحداثيات.', 'info');
             }
         }
     });
@@ -262,7 +258,7 @@ function initializeShareLocationTools(map) {
             if (window.toast) {
                 window.toast('يرجى تحديد موقع على الخريطة أولاً.', 'warning');
             } else {
-                alert('يرجى تحديد موقع على الخريطة أولاً.');
+                window.toast('يرجى تحديد موقع على الخريطة أولاً.', 'info');
             }
             return;
         }
