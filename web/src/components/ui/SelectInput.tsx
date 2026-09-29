@@ -175,7 +175,7 @@ export default function SelectInput({
           sizes[inputSize],
         )}
       >
-        <span className={clsx('flex-1 truncate', !selected && 'text-slate-400')}>
+        <span className={clsx('flex-1 truncate', !selected && 'text-slate-500')}>
           {selected?.label ?? placeholder ?? ' '}
         </span>
         <ChevronDown
@@ -212,7 +212,7 @@ export default function SelectInput({
           )}
           <ul id={listId} role="listbox" aria-label={ariaLabel} className="max-h-64 overflow-y-auto py-1">
             {visible.length === 0 && (
-              <li className="px-3.5 py-2.5 text-sm text-slate-400">{t('common.noData')}</li>
+              <li className="px-3.5 py-2.5 text-sm text-slate-500">{t('common.noData')}</li>
             )}
             {visible.map((o, i) => {
               const heading = o.group && o.group !== visible[i - 1]?.group ? o.group : null;
@@ -222,7 +222,7 @@ export default function SelectInput({
                   {heading && (
                     <div
                       role="presentation"
-                      className="px-3.5 pt-2 pb-1 text-xs font-bold tracking-wide text-slate-400"
+                      className="px-3.5 pt-2 pb-1 text-xs font-bold tracking-wide text-slate-500"
                     >
                       {heading}
                     </div>

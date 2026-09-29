@@ -263,8 +263,12 @@ export default function EditPanel({ onClose }: { onClose: () => void }) {
     const canvas = map.getTargetElement();
     if (shapeTool === 'redraw') {
       const redraw = new Draw({ type: 'Polygon' });
+      draw.current = redraw;
       keys.push(
+        redraw.on('drawstart', () => setSketching(true)),
+        redraw.on('drawabort', () => setSketching(false)),
         redraw.on('drawend', (e) => {
+          setSketching(false);
           const geometry = e.feature.getGeometry();
           if (geometry) {
             feature.setGeometry(geometry);
@@ -290,6 +294,8 @@ export default function EditPanel({ onClose }: { onClose: () => void }) {
     return () => {
       unByKey(keys);
       interactions.forEach((i) => map.removeInteraction(i));
+      draw.current = null;
+      setSketching(false);
       canvas.style.cursor = '';
     };
   }, [map, step, target, feature, shapeTool, layerSource, overlay, patch]);
@@ -518,11 +524,11 @@ export default function EditPanel({ onClose }: { onClose: () => void }) {
           </div>
         </div>
 
-        <p role="status" className={clsx('text-sm text-slate-700', activeStep ? 'mt-0' : 'mt-4')}>
+        <p role="status" className={clsx('mt-4 text-sm text-slate-700', activeStep && 'max-sm:mt-0')}>
           {t(hintKey)}
         </p>
 
-        {s.step === 'draw' && sketching && (
+        {(s.step === 'draw' || (s.step === 'shape' && s.shapeTool === 'redraw')) && sketching && (
           <div className="mt-3 grid grid-cols-2 gap-2">
             <Button size="sm" variant="secondary" onClick={() => draw.current?.removeLastPoint()}>
               {t('edit.undoPoint')}

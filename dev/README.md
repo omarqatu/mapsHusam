@@ -37,6 +37,9 @@ Other commands: `db-down` (stop, keep data), `db-reset` (delete everything).
     -v psm-dev-geoserver-data:/opt/geoserver_data:U docker.osgeo.org/geoserver:2.26.2
   dev/geoserver-setup.sh      # workspaces realestate + services, the 10 layers the map uses (idempotent)
   ```
+  The script also sets each workspace namespace to `http://localhost/<workspace>` and aligns the `RoadsTest` id sequence, both
+  needed for the map editor's WFS-T writes (`web/src/features/map/edit`). Editor live test:
+  `cd web && VITE_LIVE_API=http://localhost:3000 VITE_GEOSERVER_DEV_PASSWORD=<the dev password> npm test -- edit.live`.
   The dev admin password is a throwaway (this GeoServer only listens on your machine); the setup script refuses any
   non-local URL. Data lives in the podman volume `psm-dev-geoserver-data`.
 - The Postgres data lives in the podman volume `psm-dev-pgdata`, not in the repo.
