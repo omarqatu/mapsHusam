@@ -10,6 +10,10 @@ import AuthLayout from '@/features/auth/AuthLayout';
 import LoginPage from '@/features/auth/LoginPage';
 import RegisterPage from '@/features/auth/RegisterPage';
 import WelcomePage from '@/features/auth/WelcomePage';
+import AdminDashboardPage from '@/features/admin-dashboard/AdminDashboardPage';
+import AdminUsersPage from '@/features/admin-users/AdminUsersPage';
+import AdminViewUserPage from '@/features/admin-users/AdminViewUserPage';
+import AdminWidgetsPage from '@/features/admin-widgets/AdminWidgetsPage';
 import NotificationsPage from '@/features/notifications/NotificationsPage';
 import RequestsHost from '@/features/requests/RequestsHost';
 import LegalPage from '@/features/legal/LegalPage';
@@ -23,7 +27,13 @@ import { CenteredSpinner } from '@/components/ui/Spinner';
 const MapPage = lazy(() => import('@/features/map/MapPage'));
 
 // Ported pages by path; everything else still shows its placeholder.
-const ported: Record<string, ReactElement> = { '/notifications': <NotificationsPage /> };
+const ported: Record<string, ReactElement> = {
+  '/notifications': <NotificationsPage />,
+  '/admin/users': <AdminUsersPage />,
+  '/admin/users/:id/view': <AdminViewUserPage />,
+  '/admin/dashboard': <AdminDashboardPage />,
+  '/admin/widgets': <AdminWidgetsPage />,
+};
 
 const page = (r: AppRoute) => ({ path: r.path, element: ported[r.path] ?? <PlaceholderPage route={r} /> });
 

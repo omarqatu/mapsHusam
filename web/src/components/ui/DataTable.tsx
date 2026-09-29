@@ -1,7 +1,8 @@
-import { useMemo, useState, type ReactNode } from 'react';
+import { useMemo, useRef, useState, type ReactNode } from 'react';
 import clsx from 'clsx';
-import { ArrowDown, ArrowUp, ChevronsUpDown } from 'lucide-react';
+import { ArrowDown, ArrowUp, ChevronsUpDown, GripVertical } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { useIsDesktop } from '@/hooks/useMediaQuery';
 import Button from './Button';
 import EmptyState from './EmptyState';
 import { CenteredSpinner } from './Spinner';
@@ -13,6 +14,11 @@ export interface Column<T> {
   /** Provide to make the column sortable (client-side). */
   sortValue?: (row: T) => string | number | null | undefined;
   className?: string;
+  /**
+   * Where the column goes when the table turns into cards (below `md`):
+   * `title` = the card's heading, `footer` = the action row (no label), `hide` = table only, default = label + value.
+   */
+  card?: 'title' | 'footer' | 'hide';
 }
 
 interface DataTableProps<T> {
@@ -24,6 +30,17 @@ interface DataTableProps<T> {
   /** Client-side page size; omit for no paging. */
   pageSize?: number;
   onRowClick?: (row: T) => void;
+  /** Sort applied until the user picks a column. */
+  initialSort?: { key: string; dir: 'asc' | 'desc' };
+  /** Extra classes of a row / card (e.g. highlight unsaved rows). */
+  rowClassName?: (row: T) => string | undefined;
+  /**
+   * Adds a drag handle column (desktop): dropping row `from` on row `to` calls this. Cards have no handle —
+   * put move-up / move-down buttons in a cell instead. Sorting is off while this is set (the order is the data).
+   */
+  onReorder?: (fromKey: string | number, toKey: string | number) => void;
+  /** Accessible name of the table / list. */
+  label?: string;
 }
 
 export default function DataTable<T>({
@@ -34,10 +51,18 @@ export default function DataTable<T>({
   emptyTitle,
   pageSize,
   onRowClick,
+  initialSort,
+  rowClassName,
+  onReorder,
+  label,
 }: DataTableProps<T>) {
   const { t } = useTranslation();
-  const [sort, setSort] = useState<{ key: string; dir: 'asc' | 'desc' } | null>(null);
+  const desktop = useIsDesktop();
+  const [picked, setPicked] = useState<{ key: string; dir: 'asc' | 'desc' } | null | undefined>(undefined);
+  const sort = onReorder ? null : picked === undefined ? (initialSort ?? null) : picked;
   const [page, setPage] = useState(1);
+  const dragKey = useRef<string | number | null>(null);
+  const [overKey, setOverKey] = useState<string | number | null>(null);
 
   const sorted = useMemo(() => {
     const data = rows ?? [];
@@ -63,14 +88,69 @@ export default function DataTable<T>({
   if (!sorted.length) return <EmptyState title={emptyTitle ?? t('common.noData')} />;
 
   const toggleSort = (key: string) =>
-    setSort((s) => (s?.key === key ? (s.dir === 'asc' ? { key, dir: 'desc' } : null) : { key, dir: 'asc' }));
+    setPicked(sort?.key === key ? (sort.dir === 'asc' ? { key, dir: 'desc' } : null) : { key, dir: 'asc' });
+
+  const pager = pageSize && pages > 1 && (
+    <div className="flex items-center justify-between gap-2 border-t border-slate-100 p-3 text-sm text-slate-600">
+      <Button size="sm" variant="secondary" disabled={current <= 1} onClick={() => setPage(current - 1)}>
+        {t('common.previous')}
+      </Button>
+      <span>{t('common.page', { page: current, pages })}</span>
+      <Button size="sm" variant="secondary" disabled={current >= pages} onClick={() => setPage(current + 1)}>
+        {t('common.next')}
+      </Button>
+    </div>
+  );
+
+  if (!desktop) {
+    const cardCols = columns.filter((c) => c.card !== 'hide');
+    const titleCol = cardCols.find((c) => c.card === 'title');
+    const footerCol = cardCols.find((c) => c.card === 'footer');
+    const bodyCols = cardCols.filter((c) => c !== titleCol && c !== footerCol);
+    return (
+      <div>
+        <ul aria-label={label} className="space-y-3">
+          {visible.map((row) => (
+            <li
+              key={rowKey(row)}
+              onClick={onRowClick && (() => onRowClick(row))}
+              className={clsx(
+                'rounded-2xl border border-slate-100 bg-white p-4 shadow-sm',
+                onRowClick && 'cursor-pointer',
+                rowClassName?.(row),
+              )}
+            >
+              {titleCol && <div className="mb-3 font-semibold text-slate-800">{titleCol.cell(row)}</div>}
+              <dl className="grid grid-cols-2 gap-x-4 gap-y-3 text-sm">
+                {bodyCols.map((c) => (
+                  <div key={c.key} className="min-w-0">
+                    <dt className="text-xs font-semibold text-slate-500">{c.header}</dt>
+                    <dd className="mt-0.5 break-words text-slate-800">{c.cell(row)}</dd>
+                  </div>
+                ))}
+              </dl>
+              {footerCol && (
+                <div className="mt-3 flex flex-wrap items-center gap-2 border-t border-slate-100 pt-3">
+                  {footerCol.cell(row)}
+                </div>
+              )}
+            </li>
+          ))}
+        </ul>
+        {pager && (
+          <div className="mt-3 overflow-hidden rounded-2xl border border-slate-100 bg-white">{pager}</div>
+        )}
+      </div>
+    );
+  }
 
   return (
     <div className="overflow-hidden rounded-2xl border border-slate-100 bg-white shadow-sm">
       <div className="overflow-x-auto">
-        <table className="w-full text-start text-sm">
+        <table aria-label={label} className="w-full text-start text-sm">
           <thead className="bg-slate-50 text-slate-600">
             <tr>
+              {onReorder && <th scope="col" className="w-8 px-2 py-3" aria-label={t('common.reorder')} />}
               {columns.map((c) => {
                 const active = sort?.key === c.key;
                 return (
@@ -80,7 +160,7 @@ export default function DataTable<T>({
                     aria-sort={active ? (sort.dir === 'asc' ? 'ascending' : 'descending') : undefined}
                     className={clsx('px-4 py-3 text-start font-semibold', c.className)}
                   >
-                    {c.sortValue ? (
+                    {c.sortValue && !onReorder ? (
                       <button
                         type="button"
                         onClick={() => toggleSort(c.key)}
@@ -106,38 +186,70 @@ export default function DataTable<T>({
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
-            {visible.map((row) => (
-              <tr
-                key={rowKey(row)}
-                onClick={onRowClick && (() => onRowClick(row))}
-                className={clsx(onRowClick && 'cursor-pointer hover:bg-slate-50')}
-              >
-                {columns.map((c) => (
-                  <td key={c.key} className={clsx('px-4 py-3 align-middle', c.className)}>
-                    {c.cell(row)}
-                  </td>
-                ))}
-              </tr>
-            ))}
+            {visible.map((row) => {
+              const key = rowKey(row);
+              return (
+                <tr
+                  key={key}
+                  onClick={onRowClick && (() => onRowClick(row))}
+                  onDragOver={
+                    onReorder
+                      ? (e) => {
+                          if (dragKey.current === null) return;
+                          e.preventDefault();
+                          setOverKey(key);
+                        }
+                      : undefined
+                  }
+                  onDrop={
+                    onReorder
+                      ? (e) => {
+                          e.preventDefault();
+                          const from = dragKey.current;
+                          dragKey.current = null;
+                          setOverKey(null);
+                          if (from !== null && from !== key) onReorder(from, key);
+                        }
+                      : undefined
+                  }
+                  className={clsx(
+                    onRowClick && 'cursor-pointer hover:bg-slate-50',
+                    onReorder && overKey === key && 'bg-brand-light',
+                    rowClassName?.(row),
+                  )}
+                >
+                  {onReorder && (
+                    <td className="w-8 px-2 py-3 align-middle">
+                      <span
+                        draggable
+                        onDragStart={(e) => {
+                          dragKey.current = key;
+                          e.dataTransfer.effectAllowed = 'move';
+                          e.dataTransfer.setData('text/plain', String(key));
+                        }}
+                        onDragEnd={() => {
+                          dragKey.current = null;
+                          setOverKey(null);
+                        }}
+                        className="inline-flex cursor-grab text-slate-500 active:cursor-grabbing"
+                        aria-hidden
+                      >
+                        <GripVertical className="h-5 w-5" />
+                      </span>
+                    </td>
+                  )}
+                  {columns.map((c) => (
+                    <td key={c.key} className={clsx('px-4 py-3 align-middle', c.className)}>
+                      {c.cell(row)}
+                    </td>
+                  ))}
+                </tr>
+              );
+            })}
           </tbody>
         </table>
       </div>
-      {pageSize && pages > 1 && (
-        <div className="flex items-center justify-between gap-2 border-t border-slate-100 p-3 text-sm text-slate-600">
-          <Button size="sm" variant="secondary" disabled={current <= 1} onClick={() => setPage(current - 1)}>
-            {t('common.previous')}
-          </Button>
-          <span>{t('common.page', { page: current, pages })}</span>
-          <Button
-            size="sm"
-            variant="secondary"
-            disabled={current >= pages}
-            onClick={() => setPage(current + 1)}
-          >
-            {t('common.next')}
-          </Button>
-        </div>
-      )}
+      {pager}
     </div>
   );
 }

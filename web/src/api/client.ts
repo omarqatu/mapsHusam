@@ -85,7 +85,10 @@ export async function apiRequest<T>(path: string, opts: RequestOptions = {}): Pr
   }
 
   if (!res.ok) {
-    if (res.status === 401 && token && !NO_LOGOUT_PATHS.includes(path)) useAuthStore.getState().logout();
+    // A request that brings its own credentials (the admin's read-only view token) says nothing about the app session.
+    const ownCredentials = 'Authorization' in headers;
+    if (res.status === 401 && token && !ownCredentials && !NO_LOGOUT_PATHS.includes(path))
+      useAuthStore.getState().logout();
     const code = data && typeof data === 'object' ? (data as { code?: string }).code : undefined;
     throw new ApiError(pickMessage(data, res.statusText || `HTTP ${res.status}`), res.status, code, data);
   }

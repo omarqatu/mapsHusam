@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import '@/i18n';
@@ -40,6 +40,36 @@ describe('DataTable', () => {
     expect(names()).toHaveLength(1);
     rerender(<DataTable columns={cols} rows={[]} rowKey={(r) => r.id} emptyTitle="nothing here" />);
     expect(screen.getByText('nothing here')).toBeInTheDocument();
+  });
+});
+
+describe('DataTable on a phone', () => {
+  afterEach(() => vi.unstubAllGlobals());
+  it('turns rows into cards: title, labelled values, footer actions; initialSort applies', () => {
+    vi.stubGlobal('matchMedia', () => ({
+      matches: false,
+      addEventListener: () => undefined,
+      removeEventListener: () => undefined,
+    }));
+    const columns: Column<Row>[] = [
+      { key: 'name', header: 'Name', card: 'title', cell: (r) => r.name, sortValue: (r) => r.name },
+      { key: 'id', header: 'Number', cell: (r) => r.id },
+      { key: 'act', header: 'Act', card: 'footer', cell: (r) => <button>do {r.name}</button> },
+    ];
+    render(
+      <DataTable
+        columns={columns}
+        rows={rows}
+        rowKey={(r) => r.id}
+        initialSort={{ key: 'name', dir: 'asc' }}
+      />,
+    );
+    expect(screen.queryByRole('table')).toBeNull();
+    const items = screen.getAllByRole('listitem');
+    expect(items.map((i) => i.querySelector('div')?.textContent)).toEqual(['a', 'b', 'c']);
+    expect(within(items[0]).getByText('Number')).toBeInTheDocument();
+    expect(within(items[0]).getByRole('button', { name: 'do a' })).toBeInTheDocument();
+    expect(screen.queryByText('Act')).toBeNull(); // the footer has no label
   });
 });
 
