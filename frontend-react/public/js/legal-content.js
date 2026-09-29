@@ -95,6 +95,25 @@
             `
         },
 
+        mapEntryChoice: {
+            title: 'اختيار طريقة البحث',
+            icon: 'fa-map-marked-alt',
+            html: `
+                <div style="font-family:sans-serif; color:#2c3e50;">
+                    <h3 style="margin-top:0; margin-bottom:15px; font-size:20px; font-weight:700; text-align:center;">منصة خريطة الخدمات الفلسطينية</h3>
+                    <p style="margin-bottom:20px; color:#1a5276; font-size:13px; text-align:center; font-weight:600; background:#f0f7ff; padding:12px; border-radius:8px; border:1px solid #d1e7ff;">✨ النسخة التجريبية - لإعادة ترتيب الواجهات واللوحات حدّث المتصفح، ويمكن تصغير أي لوحة أو تكبيرها أو تحريكها.</p>
+                    <p style="font-size:14px; text-align:center; font-weight:600; margin-bottom:15px; line-height:1.6;">للبحث بدون خريطة، استخدم الفلاتر أو اكتب كلمة في مربع البحث مثل شقة للبيع أو للإيجار.</p>
+                    <div style="text-align:center; margin-bottom:20px;"><a href="/no-map-search.html" id="no-map-link" style="display:inline-block; padding:12px 25px; background:#27ae60; color:#fff; border-radius:6px; font-weight:700; text-decoration:none; font-size:14px;">⇽ الانتقال إلى صفحة البحث بدون خريطة</a></div>
+                    <p style="font-size:14px; text-align:center; font-weight:600; margin-bottom:15px; line-height:1.6;">أو تابع البحث على الخريطة باستخدام الموقع الافتراضي أو موقعك الجغرافي.</p>
+                    <div id="splash-options-container" style="display:flex; flex-direction:column; gap:10px;">
+                        <button class="splash-opt-btn" data-type="default" style="padding:12px; font-size:14px; background:#2c3e50; color:white; border:none; border-radius:4px; cursor:pointer; font-weight:500; text-align:right;">📍 فتح الموقع الافتراضي (ميدان المنارة - رام الله والبيرة)</button>
+                        <button class="splash-opt-btn" data-type="gps" style="padding:12px; font-size:14px; background:#2c3e50; color:white; border:none; border-radius:4px; cursor:pointer; font-weight:500; text-align:right;">🎯 فتح موقعي الجغرافي (انتظر قليلاً لتحديد موقعك بدقة)</button>
+                    </div>
+                    <p style="font-size:13px; text-align:center; font-weight:600; margin-top:20px; color:#1a5276; background:#f0f7ff; padding:12px; border-radius:8px; border:1px solid #d1e7ff; line-height:1.6;">💡 يمكنك الانتقال بين الخريطة وصفحة البحث بدون خريطة في أي وقت.</p>
+                </div>
+            `
+        },
+
         guideSearch: {
             title: 'البحث السريع',
             icon: 'fa-search',
@@ -347,91 +366,6 @@
             `
         },
 
-        guideMap: {
-            title: 'دليل استخدام منصة خريطة الخدمات الفلسطينية',
-            icon: 'fa-book-open',
-            html: `
-                <p style="font-size:14px; color:#555; line-height:1.8; margin-bottom:18px;">
-                    مرحباً بك في <strong>خريطة الخدمات الفلسطينية</strong>. هذا الدليل الموحّد يشرح كل أدوات المنصة سواء كنت تتصفح عبر الخريطة التفاعلية أو عبر صفحة البحث بدون خريطة.
-                </p>
-
-                <div style="background:#f0f7ff; border-radius:10px; padding:15px; margin-bottom:20px; border:1px solid #b3d7ff;">
-                    <p style="margin:0; font-size:13px; color:#1a73e8; text-align:center;">
-                        <i class="fas fa-info-circle"></i> <strong>المنصة توفر طريقتين للبحث:</strong> الخريطة التفاعلية (للبحث الجغرافي) والبحث السريع (للبحث السريع بدون خريطة)
-                    </p>
-                </div>
-
-                <div style="display:flex; flex-direction:column; gap:16px;">
-
-                    <div style="background:#fff; border-right:5px solid #34a853; padding:16px; border-radius:12px; box-shadow:0 3px 8px rgba(0,0,0,0.06);">
-                        <strong style="color:#34a853; font-size:15px; display:block; margin-bottom:6px;">🔍 ١. البحث الذكي (خريطة وقائمة)</strong>
-                        <p style="margin:0; font-size:13.5px; color:#555; line-height:1.7;">ابحث باسم الخدمة عبر شريط البحث أعلى الصفحة. استخدم زر "تحديث البيانات" لضمان ظهور أحدث النتائج، وبدّل بسهولة بين عرض "الخريطة" أو "البحث بدون خريطة" من خلال الروابط المتوفرة بأعلى كل صفحة.</p>
-                    </div>
-
-                    <div style="background:#fff; border-right:5px solid #fbbc04; padding:16px; border-radius:12px; box-shadow:0 3px 8px rgba(0,0,0,0.06);">
-                        <strong style="color:#e37400; font-size:15px; display:block; margin-bottom:6px;">📍 ٢. تحديد النطاق والمسافة</strong>
-                        <p style="margin:0; font-size:13.5px; color:#555; line-height:1.7;">حدد موقعك بدقة أو استخدم الـ GPS، واضبط مسافة البحث بالمتر لتجد أقرب مزودي الخدمة المتاحين حالياً حولك بكل سهولة (متاح من داخل الخريطة التفاعلية).</p>
-                    </div>
-
-                    <div style="background:#fff; border-right:5px solid #ea4335; padding:16px; border-radius:12px; box-shadow:0 3px 8px rgba(0,0,0,0.06);">
-                        <strong style="color:#ea4335; font-size:15px; display:block; margin-bottom:6px;">📞 ٣. تواصل مباشر وسريع</strong>
-                        <p style="margin:0; font-size:13.5px; color:#555; line-height:1.7;">اضغط على أي خدمة لتفتح نافذة معلوماتها، واستخدم أزرار "اتصال" أو "واتساب" للتحدث مباشرة مع المزود. للخدمات المرتبطة بحساب مزوّد مُفعّل، يظهر بدلاً منها زر "طلب الخدمة" الذي يفتح دردشة حقيقية داخل المنصة حتى الاتفاق وتبادل أرقام التواصل.</p>
-                    </div>
-
-                    <div style="background:#fff; border-right:5px solid #7c3aed; padding:16px; border-radius:12px; box-shadow:0 3px 8px rgba(0,0,0,0.06);">
-                        <strong style="color:#7c3aed; font-size:15px; display:block; margin-bottom:6px;">📏 ٤. أدوات القياس ومشاركة الموقع</strong>
-                        <p style="margin:0; font-size:13.5px; color:#555; line-height:1.7;">استفد من أدوات القياس لحساب المساحات والأطوال بدقة، وشارك مواقع الخدمات مع أصدقائك عبر رابط مباشر أو خرائط جوجل (متاح من داخل الخريطة التفاعلية).</p>
-                    </div>
-
-                    <div style="background:#fff; border-right:5px solid #1a73e8; padding:16px; border-radius:12px; box-shadow:0 3px 8px rgba(0,0,0,0.06);">
-                        <strong style="color:#1a73e8; font-size:15px; display:block; margin-bottom:6px;">📋 ٥. البحث بدون خريطة</strong>
-                        <p style="margin:0; font-size:13.5px; color:#555; line-height:1.7;">بديل أخف وأسرع لمن لا يريد تحميل الخريطة: اختر الفرع والفئة، طبّق فلاتر اختيارية (المنطقة، السعر، الاسم...)، واحصل على نتائج فورية مع نفس أزرار التواصل وطلب الخدمة.</p>
-                    </div>
-
-                    <div style="background:#fff; border-right:5px solid #16a085; padding:16px; border-radius:12px; box-shadow:0 3px 8px rgba(0,0,0,0.06);">
-                        <strong style="color:#16a085; font-size:15px; display:block; margin-bottom:6px;">👤 ٦. الملف الشخصي</strong>
-                        <p style="margin:0; font-size:13.5px; color:#555; line-height:1.7;">من أيقونة الملف الشخصي أعلى الصفحة يمكنك تغيير كلمة المرور، متابعة "طلباتي" (طلبات الخدمة والدردشات النشطة)، الاطلاع على الإشعارات، والوصول لدليل الاستخدام هذا وصفحة التواصل معنا في أي وقت.</p>
-                    </div>
-
-                    <div style="background:#fff; border-right:5px solid #495057; padding:16px; border-radius:12px; box-shadow:0 3px 8px rgba(0,0,0,0.06);">
-                        <strong style="color:#495057; font-size:15px; display:block; margin-bottom:6px;">⚙️ ٧. تخصيص الخريطة</strong>
-                        <p style="margin:0; font-size:13.5px; color:#555; line-height:1.7;">تحكم في نمط الخريطة (صورة فضائية، صورة جوية، أو خريطة أساس)، وأغلق لوحات البحث لتستمتع بعرض كامل ومريح للنتائج.</p>
-                    </div>
-
-                    <div style="background:#fff; border-right:5px solid #e91e63; padding:16px; border-radius:12px; box-shadow:0 3px 8px rgba(0,0,0,0.06);">
-                        <strong style="color:#e91e63; font-size:15px; display:block; margin-bottom:6px;">🗺️ ٨. الخريطة التفاعلية - الأداة الجغرافية</strong>
-                        <p style="margin:0; font-size:13.5px; color:#555; line-height:1.7;">الخريطة التفاعلية هي خريطة جغرافية ذكية تعرض جميع الخدمات والعقارات في فلسطين على خريطة حقيقية. يمكنك التكبير والتصغير، التحريك، والتفاعل مع المعالم مباشرة. استخدم "البحث الذكي" لإضافة شروط متعددة، و"الاستعلام" لاستكشاف الخدمات في منطقة معينة، و"ظهور/إخفاء الخدمات" للتحكم بـ 62 فئة مختلفة.</p>
-                    </div>
-
-                    <div style="background:#fff; border-right:5px solid #00bcd4; padding:16px; border-radius:12px; box-shadow:0 3px 8px rgba(0,0,0,0.06);">
-                        <strong style="color:#00bcd4; font-size:15px; display:block; margin-bottom:6px;">⚡ ٩. البحث السريع - الأداة السريعة</strong>
-                        <p style="margin:0; font-size:13.5px; color:#555; line-height:1.7;">في صفحة البحث بدون خريطة، اكتب أي كلمة أو جملة دلالية في مربع البحث أعلى الصفحة (مثل: "شقة للإيجار"، "فني كهرباء") وستظهر النتائج فوراً. نفس الميزة متوفرة أيضاً في الخريطة التفاعلية. استخدم كلمات مفتاحية واضحة للحصول على نتائج أفضل.</p>
-                    </div>
-
-                    <div style="background:#fff; border-right:5px solid #ff9800; padding:16px; border-radius:12px; box-shadow:0 3px 8px rgba(0,0,0,0.06);">
-                        <strong style="color:#ff9800; font-size:15px; display:block; margin-bottom:6px;">⭐ ١٠. التقييمات والتعليقات</strong>
-                        <p style="margin:0; font-size:13.5px; color:#555; line-height:1.7;">يمكنك تقييم الخدمات التي استخدمتها وترك تعليقات. هذه التقييمات تساعد المستخدمين الآخرين في اختيار أفضل مزودي الخدمات وتساعد المزودين في تحسين خدماتهم.</p>
-                    </div>
-
-                </div>
-
-                <div style="background:#e8f0fe; border-radius:10px; padding:15px; margin-top:20px; text-align:center;">
-                    <p style="margin:0; font-size:13px; color:#1a73e8;">
-                        <i class="fas fa-external-link-alt"></i> <strong>للانتقال إلى الخريطة التفاعلية:</strong>
-                        <a href="/original-index.html" target="_blank" style="color:#1a73e8; text-decoration:underline; margin-right:8px;">اضغط هنا</a>
-                        <span style="margin:0 10px;">|</span>
-                        <i class="fas fa-list"></i> <strong>للانتقال إلى صفحة البحث السريع:</strong>
-                        <a href="/no-map-search.html" target="_blank" style="color:#1a73e8; text-decoration:underline; margin-right:8px;">اضغط هنا</a>
-                    </p>
-                </div>
-
-                <div style="background:#fff3cd; border-radius:10px; padding:15px; margin-top:15px; text-align:center;">
-                    <p style="margin:0; font-size:13px; color:#856404;">
-                        <i class="fas fa-video"></i> <strong>قريباً:</strong> فيديوهات تعليمية وصور توضيحية خطوة بخطوة
-                    </p>
-                </div>
-            `
-        },
 
         terms: {
             title: 'شروط الاستخدام وإخلاء المسؤولية',
@@ -624,6 +558,95 @@
         }
     };
 
+    // دليل الاستخدام العام في صفحة البرومو هو النسخة المرجعية. كانت هناك
+    // نسخة ثانية متطابقة تقريباً باسم guideMap مما سمح بتباعد النصوص لاحقاً.
+    window.APP_LEGAL_CONTENT.guideMap = window.APP_LEGAL_CONTENT.guide;
+
+    // محتوى الإدارة يتجاوز المصدر الأصلي. نقبل HTML منسقاً مع قائمة عناصر
+    // وخصائص CSS محدودة حتى تبقى الألوان والأيقونات بدون السماح بسكربتات.
+    window.sanitizePlatformRichText = function (html) {
+        const template = document.createElement('template');
+        template.innerHTML = String(html || '');
+        const tags = new Set(['A','B','BLOCKQUOTE','BR','BUTTON','DIV','EM','FONT','H2','H3','HR','I','LI','OL','P','SPAN','STRONG','U','UL']);
+        const styleProps = new Set(['color','background','background-color','font-family','font-size','font-weight','font-style','text-align','text-decoration','line-height','margin','margin-top','margin-bottom','margin-left','margin-right','padding','padding-bottom','padding-right','border','border-right','border-bottom','border-radius','display','flex-direction','align-items','justify-content','gap','grid-template-columns','box-shadow','width','min-width','max-width']);
+        function clean(parent) {
+            Array.from(parent.children).forEach(function (el) {
+                if (!tags.has(el.tagName)) {
+                    if (['SCRIPT','STYLE','IFRAME','OBJECT','SVG','MATH'].includes(el.tagName)) el.remove();
+                    else { el.replaceWith.apply(el, Array.from(el.childNodes)); }
+                    return;
+                }
+                Array.from(el.attributes).forEach(function (attr) {
+                    const name = attr.name.toLowerCase();
+                    if (name === 'style') {
+                        const safe = [];
+                        Array.from(el.style).forEach(function (prop) {
+                            const value = el.style.getPropertyValue(prop).trim();
+                            if (styleProps.has(prop) && !/url\s*\(|expression|javascript:|[<>]/i.test(value)) safe.push(prop + ':' + value);
+                        });
+                        if (safe.length) el.setAttribute('style', safe.join(';')); else el.removeAttribute('style');
+                    } else if (name === 'class' && el.tagName === 'I') {
+                        const classes = attr.value.split(/\s+/).filter(c => /^(?:fa-[a-z0-9-]+|fas|far|fab)$/i.test(c));
+                        if (classes.length) el.className = classes.join(' '); else el.removeAttribute('class');
+                    } else if (name === 'class' && el.tagName === 'BUTTON') {
+                        if (attr.value === 'splash-opt-btn') el.className = attr.value; else el.removeAttribute(name);
+                    } else if (name === 'id' && ['no-map-link','splash-options-container'].includes(attr.value)) {
+                        // معرّفات ثابتة لزر الانتقال وحاوية خيارات الخريطة.
+                    } else if (name === 'data-type' && el.tagName === 'BUTTON') {
+                        if (!['default','gps'].includes(attr.value)) el.removeAttribute(name);
+                    } else if (name === 'dir') {
+                        if (!['rtl','ltr'].includes(attr.value.toLowerCase())) el.removeAttribute(name);
+                    } else if (el.tagName === 'A' && name === 'href') {
+                        const href = attr.value.trim();
+                        if (!/^(https?:|mailto:|tel:|\/|#)/i.test(href)) el.removeAttribute(name);
+                    } else if (el.tagName === 'A' && ['target','rel'].includes(name)) {
+                        if (name === 'target' && attr.value !== '_blank' && attr.value !== '_self') el.removeAttribute(name);
+                    } else if (el.tagName === 'FONT' && name === 'color') {
+                        if (/^#[0-9a-f]{3,8}$/i.test(attr.value) || /^[a-z]{3,20}$/i.test(attr.value)) el.style.color = attr.value;
+                        el.removeAttribute('color');
+                    } else if (el.tagName === 'FONT' && name === 'size') {
+                        const sizes = { '1':'10px','2':'13px','3':'16px','4':'18px','5':'24px','6':'32px','7':'48px' };
+                        if (sizes[attr.value]) el.style.fontSize = sizes[attr.value];
+                        el.removeAttribute('size');
+                    } else if (!['style','class'].includes(name)) el.removeAttribute(name);
+                });
+                clean(el);
+            });
+        }
+        clean(template.content);
+        return template.innerHTML;
+    };
+
+    const contentOverridesReady = fetch('/api/platform-content', { cache: 'no-store' })
+        .then(function (response) { return response.ok ? response.json() : { items: [] }; })
+        .then(function (data) {
+            const overrides = {};
+            (data.items || []).forEach(function (item) {
+                if (!item.content_key || item.content_key.indexOf('legal.') !== 0) return;
+                try {
+                    const value = JSON.parse(item.content_value);
+                    const key = item.content_key.slice(6);
+                    if (key !== 'guideMap' && window.APP_LEGAL_CONTENT[key] && typeof value.title === 'string' && typeof value.html === 'string') {
+                        overrides[key] = value;
+                    }
+                } catch (_) { /* تجاهل أي قيمة قديمة غير صالحة */ }
+            });
+            return overrides;
+        })
+        .catch(function () { return {}; });
+
+    window.getAppLegalContent = async function (key) {
+        const content = window.APP_LEGAL_CONTENT[key];
+        if (!content) return null;
+        const overrides = await contentOverridesReady;
+        const override = overrides[key];
+        return {
+            title: override ? override.title : content.title,
+            icon: content.icon,
+            html: override ? window.sanitizePlatformRichText(override.html) : content.html
+        };
+    };
+
     // ==========================================================================
     // 2) بناء مودال عام واحد (يُنشأ مرة واحدة فقط) لعرض أي من المحتويات أعلاه
     // ==========================================================================
@@ -652,7 +675,7 @@
         box.style.cssText = `
             background:#fff; border-radius:16px; max-width:700px; width:100%;
             max-height:85vh; overflow-y:auto; padding:28px 26px; position:relative;
-            box-shadow:0 10px 40px rgba(0,0,0,0.3);
+            box-shadow:0 10px 40px rgba(0,0,0,0.3); text-align:center;
         `;
 
         const closeBtn = document.createElement('button');
@@ -696,11 +719,19 @@
 
     let bodyOverflowBeforeOpen = '';
 
-    window.openAppLegalModal = function (key) {
+    function escapeText(value) {
+        return String(value).replace(/[&<>"']/g, function (char) {
+            return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[char];
+        });
+    }
+
+    window.openAppLegalModal = async function (key) {
+        if (key === 'guideMap') key = 'guide';
         const content = window.APP_LEGAL_CONTENT[key];
         if (!content) {
             return;
         }
+        const displayContent = await window.getAppLegalContent(key);
         ensureModal();
 
         // 🆕 نعيد إلحاق المودال كآخر عنصر مباشرة داخل body في كل مرة يُفتح فيها،
@@ -711,8 +742,8 @@
         }
 
         modalIcon.className = 'fas ' + (content.icon || 'fa-info-circle');
-        modalTitleEl.textContent = content.title;
-        modalBodyEl.innerHTML = content.html;
+        modalTitleEl.textContent = displayContent.title;
+        modalBodyEl.innerHTML = displayContent.html;
         modalOverlay.style.display = 'flex';
 
         // منع سكرول الخلفية أثناء فتح المودال فوق شاشات الترحيب/التسجيل (تمنع
@@ -732,11 +763,10 @@
     // يُربط تلقائياً بدون أي كود إضافي مطلوب بالصفحة نفسها.
     // ==========================================================================
     const idMap = {
-        guide: ['btn-user-guide', 'welcome-guide-link'],
+        guide: ['btn-user-guide', 'welcome-guide-link', 'footer-guide-map', 'header-guide-map'],
         guideSearch: ['footer-guide-search', 'header-guide-search', 'profile-guide-search'],
         guideProvider: ['footer-guide-provider', 'header-guide-provider', 'profile-guide-provider'],
         guideSubscription: ['footer-guide-subscription', 'header-guide-subscription', 'profile-guide-subscription'],
-        guideMap: ['footer-guide-map', 'header-guide-map'],
         guideMapInteractive: ['footer-guide-map-interactive', 'header-guide-map-interactive', 'profile-guide-map-interactive'],
         about: ['nms-about-btn', 'footer-about-btn', 'promo-about-link', 'profile-about-btn'],
         terms: ['footer-terms-btn', 'header-terms-btn', 'profile-terms-btn', 'promo-terms-link', 'welcome-terms-link'],

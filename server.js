@@ -1961,6 +1961,69 @@ async function requireAdmin(req, res, next) {
     }
 }
 
+// محتوى المنصة القابل للتحرير: القيمة العامة للقراءة، والتعديل محصور بالأدمن.
+async function ensurePlatformContentSchema() {
+    try {
+        await servicesPool.query(`
+            CREATE TABLE IF NOT EXISTS public.platform_content (
+                content_key TEXT PRIMARY KEY,
+                label TEXT NOT NULL,
+                content_value TEXT NOT NULL DEFAULT '',
+                updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+                updated_by BIGINT
+            )
+        `);
+    } catch (err) {
+        console.error('تعذر إنشاء جدول محتوى المنصة:', err.message);
+    }
+}
+ensurePlatformContentSchema();
+
+app.get('/api/platform-content', async (req, res) => {
+    try {
+        const result = await servicesPool.query(
+            'SELECT content_key, label, content_value, updated_at FROM public.platform_content ORDER BY content_key'
+        );
+        res.json({ success: true, items: result.rows });
+    } catch (err) {
+        console.error('تعذر جلب محتوى المنصة:', err.message);
+        res.status(500).json({ success: false, error: 'تعذر جلب محتوى المنصة.' });
+    }
+});
+
+app.put('/api/admin/platform-content/:key', requireAdmin, async (req, res) => {
+    const key = String(req.params.key || '').trim();
+    const label = typeof req.body?.label === 'string' ? req.body.label.trim() : '';
+    const value = typeof req.body?.value === 'string' ? req.body.value : null;
+    if (!/^[a-z0-9][a-z0-9._-]{1,99}$/i.test(key) || !label || label.length > 160 || value === null || value.length > 100000) {
+        return res.status(400).json({ success: false, error: 'تحقق من المفتاح والعنوان والنص (الحد الأقصى للنص 100,000 حرف).' });
+    }
+    try {
+        const result = await servicesPool.query(
+            `INSERT INTO public.platform_content (content_key, label, content_value, updated_by)
+             VALUES ($1, $2, $3, $4)
+             ON CONFLICT (content_key) DO UPDATE SET label = EXCLUDED.label,
+                content_value = EXCLUDED.content_value, updated_at = NOW(), updated_by = EXCLUDED.updated_by
+             RETURNING content_key, label, content_value, updated_at`,
+            [key, label, value, req.adminUserId]
+        );
+        res.json({ success: true, item: result.rows[0] });
+    } catch (err) {
+        console.error('تعذر حفظ محتوى المنصة:', err.message);
+        res.status(500).json({ success: false, error: 'تعذر حفظ المحتوى.' });
+    }
+});
+
+app.delete('/api/admin/platform-content/:key', requireAdmin, async (req, res) => {
+    try {
+        await servicesPool.query('DELETE FROM public.platform_content WHERE content_key = $1', [req.params.key]);
+        res.json({ success: true });
+    } catch (err) {
+        console.error('تعذر حذف محتوى المنصة:', err.message);
+        res.status(500).json({ success: false, error: 'تعذر حذف المحتوى.' });
+    }
+});
+
 // جلسة مشاهدة مؤقتة للمشرف: قراءة الطلبات والرسائل فقط دون انتحال جلسة المستخدم.
 async function requireReadOnlyView(req, res, next) {
     const authHeader = req.headers['authorization'] || '';
@@ -3835,7 +3898,7 @@ app.use('/api', (req, res) => {
 // STATIC_ALLOWLIST_MODE=report (الافتراضي): يقدّم كل شيء كما كان ويطبع تحذيراً لكل مسار غير مدرج.
 // بعد تجربة كل صفحات الموقع دون أي تحذير، اضبط STATIC_ALLOWLIST_MODE=enforce ليُحجب غير المدرج بـ404.
 const STATIC_ALLOWLIST_MODE = (process.env.STATIC_ALLOWLIST_MODE || 'report').toLowerCase();
-const STATIC_ALLOWED = /^\/(?:(?:js|css|pic|ol|proj4|icons|sounds|fonts|images|img|assets)\/|[A-Za-z0-9_.\-]+\.html$|favicon\.ico$|robots\.txt$)/i;
+const STATIC_ALLOWED = /^\/(?:(?:js|css|pic|ol|proj4|icons|sounds|fonts|images|img|assets|content-admin-assets)\/|texts-admin\.js$|[A-Za-z0-9_.\-]+\.html$|favicon\.ico$|robots\.txt$)/i;
 const staticReportedPaths = new Set();
 
 app.use((req, res, next) => {
@@ -3852,7 +3915,7 @@ app.use((req, res, next) => {
     decodedPath = path.posix.normalize(decodedPath).replace(/[. ]+$/, ''); // يعالج // و /./ والنقطة/المسافة الأخيرة (ويندوز)
 
     const forbiddenPatterns = [
-        /^\/[^\/]+\.(?:js|mjs|cjs|json|ts)$/i,   // أي سكربت/JSON بجذر المشروع (server.js, package.json, ...)
+        /^\/(?!texts-admin\.js$)[^\/]+\.(?:js|mjs|cjs|json|ts)$/i,   // امنع ملفات الجذر مع استثناء سكربت صفحة إدارة النصوص
         /^\/\.env/i,
         /^\/\.git(?:\/|$)/i,
         /^\/node_modules(?:\/|$)/i,
@@ -3874,6 +3937,12 @@ app.use((req, res, next) => {
     }
     next();
 });
+app.use('/content-admin-assets', express.static(path.join(__dirname, 'frontend-react', 'public'), { dotfiles: 'ignore', index: false }));
+app.get('/js/legal-content.js', (req, res) => res.sendFile(path.join(__dirname, 'frontend-react', 'public', 'js', 'legal-content.js')));
+app.get('/js/main.js', (req, res) => res.sendFile(path.join(__dirname, 'frontend-react', 'public', 'js', 'main.js')));
+app.get('/texts-admin.js', (req, res) => res.sendFile(path.join(__dirname, 'frontend-react', 'public', 'texts-admin.js')));
+app.get('/texts-admin.html', (req, res) => res.sendFile(path.join(__dirname, 'frontend-react', 'public', 'texts-admin.html')));
+app.get('/dashboard.html', (req, res, next) => res.sendFile(path.join(__dirname, 'frontend-react', 'public', 'dashboard.html'), err => err && next(err)));
 app.use(express.static(path.join(__dirname), { dotfiles: 'ignore', index: false, redirect: false }));
 
 app.get('/', (req, res) => {
