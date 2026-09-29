@@ -859,12 +859,37 @@ flows, provider card → panel on the map. **Not verified:** a real phone; the b
 - ✅ Deleted legacy `*.html`, `js/`, `css/`, `ol/`, `proj4/`, `pic/`, `icons/`, `sounds/`, `original-index.html` (own commit — `git revert` brings them back). `node_modules/` and `dist/` were never tracked here.
 - ✅ Removed the legacy static serving and allow-list from `server.js` (see Server changes).
 
+### Quality gates — what runs where
+
+| Check | Where | When |
+| --- | --- | --- |
+| `npm run typecheck`, `npm run lint` (incl. `jsx-a11y` + the design-token rule), `npm test`, `npm run build` (in `web/`) | `.github/workflows/ci.yml`, `ubuntu-latest`, Node 22, npm cache | every pull request and every push to a branch other than `main` |
+| the same four, in that order | `.github/workflows/deploy.yml`, self-hosted Windows runner, in the checkout (`web/`) — **before** the robocopy step | every push to `main`; a red check stops the job, so a broken `main` never replaces the running site |
+| `npm audit --omit=dev --audit-level=high` in `web/` and in the repo root | `ci.yml`, job `audit`, `continue-on-error` (report only) | same as CI |
+| `npm run e2e` (Playwright, `web/e2e/`, desktop 1440 + phone 390, Arabic) | **your machine only** — it needs the dev Postgres, the seeded accounts, the local GeoServer and the backend on :3000 | before merging anything that touches a page; not in CI (see `dev/README.md` → Browser tests) |
+
+- Browser specs (all read-only — any write to `/api` is answered by the test harness, never by the server): visitor on `/`
+  lands on `/welcome`; login through the form lands on `/home` (greeting + search box that continues on `/search`); the map (`/`) loads with markers and no console errors; a provider found in the
+  search box opens its card with a contact / request button; the layers panel hides a whole group; keyword search on
+  `/search`; `/widgets/portal` price cards; admin sees `/admin/users`, a normal user gets the forbidden page; the theme toggle
+  (dark and back); no horizontal overflow on every route.
+- `eslint-plugin-jsx-a11y` (recommended) is on for all of `web/src`. Fixed for real: `Modal` (click-outside moved to a decorative
+  layer behind the dialog) and `DataTable` (a clickable row is reachable with Tab + Enter). Disabled on the line, with the
+  reason next to it: ARIA combobox options (`SelectInput`, `GlobalSearchBox` — focus stays on the input by design), the owner
+  video without a caption track (`MediaGallery`), `autoFocus` in the two dialogs that a click just opened.
+  `eslint-plugin-jsx-a11y` lists ESLint ≤ 9 as a peer; `web/package.json` → `overrides` maps its peer to our ESLint 10 (lint runs
+  clean on it; drop the override when the plugin publishes support).
+- Not covered yet: nothing enforces a passing CI run before merge — turn on branch protection (require the `CI / Web` check) on
+  GitHub to make it binding (a repository setting, not code).
+
 ## Definition of done (every page / feature)
 
 - Parity checklist below is complete and every item works against the real backend.
 - Ar (RTL) + En (LTR), desktop + mobile width (375px), keyboard reachable.
 - Loading, empty and error states for every query; mutations disable their button while pending.
-- `npm run typecheck && npm run lint && npm test` green; at least one test per page (render + main
+- `npm run typecheck && npm run lint && npm test` green (CI runs them, and so does the deploy); `npm run e2e` green on the
+  dev stack when the page is reachable from a spec (add a spec in `web/e2e/` for every new route — at least "it opens and
+  does not overflow", which `layout.spec.ts` covers by listing the route); at least one test per page (render + main
   action with a mocked API).
 - No `console.log`, no hard-coded UI text, no `any` without a comment.
 

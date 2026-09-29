@@ -21,6 +21,32 @@ Real-backend tests (skipped unless the variable is set):
 
 Other commands: `db-down` (stop, keep data), `db-reset` (delete everything).
 
+## Browser tests (Playwright)
+
+The checks we used to do by hand in a browser — login, the map with its markers, a provider card from the search box, the
+layers panel, keyword search, the information centre, the admin pages and their guard, the theme toggle, no sideways scroll
+— live in `web/e2e/` and run at desktop width (1440) and phone width (390), in Arabic.
+
+```bash
+dev/dev.sh db-up && dev/dev.sh seed && dev/dev.sh server   # backend on :3000 (and the local GeoServer, see below)
+cd web && npm run e2e                                      # starts its own Vite on :5199, runs both widths
+cd web && npm run e2e -- map --project=phone               # one spec file / one width
+cd web && npm run e2e -- --ui                              # Playwright's UI mode (watch a run, inspect a failure)
+```
+
+- **Needs**: the seeded accounts (admin, user), the local GeoServer with the layers loaded (the map spec reads the services
+  layer), and the backend on `http://localhost:3000` (`VITE_BACKEND_URL` to point elsewhere). `E2E_PORT` changes the Vite port
+  (default 5199); a Vite already listening on that port is reused.
+- **Browser**: nothing is downloaded. The locally installed headless Chromium is used — the newest
+  `~/.cache/ms-playwright/chromium_headless_shell-*/chrome-headless-shell-linux64/chrome-headless-shell`, or the binary named in
+  `PLAYWRIGHT_CHROMIUM`.
+- **Read-only**: specs never change seeded data. The test harness answers every write to `/api` itself (an empty 200), except
+  the login calls, so searching or opening a card cannot log an event or use up a quota. Sessions are created once per run by
+  `global-setup.ts` through the real login endpoint.
+- **A failure** leaves a screenshot and a trace in `web/e2e/.results/` (`npx playwright show-trace <trace.zip>`).
+- **CI does not run them**: they need this database, GeoServer and the seeded accounts. CI (`.github/workflows/ci.yml`) and the
+  deploy job run typecheck, lint, unit tests and the build only. Run `npm run e2e` yourself before merging a change to a page.
+
 ## What is and isn't there
 
 - **Schema**: only what auth needs (`users`, `map_service_stats`) + whatever `server.js` creates itself at

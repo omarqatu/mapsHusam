@@ -40,16 +40,15 @@ export default function Modal({
   if (!open) return null;
 
   return createPortal(
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-fg/45 p-4 backdrop-blur-[2px]"
-      onClick={onClose}
-    >
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      {/* Click-outside is a pointer convenience on a decorative layer behind the dialog; the keyboard closes with Escape
+          (above) and with the close button. */}
+      <div aria-hidden="true" className="absolute inset-0 bg-fg/45 backdrop-blur-[2px]" onClick={onClose} />
       <div
         role="dialog"
         aria-modal="true"
         aria-labelledby={titleId}
-        className={clsx('flex max-h-full w-full flex-col rounded-2xl bg-surface shadow-xl', widthClass)}
-        onClick={(e) => e.stopPropagation()}
+        className={clsx('relative flex max-h-full w-full flex-col rounded-2xl bg-surface shadow-xl', widthClass)}
       >
         <header className="flex items-center justify-between gap-3 border-b border-line p-4">
           <h2 id={titleId} className="text-lg font-bold text-fg">

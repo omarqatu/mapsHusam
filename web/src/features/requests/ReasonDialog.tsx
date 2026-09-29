@@ -52,6 +52,7 @@ export default function ReasonDialog({ open, loading, onSubmit, onClose }: Props
       <TextareaInput
         id="cancel-reason"
         rows={3}
+        // eslint-disable-next-line jsx-a11y/no-autofocus -- the dialog was just opened by the user; focus goes to its only field
         autoFocus
         value={reason}
         maxLength={REQUEST_LIMITS.cancelReason}

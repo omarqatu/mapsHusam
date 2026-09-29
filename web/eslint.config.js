@@ -2,6 +2,7 @@ import js from '@eslint/js';
 import globals from 'globals';
 import reactHooks from 'eslint-plugin-react-hooks';
 import reactRefresh from 'eslint-plugin-react-refresh';
+import jsxA11y from 'eslint-plugin-jsx-a11y';
 import tseslint from 'typescript-eslint';
 import { defineConfig, globalIgnores } from 'eslint/config';
 
@@ -14,6 +15,7 @@ export default defineConfig([
       tseslint.configs.recommended,
       reactHooks.configs.flat.recommended,
       reactRefresh.configs.vite,
+      jsxA11y.flatConfigs.recommended,
     ],
     languageOptions: { ecmaVersion: 2022, globals: globals.browser },
     rules: {
@@ -48,6 +50,13 @@ export default defineConfig([
       ],
       'react-refresh/only-export-components': 'warn',
     },
+  },
+  {
+    // Browser tests (Playwright): its fixtures call `use(...)`, which the hooks rule mistakes for React's `use`; they run in
+    // Node, and the design-token rule is about the app's class names, not selectors.
+    files: ['e2e/**/*.ts', 'playwright.config.ts'],
+    languageOptions: { globals: { ...globals.node, ...globals.browser } },
+    rules: { 'react-hooks/rules-of-hooks': 'off', 'no-restricted-syntax': 'off' },
   },
   {
     // The UI kit test renders raw classes on purpose (it checks className passthrough).

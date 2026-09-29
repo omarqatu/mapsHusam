@@ -164,6 +164,9 @@ export default function GlobalSearchBox() {
                   .join(' | ');
                 const reason = reasonText(h);
                 return (
+                  // ARIA combobox pattern: focus stays in the search input (aria-activedescendant); its onKeyDown does the
+                  // arrows / Enter / Escape, so the option is a pointer target only.
+                  // eslint-disable-next-line jsx-a11y/click-events-have-key-events
                   <li
                     key={`${h.result.key}-${i}`}
                     id={`${uid}-opt-${i}`}

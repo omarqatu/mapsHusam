@@ -227,6 +227,9 @@ export default function SelectInput({
                       {heading}
                     </div>
                   )}
+                  {/* ARIA combobox pattern: focus stays on the combobox (aria-activedescendant) and its onKeyDown does
+                      arrows / Enter / Escape, so an option is neither focusable nor a key target. */}
+                  {/* eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/interactive-supports-focus -- see above */}
                   <div
                     id={`${uid}-opt-${i}`}
                     role="option"

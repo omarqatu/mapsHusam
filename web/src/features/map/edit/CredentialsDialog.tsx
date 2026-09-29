@@ -74,6 +74,7 @@ export default function CredentialsDialog({ confirmLabel, onSubmit, onCancel }: 
           <TextInput
             id="edit-gs-user"
             name="geoserver-user"
+            // eslint-disable-next-line jsx-a11y/no-autofocus -- the dialog was just opened by the user; focus goes to its first field
             autoFocus
             autoComplete="off"
             autoCapitalize="none"
