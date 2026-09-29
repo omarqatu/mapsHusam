@@ -15,3 +15,6 @@ dist
 # Local private notes (security findings etc.) — never commit, repo is public
 notes/
 dev/db/dumps/
+
+# Agent worktrees (parallel sessions)
+.claude/worktrees/
