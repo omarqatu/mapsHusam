@@ -28,6 +28,15 @@ Other commands: `db-down` (stop, keep data), `db-reset` (delete everything).
   startup warning `road_barriers does not exist` is expected until the widgets pages are ported.
 - **PostGIS / layer data**: not installed (postgres image without PostGIS, no data dump in the repo). Needed
   from Phase 3 (map) — switch `PSM_DEV_PG_IMAGE` to a `postgis/postgis` image then.
-- **GeoServer**: `GEOSERVER_TARGET` points at `127.0.0.1:8080` on purpose, NOT the production GeoServer —
-  editing (WFS-T) can write. Run a local GeoServer (or agree on a read-only one) before the map phase.
+- **GeoServer**: a LOCAL official image, never the production one (editing / WFS-T can write). `GEOSERVER_TARGET`
+  defaults to `127.0.0.1:8080`. Start it once (`:U` fixes the volume ownership under rootless podman), then load the
+  layers over PostGIS with the setup script:
+  ```bash
+  podman run -d --name psm-dev-geoserver --network host \
+    -e GEOSERVER_ADMIN_USER=admin -e GEOSERVER_ADMIN_PASSWORD='PsmDev-2026' \
+    -v psm-dev-geoserver-data:/opt/geoserver_data:U docker.osgeo.org/geoserver:2.26.2
+  dev/geoserver-setup.sh      # workspaces realestate + services, the 10 layers the map uses (idempotent)
+  ```
+  The dev admin password is a throwaway (this GeoServer only listens on your machine); the setup script refuses any
+  non-local URL. Data lives in the podman volume `psm-dev-geoserver-data`.
 - The Postgres data lives in the podman volume `psm-dev-pgdata`, not in the repo.
