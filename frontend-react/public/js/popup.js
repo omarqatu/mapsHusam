@@ -261,14 +261,14 @@ function initializePopup(map) {
         if (layerKey === 'serviceAllLayer') {
             const discriminator = feature ? feature.get('discriminator') : null;
             if (!discriminator) return false;
-            if (MAP_CONFIG.globalExclusions && MAP_CONFIG.globalExclusions.includes(discriminator)) return false;
+            if (window.isLayerGloballyExcluded(discriminator)) return false;
             return true;
         }
 
         const layerTitle = layer.get('title');
         const layerBaseName = layerKey ? layerKey.replace('Layer', '') : null;
 
-        return (realEstateLayerNames.includes(layerTitle) || layerTitle === areaLayerName) && (!MAP_CONFIG.globalExclusions || !MAP_CONFIG.globalExclusions.includes(layerBaseName));
+        return (realEstateLayerNames.includes(layerTitle) || layerTitle === areaLayerName) && !window.isLayerGloballyExcluded(layerBaseName);
     }
 
             function cleanUrl(rawUrl) {

@@ -145,11 +145,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const workspace = config.workspace;
         const layers = Object.keys(config.layersMap).filter(layerName => {
-            if (groupKey === 'services') {
-                return !((window.MAP_CONFIG?.globalExclusions || []).includes(layerName));
-            }
-            return true;
+            return !window.isLayerGloballyExcluded(layerName);
         });
+        if (layers.length === 0) return [];
 
         const unifiedFilter = buildUnifiedCQLFilter(term);
         const allFeatures = [];
@@ -169,7 +167,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (response.ok) {
                     const data = await response.json();
                     if (data && data.features) {
-                        const features = data.features.map(f => {
+                        const features = data.features.filter(f => !window.isLayerGloballyExcluded(f.properties.layerId || layer)).map(f => {
                             const layerName = f.properties.layerId || layer;
                             return {
                                 ...f,
@@ -203,7 +201,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (response.ok) {
                     const data = await response.json();
                     if (data && data.features) {
-                        const features = data.features.map(f => {
+                        const features = data.features.filter(f => !window.isLayerGloballyExcluded(f.id.split('.')[0])).map(f => {
                             const layerName = f.id.split('.')[0];
                             return {
                                 ...f,

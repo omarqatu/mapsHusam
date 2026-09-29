@@ -303,6 +303,22 @@ window.__nmsPageHandlesOwnAds = true;
             });
         });
 
+        // الروابط الثابتة في الهيدر والفوتر يجب أن تتبع الفئات المتاحة فعلياً.
+        // كما نخفي أزرار الطرق والوقود حين تستثنيهما config.js.
+        const availableGroups = new Set(categories.map(category => category.group));
+        document.querySelectorAll('a[href*="group="]').forEach(link => {
+            try {
+                const group = new URL(link.href, window.location.href).searchParams.get('group');
+                if (group && group !== 'all' && !availableGroups.has(group)) {
+                    link.hidden = true;
+                    link.style.setProperty('display', 'none', 'important');
+                }
+            } catch (_) {}
+        });
+        // تعمل هذه الصفحة بعد تحميل config.js؛ أعد تطبيق الاستثناءات هنا
+        // لأن CSS الخاص بأزرار الهيدر قد يتغلب على خاصية hidden وحدها.
+        window.applyGlobalExclusionsToDom?.(document);
+
         const layerNameMap = { rentLayer: 'ApartRent', saleLayer: 'ApartSale', landLayer: 'LandSale' };
 
         function getWorkspaceAndName(layerKey) {
@@ -351,7 +367,7 @@ window.__nmsPageHandlesOwnAds = true;
         function renderGroupsTabs() {
             if (!groupsTabsEl) return;
             groupsTabsEl.innerHTML = '';
-            groupDefs.forEach((g, gIndex) => {
+            groupDefs.filter(g => g.id === 'all' ? categories.length > 0 : categories.some(c => c.group === g.id)).forEach((g, gIndex) => {
                 const tab = document.createElement('button');
                 tab.type = 'button';
                 tab.className = 'nms-group-tab' + (g.id === activeGroup ? ' active' : '');
@@ -589,7 +605,7 @@ window.__nmsPageHandlesOwnAds = true;
                     const response = await fetch(`${baseUrl}api/search-features?${params.toString()}`);
                     if (!response.ok) return [];
                     const data = await response.json();
-                    return (data.features || []).map(f => {
+                    return (data.features || []).filter(f => !window.isLayerGloballyExcluded(f.properties?.discriminator)).map(f => {
                         const discriminator = f.properties.discriminator;
                         const item = { layer: discriminator, workspace: 'services', label: serviceNames[discriminator] || discriminator, isRealEstate: false };
                         return buildAdCardHtml(f.properties || {}, item, f.geometry);
@@ -1196,7 +1212,7 @@ if (ytMatch) {
                     const data = await response.json();
                     (data.features || []).forEach(f => {
                         const discriminator = f.properties.discriminator;
-                        if (!discriminator) return;
+                        if (!discriminator || window.isLayerGloballyExcluded(discriminator)) return;
                         const item = { layer: discriminator, workspace: 'services', label: serviceNames[discriminator] || discriminator, isRealEstate: false };
                         collected.push({ feature: f, item });
                     });
@@ -1240,7 +1256,7 @@ if (ytMatch) {
                     const data = await response.json();
                     (data.features || []).forEach(f => {
                         const discriminator = f.properties.discriminator;
-                        if (!discriminator) return;
+                        if (!discriminator || window.isLayerGloballyExcluded(discriminator)) return;
                         const item = { layer: discriminator, workspace: 'services', label: serviceNames[discriminator] || discriminator, isRealEstate: false };
                         collected.push({ feature: f, item });
                     });
@@ -1357,7 +1373,7 @@ if (ytMatch) {
                     (data.features || []).forEach(f => {
                         const props = f.properties || {};
                         const discriminator = props.discriminator;
-                        if (!discriminator) return;
+                        if (!discriminator || window.isLayerGloballyExcluded(discriminator)) return;
                         const item = { layer: discriminator, workspace: 'services', label: serviceNames[discriminator] || discriminator, isRealEstate: false };
                         collected.push({ props, item, rating: parseFloat(props.rating) || 0, geometry: f.geometry });
                     });
@@ -1407,7 +1423,7 @@ if (ytMatch) {
                 const validItems = data.items.filter(it => {
                     if (!it.service_layer || !it.feature_id) return false;
                     const isRE = REAL_ESTATE_TABLE_NAMES.includes(it.service_layer);
-                    if (isRE) return false;
+                    if (isRE || window.isLayerGloballyExcluded(it.service_layer)) return false;
                     return KNOWN_SERVICE_KEYS.includes(it.service_layer);
                 });
 

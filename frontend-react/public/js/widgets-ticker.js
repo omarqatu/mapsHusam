@@ -312,6 +312,7 @@ function renderManualGroupsInto(prefix) {
     let liveFuelStations = [];
 
     async function fetchLiveLayerFeatures(layerName) {
+        if (window.isLayerGloballyExcluded?.(layerName)) return [];
         try {
             const params = new URLSearchParams({ layer: layerName, workspace: 'services' });
             const res = await fetch('/api/search-features?' + params.toString());
@@ -873,7 +874,11 @@ function renderManualGroupsInto(prefix) {
             ];
 
             function renderTickerGroupsHTML() {
-                return TICKER_GROUPS.map(g => `
+                return TICKER_GROUPS.filter(g => {
+                    const layer = g.id === 'portal-road-status-card' ? 'road_barriers'
+                        : g.id === 'portal-fuel-status-card' ? 'fuel_stations' : null;
+                    return !layer || !window.isLayerGloballyExcluded?.(layer);
+                }).map(g => `
                     <div class="ticker-item ticker-group-item" data-target="${g.id}">
                         <i class="fas ${g.icon}"></i>
                         <span class="ticker-label">${g.label}</span>
@@ -951,11 +956,13 @@ function renderManualGroupsInto(prefix) {
             .then(portalHtml => {
                 const container = document.createElement('div');
                 container.innerHTML = portalHtml;
+                window.applyGlobalExclusionsToDom?.(container);
                 
                 const grid = container.querySelector('.widgets-portal-grid');
                 if (!grid) return;
                 
                                 const clonedGrid = grid.cloneNode(true);
+                window.applyGlobalExclusionsToDom?.(clonedGrid);
                 // تسمية كل id بادئة mobile- لعزلها عن نسخة المودال الأصلية
                 clonedGrid.querySelectorAll('[id]').forEach(function (el) {
                     el.id = 'mobile-' + el.id;
@@ -1111,6 +1118,7 @@ function renderManualGroupsInto(prefix) {
             .then(response => response.text())
             .then(html => {
                 contentArea.innerHTML = html;
+                window.applyGlobalExclusionsToDom?.(contentArea);
                 updatePortalData();
                 updatePortalTrafficList();
                 updatePortalFuelStatusList();

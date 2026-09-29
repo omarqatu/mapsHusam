@@ -333,24 +333,47 @@ window.isLayerGloballyExcluded = function (layerIdentifier) {
     const config = (typeof MAP_CONFIG !== 'undefined' && MAP_CONFIG) || window.MAP_CONFIG;
     if (!config || !Array.isArray(config.globalExclusions) || config.globalExclusions.length === 0) return false;
 
-    const exclusions = config.globalExclusions;
-    const raw = String(layerIdentifier).trim();
-    const withoutLayerSuffix = raw.replace(/Layer$/i, '');
-
-    // خريطة الأسماء البديلة لطبقات العقارات (المفتاح الداخلي <-> الاسم الفعلي بقاعدة البيانات)
-    const realEstateAliasMap = { rentLayer: 'ApartRent', saleLayer: 'ApartSale', landLayer: 'LandSale' };
-
-    const candidates = new Set([raw, withoutLayerSuffix]);
-    if (realEstateAliasMap[raw]) candidates.add(realEstateAliasMap[raw]);
-    Object.keys(realEstateAliasMap).forEach(function (internalKey) {
-        if (realEstateAliasMap[internalKey] === raw) candidates.add(internalKey);
-    });
-
-        for (const candidate of candidates) {
-        if (exclusions.includes(candidate)) return true;
+    // أسماء العقارات التي تمثل الفئة نفسها بين إعداد الخريطة وWFS والواجهات.
+    const realEstateAliases = {
+        rentLayer: ['ApartRent', 'rent', 'شقق الإيجار', 'شقق للايجار'],
+        saleLayer: ['ApartSale', 'sale', 'شقق للبيع'],
+        landLayer: ['LandSale', 'land', 'الأراضي للبيع', 'اراضي للبيع', 'أرض للبيع']
+    };
+    function identifiers(value) {
+        const raw = String(value || '').trim();
+        if (!raw) return new Set();
+        const values = new Set([raw.toLocaleLowerCase(), raw.replace(/Layer$/i, '').toLocaleLowerCase()]);
+        Object.keys(realEstateAliases).forEach(function (internalKey) {
+            const aliases = [internalKey, internalKey.replace(/Layer$/i, '')].concat(realEstateAliases[internalKey]);
+            if (aliases.some(alias => String(alias).trim().toLocaleLowerCase() === raw.toLocaleLowerCase())) {
+                aliases.forEach(alias => values.add(String(alias).trim().toLocaleLowerCase()));
+            }
+        });
+        return values;
     }
-    return false;
+
+    const requestedIdentifiers = identifiers(layerIdentifier);
+    return config.globalExclusions.some(function (excluded) {
+        const excludedIdentifiers = identifiers(excluded);
+        return Array.from(requestedIdentifiers).some(identifier => excludedIdentifiers.has(identifier));
+    });
 };
+
+// تطبيق استثناءات config.js على عناصر الواجهة الثابتة والمحمّلة ديناميكياً.
+window.applyGlobalExclusionsToDom = function (root) {
+    const scope = root || document;
+    if (!scope?.querySelectorAll) return;
+    scope.querySelectorAll('[data-global-layer-exclusion]').forEach(function (element) {
+        if (!window.isLayerGloballyExcluded(element.dataset.globalLayerExclusion)) return;
+        element.hidden = true;
+        element.style.setProperty('display', 'none', 'important');
+    });
+};
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', () => window.applyGlobalExclusionsToDom());
+} else {
+    window.applyGlobalExclusionsToDom();
+}
 
 // ==========================================================================
 // 8-ب) [دمج طبقات الخدمات]: دوال مساعدة موحّدة تحل مشكلة أن كل الخدمات أصبحت
