@@ -374,6 +374,13 @@ Split `index.html` into features, in this order:
      four loose buttons; the coordinates bar is centred; status emoji (🟢🔴⚪✔️❌📍) are `StatusDot` / lucide icons
      (service-type emoji on the map stay: they are the type's identity); the card's fuel list is the shared `FuelBadges`;
      a parcel label "0 م²" (missing area) is no longer drawn.
+   - Panels are draggable on desktop (`hooks/useDraggablePanel`, wired once in `MapSheet`): drag by the header, kept inside
+     the map, position remembered per panel in `localStorage`, double-click the header to reset. Not on phones (bottom
+     sheets). Legacy also let panels be resized and minimised — not ported (the panels are content-sized now).
+   - Feature card re-ordered: status + rating on one line, contact / request button first, one location line (place ·
+     village · governorate) instead of four fields, no name repeated under the header, only filled-in fields shown,
+     media folded into a section (open when there is a single item), share link + coordinates in one footer row. A URL
+     in the image field that is not an image (e.g. a Facebook page) shows as a plain link with an external-link icon.
    - Live tests run file by file (`fileParallelism` off when `VITE_LIVE_API` is set): they share the seeded accounts.
    - Media sections show only their own kind (photos section = pictures, videos section = videos); everything is still in the
      details card. Cards use the shared `MediaGallery` (enlarge on click, https-only URLs via `safeMediaUrl`) instead of the

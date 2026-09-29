@@ -334,7 +334,8 @@
       "JOD": "JOD"
     },
     "mapArea": "Area on the map",
-    "mapLength": "Length on the map"
+    "mapLength": "Length on the map",
+    "media": "Media ({{count}})"
   },
   "media": {
     "openImages": "Click to view the images",

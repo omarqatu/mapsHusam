@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ExternalLink, ImageOff } from 'lucide-react';
+import { ExternalLink } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import Modal from './Modal';
 
@@ -19,9 +19,9 @@ function Thumb({ url, onOpen }: { url: string; onOpen: () => void }) {
         href={url}
         target="_blank"
         rel="noopener noreferrer"
-        className="col-span-3 flex items-center justify-center gap-1.5 rounded-lg bg-slate-50 p-2 text-sm font-semibold text-brand underline"
+        className="col-span-3 flex items-center justify-center gap-1.5 rounded-lg bg-slate-50 p-2 text-sm font-semibold text-brand hover:underline"
       >
-        <ImageOff className="h-4 w-4" aria-hidden /> {t('media.openImages')}
+        <ExternalLink className="h-4 w-4" aria-hidden /> {t('media.openImages')}
       </a>
     );
   }

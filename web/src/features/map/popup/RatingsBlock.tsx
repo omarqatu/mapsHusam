@@ -13,14 +13,14 @@ export default function RatingsBlock({ layer, featureId }: { layer: string; feat
 
   if (isError) return null; // ratings are a bonus; a failure must not clutter the card
   return (
-    <div className="rounded-lg border border-amber-200 bg-amber-50 p-3">
+    <div className="text-xs">
       {isLoading ? (
-        <p className="text-xs text-slate-500">{t('popup.rating.loading')}</p>
+        <p className="text-slate-400">{t('popup.rating.loading')}</p>
       ) : !data || data.totalRatings === 0 ? (
-        <p className="text-xs text-slate-500">{t('popup.rating.none')}</p>
+        <p className="text-slate-400">{t('popup.rating.none')}</p>
       ) : (
         <>
-          <div className="flex items-center gap-2 text-sm">
+          <div className="flex items-center gap-1.5">
             <StarRating value={data.averageRating} />
             <b className="text-slate-800">{data.averageRating}</b>
             <span className="text-slate-500">{t('popup.rating.count', { count: data.totalRatings })}</span>
@@ -29,15 +29,15 @@ export default function RatingsBlock({ layer, featureId }: { layer: string; feat
             type="button"
             onClick={() => setOpen((o) => !o)}
             aria-expanded={open}
-            className="mt-2 inline-flex items-center gap-1.5 rounded bg-brand px-2.5 py-1 text-xs font-semibold text-white hover:bg-brand-hover"
+            className="mt-1 inline-flex items-center gap-1 font-semibold text-brand hover:underline"
           >
-            <MessageSquare className="h-3.5 w-3.5" aria-hidden />
+            <MessageSquare className="h-3 w-3" aria-hidden />
             {open
               ? t('popup.rating.hideComments')
               : t('popup.rating.showComments', { count: data.totalRatings })}
           </button>
           {open && (
-            <ul className="mt-2 max-h-52 space-y-1.5 overflow-y-auto">
+            <ul className="mt-2 max-h-52 space-y-1.5 overflow-y-auto rounded-lg bg-slate-50 p-1.5">
               {data.ratings.map((r, i) => (
                 <li key={i} className="rounded bg-white p-2">
                   <div className="flex items-center justify-between gap-2">
