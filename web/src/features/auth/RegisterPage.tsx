@@ -27,7 +27,7 @@ export default function RegisterPage() {
   const { t } = useTranslation();
   const user = useAuthStore((s) => s.user);
   const [step, setStep] = useState<'terms' | 'form'>('terms');
-  if (user) return <Navigate to="/" replace />;
+  if (user) return <Navigate to="/home" replace />;
   return (
     <div className="mx-auto mt-4 w-full max-w-lg rounded-2xl border border-line bg-surface p-6 shadow-sm">
       {step === 'terms' ? (

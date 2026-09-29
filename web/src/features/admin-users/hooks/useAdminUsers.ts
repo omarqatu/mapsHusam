@@ -12,8 +12,11 @@ export const adminUserKeys = {
 /** Legacy refreshed the online dots every 8 seconds. */
 export const ONLINE_POLL_MS = 8000;
 
-/** All users (the server has no paging). The online set of the same answer seeds the light polling query. */
-export function useAdminUsers() {
+/**
+ * All users (the server has no paging). The online set of the same answer seeds the light polling query.
+ * `enabled` lets a page that only sometimes needs it (the home page) skip the call for non-admins.
+ */
+export function useAdminUsers(enabled = true) {
   const qc = useQueryClient();
   return useQuery({
     queryKey: adminUserKeys.all,
@@ -23,6 +26,7 @@ export function useAdminUsers() {
       return res.users;
     },
     staleTime: 30_000,
+    enabled,
   });
 }
 

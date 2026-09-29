@@ -14,7 +14,7 @@ function setup() {
       <MemoryRouter initialEntries={['/login']}>
         <Routes>
           <Route path="/login" element={<LoginPage />} />
-          <Route path="/" element={<div>home</div>} />
+          <Route path="/home" element={<div>home</div>} />
         </Routes>
       </MemoryRouter>
     </QueryClientProvider>,

@@ -18,6 +18,7 @@ export interface AppRoute {
 
 // Every route from docs/react-migration/PLAN.md. Replace `element` in App.tsx as pages are ported.
 export const appRoutes: AppRoute[] = [
+  { path: '/home', titleKey: 'nav.home', access: 'auth', legacy: '(new page — no legacy counterpart)', nav: true },
   { path: '/', titleKey: 'nav.map', access: 'auth', legacy: 'index.html', nav: true, own: true },
   { path: '/search', titleKey: 'nav.search', access: 'public', legacy: 'no-map-search.html', nav: true },
   {
