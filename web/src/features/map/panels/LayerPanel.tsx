@@ -7,12 +7,13 @@ import SearchInput from '@/components/ui/SearchInput';
 import { useAuthStore } from '@/store/authStore';
 import { GROUP_ICON } from '@/features/search/categories';
 import { BASEMAPS, REAL_ESTATE_LAYERS, SERVICE_TYPES } from '../config';
-import { groupedTargets, type TypeGroupId } from '../extras/featured';
+import { groupedTargets } from '../extras/featured';
+import { groupLabelKey, serviceLabelKey, type TypeGroupId } from '../registry';
 import { useMapUi } from '../store';
 import MapSheet from './MapSheet';
 
 const ALL_SERVICE_KEYS = SERVICE_TYPES.map((s) => s.key);
-// The same groups as the search page (one table, in extras/featured.ts): service types only, real estate has its own section.
+// The same groups as the search page (one table: the registry): service types only, real estate has its own section.
 const SERVICE_GROUPS = groupedTargets()
   .map((g) => ({ group: g.group, keys: g.targets.flatMap((x) => (x.kind === 'realEstate' ? [] : [x.discriminator])) }))
   .filter((g) => g.keys.length > 0);
@@ -72,13 +73,13 @@ function ServiceGroup({ id, items, forceOpen }: { id: TypeGroupId; items: GroupI
       <summary className="flex cursor-pointer list-none items-center gap-2.5 px-3 py-2.5 [&::-webkit-details-marker]:hidden">
         <ChevronDown className="h-4 w-4 shrink-0 text-muted transition-transform group-open:rotate-180" aria-hidden />
         <Icon className="h-4 w-4 shrink-0 text-muted" aria-hidden />
-        <span className="flex-1 text-sm font-bold text-fg">{t(`extras.featured.groups.${id}`)}</span>
+        <span className="flex-1 text-sm font-bold text-fg">{t(groupLabelKey(id))}</span>
         <span className="text-xs font-semibold text-muted" dir="ltr">
           {on}/{items.length}
         </span>
         <input
           type="checkbox"
-          aria-label={t(`extras.featured.groups.${id}`)}
+          aria-label={t(groupLabelKey(id))}
           checked={all}
           ref={(el) => {
             if (el) el.indeterminate = on > 0 && !all;
@@ -116,7 +117,7 @@ export default function LayerPanel({ open, onClose }: { open: boolean; onClose: 
 
   const groups = useMemo(() => {
     const q = filter.trim().toLowerCase();
-    const byKey = new Map(SERVICE_TYPES.map((s) => [s.key, { ...s, label: t(`services.${s.key}`) }]));
+    const byKey = new Map(SERVICE_TYPES.map((s) => [s.key, { ...s, label: t(serviceLabelKey(s.key)) }]));
     return SERVICE_GROUPS.map((g) => ({
       group: g.group,
       items: g.keys.flatMap((k) => {

@@ -1,5 +1,5 @@
 import type { EditTarget, FieldDef } from './schema';
-import { SERVICE_TAG_KEYWORDS, SERVICE_TAG_NAMES } from './searchTagData';
+import { SERVICE_BY_KEY } from '../registry';
 
 // Pure logic behind the attribute dialog: feature properties -> form values, form values -> cleaned properties,
 // validation, and the `search_tags` text (legacy js/edit-core.js and editPolygons.js).
@@ -104,10 +104,11 @@ export function buildSearchTags(target: EditTarget, props: Props): string | null
   if (target.kind !== 'point') return null;
 
   const key = target.discriminator ?? target.id;
-  const head = [SERVICE_TAG_NAMES[key] ?? key, String(props.name ?? '').trim(), descriptionStart(props.des)]
+  const service = SERVICE_BY_KEY.get(key);
+  const head = [service?.tagName ?? key, String(props.name ?? '').trim(), descriptionStart(props.des)]
     .map((s) => s.trim())
     .filter((s) => s.length > 0)
     .join('، ');
-  const extra = SERVICE_TAG_KEYWORDS[key];
+  const extra = service?.tagKeywords;
   return extra ? `${head}، ${extra}` : head;
 }

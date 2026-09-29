@@ -14,6 +14,7 @@ import FeaturedCard from './FeaturedCard';
 import { nearestEntries } from './featured';
 import { useNearbyCandidates } from './queries';
 import TypeFilter from './TypeFilter';
+import { serviceLabelKey } from '../registry';
 
 const PRESETS = ['road_barriers', 'fuel_stations'] as const;
 
@@ -76,7 +77,7 @@ export default function NearMeSection() {
           return (
             target && (
               <Button key={key} size="sm" variant="secondary" disabled={locating} onClick={() => locate(key)}>
-                <span aria-hidden>{targetIcon(target)}</span> {t(`services.${key}`)}
+                <span aria-hidden>{targetIcon(target)}</span> {t(serviceLabelKey(key))}
               </Button>
             )
           );

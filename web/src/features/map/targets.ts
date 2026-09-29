@@ -1,5 +1,6 @@
 import type { Workspace } from '@/api/search';
 import { REAL_ESTATE_LAYERS, SERVICE_TYPE_BY_KEY, SERVICE_TYPES, type RealEstateLayerKey } from './config';
+import { serviceLabelKey } from './registry';
 
 /**
  * What a map feature / search is about: one real-estate layer, or one service type (a `discriminator` of service_all).
@@ -21,7 +22,7 @@ export const targetFromKey = (key: unknown) => (typeof key === 'string' ? (BY_KE
 
 /** i18n key of the type's display name. */
 export const targetLabelKey = (t: MapTarget) =>
-  t.kind === 'realEstate' ? `layers.${t.layer}` : `services.${t.discriminator}`;
+  t.kind === 'realEstate' ? `layers.${t.layer}` : serviceLabelKey(t.discriminator);
 
 export function targetIcon(t: MapTarget): string {
   if (t.kind === 'realEstate') return REAL_ESTATE_LAYERS.find((l) => l.key === t.layer)?.icon ?? '🏠';

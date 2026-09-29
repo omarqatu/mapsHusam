@@ -3,6 +3,7 @@ import clsx from 'clsx';
 import { useTranslation } from 'react-i18next';
 import SearchInput from '@/components/ui/SearchInput';
 import { matchesQuery } from '../map/extras/status';
+import { groupLabelKey } from '../map/registry';
 import { targetIcon, targetKey, targetLabelKey, type MapTarget } from '../map/targets';
 import { GROUP_ICON, GROUP_IDS, targetsInGroup, type GroupId } from './categories';
 
@@ -49,7 +50,7 @@ export default function CategoryBrowser({ group, onGroup, onPick }: Props) {
               )}
             >
               <Icon className="h-4 w-4" aria-hidden />
-              {t(g === 'all' ? 'searchPage.allGroups' : `extras.featured.groups.${g}`)}
+              {t(g === 'all' ? 'searchPage.allGroups' : groupLabelKey(g))}
             </button>
           );
         })}

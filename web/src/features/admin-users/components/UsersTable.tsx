@@ -10,6 +10,7 @@ import StatusDot from '@/components/ui/StatusDot';
 import { useIsDesktop } from '@/hooks/useMediaQuery';
 import { formatDateTime } from '@/lib/format';
 import { parseServerDate } from '../model';
+import { serviceLabelKey } from '@/features/map/registry';
 
 interface Props {
   users: AdminUser[] | undefined;
@@ -170,7 +171,7 @@ export default function UsersTable({
           u.service_layer ? (
             <div>
               <div className="font-semibold text-info">
-                {t(`services.${u.service_layer}`, u.service_layer)}
+                {t(serviceLabelKey(u.service_layer), u.service_layer)}
               </div>
               <div className="text-xs font-medium text-muted">
                 {t('adminUsers.featureShort')} {u.feature_id ?? '—'}

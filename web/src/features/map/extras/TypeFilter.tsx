@@ -1,41 +1,11 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
-import {
-  Briefcase,
-  BriefcaseMedical,
-  Building2,
-  Car,
-  Ellipsis,
-  Fuel,
-  Landmark,
-  PartyPopper,
-  School,
-  Signpost,
-  Store,
-  UserRound,
-  Wrench,
-  type LucideIcon,
-} from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import SearchInput from '@/components/ui/SearchInput';
 import { targetIcon, targetKey, targetLabelKey, type MapTarget } from '../targets';
-import { groupedTargets, type TypeGroupId } from './featured';
+import { groupLabelKey } from '../registry';
+import { GROUP_ICON } from '../registry/groupIcons';
+import { groupedTargets } from './featured';
 import { matchesQuery } from './status';
-
-const GROUP_ICON: Record<TypeGroupId, LucideIcon> = {
-  roads: Signpost,
-  fuel: Fuel,
-  realestate: Building2,
-  technicians: Wrench,
-  health: BriefcaseMedical,
-  vehicles: Car,
-  professional: UserRound,
-  events: PartyPopper,
-  misc: Ellipsis,
-  landmarks: Landmark,
-  commercial: Store,
-  education: School,
-  jobs: Briefcase,
-};
 
 const GROUPS = groupedTargets();
 
@@ -128,7 +98,7 @@ export default function TypeFilter({ selected, onChange }: Props) {
             <details key={group} className="rounded-lg" open={query.trim() !== '' || count > 0 || undefined}>
               <summary className="flex cursor-pointer items-center gap-2 rounded px-1 py-1 text-sm font-semibold text-fg hover:bg-subtle">
                 <Icon className="h-4 w-4 text-muted" aria-hidden />
-                {t(`extras.featured.groups.${group}`)}
+                {t(groupLabelKey(group))}
                 <span className="text-xs font-normal text-muted">({targets.length})</span>
               </summary>
               <div className="ms-3 border-s border-line ps-2">

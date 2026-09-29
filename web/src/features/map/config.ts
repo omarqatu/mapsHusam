@@ -1,6 +1,8 @@
 // Map configuration — typed port of legacy js/config.js (MAP_CONFIG) and js/layers.js.
 // Names shown to users live in the locale files (services.<key>, layers.<key>); this file is data only.
 
+import { SERVICE_BY_KEY, SERVICE_REGISTRY, type ServiceEntry, type ServiceTier } from './registry';
+
 export type Coordinate = [number, number];
 
 /** Al-Manara square, Ramallah/Al-Bireh — legacy default start point. */
@@ -47,89 +49,12 @@ export const SERVICE_ALL_LAYER: WfsLayerDef = {
   zIndex: 30,
 };
 
-export type ServiceTier = 'always' | 'medium' | 'close';
+export type { ServiceTier } from './registry';
+export type ServiceType = ServiceEntry;
 
-export interface ServiceType {
-  key: string;
-  icon: string;
-  tier?: ServiceTier;
-}
-
-/** Every service type the map knows (legacy serviceTranslations). Unknown discriminators are not drawn. */
-export const SERVICE_TYPES: ServiceType[] = [
-  { key: 'fuel_stations', icon: '⛽', tier: 'always' },
-  { key: 'road_barriers', icon: '🚧', tier: 'always' },
-  { key: 'job_vacancies', icon: '💼', tier: 'always' },
-  { key: 'schools_kindergartens', icon: '🏫', tier: 'medium' },
-  { key: 'city_landmarks', icon: '🏛️', tier: 'medium' },
-  { key: 'electrician', icon: '⚡' },
-  { key: 'ac_technician', icon: '❄️' },
-  { key: 'plumber', icon: '🔧' },
-  { key: 'general_maintenance', icon: '🛠️' },
-  { key: 'painter', icon: '🎨' },
-  { key: 'Finisher', icon: '🛋️' },
-  { key: 'carpenter', icon: '🪵' },
-  { key: 'blacksmith', icon: '🔨' },
-  { key: 'builder', icon: '🧱' },
-  { key: 'house_cleaner', icon: '🧹' },
-  { key: 'aluminum_tech', icon: '🪟' },
-  { key: 'glass_tech', icon: '🛡️' },
-  { key: 'car_mechanic', icon: '🚗' },
-  { key: 'car_electrician', icon: '🔌' },
-  { key: 'tire_tech', icon: '🛞' },
-  { key: 'car_wash', icon: '🧼' },
-  { key: 'motorcycle_repair', icon: '🏍️' },
-  { key: 'taxi_driver', icon: '🚕' },
-  { key: 'delivery_services', icon: '📦' },
-  { key: 'tow_truck', icon: '🛻' },
-  { key: 'cctv_installer', icon: '📹' },
-  { key: 'party_planner', icon: '🎈' },
-  { key: 'zaffa_bands', icon: '🥁' },
-  { key: 'music_bands', icon: '🎸' },
-  { key: 'party_rental', icon: '🎪' },
-  { key: 'home_nurse', icon: '🩺' },
-  { key: 'masseur', icon: '💆' },
-  { key: 'cupping_specialist', icon: '🍵' },
-  { key: 'nutritionist', icon: '🥗' },
-  { key: 'truck_driver', icon: '🚛' },
-  { key: 'security_firms', icon: '🛡️' },
-  { key: 'furniture_buyer', icon: '🛋️' },
-  { key: 'gardener', icon: '🌿' },
-  { key: 'pet_care', icon: '🐾' },
-  { key: 'clown_entertainer', icon: '🤡' },
-  { key: 'online_stores', icon: '🛒' },
-  { key: 'villas_rent', icon: '🏡' },
-  { key: 'martial_arts_gymnastics', icon: '🥋' },
-  { key: 'public_parks_recreation', icon: '🌳' },
-  { key: 'hotels', icon: '🏨' },
-  { key: 'free_distribution', icon: '🎁' },
-  { key: 'barber_shop', icon: '💈' },
-  { key: 'photographers', icon: '📷' },
-  { key: 'video_design_ads', icon: '🎬' },
-  { key: 'pharmacies_on_call', icon: '💊' },
-  { key: 'taxis_on_call', icon: '🚕' },
-  { key: 'emergency_hospitals', icon: '🏥' },
-  { key: 'clinics', icon: '🩺' },
-  { key: 'doctors_on_call', icon: '👨‍⚕️' },
-  { key: 'ambulances_on_call', icon: '🚑' },
-  { key: 'music_training', icon: '🎹' },
-  { key: 'lawyers', icon: '⚖️' },
-  { key: 'land_surveyors', icon: '📐' },
-  { key: 'real_estate_valuers', icon: '📊' },
-  { key: 'private_tutors', icon: '👨‍🏫' },
-  { key: 'programmers', icon: '💻' },
-  { key: 'car_delivery_on_call', icon: '🚗' },
-  { key: 'motorcycle_delivery_on_call', icon: '🏍️' },
-  { key: 'bicycle_delivery_on_call', icon: '🚲' },
-  { key: 'student_research_assist', icon: '📚' },
-  { key: 'supermarket', icon: '🏪' },
-  { key: 'commercial_shops', icon: '🏬' },
-  { key: 'restaurants', icon: '🍽️' },
-];
-
-export const SERVICE_TYPE_BY_KEY: ReadonlyMap<string, ServiceType> = new Map(
-  SERVICE_TYPES.map((s) => [s.key, s]),
-);
+/** Every service type the map knows (legacy serviceTranslations), from the registry. Unknown discriminators are not drawn. */
+export const SERVICE_TYPES: readonly ServiceType[] = SERVICE_REGISTRY;
+export const SERVICE_TYPE_BY_KEY: ReadonlyMap<string, ServiceType> = SERVICE_BY_KEY;
 
 /** Per tier: max resolution at which the point is drawn, and below which its label is drawn (legacy values). */
 export const TIER_RULES: Record<ServiceTier, { maxResolution: number; labelBelow: number }> = {
