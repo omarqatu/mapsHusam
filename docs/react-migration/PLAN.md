@@ -39,12 +39,74 @@ Status legend: ⬜ not started · 🟨 in progress · ✅ ported & verified · �
 
 | Route | Legacy source | Status |
 | --- | --- | --- |
-| `/admin/users` | `admin-users.html` (+ `css/admin-users.css`) | ⬜ |
-| `/admin/users/:id/view` | `admin-view-user.html` | ⬜ |
-| `/admin/widgets` | `widgets-admin.html`, `js/widgets-config.js` | ⬜ |
-| `/admin/dashboard` | `dashboard.html` | ⬜ |
+| `/admin/users` | `admin-users.html` (+ `css/admin-users.css`) | 🟨 |
+| `/admin/users/:id/view` | `admin-view-user.html` | 🟨 |
+| `/admin/widgets` | `widgets-admin.html`, `js/widgets-config.js` | 🟨 |
+| `/admin/dashboard` | `dashboard.html` | 🟨 |
 | `/notifications` | `notifications-panel.html` (socket.io) | ⬜ |
 | `/widgets/portal`, `/widgets/ticker` | `widgets-portal.html`, `widgets-ticker.html`, `js/widgets-ticker.js` | ⬜ |
+
+### Admin pages — parity checklists (Phase 1, written before the code; ticked after verification)
+
+All four pages: legacy guard = `map_user.role === 'admin'` else redirect; React = `RoleRoute roles={['admin']}`. Every `/api/admin/*`
+call needs `Authorization: Bearer <admin token>` and the server re-checks role + `is_active` + `force_logout_flag` + `token_version`
+on each request (`requireAdmin`). Errors come back as `{ success:false, error }`.
+
+**`/admin/users`** — `admin-users.html`
+- API: `GET /api/admin/users` → `{ users[], onlineUserIds[] (strings), total }`; user = `user_id, full_name, email, phone, role,
+  is_active, status, service_layer, feature_id, x_coord, y_coord, created_at, request_limit, request_limit_period, is_online`
+  (the server's `search` / `status_filter` / `role_filter` query params exist but legacy filters client-side; so do we).
+  `GET /api/admin/online-users` → `{ onlineUserIds }` polled every 8 s (dots only). `POST /api/admin/users/update`
+  `{ user_id, role?, is_active?, service_layer?, feature_id?, new_password?, request_limit?, request_limit_period? }` → `{ success, message }`
+  (server: 400 when nothing to change, 404 unknown user, saving always notifies the user + emits `force_relogin`; role / active / password
+  change bump `token_version` unless the admin edits himself). `POST /api/admin/users/force-logout { user_id }` → `{ message, wasOnline }`.
+  `POST /api/admin/users/force-logout-all { target_type: all|online|offline|selected, user_ids? }` → `{ message, total, online, offline }`.
+  `POST /api/admin/view-session { user_id }` → `{ token, expires_in, user }`.
+- [ ] Filters (client side): text (name / email / phone), role, active state, online, linked-to-service, created (2 days / week / month /
+  exact day). [ ] Newest first. [ ] Count of shown users. [ ] "Refresh list".
+- [ ] Selection kept across filter changes; select-all acts on the visible rows only (tri-state); counter of all selected.
+- [ ] Bulk force-logout: all / online only / offline only / selected (confirm first; selection cleared after success).
+- [ ] Row: role badge, online dot, active badge, service layer, feature id, request quota (limit + period, or unlimited), created at.
+- [ ] Row actions: view read-only (new page), edit, activate / deactivate (confirm), force-logout (confirm, text differs online/offline).
+- [ ] Edit dialog: active, role, service layer (66 layers, none), feature id (only with a layer), request limit (empty = none) + period
+  (enabled only with a limit), new password (>= 6, empty = keep). Sends the payload; success closes + reloads.
+- Storage: none. Mobile: legacy is a 13-column table with sideways scroll.
+
+**`/admin/users/:id/view`** — `admin-view-user.html`
+- Legacy: opened in a new tab as `admin-view-user.html?token=<view token>` from `POST /api/admin/view-session`. Read-only, 30 min.
+  `GET /api/admin/view-session/profile` → `{ user }`; `GET /api/admin/view-session/requests` → `{ requests[] }` (as requester or provider:
+  `id, service_type, status, requester_name, provider_full_name, created_at …`); `GET .../requests/:id/messages` → `{ messages[] }`
+  (`sender_role, message, created_at`; 403 if the request is not the viewed user's). These three take the VIEW token (401 when expired).
+- [ ] Read-only badge + expiry note. [ ] Profile: name, id, phone, email, role, active, service layer, feature id.
+- [ ] Requests list (type + #id, status, requester, provider, date); messages load on first expand, toggle hides.
+- [ ] Empty / error states ("invalid link" when there is no token → here: unknown user / failed session).
+
+**`/admin/dashboard`** — `dashboard.html` (provider success stats)
+- API: `GET /api/admin/provider-success-stats` → `{ stats[] }` (`id, username, provider_name, provider_phone, service_layer, service_type, status,
+  contact_type, cancellation_reason, created_at, updated_at …`, newest first, no limit). `DELETE /api/admin/provider-success-stats/:id`.
+- [ ] Status mapping: completed/success → successful, cancelled/rejected → cancelled, anything else (accepted, pending) → pending.
+- [ ] Contact type: call / whatsapp / service request (default). [ ] Layer shown by its Arabic name.
+- [ ] Column filters: user (contains + exact), provider (contains + exact), layer, phone (contains), date (picker + typed dd/mm/yyyy,
+  Arabic digits accepted), contact type, status, cancel reason (contains + exact). [ ] "Shown N of M". [ ] Reload.
+- [ ] Delete a record (confirm, irreversible). [ ] Shortcuts: send notification, live-info centre, users.
+
+**`/admin/widgets`** — `widgets-admin.html` + `js/widgets-config.js`
+- API: `GET /api/admin/widgets-data` → `{ groups: { <key>: { data[], updated_at } } }`; `POST /api/admin/widgets-data/:key { items[] }` (keys:
+  currency, gold, weather, fuel, transport_inter_city, transport_intra_city, events — else 400); `GET /api/widgets-data` (public) for the
+  road / fuel "last update"; `GET /api/admin/road-fuel-features` → `{ roadBarriers[{id,name,stop,stop2,updated_at}], fuelStations[{id,name,diesel,banzen95,banzen98,updated_at}] }`
+  (numbers, may be null); `POST /api/admin/update-road-barrier { id, stop?, stop2? }`, `update-fuel-station { id, diesel, banzen95, banzen98 }`,
+  `bulk-update-road-barriers { ids, stop?, stop2? }`, `bulk-update-fuel-stations { ids, diesel?, banzen95?, banzen98? }`,
+  `batch-update-road-barriers { items:[{id,stop?,stop2?}] }`, `batch-update-fuel-stations { items }` (one transaction), `reorder-features { layer, orderedIds }`.
+  Values: road 0 open · 1 closed · 2 light jam · 3 heavy jam · 4 inspection; fuel 0 available · 1 unavailable.
+- [ ] 9 tabs: 7 editable groups (currency, gold, weather, fuel, transport between cities, transport in city, events) + roads + fuel stations.
+- [ ] Group tab: editable rows (id, label, value, unit / code / weather fields / event date + notes), add row, delete row, reorder rows,
+  save (rows without id are dropped, empty fields omitted, values trimmed), "last update" stamp, refresh.
+  Empty server group → the defaults of `js/widgets-config.js` (weather: three demo cities) are shown as the starting rows.
+- [ ] Roads tab: table (id, name, direction in / out select incl. "not set"), single-row save, save all (changed rows only, one
+  transaction), unsaved-row highlight + count, bulk bar (checkboxes + select-all, in / out, confirm, "no change" keeps a direction),
+  reorder + save order, last-update stamp, refresh (asks when unsaved).
+- [ ] Fuel tab: same with diesel / 95 / 98 availability.
+- Storage: none. Legacy note: "add a checkpoint / station = use the map editing tool" (item 5, not here).
 
 ## Phase 2 — Search without map
 
