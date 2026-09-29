@@ -20,6 +20,8 @@ import ResultsPanel from './search/ResultsPanel';
 import SearchPanel from './search/SearchPanel';
 import { useSearchUi } from './search/store';
 import { useMapUi } from './store';
+import MapTools from './tools/MapTools';
+import ToolButtons from './tools/ToolButtons';
 import LayerPanel from './panels/LayerPanel';
 
 /** `/` — the map. Full-screen: a slim brand bar and the map; every tool floats on the map's end edge. */
@@ -93,16 +95,21 @@ export default function MapPage() {
           <SelectionController />
           <ResultsLayer />
           <ReplayShared />
-          <div className="absolute end-3 top-3 z-10 flex flex-col gap-2">
+          {/* Short screens (landscape phones): the column scrolls, and refresh/zoom — which have gestures and a
+              one-minute auto refresh — step aside so the primary tools stay reachable. */}
+          <div className="absolute end-3 top-3 z-10 flex max-h-[calc(100%-1.5rem)] flex-col gap-2 overflow-y-auto">
             <MapButton label={t('search.title')} active={searchOpen} onClick={toggleSearch}>
               <Search className="h-5 w-5" />
             </MapButton>
             <MapButton label={t('map.layers')} active={layersOpen} onClick={toggleLayers}>
               <Layers className="h-5 w-5" />
             </MapButton>
+            <ToolButtons />
             <LocateButton />
-            <RefreshButton />
-            <ZoomButtons />
+            <div className="flex flex-col gap-2 [@media(max-height:560px)]:hidden">
+              <RefreshButton />
+              <ZoomButtons />
+            </div>
           </div>
           <div className="absolute bottom-2 start-3 z-10">
             <CoordinatesBar />
@@ -111,6 +118,7 @@ export default function MapPage() {
             <GlobalSearchBox />
           </div>
           <SearchPanel />
+          <MapTools />
           <LayerPanel open={layersOpen} onClose={() => setLayersOpen(false)} />
           <ResultsPanel className={selected ? 'max-sm:hidden' : undefined} />
           {results && selected && (

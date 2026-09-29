@@ -87,7 +87,7 @@ describe('map utils', () => {
   });
   it('formats grid coordinates', () => expect(formatGrid([1.234, 5])).toBe('E: 1.23, N: 5.00'));
   it('grid ↔ GPS round-trips (Al-Manara) and formats lat, lon', () => {
-    const [lon, lat] = toLonLat(169463.41, 145767.99);
+    const [lon, lat] = toLonLat([169463.41, 145767.99]);
     expect(lat).toBeGreaterThan(31.8);
     expect(lat).toBeLessThan(32);
     expect(lon).toBeGreaterThan(35.1);

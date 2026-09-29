@@ -8,8 +8,15 @@ export function readSharedCenter(search: string): Coordinate | null {
   return Number.isFinite(x) && Number.isFinite(y) ? [x, y] : null;
 }
 
-export function formatGrid([e, n]: readonly number[]) {
-  return `E: ${e.toFixed(2)}, N: ${n.toFixed(2)}`;
+/** `?z=..` zoom of a shared-location link (share tool); null when absent or not a number. */
+export function readSharedZoom(search: string): number | null {
+  const z = Number.parseFloat(new URLSearchParams(search).get('z') ?? '');
+  return Number.isFinite(z) ? z : null;
+}
+
+/** Palestine Grid label. 2 decimals for the pointer bar (legacy), 3 where a point is shared/copied (legacy share tool). */
+export function formatGrid([e, n]: readonly number[], decimals = 2) {
+  return `E: ${e.toFixed(decimals)}, N: ${n.toFixed(decimals)}`;
 }
 
 /** GPS for people who paste into Google Maps / WhatsApp: "lat, lon" with 6 decimals (~10 cm). */

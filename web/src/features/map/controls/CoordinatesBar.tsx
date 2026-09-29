@@ -20,9 +20,8 @@ export default function CoordinatesBar() {
     const key = map.on('pointermove', (e: MapBrowserEvent) => {
       cancelAnimationFrame(frame);
       frame = requestAnimationFrame(() => {
-        const [x, y] = e.coordinate;
         if (grid.current) grid.current.textContent = formatGrid(e.coordinate);
-        if (gps.current) gps.current.textContent = formatLatLon(toLonLat(x, y));
+        if (gps.current) gps.current.textContent = formatLatLon(toLonLat(e.coordinate));
       });
     });
     return () => {

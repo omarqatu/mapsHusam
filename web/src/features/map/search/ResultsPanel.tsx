@@ -5,6 +5,7 @@ import { useProviderLinked } from '@/api/mapEvents';
 import { toast } from '@/components/ui/toastStore';
 import { useOlMap } from '../MapContext';
 import { useMapUi } from '../store';
+import { copyText } from '@/lib/clipboard';
 import { formatDateTime, formatNumber } from '@/lib/format';
 import ContactButtons from '../popup/ContactButtons';
 import { isOpenNow, text, type SelectedFeature } from '../popup/featureModel';
@@ -137,14 +138,11 @@ export default function ResultsPanel({ className }: { className?: string }) {
 
   const copyLink = async () => {
     if (!results.share) return toast.warning(t('search.results.noLink'));
-    try {
-      await navigator.clipboard.writeText(
-        buildShareLink(results.share, window.location.origin, window.location.pathname),
-      );
-      toast.success(t('search.results.linkCopied'));
-    } catch {
-      toast.error(t('search.results.linkFailed'));
-    }
+    const ok = await copyText(
+      buildShareLink(results.share, window.location.origin, window.location.pathname),
+    );
+    if (ok) toast.success(t('search.results.linkCopied'));
+    else toast.error(t('search.results.linkFailed'));
   };
 
   const print = () => {

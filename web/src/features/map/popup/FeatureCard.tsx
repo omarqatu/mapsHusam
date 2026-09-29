@@ -28,6 +28,7 @@ import {
   type SelectedFeature,
 } from './featureModel';
 import { isFuelStation, isRoadBarrier, targetIcon, targetLabelKey } from '../targets';
+import { copyText, isMobileBrowser, nativeShare } from '@/lib/clipboard';
 import { formatNumber } from '@/lib/format';
 import ContactButtons from './ContactButtons';
 import RatingsBlock from './RatingsBlock';
@@ -55,17 +56,11 @@ function StatusTile({ tone, icon, label, sub }: { tone: string; icon: string; la
 
 async function shareLocation(feature: SelectedFeature, title: string, t: (k: string) => string) {
   const url = locationShareLink(window.location.origin, window.location.pathname, feature.coordinate);
-  try {
-    if (typeof navigator.share === 'function' && /Android|iPhone|iPad|iPod/i.test(navigator.userAgent)) {
-      await navigator.share({ title, url });
-      return;
-    }
-    await navigator.clipboard.writeText(url);
-    toast.success(t('popup.linkCopied'));
-  } catch (e) {
-    if (e instanceof DOMException && e.name === 'AbortError') return; // user closed the share sheet
-    toast.error(t('popup.copyFailed'));
-  }
+  // Phones: native share sheet (closing it is not an error). Elsewhere: clipboard.
+  if (isMobileBrowser() && (await nativeShare({ title, url }))) return;
+  if (isMobileBrowser() && typeof navigator.share === 'function') return;
+  if (await copyText(url)) toast.success(t('popup.linkCopied'));
+  else toast.error(t('popup.copyFailed'));
 }
 
 /** Details of the clicked marker (legacy popup.js generateFeatureHtml), as a React card. */

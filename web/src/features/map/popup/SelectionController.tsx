@@ -67,6 +67,7 @@ export default function SelectionController() {
     const dataLayer = (l: unknown): l is Layer => !!l && (l as Layer).get('key') !== undefined;
     const clickKey = map.on('singleclick', (e) => {
       if (useSearchUi.getState().picking) return; // this tap chooses a search point
+      if (useMapUi.getState().activeTool) return; // measure / share tool owns the tap
       let picked: SelectedFeature | null = null;
       map.forEachFeatureAtPixel(
         e.pixel,
@@ -100,7 +101,7 @@ export default function SelectionController() {
     });
 
     const moveKey = map.on('pointermove', (e) => {
-      if (e.dragging) return;
+      if (e.dragging || useMapUi.getState().activeTool) return; // an active tool sets its own cursor
       const over = map.hasFeatureAtPixel(e.pixel, { hitTolerance: HIT_TOLERANCE, layerFilter: dataLayer });
       map.getTargetElement().style.cursor = over ? 'pointer' : '';
     });
