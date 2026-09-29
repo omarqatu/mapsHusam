@@ -50,7 +50,58 @@ Status legend: ⬜ not started · 🟨 in progress · ✅ ported & verified · �
 
 | Route | Legacy source | Status |
 | --- | --- | --- |
-| `/search` | `no-map-search.html`, `js/no-map-search.js` (2.4k lines), `no-map-mobile.js`, `market-search.js`, `global-search.js`, `search.js` | ⬜ |
+| `/search` | `no-map-search.html`, `js/no-map-search.js` (2.4k lines), `no-map-mobile.js`, `market-search.js`, `global-search.js`, `search.js` | 🟨 |
+
+### `/search` — inventory (read from the legacy files + `server.js`; the map page's search code is reused, not copied)
+
+**Legacy behaviour that exists (parity checklist — tick when verified in the browser):**
+
+- [ ] Route is public (no login). Session, when present, only adds the account menu / contact quota. Legacy showed a profile bar
+      (name, role, dashboard, notifications, change password, logout) → now the shared `AppHeader`.
+- [ ] Group tabs (14: all + 13 groups: roads, fuel, real estate, technicians, health, vehicles, professional, events, misc,
+      landmarks, commercial, education, jobs) and the category grid (3 real-estate layers + every service type, minus
+      `globalExclusions`). A group with exactly one category opens it directly (roads, fuel, landmarks, education, jobs).
+      `?group=<id>` deep link (footer links of the legacy map page use it) activates the tab.
+- [ ] Opening a category = search over the WHOLE layer at once (`GET /api/search-features?layer&workspace`, max 2000 rows),
+      then filters narrow it; results sorted by `rating` (highest first). Back button returns to the categories.
+- [ ] Filters per category (legacy `searchFieldsConfig`): real estate = governorate, town, location, price (currency +
+      ≥/≤ + number), area (≥/≤ + number); services = governorate, town, location, name; road barriers add checkpoint status in /
+      out (fixed list); fuel stations add diesel / 95 / 98 availability (fixed list). Governorate → town → location/name cascade
+      through `GET /api/get-unique-values` (`filter_gov_a`, `filter_village_a`). Every change re-runs the search (debounced 300 ms
+      for typed values). "Reset" clears all filters. Result count line ("عدد النتائج").
+- [ ] Result cards. Services: type + `#id`, open/closed badge + working hours, name, location, fuel availability (fuel stations),
+      average stars + count + expandable comments (`GET /api/service-ratings`), description, first picture, video (YouTube facade /
+      `<video>` / link), details links 1 and 2, contact. Real estate: type + `#fid`, place, price + currency, area, town,
+      governorate, description, media, contact. Road barriers: own card — in / out status pair, name, governorate, town, location,
+      notes, media, no contact.
+- [ ] Contact buttons: call (only when `phone`), WhatsApp (needs `whatsapp`), "request service" instead when the feature belongs to
+      a registered provider (`GET /api/provider-linked-features`); 10 s per-feature cooldown (`click_cooldown_*` keys),
+      quota check (`POST /api/check-request-limit`, fail-open), `POST /api/log-contact-click`, `POST /save-stat` (`source: quick_search`).
+- [ ] "Go to map" button on a card → map at the feature (`?x=&y=`), in a new tab in legacy.
+- [ ] Quota: every executed category search is logged `POST /api/log-map-event` `event_type: no_map_search`,
+      `source: quick_search` (the server files it under the quick-search statistics); 429 = message + no results. Fail-open otherwise.
+- [ ] Market-style keyword box (header of the legacy page, `market-search.js`): ≥ 2 letters, 400 ms debounce or Enter/button,
+      `search_tags contains <text>` over services + the 3 real-estate layers, road-barrier status words ("closed", "crisis",
+      "checkpoint") and fuel words ("diesel", "95") add status hits, de-duplicated, ranked type-name match → rating, first 50
+      shown as the same cards as above. (Legacy also had a WFS/CQL fallback — removed on the map already, same here.)
+- [ ] Home sections (loaded on page open): featured (`rating = 10`, side + bottom "ad" columns), top rated
+      (`GET /api/top-rated-providers` + batch fetch, services only), recommended (`rating = 9.9`, max 15), photos, videos,
+      before/after (from rating 10 / 9.9 with media). Cards have the same contact buttons and "go to map".
+- [ ] Hero block: how-to text, platform statistics (`GET /api/platform-stats`), link to the interactive map.
+- [ ] "Road status" and "Fuel status" buttons open the live status lists (legacy: widgets portal at that card).
+- [ ] Page chrome: top strip with guide / about / terms / privacy links (legal modals) and a Facebook contact link; footer with
+      the same legal links, group links and live-info links; widgets ticker footer bar.
+- [ ] Mobile (`no-map-mobile.js`): filter box as a draggable bottom sheet, layout switches at three widths, scroll-to-results when the
+      keyword box is used on a phone.
+
+**Legacy did NOT have** (the task list asked for them): sorting other than rating, pagination (it rendered every row, up to the
+2000-row server cap), print, share link, near-me / distance. See "Added" below.
+
+**Reused from the map page (`web/src/features/map/…`, not duplicated):** `targets` / `config` (type catalogue, icons, names),
+`search/model.ts` (fields per type, cascade rules, operators), `search/results.ts` (API row → `SearchResult`), `search/globalSearch.ts`
+(keyword fetch + ranking + highlight), `search/nearby.ts` (distance), `search/printResults.ts`, `search/shareLink.ts`,
+`search/ResultContact.tsx`, `popup/*` helpers (`featureModel`, `RatingsBlock`, `ContactButtons`, `useContactActions`),
+`extras/*` (featured sections, status lists, statistics). Shared search quota moved to `web/src/lib/searchQuota.ts`.
 
 ## Phase 3 — The map (`/`) — **priority** (user, 2026-09-29: map → UI/UX → security & performance)
 
