@@ -1,4 +1,6 @@
+import { Suspense } from 'react';
 import { Outlet } from 'react-router';
+import { CenteredSpinner } from '@/components/ui/Spinner';
 import Toaster from '@/components/ui/Toaster';
 import AppHeader from './AppHeader';
 
@@ -8,7 +10,9 @@ export default function AppShell() {
     <div className="flex min-h-full flex-col">
       <AppHeader />
       <main className="mx-auto w-full max-w-7xl flex-1 p-4">
-        <Outlet />
+        <Suspense fallback={<CenteredSpinner minHeight="50vh" />}>
+          <Outlet />
+        </Suspense>
       </main>
       <Toaster />
     </div>

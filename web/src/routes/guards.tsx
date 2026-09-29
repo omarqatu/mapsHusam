@@ -3,11 +3,11 @@ import { useAuthStore } from '@/store/authStore';
 import type { Role } from '@/types/auth';
 import ForbiddenPage from './ForbiddenPage';
 
-/** Any logged-in user; otherwise → /login and back afterwards. */
-export function ProtectedRoute() {
+/** Any logged-in user; otherwise → `to` (default /login) and back afterwards. The map sends visitors to /welcome. */
+export function ProtectedRoute({ to = '/login' }: { to?: string }) {
   const user = useAuthStore((s) => s.user);
   const location = useLocation();
-  if (!user) return <Navigate to="/login" replace state={{ from: location.pathname + location.search }} />;
+  if (!user) return <Navigate to={to} replace state={{ from: location.pathname + location.search }} />;
   return <Outlet />;
 }
 

@@ -759,6 +759,10 @@ Split `index.html` into features, in this order:
      "no background" map is offered to admins only.
    - Requests: status labels lose their emoji (a coloured dot + text instead), "تم الاتفاق" has no ✅, the chat footer keeps
      "cancel request" on one line on phones, hint and date text raised to 14 / 12 px.
+   - Performance: every page except the auth screens is its own chunk (the entry file went from 1,045 kB to 339 kB,
+     ≈103 kB gzipped) — the login page no longer downloads OpenLayers, the admin pages or the search code.
+   - Decision (login wall): the map still needs a login, as in legacy; a visitor on `/` lands on `/welcome` (log in /
+     register / legal texts), not on a bare login form. `/search` and `/widgets/*` stay public.
    - Live tests run file by file (`fileParallelism` off when `VITE_LIVE_API` is set): they share the seeded accounts.
    - Media sections show only their own kind (photos section = pictures, videos section = videos); everything is still in the
      details card. Cards use the shared `MediaGallery` (enlarge on click, https-only URLs via `safeMediaUrl`) instead of the

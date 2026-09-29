@@ -13,6 +13,10 @@ function renderAt(path: string) {
     <MemoryRouter initialEntries={[path]}>
       <Routes>
         <Route path="/login" element={<div>login page</div>} />
+        <Route path="/welcome" element={<div>welcome page</div>} />
+        <Route element={<ProtectedRoute to="/welcome" />}>
+          <Route path="/map" element={<div>map</div>} />
+        </Route>
         <Route element={<ProtectedRoute />}>
           <Route path="/inbox" element={<div>inbox</div>} />
         </Route>
@@ -30,6 +34,11 @@ describe('route guards', () => {
   it('sends anonymous visitors to /login', () => {
     renderAt('/inbox');
     expect(screen.getByText('login page')).toBeInTheDocument();
+  });
+
+  it('can send them somewhere else, e.g. the welcome page for the map', () => {
+    renderAt('/map');
+    expect(screen.getByText('welcome page')).toBeInTheDocument();
   });
 
   it('lets a logged-in user through ProtectedRoute', () => {
