@@ -4,7 +4,7 @@ import StatusDot from '@/components/ui/StatusDot';
 import { FUEL_FIELDS } from '../config';
 import { barrierDirections, fuelAvailable, type Props } from '../popup/featureModel';
 
-const pill = 'inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-bold';
+const pill = 'inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-sm font-bold';
 /** Colour + 8% tint of the same colour behind it (all status colours are 6-digit hex). */
 const tone = (color: string) => ({ color, backgroundColor: `${color}15` });
 

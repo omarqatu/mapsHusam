@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { Search, X } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { CenteredSpinner } from '@/components/ui/Spinner';
+import { passesSearchQuota } from '@/lib/searchQuota';
 import { useOutsideClick } from '@/hooks/useOutsideClick';
 import { roadBarrierStatus } from '../config';
 import { useOlMap } from '../MapContext';
@@ -11,7 +12,6 @@ import { useMapUi } from '../store';
 import { fetchGlobalHits, highlightParts, rankHits, type GlobalHit } from './globalSearch';
 import { targetLabelKey } from '../targets';
 import { toSelected } from './results';
-import { passesSearchQuota } from './useSearchActions';
 
 const MIN_CHARS = 2;
 const DEBOUNCE_MS = 400; // legacy value

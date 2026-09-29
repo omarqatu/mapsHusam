@@ -1,9 +1,10 @@
 import { useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ApiError } from '@/api/client';
-import { mapEventsApi, type MapEventType } from '@/api/mapEvents';
+import type { MapEventType } from '@/api/mapEvents';
 import { searchApi, type SearchCondition, type SearchQuery } from '@/api/search';
 import { toast } from '@/components/ui/toastStore';
+import { passesSearchQuota } from '@/lib/searchQuota';
 import type { Coordinate } from '../config';
 import { useOlMap } from '../MapContext';
 import { useMapUi } from '../store';
@@ -14,33 +15,6 @@ import { toResults, byRatingDesc } from './results';
 import { useSearchUi } from './store';
 
 let controller: AbortController | null = null;
-
-/**
- * Counts the search against the per-user request quota (POST /api/log-map-event → 429 when exceeded).
- * Fail-open like legacy: a network / server problem never blocks searching. Returns false only on a real "over the limit".
- */
-export async function passesSearchQuota(
-  event: MapEventType,
-  service: string,
-  t: (k: string, o?: Record<string, unknown>) => string,
-): Promise<boolean> {
-  try {
-    await mapEventsApi.logMapEvent({ event_type: event, provider: null, service, source: 'map' });
-    return true;
-  } catch (e) {
-    if (e instanceof ApiError && e.status === 429) {
-      const quota = (e.data as { quota?: { limit?: number; period?: string } } | undefined)?.quota ?? {};
-      toast.warning(
-        t('popup.quotaExceeded', {
-          limit: quota.limit ?? '',
-          period: t(`popup.period.${quota.period ?? 'daily'}`),
-        }),
-      );
-      return false;
-    }
-    return true;
-  }
-}
 
 /** All the ways to run a map search. Each one: quota → fetch (previous search aborted) → results into the store. */
 export function useSearchActions() {

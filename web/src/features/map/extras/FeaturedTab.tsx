@@ -29,9 +29,11 @@ interface SectionProps {
   /** null while loading. */
   entries: FeaturedEntry[] | null;
   failed: boolean;
+  /** Cards side by side on wide screens (the search page) instead of one column (the map panel). */
+  grid?: boolean;
 }
 
-function Section({ title, icon: sectionIcon, badge, mode, entries, failed }: SectionProps) {
+function Section({ title, icon: sectionIcon, badge, mode, entries, failed, grid }: SectionProps) {
   const { t } = useTranslation();
   const shown = useMemo(() => (entries ? pickForSection(entries) : []), [entries]);
   return (
@@ -41,9 +43,9 @@ function Section({ title, icon: sectionIcon, badge, mode, entries, failed }: Sec
       ) : entries === null ? (
         <CenteredSpinner minHeight="5rem" size="sm" />
       ) : shown.length === 0 ? (
-        <p className="text-sm text-slate-500">{t('extras.featured.empty')}</p>
+        <p className="text-sm text-slate-600">{t('extras.featured.empty')}</p>
       ) : (
-        <div className="space-y-2">
+        <div className={grid ? 'grid gap-3 md:grid-cols-2 xl:grid-cols-3' : 'space-y-2'}>
           {shown.map((entry) => (
             <FeaturedCard key={entry.r.key} entry={entry} mode={mode} badge={badge} />
           ))}
@@ -53,8 +55,8 @@ function Section({ title, icon: sectionIcon, badge, mode, entries, failed }: Sec
   );
 }
 
-/** Featured-services portal (legacy "خدمات مميزة"): near me, featured, top rated, recommended, and media sections. */
-export default function FeaturedTab() {
+/** Featured, top rated, recommended, photos, videos and before/after sections (legacy featured-services portal). */
+export function FeaturedSections({ grid }: { grid?: boolean }) {
   const { t } = useTranslation();
   const featured = useRatedFeatures(FEATURED_RATING);
   const recommended = useRatedFeatures(RECOMMENDED_RATING);
@@ -75,11 +77,7 @@ export default function FeaturedTab() {
   const poolFailed = featured.isError && recommended.isError;
 
   return (
-    <div className="space-y-3">
-      <p className="text-sm text-slate-600">{t('extras.featured.intro')}</p>
-      <SectionCard title={t('extras.featured.nearMe')} icon={<LocateFixed className={icon} aria-hidden />}>
-        <NearMeSection />
-      </SectionCard>
+    <>
       <Section
         title={t('extras.featured.sections.featured')}
         icon={<Star className={icon} aria-hidden />}
@@ -87,6 +85,7 @@ export default function FeaturedTab() {
         mode="all"
         entries={featuredEntries}
         failed={featured.isError}
+        grid={grid}
       />
       <Section
         title={t('extras.featured.sections.topRated')}
@@ -95,6 +94,7 @@ export default function FeaturedTab() {
         mode="all"
         entries={topRated.data ?? null}
         failed={topRated.isError}
+        grid={grid}
       />
       <Section
         title={t('extras.featured.sections.recommended')}
@@ -103,6 +103,7 @@ export default function FeaturedTab() {
         mode="all"
         entries={recommendedEntries}
         failed={recommended.isError}
+        grid={grid}
       />
       <Section
         title={t('extras.featured.sections.photos')}
@@ -111,6 +112,7 @@ export default function FeaturedTab() {
         mode="photo"
         entries={mediaEntries(hasPhotos)}
         failed={poolFailed}
+        grid={grid}
       />
       <Section
         title={t('extras.featured.sections.videos')}
@@ -119,6 +121,7 @@ export default function FeaturedTab() {
         mode="video"
         entries={mediaEntries(hasVideos)}
         failed={poolFailed}
+        grid={grid}
       />
       <Section
         title={t('extras.featured.sections.beforeAfter')}
@@ -127,7 +130,22 @@ export default function FeaturedTab() {
         mode="beforeAfter"
         entries={mediaEntries(hasBeforeAfter)}
         failed={poolFailed}
+        grid={grid}
       />
+    </>
+  );
+}
+
+/** Featured-services portal (legacy "خدمات مميزة"): near me, then the sections. */
+export default function FeaturedTab() {
+  const { t } = useTranslation();
+  return (
+    <div className="space-y-3">
+      <p className="text-sm text-slate-600">{t('extras.featured.intro')}</p>
+      <SectionCard title={t('extras.featured.nearMe')} icon={<LocateFixed className={icon} aria-hidden />}>
+        <NearMeSection />
+      </SectionCard>
+      <FeaturedSections />
     </div>
   );
 }

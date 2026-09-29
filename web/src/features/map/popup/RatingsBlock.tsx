@@ -13,11 +13,11 @@ export default function RatingsBlock({ layer, featureId }: { layer: string; feat
 
   if (isError) return null; // ratings are a bonus; a failure must not clutter the card
   return (
-    <div className="text-xs">
+    <div className="text-sm">
       {isLoading ? (
-        <p className="text-slate-400">{t('popup.rating.loading')}</p>
+        <p className="text-slate-500">{t('popup.rating.loading')}</p>
       ) : !data || data.totalRatings === 0 ? (
-        <p className="text-slate-400">{t('popup.rating.none')}</p>
+        <p className="text-slate-500">{t('popup.rating.none')}</p>
       ) : (
         <>
           <div className="flex items-center gap-1.5">
@@ -31,7 +31,7 @@ export default function RatingsBlock({ layer, featureId }: { layer: string; feat
             aria-expanded={open}
             className="mt-1 inline-flex items-center gap-1 font-semibold text-brand hover:underline"
           >
-            <MessageSquare className="h-3 w-3" aria-hidden />
+            <MessageSquare className="h-3.5 w-3.5" aria-hidden />
             {open
               ? t('popup.rating.hideComments')
               : t('popup.rating.showComments', { count: data.totalRatings })}
@@ -41,13 +41,13 @@ export default function RatingsBlock({ layer, featureId }: { layer: string; feat
               {data.ratings.map((r, i) => (
                 <li key={i} className="rounded bg-white p-2">
                   <div className="flex items-center justify-between gap-2">
-                    <span className="text-xs font-bold text-slate-700">
+                    <span className="text-sm font-bold text-slate-700">
                       {r.user_name || t('popup.rating.user')}
                     </span>
                     <StarRating value={r.rating} />
                   </div>
-                  {r.comment && <p className="mt-1 text-xs leading-relaxed text-slate-600">{r.comment}</p>}
-                  <p className="mt-1 text-xs text-slate-500">{formatDate(r.created_at, i18n.language)}</p>
+                  {r.comment && <p className="mt-1 text-sm leading-relaxed text-slate-600">{r.comment}</p>}
+                  <p className="mt-1 text-sm text-slate-500">{formatDate(r.created_at, i18n.language)}</p>
                 </li>
               ))}
             </ul>

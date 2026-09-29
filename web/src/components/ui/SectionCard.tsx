@@ -18,7 +18,7 @@ export default function SectionCard({ title, icon, badge, children, className }:
     >
       <div className="flex items-center gap-2 border-b border-slate-100 pb-2">
         {icon && <span className="text-brand">{icon}</span>}
-        <h4 className="text-sm font-bold text-slate-800">{title}</h4>
+        <h4 className="text-base font-bold text-slate-800">{title}</h4>
         {badge}
       </div>
       {children}
