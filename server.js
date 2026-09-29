@@ -792,6 +792,116 @@ app.get('/api/platform-stats', async (req, res) => {
 });
 
 
+// =========================================================================
+// 📊 عدد الإعلانات المعروضة لكل نوع (أرقام كروت الأقسام في صفحة البحث)
+// عام ومكاشّ 60 ثانية مثل platform-stats. يعدّ نفس ما يعرضه البحث للزائر (status = 0 AND auto_status = 0).
+// الاستجابة: { success, data: { counts: { ApartRent: n, ..., <discriminator>: n } } }
+// =========================================================================
+let categoryCountsCache = { data: null, expiresAt: 0 };
+
+app.get('/api/category-counts', async (req, res) => {
+    try {
+        if (categoryCountsCache.data && Date.now() < categoryCountsCache.expiresAt) {
+            return res.json({ success: true, data: categoryCountsCache.data });
+        }
+        const counts = {};
+        for (const layerName of ['ApartRent', 'ApartSale', 'LandSale']) {
+            try {
+                const r = await realestatePool.query(
+                    `SELECT COUNT(*) FROM public."${layerName}" WHERE status = 0 AND auto_status = 0`
+                );
+                counts[layerName] = parseInt(r.rows[0].count, 10) || 0;
+            } catch (layerErr) {
+                console.warn(`⚠️ تعذر عد إعلانات [${layerName}]:`, layerErr.message);
+            }
+        }
+        const services = await servicesPool.query(`
+            SELECT discriminator, COUNT(*) AS count
+            FROM public.service_all
+            WHERE status = 0 AND auto_status = 0
+            GROUP BY discriminator
+        `);
+        services.rows.forEach(row => { counts[row.discriminator] = parseInt(row.count, 10) || 0; });
+
+        const data = { counts };
+        categoryCountsCache = { data, expiresAt: Date.now() + 60000 };
+        res.json({ success: true, data });
+    } catch (err) {
+        console.error('❌ خطأ أثناء عدّ إعلانات الأقسام:', err.message);
+        res.status(500).json({ success: false, error: 'فشل جلب البيانات', details: IS_PROD ? undefined : err.message });
+    }
+});
+
+// =========================================================================
+// 💱 أسعار السوق العالمية (عملات + ذهب) من مصادر خارجية مجانية بلا مفتاح، مكاشّة 10 دقائق بالسيرفر
+// لماذا من السيرفر: زائر المنصة لا يُرسل عنوانه لطرف ثالث، ولا نعتمد على CORS/حدود الطلب لكل متصفح، وإذا تعطّل المصدر نُرجع آخر نسخة ناجحة.
+// المصادر: open.er-api.com (أسعار الصرف) و api.gold-api.com (الأونصة بالدولار). كل مصدر مستقل: فشل أحدهما يترك جزأه null.
+// الاستجابة: { success, data: { rates: { USD_ILS, JOD_ILS, EUR_ILS } | null, gold: { usdPerOunce, ilsPerGram24, ilsPerGram21 } | null, updatedAt } }
+// =========================================================================
+let marketRatesCache = { data: null, expiresAt: 0 };
+const TROY_OUNCE_GRAMS = 31.1035;
+
+async function fetchJsonWithTimeout(url, ms = 8000) {
+    const r = await fetch(url, { signal: AbortSignal.timeout(ms), headers: { Accept: 'application/json' } });
+    if (!r.ok) throw new Error(`HTTP ${r.status}`);
+    return r.json();
+}
+
+app.get('/api/market-rates', async (req, res) => {
+    if (marketRatesCache.data && Date.now() < marketRatesCache.expiresAt) {
+        return res.json({ success: true, data: marketRatesCache.data });
+    }
+    const [fx, gold] = await Promise.allSettled([
+        fetchJsonWithTimeout('https://open.er-api.com/v6/latest/USD'),
+        fetchJsonWithTimeout('https://api.gold-api.com/price/XAU'),
+    ]);
+    const num = v => (Number.isFinite(Number(v)) && Number(v) > 0 ? Number(v) : null);
+
+    let rates = null;
+    let usdIls = null;
+    if (fx.status === 'fulfilled' && fx.value && fx.value.rates) {
+        const { ILS, JOD, EUR } = fx.value.rates;
+        usdIls = num(ILS);
+        if (usdIls && num(JOD) && num(EUR)) {
+            rates = { USD_ILS: usdIls, JOD_ILS: usdIls / Number(JOD), EUR_ILS: usdIls / Number(EUR) };
+        }
+    } else if (fx.status === 'rejected') {
+        console.warn('⚠️ تعذر جلب أسعار الصرف:', fx.reason && fx.reason.message);
+    }
+
+    let goldData = null;
+    if (gold.status === 'fulfilled') {
+        const usdPerOunce = num(gold.value && gold.value.price);
+        if (usdPerOunce) {
+            const usdPerGram24 = usdPerOunce / TROY_OUNCE_GRAMS;
+            goldData = {
+                usdPerOunce,
+                // بالشيقل فقط إذا توفّر سعر الصرف، وعيار 21 = 21/24 من الخالص
+                ilsPerGram24: usdIls ? usdPerGram24 * usdIls : null,
+                ilsPerGram21: usdIls ? usdPerGram24 * usdIls * 21 / 24 : null,
+            };
+        }
+    } else {
+        console.warn('⚠️ تعذر جلب سعر الذهب:', gold.reason && gold.reason.message);
+    }
+
+    if (!rates && !goldData) {
+        // كلا المصدرين فشل: آخر نسخة ناجحة إن وُجدت (حتى لو منتهية)، وإلا 502
+        if (marketRatesCache.data) return res.json({ success: true, data: marketRatesCache.data });
+        return res.status(502).json({ success: false, error: 'تعذر جلب أسعار السوق' });
+    }
+    // جزء فشل هذه المرة يُؤخذ من آخر نسخة ناجحة إن وُجدت؛ والنسخة الناقصة تُكاشّ دقيقة فقط ثم نعيد المحاولة
+    const previous = marketRatesCache.data;
+    const data = {
+        rates: rates || (previous && previous.rates) || null,
+        gold: goldData || (previous && previous.gold) || null,
+        updatedAt: new Date().toISOString(),
+    };
+    const complete = !!(rates && goldData);
+    marketRatesCache = { data, expiresAt: Date.now() + (complete ? 10 * 60 * 1000 : 60 * 1000) };
+    res.json({ success: true, data });
+});
+
 async function checkUserRequestQuota(userId) {
     // بدون معرف مستخدم (زائر) => لا يوجد حد مطبق إطلاقاً
     if (!userId) {
@@ -2254,6 +2364,16 @@ app.get('/api/admin/view-session/requests/:id/messages', requireReadOnlyView, as
 // =========================================================================
 const WIDGETS_CONFIG_GROUPS = ['currency', 'gold', 'weather', 'fuel', 'transport_inter_city', 'transport_intra_city', 'events'];
 
+// 📡 بثّ فوري لكل الاتصالات المسجّلة (الاتصال بلا توكن مرفوض) عند تحديث حالة الطرق/الوقود أو مجموعات مركز المعلومات.
+// الزائر العام بلا socket فيبقى على الاستطلاع كل دقيقة. الحدث لا يحمل بيانات: العميل يعيد الجلب فقط.
+function broadcastLiveUpdate(event, payload) {
+    try {
+        if (global.io) global.io.emit(event, payload);
+    } catch (e) {
+        console.warn('⚠️ تعذر بثّ التحديث الفوري:', e.message);
+    }
+}
+
 // 🌐 عام (بدون حماية): تستخدمه واجهة العرض widgets-ticker.js وصفحة الإدارة
 // لجلب تاريخ آخر تحديث حقيقي لحالة الطرق ومحطات الوقود
 app.get('/api/widgets-data', async (req, res) => {
@@ -2314,6 +2434,7 @@ app.post('/api/admin/widgets-data/:groupKey', requireAdmin, async (req, res) => 
             ON CONFLICT (group_key) DO UPDATE SET data = $2, updated_at = NOW()
         `, [groupKey, JSON.stringify(items)]);
 
+        broadcastLiveUpdate('widgets_updated', { group: groupKey });
         res.json({ success: true, message: 'تم حفظ التعديلات بنجاح' });
     } catch (err) {
         console.error('❌ خطأ أثناء حفظ مجموعة widgets:', err.message);
@@ -2399,6 +2520,7 @@ app.post('/api/admin/update-road-barrier', requireAdmin, async (req, res) => {
         if (result.rowCount === 0) {
             return res.status(404).json({ success: false, error: 'الحاجز غير موجود' });
         }
+        broadcastLiveUpdate('status_updated', { layer: 'road_barriers' });
         res.json({ success: true });
     } catch (err) {
         console.error('❌ خطأ أثناء تحديث حالة الحاجز:', err.message);
@@ -2434,6 +2556,7 @@ app.post('/api/admin/bulk-update-road-barriers', requireAdmin, async (req, res) 
             `UPDATE public.service_all SET ${sets.join(', ')} WHERE discriminator = 'road_barriers' AND id = ANY($1)`,
             params
         );
+        broadcastLiveUpdate('status_updated', { layer: 'road_barriers' });
         res.json({ success: true, updated: result.rowCount });
     } catch (err) {
         console.error('❌ خطأ أثناء التعديل الجماعي لحواجز الطرق:', err.message);
@@ -2469,6 +2592,7 @@ app.post('/api/admin/bulk-update-fuel-stations', requireAdmin, async (req, res) 
             `UPDATE public.service_all SET ${sets.join(', ')} WHERE discriminator = 'fuel_stations' AND id = ANY($1)`,
             params
         );
+        broadcastLiveUpdate('status_updated', { layer: 'fuel_stations' });
         res.json({ success: true, updated: result.rowCount });
     } catch (err) {
         console.error('❌ خطأ أثناء التعديل الجماعي لمحطات الوقود:', err.message);
@@ -2487,6 +2611,7 @@ app.post('/api/admin/update-fuel-station', requireAdmin, async (req, res) => {
             `UPDATE public.service_all SET diesel = $1, banzen95 = $2, banzen98 = $3, updated_at = NOW() WHERE id = $4 AND discriminator = 'fuel_stations'`,
             [diesel, banzen95, banzen98, id]
         );
+        broadcastLiveUpdate('status_updated', { layer: 'fuel_stations' });
         res.json({ success: true });
     } catch (err) {
         console.error('❌ خطأ أثناء تحديث حالة المحطة:', err.message);
@@ -2536,6 +2661,7 @@ app.post('/api/admin/batch-update-road-barriers', requireAdmin, async (req, res)
             updated += r.rowCount;
         }
         await client.query('COMMIT');
+        broadcastLiveUpdate('status_updated', { layer: 'road_barriers' });
         res.json({ success: true, updated });
     } catch (err) {
         try { await client.query('ROLLBACK'); } catch (e) { /* تجاهل */ }
@@ -2591,6 +2717,7 @@ app.post('/api/admin/batch-update-fuel-stations', requireAdmin, async (req, res)
             updated += r.rowCount;
         }
         await client.query('COMMIT');
+        broadcastLiveUpdate('status_updated', { layer: 'fuel_stations' });
         res.json({ success: true, updated });
     } catch (err) {
         try { await client.query('ROLLBACK'); } catch (e) { /* تجاهل */ }
