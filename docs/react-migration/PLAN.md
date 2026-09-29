@@ -367,6 +367,10 @@ Split `index.html` into features, in this order:
      a full-width bar with the tool column below it. A selected marker is centred in the *visible* map — beside the
      side card on desktop, above the sheet on phones (view padding in `SelectionController`). Focus state of the box
      uses the legacy `.global-search-wrapper` look (brand border + soft ring).
+   - One shared top bar (`components/AppHeader`) for the map and every other page (legacy: each page its own header); on
+     phones the page links fold into a menu button. `/notifications` is a real page (legacy `notifications-panel.html`):
+     the bell's list (`NotificationList`, shared) with an all / unread filter; the bell keeps a "view all" link.
+   - Live tests run file by file (`fileParallelism` off when `VITE_LIVE_API` is set): they share the seeded accounts.
    - Media sections show only their own kind (photos section = pictures, videos section = videos); everything is still in the
      details card. Cards use the shared `MediaGallery` (enlarge on click, https-only URLs via `safeMediaUrl`) instead of the
      YouTube facade; a top-rated card shows the real average and the number of ratings (legacy carried but hid them).

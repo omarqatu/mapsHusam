@@ -20,7 +20,8 @@
     "next": "Next",
     "page": "Page {{page}} of {{pages}}",
     "language": "Language",
-    "actions": "Actions"
+    "actions": "Actions",
+    "menu": "Menu"
   },
   "errors": {
     "network": "Could not reach the server. Check your connection and try again.",
@@ -724,6 +725,13 @@
     "refresh": "Refresh",
     "loadFailed": "Could not load notifications",
     "enableSystem": "Enable browser notifications",
-    "justNow": "now"
+    "justNow": "now",
+    "viewAll": "View all notifications"
+  },
+  "notificationsPage": {
+    "allRead": "You are all caught up",
+    "all": "All ({{count}})",
+    "unread": "Unread ({{count}})",
+    "noUnread": "No unread notifications"
   }
 }

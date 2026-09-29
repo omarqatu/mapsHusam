@@ -25,7 +25,6 @@ export const appRoutes: AppRoute[] = [
     titleKey: 'nav.notifications',
     access: 'auth',
     legacy: 'notifications-panel.html',
-    nav: true,
   },
   {
     path: '/widgets/portal',

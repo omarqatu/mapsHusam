@@ -22,5 +22,7 @@ export default defineConfig({
     globals: true,
     setupFiles: ['./src/test/setup.ts'],
     include: ['src/**/*.{test,spec}.{ts,tsx}'],
+    // Live tests share the seeded dev accounts (one changes the admin password for a moment): run files one by one.
+    fileParallelism: !process.env.VITE_LIVE_API,
   },
 });

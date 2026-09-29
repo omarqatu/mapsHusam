@@ -1,9 +1,7 @@
 import { useEffect } from 'react';
-import { Layers, ListFilter, Search } from 'lucide-react';
+import { Layers, Search } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { Link } from 'react-router';
-import LanguageSwitcher from '@/components/LanguageSwitcher';
-import UserMenu from '@/components/UserMenu';
+import AppHeader from '@/components/AppHeader';
 import Toaster from '@/components/ui/Toaster';
 import CoordinatesBar from './controls/CoordinatesBar';
 import LocateButton from './controls/LocateButton';
@@ -83,19 +81,7 @@ export default function MapPage() {
 
   return (
     <div className="fixed inset-0 flex flex-col">
-      <header className="z-30 flex h-14 shrink-0 items-center gap-3 bg-gradient-to-l from-brand to-brand-2 px-3 text-white shadow">
-        <h1 className="truncate text-base font-black sm:text-lg">{t('app.name')}</h1>
-        <div className="flex-1" />
-        <Link
-          to="/search"
-          className="hidden items-center gap-1.5 rounded-full bg-white/15 px-3 py-1.5 text-sm font-semibold hover:bg-white/25 sm:inline-flex"
-        >
-          <ListFilter className="h-4 w-4" aria-hidden />
-          {t('map.searchWithoutMap')}
-        </Link>
-        <LanguageSwitcher tone="onBrand" />
-        <UserMenu tone="onBrand" />
-      </header>
+      <AppHeader />
 
       <div className="relative flex-1 overflow-hidden">
         <MapView>

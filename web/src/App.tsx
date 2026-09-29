@@ -1,4 +1,4 @@
-import { lazy, Suspense } from 'react';
+import { lazy, Suspense, type ReactElement } from 'react';
 import { createBrowserRouter, RouterProvider } from 'react-router';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { queryClient } from '@/api/queryClient';
@@ -10,6 +10,7 @@ import AuthLayout from '@/features/auth/AuthLayout';
 import LoginPage from '@/features/auth/LoginPage';
 import RegisterPage from '@/features/auth/RegisterPage';
 import WelcomePage from '@/features/auth/WelcomePage';
+import NotificationsPage from '@/features/notifications/NotificationsPage';
 import RequestsHost from '@/features/requests/RequestsHost';
 import LegalPage from '@/features/legal/LegalPage';
 import { ProtectedRoute, RoleRoute } from '@/routes/guards';
@@ -21,7 +22,10 @@ import { CenteredSpinner } from '@/components/ui/Spinner';
 // OpenLayers is most of the bundle; only the map page needs it.
 const MapPage = lazy(() => import('@/features/map/MapPage'));
 
-const page = (r: AppRoute) => ({ path: r.path, element: <PlaceholderPage route={r} /> });
+// Ported pages by path; everything else still shows its placeholder.
+const ported: Record<string, ReactElement> = { '/notifications': <NotificationsPage /> };
+
+const page = (r: AppRoute) => ({ path: r.path, element: ported[r.path] ?? <PlaceholderPage route={r} /> });
 
 const shelled = appRoutes.filter((r) => !r.own);
 

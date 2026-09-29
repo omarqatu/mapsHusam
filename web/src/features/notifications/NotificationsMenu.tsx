@@ -2,41 +2,13 @@ import { useEffect, useRef, useState } from 'react';
 import clsx from 'clsx';
 import { Bell, BellRing, CheckCheck, RefreshCw } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { useNotifications, isUnread, type AppNotification } from '@/api/notifications';
-import { CenteredSpinner } from '@/components/ui/Spinner';
-import { formatDateTime } from '@/lib/format';
-
-const TONE: Record<string, string> = {
-  success: 'border-green-500',
-  warning: 'border-amber-500',
-  error: 'border-red-500',
-  info: 'border-blue-500',
-};
-
-function Row({ n, onRead, lang }: { n: AppNotification; onRead: (id: number) => void; lang: string }) {
-  const unread = isUnread(n);
-  return (
-    <li>
-      <button
-        type="button"
-        onClick={() => unread && onRead(n.id)}
-        className={clsx(
-          'block w-full border-s-4 px-3 py-2 text-start hover:bg-slate-50',
-          TONE[n.type ?? 'info'] ?? TONE.info,
-          unread ? 'bg-blue-50/60' : 'opacity-70',
-        )}
-      >
-        <span className={clsx('block text-sm text-slate-800', unread && 'font-bold')}>{n.title}</span>
-        <span className="block text-xs text-slate-600">{n.message}</span>
-        <span className="block text-[11px] text-slate-400">{formatDateTime(n.created_at, lang)}</span>
-      </button>
-    </li>
-  );
-}
+import { Link } from 'react-router';
+import { useNotifications } from '@/api/notifications';
+import NotificationList from './NotificationList';
 
 /** Bell with an unread badge and a list (legacy notification dropdown). Signed-in users only. */
 export default function NotificationsMenu({ tone = 'default' }: { tone?: 'default' | 'onBrand' }) {
-  const { t, i18n } = useTranslation();
+  const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   const box = useRef<HTMLDivElement>(null);
   const { items, unread, isLoading, isError, refresh, isRefreshing, markRead, markAllRead } = useNotifications();
@@ -104,20 +76,11 @@ export default function NotificationsMenu({ tone = 'default' }: { tone?: 'defaul
             </button>
           )}
           <div className="max-h-[55vh] overflow-y-auto">
-            {isLoading ? (
-              <CenteredSpinner minHeight="6rem" />
-            ) : isError ? (
-              <p className="p-4 text-center text-xs text-red-600">{t('notificationsMenu.loadFailed')}</p>
-            ) : items.length === 0 ? (
-              <p className="p-4 text-center text-xs text-slate-500">{t('notificationsMenu.empty')}</p>
-            ) : (
-              <ul className="divide-y divide-slate-100">
-                {items.map((n) => (
-                  <Row key={n.id} n={n} onRead={markRead} lang={i18n.language} />
-                ))}
-              </ul>
-            )}
+            <NotificationList items={items} isLoading={isLoading} isError={isError} onRead={markRead} />
           </div>
+          <Link to="/notifications" onClick={() => setOpen(false)} className="block border-t border-slate-100 px-3 py-2 text-center text-xs font-bold text-brand hover:bg-slate-50">
+            {t('notificationsMenu.viewAll')}
+          </Link>
         </div>
       )}
     </div>
