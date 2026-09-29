@@ -4,6 +4,8 @@ import MultiPolygon from 'ol/geom/MultiPolygon';
 import Point from 'ol/geom/Point';
 import Polygon from 'ol/geom/Polygon';
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import { useAuthStore } from '@/store/authStore';
+import type { AuthUser } from '@/types/auth';
 import { buildSearchTags, initialValues, parseValues, validateValues, ALWAYS_OPEN } from './attributes';
 import { buildFeatureTx, coordinateColumns } from './buildTx';
 import {
@@ -650,6 +652,13 @@ describe('saveFeature (mocked network — failure cases the real server cannot p
     expect((init?.headers as Record<string, string>).Authorization).toBe(`Basic ${btoa('u:p')}`);
     expect(init?.credentials).toBe('omit');
     expect(String(init?.body)).not.toContain('"p"');
+  });
+  it('sends the app session token in X-App-Token (the proxy lets only admins write)', async () => {
+    useAuthStore.setState({ user: { token: 'app-tok' } as AuthUser });
+    const spy = respond(403, '{"error":"admins only"}');
+    expect(await saveFeature(tx)).toEqual({ ok: false, reason: 'rejected', message: 'HTTP 403' });
+    expect((spy.mock.calls[0][1]?.headers as Record<string, string>)['X-App-Token']).toBe('app-tok');
+    useAuthStore.setState({ user: null });
   });
   it('401 -> auth', async () => {
     respond(401, '');

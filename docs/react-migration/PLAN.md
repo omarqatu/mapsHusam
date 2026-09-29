@@ -959,6 +959,15 @@ Log each change here: **what · why · how to verify · commit**.
   browser against the real server (helmet CSP on): no CSP violations on login, map, search, widgets, admin, notifications.
   The deploy workflow builds `web/` after the copy (see `.github/workflows/deploy.yml`).
 
+- **`/geoserver-proxy`: writes need an admin.** Any method other than `GET`/`HEAD`/`OPTIONS` (a WFS-T transaction) is refused
+  with 403 unless the request carries a valid session token of an active admin in `X-App-Token` (the `Authorization` header holds
+  the GeoServer Basic login, so it cannot carry the app token); the server removes `X-App-Token` before forwarding. Why: the GeoServer
+  login was the only gate, and that account is in the leaked repo history — anyone could write. Parity: the legacy UI let only admins
+  edit (`config.js` → `rolePermissions.admin.canEdit`; provider and user `false`; providers move their point through
+  `/api/update-service-status`, not the proxy). The editor (`features/map/edit/transport.ts`) sends the header. Verify: POST to
+  `/geoserver-proxy/wfs` with no token or a user's token → 403, with an admin's → forwarded; reads (`GET`) unchanged. Server-side WFS-T
+  (Backend asks) is still the full fix. Commit: `fix(server): only admins may write through the GeoServer proxy`.
+
 ## Backend asks (needs the user's decision — behaviour-changing or larger)
 
 - Sessions never expire by design (`requireAuth` uses `ignoreExpiration: true`); revocation is via `token_version` / `is_active` / `force_logout_flag` (checked on every request, cached). Not a hole by itself, but a stolen token stays valid until an admin force-logout or a password change — consider `expiresIn` + refresh, and a self-service "log out everywhere". Needs the user's decision.
@@ -967,9 +976,8 @@ Log each change here: **what · why · how to verify · commit**.
   whitelisted) and GeoServer's Basic login is the only gate, so anyone who knows a GeoServer account can write from anywhere, and every
   admin has to know that account. Proposal: `POST /api/admin/features` (`requireAuth` + admin) taking the `FeatureTx` JSON that
   `web/src/features/map/edit/tx.ts` already defines (`op`, `layer`, `fid`, `properties`, `geometry`), building the transaction with a
-  server-side GeoServer account from the environment; then only `saveFeature` in `transport.ts` changes. Until then, at minimum:
-  refuse non-`GET` methods on `/geoserver-proxy` unless the request carries an admin app token (needs a header other than `Authorization`,
-  which the Basic login uses).
+  server-side GeoServer account from the environment; then only `saveFeature` in `transport.ts` changes. (The interim guard — writes only with an admin app token in
+  `X-App-Token` — is in place, see Server changes; the GeoServer login still travels from the browser.)
 - `/api/search-features*` are public and return `SELECT *` — review exposed columns.
 - `/api/search-features?ignore_status=1` bypasses the `status=0 AND auto_status=0` filter with no auth check — anyone can list
   inactive/expired records.

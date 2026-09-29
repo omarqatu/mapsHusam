@@ -517,6 +517,26 @@ async function getAuthStatus(uid) {
     return entry;
 }
 
+// رقم المشرف صاحب التوكن إن كان توكن جلسة صالحاً لمشرف فعّال (وإلا null). لا يرمي أبداً.
+async function activeAdminUidFromToken(token) {
+    if (!token) return null;
+    try {
+        const decoded = jwt.verify(token, ADMIN_JWT_SECRET, { algorithms: ['HS256'] });
+        const uid = Number(decoded.uid);
+        if (!Number.isInteger(uid) || uid <= 0) return null;
+        const status = await getAuthStatus(uid);
+        const ok = status.exists && status.active && status.role === 'admin' && (Number(decoded.tv) || 0) === status.tokenVersion;
+        return ok ? uid : null;
+    } catch (e) {
+        return null;
+    }
+}
+
+function bearerToken(req) {
+    const authHeader = req.headers['authorization'] || '';
+    return authHeader.startsWith('Bearer ') ? authHeader.slice(7) : null;
+}
+
 async function requireAuth(req, res, next) {
     const authHeader = req.headers['authorization'] || '';
     const token = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : null;
@@ -1050,7 +1070,15 @@ const PROXY_EXTRA_LAYERS = ['WB_2023_10_18mbt'];
 // 🔒 واجهات إدارة GeoServer التي لا يجب الوصول لها عبر البروكسي (REST / الواجهة الإدارية / WPS / الدخول)
 const GEOSERVER_BLOCKED_PATHS = /(^|\/)(rest|web|wps|monitor|j_spring_security_check|j_spring_security_logout|logout)(\/|$)/i;
 
-app.use('/geoserver-proxy', (req, res, next) => {
+// 🔒 الكتابة عبر البروكسي (WFS-T) للمشرف فقط، كما في الواجهة القديمة (canEdit للأدمن وحده).
+// هيدر Authorization يحمل دخول GeoServer (Basic)، لذلك يصل توكن التطبيق بهيدر X-App-Token ويُحذف قبل التمرير.
+const PROXY_READ_METHODS = ['GET', 'HEAD', 'OPTIONS'];
+
+app.use('/geoserver-proxy', async (req, res, next) => {
+    if (!PROXY_READ_METHODS.includes(req.method) && !(await activeAdminUidFromToken(req.headers['x-app-token']))) {
+        console.warn(`🚫 [Proxy Guard] رُفض طلب ${req.method} بلا توكن مشرف من IP: ${req.ip}`);
+        return res.status(403).json({ error: 'التعديل على الخريطة للمشرف فقط.' });
+    }
     let proxiedPath = req.path;
     try { proxiedPath = decodeURIComponent(req.path); } catch (e) { return res.status(400).end(); }
     proxiedPath = path.posix.normalize(proxiedPath);
@@ -1080,6 +1108,7 @@ app.use('/geoserver-proxy', (req, res, next) => {
     proxyTimeout: 60000,
     logLevel: 'warn',
     onProxyReq: (proxyReq, req, res) => {
+        proxyReq.removeHeader('x-app-token'); // توكن التطبيق لا يصل إلى GeoServer
         debugLog(`[Proxy] Forwarding to: ${GEOSERVER_TARGET}${req.url}`);
         debugLog(`[Proxy] Content-Type: ${req.headers['content-type']}`);
         // 🔒 كان Buffer.byteLength(req.body) يرمي خطأ عند كل طلب GET (لأن req.body يكون {} وليس نصاً)

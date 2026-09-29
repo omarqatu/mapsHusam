@@ -1,3 +1,4 @@
+import { useAuthStore } from '@/store/authStore';
 import type { FeatureTx, SaveResult } from './tx';
 import { buildTransactionXml, parseTransactionResponse } from './wfst';
 
@@ -32,6 +33,10 @@ export async function saveFeature(tx: FeatureTx): Promise<SaveResult> {
   try {
     const headers: Record<string, string> = { 'Content-Type': 'text/xml' };
     if (tx.credentials) headers.Authorization = basicAuth(tx.credentials);
+    // The proxy lets only admins write; the app token rides in its own header because Authorization holds the
+    // GeoServer login. The server strips it before forwarding.
+    const appToken = useAuthStore.getState().user?.token;
+    if (appToken) headers['X-App-Token'] = appToken;
     const res = await fetch(ENDPOINT, {
       method: 'POST',
       headers,
