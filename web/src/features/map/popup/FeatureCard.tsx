@@ -31,6 +31,7 @@ import { isFuelStation, isRoadBarrier, targetIcon, targetLabelKey } from '../tar
 import { copyText, isMobileBrowser, nativeShare } from '@/lib/clipboard';
 import { formatNumber } from '@/lib/format';
 import ContactButtons from './ContactButtons';
+import { formatArea, formatLength } from '../tools/measure';
 import RatingsBlock from './RatingsBlock';
 import { useContactActions } from './useContactActions';
 
@@ -183,6 +184,17 @@ export default function FeatureCard({ feature, onClose, className }: Props) {
                     value={text(props.area) ? `${text(props.area)} ${t('map.areaUnit')}` : null}
                   />
                 </>
+              )}
+              {feature.measure && (
+                <Field
+                  wide
+                  label={feature.measure.kind === 'area' ? t('popup.mapArea') : t('popup.mapLength')}
+                  value={
+                    feature.measure.kind === 'area'
+                      ? formatArea(feature.measure.squareMeters, t)
+                      : formatLength(feature.measure.meters, t)
+                  }
+                />
               )}
               <Field label={t('popup.village')} value={text(props.village_a)} />
               <Field label={t('popup.governorate')} value={text(props.gov_a)} />

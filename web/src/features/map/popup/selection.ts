@@ -2,6 +2,7 @@ import type { FeatureLike } from 'ol/Feature';
 import { REAL_ESTATE_LAYERS, type Coordinate } from '../config';
 import { targetFromKey } from '../targets';
 import { resolveFeatureId, type Props, type SelectedFeature } from './featureModel';
+import { geometryMeasure } from './geometryMeasure';
 
 /** Minimal shape of an OpenLayers layer we read from (its `key` was set in layers.ts). */
 interface KeyedLayer {
@@ -29,6 +30,17 @@ export function featureToSelection(
     return { kind: target, id, props, coordinate };
   }
   const re = REAL_ESTATE_LAYERS.find((l) => l.key === key);
-  if (re) return { kind: { kind: 'realEstate', layer: re.key }, id: id, props, coordinate };
+  if (re) {
+    const geom = feature.getGeometry();
+    return {
+      kind: { kind: 'realEstate', layer: re.key },
+      id,
+      props,
+      coordinate,
+      measure: geometryMeasure(
+        geom && 'getType' in geom && geom.getType() !== 'Point' ? (geom as never) : null,
+      ),
+    };
+  }
   return null;
 }

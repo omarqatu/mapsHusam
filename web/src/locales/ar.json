@@ -229,7 +229,9 @@
       "USD": "دولار",
       "ILS": "شيقل",
       "JOD": "دينار"
-    }
+    },
+    "mapArea": "المساحة من الخريطة",
+    "mapLength": "الطول من الخريطة"
   },
   "media": {
     "openImages": "انقر هنا لعرض الصور",
@@ -371,5 +373,11 @@
       "copyLinkFailed": "فشل نسخ الرابط. يرجى نسخه يدوياً.",
       "copyCoordsFailed": "فشل نسخ الإحداثيات."
     }
+  },
+  "measure": {
+    "lengthM": "{{value}} م",
+    "lengthKm": "{{value}} كم",
+    "areaM2": "{{m2}} م² ({{dunams}} دونم)",
+    "areaKm2": "{{km2}} كم² ({{dunams}} دونم)"
   }
 }

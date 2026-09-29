@@ -17,6 +17,8 @@ export interface SelectedFeature {
   id: string | null;
   props: Props;
   coordinate: [number, number];
+  /** Length / area measured from the drawn geometry (lines and polygons only). */
+  measure?: { kind: 'length'; meters: number } | { kind: 'area'; squareMeters: number };
 }
 
 const present = (v: unknown) => v !== undefined && v !== null && String(v).trim() !== '';

@@ -229,7 +229,9 @@
       "USD": "USD",
       "ILS": "ILS",
       "JOD": "JOD"
-    }
+    },
+    "mapArea": "Area on the map",
+    "mapLength": "Length on the map"
   },
   "media": {
     "openImages": "Click to view the images",
@@ -371,5 +373,11 @@
       "copyLinkFailed": "Could not copy the link. Please copy it manually.",
       "copyCoordsFailed": "Could not copy the coordinates."
     }
+  },
+  "measure": {
+    "lengthM": "{{value}} m",
+    "lengthKm": "{{value}} km",
+    "areaM2": "{{m2}} m² ({{dunams}} dunam)",
+    "areaKm2": "{{km2}} km² ({{dunams}} dunam)"
   }
 }

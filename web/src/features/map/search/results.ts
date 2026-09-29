@@ -7,6 +7,7 @@ import type { Coordinate } from '../config';
 import { PALESTINE_GRID } from '../projection';
 import { resolveFeatureId, type Props, type SelectedFeature } from '../popup/featureModel';
 import { targetFromKey, type MapTarget } from '../targets';
+import { geometryMeasure } from '../popup/geometryMeasure';
 
 /** One row of a result list: plain data + the OL geometry (needed to fit/draw). Distance is set by nearby search. */
 export interface SearchResult {
@@ -72,5 +73,6 @@ export function toSelected(r: SearchResult): SelectedFeature {
     id: r.id,
     props: r.props,
     coordinate: r.center,
+    measure: geometryMeasure(r.geometry),
   };
 }

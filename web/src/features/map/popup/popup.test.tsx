@@ -21,6 +21,8 @@ import {
 import { cooldownRemaining } from './useContactActions';
 import { featureToSelection } from './selection';
 import FeatureCard from './FeatureCard';
+import Polygon from 'ol/geom/Polygon';
+import { formatArea, formatLength } from '../tools/measure';
 import type { SelectedFeature } from './featureModel';
 
 describe('safeMediaUrl (URLs come from user data)', () => {
@@ -152,6 +154,36 @@ describe('featureToSelection', () => {
     });
     expect(featureToSelection(new Feature({}), layer('other'), [0, 0])).toBeNull();
     expect(featureToSelection(new Feature({}), null, [0, 0])).toBeNull();
+  });
+});
+
+describe('measured size (dunams)', () => {
+  const t = (k: string, o?: Record<string, unknown>) => `${k}:${JSON.stringify(o)}`;
+  it('land polygon → area in m² and dunams; point → nothing', () => {
+    const f = new Feature({
+      geometry: new Polygon([
+        [
+          [0, 0],
+          [50, 0],
+          [50, 17],
+          [0, 17],
+          [0, 0],
+        ],
+      ]),
+    });
+    const s = featureToSelection(f, { get: (n: string) => (n === 'key' ? 'land' : undefined) }, [0, 0])!;
+    expect(s.measure).toEqual({ kind: 'area', squareMeters: 850 });
+    expect(formatArea(850, t)).toBe('measure.areaM2:{"m2":"850","dunams":"0.85"}');
+    expect(formatArea(12_400_000, t)).toBe('measure.areaKm2:{"km2":"12.40","dunams":"12,400"}');
+    expect(formatLength(850, t)).toBe('measure.lengthM:{"value":"850"}');
+    expect(formatLength(3420, t)).toBe('measure.lengthKm:{"value":"3.42"}');
+    expect(
+      featureToSelection(
+        new Feature({ geometry: new Point([1, 1]), fid: 1 }),
+        { get: (n: string) => (n === 'key' ? 'rent' : undefined) },
+        [1, 1],
+      )?.measure,
+    ).toBeUndefined();
   });
 });
 
