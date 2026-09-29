@@ -789,6 +789,45 @@ Split `index.html` into features, in this order:
    no errors. Fixed on merge: `ResultContact` (session) now renders the shared `ContactButtons` (one look, one
    component for card / rows / featured cards); `priceLabel` and the stats tab format through `lib/format.ts`
    (a second locale helper `numberLocale` removed); checkpoint/fuel checks use `isRoadBarrier`/`isFuelStation`.
+## Home (`/home`) — new page, no legacy counterpart
+
+Brief (user, 2026-09-29): a real landing page for signed-in users in the spirit of the water platform's (greeting, "what
+needs me", role-aware cards) — designed for this platform, not a copy of the old pages. Code: `web/src/features/home/`
+(lazy chunk of ~15 KB; it does not pull OpenLayers). Data comes only from hooks that already existed (`useMyRequests`,
+`useIncomingRequests`, `useProviderAccount`, `usePendingRatings`, `useNotifications`, `useAdminUsers`, `usePlatformStats`,
+the local `useUnseen` marks) — **no new server endpoints**.
+
+- ✅ Route `/home` inside `AppShell`, login required; a visitor is sent to `/welcome` (like the map). First item of the header
+  navigation ("الرئيسية / Home"); the header brand links to it.
+- ✅ Greeting (first name, part of the day, today's date in the UI language, role badge) and a search box → `/search?q=`
+  (two-letter minimum like the search page, hint instead of an alert).
+- ✅ "Needs you" panel, most urgent first, zero counts omitted: provider — new requests waiting for their answer, "your status is
+  Unavailable" (hidden from map/search), frozen account; admin — inactive accounts awaiting review; everyone — requests with
+  news, completed services to rate, requests I sent that wait for a reply, chats in progress, unread notifications. Empty
+  state = "nothing is waiting for you"; loading = skeleton rows; a failed call keeps the other rows and offers Retry.
+- ✅ Cards (icon chip, title, one line, live figure where one exists): interactive map (places), search without a map (service
+  types), live info, my requests (open count, opens the requests dialog), provider only: manage my service (status figure;
+  opens the provider panel on the map), notifications (unread), admin only: users (inactive count, else total), dashboard
+  (visits), widgets admin. Slim platform row at the bottom (providers, services).
+- ✅ After login / registration the app lands on `/home` unless a `from` redirect exists. Deep links keep working:
+  `/?x=…&y=…` and share links go through `/welcome` → login and back to the same URL.
+
+**Changed on purpose (home):**
+- The **login → landing page changed from `/` (the map) to `/home`**; the map is one click away (card, nav, brand). Registration
+  users are inactive until an admin activates them, so `/register` → `/login` is unchanged.
+- **Bug fixed on the way:** the welcome page's "log in" / "register" buttons dropped the `from` redirect, so a deep link opened
+  by a visitor (`/?x=…&y=…`) lost its coordinates after login. They now pass the state on (`WelcomePage.tsx`).
+- "Inactive accounts" counts every account with `is_active = false`; the server cannot tell a fresh registration from an
+  account an admin switched off, so the row may include the latter. The users page still filters precisely.
+- `useAdminUsers(enabled)` got an `enabled` flag (the home page must not call the admin endpoint for non-admins);
+  `openProviderPanel()` was extracted from the map's provider button so the home page can open the panel before navigating.
+- Notification / request figures use the same cache entries as the header bell and the requests list, so numbers agree.
+
+**Verified:** typecheck, lint, unit + component tests (`home.test.tsx`: user / provider / admin variants, empty state, failed
+call, search), live tests against the real backend (`home.live.test.ts`); headless browser at 1440 and 390 px in light and dark,
+Arabic and English, as the three seeded accounts (including a real request + a "busy" provider), login landing and deep-link
+flows, provider card → panel on the map. **Not verified:** a real phone; the browser-notification permission prompt.
+
 ## Phase 4 — Cut-over & cleanup
 
 - 🟨 All routes verified on desktop + mobile width (served by the real server with its CSP: login, welcome, map, search, widgets, admin, notifications, 404; phone width verified per page during each port). Still to do by hand: a pass on a real phone, and on production after the deploy.
