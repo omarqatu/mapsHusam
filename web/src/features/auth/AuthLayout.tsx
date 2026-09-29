@@ -1,0 +1,29 @@
+import { Link, Outlet } from 'react-router';
+import { useTranslation } from 'react-i18next';
+import { MapPinned } from 'lucide-react';
+import LanguageSwitcher from '@/components/LanguageSwitcher';
+import Toaster from '@/components/ui/Toaster';
+import LegalLinks from '@/features/legal/LegalLinks';
+
+/** Shell for welcome / login / register / legal: brand + language only, no app navigation. */
+export default function AuthLayout() {
+  const { t } = useTranslation();
+  return (
+    <div className="flex min-h-full flex-col bg-gradient-to-br from-brand/10 via-white to-brand-2/10">
+      <header className="mx-auto flex w-full max-w-5xl items-center justify-between px-4 py-3">
+        <Link to="/welcome" className="flex items-center gap-2 text-lg font-black text-brand">
+          <MapPinned className="h-6 w-6" aria-hidden />
+          {t('app.name')}
+        </Link>
+        <LanguageSwitcher />
+      </header>
+      <main className="mx-auto w-full max-w-5xl flex-1 px-4 pb-6">
+        <Outlet />
+      </main>
+      <footer className="border-t border-slate-200 bg-white/70 px-4 py-3">
+        <LegalLinks linkClassName="text-slate-600" />
+      </footer>
+      <Toaster />
+    </div>
+  );
+}

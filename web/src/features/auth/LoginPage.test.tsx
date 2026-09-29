@@ -40,9 +40,20 @@ describe('LoginPage', () => {
     setup();
     await userEvent.type(screen.getByLabelText(/رقم الجوال|Phone/), '0590000001');
     await userEvent.type(screen.getByLabelText(/كلمة المرور|Password/), 'bad');
-    await userEvent.click(screen.getByRole('button', { name: /تسجيل الدخول|Log in/ }));
+    await userEvent.click(screen.getByRole('button', { name: /دخول إلى المنصة|Enter the platform/ }));
     expect(await screen.findByRole('alert')).toHaveTextContent('رقم الجوال أو كلمة المرور غير صحيحة.');
     expect(useAuthStore.getState().user).toBeNull();
+  });
+
+  it('rejects a malformed mobile number before calling the server', async () => {
+    const fetchMock = vi.fn();
+    vi.stubGlobal('fetch', fetchMock);
+    setup();
+    await userEvent.type(screen.getByLabelText(/رقم الجوال|Phone/), '123');
+    await userEvent.type(screen.getByLabelText(/كلمة المرور|Password/), 'pw');
+    await userEvent.click(screen.getByRole('button', { name: /دخول إلى المنصة|Enter the platform/ }));
+    expect(await screen.findByRole('alert')).toHaveTextContent(/05/);
+    expect(fetchMock).not.toHaveBeenCalled();
   });
 
   it('stores the session and leaves /login on success', async () => {
@@ -54,7 +65,7 @@ describe('LoginPage', () => {
     setup();
     await userEvent.type(screen.getByLabelText(/رقم الجوال|Phone/), '0590000003');
     await userEvent.type(screen.getByLabelText(/كلمة المرور|Password/), 'pw');
-    await userEvent.click(screen.getByRole('button', { name: /تسجيل الدخول|Log in/ }));
+    await userEvent.click(screen.getByRole('button', { name: /دخول إلى المنصة|Enter the platform/ }));
     await waitFor(() => expect(screen.getByText('home')).toBeInTheDocument());
     expect(useAuthStore.getState().user?.token).toBe('tk');
   });
