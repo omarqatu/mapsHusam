@@ -833,10 +833,12 @@ app.get('/api/category-counts', async (req, res) => {
 });
 
 // =========================================================================
-// 💱 أسعار السوق العالمية (عملات + ذهب) من مصادر خارجية مجانية بلا مفتاح، مكاشّة 10 دقائق بالسيرفر
+// 💱 أسعار السوق العالمية (عملات + ذهب + فضة) من مصادر خارجية مجانية بلا مفتاح، مكاشّة 10 دقائق بالسيرفر
 // لماذا من السيرفر: زائر المنصة لا يُرسل عنوانه لطرف ثالث، ولا نعتمد على CORS/حدود الطلب لكل متصفح، وإذا تعطّل المصدر نُرجع آخر نسخة ناجحة.
-// المصادر: open.er-api.com (أسعار الصرف) و api.gold-api.com (الأونصة بالدولار). كل مصدر مستقل: فشل أحدهما يترك جزأه null.
-// الاستجابة: { success, data: { rates: { USD_ILS, JOD_ILS, EUR_ILS } | null, gold: { usdPerOunce, ilsPerGram24, ilsPerGram21 } | null, updatedAt } }
+// المصادر: open.er-api.com (أسعار الصرف، تحديث يومي) و api.gold-api.com (الذهب والفضة بالدولار للأونصة، لحظي).
+// كل مصدر مستقل: فشل أحدهما يترك جزأه null (أو آخر قيمة ناجحة). asOf = وقت المصدر نفسه لا وقت جلبنا.
+// الاستجابة: { success, data: { rates: { USD_ILS, JOD_ILS, EUR_ILS, asOf } | null,
+//   gold: { usdPerOunce, ilsPerGram24, ilsPerGram21, ilsPerGram18, asOf } | null, silver: { usdPerOunce, asOf } | null, updatedAt } }
 // =========================================================================
 let marketRatesCache = { data: null, expiresAt: 0 };
 const TROY_OUNCE_GRAMS = 31.1035;
@@ -851,11 +853,13 @@ app.get('/api/market-rates', async (req, res) => {
     if (marketRatesCache.data && Date.now() < marketRatesCache.expiresAt) {
         return res.json({ success: true, data: marketRatesCache.data });
     }
-    const [fx, gold] = await Promise.allSettled([
+    const [fx, gold, silver] = await Promise.allSettled([
         fetchJsonWithTimeout('https://open.er-api.com/v6/latest/USD'),
         fetchJsonWithTimeout('https://api.gold-api.com/price/XAU'),
+        fetchJsonWithTimeout('https://api.gold-api.com/price/XAG'),
     ]);
     const num = v => (Number.isFinite(Number(v)) && Number(v) > 0 ? Number(v) : null);
+    const iso = v => { const d = new Date(v); return Number.isNaN(d.getTime()) ? null : d.toISOString(); };
 
     let rates = null;
     let usdIls = null;
@@ -863,7 +867,10 @@ app.get('/api/market-rates', async (req, res) => {
         const { ILS, JOD, EUR } = fx.value.rates;
         usdIls = num(ILS);
         if (usdIls && num(JOD) && num(EUR)) {
-            rates = { USD_ILS: usdIls, JOD_ILS: usdIls / Number(JOD), EUR_ILS: usdIls / Number(EUR) };
+            rates = {
+                USD_ILS: usdIls, JOD_ILS: usdIls / Number(JOD), EUR_ILS: usdIls / Number(EUR),
+                asOf: fx.value.time_last_update_unix ? new Date(fx.value.time_last_update_unix * 1000).toISOString() : null,
+            };
         }
     } else if (fx.status === 'rejected') {
         console.warn('⚠️ تعذر جلب أسعار الصرف:', fx.reason && fx.reason.message);
@@ -873,20 +880,29 @@ app.get('/api/market-rates', async (req, res) => {
     if (gold.status === 'fulfilled') {
         const usdPerOunce = num(gold.value && gold.value.price);
         if (usdPerOunce) {
-            const usdPerGram24 = usdPerOunce / TROY_OUNCE_GRAMS;
+            const perGram24 = usdPerOunce / TROY_OUNCE_GRAMS * usdIls;
+            // بالشيقل فقط إذا توفّر سعر الصرف؛ العيار = جزء من الخالص (21/24، 18/24)
             goldData = {
                 usdPerOunce,
-                // بالشيقل فقط إذا توفّر سعر الصرف، وعيار 21 = 21/24 من الخالص
-                ilsPerGram24: usdIls ? usdPerGram24 * usdIls : null,
-                ilsPerGram21: usdIls ? usdPerGram24 * usdIls * 21 / 24 : null,
+                ilsPerGram24: usdIls ? perGram24 : null,
+                ilsPerGram21: usdIls ? perGram24 * 21 / 24 : null,
+                ilsPerGram18: usdIls ? perGram24 * 18 / 24 : null,
+                asOf: iso(gold.value.updatedAt),
             };
         }
     } else {
         console.warn('⚠️ تعذر جلب سعر الذهب:', gold.reason && gold.reason.message);
     }
 
-    if (!rates && !goldData) {
-        // كلا المصدرين فشل: آخر نسخة ناجحة إن وُجدت (حتى لو منتهية)، وإلا 502
+    let silverData = null;
+    if (silver.status === 'fulfilled' && num(silver.value && silver.value.price)) {
+        silverData = { usdPerOunce: num(silver.value.price), asOf: iso(silver.value.updatedAt) };
+    } else if (silver.status === 'rejected') {
+        console.warn('⚠️ تعذر جلب سعر الفضة:', silver.reason && silver.reason.message);
+    }
+
+    if (!rates && !goldData && !silverData) {
+        // كل المصادر فشلت: آخر نسخة ناجحة إن وُجدت (حتى لو منتهية)، وإلا 502
         if (marketRatesCache.data) return res.json({ success: true, data: marketRatesCache.data });
         return res.status(502).json({ success: false, error: 'تعذر جلب أسعار السوق' });
     }
@@ -895,9 +911,10 @@ app.get('/api/market-rates', async (req, res) => {
     const data = {
         rates: rates || (previous && previous.rates) || null,
         gold: goldData || (previous && previous.gold) || null,
+        silver: silverData || (previous && previous.silver) || null,
         updatedAt: new Date().toISOString(),
     };
-    const complete = !!(rates && goldData);
+    const complete = !!(rates && goldData && silverData);
     marketRatesCache = { data, expiresAt: Date.now() + (complete ? 10 * 60 * 1000 : 60 * 1000) };
     res.json({ success: true, data });
 });
