@@ -16,9 +16,9 @@ export interface Column<T> {
   className?: string;
   /**
    * Where the column goes when the table turns into cards (below `md`):
-   * `title` = the card's heading, `footer` = the action row (no label), `hide` = table only, default = label + value.
+   * `title` = the card's heading, `footer` = the action row (no label), `hide` = table only, `wide` = value spans the full card width, default = label + value.
    */
-  card?: 'title' | 'footer' | 'hide';
+  card?: 'title' | 'footer' | 'hide' | 'wide';
 }
 
 interface DataTableProps<T> {
@@ -123,7 +123,7 @@ export default function DataTable<T>({
               {titleCol && <div className="mb-3 font-semibold text-slate-800">{titleCol.cell(row)}</div>}
               <dl className="grid grid-cols-2 gap-x-4 gap-y-3 text-sm">
                 {bodyCols.map((c) => (
-                  <div key={c.key} className="min-w-0">
+                  <div key={c.key} className={clsx('min-w-0', c.card === 'wide' && 'col-span-2')}>
                     <dt className="text-xs font-semibold text-slate-500">{c.header}</dt>
                     <dd className="mt-0.5 break-words text-slate-800">{c.cell(row)}</dd>
                   </div>

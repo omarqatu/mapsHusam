@@ -829,7 +829,7 @@
         "all": "Log out ALL users? They will be notified and must log in again.",
         "online": "Log out the users who are online now? They will be notified and must log in again.",
         "offline": "Log out the users who are offline? They will be notified and must log in again.",
-        "selected": "Log out the {{count}} selected users? They will be notified and must log in again."
+        "selected": "Log out the selected users ({{count}})? They will be notified and must log in again."
       }
     },
     "toast": {
@@ -838,7 +838,7 @@
       "deactivated": "The account was deactivated.",
       "loggedOutOnline": "The user was logged out and notified.",
       "loggedOutOffline": "The user is offline: the session was revoked and the notice will reach them on their next visit.",
-      "bulkLoggedOut": "Logged out {{total}} users ({{online}} online, {{offline}} offline)."
+      "bulkLoggedOut": "Users logged out: {{total}} ({{online}} online, {{offline}} offline)."
     },
     "edit": {
       "title": "Edit user",
@@ -1058,17 +1058,17 @@
       "fuelSaved": "The station's fuel availability was updated.",
       "saveFailed": "Could not save.",
       "nothingToSave": "There are no unsaved changes.",
-      "allSavedRoad": "Saved {{count}} checkpoints in one go.",
-      "allSavedFuel": "Saved {{count}} stations in one go.",
+      "allSavedRoad": "Saved in one go — checkpoints: {{count}}.",
+      "allSavedFuel": "Saved in one go — stations: {{count}}.",
       "nothingSaved": "nothing was saved",
       "selectFirst": "Tick at least one row (or use \"Select all\").",
       "chooseDirection": "Choose an inbound and/or outbound status to apply.",
       "chooseFuel": "Choose the availability of at least one fuel type to apply.",
       "bulkConfirmTitle": "Apply to selected",
-      "bulkConfirmRoad": "{{count}} checkpoints will be changed ({{changes}}). Continue?",
-      "bulkConfirmFuel": "{{count}} stations will be changed ({{changes}}). Continue?",
-      "bulkDoneRoad": "Updated {{count}} checkpoints.",
-      "bulkDoneFuel": "Updated {{count}} stations.",
+      "bulkConfirmRoad": "Change the selected checkpoints ({{count}}): {{changes}}. Continue?",
+      "bulkConfirmFuel": "Change the selected stations ({{count}}): {{changes}}. Continue?",
+      "bulkDoneRoad": "Checkpoints updated: {{count}}.",
+      "bulkDoneFuel": "Stations updated: {{count}}.",
       "bulkFailed": "The bulk update failed.",
       "orderSavedRoad": "The checkpoint order was saved.",
       "orderSavedFuel": "The station order was saved.",

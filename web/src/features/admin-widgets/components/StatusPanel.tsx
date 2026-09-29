@@ -291,6 +291,7 @@ export default function StatusPanel({ kind, rows, stamp, onReload }: Props) {
         key: f,
         header: fieldLabel(f),
         className: 'min-w-44',
+        card: 'wide',
         cell: (r) => {
           const value = effective(edits, r.id, f, r);
           return (
