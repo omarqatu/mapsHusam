@@ -7,6 +7,7 @@ import {
   CloudSun,
   Coins,
   Fuel,
+  ChevronDown,
   Gem,
   LayoutGrid,
   MoonStar,
@@ -17,6 +18,7 @@ import {
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { formatHijri, buildTickerItems, palestineNow, type CardId, type TickerItem } from '../model';
+import { useTickerUi } from '../tickerStore';
 import { useNow, usePrayerTimes, useWeather, useWidgetsData } from '../hooks/useWidgets';
 
 const ICON: Record<CardId, ReactNode> = {
@@ -69,9 +71,12 @@ function Item({ item, hidden, large }: { item: TickerItem; hidden?: boolean; lar
  */
 export default function TickerBar({
   variant = 'bar',
+  floating = false,
   className,
 }: {
   variant?: 'bar' | 'page';
+  /** Over the map: a glass pill at the bottom that folds into a small chip (the choice is remembered). */
+  floating?: boolean;
   className?: string;
 }) {
   const { t, i18n } = useTranslation();
@@ -80,6 +85,8 @@ export default function TickerBar({
   const { cities } = useWeather();
   const prayer = usePrayerTimes(now);
   const [paused, setPaused] = useState(false);
+  const hidden = useTickerUi((s) => s.hidden);
+  const setHidden = useTickerUi((s) => s.setHidden);
   const large = variant === 'page';
 
   const items = useMemo(
@@ -104,14 +111,32 @@ export default function TickerBar({
   );
 
   const title = t('widgets.ticker.title');
+  if (floating && hidden) {
+    return (
+      <button
+        type="button"
+        onClick={() => setHidden(false)}
+        aria-label={t('widgets.ticker.show')}
+        title={t('widgets.ticker.show')}
+        className="glass absolute bottom-3 start-3 z-10 inline-flex h-9 items-center gap-1.5 rounded-full px-3 text-sm font-bold text-brand-fg focus-visible:outline-2 focus-visible:outline-brand"
+      >
+        <Zap className="h-4 w-4" aria-hidden />
+        <span className="max-sm:hidden">{title}</span>
+      </button>
+    );
+  }
   return (
     <section
       aria-label={title}
       className={clsx(
-        'flex items-center gap-2 bg-surface px-3',
+        'flex items-center gap-2 px-3',
+        !floating && 'bg-surface',
+        floating && 'glass absolute inset-x-3 bottom-3 z-10 rounded-full [@media(max-height:560px)]:hidden',
         large
           ? 'h-16 rounded-2xl border border-line shadow-sm'
-          : 'h-10 shrink-0 border-t border-line [@media(max-height:560px)]:hidden',
+          : floating
+            ? 'h-10'
+            : 'h-10 shrink-0 border-t border-line [@media(max-height:560px)]:hidden',
         className,
       )}
     >
@@ -157,6 +182,17 @@ export default function TickerBar({
       >
         {paused ? <Play className="h-4 w-4" aria-hidden /> : <Pause className="h-4 w-4" aria-hidden />}
       </button>
+      {floating && (
+        <button
+          type="button"
+          onClick={() => setHidden(true)}
+          aria-label={t('widgets.ticker.hide')}
+          title={t('widgets.ticker.hide')}
+          className="shrink-0 rounded-md p-1.5 text-fg hover:bg-subtle"
+        >
+          <ChevronDown className="h-4 w-4" aria-hidden />
+        </button>
+      )}
       {!large && (
         <Link
           to="/widgets/portal"

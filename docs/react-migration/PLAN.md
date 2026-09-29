@@ -621,8 +621,15 @@ Split `index.html` into features, in this order:
    **Not ported:** the top-of-map user badge and the `enterPlatform` bootstrap (map init, edit-panel hiding, notification init): they belong to the map page / layout (item 9) and the notifications item (7). The legacy `logoutPlatform` also removes `provider_status_<id>` from localStorage: do that when the provider panel (item 6) is ported.
    **Routing kept as is:** `/` still requires a login and sends anonymous visitors to `/login` (not `/welcome`); see "Decisions for the user". `/welcome` is reachable by URL and from the header logo on the auth screens.
    Tests: `features/auth/{phone,RegisterPage,LoginPage}.test`, `features/legal/legal.test.tsx`, and the real-backend `features/auth/auth.live.test.ts` (register, duplicate phone, inactive account cannot log in, change password and back).
-9. ⬜ Layout: `mobile-tabs.js`, `desktop-panels.js`, `resizable-panels.js`, `panel-controls.js`,
+9. ✅ Layout: `mobile-tabs.js`, `desktop-panels.js`, `resizable-panels.js`, `panel-controls.js`,
    `ui-collapse.js`, `viewport-guard.js`, `mobile-app-bridge.js`
+   Covered by: draggable panels (`useDraggablePanel`), and now **minimise** — every `MapSheet` has a chevron that folds it to its
+   header (state is per open panel, not saved). Panel *resizing* (`resizable-panels.js`) is deliberately not ported: panels size to
+   their content, and a saved width would only fight the phone bottom sheet.
+   *UX changes (2026-09-29):* the live-updates ticker on the map is a floating **glass** pill over the bottom of the map (the
+   coordinates / stats pill move up above it) with a button that folds it into a small chip; the choice is remembered
+   (`psm-ticker-hidden`). `.glass` is more opaque (90 %, blur 10 px) for readability. `/search` now leads with property (three doors:
+   rent, sale, land) and lists services below with round icons; the "all" grid no longer repeats the three property types.
 10. 🟨 Extras: `platform-stats.js`, `featured-services-portal.js`, the "road status" / "fuel status" buttons, widgets ticker on the map
    ✅ **Done here (`features/map/extras/`):** the featured-services portal, the road-status and fuel-status lists and the
    platform statistics. ✅ The widgets ticker strip (bottom of the map) + the full widgets portal are ported in Phase 1 (`features/widgets/`). ⬜ **Not in this item (own items):** the mobile "home" tab (`mobile-tabs.js`, item 9) — it can open the panel with
@@ -863,8 +870,8 @@ flows, provider card → panel on the map. **Not verified:** a real phone; the b
 
 | Check | Where | When |
 | --- | --- | --- |
-| `npm run typecheck`, `npm run lint` (incl. `jsx-a11y` + the design-token rule), `npm test`, `npm run build` (in `web/`) | `.github/workflows/ci.yml`, `ubuntu-latest`, Node 22, npm cache | every pull request and every push to a branch other than `main` |
-| the same four, in that order | `.github/workflows/deploy.yml`, self-hosted Windows runner, in the checkout (`web/`) — **before** the robocopy step | every push to `main`; a red check stops the job, so a broken `main` never replaces the running site |
+| root `npm ci` + `node --check server.js`; `npm run typecheck`, `npm run lint` (incl. `jsx-a11y` + the design-token rule), `npm test`, `npm run build` in `web/` | `.github/workflows/ci.yml`, `ubuntu-latest`, Node 22, npm cache | every pull request and every push to a branch other than `main` |
+| the same server + web checks, then staged deployment, restart smoke test, and automatic rollback on failure | `.github/workflows/deploy.yml`, self-hosted Windows runner — **all installs and builds finish before production is touched** | every push to `main`; deployments are serialized and the previous release is retained as `mapsHusam.__previous` |
 | `npm audit --omit=dev --audit-level=high` in `web/` and in the repo root | `ci.yml`, job `audit`, `continue-on-error` (report only) | same as CI |
 | `npm run e2e` (Playwright, `web/e2e/`, desktop 1440 + phone 390, Arabic) | **your machine only** — it needs the dev Postgres, the seeded accounts, the local GeoServer and the backend on :3000 | before merging anything that touches a page; not in CI (see `dev/README.md` → Browser tests) |
 

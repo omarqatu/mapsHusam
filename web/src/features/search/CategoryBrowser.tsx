@@ -18,15 +18,22 @@ export default function CategoryBrowser({ group, onGroup, onPick }: Props) {
   const { t } = useTranslation();
   const [query, setQuery] = useState('');
   const targets = useMemo(
-    () => targetsInGroup(group).filter((x) => matchesQuery(t(targetLabelKey(x)), query)),
+    // Property has its own doors at the top of the page; the "all" grid lists services only.
+    () =>
+      targetsInGroup(group).filter(
+        (x) => (group !== 'all' || x.kind !== 'realEstate') && matchesQuery(t(targetLabelKey(x)), query),
+      ),
     [group, query, t],
   );
 
   return (
     <section aria-labelledby="categories-title" className="space-y-3">
-      <h2 id="categories-title" className="text-lg font-bold text-fg">
-        {t('searchPage.chooseCategory')}
-      </h2>
+      <div>
+        <h2 id="categories-title" className="text-xl font-black text-fg">
+          {t('searchPage.servicesTitle')}
+        </h2>
+        <p className="text-sm text-muted">{t('searchPage.servicesHint')}</p>
+      </div>
 
       <div
         role="group"
@@ -74,9 +81,12 @@ export default function CategoryBrowser({ group, onGroup, onPick }: Props) {
               <button
                 type="button"
                 onClick={() => onPick(x)}
-                className="flex h-full w-full flex-col items-center justify-center gap-1.5 rounded-xl border border-line bg-surface p-3 text-center text-sm font-semibold text-fg shadow-sm transition hover:-translate-y-0.5 hover:border-brand hover:shadow-md"
+                className="group flex h-full w-full flex-col items-center justify-center gap-2 rounded-2xl border border-line bg-surface p-3 text-center text-sm font-semibold text-fg shadow-sm transition hover:-translate-y-0.5 hover:border-brand hover:shadow-float focus-visible:outline-2 focus-visible:outline-brand"
               >
-                <span aria-hidden className="text-3xl leading-none">
+                <span
+                  aria-hidden
+                  className="flex h-12 w-12 items-center justify-center rounded-full bg-brand-light text-2xl leading-none transition group-hover:scale-110"
+                >
                   {targetIcon(x)}
                 </span>
                 <span>{t(targetLabelKey(x))}</span>

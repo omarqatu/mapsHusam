@@ -1,4 +1,5 @@
 import { useEffect } from 'react';
+import clsx from 'clsx';
 import { Layers, Search } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import AppHeader from '@/components/AppHeader';
@@ -30,6 +31,7 @@ import MapTools from './tools/MapTools';
 import ToolButtons from './tools/ToolButtons';
 import LayerPanel from './panels/LayerPanel';
 import TickerBar from '../widgets/components/TickerBar';
+import { useTickerUi } from '../widgets/tickerStore';
 
 /** `/` — the map. Full-screen: a slim brand bar and the map; every tool floats on the map's end edge. */
 export default function MapPage() {
@@ -37,6 +39,7 @@ export default function MapPage() {
   const layersOpen = useMapUi((s) => s.layersOpen);
   const setLayersOpen = useMapUi((s) => s.setLayersOpen);
   const selected = useMapUi((s) => s.selected);
+  const tickerHidden = useTickerUi((s) => s.hidden);
   const setSelected = useMapUi((s) => s.setSelected);
   const searchOpen = useSearchUi((s) => s.panelOpen);
   const results = useSearchUi((s) => s.results);
@@ -113,7 +116,12 @@ export default function MapPage() {
               </div>
             </div>
           </div>
-          <div className="pointer-events-none absolute inset-x-0 bottom-2 z-10 flex items-center justify-center gap-2">
+          <div
+            className={clsx(
+              'pointer-events-none absolute inset-x-0 z-10 flex items-center justify-center gap-2',
+              tickerHidden ? 'bottom-2' : 'bottom-16 [@media(max-height:560px)]:bottom-2',
+            )}
+          >
             <CoordinatesBar />
             <StatsPill />
           </div>
@@ -148,10 +156,9 @@ export default function MapPage() {
             />
           )}
         </MapView>
+        {/* Legacy "تحديثات فورية" bar: a glass pill over the bottom of the map that folds into a chip. */}
+        <TickerBar floating />
       </div>
-      {/* Legacy footer bar. A row of the page (not an overlay), so the map — and every button, sheet, the coordinates and the
-          stats pill on it — simply ends above it. One slim line; hidden on landscape phones. */}
-      <TickerBar />
       <Toaster />
     </div>
   );

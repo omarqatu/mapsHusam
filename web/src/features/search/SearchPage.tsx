@@ -75,7 +75,7 @@ export default function SearchPage() {
         <KeywordSearch value={term} onCommit={commitKeyword} />
         <QuickActions onRoads={() => setStatus('road_barriers')} onFuel={() => setStatus('fuel_stations')} />
       </div>
-      {!keywordActive && !selection && <Hero />}
+      {!keywordActive && !selection && <Hero onPick={openTarget} />}
 
       {keywordActive ? (
         <KeywordResults term={term} />

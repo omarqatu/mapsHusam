@@ -4,6 +4,8 @@
     "loading": "Loading…"
   },
   "common": {
+    "minimize": "Minimise panel",
+    "expand": "Expand panel",
     "save": "Save",
     "cancel": "Cancel",
     "confirm": "Confirm",
@@ -966,8 +968,13 @@
     "noResults": "No matching results right now",
     "noResultsHint": "Try loosening or resetting the filters.",
     "capped": "The server returns only the first {{count}} results. Use the filters to narrow the search.",
-    "heroTitle": "The easy way to search",
-    "heroText": "Pick the type of service or property below to see every available result at once, or type what you need in the search box. Narrow the results by area, price or any other detail, without opening the map.",
+    "heroTitle": "Find your property",
+    "heroText": "Flats for rent, flats for sale and land, straight from their owners. Pick a type, narrow it by area, price and size, and contact the advertiser without opening the map.",
+    "reHint_rent": "Homes to rent",
+    "reHint_sale": "Ready flats for sale",
+    "reHint_land": "Plots of land for sale",
+    "servicesTitle": "And services near you",
+    "servicesHint": "Plumbers, electricians, shops, schools and more.",
     "goToMap": "Go to the interactive map",
     "contactUs": "Contact us on Facebook",
     "about": "A digital geographic platform connecting people with the nearest and best services, properties and technicians in Palestine, easily and without middlemen."
@@ -1405,6 +1412,8 @@
     "ticker": {
       "title": "Live updates",
       "open": "Open the live information centre",
+      "hide": "Hide live updates",
+      "show": "Show live updates",
       "pause": "Pause scrolling",
       "play": "Resume scrolling",
       "loading": "Loading...",

@@ -1,6 +1,6 @@
-import type { ReactNode } from 'react';
+import { useState, type ReactNode } from 'react';
 import clsx from 'clsx';
-import { X } from 'lucide-react';
+import { ChevronDown, ChevronUp, X } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useDraggablePanel } from '@/hooks/useDraggablePanel';
 
@@ -18,8 +18,17 @@ interface MapSheetProps {
 }
 
 /** Floating panel over the map: side card on desktop, bottom sheet on phones. */
-export default function MapSheet({ title, onClose, side, label, children, className, dragId }: MapSheetProps) {
+export default function MapSheet({
+  title,
+  onClose,
+  side,
+  label,
+  children,
+  className,
+  dragId,
+}: MapSheetProps) {
   const { t } = useTranslation();
+  const [folded, setFolded] = useState(false);
   const { panelRef, panelStyle, handleProps } = useDraggablePanel(dragId ?? label);
   return (
     <aside
@@ -38,19 +47,34 @@ export default function MapSheet({ title, onClose, side, label, children, classN
       <header
         {...handleProps}
         title={undefined}
-        className="flex touch-none select-none items-center justify-between gap-2 border-b border-line px-4 py-3 sm:cursor-grab sm:active:cursor-grabbing"
+        className={clsx(
+          'flex touch-none select-none items-center justify-between gap-2 px-4 py-3 sm:cursor-grab sm:active:cursor-grabbing',
+          !folded && 'border-b border-line',
+        )}
       >
         <div className="min-w-0 text-base font-bold text-fg">{title}</div>
-        <button
-          type="button"
-          onClick={onClose}
-          aria-label={t('common.close')}
-          className="shrink-0 rounded-lg p-1.5 text-muted hover:bg-subtle"
-        >
-          <X className="h-5 w-5" />
-        </button>
+        <div className="flex shrink-0 items-center">
+          <button
+            type="button"
+            onClick={() => setFolded((v) => !v)}
+            aria-expanded={!folded}
+            aria-label={t(folded ? 'common.expand' : 'common.minimize')}
+            title={t(folded ? 'common.expand' : 'common.minimize')}
+            className="rounded-lg p-1.5 text-muted hover:bg-subtle"
+          >
+            {folded ? <ChevronUp className="h-5 w-5" /> : <ChevronDown className="h-5 w-5" />}
+          </button>
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label={t('common.close')}
+            className="rounded-lg p-1.5 text-muted hover:bg-subtle"
+          >
+            <X className="h-5 w-5" />
+          </button>
+        </div>
       </header>
-      <div className="flex-1 overflow-y-auto p-4">{children}</div>
+      {!folded && <div className="flex-1 overflow-y-auto p-4">{children}</div>}
     </aside>
   );
 }
