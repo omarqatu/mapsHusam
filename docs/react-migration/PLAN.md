@@ -980,9 +980,16 @@ Log each change here: **what · why · how to verify · commit**.
   `GET /api/widgets-data` → `updated_at` equals the save time (dev: 3 h later than before the fix). Commit:
   `fix(server): read widget timestamps in the database time zone`.
 
+- **Sessions expire after 30 idle days and renew while used.** Login / password change sign the token with `exp`
+  (`SESSION_TTL_DAYS`, default 30); `requireAuth` answers with `X-New-Token` (which both frontends already store) when fewer than
+  7 days are left or the token has no `exp` (tokens issued before this change keep working and are upgraded on their next request).
+  `requireAuth` / `requireAdmin` no longer pass `ignoreExpiration`. An active user never sees a logout; a token left on an abandoned
+  device dies by itself. Instant revocation is unchanged (`token_version` / `is_active` / `force_logout_flag`). Verify: token
+  without `exp` → 200 + `X-New-Token`; fresh token → 200, no header; token 1 day from expiry → renewed; expired → 401 `TOKEN_INVALID`.
+  Commit: `feat(server): session tokens expire after 30 idle days, renewed while in use`.
+
 ## Backend asks (needs the user's decision — behaviour-changing or larger)
 
-- Sessions never expire by design (`requireAuth` uses `ignoreExpiration: true`); revocation is via `token_version` / `is_active` / `force_logout_flag` (checked on every request, cached). Not a hole by itself, but a stolen token stays valid until an admin force-logout or a password change — consider `expiresIn` + refresh, and a self-service "log out everywhere". Needs the user's decision.
 - WFS-T editing sends GeoServer credentials from the browser (`js/edit-wfs.js`); should move server-side.
   Detail (from porting item 5): `/geoserver-proxy` has **no role check** — the proxy forwards any `POST` (a WFS-T Transaction whose layer is
   whitelisted) and GeoServer's Basic login is the only gate, so anyone who knows a GeoServer account can write from anywhere, and every

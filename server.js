@@ -517,6 +517,21 @@ async function getAuthStatus(uid) {
     return entry;
 }
 
+// 🔒 عمر جلسة الدخول: التوكن يحمل exp (SESSION_TTL_DAYS، افتراضياً 30 يوماً) ويُجدَّد تلقائياً عبر X-New-Token
+// حين يقترب انتهاؤه، فالمستخدم النشط لا يخرج أبداً، والتوكن المسروق من جهاز متروك يموت وحده.
+// الإبطال الفوري ما زال عبر token_version / is_active / force_logout_flag.
+const SESSION_TTL_DAYS = Number(process.env.SESSION_TTL_DAYS) > 0 ? Number(process.env.SESSION_TTL_DAYS) : 30;
+const SESSION_RENEW_WITHIN_S = Math.min(7, SESSION_TTL_DAYS / 2) * 86400;
+
+function signSessionToken(uid, role, tokenVersion) {
+    return jwt.sign({ uid: Number(uid), role, tv: Number(tokenVersion) || 0 }, ADMIN_JWT_SECRET, { expiresIn: `${SESSION_TTL_DAYS}d` });
+}
+
+// توكنات ما قبل هذا التعديل بلا exp: تبقى صالحة وتُستبدل بتوكن له exp عند أول طلب.
+function sessionTokenNeedsRenewal(decoded) {
+    return !decoded.exp || decoded.exp - Math.floor(Date.now() / 1000) < SESSION_RENEW_WITHIN_S;
+}
+
 // رقم المشرف صاحب التوكن إن كان توكن جلسة صالحاً لمشرف فعّال (وإلا null). لا يرمي أبداً.
 async function activeAdminUidFromToken(token) {
     if (!token) return null;
@@ -546,8 +561,8 @@ async function requireAuth(req, res, next) {
 
     let decoded;
     try {
-        // جلسة الدخول لا تنتهي زمنياً؛ الإبطال يتم عبر token_version أو حالة الحساب.
-        decoded = jwt.verify(token, ADMIN_JWT_SECRET, { algorithms: ['HS256'], ignoreExpiration: true });
+        // الجلسة تنتهي بعد SESSION_TTL_DAYS بلا نشاط (انظر signSessionToken)؛ الإبطال الفوري عبر token_version أو حالة الحساب.
+        decoded = jwt.verify(token, ADMIN_JWT_SECRET, { algorithms: ['HS256'] });
     } catch (e) {
         console.warn('[AUTH] رفض JWT:', e.name, e.message);
         return res.status(401).json({ success: false, error: 'انتهت الجلسة، يرجى تسجيل الدخول من جديد.', code: 'TOKEN_INVALID' });
@@ -567,6 +582,9 @@ async function requireAuth(req, res, next) {
             return res.status(401).json({ success: false, error: 'تم إنهاء جلستك، يرجى تسجيل الدخول من جديد.', code: 'SESSION_REVOKED' });
         }
         req.auth = { uid, role: status.role };
+        if (sessionTokenNeedsRenewal(decoded)) {
+            res.setHeader('X-New-Token', signSessionToken(uid, status.role, status.tokenVersion));
+        }
 
         next();
     } catch (err) {
@@ -1463,7 +1481,7 @@ app.post('/api/auth/change-password', authLimiter, requireAuth, async (req, res)
         // 🔒 الجلسات الأخرى تنتهي، وهذه الجلسة تستلم توكناً جديداً تلقائياً (auth-fetch.js يحفظ X-New-Token)
         if (pwUpdate.rows[0]) {
             const pwRole = pwUpdate.rows[0].role;
-            res.setHeader('X-New-Token', jwt.sign({ uid: Number(userId), role: pwRole, tv: Number(pwUpdate.rows[0].token_version) || 0 }, ADMIN_JWT_SECRET));
+            res.setHeader('X-New-Token', signSessionToken(userId, pwRole, pwUpdate.rows[0].token_version));
         }
 
         console.log(`✅ تم تحديث كلمة المرور بنجاح للمستخدم رقم: ${userId}`);
@@ -1592,11 +1610,11 @@ app.post('/api/auth/login', authLimiter, async (req, res) => {
         // 🆕 إصدار توكن موقّع للمشرفين فقط، يحل محل الثقة بأي رقم يرسله المتصفح
         let adminToken = null;
         if (user.role === 'admin') {
-            adminToken = jwt.sign({ uid: user.user_id, role: 'admin', tv: Number(user.token_version) || 0 }, ADMIN_JWT_SECRET);
+            adminToken = signSessionToken(user.user_id, 'admin', user.token_version);
         }
 
-        // 🔒 توكن الجلسة لجميع الأدوار بلا انتهاء زمني؛ الإبطال عبر token_version
-        const sessionToken = adminToken || jwt.sign({ uid: user.user_id, role: user.role, tv: Number(user.token_version) || 0 }, ADMIN_JWT_SECRET);
+        // 🔒 توكن الجلسة لجميع الأدوار (عمره SESSION_TTL_DAYS ويتجدد مع الاستخدام)؛ الإبطال عبر token_version
+        const sessionToken = adminToken || signSessionToken(user.user_id, user.role, user.token_version);
 
         res.status(200).json({
             message: 'تم تسجيل الدخول بنجاح بالمطابقة الكاملة الثلاثية المشروطة ببيانات قاعدة البيانات الحقيقية',
@@ -1967,7 +1985,7 @@ async function requireAdmin(req, res, next) {
 
     let decoded;
     try {
-        decoded = jwt.verify(token, ADMIN_JWT_SECRET, { algorithms: ['HS256'], ignoreExpiration: true });
+        decoded = jwt.verify(token, ADMIN_JWT_SECRET, { algorithms: ['HS256'] });
     } catch (e) {
         return res.status(401).json({ success: false, error: 'جلسة المشرف منتهية أو غير صالحة، يرجى تسجيل الدخول من جديد.' });
     }
