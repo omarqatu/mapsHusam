@@ -29,7 +29,21 @@ export interface ChangePasswordResponse {
   message: string;
 }
 
+export interface RegisterRequest {
+  name: string;
+  phone: string;
+  whatsapp_number: string;
+  password: string;
+  email?: string;
+}
+export interface RegisterResponse {
+  status: 'success';
+  message: string;
+  user: { user_id: number; full_name: string; email: string; phone: string; role: string; whatsapp_number: string | null };
+}
+
 export const authApi = {
+  register: (body: RegisterRequest) => api.post<RegisterResponse>('/api/auth/register', body),
   login: (body: LoginRequest) => api.post<LoginResponse>('/api/auth/login', body),
   verifySession: (userId: number) =>
     api.post<VerifySessionResponse>('/api/auth/verify-session', { user_id: userId }),
@@ -42,6 +56,11 @@ export function useLogin() {
     mutationFn: authApi.login,
     onSuccess: ({ user }) => useAuthStore.getState().setSession(user),
   });
+}
+
+/** New accounts are created inactive (status 0): no session is started, the user waits for activation. */
+export function useRegister() {
+  return useMutation({ mutationFn: authApi.register });
 }
 
 export function useChangePassword() {

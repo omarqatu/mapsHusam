@@ -161,7 +161,29 @@ Split `index.html` into features, in this order:
 5. ⬜ Editing (admin): `edit-core.js`, `edit-wfs.js`, `editLines.js`, `editPolygons.js`
 6. ⬜ Provider panel: `provider-panel.js`, `services-bridge.js`
 7. ⬜ Service requests & chat: `service-chat.js` (1.7k lines), `notifications.js`
-8. ⬜ Auth UI: `auth-core-functions.js`, `auth-app-events.js`, `auth-fetch.js`, `legal-content.js`
+8. 🟨 Auth UI: `auth-core-functions.js`, `auth-app-events.js`, `auth-fetch.js`, `legal-content.js`
+   **Parity checklist (from the legacy code).**
+   - ✅ Promo splash → `/welcome` (pitch, 6 feature cards, "create account" / "log in", terms + privacy links).
+   - ✅ Terms gate → first step of `/register`: terms list, "I agree" box, Facebook page link + "I liked it" box; the continue button stays disabled until both are ticked.
+   - ✅ Register (`POST /api/auth/register`): name, WhatsApp prefix 970/972, local mobile `^05\d{8}$`, password. Sends `whatsapp_number = +<prefix><phone without 0>`, `email: ''`. Role is always `user` (server forces it). Account is created inactive: no session, toast "contact us on Facebook to activate", then `/login`.
+   - ✅ Login (`POST /api/auth/login`): phone regex check, server error message shown, welcome toast, redirect to the page the user came from (`state.from`) or `/`. Session stays in `map_user` (shared with the legacy pages; `authStore.ts`).
+   - ✅ Change password (`POST /api/auth/change-password`): current password required, new one at least 6 chars, server message on failure, rotated `X-New-Token` stored by `api/client.ts`. Opened from the key icon in `UserMenu`.
+   - ✅ Session check on start (`verify-session`, fails open) with the legacy per-reason messages (force logout / inactive / not found). Was a single generic message before.
+   - ✅ `auth-fetch.js` (Bearer header, `X-New-Token`, 401 handling) is `api/client.ts` since Phase 0.
+   - ✅ Legal texts (`legal-content.js`): guide, search guide, provider guide, subscription guide, interactive-map guide, about, terms, privacy, contact → `features/legal/content.ts` as structured data (no HTML strings), shown by `LegalDocView` in a dialog (`LegalModal`/`LegalLinks`) and as pages `/legal/:key`. The Arabic wording is unchanged.
+   - ⬜ Not verified: a visual walk-through at desktop and 390 px in a browser (only unit + live-API tests were run).
+   **Changed on purpose (better, documented):**
+   - The promo splash, welcome/terms, login and register overlays (stacked over the map, toggled with `hidden`) are separate routes `/welcome`, `/register`, `/login`, so the back button and links work. Same texts and same steps.
+   - The login page did not check the phone format in the React skeleton; it now does (`05` + 8 digits, as legacy).
+   - The register form has no "account type" select (its only option was "user"; the server ignores the field). Client-side password length check (min 6) added before the request; the server already enforced it.
+   - The 3-second submit cooldown is gone: the button is disabled while a request is in flight and the server rate-limits (`authLimiter`).
+   - Terms/privacy/guide open in a dialog over the current page (as legacy) and also have their own URL `/legal/terms` etc.
+   - Legal texts: the duplicate `guideMap` entry (byte-identical to `guide`) is one entry; links to `/original-index.html` and `/no-map-search.html` point to `/` and `/search`; a corrupted emoji in the "search tips" heading became a light bulb. Arabic only for now (English needs the owner's review).
+   - The promo slideshow (16 photos rotating every 4 s), the floating words and the Facebook-styled buttons are not ported: the welcome page is a static pitch. Add the photos back if the owner wants them.
+   - Login/registration error and success messages are toasts/inline alerts instead of `alert()` fallbacks.
+   **Not ported:** the top-of-map user badge and the `enterPlatform` bootstrap (map init, edit-panel hiding, notification init): they belong to the map page / layout (item 9) and the notifications item (7). The legacy `logoutPlatform` also removes `provider_status_<id>` from localStorage: do that when the provider panel (item 6) is ported.
+   **Routing kept as is:** `/` still requires a login and sends anonymous visitors to `/login` (not `/welcome`); see "Decisions for the user". `/welcome` is reachable by URL and from the header logo on the auth screens.
+   Tests: `features/auth/{phone,RegisterPage,LoginPage}.test`, `features/legal/legal.test.tsx`, and the real-backend `features/auth/auth.live.test.ts` (register, duplicate phone, inactive account cannot log in, change password and back).
 9. ⬜ Layout: `mobile-tabs.js`, `desktop-panels.js`, `resizable-panels.js`, `panel-controls.js`,
    `ui-collapse.js`, `viewport-guard.js`, `mobile-app-bridge.js`
 10. 🟨 Extras: `platform-stats.js`, `featured-services-portal.js`, the "road status" / "fuel status" buttons, widgets ticker on the map
@@ -317,6 +339,7 @@ For each page, list from the legacy code — not from memory:
   React route keeps that for parity. But the WFS data (names, phones, prices) is public on GeoServer anyway,
   so the wall protects nothing and costs users. Recommend: public map, login only for actions (request,
   chat, provider panel). Flip `access` of `/` in `web/src/routes/routes.ts`.
+  Related: with a login wall, should anonymous visitors land on `/welcome` (the legacy promo) instead of `/login`? Not decided; today `ProtectedRoute` redirects to `/login`.
 
 ## Server changes (allowed: functionality-preserving improvements, one commit each)
 

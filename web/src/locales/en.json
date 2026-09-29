@@ -36,7 +36,109 @@
     "phone": "Phone number",
     "password": "Password",
     "loggingIn": "Logging in…",
-    "sessionEnded": "Your session ended, please log in again."
+    "sessionEnded": "Your session ended, please log in again.",
+    "loginTitle": "Log in to the map",
+    "loginIntro": "Enter your account details to open the interactive map",
+    "phoneHint": "Use the same mobile number you registered your WhatsApp account with.",
+    "phoneInvalid": "Invalid mobile number: it must be 10 digits and start with 05.",
+    "loginSubmit": "Enter the platform",
+    "welcomeBack": "Welcome back: {{name}}",
+    "noAccount": "No account yet?",
+    "createAccount": "Create an account",
+    "haveAccount": "Already have an account?",
+    "loginHere": "Log in here",
+    "reviewTerms": "Review the agreement and terms",
+    "showPassword": "Show password",
+    "hidePassword": "Hide password",
+    "sessionForceLogout": "The administration logged you out. Contact them through the Facebook page before trying to log in again.",
+    "sessionInactive": "Your account is currently disabled. Contact the administration through the Facebook page.",
+    "sessionNotFound": "This account was not found, please log in again.",
+    "welcome": {
+      "title": "Palestine Services Map",
+      "tagline": "Everything you need, in one place",
+      "subtitle": "The first interactive platform in Palestine: find any service or property in one tap, contact providers directly, and be one step from everything you want.",
+      "features": {
+        "realEstate": {
+          "label": "Apartments for sale and rent",
+          "desc": "Thousands of listings updated daily"
+        },
+        "providers": {
+          "label": "Service providers",
+          "desc": "More than 50 trades and professions"
+        },
+        "location": {
+          "label": "Precise locations",
+          "desc": "GPS + interactive map"
+        },
+        "contact": {
+          "label": "Direct contact",
+          "desc": "WhatsApp, no middlemen"
+        },
+        "search": {
+          "label": "Smart search",
+          "desc": "Filter by place, price and category"
+        },
+        "free": {
+          "label": "Completely free",
+          "desc": "For everyone who uses the services"
+        }
+      },
+      "register": "Create an account",
+      "login": "Have an account? Log in",
+      "footer": "Visit the map: start by creating an account, or log in if you already have one",
+      "agreeNote": "By continuing you agree to the"
+    },
+    "legal": {
+      "terms": "Terms of use",
+      "privacy": "Privacy policy",
+      "guide": "User guide",
+      "and": "and"
+    },
+    "register": {
+      "title": "Create an account with a WhatsApp number",
+      "intro": "Register with a Palestinian mobile number for fast, safe activation",
+      "termsTitle": "Terms and conditions of use",
+      "platformName": "Palestine Services Map (trial version)",
+      "about": "The first interactive platform connecting users with service providers and property owners in Palestine. Whether you look for a service or have a property to sell or rent, we give you smart geographic marketing that reaches the public directly.",
+      "term1": "The platform is a geo-digital intermediary that connects the user with the provider through WhatsApp only.",
+      "term2": "Prices, appointments and service details are agreed directly between the two parties, without our involvement.",
+      "term3": "The platform accepts no responsibility for any dispute, mistreatment or breach of agreement between the parties.",
+      "term4": "For complaints, message us on the Facebook page so that administrative action (such as a ban) can be taken.",
+      "agree": "I agree to the usage policy, the privacy policy and the disclaimer above.",
+      "fbAsk": "Your support keeps us going. Please like our Facebook page to continue:",
+      "fbLink": "Visit the Facebook page and like it",
+      "fbDone": "I visited the page and pressed Like.",
+      "gateHint": "Accept the terms and like the page to enable registration:",
+      "continue": "Register with a WhatsApp number",
+      "alreadyRegistered": "Already registered? Click here to log in",
+      "name": "Full name",
+      "namePlaceholder": "Enter your personal or business name",
+      "prefix": "WhatsApp country code",
+      "prefixHint": "Choose the country code of your WhatsApp number.",
+      "phone": "Local mobile number",
+      "phoneHint": "Enter the full mobile number with the leading zero. It is converted to WhatsApp format +970... or +972... automatically.",
+      "passwordHint": "At least 6 characters.",
+      "passwordShort": "The password must be at least 6 characters.",
+      "accountType": "Account type",
+      "accountUser": "Regular user (search, browse and request services)",
+      "submit": "Complete registration",
+      "submitting": "Registering…",
+      "success": "Your account was created. Please message us on Facebook to activate it.",
+      "backToTerms": "Back to the terms"
+    },
+    "changePassword": {
+      "open": "Change password",
+      "title": "Change your password securely",
+      "current": "Current password",
+      "new": "New password (at least 6 characters)",
+      "currentEmpty": "The current password cannot be empty.",
+      "newShort": "The new password must be 6 characters or more.",
+      "trouble": "Having trouble? Contact us directly on",
+      "facebookPage": "our Facebook page",
+      "submit": "Update",
+      "submitting": "Updating…",
+      "success": "Password changed successfully."
+    }
   },
   "nav": {
     "map": "Map",

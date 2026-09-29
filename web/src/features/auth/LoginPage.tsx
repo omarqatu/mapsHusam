@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from 'react';
-import { Navigate, useLocation, useNavigate } from 'react-router';
+import { Link, Navigate, useLocation, useNavigate } from 'react-router';
 import { useTranslation } from 'react-i18next';
 import { Phone, Lock } from 'lucide-react';
 import { useLogin } from '@/api/auth';
@@ -9,6 +9,8 @@ import AlertMessage from '@/components/ui/AlertMessage';
 import Button from '@/components/ui/Button';
 import FormField from '@/components/ui/FormField';
 import TextInput from '@/components/ui/TextInput';
+import { toast } from '@/components/ui/toastStore';
+import { isLocalMobile } from './phone';
 
 export default function LoginPage() {
   const { t } = useTranslation();
@@ -18,12 +20,26 @@ export default function LoginPage() {
   const login = useLogin();
   const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
+  const [phoneError, setPhoneError] = useState('');
 
   if (user) return <Navigate to={from} replace />;
 
   const submit = (e: FormEvent) => {
     e.preventDefault();
-    login.mutate({ phone: phone.trim(), password }, { onSuccess: () => navigate(from, { replace: true }) });
+    if (!isLocalMobile(phone)) {
+      setPhoneError(t('auth.phoneInvalid'));
+      return;
+    }
+    setPhoneError('');
+    login.mutate(
+      { phone: phone.trim(), password },
+      {
+        onSuccess: ({ user }) => {
+          toast.success(t('auth.welcomeBack', { name: user.full_name ?? user.phone }));
+          navigate(from, { replace: true });
+        },
+      },
+    );
   };
   const errorMessage =
     login.error instanceof ApiError
@@ -35,11 +51,13 @@ export default function LoginPage() {
         : '';
 
   return (
-    <div className="mx-auto mt-10 w-full max-w-sm rounded-2xl border border-slate-100 bg-white p-6 shadow-sm">
-      <h1 className="mb-5 text-2xl font-black text-slate-800">{t('auth.login')}</h1>
+    <div className="mx-auto mt-4 w-full max-w-sm rounded-2xl border border-slate-100 bg-white p-6 shadow-sm">
+      <h1 className="text-2xl font-black text-slate-800">{t('auth.loginTitle')}</h1>
+      <p className="mt-1 text-sm text-slate-500">{t('auth.loginIntro')}</p>
+      <p className="mb-4 text-xs text-slate-400">{t('auth.phoneHint')}</p>
       <form onSubmit={submit} noValidate>
         <AlertMessage type="error" message={errorMessage} className="mb-4" />
-        <FormField label={t('auth.phone')} name="phone" required>
+        <FormField label={t('auth.phone')} name="phone" required error={phoneError}>
           <TextInput
             id="phone"
             name="phone"
@@ -50,6 +68,8 @@ export default function LoginPage() {
             value={phone}
             onChange={(e) => setPhone(e.target.value)}
             startIcon={<Phone className="h-4 w-4" />}
+            hasError={!!phoneError}
+            placeholder="0598512667"
             required
           />
         </FormField>
@@ -72,8 +92,14 @@ export default function LoginPage() {
           loading={login.isPending}
           disabled={!phone.trim() || !password}
         >
-          {login.isPending ? t('auth.loggingIn') : t('auth.login')}
+          {login.isPending ? t('auth.loggingIn') : t('auth.loginSubmit')}
         </Button>
+        <p className="mt-2 text-center text-sm text-slate-500">
+          {t('auth.noAccount')}{' '}
+          <Link to="/register" className="font-semibold text-brand hover:underline">
+            {t('auth.createAccount')}
+          </Link>
+        </p>
       </form>
     </div>
   );

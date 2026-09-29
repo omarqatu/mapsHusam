@@ -21,7 +21,18 @@ export default function SessionVerifier() {
       .then((res) => {
         if (cancelled || res.valid !== false) return;
         useAuthStore.getState().logout();
-        toast.warning(t('auth.sessionEnded'));
+        const reasons = {
+          force_logout: 'auth.sessionForceLogout',
+          inactive: 'auth.sessionInactive',
+          not_found: 'auth.sessionNotFound',
+        } as const;
+        toast.warning(
+          t(
+            res.reason && res.reason in reasons
+              ? reasons[res.reason as keyof typeof reasons]
+              : 'auth.sessionEnded',
+          ),
+        );
       })
       .catch(() => undefined);
     return () => {
