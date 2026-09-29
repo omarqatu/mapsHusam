@@ -161,7 +161,7 @@ Split `index.html` into features, in this order:
 5. ⬜ Editing (admin): `edit-core.js`, `edit-wfs.js`, `editLines.js`, `editPolygons.js`
 6. ⬜ Provider panel: `provider-panel.js`, `services-bridge.js`
 7. ⬜ Service requests & chat: `service-chat.js` (1.7k lines), `notifications.js`
-8. 🟨 Auth UI: `auth-core-functions.js`, `auth-app-events.js`, `auth-fetch.js`, `legal-content.js`
+8. ✅ Auth UI: `auth-core-functions.js`, `auth-app-events.js`, `auth-fetch.js`, `legal-content.js`
    **Parity checklist (from the legacy code).**
    - ✅ Promo splash → `/welcome` (pitch, 6 feature cards, "create account" / "log in", terms + privacy links).
    - ✅ Terms gate → first step of `/register`: terms list, "I agree" box, Facebook page link + "I liked it" box; the continue button stays disabled until both are ticked.
@@ -171,7 +171,7 @@ Split `index.html` into features, in this order:
    - ✅ Session check on start (`verify-session`, fails open) with the legacy per-reason messages (force logout / inactive / not found). Was a single generic message before.
    - ✅ `auth-fetch.js` (Bearer header, `X-New-Token`, 401 handling) is `api/client.ts` since Phase 0.
    - ✅ Legal texts (`legal-content.js`): guide, search guide, provider guide, subscription guide, interactive-map guide, about, terms, privacy, contact → `features/legal/content.ts` as structured data (no HTML strings), shown by `LegalDocView` in a dialog (`LegalModal`/`LegalLinks`) and as pages `/legal/:key`. The Arabic wording is unchanged.
-   - ⬜ Not verified: a visual walk-through at desktop and 390 px in a browser (only unit + live-API tests were run).
+   - ✅ Merge review (main session): /welcome, /register, /login, /legal/terms opened at desktop and 390 px against the dev server — layout fine, no console errors. Form submit flows are covered by the live-API tests.
    **Changed on purpose (better, documented):**
    - The promo splash, welcome/terms, login and register overlays (stacked over the map, toggled with `hidden`) are separate routes `/welcome`, `/register`, `/login`, so the back button and links work. Same texts and same steps.
    - The login page did not check the phone format in the React skeleton; it now does (`05` + 8 digits, as legacy).
