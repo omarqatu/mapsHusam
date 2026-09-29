@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { MessageSquare, Star } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useServiceRatings } from '@/api/mapEvents';
+import { formatDate } from '@/lib/format';
 
 const Stars = ({ value }: { value: number }) => (
   <span className="inline-flex text-amber-400" aria-label={`${value}/5`}>
@@ -53,9 +54,7 @@ export default function RatingsBlock({ layer, featureId }: { layer: string; feat
                     <Stars value={r.rating} />
                   </div>
                   {r.comment && <p className="mt-1 text-xs leading-relaxed text-slate-600">{r.comment}</p>}
-                  <p className="mt-1 text-[10px] text-slate-400">
-                    {new Date(r.created_at).toLocaleDateString(i18n.language === 'ar' ? 'ar-EG' : 'en-GB')}
-                  </p>
+                  <p className="mt-1 text-[10px] text-slate-400">{formatDate(r.created_at, i18n.language)}</p>
                 </li>
               ))}
             </ul>

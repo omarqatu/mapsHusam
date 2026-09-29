@@ -1,4 +1,4 @@
-import { Copy, Info, Link2, MapPin, MessageCircle, Navigation, Phone, Send } from 'lucide-react';
+import { Copy, Info, Link2, MapPin, Send } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useProviderLinked } from '@/api/mapEvents';
 import Button from '@/components/ui/Button';
@@ -27,7 +27,9 @@ import {
   text,
   type SelectedFeature,
 } from './featureModel';
-import { targetIcon, targetLabelKey } from '../targets';
+import { isFuelStation, isRoadBarrier, targetIcon, targetLabelKey } from '../targets';
+import { formatNumber } from '@/lib/format';
+import ContactButtons from './ContactButtons';
 import RatingsBlock from './RatingsBlock';
 import { useContactActions } from './useContactActions';
 
@@ -73,7 +75,7 @@ export default function FeatureCard({ feature, onClose, className }: Props) {
   const contact = useContactActions();
   const { props, kind, id } = feature;
 
-  const isBarrier = kind.kind === 'service' && kind.discriminator === 'road_barriers';
+  const isBarrier = isRoadBarrier(kind);
   const typeTitle = kind.kind === 'location' ? t('popup.sharedLocation') : t(targetLabelKey(kind));
   const icon = kind.kind === 'location' ? '📍' : targetIcon(kind);
   const name = text(props.name);
@@ -177,7 +179,7 @@ export default function FeatureCard({ feature, onClose, className }: Props) {
                     label={t('popup.price')}
                     value={
                       Number.isFinite(price) && price > 0
-                        ? `${price.toLocaleString(i18n.language === 'ar' ? 'ar-EG' : 'en-US')} ${CURRENCY_KEYS[text(props.currency)] ? t(CURRENCY_KEYS[text(props.currency)]) : ''}`.trim()
+                        ? `${formatNumber(price, i18n.language)} ${CURRENCY_KEYS[text(props.currency)] ? t(CURRENCY_KEYS[text(props.currency)]) : ''}`.trim()
                         : null
                     }
                   />
@@ -195,7 +197,7 @@ export default function FeatureCard({ feature, onClose, className }: Props) {
                 wide
               />
             </div>
-            {kind.kind === 'service' && kind.discriminator === 'fuel_stations' && (
+            {isFuelStation(kind) && (
               <ul className="space-y-1.5" aria-label={t('popup.fuel.title')}>
                 {FUEL_FIELDS.map((f) => {
                   const ok = fuelAvailable(props, f);
@@ -233,28 +235,13 @@ export default function FeatureCard({ feature, onClose, className }: Props) {
               {t('popup.requestService')}
             </Button>
           ) : (
-            (phone || whatsapp) && (
-              <div className="flex flex-col gap-2">
-                {phone && (
-                  <Button
-                    className="flex-1"
-                    startIcon={<Phone className="h-4 w-4" />}
-                    onClick={() => void contact.call(feature, providerName, phone)}
-                  >
-                    <span>{t('popup.call')}</span> <span dir="ltr">{phone}</span>
-                  </Button>
-                )}
-                {whatsapp && (
-                  <Button
-                    className="w-full !bg-[#25d366] hover:!bg-[#1fb956]"
-                    startIcon={<MessageCircle className="h-4 w-4" />}
-                    onClick={() => void contact.whatsapp(feature, providerName, whatsapp, typeTitle)}
-                  >
-                    {t('popup.whatsapp')}
-                  </Button>
-                )}
-              </div>
-            )
+            <ContactButtons
+              layout="card"
+              phone={phone}
+              whatsapp={whatsapp}
+              onCall={() => void contact.call(feature, providerName, phone)}
+              onWhatsapp={() => void contact.whatsapp(feature, providerName, whatsapp, typeTitle)}
+            />
           ))}
 
         <Button
@@ -272,8 +259,7 @@ export default function FeatureCard({ feature, onClose, className }: Props) {
           {t('popup.copyLink')}
         </Button>
         <p className="flex items-center justify-center gap-1 text-[11px] text-slate-400" dir="ltr">
-          <MapPin className="h-3 w-3" aria-hidden /> <Navigation className="hidden" aria-hidden />{' '}
-          {feature.coordinate.map((n) => n.toFixed(1)).join(', ')}
+          <MapPin className="h-3 w-3" aria-hidden /> {feature.coordinate.map((n) => n.toFixed(1)).join(', ')}
         </p>
       </div>
     </MapSheet>

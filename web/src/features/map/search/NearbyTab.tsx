@@ -13,6 +13,7 @@ import { FUEL_FIELDS, FUEL_OPTIONS, STOP_OPTIONS } from './model';
 import { type MapTarget } from '../targets';
 import { EMPTY_EXTRA, MAX_RADIUS_M, type NearbyExtra } from './nearby';
 import { useSearchUi } from './store';
+import { isFuelStation, isRoadBarrier } from '../targets';
 import TargetSelect from './TargetSelect';
 import { useSearchActions } from './useSearchActions';
 
@@ -29,8 +30,8 @@ export default function NearbyTab() {
   const [extra, setExtra] = useState<NearbyExtra>(EMPTY_EXTRA);
   const [locating, setLocating] = useState(false);
 
-  const isBarrier = target?.kind === 'service' && target.discriminator === 'road_barriers';
-  const isFuel = target?.kind === 'service' && target.discriminator === 'fuel_stations';
+  const isBarrier = isRoadBarrier(target);
+  const isFuel = isFuelStation(target);
 
   const useMyLocation = () => {
     const secure = window.isSecureContext;

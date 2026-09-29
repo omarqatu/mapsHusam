@@ -1,7 +1,8 @@
-import { useEffect, useId, useMemo, useRef, useState, type KeyboardEvent } from 'react';
+import { useCallback, useEffect, useId, useMemo, useRef, useState, type KeyboardEvent } from 'react';
 import clsx from 'clsx';
 import { Check, ChevronDown, Search } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { useOutsideClick } from '@/hooks/useOutsideClick';
 
 export interface SelectOption {
   value: string;
@@ -92,13 +93,10 @@ export default function SelectInput({
     close();
   };
 
+  const closeQuietly = useCallback(() => setOpen(false), []);
+  useOutsideClick(root, closeQuietly, open);
   useEffect(() => {
-    if (!open) return;
-    const onDown = (e: PointerEvent) =>
-      root.current && !root.current.contains(e.target as Node) && setOpen(false);
-    document.addEventListener('pointerdown', onDown);
-    if (searchable) filterRef.current?.focus();
-    return () => document.removeEventListener('pointerdown', onDown);
+    if (open && searchable) filterRef.current?.focus();
   }, [open, searchable]);
 
   // Keep the active option in view while moving with the keyboard.

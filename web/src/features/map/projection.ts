@@ -17,3 +17,8 @@ export const palestineGrid = getProjection(PALESTINE_GRID)!;
 export function fromLonLat(lon: number, lat: number): [number, number] {
   return proj4('EPSG:4326', PALESTINE_GRID, [lon, lat]) as [number, number];
 }
+
+/** Palestine Grid metres → GPS [lon, lat]. */
+export function toLonLat(x: number, y: number): [number, number] {
+  return proj4(PALESTINE_GRID, 'EPSG:4326', [x, y]) as [number, number];
+}

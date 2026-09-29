@@ -1,8 +1,9 @@
-import { useEffect, useId, useRef, useState } from 'react';
+import { useCallback, useEffect, useId, useRef, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Search, X } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { CenteredSpinner } from '@/components/ui/Spinner';
+import { useOutsideClick } from '@/hooks/useOutsideClick';
 import { roadBarrierStatus } from '../config';
 import { useOlMap } from '../MapContext';
 import { targetIcon } from '../targets';
@@ -62,12 +63,8 @@ export default function GlobalSearchBox() {
     select: (hits) => rankHits(hits, term, (target) => t(targetLabelKey(target))).slice(0, MAX_SHOWN),
   });
 
-  useEffect(() => {
-    const onDown = (e: PointerEvent) =>
-      root.current && !root.current.contains(e.target as Node) && setOpen(false);
-    document.addEventListener('pointerdown', onDown);
-    return () => document.removeEventListener('pointerdown', onDown);
-  }, []);
+  const closeList = useCallback(() => setOpen(false), []);
+  useOutsideClick(root, closeList);
 
   const hits = query.data ?? [];
   const showPanel = open && term !== '';

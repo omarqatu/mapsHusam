@@ -35,3 +35,7 @@ export function targetToApi(t: MapTarget): { layer: string; workspace: Workspace
 }
 
 export const isTarget = (t: MapTarget, key: string) => targetKey(t) === key;
+
+type MaybeTarget = MapTarget | { kind: 'location' } | null | undefined;
+export const isRoadBarrier = (t: MaybeTarget) => t?.kind === 'service' && t.discriminator === 'road_barriers';
+export const isFuelStation = (t: MaybeTarget) => t?.kind === 'service' && t.discriminator === 'fuel_stations';

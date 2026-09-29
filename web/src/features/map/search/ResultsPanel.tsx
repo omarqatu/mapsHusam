@@ -1,12 +1,14 @@
 import clsx from 'clsx';
-import { Copy, MessageCircle, Phone, Printer, Star } from 'lucide-react';
+import { Copy, Printer, Star } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useProviderLinked } from '@/api/mapEvents';
 import { toast } from '@/components/ui/toastStore';
 import { useOlMap } from '../MapContext';
 import { useMapUi } from '../store';
-import { text, type SelectedFeature } from '../popup/featureModel';
-import { targetIcon } from '../targets';
+import { formatDateTime, formatNumber } from '@/lib/format';
+import ContactButtons from '../popup/ContactButtons';
+import { isOpenNow, text, type SelectedFeature } from '../popup/featureModel';
+import { isRoadBarrier, targetIcon } from '../targets';
 import { useContactActions } from '../popup/useContactActions';
 import MapSheet from '../panels/MapSheet';
 import { targetLabelKey } from '../targets';
@@ -36,7 +38,7 @@ function ResultRow({
   active: boolean;
   onOpen: () => void;
 }) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const linked = useProviderLinked();
   const contact = useContactActions();
   const p = r.props;
@@ -44,14 +46,14 @@ function ResultRow({
   const place = [text(p.location_name) || text(p.location), text(p.village_a)].filter(Boolean).join(' · ');
   const name = text(p.name) || typeTitle;
   const isRe = r.target.kind === 'realEstate';
-  const open = Number.parseInt(String(p.auto_status), 10) === 0;
+  const open = isOpenNow(p.auto_status);
+  const barrier = isRoadBarrier(r.target);
   const isLinked =
     r.target.kind === 'service' && !!r.id && !!linked.data?.get(r.target.discriminator)?.has(r.id);
   const phone = text(p.phone);
   const whatsapp = text(p.whatsapp);
   const providerName = text(p.name) || t(isRe ? 'popup.advertiser' : 'popup.provider');
-  const showContact =
-    !isLinked && !(r.target.kind === 'service' && r.target.discriminator === 'road_barriers');
+  const showContact = !isLinked && !barrier;
 
   return (
     <li
@@ -79,14 +81,14 @@ function ResultRow({
                 <Star className="h-3 w-3" fill="currentColor" aria-hidden /> {r.rating}
               </span>
             )}
-            {!(r.target.kind === 'service' && r.target.discriminator === 'road_barriers') && (
+            {!barrier && (
               <span className={open ? 'text-green-700' : 'text-red-600'}>
                 {open ? t('popup.openNow') : t('popup.closedNow')}
               </span>
             )}
             {isRe && Number(p.price) > 0 && (
               <span>
-                {Number(p.price).toLocaleString()}{' '}
+                {formatNumber(Number(p.price), i18n.language)}{' '}
                 {t(`popup.currency.${text(p.currency)}`, { defaultValue: '' })}
               </span>
             )}
@@ -101,27 +103,15 @@ function ResultRow({
           </span>
         </span>
       </button>
-      {showContact && (phone || whatsapp) && (
-        <div className="mt-2 flex gap-2 ps-8">
-          {phone && (
-            <button
-              type="button"
-              onClick={() => void contact.call(toSelected(r), providerName, phone)}
-              className="inline-flex items-center gap-1.5 rounded-lg bg-brand px-3 py-1.5 text-xs font-semibold text-white hover:bg-brand-hover"
-            >
-              <Phone className="h-3.5 w-3.5" aria-hidden /> {t('popup.call')}
-            </button>
-          )}
-          {whatsapp && (
-            <button
-              type="button"
-              onClick={() => void contact.whatsapp(toSelected(r), providerName, whatsapp, typeTitle)}
-              className="inline-flex items-center gap-1.5 rounded-lg bg-[#25d366] px-3 py-1.5 text-xs font-semibold text-white hover:bg-[#1fb956]"
-            >
-              <MessageCircle className="h-3.5 w-3.5" aria-hidden /> {t('popup.whatsapp')}
-            </button>
-          )}
-        </div>
+      {showContact && (
+        <ContactButtons
+          layout="row"
+          className="mt-2 ps-8"
+          phone={phone}
+          whatsapp={whatsapp}
+          onCall={() => void contact.call(toSelected(r), providerName, phone)}
+          onWhatsapp={() => void contact.whatsapp(toSelected(r), providerName, whatsapp, typeTitle)}
+        />
       )}
     </li>
   );
@@ -160,7 +150,7 @@ export default function ResultsPanel({ className }: { className?: string }) {
   const print = () => {
     const ok = printResults(results.items, (r) => t(targetLabelKey(r.target)), {
       title: `${t('search.results.reportTitle')} — ${results.title}`,
-      date: `${t('search.results.printedOn')} ${new Date().toLocaleString(i18n.language === 'ar' ? 'ar-EG' : 'en-GB')}`,
+      date: `${t('search.results.printedOn')} ${formatDateTime(new Date(), i18n.language)}`,
       columns: ['#', t('popup.name'), t('search.type'), t('popup.place'), t('popup.call')],
       dir: i18n.language === 'ar' ? 'rtl' : 'ltr',
       lang: i18n.language,

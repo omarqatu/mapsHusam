@@ -6,6 +6,8 @@
   --color-brand-2: #764ba2;
   --color-brand-hover: #5a6cd4;
   --color-brand-light: #e6eafb;
+  --color-whatsapp: #25d366; /* legacy --color-whatsapp */
+  --color-whatsapp-hover: #1fb956;
   --color-role-admin: #e74c3c;
   --color-role-provider: #2980b9;
   --color-role-user: #27ae60;

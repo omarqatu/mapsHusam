@@ -4,7 +4,8 @@ import Point from 'ol/geom/Point';
 import Polygon from 'ol/geom/Polygon';
 import { wfsUrls } from '@/api/geoserver';
 import { roadBarrierStatus, SERVICE_TYPES } from './config';
-import { formatGrid, geolocationErrorKey, readSharedCenter } from './mapUtils';
+import { formatGrid, formatLatLon, geolocationErrorKey, readSharedCenter } from './mapUtils';
+import { fromLonLat, toLonLat } from './projection';
 import { useMapUi } from './store';
 import { formatLabel, realEstateStyle, serviceStyle } from './styles';
 
@@ -85,6 +86,17 @@ describe('map utils', () => {
     expect(readSharedCenter('')).toBeNull();
   });
   it('formats grid coordinates', () => expect(formatGrid([1.234, 5])).toBe('E: 1.23, N: 5.00'));
+  it('grid ↔ GPS round-trips (Al-Manara) and formats lat, lon', () => {
+    const [lon, lat] = toLonLat(169463.41, 145767.99);
+    expect(lat).toBeGreaterThan(31.8);
+    expect(lat).toBeLessThan(32);
+    expect(lon).toBeGreaterThan(35.1);
+    expect(lon).toBeLessThan(35.3);
+    const [x, y] = fromLonLat(lon, lat);
+    expect(x).toBeCloseTo(169463.41, 1);
+    expect(y).toBeCloseTo(145767.99, 1);
+    expect(formatLatLon([35.2, 31.9])).toBe('31.900000, 35.200000');
+  });
   it('maps geolocation errors', () => {
     expect(geolocationErrorKey(1, false)).toBe('map.gps.insecure');
     expect(geolocationErrorKey(1, true)).toBe('map.gps.denied');

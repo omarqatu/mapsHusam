@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import clsx from 'clsx';
 import { useTranslation } from 'react-i18next';
+import Button from '@/components/ui/Button';
 import SearchInput from '@/components/ui/SearchInput';
 import { BASEMAPS, REAL_ESTATE_LAYERS, SERVICE_TYPES } from '../config';
 import { useMapUi } from '../store';
@@ -84,20 +85,22 @@ export default function LayerPanel({ open, onClose }: { open: boolean; onClose: 
         </section>
 
         <div className="flex gap-2">
-          <button
-            type="button"
+          <Button
+            variant="secondary"
+            size="sm"
+            className="flex-1"
             onClick={() => ui.setAllVisible(true, ALL_SERVICE_KEYS)}
-            className="flex-1 rounded-lg border border-slate-200 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-50"
           >
             {t('map.showAll')}
-          </button>
-          <button
-            type="button"
+          </Button>
+          <Button
+            variant="secondary"
+            size="sm"
+            className="flex-1"
             onClick={() => ui.setAllVisible(false, ALL_SERVICE_KEYS)}
-            className="flex-1 rounded-lg border border-slate-200 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-50"
           >
             {t('map.hideAll')}
-          </button>
+          </Button>
         </div>
 
         <section>

@@ -12,6 +12,11 @@ export function formatGrid([e, n]: readonly number[]) {
   return `E: ${e.toFixed(2)}, N: ${n.toFixed(2)}`;
 }
 
+/** GPS for people who paste into Google Maps / WhatsApp: "lat, lon" with 6 decimals (~10 cm). */
+export function formatLatLon([lon, lat]: readonly number[]) {
+  return `${lat.toFixed(6)}, ${lon.toFixed(6)}`;
+}
+
 /** i18n key for a geolocation failure (legacy getGeolocationErrorMessage). */
 export function geolocationErrorKey(code: number | undefined, secure: boolean) {
   if (!secure) return 'map.gps.insecure';
