@@ -24,7 +24,8 @@
     "menu": "Menu",
     "showMore": "Show more",
     "showLess": "Show less",
-    "reorder": "Reorder"
+    "reorder": "Reorder",
+    "showAll": "Show all ({{count}})"
   },
   "errors": {
     "network": "Could not reach the server. Check your connection and try again.",
@@ -154,7 +155,7 @@
     "map": "Map",
     "search": "Search",
     "notifications": "Notifications",
-    "widgets": "Widgets",
+    "widgets": "Live info",
     "adminUsers": "Users",
     "adminWidgets": "Widgets admin",
     "adminDashboard": "Dashboard"
@@ -1309,5 +1310,105 @@
   },
   "info": {
     "title": "Information and help"
+  },
+  "widgets": {
+    "title": "Live information centre",
+    "description": "Exchange rates, gold, fuel and fares, weather and prayer times, and road and fuel-station status in one place.",
+    "refreshAll": "Refresh all",
+    "failed": "Could not load the data. Check your connection and try again.",
+    "empty": "Nothing here yet",
+    "noMatch": "No matching results",
+    "tabs": {
+      "prices": "Prices",
+      "today": "Today",
+      "status": "Roads & fuel"
+    },
+    "cards": {
+      "currency": "Exchange rates",
+      "gold": "Gold and precious metals",
+      "fuel": "Fuel and gas",
+      "transport-inter": "Fares between cities",
+      "transport-intra": "Fares inside the city (Al-Bireh)",
+      "weather": "Weather",
+      "prayer": "Prayer times",
+      "calendar": "Calendar and events",
+      "road-status": "Road status (checkpoints)",
+      "fuel-status": "Fuel station status"
+    },
+    "search": {
+      "name": "Search by name...",
+      "route": "Search by city or route...",
+      "city": "Search for a city..."
+    },
+    "cities": {
+      "ramallah": "Ramallah",
+      "jerusalem": "Jerusalem",
+      "hebron": "Hebron",
+      "bethlehem": "Bethlehem",
+      "jericho": "Jericho",
+      "nablus": "Nablus",
+      "jenin": "Jenin",
+      "tulkarm": "Tulkarm",
+      "tubas": "Tubas",
+      "salfit": "Salfit",
+      "qalqilya": "Qalqilya"
+    },
+    "weather": {
+      "today": "Today",
+      "tomorrow": "Tomorrow",
+      "high": "Day",
+      "low": "Night",
+      "humidity": "Humidity",
+      "wind": "Wind",
+      "windUnit": "km/h",
+      "kind": {
+        "clear": "Sunny",
+        "partly": "Partly cloudy",
+        "cloudy": "Cloudy",
+        "fog": "Fog",
+        "rain": "Light rain",
+        "showers": "Rain showers",
+        "snow": "Snow",
+        "storm": "Thunderstorms"
+      },
+      "failed": "Could not load the weather.",
+      "forecastFailed": "Could not load the forecast for the coming days. Only the saved data is shown.",
+      "source": "Forecast: Open-Meteo. The first figure is the daytime high, the second the night low."
+    },
+    "prayer": {
+      "fajr": "Fajr",
+      "sunrise": "Sunrise",
+      "dhuhr": "Dhuhr",
+      "asr": "Asr",
+      "maghrib": "Maghrib",
+      "isha": "Isha",
+      "next": "Next prayer",
+      "tomorrow": "tomorrow",
+      "failed": "Could not load the prayer times.",
+      "source": "Jerusalem times (Aladhan)."
+    },
+    "calendar": {
+      "hijri": "Hijri date",
+      "gregorian": "Gregorian date",
+      "events": "Upcoming events",
+      "noEvents": "No events listed yet",
+      "noUpcoming": "No upcoming events.",
+      "today": "Today",
+      "tomorrow": "Tomorrow",
+      "inDays": "In {{count}} days",
+      "daysAgo": "{{count}} days ago",
+      "past": "Past events ({{count}})"
+    },
+    "ticker": {
+      "title": "Live updates",
+      "open": "Open the live information centre",
+      "pause": "Pause scrolling",
+      "play": "Resume scrolling",
+      "loading": "Loading...",
+      "nextPrayer": "Next prayer: {{name}}",
+      "pageTitle": "Live updates ticker",
+      "pageDescription": "Prices, weather and prayer times in a large scrolling bar, made for a screen.",
+      "hint": "Tap any item to open its card in the live information centre. The bar stops while the pointer is over it."
+    }
   }
 }

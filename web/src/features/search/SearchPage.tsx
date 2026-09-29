@@ -14,6 +14,7 @@ import PageFooter from './PageFooter';
 import { KEYWORD_MIN_CHARS } from './queries';
 import { readSelection, writeSelection, type Selection } from './selection';
 import StatusDialog from './StatusDialog';
+import TickerBar from '../widgets/components/TickerBar';
 
 /**
  * Search without a map (legacy no-map-search.html). What is shown is decided by the URL:
@@ -95,6 +96,8 @@ export default function SearchPage() {
       )}
 
       <StatusDialog layer={status} onClose={() => setStatus(null)} />
+      {/* Legacy footer bar: the live-information ticker (each item opens the information centre at its card). */}
+      <TickerBar className="rounded-xl border" />
       <PageFooter />
     </div>
   );
