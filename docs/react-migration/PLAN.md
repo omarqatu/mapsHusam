@@ -159,7 +159,7 @@ Split `index.html` into features, in this order:
    helper moved to `lib/clipboard.ts` and reused by the details card and the results link, landscape phones: the tool
    column scrolls and refresh/zoom hide below 560 px height (gestures + auto refresh cover them).
 5. ⬜ Editing (admin): `edit-core.js`, `edit-wfs.js`, `editLines.js`, `editPolygons.js`
-6. 🟨 Provider panel: `provider-panel.js`, `services-bridge.js` → `features/map/provider/`
+6. ✅ Provider panel: `provider-panel.js`, `services-bridge.js` → `features/map/provider/`
 
    **Inventory (read from `js/provider-panel.js`, `js/services-bridge.js`, `index.html` #provider-mini-panel, `css/provider-panel.css`,
    `js/mobile-tabs.js`, `js/main.js`, `js/auth-core-functions.js`, and the handlers in `server.js`, which are the source of truth).**
@@ -216,6 +216,21 @@ Split `index.html` into features, in this order:
      `js/` or any HTML reads `AppServices` (`grep` = only its own file); its `providerLinkedFeaturesCache` is re-implemented in
      `shared-utils.js`. **Dead code — nothing to port.** The React equivalents already exist (`api/mapEvents.ts` `providerLinked`,
      `lib/format.ts`, `lib/clipboard.ts`, `featureModel.ts` time/URL helpers); it is deleted with the legacy `index.html` at cut-over.
+   **Ported (checklist):** ✅ linked-feature lookup (`get-provider-service`) with the three account states (not linked / frozen / ready) ·
+   ✅ available (my location) with GPS→28191 and the GPS-error fallback · ✅ available (previous) · ✅ busy · ✅ 10 s cooldown after a
+   success, none after a failure · ✅ live tracking every 10 s (timer lives in `ProviderTracker`, so it runs with the panel closed) ·
+   ✅ fly to my location (red circle, zoom 19) · ✅ layer refresh after an update · ✅ `provider_status_<id>` removed on logout (`authStore.logout`).
+   Tests: `provider.model.test`, `provider.test.tsx`, and real-backend `provider.live.test.ts` (run against a server started from this branch).
+   **Changed on purpose:**
+   - The floating draggable panel is a normal map panel opened by a tool button (`ProviderButton`, providers only); on wide screens it opens by
+     itself once, on phones it stays closed so it does not cover the map. No drag, no saved position (`provider_panel_pos` is not written).
+   - Requests are sent one at a time (in-flight guard); legacy live tracking could overlap requests. Tracking stops when the account can
+     no longer update or the user leaves the map, instead of running forever after logout.
+   - The legacy code overwrote `map_user.status` (the ACCOUNT status) with the feature status and copied coordinates into `map_user`; React
+     keeps the session untouched and reads the feature status from the server (TanStack Query, refetched after each update).
+   - Live-tracking ticks are silent (no success toast); a failed tick shows the error in the panel.
+   - The "no service layer linked" click error of legacy is impossible: the buttons stay locked until the account has loaded.
+   **Not ported:** `services-bridge.js` (dead code, see above); dragging/minimising the panel.
 7. ⬜ Service requests & chat: `service-chat.js` (1.7k lines), `notifications.js`
 8. ✅ Auth UI: `auth-core-functions.js`, `auth-app-events.js`, `auth-fetch.js`, `legal-content.js`
    **Parity checklist (from the legacy code).**
@@ -402,7 +417,10 @@ For each page, list from the legacy code — not from memory:
 Rule: URLs, methods, auth rules and response shapes stay identical; legacy pages keep working.
 Log each change here: **what · why · how to verify · commit**.
 
-_(none yet)_
+- **`POST /api/update-service-status`: cast `x_coord`/`y_coord` to `float8`.** The same `$2`/`$3` were used as column values and as
+  `ST_MakePoint` arguments; PostgreSQL deduced conflicting types (numeric vs double) and the update failed with 500 "فشل تحديث قاعدة
+  البيانات الخلفية" whenever a provider sent coordinates. Response and request unchanged. Verify: `web/src/features/map/provider/provider.live.test.ts`
+  (moves the point and reads it back). Commit: `fix(server): cast provider coords to float8…`.
 
 ## Backend asks (needs the user's decision — behaviour-changing or larger)
 

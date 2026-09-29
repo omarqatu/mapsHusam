@@ -24,6 +24,15 @@ describe('authStore', () => {
     expect(localStorage.getItem('user')).toBeNull();
   });
 
+  it('logout drops the legacy per-user provider_status key', () => {
+    useAuthStore.getState().setSession(user);
+    localStorage.setItem('provider_status_1', 'x');
+    localStorage.setItem('provider_status_2', 'y');
+    useAuthStore.getState().logout();
+    expect(localStorage.getItem('provider_status_1')).toBeNull();
+    expect(localStorage.getItem('provider_status_2')).toBe('y');
+  });
+
   it('replaceToken only rewrites admin_token for admins', () => {
     useAuthStore.getState().setSession(user);
     useAuthStore.getState().replaceToken('n');
