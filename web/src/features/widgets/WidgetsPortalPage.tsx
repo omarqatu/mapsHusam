@@ -38,7 +38,7 @@ function useScrollToCard(card: CardId | null) {
   useEffect(() => {
     if (!card) return;
     const timer = setTimeout(() => {
-      const behavior = window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth';
+      const behavior = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth';
       document.getElementById(anchor(card))?.scrollIntoView({ behavior, block: 'start' });
     }, 250);
     return () => clearTimeout(timer);
