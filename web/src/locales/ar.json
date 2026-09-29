@@ -1,0 +1,49 @@
+{
+  "app": { "name": "الخريطة العقارية والخدمية", "loading": "جارٍ التحميل…" },
+  "common": {
+    "save": "حفظ",
+    "cancel": "إلغاء",
+    "confirm": "تأكيد",
+    "delete": "حذف",
+    "edit": "تعديل",
+    "close": "إغلاق",
+    "search": "بحث",
+    "clearFilters": "مسح الفلاتر",
+    "required": "حقل مطلوب",
+    "noData": "لا توجد بيانات",
+    "retry": "إعادة المحاولة",
+    "back": "رجوع",
+    "previous": "السابق",
+    "next": "التالي",
+    "page": "صفحة {{page}} من {{pages}}",
+    "language": "اللغة",
+    "actions": "إجراءات"
+  },
+  "errors": {
+    "network": "تعذر الاتصال بالخادم. تحقق من الاتصال وحاول مرة أخرى.",
+    "generic": "حدث خطأ غير متوقع.",
+    "boundaryTitle": "حدث خطأ في عرض الصفحة",
+    "notFoundTitle": "الصفحة غير موجودة",
+    "notFoundBody": "الرابط الذي فتحته غير صحيح أو تم نقل الصفحة.",
+    "forbiddenTitle": "غير مصرّح لك بدخول هذه الصفحة"
+  },
+  "auth": {
+    "login": "تسجيل الدخول",
+    "logout": "تسجيل الخروج",
+    "phone": "رقم الجوال",
+    "password": "كلمة المرور",
+    "loggingIn": "جارٍ الدخول…",
+    "sessionEnded": "انتهت جلستك، يرجى تسجيل الدخول من جديد."
+  },
+  "nav": {
+    "map": "الخريطة",
+    "search": "البحث",
+    "notifications": "الإشعارات",
+    "widgets": "الودجات",
+    "adminUsers": "المستخدمون",
+    "adminWidgets": "إدارة الودجات",
+    "adminDashboard": "لوحة التحكم"
+  },
+  "roles": { "admin": "مشرف", "provider": "مزوّد خدمة", "user": "مستخدم" },
+  "placeholder": { "title": "قيد النقل إلى React", "legacy": "الصفحة القديمة: {{source}}" }
+}

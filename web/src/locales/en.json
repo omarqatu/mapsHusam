@@ -1,0 +1,49 @@
+{
+  "app": { "name": "Real-estate & Services Map", "loading": "Loading…" },
+  "common": {
+    "save": "Save",
+    "cancel": "Cancel",
+    "confirm": "Confirm",
+    "delete": "Delete",
+    "edit": "Edit",
+    "close": "Close",
+    "search": "Search",
+    "clearFilters": "Clear filters",
+    "required": "Required field",
+    "noData": "No data",
+    "retry": "Retry",
+    "back": "Back",
+    "previous": "Previous",
+    "next": "Next",
+    "page": "Page {{page}} of {{pages}}",
+    "language": "Language",
+    "actions": "Actions"
+  },
+  "errors": {
+    "network": "Could not reach the server. Check your connection and try again.",
+    "generic": "Something went wrong.",
+    "boundaryTitle": "This page failed to render",
+    "notFoundTitle": "Page not found",
+    "notFoundBody": "The link is wrong or the page has moved.",
+    "forbiddenTitle": "You are not allowed to open this page"
+  },
+  "auth": {
+    "login": "Log in",
+    "logout": "Log out",
+    "phone": "Phone number",
+    "password": "Password",
+    "loggingIn": "Logging in…",
+    "sessionEnded": "Your session ended, please log in again."
+  },
+  "nav": {
+    "map": "Map",
+    "search": "Search",
+    "notifications": "Notifications",
+    "widgets": "Widgets",
+    "adminUsers": "Users",
+    "adminWidgets": "Widgets admin",
+    "adminDashboard": "Dashboard"
+  },
+  "roles": { "admin": "Admin", "provider": "Service provider", "user": "User" },
+  "placeholder": { "title": "Being ported to React", "legacy": "Legacy page: {{source}}" }
+}
