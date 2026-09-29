@@ -7,7 +7,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const marketSearchBtn = document.getElementById('market-search-btn');
     
     if (!marketSearchInput) {
-        console.warn("Market search input not found on this page.");
         return;
     }
 
@@ -280,7 +279,6 @@ document.addEventListener('DOMContentLoaded', () => {
             renderMarketSearchResults(allResults, term);
 
         } catch (error) {
-            console.error('Error in market search:', error);
             if (container) {
                 container.innerHTML = '<div style="text-align:center; padding:20px; color:red;">حدث خطأ أثناء البحث. يرجى المحاولة لاحقاً.</div>';
             }
@@ -307,7 +305,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (term && term.length >= 2) {
             executeMarketGlobalSearch(term);
         } else {
-            alert("يرجى إدخال حرفين على الأقل للبحث.");
+            window.toast("يرجى إدخال حرفين على الأقل للبحث.", 'info');
         }
     }
 
@@ -534,8 +532,7 @@ window.fetchRatingsForFeature = async function(serviceLayer, featureId) {
             }
         }
     } catch (err) {
-        console.warn('فشل جلب التقييمات:', err.message);
-    }
+        }
 };
 
 // دالة عرض/إخفاء التعليقات
@@ -685,7 +682,7 @@ if (typeof window.renderMarketSearchResults !== 'function') {
                                 if (window.toast) {
                                     window.toast(`يرجى الانتظار ${remaining} ثوانٍ قبل المحاولة مرة أخرى`, 'warning', 3000);
                                 } else {
-                                    alert(`يرجى الانتظار ${remaining} ثوانٍ قبل المحاولة مرة أخرى.`);
+                                    window.toast(`يرجى الانتظار ${remaining} ثوانٍ قبل المحاولة مرة أخرى.`, 'info');
                                 }
                                 return;
                             }
@@ -707,8 +704,7 @@ if (typeof window.renderMarketSearchResults !== 'function') {
                                     })
                                 });
                             } catch (err) {
-                                console.error('خطأ في تسجيل نقرة الاتصال:', err);
-                            }
+                                }
                             window.trackRequest(providerName, `(${layerTitle}) اتصال مباشر`);
                             window.location.href = 'tel:' + localPhone;
                         };
@@ -724,7 +720,7 @@ if (typeof window.renderMarketSearchResults !== 'function') {
                             if (window.toast) {
                                 window.toast(`يرجى الانتظار ${remaining} ثوانٍ قبل المحاولة مرة أخرى`, 'warning', 3000);
                             } else {
-                                alert(`يرجى الانتظار ${remaining} ثوانٍ قبل المحاولة مرة أخرى.`);
+                                window.toast(`يرجى الانتظار ${remaining} ثوانٍ قبل المحاولة مرة أخرى.`, 'info');
                             }
                             return;
                         }
@@ -747,8 +743,7 @@ if (typeof window.renderMarketSearchResults !== 'function') {
                                 })
                             });
                         } catch (err) {
-                            console.error('خطأ في تسجيل نقرة الواتساب:', err);
-                        }
+                            }
                         window.trackRequest(providerName, `(${layerTitle}) واتساب`);
                         const message = `مرحباً ${providerName}، أرغب بالاستفسار عن (${layerTitle}) من خلال منصة الخدمات.`;
                         let cleanNumber = cleanDigits;

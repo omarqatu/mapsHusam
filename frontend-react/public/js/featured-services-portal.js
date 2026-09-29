@@ -1,4 +1,4 @@
-﻿/* بوابة الخدمات المميزة للخريطة */
+/* بوابة الخدمات المميزة للخريطة */
 (function () {
     'use strict';
 
@@ -254,7 +254,6 @@
                 });
             if (typeof entry.geometry.getClosestPoint === 'function') feature.setGeometry(entry.geometry);
         } catch (error) {
-            console.warn('تعذر تحديد موقع المعلم على الخريطة:', error);
             return false;
         }
         const highlightLayer = window.searchResultsHighlightLayer || window.overlayLayersObj?.searchResultsHighlightLayer;
@@ -410,7 +409,6 @@
             }));
             return layerResults.flat();
         } catch (error) {
-            console.warn('تعذر جلب الخدمات الأعلى تقييماً:', error);
             return [];
         }
     }
@@ -603,8 +601,7 @@
         } catch (error) {
             root.dataset.loaded = '0';
             root.innerHTML = '<div class="featured-services-empty">تعذر تحميل الخدمات المميزة حالياً</div>';
-            console.warn('featured-services-portal:', error);
-        }
+            }
     }
 
     function activateVideo(facade) {

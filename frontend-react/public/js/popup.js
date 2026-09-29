@@ -22,8 +22,7 @@ async function logMapEvent(eventType, provider = null, service = null) {
             })
         });
     } catch (err) {
-        console.warn('فشل تسجيل الحدث:', err.message);
-    }
+        }
 }
 window.logMapEvent = logMapEvent;
 
@@ -174,8 +173,7 @@ async function fetchRatingsForFeature(serviceLayer, featureId) {
             }
         }
     } catch (err) {
-        console.warn('فشل جلب التقييمات:', err.message);
-    }
+        }
 }
 
 // دالة عرض/إخفاء التعليقات
@@ -220,7 +218,6 @@ function initializePopup(map) {
     const popupTitle = document.getElementById('popup-title');
 
     if (!container || !content || !closer || !togglePopupBtn || !map || !popupTitle) {
-        console.error('عناصر البوب أب ناقصة في الـ HTML.');
         return;
     }
 
@@ -296,7 +293,7 @@ function initializePopup(map) {
                 if (window.toast) {
                     window.toast(`يرجى الانتظار ${remaining} ثوانٍ قبل المحاولة مرة أخرى`, 'warning', 3000);
                 } else {
-                    alert(`يرجى الانتظار ${remaining} ثوانٍ قبل المحاولة مرة أخرى.`);
+                    window.toast(`يرجى الانتظار ${remaining} ثوانٍ قبل المحاولة مرة أخرى.`, 'info');
                 }
                 return false;
             }
@@ -308,14 +305,12 @@ function initializePopup(map) {
 
     window.handlePhoneCall = async function(providerName, localPhone, serviceType, featureId, serviceLayer) {
         const currentUserId = getRealUserId();
-        console.log('📞 handlePhoneCall called:', { providerName, localPhone, serviceType, featureId, serviceLayer, userId: currentUserId });
-        
         // 🆕 التحقق من الفاصل الزمني
         if (!checkClickCooldown('call', featureId || 'unknown', 10)) {
             return;
         }
         
-        const quota = await checkRequestQuotaOrAlert(currentUserId, null);
+        const quota = await checkRequestQuotaOrwindow.toast(currentUserId, null, 'info');
         if (!quota.allowed) return;
 
         // 🆕 تسجيل نقرة الاتصال في قاعدة البيانات
@@ -332,10 +327,8 @@ function initializePopup(map) {
                 })
             });
             const result = await response.json();
-            console.log('📞 Contact click logged:', result);
-        } catch (err) {
-            console.error('خطأ في تسجيل نقرة الاتصال:', err);
-        }
+            } catch (err) {
+            }
 
         const serviceDescription = `(${serviceType}) اتصال مباشر`;
         if (window.sendTrackingRequest) {
@@ -344,7 +337,7 @@ function initializePopup(map) {
             const serverUrl = window.location.origin + '/save-stat';
             navigator.sendBeacon
                 ? navigator.sendBeacon(serverUrl, new Blob([JSON.stringify({ user_id: currentUserId, provider: providerName, service: serviceDescription })], { type: 'application/json' }))
-                : fetch(serverUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ user_id: currentUserId, provider: providerName, service: serviceDescription }), keepalive: true }).catch(err => console.error('خطأ في تسجيل الإحصائية:', err));
+                : fetch(serverUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ user_id: currentUserId, provider: providerName, service: serviceDescription }), keepalive: true }).catch(() => {});
         }
 
         window.location.href = 'tel:' + localPhone;
@@ -354,15 +347,13 @@ function initializePopup(map) {
         const newTab = window.open('', '_blank');
 
         const currentUserId = getRealUserId();
-        console.log('💬 handleServiceRequest called:', { providerName, whatsappNumber, serviceType, featureId, serviceLayer, userId: currentUserId });
-        
         // 🆕 التحقق من الفاصل الزمني
         if (!checkClickCooldown('whatsapp', featureId || 'unknown', 10)) {
             if (newTab) newTab.close();
             return;
         }
         
-        const quota = await checkRequestQuotaOrAlert(currentUserId, newTab);
+        const quota = await checkRequestQuotaOrwindow.toast(currentUserId, newTab, 'info');
         if (!quota.allowed) return;
 
         // 🆕 تسجيل نقرة الواتساب في قاعدة البيانات
@@ -379,10 +370,8 @@ function initializePopup(map) {
                 })
             });
             const result = await response.json();
-            console.log('💬 Contact click logged:', result);
-        } catch (err) {
-            console.error('خطأ في تسجيل نقرة الواتساب:', err);
-        }
+            } catch (err) {
+            }
 
         const serviceDescription = `(${serviceType}) واتساب`;
         if (window.sendTrackingRequest) {
@@ -391,7 +380,7 @@ function initializePopup(map) {
             const serverUrl = window.location.origin + '/save-stat';
             navigator.sendBeacon
                 ? navigator.sendBeacon(serverUrl, new Blob([JSON.stringify({ user_id: currentUserId, provider: providerName, service: serviceDescription })], { type: 'application/json' }))
-                : fetch(serverUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ user_id: currentUserId, provider: providerName, service: serviceDescription }), keepalive: true }).catch(err => console.error('خطأ في تسجيل الإحصائية:', err));
+                : fetch(serverUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ user_id: currentUserId, provider: providerName, service: serviceDescription }), keepalive: true }).catch(() => {});
         }
 
         const message = `مرحباً ${providerName}، أرغب بالاستفسار عن (${serviceType}) من خلال الخريطة.`;
@@ -477,7 +466,7 @@ function initializePopup(map) {
             if (window.toast) {
                 window.toast('لا يمكن نسخ الموقع', 'error');
             } else {
-                alert('لا يمكن نسخ الموقع');
+                window.toast('لا يمكن نسخ الموقع', 'info');
             }
             return;
         }
@@ -513,7 +502,7 @@ function initializePopup(map) {
                 if (window.toast) {
                     window.toast('تم نسخ رابط الموقع بنجاح! يمكنك مشاركته الآن.', 'success');
                 } else {
-                    alert('تم نسخ رابط الموقع بنجاح! يمكنك مشاركته الآن.');
+                    window.toast('تم نسخ رابط الموقع بنجاح! يمكنك مشاركته الآن.', 'info');
                 }
             } else {
                 if (navigator.clipboard && navigator.clipboard.writeText) {
@@ -521,31 +510,29 @@ function initializePopup(map) {
                         if (window.toast) {
                             window.toast('تم نسخ الرابط بنجاح! يمكنك مشاركته الآن.', 'success');
                         } else {
-                            alert('تم نسخ الرابط بنجاح! يمكنك مشاركته الآن.');
+                            window.toast('تم نسخ الرابط بنجاح! يمكنك مشاركته الآن.', 'info');
                         }
                     }).catch(err => {
-                        console.error('فشل نسخ الرابط:', err);
                         if (window.toast) {
                             window.toast('فشل نسخ الرابط. يرجى المحاولة يدوياً.', 'error');
                         } else {
-                            alert('فشل نسخ الرابط. يرجى المحاولة يدوياً.');
+                            window.toast('فشل نسخ الرابط. يرجى المحاولة يدوياً.', 'info');
                         }
                     });
                 } else {
                     if (window.toast) {
                         window.toast('فشل نسخ الرابط. يرجى المحاولة يدوياً.', 'error');
                     } else {
-                        alert('فشل نسخ الرابط. يرجى المحاولة يدوياً.');
+                        window.toast('فشل نسخ الرابط. يرجى المحاولة يدوياً.', 'info');
                     }
                 }
             }
         } catch (err) {
             document.body.removeChild(textarea);
-            console.error('فشل نسخ الرابط:', err);
             if (window.toast) {
                 window.toast('فشل نسخ الرابط. يرجى المحاولة يدوياً.', 'error');
             } else {
-                alert('فشل نسخ الرابط. يرجى المحاولة يدوياً.');
+                window.toast('فشل نسخ الرابط. يرجى المحاولة يدوياً.', 'info');
             }
         }
     };
@@ -621,8 +608,6 @@ function initializePopup(map) {
 
     // 🆕 Event delegation لأزرار الاتصال والواتساب في popup
     container.addEventListener('click', async (e) => {
-        console.log('🔍 Popup click event triggered, target:', e.target);
-        
         const callBtn = e.target.closest('.popup-call-btn');
         if (callBtn) {
             const providerName = callBtn.dataset.provider;
@@ -630,7 +615,6 @@ function initializePopup(map) {
             const serviceType = callBtn.dataset.service;
             const featureId = callBtn.dataset.featureId;
             const serviceLayer = callBtn.dataset.layer;
-            console.log('📞 Call button clicked:', { providerName, localPhone, serviceType, featureId, serviceLayer });
             await window.handlePhoneCall(providerName, localPhone, serviceType, featureId, serviceLayer);
             return;
         }
@@ -642,7 +626,6 @@ function initializePopup(map) {
             const serviceType = whatsappBtn.dataset.service;
             const featureId = whatsappBtn.dataset.featureId;
             const serviceLayer = whatsappBtn.dataset.layer;
-            console.log('💬 WhatsApp button clicked:', { providerName, whatsappNumber, serviceType, featureId, serviceLayer });
             await window.handleServiceRequest(providerName, whatsappNumber, serviceType, featureId, serviceLayer);
             return;
         }
@@ -1097,8 +1080,7 @@ document.addEventListener('DOMContentLoaded', function () {
             }
 
         } catch (e) {
-            console.error('خطأ عام في جلب الإعلانات:', e);
-        }
+            }
 
         // دالة خلط المصفوفة عشوائياً
         function shuffleArray(array) {

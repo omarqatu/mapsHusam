@@ -42,8 +42,7 @@ async function sendWFS_T(feature, type) {
             }
         }
     } catch (e) {
-        console.warn("فشل استخراج الـ TypeName ديناميكياً، تحويل للافتراضي المعالج:", e);
-    }
+        }
 
     // fallback للتأكد من عدم انقطاع التسمية للطبقات المحددة (شقق إيجار / شقق بيع)
         if (!typeName) {
@@ -267,8 +266,6 @@ async function sendWFS_T(feature, type) {
         ? '/geoserver-proxy/wfs'
         : '/geoserver-proxy/wfs';
 
-    console.log("📤 Sending WFS-T Request:", requestXML);
-
     // 🔑 1. نافذة طلب اسم المستخدم للتوثيق الصارم
     const { value: usernameInput } = await Swal.fire({
         title: '🔑 اسم المستخدم',
@@ -352,7 +349,6 @@ async function sendWFS_T(feature, type) {
             }
             if (typeof deactivatePointEditTools === 'function') deactivatePointEditTools();
         } else {
-            console.error("GeoServer Response Error Exception:", text);
             Swal.fire({
                 icon: 'error',
                 title: 'فشل حفظ المعلم بالسيرفر',
@@ -362,7 +358,6 @@ async function sendWFS_T(feature, type) {
             if (typeof deactivatePointEditTools === 'function') deactivatePointEditTools();
         }
     }).catch(err => {
-        console.error("Fetch Connection error:", err);
         Swal.fire({
             icon: 'error',
             title: 'خطأ في الاتصال',

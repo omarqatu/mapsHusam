@@ -348,9 +348,9 @@ window.initializeGlobalSearch = function() {
                         layer.getSource().refresh();
                     }
                 });
-                alert('تم تحديث بيانات الخريطة بنجاح.');
+                window.toast('تم تحديث البيانات بنجاح', 'info');
             } else {
-                alert('لم يتم العثور على الطبقات للتحديث.');
+                window.toast('لم يتم العثور على الطبقات للتحديث.', 'info');
             }
         };
     }

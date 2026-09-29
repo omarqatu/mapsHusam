@@ -275,8 +275,6 @@ window.initMapPlatform = function () {
         window.userLocationWatchId = window.watchGeolocationPosition(
             (position) => {
                 const currentTime = Date.now();
-                console.log("📍 تم استلام إحداثيات GPS جديدة بدقة:", position.coords.accuracy);
-
                 if (currentTime - lastUpdateTime < 10000) return;
                 
                 lastUpdateTime = currentTime;
@@ -298,7 +296,6 @@ window.initMapPlatform = function () {
                 if (targetButton) targetButton.innerHTML = '📡';
             },
             (error) => {
-                console.error("Geolocation Tracking Error:", error);
                 if (targetButton) {
                     targetButton.innerHTML = '🎯';
                     targetButton.style.setProperty("background-color", "rgba(0, 60, 136, 0.85)", "important");
@@ -307,7 +304,7 @@ window.initMapPlatform = function () {
                     navigator.geolocation.clearWatch(window.userLocationWatchId);
                 }
                 window.userLocationWatchId = null;
-                alert(window.getGeolocationErrorMessage(error));
+                window.toast(window.getGeolocationErrorMessage(error, 'info'));
             },
             { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
         );

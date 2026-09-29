@@ -1,4 +1,4 @@
-﻿/**
+/**
  * js/service-chat.js  (نسخة كاملة معدّلة)
  * - نظام طلب الخدمة والدردشة والتقييم.
  * - قائمة انتظار للطلبات الواردة عند المزود (الشريط يعرض أقدم طلب ثم التالي بعد الرد).
@@ -1295,8 +1295,7 @@ async function reopenChatForRequestId(requestId) {
 
         openChatModal(requestId, chatRole, otherPartyName, isCompleted, contactObj, match.service_type);
     } catch (err) {
-        console.warn('تعذر إعادة فتح الدردشة تلقائياً:', err.message);
-    }
+        }
 }
 
     async function sendChatMessage() {

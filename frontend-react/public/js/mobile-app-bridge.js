@@ -32,7 +32,6 @@
             nativeTarget.target.postMessage(message);
             return true;
         } catch (error) {
-            console.warn('mobile-app-bridge: native message failed', error);
             return false;
         }
     }

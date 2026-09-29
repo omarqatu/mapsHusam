@@ -86,7 +86,7 @@ function executeProviderInitializationPipeline() {
                   JSON.parse(sessionStorage.getItem('map_user')) || 
                   JSON.parse(localStorage.getItem('user')) ||
                   JSON.parse(sessionStorage.getItem('user'));
-    } catch(e) { console.error("⚠️ خطأ في قراءة الكاش:", e); }
+    } catch(e) { }
 
     const panel = document.getElementById("provider-mini-panel");
     if (!panel) return;
@@ -307,7 +307,7 @@ function handleStatusChangeRequest(statusValue, updateGPS = false) {
         if (window.toast) {
             window.toast('خطأ: لا توجد طبقة خدمة مرتبطة بهذا الحساب.', 'error');
         } else {
-            alert("خطأ: لا توجد طبقة خدمة مرتبطة بهذا الحساب.");
+            window.toast("خطأ: لا توجد طبقة خدمة مرتبطة بهذا الحساب.", 'info');
         }
         return;
     }
@@ -342,7 +342,7 @@ function handleStatusChangeRequest(statusValue, updateGPS = false) {
                 if (window.toast) {
                     window.toast(errorMsg, 'warning');
                 } else {
-                    alert(errorMsg);
+                    window.toast(errorMsg, 'info');
                 }
                 sendDataToServer(parsedStatus, null, null, xPal, yPal);
             },
@@ -446,7 +446,6 @@ function sendDataToServer(status, lat, lon, xPal, yPal) {
         startCoolDownTimer();
     })
     .catch(error => {
-        console.error('❌ فشل تحديث حالة مزود الخدمة:', error);
         window.isCoolingDown = false;
         if (window.currentProviderService) {
             updateProviderPanelUI(window.currentProviderService.status);
@@ -465,13 +464,11 @@ function flyToServiceLocation() {
   
 
     if (!window.map || !window.currentProviderService || !window.currentProviderService.feature_id) {
-        console.warn("⚠️ لا يمكن الانتقال: بيانات غير مكتملة", window.currentProviderService);
         return;
     }
     const x = window.currentProviderService.x_coord;
     const y = window.currentProviderService.y_coord;
     const view = window.map.getView();
-    console.log(`📍 محاولة الانتقال إلى: x=${x}, y=${y}`);
     if (x && y && x > 100000) {
         const coords = [Number(x), Number(y)];
 
@@ -484,8 +481,7 @@ function flyToServiceLocation() {
 
         view.animate({ center: coords, zoom: 19, duration: 1200 });
     } else {
-        console.warn("⚠️ الإحداثيات غير صالحة:", x, y);
-    }
+        }
 }
 
 function initProviderPanelEvents() {

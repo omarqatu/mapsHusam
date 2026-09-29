@@ -777,7 +777,7 @@ window.__nmsPageHandlesOwnAds = true;
                     if (lastClickTime && (now - parseInt(lastClickTime)) / 1000 < 10) {
                         const remaining = Math.ceil(10 - (now - parseInt(lastClickTime)) / 1000);
                         if (window.toast) window.toast(`يرجى الانتظار ${remaining} ثوانٍ قبل المحاولة مرة أخرى`, 'warning', 3000);
-                        else alert(`يرجى الانتظار ${remaining} ثوانٍ قبل المحاولة مرة أخرى.`);
+                        else window.toast(`يرجى الانتظار ${remaining} ثوانٍ قبل المحاولة مرة أخرى.`, 'info');
                         return;
                     }
                     localStorage.setItem(cooldownKey, now.toString());
@@ -798,8 +798,7 @@ window.__nmsPageHandlesOwnAds = true;
                             })
                         });
                     } catch (err) {
-                        console.error('خطأ في تسجيل نقرة الاتصال:', err);
-                    }
+                        }
                     trackRequest(provider, `(${service}) اتصال مباشر`);
                     window.location.href = 'tel:' + phone;
                 });
@@ -821,7 +820,7 @@ window.__nmsPageHandlesOwnAds = true;
                     if (lastClickTime && (now - parseInt(lastClickTime)) / 1000 < 10) {
                         const remaining = Math.ceil(10 - (now - parseInt(lastClickTime)) / 1000);
                         if (window.toast) window.toast(`يرجى الانتظار ${remaining} ثوانٍ قبل المحاولة مرة أخرى`, 'warning', 3000);
-                        else alert(`يرجى الانتظار ${remaining} ثوانٍ قبل المحاولة مرة أخرى.`);
+                        else window.toast(`يرجى الانتظار ${remaining} ثوانٍ قبل المحاولة مرة أخرى.`, 'info');
                         return;
                     }
                     localStorage.setItem(cooldownKey, now.toString());
@@ -843,8 +842,7 @@ window.__nmsPageHandlesOwnAds = true;
                             })
                         });
                     } catch (err) {
-                        console.error('خطأ في تسجيل نقرة الواتساب:', err);
-                    }
+                        }
                     trackRequest(provider, `(${service}) واتساب`);
                     const message = `مرحباً ${provider}، أرغب بالاستفسار عن (${service}) من خلال منصة الخدمات.`;
                     let cleanNumber = (whatsappNumber || '').replace(/\D/g, '');
@@ -1148,7 +1146,7 @@ if (ytMatch) {
 
                     const cardsHtml = allEntries.map(entry => {
                         try { return buildCardFn(entry.feature, entry.item); }
-                        catch (err) { console.warn('تعذر بناء بطاقة:', err); return ''; }
+                        catch (err) { return ''; }
                     }).filter(h => h !== '');
                     grid.innerHTML = cardsHtml.length
                         ? cardsHtml.join('')
@@ -1471,8 +1469,7 @@ if (ytMatch) {
                 wireAdActionButtons(grid); // 🆕 يضمن تسجيل نقرات اتصال/واتساب/طلب خدمة لهذا القسم أيضاً
                 refreshHomeSectionsVisibility();
             } catch (err) {
-                console.warn('تعذر جلب قسم الأعلى تقييماً الحقيقي:', err.message);
-            }
+                }
         }
 
        
@@ -2133,8 +2130,7 @@ if (ytMatch) {
                                     })
                                 });
                             } catch (err) {
-                                console.error('خطأ في تسجيل نقرة الاتصال:', err);
-                            }
+                                }
                             trackRequest(providerName, `(${layerTitle}) اتصال مباشر`);
                             window.location.href = 'tel:' + localPhone;
                         };
@@ -2157,8 +2153,7 @@ if (ytMatch) {
                                 })
                             });
                         } catch (err) {
-                            console.error('خطأ في تسجيل نقرة الواتساب:', err);
-                        }
+                            }
                         trackRequest(providerName, `(${layerTitle}) واتساب`);
                         const message = `مرحباً ${providerName}، أرغب بالاستفسار عن (${layerTitle}) من خلال منصة الخدمات.`;
                         let cleanNumber = whatsappNumber.replace(/\D/g, '');
@@ -2310,8 +2305,7 @@ if (ytMatch) {
                     }
                 }
             } catch (err) {
-                console.warn('فشل جلب التقييمات:', err.message);
-            }
+                }
         }
 
         // دالة عرض/إخفاء التعليقات

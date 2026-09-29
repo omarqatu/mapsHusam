@@ -538,11 +538,14 @@ async function requireAuth(req, res, next) {
 
     try {
         const status = await getAuthStatus(uid);
+
         if (!status.exists || !status.active) {
             return res.status(401).json({ success: false, error: 'تم إنهاء جلستك أو تعطيل حسابك، يرجى تسجيل الدخول من جديد.', code: 'SESSION_REVOKED' });
         }
         // 🔒 التوكن يجب أن يطابق رقم نسخة الجلسة الحالي بقاعدة البيانات (توكنات ما قبل هذا التعديل بلا tv = 0)
-        if ((Number(decoded.tv) || 0) !== status.tokenVersion) {
+        const tokenTv = Number(decoded.tv) || 0;
+        const dbTv = status.tokenVersion;
+        if (tokenTv !== dbTv) {
             return res.status(401).json({ success: false, error: 'تم إنهاء جلستك، يرجى تسجيل الدخول من جديد.', code: 'SESSION_REVOKED' });
         }
         req.auth = { uid, role: status.role };
@@ -801,7 +804,6 @@ app.get('/api/get-provider-service', requireAuth, async (req, res) => {
 
         // 🛑 [تعديل حاسم]: تم حذف الإسناد التلقائي للنجار 14. إذا كانت الحقول فارغة، نرفض فتح اللوحة فوراً.
         if (!discriminator || !featId) {
-            console.log(`⚠️ مزود الخدمة رقم ${user_id} غير مربوط بأي طبقة جغرافية أو معلم. تم حظر اللوحة ومنع الإسناد الوهمي.`);
             return res.json({
                 success: false,
                 show_panel: false,
@@ -818,8 +820,6 @@ app.get('/api/get-provider-service', requireAuth, async (req, res) => {
             // العقارات تستخدم fid، الخدمات تستخدم id
             const idField = isRealEstate ? 'fid' : 'id';
 
-            console.log(`🔍 جلب الإحداثيات: discriminator=${discriminator}, idField=${idField}, featId=${featId}, isRealEstate=${isRealEstate}`);
-
             // 🆕 كل الخدمات أصبحت بجدول service_all موحّد، ولازم فلترة إضافية بعمود discriminator
             const coordsQuery = isRealEstate
                 ? `SELECT x_coord, y_coord, status FROM public."${discriminator}" WHERE ${idField} = $1 LIMIT 1`
@@ -827,10 +827,6 @@ app.get('/api/get-provider-service', requireAuth, async (req, res) => {
             const coordsParams = isRealEstate ? [featId] : [featId, discriminator];
 
             const coordsResult = await targetPool.query(coordsQuery, coordsParams);
-            console.log(`🔍 نتيجة الاستعلام: ${coordsResult.rows.length} صفوف`);
-            if (coordsResult.rows.length > 0) {
-                console.log(`🔍 البيانات المسترجعة:`, coordsResult.rows[0]);
-            }
             if (coordsResult.rows.length > 0) {
                 const cRow = coordsResult.rows[0];
                 coordsData.x_coord = cRow.x_coord;
@@ -884,20 +880,14 @@ app.post('/api/update-service-status', requireAuth, async (req, res) => {
         y_coord
     } = req.body;
 
-    console.log('📥 [update-service-status] Request body:', { user_id, service_layer, feature_id, id, status, x_coord, y_coord });
-
     const targetIdValue = feature_id || id;
     const layerName = service_layer ? service_layer.trim() : null;
 
-    console.log('📥 [update-service-status] Parsed values:', { targetIdValue, layerName });
-
     if (!user_id || !layerName || !targetIdValue) {
-        console.log('❌ [update-service-status] Missing required fields');
         return res.status(400).json({ success: false, error: 'بيانات التحديث غير مكتملة، المعرفات والطبقة الجغرافية حقول إجبارية.' });
     }
 
     if (!isValidLayer(layerName)) {
-        console.log('❌ [update-service-status] Invalid layer:', layerName);
         return res.status(403).json({ success: false, error: 'غير مسموح بالتعامل مع هذه الطبقة برمجياً' });
     }
 
@@ -3917,7 +3907,8 @@ io.use(async (socket, next) => {
     try {
         const token = socket.handshake.auth && socket.handshake.auth.token;
         if (!token) return next(new Error('unauthorized'));
-        const decoded = jwt.verify(token, ADMIN_JWT_SECRET, { algorithms: ['HS256'] });
+        // 🆕 استخدام ignoreExpiration مثل middleware HTTP
+        const decoded = jwt.verify(token, ADMIN_JWT_SECRET, { algorithms: ['HS256'], ignoreExpiration: true });
         const uid = Number(decoded.uid);
         if (!Number.isInteger(uid) || uid <= 0) return next(new Error('unauthorized'));
         // 🔒 الحالة والدور ورقم النسخة من قاعدة البيانات (وليس من التوكن وحده)

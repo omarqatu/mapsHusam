@@ -46,7 +46,7 @@
     function safe(fn) {
         return function () {
             try { return fn.apply(this, arguments); }
-            catch (err) { console.warn('mobile-tabs.js: تم تجاهل خطأ غير متوقع لمنع تعطل الصفحة:', err); }
+            catch (err) { }
         };
     }
 

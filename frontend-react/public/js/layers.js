@@ -263,7 +263,6 @@ const createWFSLayer = (workspace, name, title, styleFunc, maxRes = 10, visible 
                             // عند توقف الخريطة أو الشبكة، ولا نحتاج إلى تحذير مزعج.
                             return;
                         }
-                        console.warn(`Failed to load layer ${name} from ${firstUrl}:`, error.message);
                         if (!triedFallback) {
                             triedFallback = true;
                             const fallbackUrl = buildUrl(commonUrl);
@@ -281,8 +280,7 @@ const createWFSLayer = (workspace, name, title, styleFunc, maxRes = 10, visible 
 
                 tryLoad().catch(error => {
                     if (error.name !== 'AbortError') {
-                        console.warn(`Final failure loading layer ${name}:`, error.message);
-                    }
+                        }
                 });
             }
         })
@@ -305,8 +303,7 @@ const getLayerStyle = (styleParam, fallbackColor) => {
         const trimmed = styleParam.trim().replace('window.', '');
         // استخدام الوصول الآمن للكائن window بدلاً من eval
         if (typeof window[trimmed] === 'function') return window[trimmed];
-        console.warn(`⚠️ الستايل المسمى [${trimmed}] غير موجود في النطاق العالمي، تم استخدام الافتراضي.`);
-    }
+        }
     return defaultFallback;
 };
 

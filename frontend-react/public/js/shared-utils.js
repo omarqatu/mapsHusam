@@ -58,14 +58,13 @@ window.checkRequestQuotaOrAlert = async function (userId, popupRef) {
             if (window.toast) {
                 window.toast(`⛔ لقد تجاوزت الحد المسموح من الطلبات (${data.limit}) ${periodText}. يرجى المحاولة لاحقاً أو التواصل مع الإدارة.`, 'warning', 6000);
             } else {
-                alert(`⛔ لقد تجاوزت الحد المسموح من الطلبات (${data.limit}) ${periodText}. يرجى المحاولة لاحقاً أو التواصل مع الإدارة.`);
+                window.toast(`⛔ لقد تجاوزت الحد المسموح من الطلبات (${data.limit}, 'info') ${periodText}. يرجى المحاولة لاحقاً أو التواصل مع الإدارة.`);
             }
             return { allowed: false };
         }
         return { allowed: true };
     } catch (err) {
         // فشل الفحص لأي سبب (شبكة/سيرفر) => لا نمنع المستخدم من استخدام الخدمة الأساسية (Fail-open)
-        console.warn('تعذر التحقق من حد الطلبات، سيتم السماح بالطلب:', err.message);
         return { allowed: true };
     }
 };
@@ -128,8 +127,7 @@ window.refreshProviderLinkedFeatures = async function () {
             if (retryCount < maxRetries) {
                 await new Promise(resolve => setTimeout(resolve, 1000 * retryCount)); // تأخير متزايد
             } else {
-                console.warn('تعذر تحديث قائمة مزودي الخدمة المرتبطين بعد عدة محاولات:', e.message);
-            }
+                }
         }
     }
 };

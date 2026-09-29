@@ -151,13 +151,13 @@ function initializeEditTools(map, overlayLayersObjParam) {
         deactivatePointEditTools();
         selectedLayerName = editLayerSelect.value;
         if (!selectedLayerName) {
-            alert('يرجى اختيار طبقة أولاً من القائمة المنسدلة قبل تفعيل أدوات الرسم أو التعديل.');
+            window.toast('يرجى اختيار طبقة أولاً من القائمة المنسدلة قبل تفعيل أدوات الرسم أو التعديل.', 'info');
             return;
         }
 
         const target = resolveEditTarget(selectedLayerName);
         const layer = target.layer;
-        if (!layer) return alert('خطأ: الطبقة البرمجية غير موجودة');
+        if (!layer) return window.toast('خطأ: الطبقة البرمجية غير موجودة', 'info');
         selectedLayerSource = layer.getSource();
 
         if (mode === 'add') {
@@ -486,7 +486,7 @@ function initializeEditTools(map, overlayLayersObjParam) {
         attributeModal.style.display = 'none';
 
         if (currentTransactionType === 'update') {
-            alert('تم حفظ البيانات الوصفية. انقر على الخريطة لتحديد الموقع الجديد، أو انتظر وسيتم الحفظ تلقائياً في الموقع الحالي.');
+            window.toast('تم حفظ البيانات الوصفية. انقر على الخريطة لتحديد الموقع الجديد، أو انتظر وسيتم الحفظ تلقائياً في الموقع الحالي.', 'info');
             isWaitingForNewLocation = true;
             map.getTargetElement().style.cursor = 'crosshair';
             
