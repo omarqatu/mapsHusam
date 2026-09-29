@@ -25,10 +25,15 @@ this projection, so do not switch).
 ## Run
 
 ```bash
-npm install && npm start          # backend on :3000 (needs .env: Postgres + GeoServer)
-cd web && npm install && npm run dev   # Vite on :5173, proxies /api, /geoserver-proxy, /socket.io → :3000
+dev/dev.sh db-up && dev/dev.sh seed   # local Postgres in podman + dev accounts (see dev/README.md)
+dev/dev.sh server                     # backend on :3000 with dev/dev.env — no .env needed
+cd web && npm install && npm run dev  # Vite (:5173 or next free), proxies /api, /geoserver-proxy, /socket.io → :3000
 cd web && npm run typecheck && npm run lint && npm test
+cd web && VITE_LIVE_API=http://localhost:3000 npm test   # + tests against the real backend (no mocks)
 ```
+
+Test against the real backend whenever a page talks to an endpoint; mocks are only for cases the real
+server can't produce on demand (network failure, 401 mid-session).
 
 ## Invariants
 
