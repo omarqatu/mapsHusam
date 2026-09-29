@@ -25,22 +25,20 @@ const highlightStyle = new Style({
   }),
 });
 
-/** On phones the card is a bottom sheet (max 70% of the height): pan so the tapped marker stays visible above it. */
-function revealAboveSheet(map: OlMap, coordinate: [number, number]) {
-  if (window.innerWidth >= 640) return;
-  const size = map.getSize();
-  const pixel = map.getPixelFromCoordinate(coordinate);
-  if (!size || !pixel) return;
-  const visibleBottom = size[1] * 0.3 - 24; // sheet covers the lower 70%
-  if (pixel[1] <= visibleBottom) return;
-  const target = map.getCoordinateFromPixel([pixel[0], pixel[1] - (pixel[1] - size[1] * 0.15)]);
+/**
+ * On phones the card is a bottom sheet: give the view a bottom padding so "centre" means the visible part above it —
+ * a marker reached by a fly-to (search pick) or a tap then stays in sight. Cleared when the card closes.
+ */
+function fitAboveSheet(map: OlMap, coordinate: [number, number] | null) {
   const view = map.getView();
-  const center = view.getCenter();
-  if (!target || !center) return;
-  view.animate({
-    center: [center[0] + (coordinate[0] - target[0]), center[1] + (coordinate[1] - target[1])],
-    duration: 250,
-  });
+  const size = map.getSize();
+  if (!coordinate || window.innerWidth >= 640 || !size) {
+    view.padding = [0, 0, 0, 0];
+    return;
+  }
+  view.padding = [0, 0, Math.round(size[1] * 0.5), 0];
+  // A running fly-to already ends at the padded centre; only a plain tap needs its own pan.
+  if (!view.getAnimating()) view.animate({ center: coordinate, duration: 250 });
 }
 
 /** Click a marker → details card. Also owns the highlight ring and the pointer cursor. */
@@ -55,9 +53,9 @@ export default function SelectionController() {
 
     const sync = (sel = useMapUi.getState().selected) => {
       source.clear();
+      fitAboveSheet(map, sel?.coordinate ?? null);
       if (!sel) return;
       source.addFeature(new Feature(new Point(sel.coordinate)));
-      revealAboveSheet(map, sel.coordinate);
     };
     sync();
     const unsubscribe = useMapUi.subscribe((s, prev) => s.selected !== prev.selected && sync(s.selected));

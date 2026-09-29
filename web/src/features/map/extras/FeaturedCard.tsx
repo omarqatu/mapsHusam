@@ -102,7 +102,7 @@ export default function FeaturedCard({ entry, mode, badge }: CardProps) {
         {hasStatus && (
           <span className={open ? 'text-green-700' : 'text-red-600'}>
             {open ? t('popup.openNow') : t('popup.closedNow')}
-            {text(p.work_hours) && ` · ${hoursLabel(p.work_hours, t, i18n.language)}`}
+            {hoursLabel(p.work_hours, t, i18n.language) && ` · ${hoursLabel(p.work_hours, t, i18n.language)}`}
           </span>
         )}
         {price && <span className="font-semibold text-slate-700">{price}</span>}

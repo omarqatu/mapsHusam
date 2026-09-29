@@ -250,6 +250,10 @@ Split `index.html` into features, in this order:
    - Stats load when their tab is opened, not at page load (legacy fetched for the footer on every visit).
    - Near me: the type filter applies as you tick (no "apply" button); the location marker is the same blue dot as
      "search near a location" (one `nearbyCenter`), and the panel shares one geolocation helper (`geolocate.ts`) with that tab.
+   - Map UX pass: on phones the map view is padded above the bottom sheet, so the selected marker stays visible after a
+     search pick or tap (before it hid under the card); the +/- zoom buttons are hidden on phones (pinch / double-tap
+     work, and the tool column no longer covers half the screen). A lone `0` in `work_hours` (placeholder) is not shown
+     as a schedule.
    - Media sections show only their own kind (photos section = pictures, videos section = videos); everything is still in the
      details card. Cards use the shared `MediaGallery` (enlarge on click, https-only URLs via `safeMediaUrl`) instead of the
      YouTube facade; a top-rated card shows the real average and the number of ratings (legacy carried but hid them).

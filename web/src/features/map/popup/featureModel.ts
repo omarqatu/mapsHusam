@@ -198,7 +198,8 @@ export function hoursLabel(
 ) {
   const h = parseWorkHours(v);
   if (h.allDay) return t('popup.allDay');
-  if ('raw' in h) return h.raw;
+  // A lone "0" is the column's placeholder, not a schedule — show nothing rather than a stray zero.
+  if ('raw' in h) return h.raw === '0' ? '' : h.raw;
   return t('popup.availableFromTo', { from: formatClock(h.from, locale), to: formatClock(h.to, locale) });
 }
 

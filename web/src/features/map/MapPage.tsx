@@ -111,7 +111,10 @@ export default function MapPage() {
             <LocateButton />
             <div className="flex flex-col gap-2 [@media(max-height:560px)]:hidden">
               <RefreshButton />
-              <ZoomButtons />
+              {/* Phones zoom by pinch / double-tap; the two buttons only cost screen height there. */}
+              <div className="flex flex-col gap-2 max-sm:hidden">
+                <ZoomButtons />
+              </div>
             </div>
           </div>
           <div className="absolute bottom-2 start-3 z-10">
