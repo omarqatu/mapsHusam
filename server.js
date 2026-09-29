@@ -3842,17 +3842,17 @@ app.use('/api', (req, res) => {
 });
 
 // 9أ. تطبيق React (web/dist)
-// إذا كان web/dist/index.html موجوداً يُقدَّم التطبيق الجديد (ملفات مبنية + مسارات SPA + تحويل روابط الصفحات القديمة).
-// وإلا يعمل الموقع بصفحاته القديمة كما كان. SERVE_REACT_APP=off يعيد الصفحات القديمة فوراً دون حذف البناء.
+// يُقدَّم التطبيق من web/dist (ملفات مبنية + مسارات SPA + تحويل روابط الصفحات القديمة). SERVE_REACT_APP=off يوقف تقديمه.
 const REACT_DIST = path.join(__dirname, 'web', 'dist');
 const SERVE_REACT = (process.env.SERVE_REACT_APP || 'auto').toLowerCase() !== 'off'
     && fs.existsSync(path.join(REACT_DIST, 'index.html'));
-console.log(SERVE_REACT ? `🆕 يُقدَّم تطبيق React من ${REACT_DIST}` : 'ℹ️ web/dist غير موجود (أو SERVE_REACT_APP=off): تُقدَّم الصفحات القديمة');
+console.log(SERVE_REACT ? `🆕 يُقدَّم تطبيق React من ${REACT_DIST}` : '⚠️ web/dist غير موجود (أو SERVE_REACT_APP=off): لا توجد واجهة تُقدَّم، شغّل npm run build داخل web');
 
 if (SERVE_REACT) {
     // الصفحات القديمة → مساراتها الجديدة (مع الاستعلام: ?group=fuel ما زال يعمل بصفحة البحث)
     const LEGACY_PAGE_TO_ROUTE = {
         '/index.html': '/',
+        '/dashboard': '/admin/dashboard',
         '/no-map-search.html': '/search',
         '/widgets-portal.html': '/widgets/portal',
         '/widgets-ticker.html': '/widgets/ticker',
@@ -3879,59 +3879,13 @@ if (SERVE_REACT) {
     });
 }
 
-// 9. تقديم الملفات الثابتة
-// 🔒 قائمة سماح للملفات الثابتة: لا يُقدَّم إلا مجلدات الموقع المعروفة وصفحات .html بالجذر.
-// STATIC_ALLOWLIST_MODE=report (الافتراضي): يقدّم كل شيء كما كان ويطبع تحذيراً لكل مسار غير مدرج.
-// بعد تجربة كل صفحات الموقع دون أي تحذير، اضبط STATIC_ALLOWLIST_MODE=enforce ليُحجب غير المدرج بـ404.
-const STATIC_ALLOWLIST_MODE = (process.env.STATIC_ALLOWLIST_MODE || 'report').toLowerCase();
-const STATIC_ALLOWED = /^\/(?:(?:js|css|pic|ol|proj4|icons|sounds|fonts|images|img|assets)\/|[A-Za-z0-9_.\-]+\.html$|favicon\.ico$|robots\.txt$)/i;
-const staticReportedPaths = new Set();
-
-app.use((req, res, next) => {
-    // 🔒 فك الترميز وتطبيع المسار قبل الفحص (كان /%73erver.js و //server.js يتجاوزان الحظر)
-    let decodedPath;
-    try {
-        decodedPath = decodeURIComponent(req.path);
-    } catch (e) {
-        return res.status(400).end();
-    }
-    if (decodedPath.includes('\\') || decodedPath.includes('\0') || decodedPath.includes(':') || decodedPath.includes('..')) {
-        return res.status(404).end();
-    }
-    decodedPath = path.posix.normalize(decodedPath).replace(/[. ]+$/, ''); // يعالج // و /./ والنقطة/المسافة الأخيرة (ويندوز)
-
-    const forbiddenPatterns = [
-        /^\/[^\/]+\.(?:js|mjs|cjs|json|ts)$/i,   // أي سكربت/JSON بجذر المشروع (server.js, package.json, ...)
-        /^\/\.env/i,
-        /^\/\.git(?:\/|$)/i,
-        /^\/node_modules(?:\/|$)/i,
-        /^\/database(?:\/|$)/i,
-        /^\/docs(?:\/|$)/i,
-        /^\/GeoServerData(?:\/|$)/i,
-        /^\/tools(?:\/|$)/i,
-        /\.(?:bak|old|orig|sql|log|pem|key|sh|bat|ps1)$/i
-    ];
-    if (forbiddenPatterns.some((re) => re.test(decodedPath))) {
-        return res.status(404).end();
-    }
-    if (decodedPath !== '/' && !STATIC_ALLOWED.test(decodedPath)) {
-        if (STATIC_ALLOWLIST_MODE === 'enforce') return res.status(404).end();
-        if (staticReportedPaths.size < 500 && !staticReportedPaths.has(decodedPath)) {
-            staticReportedPaths.add(decodedPath);
-            console.warn(`⚠️ [Static allowlist] مسار غير مدرج (سيُحجب عند enforce): ${decodedPath}`);
-        }
-    }
-    next();
-});
-app.use(express.static(path.join(__dirname), { dotfiles: 'ignore', index: false, redirect: false }));
-
-app.get('/', (req, res) => {
-    res.sendFile(path.join(__dirname, 'index.html'));
-});
-
-app.get('/index.html', (req, res) => {
-    res.sendFile(path.join(__dirname, 'index.html'));
-});
+// 9ب. بدون بناء التطبيق (web/dist غير موجود) لا يوجد ما يُقدَّم: رسالة واضحة بدل صفحة فارغة.
+// (تُقدَّم الآن ملفات web/dist وحدها؛ لم يعد جذر المشروع يُقدَّم كملفات ثابتة، فلا تُكشف README.md وغيرها.)
+if (!SERVE_REACT) {
+    app.get(/^\/(?!api(?:\/|$)|geoserver-proxy(?:\/|$)|socket\.io(?:\/|$))/, (req, res) => {
+        res.status(503).type('text/plain; charset=utf-8').send('الموقع قيد التحديث: لم يُبنَ التطبيق بعد (شغّل npm run build داخل مجلد web ثم أعد تشغيل الخدمة).');
+    });
+}
 
 // 10. خطأ عام للميدل وير
 app.use((err, req, res, next) => {

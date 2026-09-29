@@ -21,6 +21,10 @@ const hostOf = (url: string) => {
   }
 };
 
+/** Pages, not pictures: a link in the picture field to one of these is shown as a link without trying to load it as an image. */
+const NOT_A_PICTURE_HOST = /(^|\.)(youtube\.com|youtu\.be|facebook\.com|fb\.com|instagram\.com|tiktok\.com)$/;
+const isPageLink = (url: string) => NOT_A_PICTURE_HOST.test(hostOf(url));
+
 const tile =
   'relative block h-24 w-32 shrink-0 snap-start overflow-hidden rounded-lg border border-black/10 bg-slate-100 focus-visible:outline-2 focus-visible:outline-brand';
 const playBadge = (
@@ -104,11 +108,10 @@ export default function MediaGallery({ items }: { items: MediaItem[] }) {
   const [open, setOpen] = useState<number | null>(null);
   const [broken, setBroken] = useState<ReadonlySet<string>>(new Set());
 
-  const visual = items.filter(
-    (i): i is Visual => i.type !== 'link' && !(i.type === 'image' && broken.has(i.url)),
-  );
+  const notLoaded = (i: MediaItem) => i.type === 'image' && (broken.has(i.url) || isPageLink(i.url));
+  const visual = items.filter((i): i is Visual => i.type !== 'link' && !notLoaded(i));
   const links = items.filter((i): i is Extract<MediaItem, { type: 'link' }> => i.type === 'link');
-  const brokenUrl = items.find((i) => i.type === 'image' && broken.has(i.url));
+  const notPictures = items.filter((i): i is Extract<MediaItem, { type: 'image' }> => i.type === 'image' && notLoaded(i));
 
   const step = useCallback(
     (d: 1 | -1) => setOpen((i) => (i === null ? i : (i + d + visual.length) % visual.length)),
@@ -144,15 +147,15 @@ export default function MediaGallery({ items }: { items: MediaItem[] }) {
           ))}
         </div>
       )}
-      {brokenUrl && brokenUrl.type === 'image' && (
-        <a href={brokenUrl.url} target="_blank" rel="noopener noreferrer" className={linkClass}>
+      {notPictures.map((m) => (
+        <a key={m.url} href={m.url} target="_blank" rel="noopener noreferrer" className={linkClass}>
           <ExternalLink className="h-4 w-4 shrink-0" aria-hidden />
           <span className="flex-1">{t('media.openImages')}</span>
           <span className="text-xs font-normal text-slate-500" dir="ltr">
-            {hostOf(brokenUrl.url)}
+            {hostOf(m.url)}
           </span>
         </a>
-      )}
+      ))}
       {links.map((m) => (
         <a key={m.url} href={m.url} target="_blank" rel="noopener noreferrer" className={linkClass}>
           <ExternalLink className="h-4 w-4 shrink-0" aria-hidden />

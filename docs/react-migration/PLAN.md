@@ -30,7 +30,7 @@ Status legend: ⬜ not started · 🟨 in progress · ✅ ported & verified · �
   Modal, ConfirmDialog, DataTable, Spinner, Toast, PageHeader, EmptyState.
 - ✅ App shell + router with every route below registered (placeholder pages).
 - ✅ Socket provider (`useSocket`, typed events).
-- ⬜ Server: serve `web/dist` in production (own commit, logged under "Server changes"). Design: legacy
+- ✅ Server: serve `web/dist` in production (own commit, logged under "Server changes"). Design: legacy
   and React coexist until cut-over, so `server.js` serves `web/dist/index.html` only for the routes in
   `web/src/routes/routes.ts` that have been switched, and `web/dist/assets/*`; everything else stays legacy.
   Do it together with the first real page (Phase 1) so it can be verified end-to-end.
@@ -786,9 +786,9 @@ Split `index.html` into features, in this order:
    (a second locale helper `numberLocale` removed); checkpoint/fuel checks use `isRoadBarrier`/`isFuelStation`.
 ## Phase 4 — Cut-over & cleanup
 
-- ⬜ All routes verified on desktop + mobile width.
-- ⬜ Delete legacy `*.html`, `js/`, `css/`, `original-index.html`, `dist/`; untrack `node_modules/`.
-- ⬜ Remove legacy static allow-list entries from `server.js`.
+- 🟨 All routes verified on desktop + mobile width (served by the real server with its CSP: login, welcome, map, search, widgets, admin, notifications, 404; phone width verified per page during each port). Still to do by hand: a pass on a real phone, and on production after the deploy.
+- ✅ Deleted legacy `*.html`, `js/`, `css/`, `ol/`, `proj4/`, `pic/`, `icons/`, `sounds/`, `original-index.html` (own commit — `git revert` brings them back). `node_modules/` and `dist/` were never tracked here.
+- ✅ Removed the legacy static serving and allow-list from `server.js` (see Server changes).
 
 ## Definition of done (every page / feature)
 
@@ -845,9 +845,12 @@ Log each change here: **what · why · how to verify · commit**.
   kept) to their new routes: `index.html`→`/`, `no-map-search.html`→`/search`, `widgets-portal.html`→`/widgets/portal`,
   `widgets-ticker.html`→`/widgets/ticker`, `notifications-panel.html`→`/notifications`, `admin-users.html`→`/admin/users`,
   `admin-view-user.html`→`/admin/users` (it used a token in the URL), `dashboard.html`→`/admin/dashboard`,
-  `widgets-admin.html`→`/admin/widgets`. **Without `web/dist` nothing changes** (legacy pages as before), and
-  `SERVE_REACT_APP=off` forces the legacy pages without deleting the build — the one-line rollback. All API routes, the
-  proxy, socket.io, the static allow-list and the forbidden-path list are untouched (`/.env`, `/server.js` etc. still 404).
+  `widgets-admin.html`→`/admin/widgets`. Later, in the commit that deleted the legacy frontend, the project root stopped being served as static files (the
+  allow-list and forbidden-path middleware went with it): only `web/dist` is public now, so `README.md`, `SECURITY.md`, `package.json`
+  etc. are no longer downloadable (they were, from Node; IIS blocked some). Without `web/dist`, or with `SERVE_REACT_APP=off`,
+  every non-API path answers 503 with a plain message and the API keeps working. API routes, the proxy and socket.io are untouched.
+  `web.config`: the static-file, dashboard and SPA-fallback rules are replaced by one rule that forwards everything else to Node
+  (IIS no longer serves site files itself; the React build lives in `web/dist`, read by Node).
   Verify: `cd web && npm run build`, start the server, `curl -I localhost:3000/search` (200 html), `/no-map-search.html?group=fuel`
   (301 → `/search?group=fuel`), `/assets/<hash>.js` (200), `/api/nope` (404 JSON); log "🆕 يُقدَّم تطبيق React". Checked in a
   browser against the real server (helmet CSP on): no CSP violations on login, map, search, widgets, admin, notifications.
