@@ -19,10 +19,11 @@ const pool = new pg.Pool({
 
 for (const a of accounts) {
   const hash = await bcrypt.hash(a.password, 10);
+  // The production schema has no unique constraint on phone, so replace instead of upsert.
+  await pool.query('DELETE FROM public.users WHERE phone = $1', [a.phone]);
   await pool.query(
     `INSERT INTO public.users (full_name, email, phone, password_hash, role, status, is_active)
-     VALUES ($1, $2, $3, $4, $5, 0, true)
-     ON CONFLICT (phone) DO UPDATE SET password_hash = EXCLUDED.password_hash, role = EXCLUDED.role, is_active = true`,
+     VALUES ($1, $2, $3, $4, $5, 0, true)`,
     [a.full_name, `${a.role}@dev.local`, a.phone, hash, a.role],
   );
   console.log(`seeded ${a.role}: phone ${a.phone} / password ${a.password}`);

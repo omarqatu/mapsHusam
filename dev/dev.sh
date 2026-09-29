@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 # Local dev environment for the PSM backend. Isolated Postgres in podman + server.js on :3000.
 #   dev/dev.sh db-up      start (or create) the Postgres container, wait until ready
-#   dev/dev.sh seed       create/refresh the dev accounts (needs server run once, or db-up only)
+#   dev/dev.sh restore    load dev/db/dumps/{services_db,realestate}.dump (skips personal table data)
+#   dev/dev.sh seed       create/refresh the dev accounts (after restore)
 #   dev/dev.sh server     run server.js with dev/dev.env in the foreground
 #   dev/dev.sh db-down    stop the container (data kept)
 #   dev/dev.sh db-reset   DELETE the container + data and start over
@@ -10,7 +11,7 @@ cd "$(dirname "$0")/.."
 
 NAME=psm-dev-pg
 VOLUME=psm-dev-pgdata
-IMAGE=${PSM_DEV_PG_IMAGE:-docker.io/library/postgres:18.3}
+IMAGE=${PSM_DEV_PG_IMAGE:-docker.io/postgis/postgis:18-3.6}
 PORT=55432
 
 load_env() { set -a; . dev/dev.env; set +a; }
@@ -36,6 +37,21 @@ case "${1:-}" in
     fi
     wait_ready
     echo "Postgres ready on 127.0.0.1:$PORT (databases: services_db, realestate)"
+    ;;
+  restore)
+    # Tables whose rows are about people. Their structure is restored, their rows never are — even if a
+    # dump happens to contain them.
+    PERSONAL='users|service_requests|service_request_messages|service_ratings|notifications|map_service_stats'
+    for db in services_db realestate; do
+      f="dev/db/dumps/$db.dump"
+      [ -f "$f" ] || { echo "missing $f" >&2; exit 1; }
+      podman cp "$f" "$NAME:/tmp/$db.dump"
+      podman exec "$NAME" sh -c "pg_restore -l /tmp/$db.dump | grep -vE 'TABLE DATA public ($PERSONAL) ' > /tmp/$db.list"
+      podman exec "$NAME" pg_restore -U psm -d "$db" --no-owner --no-privileges --clean --if-exists \
+        -L "/tmp/$db.list" "/tmp/$db.dump" 2>&1 | grep -vE 'extension "postgis"|already exists|does not exist, skipping' || true
+      podman exec "$NAME" rm -f "/tmp/$db.dump" "/tmp/$db.list"
+      echo "restored $db"
+    done
     ;;
   seed)   load_env; node dev/seed-users.mjs ;;
   server) load_env; exec node server.js ;;
