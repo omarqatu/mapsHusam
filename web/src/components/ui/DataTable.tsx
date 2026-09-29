@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState, type ReactNode } from 'react';
+import { useMemo, useRef, useState, type KeyboardEvent, type ReactNode } from 'react';
 import clsx from 'clsx';
 import { ArrowDown, ArrowUp, ChevronsUpDown, GripVertical } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
@@ -90,6 +90,19 @@ export default function DataTable<T>({
   const toggleSort = (key: string) =>
     setPicked(sort?.key === key ? (sort.dir === 'asc' ? { key, dir: 'desc' } : null) : { key, dir: 'asc' });
 
+  // A clickable row is a pointer target and also reachable by keyboard (Tab + Enter); keys pressed inside a
+  // control in the row (buttons, links) stay with that control.
+  const rowActivation = (row: T) =>
+    onRowClick
+      ? {
+          onClick: () => onRowClick(row),
+          tabIndex: 0,
+          onKeyDown: (e: KeyboardEvent<HTMLElement>) => {
+            if (e.key === 'Enter' && e.target === e.currentTarget) onRowClick(row);
+          },
+        }
+      : {};
+
   const pager = pageSize && pages > 1 && (
     <div className="flex items-center justify-between gap-2 border-t border-line p-3 text-sm text-muted">
       <Button size="sm" variant="secondary" disabled={current <= 1} onClick={() => setPage(current - 1)}>
@@ -113,7 +126,7 @@ export default function DataTable<T>({
           {visible.map((row) => (
             <li
               key={rowKey(row)}
-              onClick={onRowClick && (() => onRowClick(row))}
+              {...rowActivation(row)}
               className={clsx(
                 'rounded-2xl border border-line bg-surface p-4 shadow-sm',
                 onRowClick && 'cursor-pointer',
@@ -191,7 +204,7 @@ export default function DataTable<T>({
               return (
                 <tr
                   key={key}
-                  onClick={onRowClick && (() => onRowClick(row))}
+                  {...rowActivation(row)}
                   onDragOver={
                     onReorder
                       ? (e) => {

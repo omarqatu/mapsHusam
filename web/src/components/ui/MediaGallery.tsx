@@ -66,6 +66,7 @@ function Viewer({ m }: { m: Visual }) {
   if (m.type === 'image')
     return <img src={m.url} alt="" referrerPolicy="no-referrer" className="mx-auto max-h-[65vh] rounded-lg" />;
   if (m.type === 'video')
+    // eslint-disable-next-line jsx-a11y/media-has-caption -- owner-uploaded clips; there is no caption file to reference
     return <video src={m.url} controls autoPlay playsInline className="mx-auto max-h-[65vh] w-full rounded-lg bg-black" />;
   return (
     <div className="space-y-2">
