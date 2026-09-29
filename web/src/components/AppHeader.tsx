@@ -44,8 +44,9 @@ export default function AppHeader() {
 
   return (
     <header className="sticky top-0 z-40 flex h-14 shrink-0 items-center gap-2 bg-gradient-to-l from-brand to-brand-2 px-3 text-white shadow">
-      <NavLink to="/home" className="truncate text-base font-black sm:text-lg">
-        {t('app.name')}
+      <NavLink to="/home" className="shrink-0 whitespace-nowrap text-sm font-black sm:text-lg">
+        <span className="sm:hidden">{t('app.shortName')}</span>
+        <span className="max-sm:hidden">{t('app.name')}</span>
       </NavLink>
 
       <nav className="ms-3 hidden flex-1 items-center gap-1 md:flex" aria-label="main">

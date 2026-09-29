@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from 'react';
-import { CalendarDays, MapPinned, Search } from 'lucide-react';
+import { CalendarDays, Search } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router';
 import Badge from '@/components/ui/Badge';
@@ -31,13 +31,11 @@ export default function Greeting() {
 
   return (
     <section className="relative overflow-hidden rounded-2xl border border-line bg-surface p-5 shadow-card md:p-8">
-      {/* Decoration only: a soft brand disc in the corner, with a map mark on wide screens. */}
+      {/* Decoration only: a soft brand disc in the corner. */}
       <span
         aria-hidden
-        className="pointer-events-none absolute -end-12 -top-16 flex h-40 w-40 items-end justify-start rounded-full bg-brand-light p-0 md:h-72 md:w-72 md:p-16"
-      >
-        <MapPinned className="hidden h-16 w-16 text-brand-fg/50 md:block" />
-      </span>
+        className="pointer-events-none absolute -end-10 -top-14 h-32 w-32 rounded-full bg-brand-light md:-end-14 md:-top-20 md:h-52 md:w-52"
+      />
 
       <div className="relative">
         <p className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm font-semibold text-muted">

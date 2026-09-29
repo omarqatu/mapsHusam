@@ -1,3 +1,4 @@
+import { formatDateTime } from '@/lib/format';
 import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react';
 import { Ban, CheckCircle2, Handshake, Send } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
@@ -197,7 +198,7 @@ function Chat({ req, uid }: { req: ServiceRequest; uid: number }) {
                         ? 'ms-auto max-w-[80%] break-words rounded-2xl bg-brand px-3 py-2 text-sm text-white'
                         : 'me-auto max-w-[80%] break-words rounded-2xl border border-line bg-surface px-3 py-2 text-sm text-fg'
                     }
-                    title={new Date(m.created_at).toLocaleString(i18n.language)}
+                    title={formatDateTime(m.created_at, i18n.language)}
                   >
                     {m.message}
                   </div>

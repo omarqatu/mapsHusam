@@ -1,13 +1,14 @@
 // Locale-aware formatting — the one place that maps the UI language to an Intl locale.
 
-/** Arabic UI → Egyptian Arabic digits/format (legacy used 'ar-EG'); English → British day/month order. */
-export const intlLocale = (lang: string) => (lang === 'ar' ? 'ar-EG' : 'en-GB');
+/** Arabic UI → Arabic names with Latin digits (prices, counts and dates read the same everywhere); English → British day/month order. */
+export const intlLocale = (lang: string) => (lang === 'ar' ? 'ar-u-nu-latn' : 'en-GB');
 
 export const formatNumber = (n: number, lang: string) => n.toLocaleString(intlLocale(lang));
 export const formatDate = (d: Date | string, lang: string) =>
   new Date(d).toLocaleDateString(intlLocale(lang));
+/** Date, then time without seconds — two separate pieces, so right-to-left text cannot shuffle them. */
 export const formatDateTime = (d: Date | string, lang: string) =>
-  new Date(d).toLocaleString(intlLocale(lang));
+  `${formatDate(d, lang)} ${new Date(d).toLocaleTimeString(intlLocale(lang), { hour: '2-digit', minute: '2-digit', hour12: false })}`;
 /** "Tuesday 29 September 2026" / «الثلاثاء ٢٩ سبتمبر ٢٠٢٦». */
 export const formatLongDate = (d: Date | string, lang: string) =>
   new Date(d).toLocaleDateString(intlLocale(lang), { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });

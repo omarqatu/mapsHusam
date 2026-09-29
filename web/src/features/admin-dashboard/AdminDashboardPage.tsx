@@ -125,7 +125,7 @@ export default function AdminDashboardPage() {
         card: 'footer',
         cell: (r) => (
           <Button
-            variant="danger"
+            variant="dangerSoft"
             size="sm"
             startIcon={<Trash2 className="h-4 w-4" />}
             aria-label={t('adminDashboard.delete.aria', { id: r.id })}

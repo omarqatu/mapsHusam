@@ -2,7 +2,7 @@ import type { ButtonHTMLAttributes, ReactNode } from 'react';
 import clsx from 'clsx';
 import { Spinner } from './Spinner';
 
-type Variant = 'primary' | 'secondary' | 'danger' | 'ghost' | 'whatsapp';
+type Variant = 'primary' | 'secondary' | 'danger' | 'dangerSoft' | 'ghost' | 'whatsapp';
 type Size = 'sm' | 'md' | 'lg';
 
 export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
@@ -16,7 +16,9 @@ export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 const variants: Record<Variant, string> = {
   primary: 'bg-brand text-white hover:bg-brand-hover',
   secondary: 'bg-surface text-fg border border-line-strong hover:bg-subtle',
-  danger: 'bg-danger-solid text-white hover:bg-danger-solid',
+  danger: 'bg-danger-solid text-white hover:brightness-90',
+  /** A delete that sits in every row of a table: visible as destructive without shouting. */
+  dangerSoft: 'border border-danger-line bg-danger-soft text-danger hover:brightness-95',
   ghost: 'text-fg hover:bg-subtle',
   whatsapp: 'bg-whatsapp text-white hover:bg-whatsapp-hover',
 };

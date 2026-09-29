@@ -292,8 +292,12 @@ export function nextPrayer(times: PrayerTimes, minutes: number): { key: PrayerKe
 
 /** Hijri date in the UI language (Umm al-Qura, like the legacy Aladhan `gToH` default) — computed on the device, no request. */
 export function formatHijri(now: Date, lang: string): string {
-  const locale = `${intlLocale(lang)}-u-ca-islamic-umalqura`;
-  return new Intl.DateTimeFormat(locale, { day: 'numeric', month: 'long', year: 'numeric' }).format(now);
+  return new Intl.DateTimeFormat(intlLocale(lang), {
+    calendar: 'islamic-umalqura',
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
+  }).format(now);
 }
 
 export function formatGregorianLong(now: Date, lang: string): string {

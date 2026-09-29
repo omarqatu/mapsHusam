@@ -630,6 +630,7 @@ Split `index.html` into features, in this order:
    coordinates / stats pill move up above it) with a button that folds it into a small chip; the choice is remembered
    (`psm-ticker-hidden`). `.glass` is more opaque (90 %, blur 10 px) for readability. `/search` now leads with property (three doors:
    rent, sale, land) and lists services below with round icons; the "all" view shows only the 13 group cards (a group opens its types under a one-line tab row), so the page is short. The old ad-space look is gone: the intro is a title and three compact doors, no big banner.
+   *Polish pass (2026-09-29):* Arabic UI uses **Latin digits** everywhere (`intlLocale('ar')` = `ar-u-nu-latn`; before, counts were Arabic-Indic and prices Latin); date+time is formatted as two pieces, 24 h, so RTL cannot shuffle it; per-row delete on the dashboard is a soft-red button (`dangerSoft`), and the `danger`/ok buttons now darken on hover (they had no hover change); phone header shows a short brand name instead of a truncated one.
 10. 🟨 Extras: `platform-stats.js`, `featured-services-portal.js`, the "road status" / "fuel status" buttons, widgets ticker on the map
    ✅ **Done here (`features/map/extras/`):** the featured-services portal, the road-status and fuel-status lists and the
    platform statistics. ✅ The widgets ticker strip (bottom of the map) + the full widgets portal are ported in Phase 1 (`features/widgets/`). ⬜ **Not in this item (own items):** the mobile "home" tab (`mobile-tabs.js`, item 9) — it can open the panel with

@@ -180,7 +180,7 @@ describe('calendar', () => {
   it('formats the hijri date in both languages', () => {
     const d = new Date('2026-09-29T12:00:00');
     expect(formatHijri(d, 'en')).toContain('1448');
-    expect(formatHijri(d, 'ar')).toMatch(/١٤٤٨/);
+    expect(formatHijri(d, 'ar')).toMatch(/1448/);
   });
   it('splits events into upcoming, past and undated, sorted', () => {
     const { upcoming, past, undated } = splitEvents(

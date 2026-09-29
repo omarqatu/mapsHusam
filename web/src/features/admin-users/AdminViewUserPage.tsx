@@ -11,7 +11,7 @@ import EmptyState from '@/components/ui/EmptyState';
 import PageHeader from '@/components/ui/PageHeader';
 import SectionCard from '@/components/ui/SectionCard';
 import { CenteredSpinner } from '@/components/ui/Spinner';
-import { formatDateTime } from '@/lib/format';
+import { formatDateTime, intlLocale } from '@/lib/format';
 import { errorText } from '@/lib/errorText';
 import { useViewMessages, useViewSession } from './hooks/useAdminUsers';
 import { serviceLabelKey } from '@/features/map/registry';
@@ -136,7 +136,7 @@ export default function AdminViewUserPage() {
         description={
           expiresAt
             ? t('adminView.expires', {
-                time: expiresAt.toLocaleTimeString(i18n.language === 'ar' ? 'ar-EG' : 'en-GB', {
+                time: expiresAt.toLocaleTimeString(intlLocale(i18n.language), {
                   hour: '2-digit',
                   minute: '2-digit',
                 }),
