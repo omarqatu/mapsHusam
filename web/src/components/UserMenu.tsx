@@ -10,7 +10,7 @@ import NotificationsMenu from '@/features/notifications/NotificationsMenu';
 import { useRequestsUi } from '@/features/requests/store';
 import { useUnseen } from '@/features/requests/unseen';
 
-const item = 'flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-start text-sm font-semibold hover:bg-slate-100';
+const item = 'flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-start text-sm font-semibold hover:bg-subtle';
 
 /**
  * Header actions of the signed-in user: bell, my requests, and one account menu (name, role, change password,
@@ -29,7 +29,7 @@ export default function UserMenu({ tone = 'default' }: { tone?: 'default' | 'onB
   const hasNew = useUnseen((s) => s.ids.length > 0);
   const btn = clsx(
     'relative inline-flex items-center rounded-lg px-2.5 py-1.5',
-    tone === 'onBrand' ? 'text-white hover:bg-white/15' : 'text-slate-600 hover:bg-slate-100',
+    tone === 'onBrand' ? 'text-white hover:bg-surface/15' : 'text-muted hover:bg-subtle',
   );
 
   if (!user) {
@@ -52,7 +52,7 @@ export default function UserMenu({ tone = 'default' }: { tone?: 'default' | 'onB
         title={t('requests.myRequests')}
       >
         <ClipboardList className="h-4 w-4" aria-hidden />
-        {hasNew && <span className="absolute end-1 top-1 h-2 w-2 rounded-full bg-green-400 ring-2 ring-green-700/40" />}
+        {hasNew && <span className="absolute end-1 top-1 h-2 w-2 rounded-full bg-ok-solid ring-2 ring-ok-solid/40" />}
       </button>
 
       <div ref={menu} className="relative ms-1">
@@ -65,7 +65,7 @@ export default function UserMenu({ tone = 'default' }: { tone?: 'default' | 'onB
           title={name}
           className={clsx(
             'flex h-8 w-8 items-center justify-center rounded-full text-sm font-black',
-            tone === 'onBrand' ? 'bg-white/25 text-white hover:bg-white/35' : 'bg-brand-light text-brand',
+            tone === 'onBrand' ? 'bg-surface/25 text-white hover:bg-surface/35' : 'bg-brand-light text-brand-fg',
           )}
         >
           {name.trim().charAt(0).toUpperCase()}
@@ -73,11 +73,11 @@ export default function UserMenu({ tone = 'default' }: { tone?: 'default' | 'onB
         {open && (
           <div
             role="menu"
-            className="absolute end-0 top-full z-50 mt-1.5 w-60 rounded-xl border border-slate-200 bg-white p-1 text-slate-700 shadow-xl"
+            className="absolute end-0 top-full z-50 mt-1.5 w-60 rounded-xl border border-line bg-surface p-1 text-fg shadow-xl"
           >
-            <div className="border-b border-slate-100 px-3 py-2">
-              <p className="truncate text-sm font-bold text-slate-800">{name}</p>
-              <p className="text-xs text-slate-500">{t(`roles.${user.role}`)}</p>
+            <div className="border-b border-line px-3 py-2">
+              <p className="truncate text-sm font-bold text-fg">{name}</p>
+              <p className="text-xs text-muted">{t(`roles.${user.role}`)}</p>
             </div>
             <button
               type="button"
@@ -88,10 +88,10 @@ export default function UserMenu({ tone = 'default' }: { tone?: 'default' | 'onB
                 setPwdOpen(true);
               }}
             >
-              <KeyRound className="h-4 w-4 text-slate-400" aria-hidden />
+              <KeyRound className="h-4 w-4 text-muted" aria-hidden />
               {t('auth.changePassword.open')}
             </button>
-            <button type="button" role="menuitem" className={clsx(item, 'text-red-600')} onClick={logout}>
+            <button type="button" role="menuitem" className={clsx(item, 'text-danger')} onClick={logout}>
               <LogOut className="h-4 w-4" aria-hidden />
               {t('auth.logout')}
             </button>

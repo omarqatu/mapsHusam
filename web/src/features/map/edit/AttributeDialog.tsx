@@ -92,7 +92,7 @@ export default function AttributeDialog({
         noValidate
       >
         {position && (
-          <p className="mb-3 rounded-lg bg-slate-50 px-3 py-2 text-sm text-slate-700">
+          <p className="mb-3 rounded-lg bg-subtle px-3 py-2 text-sm text-fg">
             {t('edit.dialog.position')}{' '}
             <bdi dir="ltr" className="font-semibold">
               {formatGrid(position)}

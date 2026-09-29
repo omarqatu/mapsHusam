@@ -13,7 +13,7 @@ export default function FilterField({
 }) {
   return (
     <div className={clsx('flex min-w-0 flex-col gap-1.5', className)}>
-      <span className="text-sm font-semibold text-slate-700">{label}</span>
+      <span className="text-sm font-semibold text-fg">{label}</span>
       {children}
     </div>
   );

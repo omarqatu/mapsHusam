@@ -27,7 +27,7 @@ export default function MapSheet({ title, onClose, side, label, children, classN
       style={panelStyle}
       aria-label={label}
       className={clsx(
-        'absolute z-20 flex flex-col bg-white shadow-xl',
+        'absolute z-20 flex flex-col bg-surface shadow-xl',
         'inset-x-0 bottom-0 max-h-[70%] rounded-t-2xl',
         'sm:inset-x-auto sm:bottom-auto sm:max-h-[calc(100%-4.75rem)] sm:w-[22rem] sm:rounded-2xl sm:[transform:translate(var(--dx),var(--dy))]',
         // end side leaves room for the tool buttons; start side leaves room for the search box on top
@@ -38,14 +38,14 @@ export default function MapSheet({ title, onClose, side, label, children, classN
       <header
         {...handleProps}
         title={undefined}
-        className="flex touch-none select-none items-center justify-between gap-2 border-b border-slate-100 px-4 py-3 sm:cursor-grab sm:active:cursor-grabbing"
+        className="flex touch-none select-none items-center justify-between gap-2 border-b border-line px-4 py-3 sm:cursor-grab sm:active:cursor-grabbing"
       >
-        <div className="min-w-0 text-base font-bold text-slate-900">{title}</div>
+        <div className="min-w-0 text-base font-bold text-fg">{title}</div>
         <button
           type="button"
           onClick={onClose}
           aria-label={t('common.close')}
-          className="shrink-0 rounded-lg p-1.5 text-slate-600 hover:bg-slate-100"
+          className="shrink-0 rounded-lg p-1.5 text-muted hover:bg-subtle"
         >
           <X className="h-5 w-5" />
         </button>

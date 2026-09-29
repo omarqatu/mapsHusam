@@ -32,14 +32,14 @@ export default function CoordinatesBar() {
 
   return (
     <div
-      className="pointer-events-none hidden items-center gap-2 glass rounded-full px-3 py-1 font-mono text-xs text-slate-800 sm:flex"
+      className="pointer-events-none hidden items-center gap-2 glass rounded-full px-3 py-1 font-mono text-xs text-fg sm:flex"
       dir="ltr"
     >
       <span ref={grid}>E: —, N: —</span>
-      <span className="text-slate-300" aria-hidden>
+      <span className="text-line-strong" aria-hidden>
         |
       </span>
-      <span ref={gps} className="text-slate-500">
+      <span ref={gps} className="text-muted">
         —
       </span>
     </div>

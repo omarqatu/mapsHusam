@@ -40,17 +40,17 @@ export default function IncomingBanner() {
     <div
       role="alertdialog"
       aria-label={t('requests.incoming.title')}
-      className="fixed end-4 top-16 z-[55] w-80 max-w-[calc(100vw-2rem)] rounded-xl border border-slate-200 bg-white p-4 shadow-xl"
+      className="fixed end-4 top-16 z-[55] w-80 max-w-[calc(100vw-2rem)] rounded-xl border border-line bg-surface p-4 shadow-xl"
     >
-      <p className="mb-2 flex items-center gap-2 text-sm font-bold text-brand">
+      <p className="mb-2 flex items-center gap-2 text-sm font-bold text-brand-fg">
         <Bell className="h-4 w-4" aria-hidden />
         {t('requests.incoming.title')}
       </p>
-      <p className="mb-3 text-sm text-slate-700">
+      <p className="mb-3 text-sm text-fg">
         {t('requests.incoming.text', { type: req.service_type || t('requests.defaultService') })}
       </p>
       {others > 0 && (
-        <p className="mb-3 text-xs font-bold text-amber-600">{t('requests.incoming.others', { count: others })}</p>
+        <p className="mb-3 text-xs font-bold text-warn">{t('requests.incoming.others', { count: others })}</p>
       )}
       <div className="flex gap-2">
         <Button

@@ -25,7 +25,9 @@
     "showMore": "Show more",
     "showLess": "Show less",
     "reorder": "Reorder",
-    "showAll": "Show all ({{count}})"
+    "showAll": "Show all ({{count}})",
+    "themeDark": "Dark mode",
+    "themeLight": "Light mode"
   },
   "errors": {
     "network": "Could not reach the server. Check your connection and try again.",

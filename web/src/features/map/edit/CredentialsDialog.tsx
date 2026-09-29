@@ -66,7 +66,7 @@ export default function CredentialsDialog({ confirmLabel, onSubmit, onCancel }: 
         }}
         autoComplete="off"
       >
-        <p className="mb-4 flex items-start gap-2 text-sm text-slate-700">
+        <p className="mb-4 flex items-start gap-2 text-sm text-fg">
           <KeyRound className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />
           {t('edit.credentials.intro')}
         </p>
@@ -98,7 +98,7 @@ export default function CredentialsDialog({ confirmLabel, onSubmit, onCancel }: 
           <>
             <AlertMessage type="error" message={t(`edit.credentials.failed.${failure.reason}`)} />
             {failure.message && (
-              <p dir="ltr" className="mt-2 text-start text-sm break-words text-slate-700">
+              <p dir="ltr" className="mt-2 text-start text-sm break-words text-fg">
                 {failure.message}
               </p>
             )}

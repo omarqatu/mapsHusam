@@ -79,12 +79,12 @@ export default function EditUserDialog({ user, onClose }: { user: AdminUser; onC
       }
     >
       <div className="space-y-4">
-        <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl bg-slate-50 p-3 text-sm">
+        <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl bg-subtle p-3 text-sm">
           <div>
-            <span className="text-slate-500">{t('adminUsers.edit.user')}: </span>
-            <strong className="text-slate-800">{user.full_name || t('adminUsers.noName')}</strong>
+            <span className="text-muted">{t('adminUsers.edit.user')}: </span>
+            <strong className="text-fg">{user.full_name || t('adminUsers.noName')}</strong>
           </div>
-          <div dir="ltr" className="font-mono text-slate-600">
+          <div dir="ltr" className="font-mono text-muted">
             ID {user.user_id}
           </div>
         </div>
@@ -98,7 +98,7 @@ export default function EditUserDialog({ user, onClose }: { user: AdminUser; onC
             checked={form.is_active}
             onChange={(v) => set('is_active', v)}
           />
-          <p className="text-sm text-slate-600">{t('adminUsers.edit.activeHint')}</p>
+          <p className="text-sm text-muted">{t('adminUsers.edit.activeHint')}</p>
         </section>
 
         <FormField label={t('adminUsers.edit.role')} name="edit-role">
@@ -114,8 +114,8 @@ export default function EditUserDialog({ user, onClose }: { user: AdminUser; onC
         </FormField>
         {providerNeedsLink && <AlertMessage type="info" message={t('adminUsers.edit.providerHint')} />}
 
-        <fieldset className="space-y-1 rounded-xl border border-slate-200 p-3">
-          <legend className="px-1 text-sm font-bold text-slate-800">
+        <fieldset className="space-y-1 rounded-xl border border-line p-3">
+          <legend className="px-1 text-sm font-bold text-fg">
             {t('adminUsers.edit.serviceLink')}
           </legend>
           <FormField label={t('adminUsers.edit.layer')} name="edit-layer">
@@ -152,8 +152,8 @@ export default function EditUserDialog({ user, onClose }: { user: AdminUser; onC
           )}
         </fieldset>
 
-        <fieldset className="space-y-1 rounded-xl border border-slate-200 p-3">
-          <legend className="px-1 text-sm font-bold text-slate-800">{t('adminUsers.edit.quota')}</legend>
+        <fieldset className="space-y-1 rounded-xl border border-line p-3">
+          <legend className="px-1 text-sm font-bold text-fg">{t('adminUsers.edit.quota')}</legend>
           <FormField
             label={t('adminUsers.edit.limit')}
             name="edit-limit"
@@ -169,7 +169,7 @@ export default function EditUserDialog({ user, onClose }: { user: AdminUser; onC
               onChange={(e) => set('request_limit', e.target.value)}
             />
           </FormField>
-          <p className="text-sm text-slate-600">{t('adminUsers.edit.limitHint')}</p>
+          <p className="text-sm text-muted">{t('adminUsers.edit.limitHint')}</p>
           <FormField label={t('adminUsers.edit.period')} name="edit-period">
             <SelectInput
               id="edit-period"
@@ -183,8 +183,8 @@ export default function EditUserDialog({ user, onClose }: { user: AdminUser; onC
           </FormField>
         </fieldset>
 
-        <fieldset className="space-y-1 rounded-xl border border-slate-200 p-3">
-          <legend className="px-1 text-sm font-bold text-slate-800">{t('adminUsers.edit.password')}</legend>
+        <fieldset className="space-y-1 rounded-xl border border-line p-3">
+          <legend className="px-1 text-sm font-bold text-fg">{t('adminUsers.edit.password')}</legend>
           <FormField
             label={t('adminUsers.edit.newPassword')}
             name="edit-password"
@@ -200,7 +200,7 @@ export default function EditUserDialog({ user, onClose }: { user: AdminUser; onC
               onChange={(e) => set('new_password', e.target.value)}
             />
           </FormField>
-          <p className="text-sm text-slate-600">{t('adminUsers.edit.passwordHint', { min: MIN_PASSWORD })}</p>
+          <p className="text-sm text-muted">{t('adminUsers.edit.passwordHint', { min: MIN_PASSWORD })}</p>
         </fieldset>
       </div>
     </Modal>

@@ -22,14 +22,14 @@ const inlineIcons: Record<LegalIconName, typeof Info> = {
 };
 
 const tones: Record<LegalTone, string> = {
-  blue: 'border-blue-200 bg-blue-50 text-blue-900',
-  yellow: 'border-amber-200 bg-amber-50 text-amber-900',
-  green: 'border-emerald-200 bg-emerald-50 text-emerald-900',
-  gray: 'border-slate-200 bg-slate-50 text-slate-800',
-  cyan: 'border-cyan-200 bg-cyan-50 text-cyan-900',
+  blue: 'border-info-line bg-info-soft text-info',
+  yellow: 'border-warn-line bg-warn-soft text-warn',
+  green: 'border-ok-line bg-ok-soft text-ok',
+  gray: 'border-line bg-subtle text-fg',
+  cyan: 'border-info-line bg-info-soft text-info',
 };
 
-const linkClass = 'font-semibold text-brand underline';
+const linkClass = 'font-semibold text-brand-fg underline';
 
 function Inline({ parts }: { parts: LegalInline[] }) {
   return (
@@ -87,11 +87,11 @@ function Callout({ block }: { block: LegalCallout }) {
 function Card({ block }: { block: LegalCard }) {
   return (
     <div
-      className="rounded-xl border border-slate-200 bg-white p-3 ps-4 text-sm leading-7"
+      className="rounded-xl border border-line bg-surface p-3 ps-4 text-sm leading-7"
       style={{ borderInlineStartWidth: 4, borderInlineStartColor: block.accent }}
     >
-      <h4 className="font-bold text-slate-800">{block.title}</h4>
-      <p className="text-slate-700">
+      <h4 className="font-bold text-fg">{block.title}</h4>
+      <p className="text-fg">
         <Inline parts={block.text} />
       </p>
       {block.action && <ActionLink {...block.action} />}
@@ -121,7 +121,7 @@ function PanelBody({ body }: { body: LegalPanelBody }) {
       return (
         <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
           {body.items.map((s) => (
-            <div key={s.label} className="rounded-lg bg-white/70 p-2 text-center">
+            <div key={s.label} className="rounded-lg bg-surface/70 p-2 text-center">
               <div className="text-xl font-black">{s.value}</div>
               <div className="text-xs">{s.label}</div>
             </div>
@@ -138,13 +138,13 @@ function Block({ block }: { block: LegalBlock }): ReactNode {
     case 'title':
       return (
         <div className="text-center">
-          <h3 className="text-xl font-black text-slate-800">{block.title}</h3>
-          <p className="text-sm text-slate-500">{block.subtitle}</p>
+          <h3 className="text-xl font-black text-fg">{block.title}</h3>
+          <p className="text-sm text-muted">{block.subtitle}</p>
         </div>
       );
     case 'intro':
       return (
-        <p className="text-sm leading-7 text-slate-700">
+        <p className="text-sm leading-7 text-fg">
           <Inline parts={block.text} />
         </p>
       );

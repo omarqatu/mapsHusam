@@ -44,7 +44,7 @@ export default function ConfirmDialog({
         </>
       }
     >
-      <p className="text-slate-600">{message}</p>
+      <p className="text-muted">{message}</p>
     </Modal>
   );
 }

@@ -90,7 +90,7 @@ export default function KeywordSearch({ value, onCommit }: Props) {
         </Button>
       </div>
       {hint && (
-        <p role="alert" className="text-sm font-semibold text-red-700">
+        <p role="alert" className="text-sm font-semibold text-danger">
           {t('searchPage.minChars', { count: KEYWORD_MIN_CHARS })}
         </p>
       )}

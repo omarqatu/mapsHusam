@@ -81,13 +81,13 @@ export default function UsersTable({
     const quota = (u: AdminUser) =>
       u.request_limit ? (
         <span>
-          <strong className="text-amber-800">{u.request_limit}</strong>{' '}
-          <span className="text-slate-600">
+          <strong className="text-warn">{u.request_limit}</strong>{' '}
+          <span className="text-muted">
             / {t(`adminUsers.period.${u.request_limit_period ?? 'daily'}`)}
           </span>
         </span>
       ) : (
-        <span className="font-semibold text-green-800">{t('adminUsers.unlimited')}</span>
+        <span className="font-semibold text-ok">{t('adminUsers.unlimited')}</span>
       );
 
     return [
@@ -119,18 +119,18 @@ export default function UsersTable({
               />
             )}
             <div className="min-w-0 space-y-0.5">
-              <div className="font-bold text-slate-900">{u.full_name || t('adminUsers.noName')}</div>
+              <div className="font-bold text-fg">{u.full_name || t('adminUsers.noName')}</div>
               {u.phone && (
-                <div className="text-slate-700">
+                <div className="text-fg">
                   <bdi>{u.phone}</bdi>
                 </div>
               )}
               {u.email && (
-                <div className="break-all text-slate-700">
+                <div className="break-all text-fg">
                   <bdi>{u.email}</bdi>
                 </div>
               )}
-              <div className="text-xs font-medium text-slate-500">ID {u.user_id}</div>
+              <div className="text-xs font-medium text-muted">ID {u.user_id}</div>
             </div>
           </div>
         ),
@@ -153,9 +153,9 @@ export default function UsersTable({
                 {u.is_active ? t('adminUsers.active') : t('adminUsers.inactive')}
               </Badge>
               <span
-                className={`inline-flex items-center gap-1.5 text-sm font-medium ${online ? 'text-green-800' : 'text-slate-600'}`}
+                className={`inline-flex items-center gap-1.5 text-sm font-medium ${online ? 'text-ok' : 'text-muted'}`}
               >
-                <StatusDot color={online ? '#16a34a' : '#94a3b8'} />
+                <StatusDot color={online ? 'var(--color-ok-solid)' : 'var(--color-line-strong)'} />
                 {online ? t('adminUsers.online') : t('adminUsers.offline')}
               </span>
             </div>
@@ -169,15 +169,15 @@ export default function UsersTable({
         cell: (u) =>
           u.service_layer ? (
             <div>
-              <div className="font-semibold text-blue-800">
+              <div className="font-semibold text-info">
                 {t(`services.${u.service_layer}`, u.service_layer)}
               </div>
-              <div className="text-xs font-medium text-slate-500">
+              <div className="text-xs font-medium text-muted">
                 {t('adminUsers.featureShort')} {u.feature_id ?? '—'}
               </div>
             </div>
           ) : (
-            <span className="text-slate-500">—</span>
+            <span className="text-muted">—</span>
           ),
       },
       { key: 'quota', header: t('adminUsers.col.quota'), cell: quota },
@@ -203,7 +203,7 @@ export default function UsersTable({
                 to={`/admin/users/${u.user_id}/view`}
                 aria-label={t('adminUsers.actions.view')}
                 title={t('adminUsers.actions.viewHint')}
-                className={`${iconBtn} border-teal-200 bg-teal-50 text-teal-800 hover:bg-teal-100`}
+                className={`${iconBtn} border-ok-line bg-ok-soft text-ok hover:bg-ok-soft`}
               >
                 <Eye className="h-4 w-4" aria-hidden />
                 {!desktop && <span>{t('adminUsers.actions.view')}</span>}
@@ -211,7 +211,7 @@ export default function UsersTable({
               <Action
                 label={t('adminUsers.actions.edit')}
                 showLabel={!desktop}
-                tone="border-blue-200 bg-blue-50 text-blue-800 hover:bg-blue-100"
+                tone="border-info-line bg-info-soft text-info hover:bg-info-soft"
                 onClick={() => onEdit(u)}
               >
                 <Pencil className="h-4 w-4" aria-hidden />
@@ -221,8 +221,8 @@ export default function UsersTable({
                 showLabel={!desktop}
                 tone={
                   u.is_active
-                    ? 'border-amber-200 bg-amber-50 text-amber-900 hover:bg-amber-100'
-                    : 'border-green-200 bg-green-50 text-green-800 hover:bg-green-100'
+                    ? 'border-warn-line bg-warn-soft text-warn hover:bg-warn-soft'
+                    : 'border-ok-line bg-ok-soft text-ok hover:bg-ok-soft'
                 }
                 disabled={self && u.is_active}
                 title={self && u.is_active ? selfTitle : undefined}
@@ -237,7 +237,7 @@ export default function UsersTable({
               <Action
                 label={t('adminUsers.actions.forceLogout')}
                 showLabel={!desktop}
-                tone="border-red-200 bg-red-50 text-red-800 hover:bg-red-100"
+                tone="border-danger-line bg-danger-soft text-danger hover:bg-danger-soft"
                 disabled={self}
                 title={self ? selfTitle : t('adminUsers.actions.forceLogoutHint')}
                 onClick={() => onForceLogout(u)}

@@ -37,7 +37,7 @@ export default function NotificationsPage() {
           </>
         }
       />
-      <div className="overflow-hidden rounded-2xl border border-slate-100 bg-white shadow-sm">
+      <div className="overflow-hidden rounded-2xl border border-line bg-surface shadow-sm">
         <Tabs
           className="m-3"
           label={t('nav.notifications')}

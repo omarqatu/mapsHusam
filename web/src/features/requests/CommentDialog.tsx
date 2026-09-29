@@ -50,11 +50,11 @@ function CommentForm({ target }: { target: Target }) {
         </>
       }
     >
-      <p className="mb-1 text-sm text-slate-600">
+      <p className="mb-1 text-sm text-muted">
         {t('requests.rating.question', { provider: target.providerName, service: target.serviceType })}
       </p>
-      <p className="mb-3 text-xs text-slate-500">{t('requests.comment.intro')}</p>
-      <label htmlFor="comment-text" className="mb-1.5 block text-sm font-bold text-slate-700">
+      <p className="mb-3 text-xs text-muted">{t('requests.comment.intro')}</p>
+      <label htmlFor="comment-text" className="mb-1.5 block text-sm font-bold text-fg">
         {t('requests.comment.label')}
       </label>
       <TextareaInput
@@ -67,7 +67,7 @@ function CommentForm({ target }: { target: Target }) {
         onChange={(e) => setComment(e.target.value)}
       />
       {touched && empty && (
-        <p role="alert" className="mt-1.5 text-xs font-semibold text-red-600">
+        <p role="alert" className="mt-1.5 text-xs font-semibold text-danger">
           {t('requests.comment.required')}
         </p>
       )}

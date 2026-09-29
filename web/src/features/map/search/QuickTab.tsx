@@ -22,7 +22,7 @@ export default function QuickTab() {
 
   return (
     <div className="space-y-3">
-      <p className="text-sm text-slate-600">{t('search.quickHint')}</p>
+      <p className="text-sm text-muted">{t('search.quickHint')}</p>
       <SearchInput value={filter} onChange={setFilter} placeholder={t('search.filterTypes')} debounceMs={0} />
       <div className="grid grid-cols-2 gap-2">
         {items.map(({ x, label }) => (
@@ -32,7 +32,7 @@ export default function QuickTab() {
             disabled={busy}
             onClick={() => void actions.quick(x)}
             className={clsx(
-              'flex min-h-11 items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 text-start text-sm font-semibold text-slate-800',
+              'flex min-h-11 items-center gap-2 rounded-xl border border-line bg-surface px-3 py-2 text-start text-sm font-semibold text-fg',
               'hover:border-brand hover:bg-brand-light disabled:opacity-60',
             )}
           >
@@ -42,7 +42,7 @@ export default function QuickTab() {
             <span className="min-w-0 flex-1 leading-tight">{label}</span>
           </button>
         ))}
-        {items.length === 0 && <p className="col-span-2 text-sm text-slate-600">{t('common.noData')}</p>}
+        {items.length === 0 && <p className="col-span-2 text-sm text-muted">{t('common.noData')}</p>}
       </div>
     </div>
   );

@@ -22,7 +22,7 @@ export default function StarRating({ value, onChange, label, size = 'sm', classN
   if (!onChange)
     return (
       <span
-        className={clsx('inline-flex text-amber-400', className)}
+        className={clsx('inline-flex text-warn', className)}
         role="img"
         aria-label={`${label ?? ''} ${value}/5`.trim()}
       >
@@ -33,7 +33,7 @@ export default function StarRating({ value, onChange, label, size = 'sm', classN
     );
 
   return (
-    <div role="radiogroup" aria-label={label} className={clsx('inline-flex text-amber-400', className)}>
+    <div role="radiogroup" aria-label={label} className={clsx('inline-flex text-warn', className)}>
       {[1, 2, 3, 4, 5].map((n) => (
         <button
           key={n}

@@ -6,7 +6,7 @@ import { barrierDirections, fuelAvailable, type Props } from '../popup/featureMo
 
 const pill = 'inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-sm font-bold';
 /** Colour + 8% tint of the same colour behind it (all status colours are 6-digit hex). */
-const tone = (color: string) => ({ color, backgroundColor: `${color}15` });
+const tone = (color: string) => ({ color, backgroundColor: `color-mix(in srgb, ${color} 12%, transparent)` });
 
 /** Road checkpoint: inbound (`stop`) and outbound (`stop2`) status side by side. */
 export function BarrierBadges({ props }: { props: Props }) {
@@ -18,8 +18,8 @@ export function BarrierBadges({ props }: { props: Props }) {
         <LogIn className="h-3 w-3" aria-hidden /> {t('popup.inbound')}: <StatusDot color={inbound.color} className="h-2 w-2" />
         {t(`roadStatus.${inbound.key}`)}
       </span>
-      <span className={pill} style={tone(outbound?.color ?? '#6c757d')}>
-        <LogOut className="h-3 w-3" aria-hidden /> {t('popup.outbound')}: <StatusDot color={outbound?.color ?? '#6c757d'} className="h-2 w-2" />
+      <span className={pill} style={tone(outbound?.color ?? 'var(--color-muted)')}>
+        <LogOut className="h-3 w-3" aria-hidden /> {t('popup.outbound')}: <StatusDot color={outbound?.color ?? 'var(--color-muted)'} className="h-2 w-2" />
         {outbound ? t(`roadStatus.${outbound.key}`) : t('popup.notSet')}
       </span>
     </div>
@@ -34,7 +34,7 @@ export function FuelBadges({ props }: { props: Props }) {
       {FUEL_FIELDS.map((f) => {
         const ok = fuelAvailable(props, f);
         return (
-          <li key={f} className={pill} style={tone(ok ? '#28a745' : '#dc3545')}>
+          <li key={f} className={pill} style={tone(ok ? 'var(--color-ok)' : 'var(--color-danger)')}>
             {ok ? <Check className="h-3 w-3" aria-hidden /> : <X className="h-3 w-3" aria-hidden />}
             {t(`popup.fuel.${f}`)}
             <span className="sr-only">{ok ? t('popup.fuel.available') : t('popup.fuel.unavailable')}</span>

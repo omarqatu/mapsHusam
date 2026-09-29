@@ -22,10 +22,10 @@ export default function TextareaInput({
       ref={ref}
       aria-invalid={hasError || undefined}
       className={clsx(
-        'w-full resize-none rounded-lg border bg-white text-slate-800 placeholder:text-slate-400',
+        'w-full resize-none rounded-lg border bg-surface text-fg placeholder:text-muted',
         'focus:border-brand focus:outline-2 focus:outline-brand/30',
-        'disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-500',
-        hasError ? 'border-red-400' : 'border-slate-300',
+        'disabled:cursor-not-allowed disabled:bg-subtle disabled:text-muted',
+        hasError ? 'border-danger-solid' : 'border-line-strong',
         sizes[inputSize],
         className,
       )}

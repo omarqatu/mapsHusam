@@ -268,7 +268,7 @@ export default function StatusPanel({ kind, rows, stamp, onReload }: Props) {
         key: 'id',
         header: 'ID',
         className: 'w-20',
-        cell: (r) => <span className="font-mono text-slate-600">{r.id}</span>,
+        cell: (r) => <span className="font-mono text-muted">{r.id}</span>,
       },
       {
         key: 'name',
@@ -283,7 +283,7 @@ export default function StatusPanel({ kind, rows, stamp, onReload }: Props) {
                 onChange={(on) => toggle(r.id, on)}
               />
             )}
-            <span className="font-semibold text-slate-900">{r.name || '—'}</span>
+            <span className="font-semibold text-fg">{r.name || '—'}</span>
           </div>
         ),
       },
@@ -365,7 +365,7 @@ export default function StatusPanel({ kind, rows, stamp, onReload }: Props) {
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h2 className="text-lg font-bold text-slate-800">
+        <h2 className="text-lg font-bold text-fg">
           {t(kind === 'road' ? 'adminWidgets.tab.road' : 'adminWidgets.tab.fuelStations')}
         </h2>
         <div className="flex flex-wrap items-center gap-2">
@@ -384,20 +384,20 @@ export default function StatusPanel({ kind, rows, stamp, onReload }: Props) {
           <LastUpdated at={stamp} />
         </div>
       </div>
-      <p className="text-sm text-slate-600">
+      <p className="text-sm text-muted">
         {kind === 'road' ? t('adminWidgets.status.roadHint') : t('adminWidgets.status.fuelHint')}
       </p>
 
       <section
         aria-label={t('adminWidgets.status.bulkTitle')}
-        className="space-y-3 rounded-xl border border-slate-200 bg-slate-50 p-4"
+        className="space-y-3 rounded-xl border border-line bg-subtle p-4"
       >
         <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
-          <strong className="inline-flex items-center gap-2 text-slate-800">
+          <strong className="inline-flex items-center gap-2 text-fg">
             <Layers className="h-4 w-4" aria-hidden />
             {t('adminWidgets.status.bulkTitle')}
           </strong>
-          <span className="text-sm font-semibold text-slate-700">
+          <span className="text-sm font-semibold text-fg">
             {t('adminWidgets.status.selectedOf', { count: selectedCount, total: ordered.length })}
           </span>
           <Checkbox
@@ -409,7 +409,7 @@ export default function StatusPanel({ kind, rows, stamp, onReload }: Props) {
         </div>
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
           {fields.map((f) => (
-            <label key={f} className="flex min-w-0 flex-col gap-1.5 text-sm font-semibold text-slate-700">
+            <label key={f} className="flex min-w-0 flex-col gap-1.5 text-sm font-semibold text-fg">
               {fieldLabel(f)}
               <SelectInput
                 inputSize="sm"
@@ -431,7 +431,7 @@ export default function StatusPanel({ kind, rows, stamp, onReload }: Props) {
             </Button>
           </div>
         </div>
-        <p className="text-sm text-slate-600">{t('adminWidgets.status.bulkHint')}</p>
+        <p className="text-sm text-muted">{t('adminWidgets.status.bulkHint')}</p>
       </section>
 
       <DataTable
@@ -440,11 +440,11 @@ export default function StatusPanel({ kind, rows, stamp, onReload }: Props) {
         rows={ordered}
         rowKey={(r) => r.id}
         emptyTitle={t(kind === 'road' ? 'adminWidgets.status.noRoad' : 'adminWidgets.status.noFuel')}
-        rowClassName={(r) => (edits[r.id] ? 'bg-amber-50' : undefined)}
+        rowClassName={(r) => (edits[r.id] ? 'bg-warn-soft' : undefined)}
         onReorder={(from, to) => setOrder(moveById(ids, Number(from), Number(to)))}
       />
 
-      <div className="flex flex-wrap gap-2 border-t border-slate-100 pt-4">
+      <div className="flex flex-wrap gap-2 border-t border-line pt-4">
         <Button
           startIcon={<SaveAll className="h-4 w-4" />}
           loading={busy === 'all'}

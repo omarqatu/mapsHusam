@@ -22,7 +22,7 @@ const hostOf = (url: string) => {
 };
 
 const tile =
-  'relative block h-24 w-32 shrink-0 snap-start overflow-hidden rounded-lg border border-black/10 bg-slate-100 focus-visible:outline-2 focus-visible:outline-brand';
+  'relative block h-24 w-32 shrink-0 snap-start overflow-hidden rounded-lg border border-black/10 bg-subtle focus-visible:outline-2 focus-visible:outline-brand';
 const playBadge = (
   <span className="absolute inset-0 flex items-center justify-center bg-black/25">
     <span className="rounded-full bg-black/60 p-2 text-white">
@@ -85,7 +85,7 @@ function Viewer({ m }: { m: Visual }) {
         href={ytWatch(m.id)}
         target="_blank"
         rel="noopener noreferrer"
-        className="inline-flex items-center gap-1.5 text-sm font-semibold text-brand hover:underline"
+        className="inline-flex items-center gap-1.5 text-sm font-semibold text-brand-fg hover:underline"
       >
         <ExternalLink className="h-4 w-4" aria-hidden /> {t('media.openOnYoutube')}
       </a>
@@ -128,7 +128,7 @@ export default function MediaGallery({ items }: { items: MediaItem[] }) {
   if (!items.length) return null;
   const current = open !== null ? visual[open] : undefined;
   const linkClass =
-    'flex items-center gap-2 rounded-lg bg-slate-50 px-3 py-2 text-sm font-semibold text-brand hover:bg-slate-100';
+    'flex items-center gap-2 rounded-lg bg-subtle px-3 py-2 text-sm font-semibold text-brand-fg hover:bg-subtle';
 
   return (
     <div className="space-y-2">
@@ -148,7 +148,7 @@ export default function MediaGallery({ items }: { items: MediaItem[] }) {
         <a href={brokenUrl.url} target="_blank" rel="noopener noreferrer" className={linkClass}>
           <ExternalLink className="h-4 w-4 shrink-0" aria-hidden />
           <span className="flex-1">{t('media.openImages')}</span>
-          <span className="text-xs font-normal text-slate-500" dir="ltr">
+          <span className="text-xs font-normal text-muted" dir="ltr">
             {hostOf(brokenUrl.url)}
           </span>
         </a>
@@ -157,7 +157,7 @@ export default function MediaGallery({ items }: { items: MediaItem[] }) {
         <a key={m.url} href={m.url} target="_blank" rel="noopener noreferrer" className={linkClass}>
           <ExternalLink className="h-4 w-4 shrink-0" aria-hidden />
           <span className="flex-1">{m.label}</span>
-          <span className="text-xs font-normal text-slate-500" dir="ltr">
+          <span className="text-xs font-normal text-muted" dir="ltr">
             {hostOf(m.url)}
           </span>
         </a>
@@ -173,18 +173,18 @@ export default function MediaGallery({ items }: { items: MediaItem[] }) {
                   type="button"
                   onClick={() => step(-1)}
                   aria-label={t('media.prev')}
-                  className="rounded-lg border border-slate-300 p-2 hover:bg-slate-50"
+                  className="rounded-lg border border-line-strong p-2 hover:bg-subtle"
                 >
                   <ChevronRight className="h-5 w-5 rtl:rotate-0 ltr:rotate-180" aria-hidden />
                 </button>
-                <span className="text-sm text-slate-600">
+                <span className="text-sm text-muted">
                   {(open ?? 0) + 1} / {visual.length}
                 </span>
                 <button
                   type="button"
                   onClick={() => step(1)}
                   aria-label={t('media.next')}
-                  className="rounded-lg border border-slate-300 p-2 hover:bg-slate-50"
+                  className="rounded-lg border border-line-strong p-2 hover:bg-subtle"
                 >
                   <ChevronRight className="h-5 w-5 rtl:rotate-180" aria-hidden />
                 </button>

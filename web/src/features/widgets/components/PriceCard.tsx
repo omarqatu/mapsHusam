@@ -12,28 +12,28 @@ import GroupCard from './GroupCard';
 /** Rows shown before "show all"; cards with more rows than this also get a search box. */
 export const INITIAL_ROWS = 6;
 
-const gemTone = 'bg-amber-100 text-amber-800';
+const gemTone = 'bg-warn-soft text-warn';
 
 const CARD: Record<PriceCardId, { icon: ReactNode; chip: string; searchKey: string }> = {
   currency: {
     icon: <Coins className="h-5 w-5" aria-hidden />,
-    chip: 'bg-emerald-100 text-emerald-800',
+    chip: 'bg-ok-soft text-ok',
     searchKey: 'widgets.search.name',
   },
   gold: { icon: <Gem className="h-5 w-5" aria-hidden />, chip: gemTone, searchKey: 'widgets.search.name' },
   fuel: {
     icon: <Fuel className="h-5 w-5" aria-hidden />,
-    chip: 'bg-orange-100 text-orange-800',
+    chip: 'bg-warn-soft text-warn',
     searchKey: 'widgets.search.name',
   },
   'transport-inter': {
     icon: <Bus className="h-5 w-5" aria-hidden />,
-    chip: 'bg-indigo-100 text-indigo-800',
+    chip: 'bg-info-soft text-info',
     searchKey: 'widgets.search.route',
   },
   'transport-intra': {
     icon: <Bus className="h-5 w-5" aria-hidden />,
-    chip: 'bg-violet-100 text-violet-800',
+    chip: 'bg-brand-light text-brand-fg',
     searchKey: 'widgets.search.route',
   },
 };
@@ -63,7 +63,7 @@ function RowMark({ card, item, index }: { card: PriceCardId; item: WidgetItem; i
   if (card === 'gold') {
     // Legacy alternated medals; the first three rows (24 / 21 / 18 carat) get a stronger tint.
     return (
-      <span className={`${cls} ${index < 3 ? 'bg-amber-200 text-amber-900' : gemTone}`} aria-hidden>
+      <span className={`${cls} ${index < 3 ? 'bg-warn-soft text-warn' : gemTone}`} aria-hidden>
         {icon}
       </span>
     );
@@ -126,29 +126,29 @@ export default function PriceCard({
             <SearchInput value={query} onChange={setQuery} debounceMs={150} placeholder={t(searchKey)} />
           )}
           {shown.length === 0 ? (
-            <p className="py-6 text-center text-base text-slate-600">{t('widgets.noMatch')}</p>
+            <p className="py-6 text-center text-base text-muted">{t('widgets.noMatch')}</p>
           ) : (
-            <ul className="divide-y divide-slate-100">
+            <ul className="divide-y divide-line">
               {visible.map((item, i) => (
                 <li key={`${item.id ?? ''}-${i}`} className="flex items-center gap-3 py-2.5">
                   <RowMark card={card} item={item} index={i} />
                   <div className="min-w-0 flex-1">
-                    <div className="break-words text-base font-semibold text-slate-800" dir="auto">
+                    <div className="break-words text-base font-semibold text-fg" dir="auto">
                       {item.label || item.id}
                     </div>
                     {(card === 'currency' ? item.code : item.unit) && (
-                      <div className="text-sm text-slate-600" dir="auto">
+                      <div className="text-sm text-muted" dir="auto">
                         {card === 'currency' ? item.code : item.unit}
                       </div>
                     )}
                   </div>
                   <div
-                    className="max-w-[45%] break-words text-end text-lg font-black tabular-nums text-slate-900"
+                    className="max-w-[45%] break-words text-end text-lg font-black tabular-nums text-fg"
                     dir="auto"
                   >
                     {displayValue(item.value) || '—'}
                     {card === 'currency' && item.unit && (
-                      <span className="ms-1 text-sm font-semibold text-slate-600">{item.unit}</span>
+                      <span className="ms-1 text-sm font-semibold text-muted">{item.unit}</span>
                     )}
                   </div>
                 </li>
@@ -160,7 +160,7 @@ export default function PriceCard({
               type="button"
               onClick={() => setExpanded((v) => !v)}
               aria-expanded={expanded}
-              className="w-full rounded-lg border border-slate-200 py-2 text-sm font-semibold text-brand hover:bg-slate-50"
+              className="w-full rounded-lg border border-line py-2 text-sm font-semibold text-brand-fg hover:bg-subtle"
             >
               {expanded ? t('common.showLess') : t('common.showAll', { count: shown.length })}
             </button>

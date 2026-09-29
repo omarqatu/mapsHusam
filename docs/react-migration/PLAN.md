@@ -763,6 +763,11 @@ Split `index.html` into features, in this order:
      ≈103 kB gzipped) — the login page no longer downloads OpenLayers, the admin pages or the search code.
    - Decision (login wall): the map still needs a login, as in legacy; a visitor on `/` lands on `/welcome` (log in /
      register / legal texts), not on a bare login form. `/search` and `/widgets/*` stay public.
+   - **Design system** (user, 2026-09-30: "the style is not that good; make Husam's work organised and maintainable"): one
+     token file (`index.css`): brand indigo darkened for AA contrast, semantic surfaces / lines / text / status / elevation,
+     Cairo font (self-hosted), a real dark theme (header toggle, saved, no flash). All ~480 raw `slate-*`/`red-*`… classes were
+     replaced by tokens with a codemod; ESLint now forbids raw palette classes; hex colours in components → tokens.
+     Brand `#667eea` → `#4f46e5` (same family; white text on it now passes AA). See HOUSE-STYLE.md "Design system".
    - Live tests run file by file (`fileParallelism` off when `VITE_LIVE_API` is set): they share the seeded accounts.
    - Media sections show only their own kind (photos section = pictures, videos section = videos); everything is still in the
      details card. Cards use the shared `MediaGallery` (enlarge on click, https-only URLs via `safeMediaUrl`) instead of the

@@ -457,7 +457,7 @@ export default function EditPanel({ onClose }: { onClose: () => void }) {
         <div className={clsx(activeStep && 'max-sm:hidden')}>
           <Tabs tabs={tabs} value={kind} onChange={changeKind} label={t('edit.tabsLabel')} idPrefix="edit" />
           <div className="mt-4">
-            <label htmlFor="edit-layer" className="mb-1.5 block text-sm font-semibold text-slate-700">
+            <label htmlFor="edit-layer" className="mb-1.5 block text-sm font-semibold text-fg">
               {t('edit.layer')}
             </label>
             {KIND_TARGETS[kind].length > 1 ? (
@@ -474,7 +474,7 @@ export default function EditPanel({ onClose }: { onClose: () => void }) {
             ) : (
               <p
                 id="edit-layer"
-                className="rounded-lg bg-slate-50 px-3 py-2.5 text-base font-semibold text-slate-800"
+                className="rounded-lg bg-subtle px-3 py-2.5 text-base font-semibold text-fg"
               >
                 {targetLabel(selected)}
               </p>
@@ -482,7 +482,7 @@ export default function EditPanel({ onClose }: { onClose: () => void }) {
           </div>
 
           {(hidden || tooFar) && (
-            <div className="mt-3 rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">
+            <div className="mt-3 rounded-lg border border-warn-line bg-warn-soft p-3 text-sm text-warn">
               {hidden ? t('edit.layerHidden') : t('edit.zoomIn')}
               {hidden && (
                 <Button size="sm" variant="secondary" className="mt-2 w-full" onClick={showLayer}>
@@ -515,7 +515,7 @@ export default function EditPanel({ onClose }: { onClose: () => void }) {
               size="sm"
               variant={s.mode === 'delete' ? 'danger' : 'secondary'}
               aria-pressed={s.mode === 'delete'}
-              className={s.mode === 'delete' ? undefined : 'text-red-700'}
+              className={s.mode === 'delete' ? undefined : 'text-danger'}
               startIcon={<Trash2 className="h-4 w-4" />}
               onClick={() => start('delete')}
             >
@@ -524,7 +524,7 @@ export default function EditPanel({ onClose }: { onClose: () => void }) {
           </div>
         </div>
 
-        <p role="status" className={clsx('mt-4 text-sm text-slate-700', activeStep && 'max-sm:mt-0')}>
+        <p role="status" className={clsx('mt-4 text-sm text-fg', activeStep && 'max-sm:mt-0')}>
           {t(hintKey)}
         </p>
 

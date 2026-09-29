@@ -55,15 +55,15 @@ function RatingForm({ target }: { target: Target }) {
       }
     >
       <div className="space-y-4">
-        <p className="flex items-start gap-2 rounded-lg border border-blue-200 bg-blue-50 p-3 text-xs leading-relaxed text-blue-800">
+        <p className="flex items-start gap-2 rounded-lg border border-info-line bg-info-soft p-3 text-xs leading-relaxed text-info">
           <Info className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />
           {t('requests.rating.info')}
         </p>
-        <p className="text-sm text-slate-600">
+        <p className="text-sm text-muted">
           {t('requests.rating.question', { provider: target.providerName, service: target.serviceType })}
         </p>
         <div>
-          <p className="mb-1 text-sm font-bold text-slate-700">{t('requests.rating.stars')}</p>
+          <p className="mb-1 text-sm font-bold text-fg">{t('requests.rating.stars')}</p>
           <StarRating
             size="lg"
             value={stars}
@@ -73,15 +73,15 @@ function RatingForm({ target }: { target: Target }) {
               setMissing(false);
             }}
           />
-          <p className={missing ? 'mt-1 text-sm font-semibold text-red-600' : 'mt-1 text-sm text-slate-500'} role={missing ? 'alert' : undefined}>
+          <p className={missing ? 'mt-1 text-sm font-semibold text-danger' : 'mt-1 text-sm text-muted'} role={missing ? 'alert' : undefined}>
             {missing ? t('requests.rating.pickStars') : stars ? t(`requests.rating.labels.${stars}`) : t('requests.rating.pick')}
           </p>
         </div>
         <div>
-          <label htmlFor="rating-comment" className="text-sm font-bold text-slate-700">
+          <label htmlFor="rating-comment" className="text-sm font-bold text-fg">
             {t('requests.rating.commentLabel')}
           </label>
-          <p className="mb-1.5 text-xs text-slate-500">{t('requests.rating.commentHint')}</p>
+          <p className="mb-1.5 text-xs text-muted">{t('requests.rating.commentHint')}</p>
           <TextareaInput
             id="rating-comment"
             rows={3}

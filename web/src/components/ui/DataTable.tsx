@@ -91,7 +91,7 @@ export default function DataTable<T>({
     setPicked(sort?.key === key ? (sort.dir === 'asc' ? { key, dir: 'desc' } : null) : { key, dir: 'asc' });
 
   const pager = pageSize && pages > 1 && (
-    <div className="flex items-center justify-between gap-2 border-t border-slate-100 p-3 text-sm text-slate-600">
+    <div className="flex items-center justify-between gap-2 border-t border-line p-3 text-sm text-muted">
       <Button size="sm" variant="secondary" disabled={current <= 1} onClick={() => setPage(current - 1)}>
         {t('common.previous')}
       </Button>
@@ -115,22 +115,22 @@ export default function DataTable<T>({
               key={rowKey(row)}
               onClick={onRowClick && (() => onRowClick(row))}
               className={clsx(
-                'rounded-2xl border border-slate-100 bg-white p-4 shadow-sm',
+                'rounded-2xl border border-line bg-surface p-4 shadow-sm',
                 onRowClick && 'cursor-pointer',
                 rowClassName?.(row),
               )}
             >
-              {titleCol && <div className="mb-3 font-semibold text-slate-800">{titleCol.cell(row)}</div>}
+              {titleCol && <div className="mb-3 font-semibold text-fg">{titleCol.cell(row)}</div>}
               <dl className="grid grid-cols-2 gap-x-4 gap-y-3 text-sm">
                 {bodyCols.map((c) => (
                   <div key={c.key} className={clsx('min-w-0', c.card === 'wide' && 'col-span-2')}>
-                    <dt className="text-xs font-semibold text-slate-500">{c.header}</dt>
-                    <dd className="mt-0.5 break-words text-slate-800">{c.cell(row)}</dd>
+                    <dt className="text-xs font-semibold text-muted">{c.header}</dt>
+                    <dd className="mt-0.5 break-words text-fg">{c.cell(row)}</dd>
                   </div>
                 ))}
               </dl>
               {footerCol && (
-                <div className="mt-3 flex flex-wrap items-center gap-2 border-t border-slate-100 pt-3">
+                <div className="mt-3 flex flex-wrap items-center gap-2 border-t border-line pt-3">
                   {footerCol.cell(row)}
                 </div>
               )}
@@ -138,17 +138,17 @@ export default function DataTable<T>({
           ))}
         </ul>
         {pager && (
-          <div className="mt-3 overflow-hidden rounded-2xl border border-slate-100 bg-white">{pager}</div>
+          <div className="mt-3 overflow-hidden rounded-2xl border border-line bg-surface">{pager}</div>
         )}
       </div>
     );
   }
 
   return (
-    <div className="overflow-hidden rounded-2xl border border-slate-100 bg-white shadow-sm">
+    <div className="overflow-hidden rounded-2xl border border-line bg-surface shadow-sm">
       <div className="overflow-x-auto">
         <table aria-label={label} className="w-full text-start text-sm">
-          <thead className="bg-slate-50 text-slate-600">
+          <thead className="bg-subtle text-muted">
             <tr>
               {onReorder && <th scope="col" className="w-8 px-2 py-3" aria-label={t('common.reorder')} />}
               {columns.map((c) => {
@@ -164,7 +164,7 @@ export default function DataTable<T>({
                       <button
                         type="button"
                         onClick={() => toggleSort(c.key)}
-                        className="inline-flex items-center gap-1 hover:text-slate-900"
+                        className="inline-flex items-center gap-1 hover:text-fg"
                       >
                         {c.header}
                         {active ? (
@@ -185,7 +185,7 @@ export default function DataTable<T>({
               })}
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-100">
+          <tbody className="divide-y divide-line">
             {visible.map((row) => {
               const key = rowKey(row);
               return (
@@ -213,7 +213,7 @@ export default function DataTable<T>({
                       : undefined
                   }
                   className={clsx(
-                    onRowClick && 'cursor-pointer hover:bg-slate-50',
+                    onRowClick && 'cursor-pointer hover:bg-subtle',
                     onReorder && overKey === key && 'bg-brand-light',
                     rowClassName?.(row),
                   )}
@@ -231,7 +231,7 @@ export default function DataTable<T>({
                           dragKey.current = null;
                           setOverKey(null);
                         }}
-                        className="inline-flex cursor-grab text-slate-500 active:cursor-grabbing"
+                        className="inline-flex cursor-grab text-muted active:cursor-grabbing"
                         aria-hidden
                       >
                         <GripVertical className="h-5 w-5" />

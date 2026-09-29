@@ -8,7 +8,7 @@ import { formatAgo, relativeUpdate } from './status';
 export default function UpdatedAgo({
   at,
   now,
-  className = 'text-sm text-slate-600',
+  className = 'text-sm text-muted',
 }: {
   at: string | null | undefined;
   now: number;
@@ -27,7 +27,7 @@ export default function UpdatedAgo({
   return (
     <span className={className}>
       {t('extras.status.updated')}{' '}
-      <span className={rel.kind === 'now' ? 'font-bold text-green-700' : undefined}>{label}</span>
+      <span className={rel.kind === 'now' ? 'font-bold text-ok' : undefined}>{label}</span>
     </span>
   );
 }

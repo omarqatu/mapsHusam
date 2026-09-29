@@ -12,7 +12,7 @@ export default function LastUpdated({ at }: { at: string | null | undefined }) {
       ? formatDateTime(d, i18n.language)
       : t('adminWidgets.unknownDate');
   return (
-    <span className="inline-flex items-center gap-1.5 rounded-full bg-slate-100 px-3 py-1 text-sm font-semibold text-slate-700">
+    <span className="inline-flex items-center gap-1.5 rounded-full bg-subtle px-3 py-1 text-sm font-semibold text-fg">
       <Clock className="h-4 w-4" aria-hidden />
       {t('adminWidgets.lastUpdate')}: {text}
     </span>

@@ -23,7 +23,7 @@ export default function StatusCard({
       id={id}
       title={title}
       icon={road ? <TrafficCone className="h-5 w-5" aria-hidden /> : <Fuel className="h-5 w-5" aria-hidden />}
-      chip={road ? 'bg-orange-100 text-orange-800' : 'bg-sky-100 text-sky-800'}
+      chip={road ? 'bg-warn-soft text-warn' : 'bg-info-soft text-info'}
       subtitle={<UpdatedAgo at={updated.data} now={updated.dataUpdatedAt} />}
       className={className}
     >

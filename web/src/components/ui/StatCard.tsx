@@ -5,9 +5,9 @@ interface StatCardProps {
   label: string;
   value: string | number;
   icon: ReactNode;
-  /** Tailwind bg-color-500 class for the icon chip, e.g. 'bg-sky-500'. */
+  /** Tailwind bg-color-500 class for the icon chip, e.g. 'bg-info-solid'. */
   chipClassName: string;
-  /** Tailwind bg-color-50/text-color-700 classes for the card body, e.g. 'bg-sky-50 text-sky-700'. */
+  /** Tailwind bg-color-50/text-color-700 classes for the card body, e.g. 'bg-info-soft text-info'. */
   tileClassName: string;
   className?: string;
 }

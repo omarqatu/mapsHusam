@@ -65,14 +65,14 @@ export default function AdminWidgetsPage() {
         actions={
           <Link
             to="/admin/dashboard"
-            className="inline-flex h-11 items-center gap-2 rounded-lg border border-slate-300 bg-white px-4 font-semibold text-slate-700 hover:bg-slate-50"
+            className="inline-flex h-11 items-center gap-2 rounded-lg border border-line-strong bg-surface px-4 font-semibold text-fg hover:bg-subtle"
           >
             <LayoutDashboard className="h-4 w-4" aria-hidden />
             {t('nav.adminDashboard')}
           </Link>
         }
       />
-      <div className="rounded-2xl border border-slate-100 bg-white shadow-sm">
+      <div className="rounded-2xl border border-line bg-surface shadow-sm">
         <Tabs
           scrollable
           className="m-3"

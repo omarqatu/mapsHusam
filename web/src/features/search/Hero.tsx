@@ -20,7 +20,7 @@ export default function Hero() {
       {tiles.length > 0 && (
         <ul className="mt-4 flex flex-wrap gap-3" aria-label={t('extras.tabs.stats')}>
           {tiles.map(({ icon: Icon, value, label }) => (
-            <li key={label} className="flex min-w-36 items-center gap-3 rounded-xl bg-white/15 px-4 py-2.5">
+            <li key={label} className="flex min-w-36 items-center gap-3 rounded-xl bg-surface/15 px-4 py-2.5">
               <Icon className="h-6 w-6 text-white/90" aria-hidden />
               <span>
                 <b className="block text-2xl leading-none">{formatNumber(value, i18n.language)}</b>

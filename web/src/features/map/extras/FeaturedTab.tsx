@@ -43,7 +43,7 @@ function Section({ title, icon: sectionIcon, badge, mode, entries, failed, grid 
       ) : entries === null ? (
         <CenteredSpinner minHeight="5rem" size="sm" />
       ) : shown.length === 0 ? (
-        <p className="text-sm text-slate-600">{t('extras.featured.empty')}</p>
+        <p className="text-sm text-muted">{t('extras.featured.empty')}</p>
       ) : (
         <div
           className={grid ? 'relative flex snap-x gap-3 overflow-x-auto pb-2' : 'space-y-2'}
@@ -148,7 +148,7 @@ export default function FeaturedTab() {
   const { t } = useTranslation();
   return (
     <div className="space-y-3">
-      <p className="text-sm text-slate-600">{t('extras.featured.intro')}</p>
+      <p className="text-sm text-muted">{t('extras.featured.intro')}</p>
       <SectionCard title={t('extras.featured.nearMe')} icon={<LocateFixed className={icon} aria-hidden />}>
         <NearMeSection />
       </SectionCard>

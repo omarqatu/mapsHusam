@@ -23,7 +23,7 @@ export default function CategoryBrowser({ group, onGroup, onPick }: Props) {
 
   return (
     <section aria-labelledby="categories-title" className="space-y-3">
-      <h2 id="categories-title" className="text-lg font-bold text-slate-800">
+      <h2 id="categories-title" className="text-lg font-bold text-fg">
         {t('searchPage.chooseCategory')}
       </h2>
 
@@ -45,7 +45,7 @@ export default function CategoryBrowser({ group, onGroup, onPick }: Props) {
                 'inline-flex h-10 shrink-0 items-center gap-2 rounded-full border px-4 text-sm font-semibold transition-colors',
                 on
                   ? 'border-brand bg-brand text-white'
-                  : 'border-slate-300 bg-white text-slate-700 hover:border-brand hover:bg-brand-light',
+                  : 'border-line-strong bg-surface text-fg hover:border-brand hover:bg-brand-light',
               )}
             >
               <Icon className="h-4 w-4" aria-hidden />
@@ -65,7 +65,7 @@ export default function CategoryBrowser({ group, onGroup, onPick }: Props) {
       </div>
 
       {targets.length === 0 ? (
-        <p className="rounded-xl bg-white p-4 text-sm text-slate-600">{t('searchPage.noCategories')}</p>
+        <p className="rounded-xl bg-surface p-4 text-sm text-muted">{t('searchPage.noCategories')}</p>
       ) : (
         <ul className="grid grid-cols-2 gap-2.5 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
           {targets.map((x) => (
@@ -73,7 +73,7 @@ export default function CategoryBrowser({ group, onGroup, onPick }: Props) {
               <button
                 type="button"
                 onClick={() => onPick(x)}
-                className="flex h-full w-full flex-col items-center justify-center gap-1.5 rounded-xl border border-slate-200 bg-white p-3 text-center text-sm font-semibold text-slate-800 shadow-sm transition hover:-translate-y-0.5 hover:border-brand hover:shadow-md"
+                className="flex h-full w-full flex-col items-center justify-center gap-1.5 rounded-xl border border-line bg-surface p-3 text-center text-sm font-semibold text-fg shadow-sm transition hover:-translate-y-0.5 hover:border-brand hover:shadow-md"
               >
                 <span aria-hidden className="text-3xl leading-none">
                   {targetIcon(x)}

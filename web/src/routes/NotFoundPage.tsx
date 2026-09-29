@@ -9,7 +9,7 @@ export default function NotFoundPage() {
       title={t('errors.notFoundTitle')}
       description={t('errors.notFoundBody')}
       action={
-        <Link to="/" className="mt-2 font-semibold text-brand hover:underline">
+        <Link to="/" className="mt-2 font-semibold text-brand-fg hover:underline">
           {t('common.back')}
         </Link>
       }

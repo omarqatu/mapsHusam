@@ -46,7 +46,7 @@ export default function ReasonDialog({ open, loading, onSubmit, onClose }: Props
         </>
       }
     >
-      <label htmlFor="cancel-reason" className="mb-1.5 block text-sm font-semibold text-slate-700">
+      <label htmlFor="cancel-reason" className="mb-1.5 block text-sm font-semibold text-fg">
         {t('requests.cancelDialog.label')}
       </label>
       <TextareaInput
@@ -60,7 +60,7 @@ export default function ReasonDialog({ open, loading, onSubmit, onClose }: Props
         onChange={(e) => setReason(e.target.value)}
       />
       {touched && empty && (
-        <p role="alert" className="mt-1.5 text-xs font-semibold text-red-600">
+        <p role="alert" className="mt-1.5 text-xs font-semibold text-danger">
           {t('requests.cancelDialog.required')}
         </p>
       )}

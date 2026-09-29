@@ -7,7 +7,7 @@ export function Spinner({ size = 'md', className }: { size?: keyof typeof sizes;
     <div
       role="status"
       aria-live="polite"
-      className={clsx('animate-spin rounded-full border-slate-200 border-t-brand', sizes[size], className)}
+      className={clsx('animate-spin rounded-full border-line border-t-brand', sizes[size], className)}
     />
   );
 }

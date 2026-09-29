@@ -33,14 +33,14 @@ import { useWeather } from '../hooks/useWidgets';
 import GroupCard from './GroupCard';
 
 const ICON: Record<WeatherKind, { Icon: typeof Sun; color: string }> = {
-  clear: { Icon: Sun, color: 'text-amber-500' },
-  partly: { Icon: CloudSun, color: 'text-amber-500' },
-  cloudy: { Icon: Cloud, color: 'text-slate-500' },
-  fog: { Icon: CloudFog, color: 'text-slate-500' },
-  rain: { Icon: CloudDrizzle, color: 'text-sky-600' },
-  showers: { Icon: CloudRain, color: 'text-sky-700' },
-  snow: { Icon: CloudSnow, color: 'text-cyan-600' },
-  storm: { Icon: CloudLightning, color: 'text-violet-600' },
+  clear: { Icon: Sun, color: 'text-warn' },
+  partly: { Icon: CloudSun, color: 'text-warn' },
+  cloudy: { Icon: Cloud, color: 'text-muted' },
+  fog: { Icon: CloudFog, color: 'text-muted' },
+  rain: { Icon: CloudDrizzle, color: 'text-info' },
+  showers: { Icon: CloudRain, color: 'text-info' },
+  snow: { Icon: CloudSnow, color: 'text-info' },
+  storm: { Icon: CloudLightning, color: 'text-brand-fg' },
 };
 
 export function WeatherIcon({ kind, className = 'h-7 w-7' }: { kind: WeatherKind; className?: string }) {
@@ -64,15 +64,15 @@ function CityTile({ city }: { city: CityWeather }) {
   const temp = city.current?.temp ?? (today ? String(today.max) : undefined);
 
   return (
-    <li className="rounded-xl border border-slate-200 bg-slate-50/60 p-3">
+    <li className="rounded-xl border border-line bg-subtle/60 p-3">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
-          <div className="flex items-center gap-1.5 text-base font-bold text-slate-800" dir="auto">
-            <MapPin className="h-4 w-4 shrink-0 text-brand" aria-hidden />
+          <div className="flex items-center gap-1.5 text-base font-bold text-fg" dir="auto">
+            <MapPin className="h-4 w-4 shrink-0 text-brand-fg" aria-hidden />
             {name}
           </div>
           {condition && (
-            <div className="mt-0.5 text-sm text-slate-700" dir="auto">
+            <div className="mt-0.5 text-sm text-fg" dir="auto">
               {condition}
             </div>
           )}
@@ -80,7 +80,7 @@ function CityTile({ city }: { city: CityWeather }) {
         {temp && (
           <div className="flex shrink-0 items-center gap-2">
             {today && <WeatherIcon kind={today.kind} className="h-8 w-8" />}
-            <span className="text-3xl font-black tabular-nums text-slate-900" dir="ltr">
+            <span className="text-3xl font-black tabular-nums text-fg" dir="ltr">
               {temp}°
             </span>
           </div>
@@ -88,16 +88,16 @@ function CityTile({ city }: { city: CityWeather }) {
       </div>
 
       {(city.current?.humidity || city.current?.wind) && (
-        <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-sm text-slate-700">
+        <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-sm text-fg">
           {city.current.humidity && (
             <span className="inline-flex items-center gap-1.5">
-              <Droplets className="h-4 w-4 text-sky-600" aria-hidden />
+              <Droplets className="h-4 w-4 text-info" aria-hidden />
               {t('widgets.weather.humidity')} <b dir="ltr">{city.current.humidity}%</b>
             </span>
           )}
           {city.current.wind && (
             <span className="inline-flex items-center gap-1.5">
-              <Wind className="h-4 w-4 text-slate-600" aria-hidden />
+              <Wind className="h-4 w-4 text-muted" aria-hidden />
               {t('widgets.weather.wind')} <b dir="ltr">{city.current.wind}</b> {t('widgets.weather.windUnit')}
             </span>
           )}
@@ -107,19 +107,19 @@ function CityTile({ city }: { city: CityWeather }) {
       {city.days.length > 0 && (
         <ul className="mt-3 grid grid-cols-3 gap-2">
           {city.days.map((day, i) => (
-            <li key={day.date} className="rounded-lg bg-white px-1 py-2 text-center ring-1 ring-slate-200">
-              <div className="truncate px-1 text-sm font-semibold text-slate-700">
+            <li key={day.date} className="rounded-lg bg-surface px-1 py-2 text-center ring-1 ring-line">
+              <div className="truncate px-1 text-sm font-semibold text-fg">
                 {dayLabel(day, i, i18n.language, t)}
               </div>
               <div className="my-1 flex justify-center">
                 <WeatherIcon kind={day.kind} />
               </div>
-              <div className="text-base font-bold tabular-nums text-slate-900" dir="ltr">
+              <div className="text-base font-bold tabular-nums text-fg" dir="ltr">
                 <span title={t('widgets.weather.high')}>{day.max}°</span>
-                <span className="mx-1 text-slate-500" aria-hidden>
+                <span className="mx-1 text-muted" aria-hidden>
                   /
                 </span>
-                <span className="font-semibold text-slate-600" title={t('widgets.weather.low')}>
+                <span className="font-semibold text-muted" title={t('widgets.weather.low')}>
                   {day.min}°
                 </span>
               </div>
@@ -183,7 +183,7 @@ export default function WeatherCard({
             <button
               type="button"
               onClick={() => void forecast.refetch()}
-              className="inline-flex items-center gap-1.5 rounded-lg border border-slate-300 px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+              className="inline-flex items-center gap-1.5 rounded-lg border border-line-strong px-3 py-2 text-sm font-semibold text-fg hover:bg-subtle"
             >
               <RefreshCw className="h-4 w-4" aria-hidden /> {t('common.retry')}
             </button>
@@ -198,7 +198,7 @@ export default function WeatherCard({
           />
         )}
         {shown.length === 0 ? (
-          <p className="py-6 text-center text-base text-slate-600">{t('widgets.noMatch')}</p>
+          <p className="py-6 text-center text-base text-muted">{t('widgets.noMatch')}</p>
         ) : (
           <ul className="grid gap-3 sm:grid-cols-2">
             {shown.map((c) => (
@@ -206,7 +206,7 @@ export default function WeatherCard({
             ))}
           </ul>
         )}
-        <p className="text-sm text-slate-600">{t('widgets.weather.source')}</p>
+        <p className="text-sm text-muted">{t('widgets.weather.source')}</p>
       </>
     );
 
@@ -215,7 +215,7 @@ export default function WeatherCard({
       id={id}
       title={title}
       icon={<CloudSun className="h-5 w-5" aria-hidden />}
-      chip="bg-sky-100 text-sky-800"
+      chip="bg-info-soft text-info"
       subtitle={<UpdatedAgo at={stamp} now={stampNow} />}
       className={className}
     >

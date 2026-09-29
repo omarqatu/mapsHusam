@@ -24,9 +24,9 @@ export function InfoList({ onPick, className }: { onPick: (k: LegalKey) => void;
           <button
             type="button"
             onClick={() => onPick(key)}
-            className={clsx('flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-start text-sm font-semibold hover:bg-slate-100')}
+            className={clsx('flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-start text-sm font-semibold hover:bg-subtle')}
           >
-            <Icon className="h-4 w-4 shrink-0 text-slate-500" aria-hidden />
+            <Icon className="h-4 w-4 shrink-0 text-muted" aria-hidden />
             {t(`auth.legal.${key}`)}
           </button>
         </li>

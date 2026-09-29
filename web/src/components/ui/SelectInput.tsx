@@ -164,35 +164,35 @@ export default function SelectInput({
         onClick={() => (open ? close() : openList())}
         onKeyDown={onKey}
         className={clsx(
-          'flex w-full items-center justify-between gap-2 rounded-lg border bg-white text-start transition-colors',
+          'flex w-full items-center justify-between gap-2 rounded-lg border bg-surface text-start transition-colors',
           'focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-brand',
-          'disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-500',
+          'disabled:cursor-not-allowed disabled:bg-subtle disabled:text-muted',
           hasError
-            ? 'border-red-400'
+            ? 'border-danger-solid'
             : open
               ? 'border-brand ring-2 ring-brand/20'
-              : 'border-slate-300 hover:border-slate-400',
+              : 'border-line-strong hover:border-line-strong',
           sizes[inputSize],
         )}
       >
-        <span className={clsx('flex-1 truncate', !selected && 'text-slate-500')}>
+        <span className={clsx('flex-1 truncate', !selected && 'text-muted')}>
           {selected?.label ?? placeholder ?? ' '}
         </span>
         <ChevronDown
           className={clsx(
-            'h-4 w-4 shrink-0 text-slate-400 transition-transform',
-            open && 'rotate-180 text-brand',
+            'h-4 w-4 shrink-0 text-muted transition-transform',
+            open && 'rotate-180 text-brand-fg',
           )}
           aria-hidden
         />
       </button>
 
       {open && (
-        <div className="absolute inset-x-0 z-50 mt-1.5 overflow-hidden rounded-xl border border-slate-200 bg-white shadow-lg">
+        <div className="absolute inset-x-0 z-50 mt-1.5 overflow-hidden rounded-xl border border-line bg-surface shadow-lg">
           {searchable && (
-            <div className="border-b border-slate-100 p-2">
-              <div className="flex items-center gap-2 rounded-lg bg-slate-50 px-2.5">
-                <Search className="h-4 w-4 shrink-0 text-slate-400" aria-hidden />
+            <div className="border-b border-line p-2">
+              <div className="flex items-center gap-2 rounded-lg bg-subtle px-2.5">
+                <Search className="h-4 w-4 shrink-0 text-muted" aria-hidden />
                 <input
                   ref={filterRef}
                   value={filter}
@@ -212,7 +212,7 @@ export default function SelectInput({
           )}
           <ul id={listId} role="listbox" aria-label={ariaLabel} className="max-h-64 overflow-y-auto py-1">
             {visible.length === 0 && (
-              <li className="px-3.5 py-2.5 text-sm text-slate-500">{t('common.noData')}</li>
+              <li className="px-3.5 py-2.5 text-sm text-muted">{t('common.noData')}</li>
             )}
             {visible.map((o, i) => {
               const heading = o.group && o.group !== visible[i - 1]?.group ? o.group : null;
@@ -222,7 +222,7 @@ export default function SelectInput({
                   {heading && (
                     <div
                       role="presentation"
-                      className="px-3.5 pt-2 pb-1 text-xs font-bold tracking-wide text-slate-500"
+                      className="px-3.5 pt-2 pb-1 text-xs font-bold tracking-wide text-muted"
                     >
                       {heading}
                     </div>
@@ -237,10 +237,10 @@ export default function SelectInput({
                     className={clsx(
                       'flex cursor-pointer items-center gap-2 px-3.5 py-2.5 text-sm',
                       isSelected
-                        ? 'bg-brand-light font-semibold text-brand'
+                        ? 'bg-brand-light font-semibold text-brand-fg'
                         : i === active
-                          ? 'bg-slate-100 text-slate-900'
-                          : 'text-slate-700',
+                          ? 'bg-subtle text-fg'
+                          : 'text-fg',
                       o.disabled && 'cursor-not-allowed opacity-40',
                     )}
                   >

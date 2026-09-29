@@ -55,7 +55,7 @@ function Check({
     if (ref.current) ref.current.indeterminate = !!indeterminate;
   }, [indeterminate]);
   return (
-    <label className="flex cursor-pointer items-center gap-2 rounded px-1 py-1 text-sm text-slate-700 hover:bg-slate-50">
+    <label className="flex cursor-pointer items-center gap-2 rounded px-1 py-1 text-sm text-fg hover:bg-subtle">
       <input
         ref={ref}
         type="checkbox"
@@ -106,8 +106,8 @@ export default function TypeFilter({ selected, onChange }: Props) {
         debounceMs={0}
         placeholder={t('extras.featured.filterTypes')}
       />
-      <div className="max-h-56 space-y-1 overflow-y-auto rounded-lg border border-slate-200 p-2">
-        {groups.length === 0 && <p className="p-2 text-sm text-slate-500">{t('common.noData')}</p>}
+      <div className="max-h-56 space-y-1 overflow-y-auto rounded-lg border border-line p-2">
+        {groups.length === 0 && <p className="p-2 text-sm text-muted">{t('common.noData')}</p>}
         {groups.map(({ group, targets, visible }) => {
           const Icon = GROUP_ICON[group];
           const keys = targets.map(targetKey);
@@ -120,18 +120,18 @@ export default function TypeFilter({ selected, onChange }: Props) {
                 checked={selected.has(targetKey(only))}
                 onChange={(v) => toggle([targetKey(only)], v)}
               >
-                <Icon className="h-4 w-4 text-slate-500" aria-hidden /> {label(only)}
+                <Icon className="h-4 w-4 text-muted" aria-hidden /> {label(only)}
               </Check>
             );
           }
           return (
             <details key={group} className="rounded-lg" open={query.trim() !== '' || count > 0 || undefined}>
-              <summary className="flex cursor-pointer items-center gap-2 rounded px-1 py-1 text-sm font-semibold text-slate-800 hover:bg-slate-50">
-                <Icon className="h-4 w-4 text-slate-500" aria-hidden />
+              <summary className="flex cursor-pointer items-center gap-2 rounded px-1 py-1 text-sm font-semibold text-fg hover:bg-subtle">
+                <Icon className="h-4 w-4 text-muted" aria-hidden />
                 {t(`extras.featured.groups.${group}`)}
-                <span className="text-xs font-normal text-slate-500">({targets.length})</span>
+                <span className="text-xs font-normal text-muted">({targets.length})</span>
               </summary>
-              <div className="ms-3 border-s border-slate-100 ps-2">
+              <div className="ms-3 border-s border-line ps-2">
                 <Check
                   checked={count === keys.length}
                   indeterminate={count > 0 && count < keys.length}

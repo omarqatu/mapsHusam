@@ -22,7 +22,7 @@ function Highlighted({ text, term }: { text: string; term: string }) {
     <>
       {highlightParts(text, term).map((p, i) =>
         p.match ? (
-          <mark key={i} className="rounded bg-yellow-200 px-0.5 text-inherit">
+          <mark key={i} className="rounded bg-warn-soft px-0.5 text-inherit">
             {p.text}
           </mark>
         ) : (
@@ -106,7 +106,7 @@ export default function GlobalSearchBox() {
   return (
     <div ref={root} className="relative">
       <div className="flex items-center gap-2 glass rounded-full border-2 px-4 transition-shadow focus-within:border-brand focus-within:ring-4 focus-within:ring-brand/10">
-        <Search className="h-4 w-4 shrink-0 text-slate-400" aria-hidden />
+        <Search className="h-4 w-4 shrink-0 text-muted" aria-hidden />
         <input
           role="combobox"
           aria-expanded={showPanel}
@@ -134,7 +134,7 @@ export default function GlobalSearchBox() {
               setTerm('');
               setOpen(false);
             }}
-            className="rounded p-1 text-slate-400 hover:bg-slate-100"
+            className="rounded p-1 text-muted hover:bg-subtle"
           >
             <X className="h-4 w-4" />
           </button>
@@ -142,13 +142,13 @@ export default function GlobalSearchBox() {
       </div>
 
       {showPanel && (
-        <div className="absolute inset-x-0 top-full z-30 mt-2 max-h-[60vh] overflow-y-auto rounded-2xl bg-white shadow-xl">
+        <div className="absolute inset-x-0 top-full z-30 mt-2 max-h-[60vh] overflow-y-auto rounded-2xl bg-surface shadow-xl">
           {query.isFetching && !hits.length ? (
             <CenteredSpinner minHeight="6rem" size="sm" />
           ) : query.isError ? (
-            <p className="p-4 text-sm text-red-600">{t('search.failed')}</p>
+            <p className="p-4 text-sm text-danger">{t('search.failed')}</p>
           ) : !hits.length ? (
-            <p className="p-4 text-sm text-slate-500">{t('search.globalNone')}</p>
+            <p className="p-4 text-sm text-muted">{t('search.globalNone')}</p>
           ) : (
             <ul id={`${uid}-list`} role="listbox">
               {hits.map((h, i) => {
@@ -171,19 +171,19 @@ export default function GlobalSearchBox() {
                     aria-selected={i === active}
                     onClick={() => pick(h)}
                     onMouseEnter={() => setActive(i)}
-                    className={`flex cursor-pointer items-start gap-3 border-b border-slate-100 px-4 py-2.5 last:border-0 ${i === active ? 'bg-brand-light/50' : ''}`}
+                    className={`flex cursor-pointer items-start gap-3 border-b border-line px-4 py-2.5 last:border-0 ${i === active ? 'bg-brand-light/50' : ''}`}
                   >
                     <span aria-hidden className="text-lg">
                       {targetIcon(h.result.target)}
                     </span>
                     <span className="min-w-0 flex-1">
-                      <span className="block truncate text-sm font-bold text-slate-800" dir="auto">
+                      <span className="block truncate text-sm font-bold text-fg" dir="auto">
                         <Highlighted text={name} term={term} />
                       </span>
-                      <span className="block truncate text-xs text-slate-600" dir="auto">
+                      <span className="block truncate text-xs text-muted" dir="auto">
                         <Highlighted text={sub} term={term} />
                       </span>
-                      {reason && <span className="block text-xs font-semibold text-brand">{reason}</span>}
+                      {reason && <span className="block text-xs font-semibold text-brand-fg">{reason}</span>}
                     </span>
                   </li>
                 );

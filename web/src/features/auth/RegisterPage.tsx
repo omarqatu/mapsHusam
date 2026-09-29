@@ -29,20 +29,20 @@ export default function RegisterPage() {
   const [step, setStep] = useState<'terms' | 'form'>('terms');
   if (user) return <Navigate to="/" replace />;
   return (
-    <div className="mx-auto mt-4 w-full max-w-lg rounded-2xl border border-slate-100 bg-white p-6 shadow-sm">
+    <div className="mx-auto mt-4 w-full max-w-lg rounded-2xl border border-line bg-surface p-6 shadow-sm">
       {step === 'terms' ? (
         <TermsStep onContinue={() => setStep('form')} />
       ) : (
         <FormStep onBack={() => setStep('terms')} />
       )}
-      <p className="mt-4 text-center text-sm text-slate-500">
+      <p className="mt-4 text-center text-sm text-muted">
         {t('auth.haveAccount')}{' '}
-        <Link to="/login" className="font-semibold text-brand hover:underline">
+        <Link to="/login" className="font-semibold text-brand-fg hover:underline">
           {t('auth.loginHere')}
         </Link>
       </p>
       <div className="mt-1">
-        <LegalLinks keys={['guide']} linkClassName="text-slate-500 text-xs" />
+        <LegalLinks keys={['guide']} linkClassName="text-muted text-xs" />
       </div>
     </div>
   );
@@ -55,16 +55,16 @@ function TermsStep({ onContinue }: { onContinue: () => void }) {
   const ready = agreed && liked;
   return (
     <>
-      <h1 className="text-xl font-black text-slate-800">{t('auth.register.platformName')}</h1>
-      <p className="mt-2 text-sm leading-7 text-slate-600">{t('auth.register.about')}</p>
-      <hr className="my-4 border-slate-100" />
-      <h2 className="mb-2 font-bold text-slate-700">{t('auth.register.termsTitle')}</h2>
-      <ul className="list-disc space-y-1 rounded-lg bg-slate-50 p-3 ps-8 text-sm leading-7 text-slate-700">
+      <h1 className="text-xl font-black text-fg">{t('auth.register.platformName')}</h1>
+      <p className="mt-2 text-sm leading-7 text-muted">{t('auth.register.about')}</p>
+      <hr className="my-4 border-line" />
+      <h2 className="mb-2 font-bold text-fg">{t('auth.register.termsTitle')}</h2>
+      <ul className="list-disc space-y-1 rounded-lg bg-subtle p-3 ps-8 text-sm leading-7 text-fg">
         {[1, 2, 3, 4].map((n) => (
           <li key={n}>{t(`auth.register.term${n}`)}</li>
         ))}
       </ul>
-      <label className="mt-4 flex items-start gap-2 text-sm text-slate-700">
+      <label className="mt-4 flex items-start gap-2 text-sm text-fg">
         <input
           type="checkbox"
           className="mt-1 h-4 w-4 accent-[var(--color-brand)]"
@@ -73,13 +73,13 @@ function TermsStep({ onContinue }: { onContinue: () => void }) {
         />
         <span>{t('auth.register.agree')}</span>
       </label>
-      <div className="mt-3 rounded-lg border border-blue-100 bg-blue-50 p-3 text-sm text-blue-900">
+      <div className="mt-3 rounded-lg border border-info-line bg-info-soft p-3 text-sm text-info">
         <p>{t('auth.register.fbAsk')}</p>
         <a
           href={FACEBOOK_PAGE}
           target="_blank"
           rel="noopener noreferrer"
-          className="mt-2 inline-block rounded-lg bg-[#1877f2] px-3 py-2 font-semibold text-white"
+          className="mt-2 inline-block rounded-lg bg-info-solid px-3 py-2 font-semibold text-white"
         >
           {t('auth.register.fbLink')}
         </a>
@@ -93,12 +93,12 @@ function TermsStep({ onContinue }: { onContinue: () => void }) {
           <span>{t('auth.register.fbDone')}</span>
         </label>
       </div>
-      {!ready && <p className="mt-4 text-sm text-slate-500">{t('auth.register.gateHint')}</p>}
+      {!ready && <p className="mt-4 text-sm text-muted">{t('auth.register.gateHint')}</p>}
       <Button className="mt-3 w-full" disabled={!ready} onClick={onContinue}>
         {t('auth.register.continue')}
       </Button>
       <div className="mt-3">
-        <LegalLinks keys={['terms', 'privacy']} linkClassName="text-brand" />
+        <LegalLinks keys={['terms', 'privacy']} linkClassName="text-brand-fg" />
       </div>
     </>
   );
@@ -149,8 +149,8 @@ function FormStep({ onBack }: { onBack: () => void }) {
 
   return (
     <>
-      <h1 className="text-xl font-black text-slate-800">{t('auth.register.title')}</h1>
-      <p className="mb-4 mt-1 text-sm text-slate-500">{t('auth.register.intro')}</p>
+      <h1 className="text-xl font-black text-fg">{t('auth.register.title')}</h1>
+      <p className="mb-4 mt-1 text-sm text-muted">{t('auth.register.intro')}</p>
       <form onSubmit={submit} noValidate>
         <AlertMessage type="error" message={errorMessage} className="mb-4" />
         <FormField label={t('auth.register.name')} name="reg-name" required>
@@ -192,7 +192,7 @@ function FormStep({ onBack }: { onBack: () => void }) {
             required
           />
         </FormField>
-        <p className="-mt-3 mb-3 text-xs text-slate-400">{t('auth.register.phoneHint')}</p>
+        <p className="-mt-3 mb-3 text-xs text-muted">{t('auth.register.phoneHint')}</p>
         <FormField label={t('auth.password')} name="reg-password" required error={errors.password}>
           <TextInput
             id="reg-password"
@@ -208,7 +208,7 @@ function FormStep({ onBack }: { onBack: () => void }) {
             required
           />
         </FormField>
-        <p className="-mt-3 mb-3 text-xs text-slate-400">{t('auth.register.passwordHint')}</p>
+        <p className="-mt-3 mb-3 text-xs text-muted">{t('auth.register.passwordHint')}</p>
         <Button
           type="submit"
           className="mt-1 w-full"

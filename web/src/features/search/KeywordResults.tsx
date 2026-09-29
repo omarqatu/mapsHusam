@@ -32,7 +32,7 @@ export default function KeywordResults({ term }: { term: string }) {
 
   return (
     <section aria-labelledby="keyword-title" aria-busy={query.isFetching} className="space-y-3">
-      <h2 id="keyword-title" className="text-lg font-bold text-slate-800">
+      <h2 id="keyword-title" className="text-lg font-bold text-fg">
         {t('searchPage.keywordTitle', { term })}
       </h2>
       {query.isPending ? (
@@ -49,7 +49,7 @@ export default function KeywordResults({ term }: { term: string }) {
         />
       ) : (
         <>
-          <p role="status" className="text-sm font-semibold text-slate-600">
+          <p role="status" className="text-sm font-semibold text-muted">
             {t('search.results.count', { count: hits.length })}
           </p>
           <PagedGrid

@@ -11,9 +11,9 @@ import LegalLinks from '@/features/legal/LegalLinks';
 export default function AuthLayout() {
   const { t } = useTranslation();
   return (
-    <div className="flex min-h-full flex-col bg-gradient-to-br from-brand/10 via-white to-brand-2/10">
+    <div className="flex min-h-full flex-col bg-gradient-to-br from-brand/10 via-surface to-brand-2/10">
       <header className="mx-auto flex w-full max-w-5xl items-center justify-between px-4 py-3">
-        <Link to="/welcome" className="flex items-center gap-2 text-lg font-black text-brand">
+        <Link to="/welcome" className="flex items-center gap-2 text-lg font-black text-brand-fg">
           <MapPinned className="h-6 w-6" aria-hidden />
           {t('app.name')}
         </Link>
@@ -24,8 +24,8 @@ export default function AuthLayout() {
           <Outlet />
         </Suspense>
       </main>
-      <footer className="border-t border-slate-200 bg-white/70 px-4 py-3">
-        <LegalLinks linkClassName="text-slate-600" />
+      <footer className="border-t border-line bg-surface/70 px-4 py-3">
+        <LegalLinks linkClassName="text-muted" />
       </footer>
       <Toaster />
     </div>

@@ -71,7 +71,7 @@ export default function SearchPage() {
   return (
     <div className="space-y-6">
       {/* Stays in view while scrolling: the search box and the three shortcuts are what people come back to. */}
-      <div className="sticky top-14 z-30 -mx-4 space-y-2 bg-[#f3f6f9]/95 px-4 py-2 backdrop-blur">
+      <div className="sticky top-14 z-30 -mx-4 space-y-2 bg-canvas/95 px-4 py-2 backdrop-blur">
         <KeywordSearch value={term} onCommit={commitKeyword} />
         <QuickActions onRoads={() => setStatus('road_barriers')} onFuel={() => setStatus('fuel_stations')} />
       </div>

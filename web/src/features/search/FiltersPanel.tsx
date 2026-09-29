@@ -24,7 +24,7 @@ const TYPE_DELAY_MS = 300; // legacy debounce for typed values
 function Field({ label, id, children }: { label: string; id: string; children: ReactNode }) {
   return (
     <div className="flex min-w-0 flex-col gap-1.5">
-      <label htmlFor={id} className="text-sm font-semibold text-slate-700">
+      <label htmlFor={id} className="text-sm font-semibold text-fg">
         {label}
       </label>
       {children}
@@ -60,7 +60,7 @@ function DropdownFilter({ field, target, state, onChange, fields }: CommonProps 
         options={options}
         placeholder={values.isLoading ? t('app.loading') : t('searchPage.all')}
       />
-      {values.isError && <p className="text-sm text-red-700">{t('searchPage.valuesFailed')}</p>}
+      {values.isError && <p className="text-sm text-danger">{t('searchPage.valuesFailed')}</p>}
     </Field>
   );
 }
@@ -186,7 +186,7 @@ export default function FiltersPanel({ target, state, onChange, onReset }: Panel
   return (
     <section
       aria-label={t('searchPage.filters')}
-      className="rounded-xl border border-slate-200 bg-white p-3 shadow-sm md:p-4"
+      className="rounded-xl border border-line bg-surface p-3 shadow-sm md:p-4"
     >
       <div className="flex items-center justify-between gap-2">
         <button
@@ -194,9 +194,9 @@ export default function FiltersPanel({ target, state, onChange, onReset }: Panel
           onClick={() => setOpen((v) => !v)}
           aria-expanded={open}
           aria-controls={bodyId}
-          className="inline-flex items-center gap-2 text-base font-bold text-slate-800 md:pointer-events-none"
+          className="inline-flex items-center gap-2 text-base font-bold text-fg md:pointer-events-none"
         >
-          <ListFilter className="h-5 w-5 text-brand" aria-hidden />
+          <ListFilter className="h-5 w-5 text-brand-fg" aria-hidden />
           {t('searchPage.filters')}
           {active > 0 && (
             <span className="rounded-full bg-brand px-2 text-sm font-bold text-white">{active}</span>

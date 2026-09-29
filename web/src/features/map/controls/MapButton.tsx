@@ -18,7 +18,7 @@ export default function MapButton({ label, active, className, children, ...rest 
       className={clsx(
         'flex h-11 w-11 items-center justify-center rounded-full transition-colors',
         'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand',
-        active ? 'bg-brand text-white shadow-md' : 'glass text-slate-800 hover:bg-white/90',
+        active ? 'bg-brand text-white shadow-md' : 'glass text-fg hover:bg-surface/90',
         className,
       )}
       {...rest}

@@ -18,12 +18,12 @@ export default function LegalModal({ docKey, onClose }: { docKey: LegalKey | nul
       title={doc.title}
       widthClass="max-w-2xl"
       footer={
-        <button type="button" onClick={onClose} className="text-sm font-semibold text-slate-600">
+        <button type="button" onClick={onClose} className="text-sm font-semibold text-muted">
           {t('common.close')}
         </button>
       }
     >
-      <div className="mb-3 flex items-center gap-2 text-brand">
+      <div className="mb-3 flex items-center gap-2 text-brand-fg">
         <Icon className="h-5 w-5" aria-hidden />
       </div>
       <LegalDocView doc={doc} />

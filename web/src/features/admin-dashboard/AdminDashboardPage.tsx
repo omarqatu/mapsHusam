@@ -48,7 +48,7 @@ const contactIcon: Record<ContactKey, typeof Phone> = {
 };
 
 const linkBtn =
-  'inline-flex h-11 items-center gap-2 rounded-lg border border-slate-300 bg-white px-4 font-semibold text-slate-700 hover:bg-slate-50';
+  'inline-flex h-11 items-center gap-2 rounded-lg border border-line-strong bg-surface px-4 font-semibold text-fg hover:bg-subtle';
 
 /** `/admin/dashboard` — every service request / call / WhatsApp click with its outcome, filterable, deletable (legacy dashboard.html). */
 export default function AdminDashboardPage() {
@@ -69,13 +69,13 @@ export default function AdminDashboardPage() {
   );
 
   const columns = useMemo<Column<StatRow>[]>(() => {
-    const dash = <span className="text-slate-500">—</span>;
+    const dash = <span className="text-muted">—</span>;
     return [
       {
         key: 'user',
         header: t('adminDashboard.col.user'),
         card: 'title',
-        cell: (r) => <strong className="text-slate-900">{r.username || '—'}</strong>,
+        cell: (r) => <strong className="text-fg">{r.username || '—'}</strong>,
       },
       {
         key: 'provider',
@@ -85,7 +85,7 @@ export default function AdminDashboardPage() {
       {
         key: 'layer',
         header: t('adminDashboard.col.layer'),
-        cell: (r) => <span className="font-semibold text-blue-800">{layerLabel(r.layer)}</span>,
+        cell: (r) => <span className="font-semibold text-info">{layerLabel(r.layer)}</span>,
       },
       {
         key: 'phone',
@@ -105,7 +105,7 @@ export default function AdminDashboardPage() {
           const Icon = contactIcon[r.contact];
           return (
             <span className="inline-flex items-center gap-1.5">
-              <Icon className="h-4 w-4 text-slate-600" aria-hidden />
+              <Icon className="h-4 w-4 text-muted" aria-hidden />
               {t(`adminDashboard.contact.${r.contact}`)}
             </span>
           );
@@ -197,32 +197,32 @@ export default function AdminDashboardPage() {
               label={t('adminDashboard.stat.total')}
               value={shown.length}
               icon={<ListOrdered className="h-4 w-4" />}
-              chipClassName="bg-slate-600"
-              tileClassName="bg-slate-100 text-slate-800"
+              chipClassName="bg-subtle-2"
+              tileClassName="bg-subtle text-fg"
             />
             <StatCard
               label={t('adminDashboard.status.success')}
               value={counts.success}
               icon={<CheckCircle2 className="h-4 w-4" />}
-              chipClassName="bg-green-600"
-              tileClassName="bg-green-50 text-green-800"
+              chipClassName="bg-ok-solid"
+              tileClassName="bg-ok-soft text-ok"
             />
             <StatCard
               label={t('adminDashboard.status.pending')}
               value={counts.pending}
               icon={<Clock className="h-4 w-4" />}
-              chipClassName="bg-amber-600"
-              tileClassName="bg-amber-50 text-amber-900"
+              chipClassName="bg-warn-solid"
+              tileClassName="bg-warn-soft text-warn"
             />
             <StatCard
               label={t('adminDashboard.status.cancelled')}
               value={counts.cancelled}
               icon={<XCircle className="h-4 w-4" />}
-              chipClassName="bg-red-600"
-              tileClassName="bg-red-50 text-red-800"
+              chipClassName="bg-danger-solid"
+              tileClassName="bg-danger-soft text-danger"
             />
           </div>
-          <p className="mb-3 text-sm font-semibold text-slate-700">
+          <p className="mb-3 text-sm font-semibold text-fg">
             {hasStatFilters(filters)
               ? t('adminDashboard.shownOf', { shown: shown.length, total: all.length })
               : t('adminDashboard.total', { count: all.length })}

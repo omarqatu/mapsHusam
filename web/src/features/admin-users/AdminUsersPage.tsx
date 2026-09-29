@@ -169,7 +169,7 @@ export default function AdminUsersPage() {
           <>
             <Link
               to="/admin/dashboard"
-              className="inline-flex h-11 items-center gap-2 rounded-lg border border-slate-300 bg-white px-4 font-semibold text-slate-700 hover:bg-slate-50"
+              className="inline-flex h-11 items-center gap-2 rounded-lg border border-line-strong bg-surface px-4 font-semibold text-fg hover:bg-subtle"
             >
               <LayoutDashboard className="h-4 w-4" aria-hidden />
               {t('nav.adminDashboard')}
@@ -189,9 +189,9 @@ export default function AdminUsersPage() {
 
       <section
         aria-label={t('adminUsers.bulk.title')}
-        className="mb-4 rounded-2xl border border-slate-100 bg-white p-4 shadow-sm"
+        className="mb-4 rounded-2xl border border-line bg-surface p-4 shadow-sm"
       >
-        <h2 className="mb-3 text-base font-bold text-slate-800">{t('adminUsers.bulk.title')}</h2>
+        <h2 className="mb-3 text-base font-bold text-fg">{t('adminUsers.bulk.title')}</h2>
         <div className="flex flex-wrap gap-2">
           <Button
             variant="danger"
@@ -228,7 +228,7 @@ export default function AdminUsersPage() {
       ) : (
         <>
           <div className="mb-3 flex flex-wrap items-center justify-between gap-3 text-sm">
-            <span className="inline-flex items-center gap-2 rounded-full bg-brand-light px-3 py-1 font-bold text-brand">
+            <span className="inline-flex items-center gap-2 rounded-full bg-brand-light px-3 py-1 font-bold text-brand-fg">
               <Users className="h-4 w-4" aria-hidden />
               {hasFilters(filters)
                 ? t('adminUsers.countFiltered', { shown: shown.length, total: users.data?.length ?? 0 })

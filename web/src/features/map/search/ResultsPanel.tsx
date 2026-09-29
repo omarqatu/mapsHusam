@@ -46,30 +46,30 @@ function ResultRow({
     <li
       className={clsx(
         'rounded-xl border p-3',
-        active ? 'border-brand bg-brand-light/40' : 'border-slate-200 bg-white',
+        active ? 'border-brand bg-brand-light/40' : 'border-line bg-surface',
       )}
     >
       <button type="button" onClick={onOpen} className="flex w-full items-start gap-3 text-start">
-        <span className="mt-0.5 w-5 shrink-0 text-center text-xs font-bold text-slate-500">{index + 1}</span>
+        <span className="mt-0.5 w-5 shrink-0 text-center text-xs font-bold text-muted">{index + 1}</span>
         <span aria-hidden className="text-xl">
           {targetIcon(r.target)}
         </span>
         <span className="min-w-0 flex-1">
-          <span className="block truncate text-sm font-bold text-slate-800" dir="auto">
+          <span className="block truncate text-sm font-bold text-fg" dir="auto">
             {name}
           </span>
-          <span className="block truncate text-xs text-slate-600">
+          <span className="block truncate text-xs text-muted">
             {typeTitle}
             {place ? ` · ${place}` : ''}
           </span>
-          <span className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-xs text-slate-600">
+          <span className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-xs text-muted">
             {r.rating > 0 && (
-              <span className="inline-flex items-center gap-0.5 text-amber-600">
+              <span className="inline-flex items-center gap-0.5 text-warn">
                 <Star className="h-3 w-3" fill="currentColor" aria-hidden /> {r.rating}
               </span>
             )}
             {!barrier && (
-              <span className={open ? 'text-green-700' : 'text-red-600'}>
+              <span className={open ? 'text-ok' : 'text-danger'}>
                 {open ? t('popup.openNow') : t('popup.closedNow')}
               </span>
             )}
@@ -80,7 +80,7 @@ function ResultRow({
               </span>
             )}
             {r.distance !== undefined && (
-              <span className="font-semibold text-brand">{formatDistance(r.distance, t)}</span>
+              <span className="font-semibold text-brand-fg">{formatDistance(r.distance, t)}</span>
             )}
           </span>
         </span>
@@ -128,7 +128,7 @@ export default function ResultsPanel({ className }: { className?: string }) {
     if (!ok) toast.warning(t('search.results.popupBlocked'));
   };
 
-  const iconBtn = 'rounded p-1.5 text-slate-500 hover:bg-slate-100';
+  const iconBtn = 'rounded p-1.5 text-muted hover:bg-subtle';
   return (
     <MapSheet
       side="start"
@@ -139,7 +139,7 @@ export default function ResultsPanel({ className }: { className?: string }) {
         <div className="flex items-center justify-between gap-2">
           <span className="truncate text-sm">
             {t('search.results.title')} · {t('search.results.count', { count: results.items.length })}
-            <span className="block truncate text-xs font-normal text-slate-500">{results.title}</span>
+            <span className="block truncate text-xs font-normal text-muted">{results.title}</span>
           </span>
           <span className="flex shrink-0">
             <button

@@ -27,11 +27,11 @@ import { useRequestsUi } from './store';
 import { useUnseen } from './unseen';
 
 const TONE: Record<RequestStatus, string> = {
-  pending: 'text-amber-600',
-  accepted: 'text-blue-600',
-  rejected: 'text-red-600',
-  cancelled: 'text-slate-500',
-  completed: 'text-green-600',
+  pending: 'text-warn',
+  accepted: 'text-info',
+  rejected: 'text-danger',
+  cancelled: 'text-muted',
+  completed: 'text-ok',
 };
 
 function RequestCard({ r, uid, onCancel }: { r: ServiceRequest; uid: number; onCancel: (id: number) => void }) {
@@ -58,10 +58,10 @@ function RequestCard({ r, uid, onCancel }: { r: ServiceRequest; uid: number; onC
     <li
       className={clsx(
         'flex flex-col gap-1.5 rounded-lg border p-3',
-        unseen || rateable || commentable ? 'border-brand bg-brand-light/40' : 'border-slate-200 bg-slate-50',
+        unseen || rateable || commentable ? 'border-brand bg-brand-light/40' : 'border-line bg-subtle',
       )}
     >
-      <div className="flex items-center justify-between gap-2 text-sm font-bold text-slate-800">
+      <div className="flex items-center justify-between gap-2 text-sm font-bold text-fg">
         <span>
           {service} ({otherLabel})
         </span>
@@ -78,7 +78,7 @@ function RequestCard({ r, uid, onCancel }: { r: ServiceRequest; uid: number; onC
           ? t('requests.status.cancelled', { reason: r.cancellation_reason || t('requests.noReason') })
           : t(`requests.status.${r.status}`)}
       </p>
-      <p className="text-xs text-slate-500">{formatDateTime(r.created_at, i18n.language)}</p>
+      <p className="text-xs text-muted">{formatDateTime(r.created_at, i18n.language)}</p>
 
       <div className="mt-1 flex flex-wrap gap-2">
         {(r.status === 'accepted' || r.status === 'completed') && (

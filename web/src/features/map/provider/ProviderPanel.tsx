@@ -66,7 +66,7 @@ function Panel({ onClose }: { onClose: () => void }) {
   return (
     <MapSheet side="start" label={t('provider.title')} title={t('provider.title')} onClose={onClose}>
       <div className="space-y-3">
-        {name && <p className="rounded-lg bg-brand/10 px-3 py-2 text-sm font-bold text-brand">{t('provider.welcome', { name })}</p>}
+        {name && <p className="rounded-lg bg-brand/10 px-3 py-2 text-sm font-bold text-brand-fg">{t('provider.welcome', { name })}</p>}
 
         {account === undefined ? (
           isError ? (
@@ -77,7 +77,7 @@ function Panel({ onClose }: { onClose: () => void }) {
               </Button>
             </div>
           ) : (
-            <p className="flex items-center gap-2 text-sm text-slate-500">
+            <p className="flex items-center gap-2 text-sm text-muted">
               <Spinner size="sm" /> {t('provider.checking')}
             </p>
           )
@@ -85,16 +85,16 @@ function Panel({ onClose }: { onClose: () => void }) {
           <AlertMessage type="error" message={t('provider.noAccess')} />
         ) : (
           <>
-            {featureName && <p className="text-sm font-semibold text-slate-700">{featureName}</p>}
+            {featureName && <p className="text-sm font-semibold text-fg">{featureName}</p>}
             <p
-              className={`flex items-center gap-2 text-sm font-semibold ${available ? 'text-green-700' : 'text-red-700'}`}
+              className={`flex items-center gap-2 text-sm font-semibold ${available ? 'text-ok' : 'text-danger'}`}
               role="status"
             >
               {available ? <CheckCircle2 className="h-4 w-4" /> : <XCircle className="h-4 w-4" />}
               {t(available ? 'provider.statusAvailable' : 'provider.statusBusy')}
             </p>
             {error && <AlertMessage type="error" message={error} />}
-            {seconds > 0 && <p className="text-sm text-slate-500">{t('provider.cooldown', { seconds })}</p>}
+            {seconds > 0 && <p className="text-sm text-muted">{t('provider.cooldown', { seconds })}</p>}
 
             <div className="grid gap-2">
               <Button

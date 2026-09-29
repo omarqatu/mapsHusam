@@ -18,10 +18,10 @@ export default function QuickActions({ onRoads, onFuel }: Props) {
       <Link to="/" className={`${chip} border-brand bg-brand text-white hover:bg-brand-hover`}>
         <MapIcon className="h-4 w-4" aria-hidden /> {t('searchPage.goToMap')}
       </Link>
-      <button type="button" onClick={onRoads} className={`${chip} border-orange-200 bg-orange-50 text-orange-800 hover:bg-orange-100`}>
+      <button type="button" onClick={onRoads} className={`${chip} border-warn-line bg-warn-soft text-warn hover:bg-warn-soft`}>
         <Signpost className="h-4 w-4" aria-hidden /> {t('searchPage.roadStatus')}
       </button>
-      <button type="button" onClick={onFuel} className={`${chip} border-sky-200 bg-sky-50 text-sky-800 hover:bg-sky-100`}>
+      <button type="button" onClick={onFuel} className={`${chip} border-info-line bg-info-soft text-info hover:bg-info-soft`}>
         <Fuel className="h-4 w-4" aria-hidden /> {t('searchPage.fuelStatus')}
       </button>
     </div>

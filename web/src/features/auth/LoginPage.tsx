@@ -51,10 +51,10 @@ export default function LoginPage() {
         : '';
 
   return (
-    <div className="mx-auto mt-4 w-full max-w-sm rounded-2xl border border-slate-100 bg-white p-6 shadow-sm">
-      <h1 className="text-2xl font-black text-slate-800">{t('auth.loginTitle')}</h1>
-      <p className="mt-1 text-sm text-slate-500">{t('auth.loginIntro')}</p>
-      <p className="mb-4 text-xs text-slate-400">{t('auth.phoneHint')}</p>
+    <div className="mx-auto mt-4 w-full max-w-sm rounded-2xl border border-line bg-surface p-6 shadow-sm">
+      <h1 className="text-2xl font-black text-fg">{t('auth.loginTitle')}</h1>
+      <p className="mt-1 text-sm text-muted">{t('auth.loginIntro')}</p>
+      <p className="mb-4 text-xs text-muted">{t('auth.phoneHint')}</p>
       <form onSubmit={submit} noValidate>
         <AlertMessage type="error" message={errorMessage} className="mb-4" />
         <FormField label={t('auth.phone')} name="phone" required error={phoneError}>
@@ -94,9 +94,9 @@ export default function LoginPage() {
         >
           {login.isPending ? t('auth.loggingIn') : t('auth.loginSubmit')}
         </Button>
-        <p className="mt-2 text-center text-sm text-slate-500">
+        <p className="mt-2 text-center text-sm text-muted">
           {t('auth.noAccount')}{' '}
-          <Link to="/register" className="font-semibold text-brand hover:underline">
+          <Link to="/register" className="font-semibold text-brand-fg hover:underline">
             {t('auth.createAccount')}
           </Link>
         </p>

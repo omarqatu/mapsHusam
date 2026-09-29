@@ -25,7 +25,7 @@ export default function Checkbox({
   return (
     <label
       className={clsx(
-        'inline-flex items-center gap-2 text-sm font-medium text-slate-700',
+        'inline-flex items-center gap-2 text-sm font-medium text-fg',
         disabled ? 'cursor-not-allowed opacity-60' : 'cursor-pointer',
         className,
       )}
@@ -35,7 +35,7 @@ export default function Checkbox({
         type="checkbox"
         disabled={disabled}
         onChange={(e) => onChange?.(e.target.checked)}
-        className="h-5 w-5 shrink-0 cursor-[inherit] rounded border-slate-300 accent-brand"
+        className="h-5 w-5 shrink-0 cursor-[inherit] rounded border-line-strong accent-brand"
         {...rest}
       />
       {label}

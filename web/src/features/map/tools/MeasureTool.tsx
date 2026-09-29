@@ -66,7 +66,7 @@ function ResultBox({ display }: { display: Display }) {
   return (
     <div
       role="status"
-      className="mt-4 min-h-10 rounded-lg bg-slate-50 p-3 text-center text-sm font-bold text-slate-700"
+      className="mt-4 min-h-10 rounded-lg bg-subtle p-3 text-center text-sm font-bold text-fg"
     >
       {body}
     </div>
@@ -180,7 +180,7 @@ function MeasurePanel({ source, display, setDisplay, onClose }: PanelProps) {
       </div>
 
       {mode && (
-        <p className="mt-3 text-sm text-slate-600">
+        <p className="mt-3 text-sm text-muted">
           {t(mode === 'point' ? 'tools.measure.hintPoint' : 'tools.measure.hintLine')}
         </p>
       )}
@@ -195,7 +195,7 @@ function MeasurePanel({ source, display, setDisplay, onClose }: PanelProps) {
         </div>
       )}
 
-      <hr className="my-3 border-slate-100" />
+      <hr className="my-3 border-line" />
       <Button
         size="sm"
         variant="danger"

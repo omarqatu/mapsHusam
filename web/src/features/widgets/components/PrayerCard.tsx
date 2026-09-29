@@ -40,7 +40,7 @@ export default function PrayerCard({
       id={id}
       title={title}
       icon={<MoonStar className="h-5 w-5" aria-hidden />}
-      chip="bg-teal-100 text-teal-800"
+      chip="bg-ok-soft text-ok"
       subtitle={
         times.data ? <UpdatedAgo at={isoFromMs(times.dataUpdatedAt)} now={times.dataUpdatedAt} /> : undefined
       }
@@ -54,7 +54,7 @@ export default function PrayerCard({
           <button
             type="button"
             onClick={() => void times.refetch()}
-            className="inline-flex items-center gap-1.5 rounded-lg border border-slate-300 px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+            className="inline-flex items-center gap-1.5 rounded-lg border border-line-strong px-3 py-2 text-sm font-semibold text-fg hover:bg-subtle"
           >
             <RefreshCw className="h-4 w-4" aria-hidden /> {t('common.retry')}
           </button>
@@ -69,18 +69,18 @@ export default function PrayerCard({
                   key={key}
                   className={clsx(
                     'flex items-center gap-3 rounded-xl border p-3',
-                    isNext ? 'border-teal-500 bg-teal-50 ring-1 ring-teal-500' : 'border-slate-200 bg-white',
+                    isNext ? 'border-ok-solid bg-ok-soft ring-1 ring-ok-solid' : 'border-line bg-surface',
                   )}
                   aria-current={isNext ? 'true' : undefined}
                 >
-                  <span className={clsx('shrink-0', isNext ? 'text-teal-700' : 'text-slate-600')}>
+                  <span className={clsx('shrink-0', isNext ? 'text-ok' : 'text-muted')}>
                     {ICON[key]}
                   </span>
                   <div className="min-w-0">
-                    <div className="truncate text-sm font-semibold text-slate-700">
+                    <div className="truncate text-sm font-semibold text-fg">
                       {t(`widgets.prayer.${key}`)}
                     </div>
-                    <div className="text-xl font-black tabular-nums text-slate-900" dir="ltr">
+                    <div className="text-xl font-black tabular-nums text-fg" dir="ltr">
                       {times.data[key]}
                     </div>
                   </div>
@@ -88,7 +88,7 @@ export default function PrayerCard({
               );
             })}
           </ul>
-          <div className="flex flex-wrap items-center gap-2 text-sm text-slate-700">
+          <div className="flex flex-wrap items-center gap-2 text-sm text-fg">
             {next && (
               <Badge tone="green" large>
                 {t('widgets.prayer.next')}: {t(`widgets.prayer.${next.key}`)}

@@ -102,13 +102,13 @@ function Dialog({ onClose }: { onClose: () => void }) {
             hasError={!!errors.next}
           />
         </FormField>
-        <p className="rounded-lg border-s-4 border-blue-400 bg-slate-50 p-2 text-xs leading-5 text-slate-500">
+        <p className="rounded-lg border-s-4 border-info-solid bg-subtle p-2 text-xs leading-5 text-muted">
           {t('auth.changePassword.trouble')}{' '}
           <a
             href={FACEBOOK_PAGE}
             target="_blank"
             rel="noopener noreferrer"
-            className="font-semibold text-brand underline"
+            className="font-semibold text-brand-fg underline"
           >
             {t('auth.changePassword.facebookPage')}
           </a>

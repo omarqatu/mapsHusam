@@ -24,7 +24,7 @@ export default function TextInput({
   return (
     <div className="relative">
       {startIcon && (
-        <span className="pointer-events-none absolute inset-y-0 start-3 flex items-center text-slate-500">
+        <span className="pointer-events-none absolute inset-y-0 start-3 flex items-center text-muted">
           {startIcon}
         </span>
       )}
@@ -32,10 +32,10 @@ export default function TextInput({
         ref={ref}
         aria-invalid={hasError || undefined}
         className={clsx(
-          'w-full rounded-lg border bg-white px-3.5 text-slate-800 placeholder:text-slate-500',
+          'w-full rounded-lg border bg-surface px-3.5 text-fg placeholder:text-muted',
           'focus:border-brand focus:outline-2 focus:outline-brand/30',
-          'disabled:bg-slate-100 disabled:text-slate-500',
-          hasError ? 'border-red-400' : 'border-slate-300',
+          'disabled:bg-subtle disabled:text-muted',
+          hasError ? 'border-danger-solid' : 'border-line-strong',
           startIcon && 'ps-10',
           endIcon && 'pe-10',
           sizes[inputSize],
@@ -44,7 +44,7 @@ export default function TextInput({
         {...rest}
       />
       {endIcon && (
-        <span className="absolute inset-y-0 end-3 flex items-center text-slate-500">{endIcon}</span>
+        <span className="absolute inset-y-0 end-3 flex items-center text-muted">{endIcon}</span>
       )}
     </div>
   );

@@ -34,7 +34,7 @@ export default function PagedGrid<T>({ items, getKey, render, pageSize = PAGE_SI
           <Button variant="secondary" size="lg" onClick={() => setShown((n) => n + pageSize)}>
             {t('searchPage.showMore', { count: Math.min(left, pageSize) })}
           </Button>
-          <p className="text-sm text-slate-600">
+          <p className="text-sm text-muted">
             {t('searchPage.shownOf', { shown: visible.length, total: items.length })}
           </p>
         </div>

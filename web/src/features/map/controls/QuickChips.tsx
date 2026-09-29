@@ -7,7 +7,7 @@ import { useSearchUi } from '../search/store';
 import { useMapUi } from '../store';
 
 const chip =
-  'glass inline-flex h-9 shrink-0 items-center gap-1.5 rounded-full px-3 text-sm font-bold text-slate-800 hover:bg-white/90 focus-visible:outline-2 focus-visible:outline-brand';
+  'glass inline-flex h-9 shrink-0 items-center gap-1.5 rounded-full px-3 text-sm font-bold text-fg hover:bg-surface/90 focus-visible:outline-2 focus-visible:outline-brand';
 
 /**
  * One-tap shortcuts under the search box (legacy had these as four coloured buttons on top of the map): road and fuel
@@ -28,11 +28,11 @@ export default function QuickChips() {
   );
   return (
     <div className="flex gap-2 overflow-x-auto pb-1 [scrollbar-width:none] sm:justify-center [&::-webkit-scrollbar]:hidden">
-      {button('fuel', <Fuel className="h-4 w-4 text-sky-700" aria-hidden />, t('extras.chips.fuel'))}
-      {button('roads', <TrafficCone className="h-4 w-4 text-orange-600" aria-hidden />, t('extras.chips.roads'))}
-      {button('featured', <Star className="h-4 w-4 text-amber-500" aria-hidden />, t('extras.chips.featured'))}
+      {button('fuel', <Fuel className="h-4 w-4 text-info" aria-hidden />, t('extras.chips.fuel'))}
+      {button('roads', <TrafficCone className="h-4 w-4 text-warn" aria-hidden />, t('extras.chips.roads'))}
+      {button('featured', <Star className="h-4 w-4 text-warn" aria-hidden />, t('extras.chips.featured'))}
       <Link to="/search" className={chip}>
-        <ListFilter className="h-4 w-4 text-emerald-700" aria-hidden />
+        <ListFilter className="h-4 w-4 text-ok" aria-hidden />
         {t('extras.chips.search')}
       </Link>
     </div>

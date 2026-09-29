@@ -10,12 +10,13 @@ import { useAuthStore } from '@/store/authStore';
 import { appRoutes, canAccess } from '@/routes/routes';
 import { InfoList } from './InfoMenu';
 import LanguageSwitcher from './LanguageSwitcher';
+import ThemeSwitcher from './ThemeSwitcher';
 import UserMenu from './UserMenu';
 
 const link = (isActive: boolean) =>
   clsx(
     'whitespace-nowrap rounded-lg px-3 py-1.5 text-sm font-semibold transition-colors',
-    isActive ? 'bg-white/25 text-white' : 'text-white/85 hover:bg-white/15',
+    isActive ? 'bg-surface/25 text-white' : 'text-white/85 hover:bg-surface/15',
   );
 
 /**
@@ -62,14 +63,14 @@ export default function AppHeader() {
           onClick={() => setOpen((v) => !v)}
           aria-expanded={open}
           aria-label={t('common.menu')}
-          className="rounded-lg p-2 hover:bg-white/15"
+          className="rounded-lg p-2 hover:bg-surface/15"
         >
           <Menu className="h-5 w-5" aria-hidden />
         </button>
         {open && (
           <nav
             aria-label="main"
-            className="fixed inset-x-2 top-14 z-50 mt-1 flex flex-col rounded-xl border border-slate-200 bg-white p-1 text-slate-700 shadow-xl"
+            className="fixed inset-x-2 top-14 z-50 mt-1 flex flex-col rounded-xl border border-line bg-surface p-1 text-fg shadow-xl"
           >
             {links.map((r) => (
               <NavLink
@@ -80,14 +81,14 @@ export default function AppHeader() {
                 className={({ isActive }) =>
                   clsx(
                     'rounded-lg px-3 py-2 text-sm font-semibold',
-                    isActive ? 'bg-brand-light text-brand' : 'hover:bg-slate-100',
+                    isActive ? 'bg-brand-light text-brand-fg' : 'hover:bg-subtle',
                   )
                 }
               >
                 {t(r.titleKey)}
               </NavLink>
             ))}
-            <div className="my-1 border-t border-slate-100" role="separator" />
+            <div className="my-1 border-t border-line" role="separator" />
             <InfoList onPick={pick} />
           </nav>
         )}
@@ -100,16 +101,17 @@ export default function AppHeader() {
           aria-expanded={infoOpen}
           aria-label={t('info.title')}
           title={t('info.title')}
-          className="rounded-lg p-2 hover:bg-white/15"
+          className="rounded-lg p-2 hover:bg-surface/15"
         >
           <CircleHelp className="h-5 w-5" aria-hidden />
         </button>
         {infoOpen && (
-          <div className="absolute end-0 top-full z-50 mt-1.5 w-64 rounded-xl border border-slate-200 bg-white p-1 text-slate-700 shadow-xl">
+          <div className="absolute end-0 top-full z-50 mt-1.5 w-64 rounded-xl border border-line bg-surface p-1 text-fg shadow-xl">
             <InfoList onPick={pick} />
           </div>
         )}
       </div>
+      <ThemeSwitcher />
       <LanguageSwitcher tone="onBrand" />
       <UserMenu tone="onBrand" />
       <LegalModal docKey={legal} onClose={() => setLegal(null)} />

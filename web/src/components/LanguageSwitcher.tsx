@@ -13,7 +13,7 @@ export default function LanguageSwitcher({ tone = 'default' }: { tone?: 'default
       aria-label={t('common.language')}
       className={clsx(
         'inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-sm font-semibold',
-        tone === 'onBrand' ? 'text-white hover:bg-white/15' : 'text-slate-600 hover:bg-slate-100',
+        tone === 'onBrand' ? 'text-white hover:bg-surface/15' : 'text-muted hover:bg-subtle',
       )}
     >
       <Languages className="h-4 w-4" aria-hidden />

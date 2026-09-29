@@ -145,8 +145,8 @@ describe('StatCard', () => {
         label="Users"
         value="1,204"
         icon={<i />}
-        chipClassName="bg-sky-500"
-        tileClassName="bg-sky-50"
+        chipClassName="bg-info-solid"
+        tileClassName="bg-info-soft"
       />,
     );
     expect(screen.getByText('Users')).toBeInTheDocument();

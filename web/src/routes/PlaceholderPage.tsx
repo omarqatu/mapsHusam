@@ -11,7 +11,7 @@ export default function PlaceholderPage({ route }: { route: AppRoute }) {
       title={t(route.titleKey)}
       description={t('placeholder.legacy', { source: route.legacy })}
       icon={<Construction className="h-6 w-6" aria-hidden />}
-      actions={<span className="text-sm font-semibold text-slate-500">{t('placeholder.title')}</span>}
+      actions={<span className="text-sm font-semibold text-muted">{t('placeholder.title')}</span>}
     />
   );
 }

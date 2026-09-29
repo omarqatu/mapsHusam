@@ -25,19 +25,19 @@ export default function ContactBox({ contact, otherName, serviceType }: Props) {
 
   if (!tel && !wa)
     return (
-      <p className="text-sm text-slate-600">
+      <p className="text-sm text-muted">
         <b>{t('requests.contact.agreed')}</b> {t('requests.contact.none')}
       </p>
     );
 
   return (
-    <div className="rounded-lg border border-green-200 bg-green-50 p-3 text-center">
-      <p className="mb-2 text-sm font-bold text-green-800">{t('requests.contact.title')}</p>
+    <div className="rounded-lg border border-ok-line bg-ok-soft p-3 text-center">
+      <p className="mb-2 text-sm font-bold text-ok">{t('requests.contact.title')}</p>
       <div className="flex flex-wrap justify-center gap-2">
         {tel && (
           <a
             href={tel}
-            className="inline-flex items-center gap-1.5 rounded-md bg-green-600 px-3 py-1.5 text-xs font-bold text-white hover:bg-green-700"
+            className="inline-flex items-center gap-1.5 rounded-md bg-ok-solid px-3 py-1.5 text-xs font-bold text-white hover:bg-ok-solid"
           >
             <Phone className="h-3.5 w-3.5" aria-hidden />
             {t('requests.contact.call', { phone: contact.phone })}

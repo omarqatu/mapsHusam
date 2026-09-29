@@ -82,7 +82,7 @@ export default function NearMeSection() {
           );
         })}
       </div>
-      <p className="flex items-center gap-2 text-sm text-slate-600" role="status" aria-live="polite">
+      <p className="flex items-center gap-2 text-sm text-muted" role="status" aria-live="polite">
         {center && candidates.isPending && <Spinner size="sm" />}
         {status}
       </p>
@@ -93,7 +93,7 @@ export default function NearMeSection() {
             type="button"
             onClick={() => setFilterOpen((v) => !v)}
             aria-expanded={filterOpen}
-            className="inline-flex items-center gap-1.5 text-sm font-semibold text-brand"
+            className="inline-flex items-center gap-1.5 text-sm font-semibold text-brand-fg"
           >
             <ListFilter className="h-4 w-4" aria-hidden />
             {t('extras.featured.filterByType')}
@@ -111,7 +111,7 @@ export default function NearMeSection() {
           )}
           {candidates.isError && <AlertMessage type="error" message={t('extras.featured.failed')} />}
           {candidates.data && nearest.length === 0 && (
-            <p className="text-sm text-slate-500">{t('extras.featured.nearNone')}</p>
+            <p className="text-sm text-muted">{t('extras.featured.nearNone')}</p>
           )}
           <div className="space-y-2">
             {nearest.map((r) => (

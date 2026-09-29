@@ -118,8 +118,8 @@ export default function StatsFilters({ value, onChange, users, providers, reason
           />
         </FilterField>
       </div>
-      <details open={moreActive || undefined} className="rounded-xl border border-slate-200 p-3">
-        <summary className="cursor-pointer text-sm font-semibold text-slate-700">
+      <details open={moreActive || undefined} className="rounded-xl border border-line p-3">
+        <summary className="cursor-pointer text-sm font-semibold text-fg">
           {t('adminDashboard.filters.more')}
         </summary>
         <div className="mt-3 grid grid-cols-2 gap-3 lg:grid-cols-4">

@@ -39,7 +39,7 @@ function Description({ value }: { value: string }) {
   const long = value.length > LONG_DESCRIPTION;
   return (
     <div>
-      <p className={open || !long ? 'text-sm text-slate-700' : 'line-clamp-3 text-sm text-slate-700'} dir="auto">
+      <p className={open || !long ? 'text-sm text-fg' : 'line-clamp-3 text-sm text-fg'} dir="auto">
         {value}
       </p>
       {long && (
@@ -47,7 +47,7 @@ function Description({ value }: { value: string }) {
           type="button"
           onClick={() => setOpen((v) => !v)}
           aria-expanded={open}
-          className="mt-0.5 text-sm font-semibold text-brand hover:underline"
+          className="mt-0.5 text-sm font-semibold text-brand-fg hover:underline"
         >
           {open ? t('common.showLess') : t('common.showMore')}
         </button>
@@ -61,11 +61,11 @@ function BeforeAfter({ props }: { props: Props }) {
   const [before, after] = detailLinks(props);
   const side = (label: string, url: string | null, labelKey: string) => (
     <div className="min-w-0 space-y-1">
-      <div className="text-center text-sm font-bold text-slate-600">{label}</div>
+      <div className="text-center text-sm font-bold text-muted">{label}</div>
       {url ? (
         <MediaGallery items={labelMedia(sideMedia(url, labelKey), t)} />
       ) : (
-        <div className="rounded-lg bg-slate-50 p-3 text-center text-sm text-slate-500">
+        <div className="rounded-lg bg-subtle p-3 text-center text-sm text-muted">
           {t('extras.featured.none')}
         </div>
       )}
@@ -101,51 +101,51 @@ export default function FeaturedCard({ entry, mode, badge, note, customerRatings
   const showCustomerRatings = !!customerRatings && r.target.kind === 'service' && !!r.id;
 
   return (
-    <article className="space-y-2 rounded-xl border border-slate-200 bg-white p-3 shadow-sm">
+    <article className="space-y-2 rounded-xl border border-line bg-surface p-3 shadow-sm">
       {mode === 'beforeAfter' ? <BeforeAfter props={p} /> : media && <MediaGallery items={media} />}
 
-      <div className="flex items-center gap-1.5 text-sm font-bold text-amber-700">
+      <div className="flex items-center gap-1.5 text-sm font-bold text-warn">
         {badge && <Star className="h-3.5 w-3.5" fill="currentColor" aria-hidden />}
         <span>{badge ? `${badge} · ${typeTitle}` : typeTitle}</span>
-        {r.id && <span className="font-normal text-slate-600">#{r.id}</span>}
+        {r.id && <span className="font-normal text-muted">#{r.id}</span>}
       </div>
 
-      <h5 className="flex items-start gap-2 text-base font-bold text-slate-800" dir="auto">
+      <h5 className="flex items-start gap-2 text-base font-bold text-fg" dir="auto">
         <span aria-hidden className="text-lg leading-none">
           {targetIcon(r.target)}
         </span>
         {name}
       </h5>
 
-      {note && <p className="text-sm font-semibold text-brand">{note}</p>}
+      {note && <p className="text-sm font-semibold text-brand-fg">{note}</p>}
 
       {place && (
-        <div className="flex items-center gap-1 text-sm text-slate-600" dir="auto">
+        <div className="flex items-center gap-1 text-sm text-muted" dir="auto">
           <MapPin className="h-3.5 w-3.5 shrink-0" aria-hidden /> {place}
         </div>
       )}
 
       <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm">
         {!showCustomerRatings && stars > 0 && (
-          <span className="inline-flex items-center gap-0.5 text-amber-700">
+          <span className="inline-flex items-center gap-0.5 text-warn">
             <Star className="h-3.5 w-3.5" fill="currentColor" aria-hidden /> {stars}
-            {ratings && <span className="text-slate-600">({ratings.total})</span>}
+            {ratings && <span className="text-muted">({ratings.total})</span>}
           </span>
         )}
         {hasStatus && (
-          <span className={open ? 'text-green-700' : 'text-red-600'}>
+          <span className={open ? 'text-ok' : 'text-danger'}>
             {open ? t('popup.openNow') : t('popup.closedNow')}
             {hoursLabel(p.work_hours, t, i18n.language) && ` · ${hoursLabel(p.work_hours, t, i18n.language)}`}
           </span>
         )}
-        {price && <span className="font-semibold text-slate-700">{price}</span>}
+        {price && <span className="font-semibold text-fg">{price}</span>}
         {area && (
-          <span className="text-slate-600">
+          <span className="text-muted">
             {area} {t('map.areaUnit')}
           </span>
         )}
         {r.distance !== undefined && (
-          <span className="font-semibold text-brand">{formatDistance(r.distance, t)}</span>
+          <span className="font-semibold text-brand-fg">{formatDistance(r.distance, t)}</span>
         )}
       </div>
 
@@ -163,7 +163,7 @@ export default function FeaturedCard({ entry, mode, badge, note, customerRatings
         <button
           type="button"
           onClick={() => showOnMap(r)}
-          className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-slate-300 bg-white px-3 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+          className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-line-strong bg-surface px-3 text-sm font-semibold text-fg hover:bg-subtle"
         >
           <MapPin className="h-4 w-4" aria-hidden /> {t('extras.featured.showOnMap')}
         </button>

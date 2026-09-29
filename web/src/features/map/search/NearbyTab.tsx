@@ -88,7 +88,7 @@ export default function NearbyTab() {
       </div>
       <p
         role="status"
-        className={`flex items-center gap-1.5 text-sm ${nearbyCenter ? 'text-green-700' : picking ? 'text-brand' : 'text-slate-500'}`}
+        className={`flex items-center gap-1.5 text-sm ${nearbyCenter ? 'text-ok' : picking ? 'text-brand-fg' : 'text-muted'}`}
       >
         <MapPin className="h-4 w-4" aria-hidden /> {status}
       </p>
@@ -147,7 +147,7 @@ export default function NearbyTab() {
           value={radius}
           onChange={(e) => setRadius(e.target.value)}
         />
-        <p className="text-sm text-slate-600">{t('search.nearby.radiusHint')}</p>
+        <p className="text-sm text-muted">{t('search.nearby.radiusHint')}</p>
       </FormField>
 
       <div className="flex gap-2">

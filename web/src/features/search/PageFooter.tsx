@@ -19,18 +19,18 @@ const KEYS: LegalKey[] = [
 export default function PageFooter() {
   const { t } = useTranslation();
   return (
-    <footer className="mt-8 space-y-3 border-t border-slate-200 py-6 text-center text-slate-700">
-      <LegalLinks keys={KEYS} linkClassName="text-brand" />
+    <footer className="mt-8 space-y-3 border-t border-line py-6 text-center text-fg">
+      <LegalLinks keys={KEYS} linkClassName="text-brand-fg" />
       <a
         href={FACEBOOK_PAGE}
         target="_blank"
         rel="noopener noreferrer"
-        className="inline-flex items-center gap-2 text-sm font-semibold text-brand hover:underline"
+        className="inline-flex items-center gap-2 text-sm font-semibold text-brand-fg hover:underline"
       >
         <ExternalLink className="h-4 w-4" aria-hidden /> {t('searchPage.contactUs')}
       </a>
-      <p className="text-sm text-slate-600">{t('searchPage.about')}</p>
-      <p className="text-sm text-slate-600">
+      <p className="text-sm text-muted">{t('searchPage.about')}</p>
+      <p className="text-sm text-muted">
         © 2026 {t('app.name')}
       </p>
     </footer>

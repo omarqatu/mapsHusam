@@ -13,9 +13,9 @@ export default function EmptyState({
   icon?: ReactNode;
 }) {
   return (
-    <div className="flex flex-col items-center justify-center gap-2 px-4 py-12 text-center text-slate-500">
-      <div className="text-slate-300">{icon ?? <Inbox className="h-10 w-10" aria-hidden />}</div>
-      <p className="font-semibold text-slate-700">{title}</p>
+    <div className="flex flex-col items-center justify-center gap-2 px-4 py-12 text-center text-muted">
+      <div className="text-line-strong">{icon ?? <Inbox className="h-10 w-10" aria-hidden />}</div>
+      <p className="font-semibold text-fg">{title}</p>
       {description && <p className="max-w-sm text-sm">{description}</p>}
       {action}
     </div>

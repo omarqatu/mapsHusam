@@ -4,10 +4,10 @@ import { AlertCircle, CheckCircle2, Info, X } from 'lucide-react';
 type AlertType = 'error' | 'success' | 'warning' | 'info';
 
 const styles: Record<AlertType, { box: string; icon: typeof Info }> = {
-  error: { box: 'bg-red-50 border-red-200 text-red-700', icon: AlertCircle },
-  success: { box: 'bg-green-50 border-green-200 text-green-700', icon: CheckCircle2 },
-  warning: { box: 'bg-amber-50 border-amber-200 text-amber-700', icon: AlertCircle },
-  info: { box: 'bg-blue-50 border-blue-200 text-blue-700', icon: Info },
+  error: { box: 'bg-danger-soft border-danger-line text-danger', icon: AlertCircle },
+  success: { box: 'bg-ok-soft border-ok-line text-ok', icon: CheckCircle2 },
+  warning: { box: 'bg-warn-soft border-warn-line text-warn', icon: AlertCircle },
+  info: { box: 'bg-info-soft border-info-line text-info', icon: Info },
 };
 
 interface AlertMessageProps {

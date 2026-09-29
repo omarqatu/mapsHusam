@@ -20,16 +20,16 @@ import { formatHijri, buildTickerItems, palestineNow, type CardId, type TickerIt
 import { useNow, usePrayerTimes, useWeather, useWidgetsData } from '../hooks/useWidgets';
 
 const ICON: Record<CardId, ReactNode> = {
-  currency: <Coins className="h-4 w-4 text-emerald-700" aria-hidden />,
-  gold: <Gem className="h-4 w-4 text-amber-600" aria-hidden />,
-  fuel: <Fuel className="h-4 w-4 text-orange-700" aria-hidden />,
-  'transport-inter': <Bus className="h-4 w-4 text-indigo-700" aria-hidden />,
-  'transport-intra': <Bus className="h-4 w-4 text-violet-700" aria-hidden />,
-  weather: <CloudSun className="h-4 w-4 text-sky-700" aria-hidden />,
-  prayer: <MoonStar className="h-4 w-4 text-teal-700" aria-hidden />,
-  calendar: <CalendarDays className="h-4 w-4 text-rose-700" aria-hidden />,
-  'road-status': <TrafficCone className="h-4 w-4 text-orange-700" aria-hidden />,
-  'fuel-status': <Fuel className="h-4 w-4 text-sky-700" aria-hidden />,
+  currency: <Coins className="h-4 w-4 text-ok" aria-hidden />,
+  gold: <Gem className="h-4 w-4 text-warn" aria-hidden />,
+  fuel: <Fuel className="h-4 w-4 text-warn" aria-hidden />,
+  'transport-inter': <Bus className="h-4 w-4 text-info" aria-hidden />,
+  'transport-intra': <Bus className="h-4 w-4 text-brand-fg" aria-hidden />,
+  weather: <CloudSun className="h-4 w-4 text-info" aria-hidden />,
+  prayer: <MoonStar className="h-4 w-4 text-ok" aria-hidden />,
+  calendar: <CalendarDays className="h-4 w-4 text-danger" aria-hidden />,
+  'road-status': <TrafficCone className="h-4 w-4 text-warn" aria-hidden />,
+  'fuel-status': <Fuel className="h-4 w-4 text-info" aria-hidden />,
 };
 
 /** Seconds for one full pass: about three seconds per item, never faster than 40 s. */
@@ -42,7 +42,7 @@ function Item({ item, hidden, large }: { item: TickerItem; hidden?: boolean; lar
         to={`/widgets/portal?card=${item.card}`}
         tabIndex={hidden ? -1 : undefined}
         className={clsx(
-          'inline-flex items-center gap-2 whitespace-nowrap rounded-md py-1 text-slate-700 hover:text-brand focus-visible:outline-2 focus-visible:outline-brand',
+          'inline-flex items-center gap-2 whitespace-nowrap rounded-md py-1 text-fg hover:text-brand-fg focus-visible:outline-2 focus-visible:outline-brand',
           large ? 'text-lg' : 'text-sm',
         )}
       >
@@ -51,11 +51,11 @@ function Item({ item, hidden, large }: { item: TickerItem; hidden?: boolean; lar
           {item.label}
         </span>
         {item.value && (
-          <b className="font-black text-slate-900" dir="auto">
+          <b className="font-black text-fg" dir="auto">
             {item.value}
           </b>
         )}
-        {item.unit && <span className="text-slate-600">{item.unit}</span>}
+        {item.unit && <span className="text-muted">{item.unit}</span>}
       </Link>
     </li>
   );
@@ -108,16 +108,16 @@ export default function TickerBar({
     <section
       aria-label={title}
       className={clsx(
-        'flex items-center gap-2 bg-white px-3',
+        'flex items-center gap-2 bg-surface px-3',
         large
-          ? 'h-16 rounded-2xl border border-slate-200 shadow-sm'
-          : 'h-10 shrink-0 border-t border-slate-200 [@media(max-height:560px)]:hidden',
+          ? 'h-16 rounded-2xl border border-line shadow-sm'
+          : 'h-10 shrink-0 border-t border-line [@media(max-height:560px)]:hidden',
         className,
       )}
     >
       <Link
         to="/widgets/portal"
-        className="flex shrink-0 items-center gap-1.5 rounded-md py-1 font-black text-brand focus-visible:outline-2 focus-visible:outline-brand"
+        className="flex shrink-0 items-center gap-1.5 rounded-md py-1 font-black text-brand-fg focus-visible:outline-2 focus-visible:outline-brand"
       >
         <Zap className={large ? 'h-6 w-6' : 'h-4 w-4'} aria-hidden />
         <span className={clsx(large ? 'text-lg' : 'hidden text-sm sm:inline')}>{title}</span>
@@ -125,9 +125,9 @@ export default function TickerBar({
 
       <div className="ticker-viewport min-w-0 flex-1 overflow-hidden motion-reduce:overflow-x-auto">
         {data.isPending ? (
-          <span className="text-sm text-slate-600">{t('widgets.ticker.loading')}</span>
+          <span className="text-sm text-muted">{t('widgets.ticker.loading')}</span>
         ) : items.length === 0 ? (
-          <span className="text-sm text-slate-600">{t('widgets.empty')}</span>
+          <span className="text-sm text-muted">{t('widgets.empty')}</span>
         ) : (
           <ul
             className="ticker-track flex w-max items-center"
@@ -153,7 +153,7 @@ export default function TickerBar({
         aria-pressed={paused}
         aria-label={t(paused ? 'widgets.ticker.play' : 'widgets.ticker.pause')}
         title={t(paused ? 'widgets.ticker.play' : 'widgets.ticker.pause')}
-        className="shrink-0 rounded-md p-1.5 text-slate-700 hover:bg-slate-100 motion-reduce:hidden"
+        className="shrink-0 rounded-md p-1.5 text-fg hover:bg-subtle motion-reduce:hidden"
       >
         {paused ? <Play className="h-4 w-4" aria-hidden /> : <Pause className="h-4 w-4" aria-hidden />}
       </button>
@@ -162,7 +162,7 @@ export default function TickerBar({
           to="/widgets/portal"
           aria-label={t('widgets.ticker.open')}
           title={t('widgets.ticker.open')}
-          className="shrink-0 rounded-md p-1.5 text-slate-700 hover:bg-slate-100"
+          className="shrink-0 rounded-md p-1.5 text-fg hover:bg-subtle"
         >
           <LayoutGrid className="h-4 w-4" aria-hidden />
         </Link>

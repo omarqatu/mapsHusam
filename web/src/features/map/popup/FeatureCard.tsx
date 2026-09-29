@@ -44,12 +44,12 @@ function StatusTile({ tone, label, sub }: { tone: string; label: string; sub?: s
   return (
     <div
       className="rounded-lg border border-dashed p-3 text-center"
-      style={{ borderColor: tone, background: `${tone}14` }}
+      style={{ borderColor: tone, background: `color-mix(in srgb, ${tone} 12%, transparent)` }}
     >
       <div className="flex items-center justify-center gap-2 text-sm font-bold" style={{ color: tone }}>
         <StatusDot color={tone} /> {label}
       </div>
-      {sub && <div className="mt-1 text-xs text-slate-600">{sub}</div>}
+      {sub && <div className="mt-1 text-xs text-muted">{sub}</div>}
     </div>
   );
 }
@@ -58,11 +58,11 @@ function StatusPill({ tone, label, sub }: { tone: string; label: string; sub?: s
   return (
     <span
       className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-bold"
-      style={{ color: tone, background: `${tone}14` }}
+      style={{ color: tone, background: `color-mix(in srgb, ${tone} 12%, transparent)` }}
     >
       <StatusDot color={tone} className="h-2 w-2" />
       {label}
-      {sub && <span className="font-normal text-slate-600">· {sub}</span>}
+      {sub && <span className="font-normal text-muted">· {sub}</span>}
     </span>
   );
 }
@@ -125,7 +125,7 @@ export default function FeatureCard({ feature, onClose, className }: Props) {
       title={
         <div className="flex items-center gap-2">
           {kind.kind === 'location' ? (
-            <MapPin className="h-6 w-6 text-red-500" aria-hidden />
+            <MapPin className="h-6 w-6 text-danger" aria-hidden />
           ) : (
             <span aria-hidden className="text-xl">
               {targetIcon(kind)}
@@ -134,7 +134,7 @@ export default function FeatureCard({ feature, onClose, className }: Props) {
           <div className="min-w-0">
             <div className="truncate text-sm">{name || typeTitle}</div>
             {name && (
-              <div className="truncate text-xs font-normal text-slate-500">
+              <div className="truncate text-xs font-normal text-muted">
                 {typeTitle}
                 {id ? ` · #${id}` : ''}
               </div>
@@ -145,21 +145,21 @@ export default function FeatureCard({ feature, onClose, className }: Props) {
     >
       <div className="space-y-3">
         {kind.kind === 'location' && (
-          <p className="text-sm text-slate-600">{t('popup.sharedLocationHint')}</p>
+          <p className="text-sm text-muted">{t('popup.sharedLocationHint')}</p>
         )}
 
         {dirs && (
           <div className="grid grid-cols-2 gap-2">
             <div>
-              <div className="mb-1 text-center text-xs text-slate-500">{t('popup.inbound')}</div>
+              <div className="mb-1 text-center text-xs text-muted">{t('popup.inbound')}</div>
               <StatusTile tone={dirs.inbound.color} label={t(`roadStatus.${dirs.inbound.key}`)} />
             </div>
             <div>
-              <div className="mb-1 text-center text-xs text-slate-500">{t('popup.outbound')}</div>
+              <div className="mb-1 text-center text-xs text-muted">{t('popup.outbound')}</div>
               {dirs.outbound ? (
                 <StatusTile tone={dirs.outbound.color} label={t(`roadStatus.${dirs.outbound.key}`)} />
               ) : (
-                <StatusTile tone="#6c757d" label={t('popup.notSet')} />
+                <StatusTile tone="var(--color-muted)" label={t('popup.notSet')} />
               )}
             </div>
           </div>
@@ -168,7 +168,7 @@ export default function FeatureCard({ feature, onClose, className }: Props) {
         {/* One line: open / closed (+ hours) and the rating summary. */}
         {kind.kind !== 'location' && !isBarrier && (
           <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1.5">
-            <StatusPill tone={open ? '#28a745' : '#dc3545'} label={open ? t('popup.openNow') : t('popup.closedNow')} sub={hoursText} />
+            <StatusPill tone={open ? 'var(--color-ok)' : 'var(--color-danger)'} label={open ? t('popup.openNow') : t('popup.closedNow')} sub={hoursText} />
             {kind.kind === 'service' && id && <RatingsBlock layer={kind.discriminator} featureId={id} />}
           </div>
         )}
@@ -198,14 +198,14 @@ export default function FeatureCard({ feature, onClose, className }: Props) {
           ))}
 
         {kind.kind !== 'location' && !isBarrier && !isLinkedProvider && !phone && !whatsapp && (
-          <p className="text-sm text-slate-600">{t('popup.noContact')}</p>
+          <p className="text-sm text-muted">{t('popup.noContact')}</p>
         )}
 
         {kind.kind !== 'location' && (hasDetails || isFuelStation(kind)) && (
-          <div className="space-y-3 rounded-lg border border-slate-200 p-3">
+          <div className="space-y-3 rounded-lg border border-line p-3">
             {where && (
-              <p className="flex items-start gap-1.5 text-sm text-slate-700">
-                <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-slate-400" aria-hidden />
+              <p className="flex items-start gap-1.5 text-sm text-fg">
+                <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-muted" aria-hidden />
                 {where}
               </p>
             )}
@@ -229,7 +229,7 @@ export default function FeatureCard({ feature, onClose, className }: Props) {
 
         {media.length > 0 && <MediaGallery items={media} />}
 
-        <div className="flex items-center justify-between gap-2 border-t border-slate-100 pt-3">
+        <div className="flex items-center justify-between gap-2 border-t border-line pt-3">
           <Button
             variant="secondary"
             size="sm"
@@ -240,7 +240,7 @@ export default function FeatureCard({ feature, onClose, className }: Props) {
           >
             {t('popup.copyLink')}
           </Button>
-          <span className="text-xs text-slate-500" dir="ltr">
+          <span className="text-xs text-muted" dir="ltr">
             {feature.coordinate.map((n) => n.toFixed(1)).join(', ')}
           </span>
         </div>

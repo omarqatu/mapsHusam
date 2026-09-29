@@ -27,13 +27,13 @@ export default function SectionCard({
   return (
     <section
       id={id}
-      className={clsx('space-y-3 rounded-xl border border-slate-200 bg-white p-4 shadow-sm', className)}
+      className={clsx('space-y-3 rounded-xl border border-line bg-surface p-4 shadow-sm', className)}
     >
-      <div className="flex items-center gap-2 border-b border-slate-100 pb-2">
-        {icon && <span className="text-brand">{icon}</span>}
+      <div className="flex items-center gap-2 border-b border-line pb-2">
+        {icon && <span className="text-brand-fg">{icon}</span>}
         <div className="min-w-0 flex-1">
-          <h4 className="text-base font-bold text-slate-800">{title}</h4>
-          {subtitle && <div className="text-sm text-slate-600">{subtitle}</div>}
+          <h4 className="text-base font-bold text-fg">{title}</h4>
+          {subtitle && <div className="text-sm text-muted">{subtitle}</div>}
         </div>
         {badge}
       </div>

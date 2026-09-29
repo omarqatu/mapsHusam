@@ -17,27 +17,27 @@ export default function WelcomePage() {
   const { t } = useTranslation();
   return (
     <div className="mx-auto max-w-3xl py-6 text-center">
-      <h1 className="text-3xl font-black text-slate-800 sm:text-4xl">
-        <span className="text-brand">{t('auth.welcome.title')}</span>
+      <h1 className="text-3xl font-black text-fg sm:text-4xl">
+        <span className="text-brand-fg">{t('auth.welcome.title')}</span>
         <br />
         {t('auth.welcome.tagline')}
       </h1>
-      <p className="mx-auto mt-4 max-w-xl text-slate-600">{t('auth.welcome.subtitle')}</p>
+      <p className="mx-auto mt-4 max-w-xl text-muted">{t('auth.welcome.subtitle')}</p>
 
       <ul className="mt-8 grid grid-cols-1 gap-3 text-start sm:grid-cols-2 md:grid-cols-3">
         {features.map(({ key, Icon }) => (
           <li
             key={key}
-            className="flex items-start gap-3 rounded-xl border border-slate-100 bg-white p-3 shadow-sm"
+            className="flex items-start gap-3 rounded-xl border border-line bg-surface p-3 shadow-sm"
           >
-            <span className="rounded-lg bg-brand-light p-2 text-brand">
+            <span className="rounded-lg bg-brand-light p-2 text-brand-fg">
               <Icon className="h-5 w-5" aria-hidden />
             </span>
             <span>
-              <span className="block font-bold text-slate-800">
+              <span className="block font-bold text-fg">
                 {t(`auth.welcome.features.${key}.label`)}
               </span>
-              <span className="block text-sm text-slate-500">{t(`auth.welcome.features.${key}.desc`)}</span>
+              <span className="block text-sm text-muted">{t(`auth.welcome.features.${key}.desc`)}</span>
             </span>
           </li>
         ))}
@@ -53,16 +53,16 @@ export default function WelcomePage() {
         </Link>
         <Link
           to="/login"
-          className="inline-flex h-12 items-center justify-center gap-2 rounded-lg border border-brand bg-white px-6 font-bold text-brand hover:bg-brand-light"
+          className="inline-flex h-12 items-center justify-center gap-2 rounded-lg border border-brand bg-surface px-6 font-bold text-brand-fg hover:bg-brand-light"
         >
           <LogIn className="h-5 w-5" aria-hidden />
           {t('auth.welcome.login')}
         </Link>
       </div>
-      <p className="mt-4 text-sm text-slate-500">{t('auth.welcome.footer')}</p>
-      <div className="mt-2 flex flex-wrap items-center justify-center gap-1 text-xs text-slate-500">
+      <p className="mt-4 text-sm text-muted">{t('auth.welcome.footer')}</p>
+      <div className="mt-2 flex flex-wrap items-center justify-center gap-1 text-xs text-muted">
         {t('auth.welcome.agreeNote')}
-        <LegalLinks keys={['terms', 'privacy']} linkClassName="text-brand" />
+        <LegalLinks keys={['terms', 'privacy']} linkClassName="text-brand-fg" />
       </div>
     </div>
   );

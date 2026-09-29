@@ -105,7 +105,7 @@ export default function CategoryResults({ selection, onChange, onBack }: Props) 
         >
           {t('searchPage.backToCategories')}
         </Button>
-        <h2 id="category-title" className="flex items-center gap-2 text-xl font-black text-slate-800">
+        <h2 id="category-title" className="flex items-center gap-2 text-xl font-black text-fg">
           <span aria-hidden>{targetIcon(target)}</span>
           {title}
         </h2>
@@ -119,7 +119,7 @@ export default function CategoryResults({ selection, onChange, onBack }: Props) 
       />
 
       <div className="flex flex-wrap items-end justify-between gap-3">
-        <p role="status" aria-live="polite" className="text-base font-bold text-slate-700">
+        <p role="status" aria-live="polite" className="text-base font-bold text-fg">
           {query.isFetching && !data
             ? t('searchPage.searching')
             : data
@@ -128,7 +128,7 @@ export default function CategoryResults({ selection, onChange, onBack }: Props) 
         </p>
         <div className="flex flex-wrap items-center gap-2">
           <div className="flex items-center gap-2">
-            <span className="text-sm font-semibold text-slate-700">{t('searchPage.sortBy')}</span>
+            <span className="text-sm font-semibold text-fg">{t('searchPage.sortBy')}</span>
             <SelectInput
               inputSize="sm"
               className="w-44"
@@ -158,7 +158,7 @@ export default function CategoryResults({ selection, onChange, onBack }: Props) 
           </Button>
           <Link
             to={mapSearchPath(selection)}
-            className="inline-flex h-9 items-center gap-2 rounded-lg border border-slate-300 bg-white px-3 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+            className="inline-flex h-9 items-center gap-2 rounded-lg border border-line-strong bg-surface px-3 text-sm font-semibold text-fg hover:bg-subtle"
           >
             <MapIcon className="h-4 w-4" aria-hidden />
             {t('searchPage.openOnMap')}
@@ -166,7 +166,7 @@ export default function CategoryResults({ selection, onChange, onBack }: Props) 
         </div>
       </div>
       {origin && effectiveSort === 'nearest' && (
-        <p className="flex items-center gap-1.5 text-sm text-slate-600">
+        <p className="flex items-center gap-1.5 text-sm text-muted">
           <LocateFixed className="h-4 w-4" aria-hidden /> {t('searchPage.sortedFromYou')}
         </p>
       )}

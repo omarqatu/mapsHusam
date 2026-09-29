@@ -220,7 +220,7 @@ export default function SmartTab() {
           {chips.map((c, i) => (
             <li
               key={i}
-              className="flex items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm"
+              className="flex items-center gap-2 rounded-lg border border-line bg-subtle px-3 py-2 text-sm"
             >
               <span className="min-w-0 flex-1">
                 <b>{c.fieldLabel}</b> {OPERATOR_SYMBOL[c.operator]} <span dir="auto">{c.shown}</span>
@@ -229,7 +229,7 @@ export default function SmartTab() {
                 type="button"
                 aria-label={t('common.delete')}
                 onClick={() => setChips((cs) => cs.filter((_, j) => j !== i))}
-                className="rounded p-1 text-red-600 hover:bg-red-50"
+                className="rounded p-1 text-danger hover:bg-danger-soft"
               >
                 <X className="h-4 w-4" />
               </button>

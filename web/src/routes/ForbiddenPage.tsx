@@ -10,7 +10,7 @@ export default function ForbiddenPage() {
       icon={<ShieldAlert className="h-10 w-10" aria-hidden />}
       title={t('errors.forbiddenTitle')}
       action={
-        <Link to="/" className="mt-2 font-semibold text-brand hover:underline">
+        <Link to="/" className="mt-2 font-semibold text-brand-fg hover:underline">
           {t('common.back')}
         </Link>
       }

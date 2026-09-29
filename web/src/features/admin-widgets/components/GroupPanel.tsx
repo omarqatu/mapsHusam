@@ -67,19 +67,19 @@ function Editor({ groupKey, items, updatedAt, onReload, onDiscard }: Props & { o
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h2 className="text-lg font-bold text-slate-800">{t(`adminWidgets.tab.${groupKey}`)}</h2>
+        <h2 className="text-lg font-bold text-fg">{t(`adminWidgets.tab.${groupKey}`)}</h2>
         <div className="flex flex-wrap items-center gap-2">
           {dirty && <Badge tone="amber">{t('adminWidgets.unsaved')}</Badge>}
           <LastUpdated at={updatedAt} />
         </div>
       </div>
-      <p className="text-sm text-slate-600">{t('adminWidgets.group.hint')}</p>
+      <p className="text-sm text-muted">{t('adminWidgets.group.hint')}</p>
 
       {rows.length === 0 ? (
         <EmptyState title={t('adminWidgets.group.empty')} />
       ) : (
         <div style={cols} role="group" aria-label={t(`adminWidgets.tab.${groupKey}`)}>
-          <div className={`hidden gap-2 px-1 pb-1 text-sm font-semibold text-slate-600 md:grid ${grid}`}>
+          <div className={`hidden gap-2 px-1 pb-1 text-sm font-semibold text-muted md:grid ${grid}`}>
             {fields.map((f) => (
               <span key={f.key}>{t(`adminWidgets.field.${f.label}`)}</span>
             ))}
@@ -91,11 +91,11 @@ function Editor({ groupKey, items, updatedAt, onReload, onDiscard }: Props & { o
               return (
                 <li
                   key={r.uid}
-                  className={`grid gap-2 rounded-xl border border-slate-200 bg-slate-50/60 p-3 md:items-start md:border-0 md:bg-transparent md:p-0 ${grid}`}
+                  className={`grid gap-2 rounded-xl border border-line bg-subtle/60 p-3 md:items-start md:border-0 md:bg-transparent md:p-0 ${grid}`}
                 >
                   {fields.map((f) => (
                     <label key={f.key} className="flex min-w-0 flex-col gap-1">
-                      <span className="text-xs font-semibold text-slate-600 md:sr-only">
+                      <span className="text-xs font-semibold text-muted md:sr-only">
                         {t(`adminWidgets.field.${f.label}`)}
                       </span>
                       <TextInput
@@ -107,7 +107,7 @@ function Editor({ groupKey, items, updatedAt, onReload, onDiscard }: Props & { o
                         onChange={(e) => edit(r.uid, f.key, e.target.value)}
                       />
                       {f.key === 'id' && missingId && (
-                        <span role="alert" className="text-xs font-medium text-red-700">
+                        <span role="alert" className="text-xs font-medium text-danger">
                           {t('adminWidgets.group.needsId')}
                         </span>
                       )}
@@ -148,7 +148,7 @@ function Editor({ groupKey, items, updatedAt, onReload, onDiscard }: Props & { o
         </div>
       )}
 
-      <div className="flex flex-wrap gap-2 border-t border-slate-100 pt-4">
+      <div className="flex flex-wrap gap-2 border-t border-line pt-4">
         <Button variant="secondary" startIcon={<Plus className="h-4 w-4" />} onClick={add}>
           {t('adminWidgets.group.add')}
         </Button>

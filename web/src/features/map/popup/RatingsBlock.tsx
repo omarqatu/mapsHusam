@@ -15,21 +15,21 @@ export default function RatingsBlock({ layer, featureId }: { layer: string; feat
   return (
     <div className="text-sm">
       {isLoading ? (
-        <p className="text-slate-500">{t('popup.rating.loading')}</p>
+        <p className="text-muted">{t('popup.rating.loading')}</p>
       ) : !data || data.totalRatings === 0 ? (
-        <p className="text-slate-500">{t('popup.rating.none')}</p>
+        <p className="text-muted">{t('popup.rating.none')}</p>
       ) : (
         <>
           <div className="flex items-center gap-1.5">
             <StarRating value={data.averageRating} />
-            <b className="text-slate-800">{data.averageRating}</b>
-            <span className="text-slate-500">{t('popup.rating.count', { count: data.totalRatings })}</span>
+            <b className="text-fg">{data.averageRating}</b>
+            <span className="text-muted">{t('popup.rating.count', { count: data.totalRatings })}</span>
           </div>
           <button
             type="button"
             onClick={() => setOpen((o) => !o)}
             aria-expanded={open}
-            className="mt-1 inline-flex items-center gap-1 font-semibold text-brand hover:underline"
+            className="mt-1 inline-flex items-center gap-1 font-semibold text-brand-fg hover:underline"
           >
             <MessageSquare className="h-3.5 w-3.5" aria-hidden />
             {open
@@ -37,17 +37,17 @@ export default function RatingsBlock({ layer, featureId }: { layer: string; feat
               : t('popup.rating.showComments', { count: data.totalRatings })}
           </button>
           {open && (
-            <ul className="mt-2 max-h-52 space-y-1.5 overflow-y-auto rounded-lg bg-slate-50 p-1.5">
+            <ul className="mt-2 max-h-52 space-y-1.5 overflow-y-auto rounded-lg bg-subtle p-1.5">
               {data.ratings.map((r, i) => (
-                <li key={i} className="rounded bg-white p-2">
+                <li key={i} className="rounded bg-surface p-2">
                   <div className="flex items-center justify-between gap-2">
-                    <span className="text-sm font-bold text-slate-700">
+                    <span className="text-sm font-bold text-fg">
                       {r.user_name || t('popup.rating.user')}
                     </span>
                     <StarRating value={r.rating} />
                   </div>
-                  {r.comment && <p className="mt-1 text-sm leading-relaxed text-slate-600">{r.comment}</p>}
-                  <p className="mt-1 text-sm text-slate-500">{formatDate(r.created_at, i18n.language)}</p>
+                  {r.comment && <p className="mt-1 text-sm leading-relaxed text-muted">{r.comment}</p>}
+                  <p className="mt-1 text-sm text-muted">{formatDate(r.created_at, i18n.language)}</p>
                 </li>
               ))}
             </ul>

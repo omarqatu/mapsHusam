@@ -19,7 +19,7 @@ export default function WidgetsTickerPage() {
         actions={
           <Link
             to="/widgets/portal"
-            className="inline-flex h-11 items-center justify-center gap-2 rounded-lg border border-slate-300 bg-white px-4 text-base font-semibold text-slate-700 hover:bg-slate-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
+            className="inline-flex h-11 items-center justify-center gap-2 rounded-lg border border-line-strong bg-surface px-4 text-base font-semibold text-fg hover:bg-subtle focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
           >
             <LayoutGrid className="h-4 w-4" aria-hidden />
             {t('widgets.ticker.open')}
@@ -27,7 +27,7 @@ export default function WidgetsTickerPage() {
         }
       />
       <TickerBar variant="page" />
-      <p className="mt-3 text-base text-slate-700">{t('widgets.ticker.hint')}</p>
+      <p className="mt-3 text-base text-fg">{t('widgets.ticker.hint')}</p>
     </div>
   );
 }

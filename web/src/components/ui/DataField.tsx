@@ -20,12 +20,12 @@ export default function DataField({ label, value, mono, wide, className }: DataF
   const empty = value === null || value === undefined || value === '';
   return (
     <div className={clsx(wide && 'col-span-2', className)}>
-      <div className="mb-0.5 text-xs text-slate-500">{label}</div>
+      <div className="mb-0.5 text-xs text-muted">{label}</div>
       <div
         className={clsx(
           'text-sm font-medium break-words',
           mono && 'font-mono',
-          empty ? 'text-slate-300' : 'text-slate-900',
+          empty ? 'text-line-strong' : 'text-fg',
         )}
         dir={mono ? 'ltr' : undefined}
       >

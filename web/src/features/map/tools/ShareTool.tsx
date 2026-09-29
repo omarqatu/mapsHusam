@@ -41,7 +41,7 @@ type CopyKey = 'link' | 'grid' | 'wgs';
 
 /** A coordinate value: always left-to-right, even inside an Arabic page. */
 const Value = ({ children }: { children: string }) => (
-  <span dir="ltr" className="inline-block font-mono text-xs text-slate-800">
+  <span dir="ltr" className="inline-block font-mono text-xs text-fg">
     {children}
   </span>
 );
@@ -94,7 +94,7 @@ function SharePanel({
 
   return (
     <MapSheet side="end" label={t('tools.share.title')} title={t('tools.share.title')} onClose={onClose}>
-      <p className="mb-3 text-sm text-slate-600" role="status">
+      <p className="mb-3 text-sm text-muted" role="status">
         {!picked
           ? t('tools.share.hint')
           : picked.fromLink
@@ -121,9 +121,9 @@ function SharePanel({
         {canShare ? t('tools.share.shareLink') : copyLabel('link', t('tools.share.copyLink'))}
       </Button>
 
-      <div className="mt-4 space-y-3 rounded-lg border border-dashed border-slate-300 p-3 text-xs">
+      <div className="mt-4 space-y-3 rounded-lg border border-dashed border-line-strong p-3 text-xs">
         <div>
-          <div className="font-bold text-slate-700">{t('tools.share.gridTitle')}</div>
+          <div className="font-bold text-fg">{t('tools.share.gridTitle')}</div>
           <div className="mt-1 flex items-center justify-between gap-2">
             <Value>{picked ? gridDisplay(picked.coord) : 'E: --- , N: ---'}</Value>
             <Button
@@ -138,7 +138,7 @@ function SharePanel({
           </div>
         </div>
         <div>
-          <div className="font-bold text-slate-700">{t('tools.share.wgsTitle')}</div>
+          <div className="font-bold text-fg">{t('tools.share.wgsTitle')}</div>
           <div className="mt-1 flex items-center justify-between gap-2">
             <Value>{picked ? wgsDisplay(picked.coord) : 'Lat: --- , Lon: ---'}</Value>
             <Button
@@ -169,7 +169,7 @@ function SharePanel({
       <Button
         size="sm"
         variant="ghost"
-        className="mt-3 w-full border border-slate-200"
+        className="mt-3 w-full border border-line"
         disabled={!picked}
         startIcon={<Trash2 className="h-4 w-4" aria-hidden />}
         onClick={onClear}

@@ -161,7 +161,7 @@ function Chat({ req, uid }: { req: ServiceRequest; uid: number }) {
         }
       >
         <div className="space-y-3">
-          <div className="rounded-lg bg-slate-50 p-2.5 text-sm text-slate-700">
+          <div className="rounded-lg bg-subtle p-2.5 text-sm text-fg">
             {completed ? (
               <ContactBox contact={contact} otherName={other} serviceType={req.service_type} />
             ) : open ? (
@@ -180,12 +180,12 @@ function Chat({ req, uid }: { req: ServiceRequest; uid: number }) {
               const el = e.currentTarget;
               stick.current = el.scrollTop + el.clientHeight >= el.scrollHeight - 40;
             }}
-            className="flex h-64 flex-col gap-2 overflow-y-auto rounded-lg bg-slate-100 p-3"
+            className="flex h-64 flex-col gap-2 overflow-y-auto rounded-lg bg-subtle p-3"
           >
             {messagesQ.isLoading ? (
               <CenteredSpinner />
             ) : messagesQ.isError ? (
-              <p className="m-auto text-center text-xs text-red-600">{t('requests.chat.loadFailed')}</p>
+              <p className="m-auto text-center text-xs text-danger">{t('requests.chat.loadFailed')}</p>
             ) : messages?.length ? (
               messages.map((m) => {
                 const mine = m.sender_role === role;
@@ -195,7 +195,7 @@ function Chat({ req, uid }: { req: ServiceRequest; uid: number }) {
                     className={
                       mine
                         ? 'ms-auto max-w-[80%] break-words rounded-2xl bg-brand px-3 py-2 text-sm text-white'
-                        : 'me-auto max-w-[80%] break-words rounded-2xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-800'
+                        : 'me-auto max-w-[80%] break-words rounded-2xl border border-line bg-surface px-3 py-2 text-sm text-fg'
                     }
                     title={new Date(m.created_at).toLocaleString(i18n.language)}
                   >
@@ -204,7 +204,7 @@ function Chat({ req, uid }: { req: ServiceRequest; uid: number }) {
                 );
               })
             ) : (
-              <p className="m-auto text-center text-xs text-slate-500">{t('requests.chat.empty')}</p>
+              <p className="m-auto text-center text-xs text-muted">{t('requests.chat.empty')}</p>
             )}
           </div>
 

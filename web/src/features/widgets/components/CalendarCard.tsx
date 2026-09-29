@@ -17,11 +17,11 @@ import GroupCard from './GroupCard';
 
 function DateTile({ icon, label, value }: { icon: React.ReactNode; label: string; value: string }) {
   return (
-    <div className="flex items-center gap-3 rounded-xl border border-slate-200 bg-white p-3">
-      <span className="shrink-0 text-brand">{icon}</span>
+    <div className="flex items-center gap-3 rounded-xl border border-line bg-surface p-3">
+      <span className="shrink-0 text-brand-fg">{icon}</span>
       <div className="min-w-0">
-        <div className="text-sm font-semibold text-slate-600">{label}</div>
-        <div className="text-lg font-black text-slate-900" dir="auto">
+        <div className="text-sm font-semibold text-muted">{label}</div>
+        <div className="text-lg font-black text-fg" dir="auto">
           {value}
         </div>
       </div>
@@ -53,16 +53,16 @@ function daysBadge(days: number | null, t: (k: string, o?: Record<string, unknow
 function EventList({ rows }: { rows: EventRow[] }) {
   const { t, i18n } = useTranslation();
   return (
-    <ul className="divide-y divide-slate-100">
+    <ul className="divide-y divide-line">
       {rows.map(({ item, days }, i) => {
         const d = item.date ? isoToDate(item.date) : null;
         return (
           <li key={`${item.id ?? ''}-${i}`} className="flex items-start justify-between gap-3 py-2.5">
             <div className="min-w-0">
-              <div className="break-words text-base font-semibold text-slate-800" dir="auto">
+              <div className="break-words text-base font-semibold text-fg" dir="auto">
                 {item.label || item.id}
               </div>
-              <div className="text-sm text-slate-600" dir="auto">
+              <div className="text-sm text-muted" dir="auto">
                 {d ? formatDate(d, i18n.language) : (item.date ?? '')}
                 {item.notes ? ` — ${item.notes}` : ''}
               </div>
@@ -103,8 +103,8 @@ export default function CalendarCard({
       id={id}
       title={title}
       icon={<CalendarDays className="h-5 w-5" aria-hidden />}
-      chip="bg-rose-100 text-rose-800"
-      subtitle={<UpdatedAgo at={updatedAt} now={dataNow} className="text-sm text-slate-600" />}
+      chip="bg-danger-soft text-danger"
+      subtitle={<UpdatedAgo at={updatedAt} now={dataNow} className="text-sm text-muted" />}
       className={className}
     >
       <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-1">
@@ -121,8 +121,8 @@ export default function CalendarCard({
       </div>
 
       <div>
-        <h5 className="mb-1 flex items-center gap-1.5 text-base font-bold text-slate-800">
-          <CalendarHeart className="h-4 w-4 text-rose-700" aria-hidden />
+        <h5 className="mb-1 flex items-center gap-1.5 text-base font-bold text-fg">
+          <CalendarHeart className="h-4 w-4 text-danger" aria-hidden />
           {t('widgets.calendar.events')}
         </h5>
         {listed.length === 0 && past.length === 0 ? (
@@ -130,13 +130,13 @@ export default function CalendarCard({
         ) : (
           <>
             {listed.length === 0 ? (
-              <p className="py-3 text-base text-slate-600">{t('widgets.calendar.noUpcoming')}</p>
+              <p className="py-3 text-base text-muted">{t('widgets.calendar.noUpcoming')}</p>
             ) : (
               <EventList rows={listed} />
             )}
             {past.length > 0 && (
-              <details className="mt-1 rounded-lg border border-slate-200 px-3">
-                <summary className="cursor-pointer py-2 text-sm font-semibold text-slate-700">
+              <details className="mt-1 rounded-lg border border-line px-3">
+                <summary className="cursor-pointer py-2 text-sm font-semibold text-fg">
                   {t('widgets.calendar.past', { count: past.length })}
                 </summary>
                 <EventList rows={past} />

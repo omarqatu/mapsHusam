@@ -31,6 +31,16 @@ export default defineConfig([
           selector: 'AssignmentExpression[left.property.name=/^(innerHTML|outerHTML)$/]',
           message: 'No innerHTML/outerHTML — render through JSX.',
         },
+        // Design system: colours come from the tokens in index.css (bg-surface, text-muted, border-line, bg-danger-soft …),
+        // so both themes work and a re-brand is one file. Raw palette classes (slate-600, red-50 …) are not allowed.
+        {
+          selector: `Literal[value=/\\b(text|bg|border|ring|divide|outline|fill|stroke|placeholder|from|to|via)-(slate|gray|zinc|neutral|stone|red|rose|pink|orange|amber|yellow|lime|green|emerald|teal|cyan|sky|blue|indigo|violet|purple|fuchsia)-\\d/]`,
+          message: 'Use a colour token (bg-surface, text-muted, border-line, bg-danger-soft …) — see index.css @theme.',
+        },
+        {
+          selector: `TemplateElement[value.raw=/\\b(text|bg|border|ring|divide|outline|fill|stroke|placeholder|from|to|via)-(slate|gray|zinc|neutral|stone|red|rose|pink|orange|amber|yellow|lime|green|emerald|teal|cyan|sky|blue|indigo|violet|purple|fuchsia)-\\d/]`,
+          message: 'Use a colour token (bg-surface, text-muted, border-line, bg-danger-soft …) — see index.css @theme.',
+        },
       ],
       'no-restricted-globals': [
         'error',
@@ -38,6 +48,11 @@ export default defineConfig([
       ],
       'react-refresh/only-export-components': 'warn',
     },
+  },
+  {
+    // The UI kit test renders raw classes on purpose (it checks className passthrough).
+    files: ['**/*.test.{ts,tsx}'],
+    rules: { 'no-restricted-syntax': 'off' },
   },
   {
     // The only places allowed to call fetch: the API client, the GeoServer reader (no app token to GeoServer),

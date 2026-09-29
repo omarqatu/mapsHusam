@@ -72,7 +72,7 @@ export default function StatusTab({
           disabled={rows.isFetching}
           aria-label={t('extras.status.refresh')}
           title={t('extras.status.refreshHint')}
-          className="rounded p-1.5 text-slate-600 hover:bg-slate-100 disabled:opacity-60"
+          className="rounded p-1.5 text-muted hover:bg-subtle disabled:opacity-60"
         >
           <RefreshCw className={rows.isFetching ? 'h-4 w-4 animate-spin' : 'h-4 w-4'} />
         </button>
@@ -101,18 +101,18 @@ export default function StatusTab({
                 <button
                   type="button"
                   onClick={() => showOnMap(r)}
-                  className="w-full rounded-xl border border-slate-200 bg-white p-3 text-start hover:border-brand hover:bg-brand-light/30"
+                  className="w-full rounded-xl border border-line bg-surface p-3 text-start hover:border-brand hover:bg-brand-light/30"
                 >
                   <span className="flex items-start gap-2">
                     <span aria-hidden className="text-xl">
                       {targetIcon(r.target)}
                     </span>
                     <span className="min-w-0 flex-1">
-                      <span className="block text-base font-bold text-slate-800" dir="auto">
+                      <span className="block text-base font-bold text-fg" dir="auto">
                         {name}
-                        {note && <span className="font-normal text-slate-600"> ({note})</span>}
+                        {note && <span className="font-normal text-muted"> ({note})</span>}
                       </span>
-                      {place && <span className="block truncate text-sm text-slate-600">{place}</span>}
+                      {place && <span className="block truncate text-sm text-muted">{place}</span>}
                     </span>
                   </span>
                   <span className="mt-2 block">
@@ -132,7 +132,7 @@ export default function StatusTab({
         <button
           type="button"
           onClick={() => setExpanded((v) => !v)}
-          className="w-full rounded-lg border border-slate-200 py-2 text-sm font-semibold text-brand hover:bg-slate-50"
+          className="w-full rounded-lg border border-line py-2 text-sm font-semibold text-brand-fg hover:bg-subtle"
         >
           {expanded ? t('common.showLess') : t('common.showAll', { count: shown.length })}
         </button>

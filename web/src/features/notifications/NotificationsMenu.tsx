@@ -38,12 +38,12 @@ export default function NotificationsMenu({ tone = 'default' }: { tone?: 'defaul
         title={t('notificationsMenu.open')}
         className={clsx(
           'relative inline-flex items-center rounded-lg px-2.5 py-1.5',
-          tone === 'onBrand' ? 'text-white hover:bg-white/15' : 'text-slate-600 hover:bg-slate-100',
+          tone === 'onBrand' ? 'text-white hover:bg-surface/15' : 'text-muted hover:bg-subtle',
         )}
       >
         <Bell className="h-4 w-4" aria-hidden />
         {unread > 0 && (
-          <span className="absolute -end-0.5 -top-0.5 min-w-4 rounded-full bg-red-600 px-1 text-center text-[10px] font-bold leading-4 text-white">
+          <span className="absolute -end-0.5 -top-0.5 min-w-4 rounded-full bg-danger-solid px-1 text-center text-[10px] font-bold leading-4 text-white">
             {unread > 99 ? '99+' : unread}
           </span>
         )}
@@ -52,15 +52,15 @@ export default function NotificationsMenu({ tone = 'default' }: { tone?: 'defaul
         <div
           role="dialog"
           aria-label={t('notificationsMenu.title')}
-          className="fixed inset-x-2 top-12 z-50 max-h-[70vh] overflow-hidden rounded-xl border border-slate-200 bg-white text-slate-800 shadow-xl sm:absolute sm:inset-x-auto sm:end-0 sm:top-full sm:mt-1 sm:w-80"
+          className="fixed inset-x-2 top-12 z-50 max-h-[70vh] overflow-hidden rounded-xl border border-line bg-surface text-fg shadow-xl sm:absolute sm:inset-x-auto sm:end-0 sm:top-full sm:mt-1 sm:w-80"
         >
-          <div className="flex items-center justify-between gap-2 border-b border-slate-100 px-3 py-2">
+          <div className="flex items-center justify-between gap-2 border-b border-line px-3 py-2">
             <p className="text-sm font-bold">{t('notificationsMenu.title')}</p>
             <div className="flex items-center gap-1">
-              <button type="button" onClick={refresh} className="rounded p-1 hover:bg-slate-100" aria-label={t('notificationsMenu.refresh')} title={t('notificationsMenu.refresh')}>
+              <button type="button" onClick={refresh} className="rounded p-1 hover:bg-subtle" aria-label={t('notificationsMenu.refresh')} title={t('notificationsMenu.refresh')}>
                 <RefreshCw className={clsx('h-4 w-4', isRefreshing && 'animate-spin')} aria-hidden />
               </button>
-              <button type="button" onClick={markAllRead} disabled={!unread} className="rounded p-1 hover:bg-slate-100 disabled:opacity-40" aria-label={t('notificationsMenu.markAll')} title={t('notificationsMenu.markAll')}>
+              <button type="button" onClick={markAllRead} disabled={!unread} className="rounded p-1 hover:bg-subtle disabled:opacity-40" aria-label={t('notificationsMenu.markAll')} title={t('notificationsMenu.markAll')}>
                 <CheckCheck className="h-4 w-4" aria-hidden />
               </button>
             </div>
@@ -69,7 +69,7 @@ export default function NotificationsMenu({ tone = 'default' }: { tone?: 'defaul
             <button
               type="button"
               onClick={() => void Notification.requestPermission().then(() => setOpen(false))}
-              className="flex w-full items-center gap-2 bg-amber-50 px-3 py-2 text-start text-xs font-semibold text-amber-800"
+              className="flex w-full items-center gap-2 bg-warn-soft px-3 py-2 text-start text-xs font-semibold text-warn"
             >
               <BellRing className="h-4 w-4" aria-hidden />
               {t('notificationsMenu.enableSystem')}
@@ -78,7 +78,7 @@ export default function NotificationsMenu({ tone = 'default' }: { tone?: 'defaul
           <div className="max-h-[55vh] overflow-y-auto">
             <NotificationList items={items} isLoading={isLoading} isError={isError} onRead={markRead} />
           </div>
-          <Link to="/notifications" onClick={() => setOpen(false)} className="block border-t border-slate-100 px-3 py-2 text-center text-xs font-bold text-brand hover:bg-slate-50">
+          <Link to="/notifications" onClick={() => setOpen(false)} className="block border-t border-line px-3 py-2 text-center text-xs font-bold text-brand-fg hover:bg-subtle">
             {t('notificationsMenu.viewAll')}
           </Link>
         </div>

@@ -15,9 +15,9 @@ export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 
 const variants: Record<Variant, string> = {
   primary: 'bg-brand text-white hover:bg-brand-hover',
-  secondary: 'bg-white text-slate-700 border border-slate-300 hover:bg-slate-50',
-  danger: 'bg-red-600 text-white hover:bg-red-700',
-  ghost: 'text-slate-700 hover:bg-slate-100',
+  secondary: 'bg-surface text-fg border border-line-strong hover:bg-subtle',
+  danger: 'bg-danger-solid text-white hover:bg-danger-solid',
+  ghost: 'text-fg hover:bg-subtle',
   whatsapp: 'bg-whatsapp text-white hover:bg-whatsapp-hover',
 };
 const sizes: Record<Size, string> = {

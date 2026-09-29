@@ -33,6 +33,27 @@ locales/      ar.json (default), en.json                       types/  shared ty
   warning/info, `--bg-body`, `--bg-surface`) exposed to Tailwind via `@theme`; dark mode via
   `data-color-mode="dark"` on `<html>` (add later, not in Phase 0).
 
+## Design system (ours — this part overrides the reference)
+
+All visual decisions live in `web/src/index.css` (`@theme` + the dark block). Components use **semantic tokens only**; ESLint
+rejects raw palette classes (`text-slate-600`, `bg-red-50` …) so a new screen cannot bypass them.
+
+| Need | Use |
+| --- | --- |
+| Page / card / quiet block / stronger quiet block | `bg-canvas` / `bg-surface` / `bg-subtle` / `bg-subtle-2` |
+| Borders, dividers / input borders | `border-line` / `border-line-strong` |
+| Text | `text-fg` (primary), `text-muted` (secondary; never lighter) |
+| Brand fill (white text) / brand text or icon / selected tint | `bg-brand` / `text-brand-fg` / `bg-brand-light` |
+| Status (danger, warn, ok, info) | `text-{s}`, `bg-{s}-soft`, `border-{s}-line`, `bg-{s}-solid` (white text) |
+| Elevation | `shadow-card` (rests) or `shadow-float` (menus, sheets) — nothing else |
+| Radius | `rounded-lg` controls, `rounded-2xl` cards, `rounded-full` pills |
+| Font | Cairo (self-hosted via `@fontsource-variable/cairo`), sizes: content ≥ 14 px, nothing below 12 px |
+
+Dark mode: `data-theme="dark"` on `<html>` (toggle in the header, saved in `localStorage`, applied before paint by
+`public/theme-init.js`); with no choice it follows the system. Status colours passed as data (road-status tones from config)
+use `color-mix(in srgb, <colour> 12%, transparent)` for tints, never `${hex}15`. Icons are lucide; emoji are content
+(service-type identity on the map), not UI chrome.
+
 ## Shared UI kit — API to mirror (`components/ui/`)
 
 | Component | API (props) | Notes |

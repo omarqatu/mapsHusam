@@ -41,32 +41,32 @@ export default function Modal({
 
   return createPortal(
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/45 p-4 backdrop-blur-[2px]"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-fg/45 p-4 backdrop-blur-[2px]"
       onClick={onClose}
     >
       <div
         role="dialog"
         aria-modal="true"
         aria-labelledby={titleId}
-        className={clsx('flex max-h-full w-full flex-col rounded-2xl bg-white shadow-xl', widthClass)}
+        className={clsx('flex max-h-full w-full flex-col rounded-2xl bg-surface shadow-xl', widthClass)}
         onClick={(e) => e.stopPropagation()}
       >
-        <header className="flex items-center justify-between gap-3 border-b border-slate-100 p-4">
-          <h2 id={titleId} className="text-lg font-bold text-slate-800">
+        <header className="flex items-center justify-between gap-3 border-b border-line p-4">
+          <h2 id={titleId} className="text-lg font-bold text-fg">
             {title}
           </h2>
           <button
             type="button"
             onClick={onClose}
             aria-label={t('common.close')}
-            className="rounded p-1 text-slate-500 hover:bg-slate-100"
+            className="rounded p-1 text-muted hover:bg-subtle"
           >
             <X className="h-5 w-5" />
           </button>
         </header>
         <div className="overflow-y-auto p-4">{children}</div>
         {footer && (
-          <footer className="flex flex-wrap justify-end gap-2 border-t border-slate-100 p-4">{footer}</footer>
+          <footer className="flex flex-wrap justify-end gap-2 border-t border-line p-4">{footer}</footer>
         )}
       </div>
     </div>,

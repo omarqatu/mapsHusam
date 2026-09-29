@@ -35,7 +35,7 @@ export default function Tabs<T extends string>({
       role="tablist"
       aria-label={label}
       className={clsx(
-        'gap-1 rounded-lg bg-slate-100 p-1',
+        'gap-1 rounded-lg bg-subtle p-1',
         scrollable ? 'flex overflow-x-auto' : 'grid',
         className,
       )}
@@ -53,7 +53,7 @@ export default function Tabs<T extends string>({
           className={clsx(
             'flex items-center justify-center gap-1.5 rounded-md px-3 py-2 text-sm font-semibold',
             scrollable ? 'shrink-0 flex-row whitespace-nowrap' : 'flex-col gap-0.5 px-1',
-            value === tab.id ? 'bg-white text-brand shadow-sm' : 'text-slate-600 hover:text-slate-900',
+            value === tab.id ? 'bg-surface text-brand-fg shadow-sm' : 'text-muted hover:text-fg',
           )}
         >
           {tab.icon}

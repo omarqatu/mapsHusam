@@ -33,7 +33,7 @@ function Toggle({
   return (
     <label
       htmlFor={id}
-      className="flex cursor-pointer items-center gap-3 rounded-lg px-2 py-2 hover:bg-slate-50"
+      className="flex cursor-pointer items-center gap-3 rounded-lg px-2 py-2 hover:bg-subtle"
     >
       <input
         id={id}
@@ -47,7 +47,7 @@ function Toggle({
           {icon}
         </span>
       )}
-      <span className="flex-1 text-sm text-slate-700">{label}</span>
+      <span className="flex-1 text-sm text-fg">{label}</span>
     </label>
   );
 }
@@ -68,12 +68,12 @@ function ServiceGroup({ id, items, forceOpen }: { id: TypeGroupId; items: GroupI
   const on = items.filter((i) => !hidden.has(i.key)).length;
   const all = on === items.length;
   return (
-    <details open={forceOpen || undefined} className="group rounded-xl border border-slate-200 bg-white">
+    <details open={forceOpen || undefined} className="group rounded-xl border border-line bg-surface">
       <summary className="flex cursor-pointer list-none items-center gap-2.5 px-3 py-2.5 [&::-webkit-details-marker]:hidden">
-        <ChevronDown className="h-4 w-4 shrink-0 text-slate-500 transition-transform group-open:rotate-180" aria-hidden />
-        <Icon className="h-4 w-4 shrink-0 text-slate-600" aria-hidden />
-        <span className="flex-1 text-sm font-bold text-slate-800">{t(`extras.featured.groups.${id}`)}</span>
-        <span className="text-xs font-semibold text-slate-600" dir="ltr">
+        <ChevronDown className="h-4 w-4 shrink-0 text-muted transition-transform group-open:rotate-180" aria-hidden />
+        <Icon className="h-4 w-4 shrink-0 text-muted" aria-hidden />
+        <span className="flex-1 text-sm font-bold text-fg">{t(`extras.featured.groups.${id}`)}</span>
+        <span className="text-xs font-semibold text-muted" dir="ltr">
           {on}/{items.length}
         </span>
         <input
@@ -88,7 +88,7 @@ function ServiceGroup({ id, items, forceOpen }: { id: TypeGroupId; items: GroupI
           className="h-4 w-4 accent-[var(--color-brand)]"
         />
       </summary>
-      <div className="border-t border-slate-100 px-1 py-1">
+      <div className="border-t border-line px-1 py-1">
         {items.map((s) => (
           <Toggle
             key={s.key}
@@ -132,7 +132,7 @@ export default function LayerPanel({ open, onClose }: { open: boolean; onClose: 
     <MapSheet title={t('map.layers')} label={t('map.layers')} side="end" onClose={onClose}>
       <div className="space-y-5">
         <section>
-          <h3 className="mb-2 text-sm font-bold text-slate-700">{t('map.basemap')}</h3>
+          <h3 className="mb-2 text-sm font-bold text-fg">{t('map.basemap')}</h3>
           <div className="grid grid-cols-2 gap-2" role="radiogroup" aria-label={t('map.basemap')}>
             {basemaps.map((b) => (
               <button
@@ -144,8 +144,8 @@ export default function LayerPanel({ open, onClose }: { open: boolean; onClose: 
                 className={clsx(
                   'rounded-lg border px-3 py-2 text-sm font-semibold',
                   ui.basemap === b
-                    ? 'border-brand bg-brand-light text-brand'
-                    : 'border-slate-200 text-slate-600 hover:bg-slate-50',
+                    ? 'border-brand bg-brand-light text-brand-fg'
+                    : 'border-line text-muted hover:bg-subtle',
                 )}
               >
                 {t(`basemaps.${b}`)}
@@ -174,7 +174,7 @@ export default function LayerPanel({ open, onClose }: { open: boolean; onClose: 
         </div>
 
         <section>
-          <h3 className="mb-1 text-sm font-bold text-slate-700">{t('map.realEstate')}</h3>
+          <h3 className="mb-1 text-sm font-bold text-fg">{t('map.realEstate')}</h3>
           {REAL_ESTATE_LAYERS.map((l) => (
             <Toggle
               key={l.key}
@@ -188,7 +188,7 @@ export default function LayerPanel({ open, onClose }: { open: boolean; onClose: 
         </section>
 
         <section>
-          <h3 className="mb-2 text-sm font-bold text-slate-700">{t('map.services')}</h3>
+          <h3 className="mb-2 text-sm font-bold text-fg">{t('map.services')}</h3>
           <SearchInput
             value={filter}
             onChange={setFilter}
@@ -200,7 +200,7 @@ export default function LayerPanel({ open, onClose }: { open: boolean; onClose: 
             {groups.map((g) => (
               <ServiceGroup key={g.group} id={g.group} items={g.items} forceOpen={filter.trim() !== ''} />
             ))}
-            {groups.length === 0 && <p className="text-sm text-slate-600">{t('common.noData')}</p>}
+            {groups.length === 0 && <p className="text-sm text-muted">{t('common.noData')}</p>}
           </div>
         </section>
       </div>

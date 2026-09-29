@@ -4,12 +4,12 @@ import clsx from 'clsx';
 export type BadgeTone = 'green' | 'red' | 'amber' | 'blue' | 'purple' | 'slate';
 
 const tones: Record<BadgeTone, string> = {
-  green: 'bg-green-50 text-green-800 ring-green-200',
-  red: 'bg-red-50 text-red-800 ring-red-200',
-  amber: 'bg-amber-50 text-amber-900 ring-amber-200',
-  blue: 'bg-blue-50 text-blue-800 ring-blue-200',
-  purple: 'bg-purple-50 text-purple-800 ring-purple-200',
-  slate: 'bg-slate-100 text-slate-700 ring-slate-200',
+  green: 'bg-ok-soft text-ok ring-ok-line',
+  red: 'bg-danger-soft text-danger ring-danger-line',
+  amber: 'bg-warn-soft text-warn ring-warn-line',
+  blue: 'bg-info-soft text-info ring-info-line',
+  purple: 'bg-brand-light text-brand-fg ring-brand/30',
+  slate: 'bg-subtle text-fg ring-line',
 };
 
 /** Small status / role pill. Text is always at least 12 px and dark enough on its tint. */

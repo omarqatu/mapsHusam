@@ -38,16 +38,16 @@ function Messages({
   if (q.isError)
     return <AlertMessage type="error" message={errorText(q.error, t('adminView.messagesFailed'))} />;
   const messages = q.data?.messages ?? [];
-  if (!messages.length) return <p className="text-sm text-slate-600">{t('adminView.noMessages')}</p>;
+  if (!messages.length) return <p className="text-sm text-muted">{t('adminView.noMessages')}</p>;
   return (
     <ul className="space-y-2" aria-label={t('adminView.messages')}>
       {messages.map((m) => (
-        <li key={m.id} className="rounded-lg bg-slate-50 p-3 text-sm">
-          <div className="mb-1 text-xs font-bold text-slate-600">
+        <li key={m.id} className="rounded-lg bg-subtle p-3 text-sm">
+          <div className="mb-1 text-xs font-bold text-muted">
             {t(`adminView.sender.${m.sender_role}`, m.sender_role)}
           </div>
-          <p className="whitespace-pre-wrap break-words text-slate-800">{m.message}</p>
-          <div className="mt-1 text-xs text-slate-500">{formatDateTime(m.created_at, i18n.language)}</div>
+          <p className="whitespace-pre-wrap break-words text-fg">{m.message}</p>
+          <div className="mt-1 text-xs text-muted">{formatDateTime(m.created_at, i18n.language)}</div>
         </li>
       ))}
     </ul>
@@ -67,9 +67,9 @@ function RequestItem({
   const [open, setOpen] = useState(false);
   const status = request.status ?? '';
   return (
-    <li className="rounded-xl border border-slate-200 p-4">
+    <li className="rounded-xl border border-line p-4">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <strong className="text-slate-900">
+        <strong className="text-fg">
           {request.service_type || t('adminView.defaultService')} #{request.id}
         </strong>
         <Badge tone={statusTone[status] ?? 'slate'}>{t(`adminView.status.${status}`, status || '—')}</Badge>
@@ -80,7 +80,7 @@ function RequestItem({
         <DataField label={t('adminView.date')} value={formatDateTime(request.created_at, i18n.language)} />
       </div>
       {request.cancellation_reason && (
-        <p className="mt-2 text-sm text-slate-700">
+        <p className="mt-2 text-sm text-fg">
           <span className="font-semibold">{t('adminView.cancelReason')}: </span>
           {request.cancellation_reason}
         </p>
@@ -101,7 +101,7 @@ function RequestItem({
         )}
       </Button>
       {open && (
-        <div className="mt-3 border-t border-slate-100 pt-3">
+        <div className="mt-3 border-t border-line pt-3">
           <Messages userId={userId} token={token} requestId={request.id} />
         </div>
       )}
@@ -121,7 +121,7 @@ export default function AdminViewUserPage() {
   const back = (
     <Link
       to="/admin/users"
-      className="inline-flex h-11 items-center gap-2 rounded-lg border border-slate-300 bg-white px-4 font-semibold text-slate-700 hover:bg-slate-50"
+      className="inline-flex h-11 items-center gap-2 rounded-lg border border-line-strong bg-surface px-4 font-semibold text-fg hover:bg-subtle"
     >
       <ArrowRight className="h-4 w-4 rtl:rotate-0 ltr:rotate-180" aria-hidden />
       {t('adminView.back')}
