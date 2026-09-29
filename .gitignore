@@ -9,3 +9,4 @@
 *.temp
 temp.txt
 node_modules
+.claude/hooks/.stop-verify-state.json
