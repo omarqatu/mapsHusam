@@ -13,13 +13,13 @@ function Field(props: Parameters<typeof DataField>[0]) {
 }
 import MediaGallery from '@/components/ui/MediaGallery';
 import SectionCard from '@/components/ui/SectionCard';
+import StatusDot from '@/components/ui/StatusDot';
 import { toast } from '@/components/ui/toastStore';
 import MapSheet from '../panels/MapSheet';
+import { FuelBadges } from '../extras/StatusBadges';
 import {
   barrierDirections,
   collectMedia,
-  FUEL_FIELDS,
-  fuelAvailable,
   hoursLabel,
   isOpenNow,
   labelMedia,
@@ -41,14 +41,14 @@ interface Props {
   className?: string;
 }
 
-function StatusTile({ tone, icon, label, sub }: { tone: string; icon: string; label: string; sub?: string }) {
+function StatusTile({ tone, label, sub }: { tone: string; label: string; sub?: string }) {
   return (
     <div
       className="rounded-lg border border-dashed p-3 text-center"
       style={{ borderColor: tone, background: `${tone}14` }}
     >
-      <div className="text-sm font-bold" style={{ color: tone }}>
-        <span aria-hidden>{icon}</span> {label}
+      <div className="flex items-center justify-center gap-2 text-sm font-bold" style={{ color: tone }}>
+        <StatusDot color={tone} /> {label}
       </div>
       {sub && <div className="mt-1 text-xs text-slate-600">{sub}</div>}
     </div>
@@ -73,7 +73,6 @@ export default function FeatureCard({ feature, onClose, className }: Props) {
 
   const isBarrier = isRoadBarrier(kind);
   const typeTitle = kind.kind === 'location' ? t('popup.sharedLocation') : t(targetLabelKey(kind));
-  const icon = kind.kind === 'location' ? '📍' : targetIcon(kind);
   const name = text(props.name);
   const providerName = name || (kind.kind === 'realEstate' ? t('popup.advertiser') : t('popup.provider'));
   const place = text(props.location_name) || text(props.location);
@@ -94,9 +93,13 @@ export default function FeatureCard({ feature, onClose, className }: Props) {
       onClose={onClose}
       title={
         <div className="flex items-center gap-2">
-          <span aria-hidden className="text-xl">
-            {icon}
-          </span>
+          {kind.kind === 'location' ? (
+            <MapPin className="h-6 w-6 text-red-500" aria-hidden />
+          ) : (
+            <span aria-hidden className="text-xl">
+              {targetIcon(kind)}
+            </span>
+          )}
           <div className="min-w-0">
             <div className="truncate text-sm">{name || typeTitle}</div>
             {name && (
@@ -120,7 +123,6 @@ export default function FeatureCard({ feature, onClose, className }: Props) {
               <div className="mb-1 text-center text-[11px] text-slate-500">{t('popup.inbound')}</div>
               <StatusTile
                 tone={dirs.inbound.color}
-                icon={dirs.inbound.icon}
                 label={t(`roadStatus.${dirs.inbound.key}`)}
               />
             </div>
@@ -129,11 +131,10 @@ export default function FeatureCard({ feature, onClose, className }: Props) {
               {dirs.outbound ? (
                 <StatusTile
                   tone={dirs.outbound.color}
-                  icon={dirs.outbound.icon}
                   label={t(`roadStatus.${dirs.outbound.key}`)}
                 />
               ) : (
-                <StatusTile tone="#6c757d" icon="⚪" label={t('popup.notSet')} />
+                <StatusTile tone="#6c757d" label={t('popup.notSet')} />
               )}
             </div>
           </div>
@@ -146,7 +147,6 @@ export default function FeatureCard({ feature, onClose, className }: Props) {
         {kind.kind !== 'location' && !isBarrier && (
           <StatusTile
             tone={open ? '#28a745' : '#dc3545'}
-            icon={open ? '🟢' : '🔴'}
             label={open ? t('popup.openNow') : t('popup.closedNow')}
             sub={hoursText}
           />
@@ -185,26 +185,7 @@ export default function FeatureCard({ feature, onClose, className }: Props) {
                 wide
               />
             </div>
-            {isFuelStation(kind) && (
-              <ul className="space-y-1.5" aria-label={t('popup.fuel.title')}>
-                {FUEL_FIELDS.map((f) => {
-                  const ok = fuelAvailable(props, f);
-                  return (
-                    <li
-                      key={f}
-                      className="flex items-center gap-2 text-sm font-bold"
-                      style={{ color: ok ? '#28a745' : '#dc3545' }}
-                    >
-                      <span aria-hidden>{ok ? '✔️' : '❌'}</span>
-                      {t(`popup.fuel.${f}`)}
-                      <span className="sr-only">
-                        {ok ? t('popup.fuel.available') : t('popup.fuel.unavailable')}
-                      </span>
-                    </li>
-                  );
-                })}
-              </ul>
-            )}
+            {isFuelStation(kind) && <FuelBadges props={props} />}
           </SectionCard>
         )}
 

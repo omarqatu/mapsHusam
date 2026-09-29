@@ -110,7 +110,7 @@ export default function MapPage() {
               </div>
             </div>
           </div>
-          <div className="absolute bottom-2 start-3 z-10">
+          <div className="pointer-events-none absolute inset-x-0 bottom-2 z-10 flex justify-center">
             <CoordinatesBar />
           </div>
           {/* Centred over the map: a full-width bar on phones (tools sit below it), a 28rem pill on desktop. */}

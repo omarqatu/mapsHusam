@@ -370,6 +370,10 @@ Split `index.html` into features, in this order:
    - One shared top bar (`components/AppHeader`) for the map and every other page (legacy: each page its own header); on
      phones the page links fold into a menu button. `/notifications` is a real page (legacy `notifications-panel.html`):
      the bell's list (`NotificationList`, shared) with an all / unread filter; the bell keeps a "view all" link.
+   - Tidy pass: one account menu in the top bar (avatar → name, role, change password, log out) instead of a name plus
+     four loose buttons; the coordinates bar is centred; status emoji (🟢🔴⚪✔️❌📍) are `StatusDot` / lucide icons
+     (service-type emoji on the map stay: they are the type's identity); the card's fuel list is the shared `FuelBadges`;
+     a parcel label "0 م²" (missing area) is no longer drawn.
    - Live tests run file by file (`fileParallelism` off when `VITE_LIVE_API` is set): they share the seeded accounts.
    - Media sections show only their own kind (photos section = pictures, videos section = videos); everything is still in the
      details card. Cards use the shared `MediaGallery` (enlarge on click, https-only URLs via `safeMediaUrl`) instead of the

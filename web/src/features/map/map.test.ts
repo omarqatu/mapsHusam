@@ -73,7 +73,8 @@ describe('real-estate style', () => {
     expect(land(f, 1).getText()?.getText()).toBe('550 م²');
   });
   it('formatLabel', () => {
-    expect(formatLabel('area', 0, t)).toBe('0 م²');
+    expect(formatLabel('area', 150, t)).toBe('150 م²');
+    expect(formatLabel('area', 0, t)).toBe(''); // a missing area is not drawn (legacy drew "0 م²")
     expect(formatLabel('name', 'x', t)).toBe('x');
     expect(formatLabel('area', null, t)).toBe('');
   });

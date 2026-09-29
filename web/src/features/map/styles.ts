@@ -27,6 +27,8 @@ function label(text: string, withIcon: boolean, line = false) {
 export function formatLabel(field: string, value: unknown, t: Translate): string {
   if (value === undefined || value === null || value === '') return '';
   const s = String(value);
+  // "0 م²" is a missing area, not information — and it crowds the map (legacy drew it).
+  if (field.toLowerCase().includes('area') && Number(s) === 0) return '';
   return field.toLowerCase().includes('area') ? `${s} ${t('map.areaUnit')}` : s;
 }
 
