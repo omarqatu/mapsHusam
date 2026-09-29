@@ -1,0 +1,75 @@
+// @vitest-environment node
+// Real-backend test (no mocks) for the service-request lifecycle. Needs the seeded dev accounts, where the dev
+// provider is linked to plumber #900001 (dev/seed-users.mjs):
+//   cd web && VITE_LIVE_API=http://localhost:3000 npm test
+import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { authApi } from '@/api/auth';
+import { requestsApi } from '@/api/requests';
+import { useAuthStore } from '@/store/authStore';
+
+const BASE = import.meta.env.VITE_LIVE_API;
+const nativeFetch = globalThis.fetch;
+
+async function signIn(phone: string, password: string) {
+  const { user } = await authApi.login({ phone, password });
+  useAuthStore.getState().setSession(user);
+  return user;
+}
+
+describe.skipIf(!BASE)('service requests against the live backend', () => {
+  beforeAll(() => {
+    globalThis.fetch = ((input: RequestInfo | URL, init?: RequestInit) =>
+      nativeFetch(typeof input === 'string' && input.startsWith('/') ? BASE + input : input, init)) as typeof fetch;
+  });
+  afterAll(() => {
+    globalThis.fetch = nativeFetch;
+    useAuthStore.setState({ user: null });
+  });
+
+  const body = { service_layer: 'plumber', feature_id: 900001, provider_name: 'Dev Provider', service_type: 'سباك' };
+
+  it('request → accept → chat → both agree → contacts → rating → comment', async () => {
+    const user = await signIn('0590000003', 'User#12345');
+    const created = await requestsApi.create(body);
+    expect(created).toMatchObject({ success: true, status: 'pending' });
+    const id = created.requestId;
+
+    // Same provider again while one is open: the server refuses.
+    await expect(requestsApi.create(body)).rejects.toMatchObject({ status: 409 });
+    expect((await requestsApi.mine(user.user_id)).requests.some((r) => r.id === id)).toBe(true);
+
+    const provider = await signIn('0590000002', 'Provider#12345');
+    const incoming = await requestsApi.incoming(provider.user_id);
+    expect(incoming.requests.some((r) => r.id === id)).toBe(true);
+    expect((await requestsApi.respond(id, 'accept')).status).toBe('accepted');
+
+    await requestsApi.sendMessage(id, 'provider', 'hello from provider');
+    const first = await requestsApi.confirm(id, 'provider');
+    expect(first.status).toBe('accepted');
+
+    await signIn('0590000003', 'User#12345');
+    const msgs = await requestsApi.messages(id);
+    expect(msgs.messages.map((m) => m.message)).toContain('hello from provider');
+    const done = await requestsApi.confirm(id, 'user');
+    expect(done.status).toBe('completed');
+
+    expect((await requestsApi.pendingRatings()).pendingRatings.some((p) => p.id === id)).toBe(true);
+    await requestsApi.rate(id, 4, '');
+    const pc = await requestsApi.pendingComments();
+    const pending = pc.pendingComments.find((c) => c.request_id === id);
+    expect(pending).toBeTruthy();
+    await requestsApi.comment(pending!.id, 'good work');
+  });
+
+  it('request → provider rejects; request → user cancels with a reason', async () => {
+    await signIn('0590000003', 'User#12345');
+    const a = await requestsApi.create(body);
+    await signIn('0590000002', 'Provider#12345');
+    expect((await requestsApi.respond(a.requestId, 'reject')).status).toBe('rejected');
+
+    await signIn('0590000003', 'User#12345');
+    const b = await requestsApi.create(body);
+    await expect(requestsApi.cancel(b.requestId, '')).rejects.toMatchObject({ status: 400 });
+    expect((await requestsApi.cancel(b.requestId, 'changed my mind')).success).toBe(true);
+  });
+});

@@ -638,7 +638,11 @@
         "cancelled": "This request was cancelled; messages cannot be sent.",
         "pending": "Waiting for the provider to accept.",
         "other": "This conversation is closed."
-      }
+      },
+      "completedToast": "Agreement complete; the contact numbers are now shown!",
+      "waitingToast": "Your confirmation was recorded; waiting for the other side to confirm.",
+      "confirm": "Agreed ✅",
+      "confirmWaiting": "Waiting for the other side"
     },
     "contact": {
       "agreed": "Agreed!",
@@ -669,7 +673,9 @@
       "commentPlaceholder": "Tell us about your experience with the provider... (optional)",
       "skip": "Later",
       "submit": "Send rating",
-      "failed": "Could not send the rating."
+      "failed": "Could not send the rating.",
+      "done": "Rating sent. You can write the comment later from \"My requests\".",
+      "doneWithComment": "Rating and comment sent. Thank you!"
     },
     "comment": {
       "title": "Write a comment",
@@ -680,7 +686,11 @@
       "submit": "Send comment",
       "done": "Comment added. Thank you!",
       "failed": "Could not add the comment."
-    }
+    },
+    "provider": "the provider",
+    "requester": "the requester",
+    "openArchive": "View archive and contact numbers",
+    "openChat": "Open chat / details"
   },
   "notificationsMenu": {
     "title": "Notifications",
