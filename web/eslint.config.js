@@ -52,6 +52,13 @@ export default defineConfig([
     },
   },
   {
+    // Browser tests (Playwright): its fixtures call `use(...)`, which the hooks rule mistakes for React's `use`; they run in
+    // Node, and the design-token rule is about the app's class names, not selectors.
+    files: ['e2e/**/*.ts', 'playwright.config.ts'],
+    languageOptions: { globals: { ...globals.node, ...globals.browser } },
+    rules: { 'react-hooks/rules-of-hooks': 'off', 'no-restricted-syntax': 'off' },
+  },
+  {
     // The UI kit test renders raw classes on purpose (it checks className passthrough).
     files: ['**/*.test.{ts,tsx}'],
     rules: { 'no-restricted-syntax': 'off' },
