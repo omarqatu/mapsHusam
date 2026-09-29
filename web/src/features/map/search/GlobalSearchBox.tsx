@@ -13,7 +13,7 @@ import { toSelected } from './results';
 import { passesSearchQuota } from './useSearchActions';
 
 const MIN_CHARS = 2;
-const DEBOUNCE_MS = 450;
+const DEBOUNCE_MS = 400; // legacy value
 const MAX_SHOWN = 50;
 
 function Highlighted({ text, term }: { text: string; term: string }) {
@@ -79,7 +79,11 @@ export default function GlobalSearchBox() {
   };
 
   const onKey = (e: React.KeyboardEvent) => {
-    if (e.key === 'Escape') return setOpen(false);
+    if (e.key === 'Escape') {
+      if (showPanel) e.preventDefault(); // only the suggestions close
+      setOpen(false);
+      return;
+    }
     if (!showPanel || !hits.length) return;
     if (e.key === 'ArrowDown') {
       e.preventDefault();

@@ -6,6 +6,7 @@ import { searchApi, type SearchCondition, type SearchQuery } from '@/api/search'
 import { toast } from '@/components/ui/toastStore';
 import type { Coordinate } from '../config';
 import { useOlMap } from '../MapContext';
+import { useMapUi } from '../store';
 import { targetKey, targetLabelKey, targetFromKey, targetToApi, type MapTarget } from '../targets';
 import { findNearby, type NearbyExtra } from './nearby';
 import type { ShareState } from './shareLink';
@@ -168,6 +169,7 @@ export function useSearchActions() {
 
   const clear = useCallback(() => {
     controller?.abort();
+    useMapUi.getState().setSelected(null);
     useSearchUi.getState().setBusy(false);
     useSearchUi.getState().setResults(null);
   }, []);

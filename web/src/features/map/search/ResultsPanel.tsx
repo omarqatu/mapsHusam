@@ -1,4 +1,3 @@
-import { useEffect } from 'react';
 import clsx from 'clsx';
 import { Copy, MessageCircle, Phone, Printer, Star } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
@@ -6,7 +5,7 @@ import { useProviderLinked } from '@/api/mapEvents';
 import { toast } from '@/components/ui/toastStore';
 import { useOlMap } from '../MapContext';
 import { useMapUi } from '../store';
-import { text } from '../popup/featureModel';
+import { text, type SelectedFeature } from '../popup/featureModel';
 import { targetIcon } from '../targets';
 import { useContactActions } from '../popup/useContactActions';
 import MapSheet from '../panels/MapSheet';
@@ -15,6 +14,10 @@ import { printResults } from './printResults';
 import { toSelected, type SearchResult } from './results';
 import { buildShareLink } from './shareLink';
 import { useSearchUi } from './store';
+
+/** A card and a row show the same feature when both the id and the point match (ids repeat across types). */
+const isSameFeature = (s: SelectedFeature | null, r: SearchResult) =>
+  !!s && s.id === r.id && s.coordinate[0] === r.center[0] && s.coordinate[1] === r.center[1];
 
 function formatDistance(m: number, t: (k: string) => string) {
   return m >= 1000
@@ -134,13 +137,6 @@ export default function ResultsPanel({ className }: { className?: string }) {
   const setSelected = useMapUi((s) => s.setSelected);
 
   const close = () => setResults(null);
-  useEffect(() => {
-    if (!results) return;
-    const onKey = (e: KeyboardEvent) => e.key === 'Escape' && !useMapUi.getState().selected && close();
-    document.addEventListener('keydown', onKey);
-    return () => document.removeEventListener('keydown', onKey);
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- `close` only touches the store
-  }, [results]);
 
   if (!results) return null;
 
@@ -210,13 +206,7 @@ export default function ResultsPanel({ className }: { className?: string }) {
     >
       <ul className="space-y-2">
         {results.items.map((r, i) => (
-          <ResultRow
-            key={r.key}
-            r={r}
-            index={i}
-            active={selected?.id === r.id && selected.coordinate[0] === r.center[0]}
-            onOpen={() => open(r)}
-          />
+          <ResultRow key={r.key} r={r} index={i} active={isSameFeature(selected, r)} onOpen={() => open(r)} />
         ))}
       </ul>
     </MapSheet>

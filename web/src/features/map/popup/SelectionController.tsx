@@ -45,7 +45,7 @@ function revealAboveSheet(map: OlMap, coordinate: [number, number]) {
   });
 }
 
-/** Click a marker → details card. Also owns the highlight ring, the pointer cursor and Escape-to-close. */
+/** Click a marker → details card. Also owns the highlight ring and the pointer cursor. */
 export default function SelectionController() {
   const map = useOlMap();
 
@@ -105,12 +105,8 @@ export default function SelectionController() {
       map.getTargetElement().style.cursor = over ? 'pointer' : '';
     });
 
-    const onKey = (ev: KeyboardEvent) => ev.key === 'Escape' && useMapUi.getState().setSelected(null);
-    document.addEventListener('keydown', onKey);
-
     return () => {
       unByKey([clickKey, moveKey]);
-      document.removeEventListener('keydown', onKey);
       unsubscribe();
       map.removeLayer(ring);
     };

@@ -49,6 +49,17 @@ export default function MapPage() {
     };
   }, []);
 
+  // Escape closes the top-most sheet only: details card, then the result list. One handler, so the order is fixed.
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== 'Escape' || e.defaultPrevented) return;
+      if (useMapUi.getState().selected) useMapUi.getState().setSelected(null);
+      else if (useSearchUi.getState().results) useSearchUi.getState().setResults(null);
+    };
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+  }, []);
+
   const toggleLayers = () => {
     if (!layersOpen) useSearchUi.getState().closePanel();
     setLayersOpen(!layersOpen);
