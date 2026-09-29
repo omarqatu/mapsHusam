@@ -14,6 +14,7 @@ import { BarrierBadges, FuelBadges } from './StatusBadges';
 import { matchesQuery } from './status';
 import UpdatedAgo from './UpdatedAgo';
 import { useShowOnMap } from './useShowOnMap';
+import { serviceLabelKey } from '../registry';
 
 /** What the search box matches: the row's own text plus the status words it displays (legacy matched rendered text). */
 function searchText(r: SearchResult, layer: StatusLayer, t: (k: string) => string) {
@@ -93,7 +94,7 @@ export default function StatusTab({
       ) : (
         <ul className="space-y-2">
           {visible.map((r) => {
-            const name = text(r.props.name) || t(`services.${layer}`);
+            const name = text(r.props.name) || t(serviceLabelKey(layer));
             const note = layer === 'road_barriers' ? text(r.props.des) : '';
             const place = text(r.props.location_name) || text(r.props.village_a);
             return (

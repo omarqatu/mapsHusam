@@ -14,6 +14,7 @@ import { CenteredSpinner } from '@/components/ui/Spinner';
 import { formatDateTime } from '@/lib/format';
 import { errorText } from '@/lib/errorText';
 import { useViewMessages, useViewSession } from './hooks/useAdminUsers';
+import { serviceLabelKey } from '@/features/map/registry';
 
 const statusTone: Record<string, BadgeTone> = {
   pending: 'amber',
@@ -177,7 +178,9 @@ export default function AdminViewUserPage() {
                 />
                 <DataField
                   label={t('adminView.serviceLayer')}
-                  value={user.service_layer ? t(`services.${user.service_layer}`, user.service_layer) : null}
+                  value={
+                    user.service_layer ? t(serviceLabelKey(user.service_layer), user.service_layer) : null
+                  }
                 />
                 <DataField label={t('adminView.featureId')} value={user.feature_id} mono />
               </div>

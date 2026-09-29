@@ -1,44 +1,15 @@
-import {
-  Briefcase,
-  BriefcaseMedical,
-  Building2,
-  Car,
-  Ellipsis,
-  Fuel,
-  LayoutGrid,
-  Landmark,
-  PartyPopper,
-  School,
-  Signpost,
-  Store,
-  UserRound,
-  Wrench,
-  type LucideIcon,
-} from 'lucide-react';
-import { groupedTargets, type TypeGroupId } from '../map/extras/featured';
+import { LayoutGrid, type LucideIcon } from 'lucide-react';
+import { groupedTargets } from '../map/extras/featured';
+import type { TypeGroupId } from '../map/registry';
+import { GROUP_ICON as TYPE_GROUP_ICON } from '../map/registry/groupIcons';
 import { ALL_TARGETS, type MapTarget } from '../map/targets';
 
 // The category browser of the page: 13 groups (legacy "branches") + "all", each holding some types.
-// The type → group table lives in the map's `extras/featured.ts` (one copy, shared).
+// The type → group table is the `group` of each service in the map's `registry/services.ts` (one copy, shared).
 
 export type GroupId = 'all' | TypeGroupId;
 
-export const GROUP_ICON: Record<GroupId, LucideIcon> = {
-  all: LayoutGrid,
-  roads: Signpost,
-  fuel: Fuel,
-  realestate: Building2,
-  technicians: Wrench,
-  health: BriefcaseMedical,
-  vehicles: Car,
-  professional: UserRound,
-  events: PartyPopper,
-  misc: Ellipsis,
-  landmarks: Landmark,
-  commercial: Store,
-  education: School,
-  jobs: Briefcase,
-};
+export const GROUP_ICON: Record<GroupId, LucideIcon> = { all: LayoutGrid, ...TYPE_GROUP_ICON };
 
 const GROUPS = groupedTargets();
 export const GROUP_IDS: GroupId[] = ['all', ...GROUPS.map((g) => g.group)];

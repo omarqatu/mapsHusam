@@ -9,6 +9,7 @@ import { useAuthStore } from '@/store/authStore';
 import { errorText } from './errors';
 import { useRequestsUi } from './store';
 import { useUnseen } from './unseen';
+import { serviceLabelKey } from '@/features/map/registry';
 
 /**
  * "Request service" (legacy ServiceChat.requestService): an existing pending request is not duplicated, an
@@ -74,7 +75,9 @@ export default function RequestFlow() {
         feature_id: Number(run.featureId),
         provider_name: run.providerName,
         // The server quotes this in the provider's (Arabic) notification.
-        service_type: i18n.getFixedT('ar')(`services.${run.serviceLayer}`, { defaultValue: run.serviceType }),
+        service_type: i18n.getFixedT('ar')(serviceLabelKey(run.serviceLayer), {
+          defaultValue: run.serviceType,
+        }),
       },
       {
         onSuccess: (res) => {

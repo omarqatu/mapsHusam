@@ -12,6 +12,7 @@ import { toast } from '@/components/ui/toastStore';
 import { errorText } from '@/lib/errorText';
 import { useAuthStore } from '@/store/authStore';
 import { SERVICE_TYPES } from '@/features/map/config';
+import { serviceLabelKey } from '@/features/map/registry';
 import { useUpdateUser } from '../hooks/useAdminUsers';
 import { buildUpdate, formFromUser, MIN_PASSWORD, validateForm, type EditForm } from '../model';
 
@@ -31,7 +32,7 @@ export default function EditUserDialog({ user, onClose }: { user: AdminUser; onC
   const layerOptions = useMemo(
     () => [
       { value: '', label: t('adminUsers.edit.notLinked') },
-      ...SERVICE_TYPES.map((s) => ({ value: s.key, label: `${t(`services.${s.key}`)} — ${s.key}` })),
+      ...SERVICE_TYPES.map((s) => ({ value: s.key, label: `${t(serviceLabelKey(s.key))} — ${s.key}` })),
     ],
     [t],
   );

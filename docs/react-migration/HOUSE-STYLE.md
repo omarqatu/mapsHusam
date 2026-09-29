@@ -54,6 +54,24 @@ Dark mode: `data-theme="dark"` on `<html>` (toggle in the header, saved in `loca
 use `color-mix(in srgb, <colour> 12%, transparent)` for tints, never `${hex}15`. Icons are lucide; emoji are content
 (service-type identity on the map), not UI chrome.
 
+## Service registry — how to add a service type
+
+`web/src/features/map/registry/services.ts` is the only list of service types. Everything else (layers on the map, search
+targets, layer panel and type filter groups, category browser, search tags, editor fields, admin service picker) derives from it.
+
+1. Add ONE entry to `DEFS` in `registry/services.ts`: `key` (= the `discriminator` in `service_all`), `icon` (emoji), `group`
+   (one of `TYPE_GROUP_IDS` in `registry/types.ts`; `misc` if none fits), `tagName` + `tagKeywords` (Arabic search terms written
+   to `search_tags` on save), optional `tier` (`always` / `medium`; omit = `close`, drawn only when zoomed in) and optional
+   `editProfile` (`roadBarrier` / `fuelStation` for extra status columns; omit = the common service fields).
+2. Add the display name in both `locales/ar.json` and `locales/en.json` under `services.<key>`.
+3. Add the key to `ALLOWED_LAYERS` in `server.js` (the server whitelists layer names; a separate, reviewed commit).
+4. Run `npm test`: `registry/registry.test.ts` fails with the exact place that disagrees (locale key missing, server whitelist,
+   group, tags). Nothing else needs editing — do not add the key to any other list.
+
+A new *group*: add its id to `TYPE_GROUP_IDS` (order = order of the filter), its icon in `registry/groupIcons.ts` (does not compile
+without it) and `extras.featured.groups.<id>` in both locales. Long static data (legal texts, tag lists) lives in data files or
+in the registry, never copied into components; legal texts are `features/legal/texts/<key>.json` (pinned by hash in `legal.content.test.ts`).
+
 ## Shared UI kit — API to mirror (`components/ui/`)
 
 | Component | API (props) | Notes |

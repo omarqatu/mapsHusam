@@ -2,6 +2,7 @@ import type { Coordinate } from '../config';
 import { collectMedia, detailLinks, type MediaItem, type Props } from '../popup/featureModel';
 import { distanceToResult } from '../search/nearby';
 import type { SearchResult } from '../search/results';
+import { SERVICE_BY_KEY, TYPE_GROUP_IDS, type TypeGroupId } from '../registry';
 import { ALL_TARGETS, targetKey, type MapTarget } from '../targets';
 
 // Pure logic of the featured-services portal (legacy featured-services-portal.js), testable without React or a map.
@@ -58,111 +59,11 @@ export function sideMedia(url: string | null, linkLabelKey: string): MediaItem[]
   return m ? [m.type === 'link' ? { ...m, labelKey: linkLabelKey } : m] : [];
 }
 
-// --- "near me" type filter ------------------------------------------------------------------
-export const TYPE_GROUP_IDS = [
-  'roads',
-  'fuel',
-  'realestate',
-  'technicians',
-  'health',
-  'vehicles',
-  'professional',
-  'events',
-  'misc',
-  'landmarks',
-  'commercial',
-  'education',
-  'jobs',
-] as const;
-export type TypeGroupId = (typeof TYPE_GROUP_IDS)[number];
-
-const GROUPS: Record<Exclude<TypeGroupId, 'realestate' | 'misc'>, string[]> = {
-  roads: ['road_barriers'],
-  fuel: ['fuel_stations'],
-  technicians: [
-    'electrician',
-    'ac_technician',
-    'plumber',
-    'general_maintenance',
-    'painter',
-    'Finisher',
-    'carpenter',
-    'blacksmith',
-    'builder',
-    'house_cleaner',
-    'aluminum_tech',
-    'glass_tech',
-    'cctv_installer',
-    'gardener',
-    'security_firms',
-    'furniture_buyer',
-  ],
-  health: [
-    'home_nurse',
-    'masseur',
-    'cupping_specialist',
-    'nutritionist',
-    'pharmacies_on_call',
-    'emergency_hospitals',
-    'clinics',
-    'doctors_on_call',
-    'ambulances_on_call',
-    'pet_care',
-  ],
-  vehicles: [
-    'car_mechanic',
-    'car_electrician',
-    'tire_tech',
-    'car_wash',
-    'motorcycle_repair',
-    'taxi_driver',
-    'delivery_services',
-    'tow_truck',
-    'truck_driver',
-    'taxis_on_call',
-    'car_delivery_on_call',
-    'motorcycle_delivery_on_call',
-    'bicycle_delivery_on_call',
-  ],
-  professional: [
-    'lawyers',
-    'land_surveyors',
-    'real_estate_valuers',
-    'private_tutors',
-    'programmers',
-    'music_training',
-    'student_research_assist',
-  ],
-  events: [
-    'party_planner',
-    'zaffa_bands',
-    'music_bands',
-    'party_rental',
-    'clown_entertainer',
-    'martial_arts_gymnastics',
-    'public_parks_recreation',
-    'hotels',
-    'villas_rent',
-    'barber_shop',
-    'video_design_ads',
-    'photographers',
-  ],
-  landmarks: ['city_landmarks'],
-  commercial: ['supermarket', 'commercial_shops', 'restaurants'],
-  education: ['schools_kindergartens'],
-  jobs: ['job_vacancies'],
-};
-
-const GROUP_OF_SERVICE = new Map<string, TypeGroupId>(
-  Object.entries(GROUPS).flatMap(([group, keys]) =>
-    keys.map((k): [string, TypeGroupId] => [k, group as TypeGroupId]),
-  ),
-);
-
-/** Legacy grouping of the type filter; a service type not listed above (or a new one) lands in "misc". */
+// --- "near me" type filter (the type → group table is the `group` of each registry entry) ---------------
+/** Legacy grouping of the type filter, from the registry; a discriminator the registry does not know lands in "misc". */
 export function groupOf(target: MapTarget): TypeGroupId {
   if (target.kind === 'realEstate') return 'realestate';
-  return GROUP_OF_SERVICE.get(target.discriminator) ?? 'misc';
+  return SERVICE_BY_KEY.get(target.discriminator)?.group ?? 'misc';
 }
 
 /** Every type the map knows, by group, in the legacy group order; empty groups left out. */
