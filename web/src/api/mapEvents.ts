@@ -28,6 +28,10 @@ export interface RequestQuota {
 
 export type ContactType = 'call' | 'whatsapp';
 
+/** Counted against the same per-user quota as contact clicks (server checkUserRequestQuota). */
+export type MapEventType =
+  'map_click' | 'attribute_search' | 'quick_search' | 'global_search' | 'location_search';
+
 export interface ProviderLinkedResponse {
   success: boolean;
   /** layer (service discriminator) → feature ids that belong to a registered provider account. */
@@ -51,8 +55,12 @@ export const mapEventsApi = {
   /** Legacy "stats" row (dashboard counters). Public endpoint; user_id is the account id or a guest id. */
   saveStat: (body: { user_id: string; provider: string; service: string }) =>
     api.post<unknown>('/save-stat', body),
-  logMapEvent: (body: { event_type: 'map_click'; provider: string; service: string }) =>
-    api.post<unknown>('/api/log-map-event', body),
+  logMapEvent: (body: {
+    event_type: MapEventType;
+    provider: string | null;
+    service: string | null;
+    source?: string;
+  }) => api.post<unknown>('/api/log-map-event', body),
 };
 
 export const mapEventKeys = {

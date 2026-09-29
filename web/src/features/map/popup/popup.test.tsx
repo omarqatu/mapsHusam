@@ -65,6 +65,15 @@ describe('media lists', () => {
     expect(items.map((i) => i.type)).toEqual(['image', 'image', 'youtube', 'link', 'image']);
     expect(items[2]).toEqual({ type: 'youtube', id: 'dQw4w9WgXcQ' });
   });
+  it('shows the same video / picture only once even when two fields hold it', () => {
+    const items = collectMedia({
+      pic: 'a.com/1.jpg',
+      video: 'https://youtu.be/dQw4w9WgXcQ',
+      details_link_1: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
+      details_link_2: 'https://a.com/1.jpg',
+    });
+    expect(items.map((i) => i.type)).toEqual(['image', 'youtube']);
+  });
   it('drops javascript: links entirely', () => {
     expect(collectMedia({ details_link_1: 'javascript:alert(1)' })).toEqual([]);
   });

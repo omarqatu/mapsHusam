@@ -33,6 +33,7 @@ import { useContactActions } from './useContactActions';
 interface Props {
   feature: SelectedFeature;
   onClose: () => void;
+  className?: string;
 }
 
 function StatusTile({ tone, icon, label, sub }: { tone: string; icon: string; label: string; sub?: string }) {
@@ -65,7 +66,7 @@ async function shareLocation(feature: SelectedFeature, title: string, t: (k: str
 }
 
 /** Details of the clicked marker (legacy popup.js generateFeatureHtml), as a React card. */
-export default function FeatureCard({ feature, onClose }: Props) {
+export default function FeatureCard({ feature, onClose, className }: Props) {
   const { t, i18n } = useTranslation();
   const linked = useProviderLinked();
   const contact = useContactActions();
@@ -106,6 +107,7 @@ export default function FeatureCard({ feature, onClose }: Props) {
   return (
     <MapSheet
       side="start"
+      className={className}
       label={typeTitle}
       onClose={onClose}
       title={

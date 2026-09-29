@@ -1,0 +1,225 @@
+import { useEffect } from 'react';
+import clsx from 'clsx';
+import { Copy, MessageCircle, Phone, Printer, Star } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
+import { useProviderLinked } from '@/api/mapEvents';
+import { toast } from '@/components/ui/toastStore';
+import { useOlMap } from '../MapContext';
+import { useMapUi } from '../store';
+import { serviceIcon, text } from '../popup/featureModel';
+import { useContactActions } from '../popup/useContactActions';
+import MapSheet from '../panels/MapSheet';
+import { targetLabelKey } from './model';
+import { printResults } from './printResults';
+import { toSelected, type SearchResult } from './results';
+import { buildShareLink } from './shareLink';
+import { useSearchUi } from './store';
+
+const RE_ICON: Record<string, string> = { rent: '🏠', sale: '🏡', land: '🟥' };
+
+function formatDistance(m: number, t: (k: string) => string) {
+  return m >= 1000
+    ? `${(m / 1000).toFixed(1)} ${t('search.results.km')}`
+    : `${Math.round(m)} ${t('search.results.m')}`;
+}
+
+function ResultRow({
+  r,
+  index,
+  active,
+  onOpen,
+}: {
+  r: SearchResult;
+  index: number;
+  active: boolean;
+  onOpen: () => void;
+}) {
+  const { t } = useTranslation();
+  const linked = useProviderLinked();
+  const contact = useContactActions();
+  const p = r.props;
+  const typeTitle = t(targetLabelKey(r.target));
+  const place = [text(p.location_name) || text(p.location), text(p.village_a)].filter(Boolean).join(' · ');
+  const name = text(p.name) || typeTitle;
+  const isRe = r.target.kind === 'realEstate';
+  const open = Number.parseInt(String(p.auto_status), 10) === 0;
+  const isLinked =
+    r.target.kind === 'service' && !!r.id && !!linked.data?.get(r.target.discriminator)?.has(r.id);
+  const phone = text(p.phone);
+  const whatsapp = text(p.whatsapp);
+  const providerName = text(p.name) || t(isRe ? 'popup.advertiser' : 'popup.provider');
+  const showContact =
+    !isLinked && !(r.target.kind === 'service' && r.target.discriminator === 'road_barriers');
+
+  return (
+    <li
+      className={clsx(
+        'rounded-xl border p-3',
+        active ? 'border-brand bg-brand-light/40' : 'border-slate-200 bg-white',
+      )}
+    >
+      <button type="button" onClick={onOpen} className="flex w-full items-start gap-3 text-start">
+        <span className="mt-0.5 w-5 shrink-0 text-center text-xs font-bold text-slate-400">{index + 1}</span>
+        <span aria-hidden className="text-xl">
+          {r.target.kind === 'service' ? serviceIcon(r.target.discriminator) : RE_ICON[r.target.layer]}
+        </span>
+        <span className="min-w-0 flex-1">
+          <span className="block truncate text-sm font-bold text-slate-800" dir="auto">
+            {name}
+          </span>
+          <span className="block truncate text-xs text-slate-500">
+            {typeTitle}
+            {place ? ` · ${place}` : ''}
+          </span>
+          <span className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-xs text-slate-600">
+            {r.rating > 0 && (
+              <span className="inline-flex items-center gap-0.5 text-amber-600">
+                <Star className="h-3 w-3" fill="currentColor" aria-hidden /> {r.rating}
+              </span>
+            )}
+            {!(r.target.kind === 'service' && r.target.discriminator === 'road_barriers') && (
+              <span className={open ? 'text-green-700' : 'text-red-600'}>
+                {open ? t('popup.openNow') : t('popup.closedNow')}
+              </span>
+            )}
+            {isRe && Number(p.price) > 0 && (
+              <span>
+                {Number(p.price).toLocaleString()}{' '}
+                {t(`popup.currency.${text(p.currency)}`, { defaultValue: '' })}
+              </span>
+            )}
+            {isRe && text(p.area) && (
+              <span>
+                {text(p.area)} {t('map.areaUnit')}
+              </span>
+            )}
+            {r.distance !== undefined && (
+              <span className="font-semibold text-brand">{formatDistance(r.distance, t)}</span>
+            )}
+          </span>
+        </span>
+      </button>
+      {showContact && (phone || whatsapp) && (
+        <div className="mt-2 flex gap-2 ps-8">
+          {phone && (
+            <button
+              type="button"
+              onClick={() => void contact.call(toSelected(r), providerName, phone)}
+              className="inline-flex items-center gap-1.5 rounded-lg bg-brand px-3 py-1.5 text-xs font-semibold text-white hover:bg-brand-hover"
+            >
+              <Phone className="h-3.5 w-3.5" aria-hidden /> {t('popup.call')}
+            </button>
+          )}
+          {whatsapp && (
+            <button
+              type="button"
+              onClick={() => void contact.whatsapp(toSelected(r), providerName, whatsapp, typeTitle)}
+              className="inline-flex items-center gap-1.5 rounded-lg bg-[#25d366] px-3 py-1.5 text-xs font-semibold text-white hover:bg-[#1fb956]"
+            >
+              <MessageCircle className="h-3.5 w-3.5" aria-hidden /> {t('popup.whatsapp')}
+            </button>
+          )}
+        </div>
+      )}
+    </li>
+  );
+}
+
+/** The list of the current search's results. Tap a row → fly there and open its details card. */
+export default function ResultsPanel({ className }: { className?: string }) {
+  const { t, i18n } = useTranslation();
+  const map = useOlMap();
+  const results = useSearchUi((s) => s.results);
+  const setResults = useSearchUi((s) => s.setResults);
+  const selected = useMapUi((s) => s.selected);
+  const setSelected = useMapUi((s) => s.setSelected);
+
+  const close = () => setResults(null);
+  useEffect(() => {
+    if (!results) return;
+    const onKey = (e: KeyboardEvent) => e.key === 'Escape' && !useMapUi.getState().selected && close();
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- `close` only touches the store
+  }, [results]);
+
+  if (!results) return null;
+
+  const open = (r: SearchResult) => {
+    map?.getView().animate({ center: r.center, zoom: 19, duration: 800 });
+    setSelected(toSelected(r));
+  };
+
+  const copyLink = async () => {
+    if (!results.share) return toast.warning(t('search.results.noLink'));
+    try {
+      await navigator.clipboard.writeText(
+        buildShareLink(results.share, window.location.origin, window.location.pathname),
+      );
+      toast.success(t('search.results.linkCopied'));
+    } catch {
+      toast.error(t('search.results.linkFailed'));
+    }
+  };
+
+  const print = () => {
+    const ok = printResults(results.items, (r) => t(targetLabelKey(r.target)), {
+      title: `${t('search.results.reportTitle')} — ${results.title}`,
+      date: `${t('search.results.printedOn')} ${new Date().toLocaleString(i18n.language === 'ar' ? 'ar-EG' : 'en-GB')}`,
+      columns: ['#', t('popup.name'), t('search.type'), t('popup.place'), t('popup.call')],
+      dir: i18n.language === 'ar' ? 'rtl' : 'ltr',
+      lang: i18n.language,
+    });
+    if (!ok) toast.warning(t('search.results.popupBlocked'));
+  };
+
+  const iconBtn = 'rounded p-1.5 text-slate-500 hover:bg-slate-100';
+  return (
+    <MapSheet
+      side="start"
+      label={t('search.results.title')}
+      className={className}
+      onClose={close}
+      title={
+        <div className="flex items-center justify-between gap-2">
+          <span className="truncate text-sm">
+            {t('search.results.title')} · {t('search.results.count', { count: results.items.length })}
+            <span className="block truncate text-xs font-normal text-slate-500">{results.title}</span>
+          </span>
+          <span className="flex shrink-0">
+            <button
+              type="button"
+              className={iconBtn}
+              onClick={() => void copyLink()}
+              aria-label={t('search.results.copyLink')}
+              title={t('search.results.copyLink')}
+            >
+              <Copy className="h-4 w-4" />
+            </button>
+            <button
+              type="button"
+              className={iconBtn}
+              onClick={print}
+              aria-label={t('search.results.print')}
+              title={t('search.results.print')}
+            >
+              <Printer className="h-4 w-4" />
+            </button>
+          </span>
+        </div>
+      }
+    >
+      <ul className="space-y-2">
+        {results.items.map((r, i) => (
+          <ResultRow
+            key={r.key}
+            r={r}
+            index={i}
+            active={selected?.id === r.id && selected.coordinate[0] === r.center[0]}
+            onOpen={() => open(r)}
+          />
+        ))}
+      </ul>
+    </MapSheet>
+  );
+}

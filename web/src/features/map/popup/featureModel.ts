@@ -152,7 +152,14 @@ export function collectMedia(props: Props): MediaItem[] {
     if (!url) continue;
     out.push(isImageUrl(url) ? { type: 'image', url } : asVideo(url, labelKey));
   }
-  return out;
+  // The same picture / video is often filled in two fields; show it once.
+  const seen = new Set<string>();
+  return out.filter((m) => {
+    const k = m.type === 'youtube' ? `y:${m.id}` : `${m.type}:${m.url}`;
+    if (seen.has(k)) return false;
+    seen.add(k);
+    return true;
+  });
 }
 
 // --- availability ----------------------------------------------------------------------------

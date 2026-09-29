@@ -12,6 +12,7 @@ import i18n from '@/i18n';
 import { useAuthStore } from '@/store/authStore';
 import { useOlMap } from '../MapContext';
 import { useMapUi } from '../store';
+import { useSearchUi } from '../search/store';
 import { text, type SelectedFeature } from './featureModel';
 import { featureToSelection } from './selection';
 
@@ -65,6 +66,7 @@ export default function SelectionController() {
 
     const dataLayer = (l: unknown): l is Layer => !!l && (l as Layer).get('key') !== undefined;
     const clickKey = map.on('singleclick', (e) => {
+      if (useSearchUi.getState().picking) return; // this tap chooses a search point
       let picked: SelectedFeature | null = null;
       map.forEachFeatureAtPixel(
         e.pixel,

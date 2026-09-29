@@ -77,7 +77,9 @@
       "unavailable": "Could not determine your location. Make sure GPS is on and permission is granted.",
       "timeout": "Finding your location timed out. Please try again.",
       "failed": "Could not access your location. Make sure GPS is on and permission is granted."
-    }
+    },
+    "refresh": "Refresh map",
+    "refreshed": "Map data refreshed."
   },
   "basemaps": {
     "esri": "Satellite (Esri)",
@@ -232,5 +234,102 @@
   "media": {
     "openImages": "Click to view the images",
     "preview": "Image preview"
+  },
+  "search": {
+    "title": "Search",
+    "type": "Type",
+    "chooseType": "-- Choose a service or property --",
+    "field": "Field",
+    "operator": "Condition",
+    "value": "Value",
+    "conditions": "Search conditions",
+    "chooseValue": "-- Choose a value --",
+    "customValue": "✏️ Custom value (type)",
+    "typeValue": "Type the value here...",
+    "backToList": "Back to the list",
+    "currency": "Currency",
+    "allCurrencies": "All currencies",
+    "addCondition": "Add condition",
+    "run": "Search",
+    "clear": "Clear",
+    "globalPlaceholder": "Search any service, property or technician...",
+    "globalNone": "No matching results",
+    "unnamed": "Unnamed place",
+    "quickHint": "Pick a type to show everything of it in the area you are looking at.",
+    "filterTypes": "Find a type…",
+    "chooseTypeFirst": "Choose what to search first.",
+    "addCriteria": "Set the search criteria.",
+    "noResults": "No results.",
+    "noneInArea": "Sorry, no results for \"{{type}}\" in the current area.",
+    "failed": "Something went wrong while searching. Please try again.",
+    "invalidRadius": "The radius must be a number between 0 and 50000 metres.",
+    "tabs": {
+      "quick": "Quick",
+      "smart": "Smart",
+      "nearby": "Nearby"
+    },
+    "fields": {
+      "gov_a": "Governorate",
+      "village_a": "Town / village",
+      "location": "Location",
+      "location_name": "Location",
+      "name": "Name",
+      "barrierName": "Checkpoint name",
+      "stationName": "Station name",
+      "price": "Price",
+      "area": "Area",
+      "stopIn": "Checkpoint status (inbound)",
+      "stopOut": "Checkpoint status (outbound)"
+    },
+    "operators": {
+      "=": "equals",
+      "contains": "contains",
+      ">": "at least",
+      "<": "at most"
+    },
+    "currencies": {
+      "USD": "US dollar $",
+      "ILS": "Shekel ₪",
+      "JOD": "Dinar JD"
+    },
+    "nearby": {
+      "myLocation": "My location",
+      "pickOnMap": "Pick on the map",
+      "pickHint": "Tap the map to choose the point...",
+      "notSet": "No location chosen yet",
+      "locating": "Finding your location...",
+      "centerSet": "Search location set",
+      "radius": "Radius (metres)",
+      "radiusHint": "Leave empty for the single closest result, 0 for what contains the point itself.",
+      "barrierStatus": "Checkpoint status (optional)",
+      "anyStatus": "-- Any status --",
+      "noCondition": "-- No condition --",
+      "optional": "optional",
+      "pickCenterFirst": "Please choose the search location first.",
+      "pickTypeFirst": "Please choose a property or service type."
+    },
+    "reason": {
+      "stop": {
+        "in": "{{status}} (inbound)",
+        "out": "{{status}} (outbound)"
+      },
+      "fuel": "{{fuel}} available"
+    },
+    "results": {
+      "title": "Results",
+      "count": "{{count}} results",
+      "copyLink": "Copy results link",
+      "print": "Print",
+      "linkCopied": "✅ Results link copied. You can share it now.",
+      "linkFailed": "Could not copy the link, please copy it manually.",
+      "noLink": "There is no current search to share.",
+      "badLink": "Could not open the shared results link.",
+      "back": "Back to results ({{count}})",
+      "km": "km",
+      "m": "m",
+      "reportTitle": "Search results report",
+      "printedOn": "Printed on:",
+      "popupBlocked": "Allow pop-ups to print the report."
+    }
   }
 }

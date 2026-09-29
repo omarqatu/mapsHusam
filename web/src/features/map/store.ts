@@ -8,6 +8,8 @@ interface MapUiState {
   realEstateVisible: Record<RealEstateLayerKey, boolean>;
   /** Service types switched off by the user. */
   hiddenServices: ReadonlySet<string>;
+  layersOpen: boolean;
+  setLayersOpen: (open: boolean) => void;
   /** The feature whose details card is open. */
   selected: SelectedFeature | null;
   setSelected: (f: SelectedFeature | null) => void;
@@ -22,6 +24,8 @@ export const useMapUi = create<MapUiState>((set) => ({
   basemap: DEFAULT_BASEMAP,
   realEstateVisible: { rent: true, sale: true, land: true },
   hiddenServices: new Set(),
+  layersOpen: false,
+  setLayersOpen: (layersOpen) => set({ layersOpen }),
   selected: null,
   setSelected: (selected) => set({ selected }),
   setBasemap: (basemap) => set({ basemap }),

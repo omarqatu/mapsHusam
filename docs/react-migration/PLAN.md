@@ -76,7 +76,37 @@ Split `index.html` into features, in this order:
    hidden; 8 px hit tolerance; bottom sheet on phones with auto-pan; contact buttons stacked; highlight ring;
    Esc closes; a provider with only a phone (no WhatsApp) can now be called (legacy showed nothing).
    NOT yet: "طلب الخدمة" for provider-linked features is shown disabled — comes with item 7 (service requests).
-3. ⬜ Search on map: `search.js`, `global-search.js`, `location-search.js`, `quick-search.js`, `results-share.js`
+3. ✅ Search on map: `search.js`, `global-search.js`, `location-search.js`, `quick-search.js`, `results-share.js`
+   → `features/map/search/`. Rules were read from the code AND `server.js` (a 6-agent inventory was cross-checked by a
+   second verifier pass — all six inventories had errors; the server code is the source of truth).
+   **Kept (parity):** global keyword search (Arabic letter folding, ranked suggestions, "closed checkpoint" / "diesel"
+   keywords); quick search (a type inside the current map view); smart search (type + field/operator/value
+   conditions, cascading governorate→town→place lists from `get-unique-values`, custom typed value, price + currency,
+   fixed lists for checkpoint status / fuel); search by location (my location or tap on the map, radius rules: empty =
+   closest, 0 = contains the point, N = within N m; checkpoint status; fuel filters AND-ed); results list with fly-to +
+   details card; yellow highlight on the map; radius circle; copy results link + replay from `?resultsShare=`; print;
+   per-user search quota (`log-map-event`, 429 message, fail-open); rating-desc ranking; map refresh button.
+   **Changed on purpose (better, documented):**
+   - Result rows are compact (name, type, place, rating, open/closed, price/area, distance) with call/WhatsApp buttons;
+     the full details open in the card on tap. Legacy rendered the whole popup HTML inside every row.
+   - Nearby results are sorted nearest-first and show the distance (legacy: by rating).
+   - Nearby extra filters apply BEFORE choosing the closest (legacy fixed this too); radius validated 0–50 000 m.
+   - Global search: the three real-estate queries run in parallel; keyword hits need one request per direction
+     (same-field conditions are OR-ed by the server) instead of up to ten; the LONGEST matching keyword wins
+     ("أزمة خانقة" = heavy only — legacy let the shorter "أزمة" override it); rows are ranked by type-name match →
+     number of typed words matched (the server ORs the words) → rating; one row per feature.
+   - Operator labels say ≥ / ≤ because the server's `>` / `<` are inclusive.
+   - A newer search cancels the older one (legacy: last response wins, races); errors show a message.
+   - Share link = new clean format (`?resultsShare=` base64url JSON, validated on read). **Old links do not open** —
+     acceptable in the test phase (decision: no legacy-compat layers).
+   - One search panel with 3 tabs + a search box floating on the map; bottom sheets on phones (one at a time).
+   **Removed:** the local fallback that searched the features already loaded in the browser when the API failed (it
+   returned partial, stale data silently) — now a clear error; the WFS/CQL fallback of global search; the 71-button
+   quick-search bar (now a filterable chip grid in the panel).
+   **XSS / bug fixes:** 5 `innerHTML` sinks with server data (search.js ×2, quick-search, location-search,
+   global-search) → JSX; global-search highlight built HTML and its regex crashed on `(`; print report built HTML
+   strings and printed the literal text `${new Date()}` instead of the date; media shown twice when two fields hold
+   the same video.
 4. ⬜ Tools: `measure.js`, `share-location.js`
 5. ⬜ Editing (admin): `edit-core.js`, `edit-wfs.js`, `editLines.js`, `editPolygons.js`
 6. ⬜ Provider panel: `provider-panel.js`, `services-bridge.js`
@@ -142,4 +172,11 @@ _(none yet)_
 - Sessions never expire by design (`requireAuth` uses `ignoreExpiration: true`); revocation is via `token_version` / `is_active` / `force_logout_flag` (checked on every request, cached). Not a hole by itself, but a stolen token stays valid until an admin force-logout or a password change — consider `expiresIn` + refresh, and a self-service "log out everywhere". Needs the user's decision.
 - WFS-T editing sends GeoServer credentials from the browser (`js/edit-wfs.js`); should move server-side.
 - `/api/search-features*` are public and return `SELECT *` — review exposed columns.
+- `/api/search-features?ignore_status=1` bypasses the `status=0 AND auto_status=0` filter with no auth check — anyone can list
+  inactive/expired records.
+- Search returns at most 2000 rows with no offset/pagination; a text search ORs its words (broadens instead of narrowing).
+- `/api/log-map-event` ignores the `service` field for search events (only `provider` and `event_type` are stored), so the
+  dashboard can't tell WHAT was searched.
+- Results are filtered client-side for nearby search (whole layer fetched, up to 2000 rows) — a server-side distance filter
+  would scale better.
 - CSP `connectSrc` allows any `https:`/`ws:`/`wss:` — tighten to own origin once the app is on React.
