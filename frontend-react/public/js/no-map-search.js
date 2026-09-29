@@ -1656,9 +1656,14 @@ if (ytMatch) {
                     filterItem.appendChild(priceContainer);
                 } else if (field.id === 'area') {
                     // حقل المساحة بالمتر المربع مع خيار المقارنة
+                    if (['hotelsLayer', 'villas_rentLayer'].includes(currentCategory.key)) {
+                        // اجعل فلتر المساحة بسطر مستقل حتى لا يزاحم الإعلانات الجانبية.
+                        filterItem.style.gridColumn = '1 / -1';
+                    }
                     const areaContainer = document.createElement('div');
                     areaContainer.style.display = 'flex';
                     areaContainer.style.gap = '5px';
+                    areaContainer.style.width = '100%';
 
                     const operatorSelect = document.createElement('select');
                     operatorSelect.dataset.fieldId = `${field.id}_operator`;
@@ -1910,7 +1915,8 @@ if (ytMatch) {
 
                 // معالجة العملة
                 const currencySelect = filterItem.querySelector('select[data-field-id="currency"]');
-                if (isRealEstate && currencySelect && currencySelect.value) {
+                const isPropertyService = ['hotelsLayer', 'villas_rentLayer'].includes(currentCategory.key);
+                if ((isRealEstate || isPropertyService) && currencySelect && currencySelect.value) {
                     params.append(`field_${conditionIndex}`, 'currency');
                     params.append(`operator_${conditionIndex}`, '=');
                     params.append(`value_${conditionIndex}`, currencySelect.value);

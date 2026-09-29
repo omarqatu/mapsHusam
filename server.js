@@ -1868,7 +1868,6 @@ app.get('/api/search-features', async (req, res) => {
         debugLog(`Search Params:`, params);
 
         const result = await targetPool.query(query, params);
-
         // تحويل النتائج إلى GeoJSON
         // تحويل النتائج إلى GeoJSON
         const features = result.rows.map(row => {

@@ -670,8 +670,7 @@ function initializePopup(map) {
     }
 
     function getCurrencySymbol(code) {
-        const symbols = { USD: 'دولار', ILS: 'شيقل', JOD: 'دينار' };
-        return symbols[code] || '';
+        return window.currencyDisplayLabel ? window.currencyDisplayLabel(code) : String(code || '');
     }
 
         window.generateFeatureHtml = function(feature, layer) {
@@ -797,7 +796,8 @@ function initializePopup(map) {
 
             if (isRealEstate || isPropertyService) {
                 if (props.price !== undefined && props.price !== null && props.price !== '') {
-                    bodyHtml += `<b>💰 السعر:</b> ${Number(props.price).toLocaleString()} ${getCurrencySymbol(props.currency)}<br>`;
+                    const currencyText = getCurrencySymbol(window.getCaseInsensitiveProp(props, 'currency'));
+                    bodyHtml += `<b>💰 السعر:</b> ${Number(props.price).toLocaleString()} ${currencyText}<br>`;
                 }
                 if (props.area) bodyHtml += `<b>📐 المساحة:</b> ${props.area} م²<br>`;
             }

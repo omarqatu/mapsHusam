@@ -84,9 +84,8 @@ async function sendWFS_T(feature, type) {
         ['name', 'whatsapp', 'phone', 'pic', 'video', 'rating', 'details_link_1', 'details_link_2', 'end_date', 'work_hours', 'des', 'search_tags'];
 
     if (!isRealEstate && ['villas_rentLayer', 'hotelsLayer'].includes(selectedLayerName)) {
-        // currency اختيار للعرض في واجهة المنصة ولا يوجد كحقل في service_all.
-        allowedPropsAdd.push('price', 'area');
-        allowedPropsUpdate.push('price', 'area');
+        allowedPropsAdd.push('price', 'area', 'currency');
+        allowedPropsUpdate.push('price', 'area', 'currency');
     }
 
     // 🆕 عمود "stop" الخاص بحالة حاجز الطرق (0=مفتوح، 1=مغلق، 2=أزمة خفيفة،
@@ -191,7 +190,7 @@ async function sendWFS_T(feature, type) {
                 ];
 
         if (!isRealEstate && ['villas_rentLayer', 'hotelsLayer'].includes(selectedLayerName)) {
-            servicesSchemaOrder.push('price', 'area');
+            servicesSchemaOrder.push('price', 'area', 'currency');
         }
 
         
@@ -349,7 +348,7 @@ async function sendWFS_T(feature, type) {
             Swal.fire({
                 icon: 'success',
                 title: 'تم الحفظ بنجاح!',
-                text: 'تمت العملية وحفظ المعلم بنجاح في قاعدة البيانات الجغرافية.',
+                text: 'تم حفظ المعلم بنجاح.',
                 confirmButtonText: 'موافق'
             });
 

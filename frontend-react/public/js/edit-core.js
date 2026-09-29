@@ -237,7 +237,7 @@ function initializeEditTools(map, overlayLayersObjParam) {
         return { layer: null, discriminator: null, isService: false };
     }
 
-    function showAttributeModal(feature) {
+    async function showAttributeModal(feature) {
         modalTitle.textContent = currentTransactionType === 'insert' ? 'إضافة معلم جديد' : 'تعديل البيانات الحالية';
         attributeForm.innerHTML = '';
         

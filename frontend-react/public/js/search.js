@@ -536,7 +536,7 @@
                 finalConditions.push({ field: fieldSelect.value, fieldName: fieldSelect.options[fieldSelect.selectedIndex].text, operator: operatorSelect.value, value: currentVal });
 
                 // 🆕 إضافة شرط العملة تلقائياً بنفس المسار السريع
-                if (fieldSelect.value === 'price' && !['villas_rentLayer', 'hotelsLayer'].includes(layerSelect.value)) {
+                if (fieldSelect.value === 'price' && ['villas_rentLayer', 'hotelsLayer'].includes(layerSelect.value)) {
                     const currencySelect = document.getElementById('value-currency-select');
                     if (currencySelect && currencySelect.value) {
                         finalConditions.push({ field: 'currency', fieldName: 'العملة', operator: '=', value: currencySelect.value });
@@ -633,7 +633,7 @@
             conditions.push({ field: fieldSelect.value, fieldName: fieldSelect.options[fieldSelect.selectedIndex].text, operator: operatorSelect.value, value: val, displayValue: displayVal });
 
             // 🆕 إضافة شرط العملة تلقائياً إذا كان الحقل هو السعر وتم اختيار عملة محددة
-            if (fieldSelect.value === 'price' && !['villas_rentLayer', 'hotelsLayer'].includes(layerSelect.value)) {
+            if (fieldSelect.value === 'price' && ['villas_rentLayer', 'hotelsLayer'].includes(layerSelect.value)) {
                 const currencySelect = document.getElementById('value-currency-select');
                 if (currencySelect && currencySelect.value) {
                     conditions.push({ field: 'currency', fieldName: 'العملة', operator: '=', value: currencySelect.value });

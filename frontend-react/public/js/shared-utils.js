@@ -188,6 +188,17 @@ window.getCaseInsensitiveProp = function (obj, keyName) {
     return foundKey !== undefined ? obj[foundKey] : undefined;
 };
 
+window.currencyDisplayLabel = function (value) {
+    const raw = value == null ? '' : String(value).trim();
+    const normalized = raw.toUpperCase();
+    const labels = {
+        USD: 'دولار', '$': 'دولار', 'دولار': 'دولار',
+        ILS: 'شيكل', '₪': 'شيكل', 'شيكل': 'شيكل', 'شيقل': 'شيكل',
+        JOD: 'دينار', 'د.أ': 'دينار', 'دينار': 'دينار'
+    };
+    return labels[normalized] || labels[raw] || raw;
+};
+
 window.getFirstValidMediaValue = function (obj, keys) {
     if (!obj || !Array.isArray(keys) || !keys.length) return undefined;
     for (const key of keys) {
@@ -545,8 +556,8 @@ window.buildPopupInfoBlock = function (props, opts) {
 
     if (isRealEstate || isPropertyService) {
         if (props.price) {
-            const symbols = { USD: 'دولار', ILS: 'شيقل', JOD: 'دينار' };
-            html += row('line', `<b>💰 السعر:</b> ${Number(props.price).toLocaleString()} ${symbols[props.currency] || ''}`);
+            const currency = window.currencyDisplayLabel(window.getCaseInsensitiveProp(props, 'currency'));
+            html += row('line', `<b>💰 السعر:</b> ${Number(props.price).toLocaleString()} ${esc(currency)}`);
         }
         if (props.area) html += row('line', `<b>📐 المساحة:</b> ${esc(props.area)} م²`);
         if (isRealEstate && props.village_a) html += row('line', `<b>🏘️ البلدة:</b> ${esc(props.village_a)}`);
