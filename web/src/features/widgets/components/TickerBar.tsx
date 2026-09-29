@@ -9,7 +9,6 @@ import {
   Fuel,
   ChevronDown,
   Gem,
-  LayoutGrid,
   MoonStar,
   Pause,
   Play,
@@ -142,6 +141,7 @@ export default function TickerBar({
     >
       <Link
         to="/widgets/portal"
+        aria-label={title}
         className="flex shrink-0 items-center gap-1.5 rounded-md py-1 font-black text-brand-fg focus-visible:outline-2 focus-visible:outline-brand"
       >
         <Zap className={large ? 'h-6 w-6' : 'h-4 w-4'} aria-hidden />
@@ -192,16 +192,6 @@ export default function TickerBar({
         >
           <ChevronDown className="h-4 w-4" aria-hidden />
         </button>
-      )}
-      {!large && (
-        <Link
-          to="/widgets/portal"
-          aria-label={t('widgets.ticker.open')}
-          title={t('widgets.ticker.open')}
-          className="shrink-0 rounded-md p-1.5 text-fg hover:bg-subtle"
-        >
-          <LayoutGrid className="h-4 w-4" aria-hidden />
-        </Link>
       )}
     </section>
   );

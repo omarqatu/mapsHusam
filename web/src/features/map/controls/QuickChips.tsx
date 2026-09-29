@@ -31,7 +31,8 @@ export default function QuickChips() {
       {button('fuel', <Fuel className="h-4 w-4 text-info" aria-hidden />, t('extras.chips.fuel'))}
       {button('roads', <TrafficCone className="h-4 w-4 text-warn" aria-hidden />, t('extras.chips.roads'))}
       {button('featured', <Star className="h-4 w-4 text-warn" aria-hidden />, t('extras.chips.featured'))}
-      <Link to="/search" className={chip}>
+      {/* The header already has "search" from tablet width up; phones keep the shortcut. */}
+      <Link to="/search" className={`${chip} md:hidden`}>
         <ListFilter className="h-4 w-4 text-ok" aria-hidden />
         {t('extras.chips.search')}
       </Link>

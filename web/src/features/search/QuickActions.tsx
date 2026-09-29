@@ -15,7 +15,7 @@ export default function QuickActions({ onRoads, onFuel }: Props) {
   const { t } = useTranslation();
   return (
     <div className="flex gap-2 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-      <Link to="/" className={`${chip} border-brand bg-brand text-white hover:bg-brand-hover`}>
+      <Link to="/" className={`${chip} border-brand bg-brand text-white hover:bg-brand-hover md:hidden`}>
         <MapIcon className="h-4 w-4" aria-hidden /> {t('searchPage.goToMap')}
       </Link>
       <button type="button" onClick={onRoads} className={`${chip} border-warn-line bg-warn-soft text-warn hover:bg-warn-soft`}>
