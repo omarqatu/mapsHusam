@@ -22,6 +22,18 @@ jobs:
         working-directory: C:\inetpub\wwwroot\psm\mapsHusam
         run: npm ci
 
+      # The React app (web/) is built on the server after the copy: web/dist is not in git, and the copy above
+      # mirrors the folder, so the build has to come after it and before the restart (server.js reads web/dist at start).
+      - name: Install web dependencies
+        shell: cmd
+        working-directory: C:\inetpub\wwwroot\psm\mapsHusam\web
+        run: npm ci
+
+      - name: Build web app
+        shell: cmd
+        working-directory: C:\inetpub\wwwroot\psm\mapsHusam\web
+        run: npm run build
+
       - name: Restart app
         shell: cmd
         run: |
