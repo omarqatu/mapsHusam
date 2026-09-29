@@ -8,6 +8,9 @@ export const formatDate = (d: Date | string, lang: string) =>
   new Date(d).toLocaleDateString(intlLocale(lang));
 export const formatDateTime = (d: Date | string, lang: string) =>
   new Date(d).toLocaleString(intlLocale(lang));
+/** "Tuesday 29 September 2026" / «الثلاثاء ٢٩ سبتمبر ٢٠٢٦». */
+export const formatLongDate = (d: Date | string, lang: string) =>
+  new Date(d).toLocaleDateString(intlLocale(lang), { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
 
 /**
  * Postgres timestamps: the server sends ISO (`2026-06-28T22:35:58.529Z`), but other drivers / older rows give

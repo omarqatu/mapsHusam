@@ -1,4 +1,4 @@
-import { Link } from 'react-router';
+import { Link, useLocation } from 'react-router';
 import { useTranslation } from 'react-i18next';
 import { Building2, Gift, LogIn, MapPin, MessageCircle, SearchCheck, UserPlus, Wrench } from 'lucide-react';
 import LegalLinks from '@/features/legal/LegalLinks';
@@ -15,6 +15,8 @@ const features = [
 /** Legacy promo splash (`#promo-splash-overlay`): pitch + "create account" / "log in". */
 export default function WelcomePage() {
   const { t } = useTranslation();
+  // A visitor sent here from a deep link (/?x=…&y=…, a share link) keeps it through log in.
+  const { state } = useLocation();
   return (
     <div className="mx-auto max-w-3xl py-6 text-center">
       <h1 className="text-3xl font-black text-fg sm:text-4xl">
@@ -46,6 +48,7 @@ export default function WelcomePage() {
       <div className="mt-8 flex flex-col justify-center gap-3 sm:flex-row">
         <Link
           to="/register"
+          state={state}
           className="inline-flex h-12 items-center justify-center gap-2 rounded-lg bg-brand px-6 font-bold text-white hover:bg-brand-hover"
         >
           <UserPlus className="h-5 w-5" aria-hidden />
@@ -53,6 +56,7 @@ export default function WelcomePage() {
         </Link>
         <Link
           to="/login"
+          state={state}
           className="inline-flex h-12 items-center justify-center gap-2 rounded-lg border border-brand bg-surface px-6 font-bold text-brand-fg hover:bg-brand-light"
         >
           <LogIn className="h-5 w-5" aria-hidden />

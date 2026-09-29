@@ -1,8 +1,7 @@
 import { Wrench } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import MapButton from '../controls/MapButton';
-import { useSearchUi } from '../search/store';
-import { useMapUi } from '../store';
+import { openProviderPanel } from './openPanel';
 import { useIsProvider } from './queries';
 import { useProviderUi } from './store';
 
@@ -15,9 +14,7 @@ export default function ProviderButton() {
 
   const toggle = () => {
     if (open) return useProviderUi.getState().closePanel();
-    useMapUi.getState().setLayersOpen(false);
-    useSearchUi.getState().closePanel();
-    useProviderUi.getState().openPanel();
+    openProviderPanel();
   };
   return (
     <MapButton label={t('provider.title')} active={open} onClick={toggle}>
