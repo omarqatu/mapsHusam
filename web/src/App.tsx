@@ -16,6 +16,8 @@ import AdminViewUserPage from '@/features/admin-users/AdminViewUserPage';
 import AdminWidgetsPage from '@/features/admin-widgets/AdminWidgetsPage';
 import NotificationsPage from '@/features/notifications/NotificationsPage';
 import SearchPage from '@/features/search/SearchPage';
+import WidgetsPortalPage from '@/features/widgets/WidgetsPortalPage';
+import WidgetsTickerPage from '@/features/widgets/WidgetsTickerPage';
 import RequestsHost from '@/features/requests/RequestsHost';
 import LegalPage from '@/features/legal/LegalPage';
 import { ProtectedRoute, RoleRoute } from '@/routes/guards';
@@ -31,6 +33,8 @@ const MapPage = lazy(() => import('@/features/map/MapPage'));
 const ported: Record<string, ReactElement> = {
   '/notifications': <NotificationsPage />,
   '/search': <SearchPage />,
+  '/widgets/portal': <WidgetsPortalPage />,
+  '/widgets/ticker': <WidgetsTickerPage />,
   '/admin/users': <AdminUsersPage />,
   '/admin/users/:id/view': <AdminViewUserPage />,
   '/admin/dashboard': <AdminDashboardPage />,

@@ -29,6 +29,7 @@ import { useMapUi } from './store';
 import MapTools from './tools/MapTools';
 import ToolButtons from './tools/ToolButtons';
 import LayerPanel from './panels/LayerPanel';
+import TickerBar from '../widgets/components/TickerBar';
 
 /** `/` — the map. Full-screen: a slim brand bar and the map; every tool floats on the map's end edge. */
 export default function MapPage() {
@@ -148,6 +149,9 @@ export default function MapPage() {
           )}
         </MapView>
       </div>
+      {/* Legacy footer bar. A row of the page (not an overlay), so the map — and every button, sheet, the coordinates and the
+          stats pill on it — simply ends above it. One slim line; hidden on landscape phones. */}
+      <TickerBar />
       <Toaster />
     </div>
   );

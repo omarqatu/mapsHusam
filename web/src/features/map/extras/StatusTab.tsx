@@ -11,7 +11,8 @@ import { barrierDirections, text } from '../popup/featureModel';
 import { toResults, type SearchResult } from '../search/results';
 import { targetFromKey, targetIcon } from '../targets';
 import { BarrierBadges, FuelBadges } from './StatusBadges';
-import { formatAgo, matchesQuery, relativeUpdate } from './status';
+import { matchesQuery } from './status';
+import UpdatedAgo from './UpdatedAgo';
 import { useShowOnMap } from './useShowOnMap';
 
 /** What the search box matches: the row's own text plus the status words it displays (legacy matched rendered text). */
@@ -29,33 +30,24 @@ function searchText(r: SearchResult, layer: StatusLayer, t: (k: string) => strin
   return [p.name, p.des, p.location_name, p.village_a, p.gov_a, ...status].map(text).join(' ');
 }
 
-function LastUpdated({ layer }: { layer: StatusLayer }) {
-  const { t, i18n } = useTranslation();
-  const at = useStatusUpdatedAt(layer);
-  const rel = relativeUpdate(at.data, at.dataUpdatedAt);
-  const label =
-    rel.kind === 'never'
-      ? t('extras.status.never')
-      : rel.kind === 'unknown'
-        ? t('extras.status.unknown')
-        : rel.kind === 'now'
-          ? t('extras.status.justNow')
-          : formatAgo(rel, i18n.language);
-  return (
-    <span className="text-sm text-slate-500">
-      {t('extras.status.updated')}{' '}
-      <span className={rel.kind === 'now' ? 'font-bold text-green-600' : undefined}>{label}</span>
-    </span>
-  );
-}
-
 /** Road checkpoint / fuel station status list (legacy widgets portal cards): searchable, auto-refreshing, tap → on the map. */
-export default function StatusTab({ layer }: { layer: StatusLayer }) {
+export default function StatusTab({
+  layer,
+  showUpdated = true,
+  initialCount,
+}: {
+  layer: StatusLayer;
+  /** False when the host shows the "last update" stamp itself (the portal card header). */
+  showUpdated?: boolean;
+  /** Show only this many rows until "show all" is tapped (a long list on a page); searching always searches every row. */
+  initialCount?: number;
+}) {
   const { t } = useTranslation();
   const rows = useStatusRows(layer);
   const updated = useStatusUpdatedAt(layer);
   const showOnMap = useShowOnMap();
   const [query, setQuery] = useState('');
+  const [expanded, setExpanded] = useState(false);
 
   const target = targetFromKey(layer);
   const all = useMemo(() => (rows.data && target ? toResults(rows.data, target) : []), [rows.data, target]);
@@ -64,6 +56,7 @@ export default function StatusTab({ layer }: { layer: StatusLayer }) {
     [all, layer, query, t],
   );
 
+  const visible = initialCount && !expanded && !query.trim() ? shown.slice(0, initialCount) : shown;
   const refresh = () => {
     void rows.refetch();
     void updated.refetch();
@@ -72,14 +65,14 @@ export default function StatusTab({ layer }: { layer: StatusLayer }) {
   return (
     <div className="space-y-3">
       <div className="flex items-center justify-between gap-2">
-        <LastUpdated layer={layer} />
+        {showUpdated ? <UpdatedAgo at={updated.data} now={updated.dataUpdatedAt} /> : <span />}
         <button
           type="button"
           onClick={refresh}
           disabled={rows.isFetching}
           aria-label={t('extras.status.refresh')}
           title={t('extras.status.refreshHint')}
-          className="rounded p-1.5 text-slate-500 hover:bg-slate-100 disabled:opacity-60"
+          className="rounded p-1.5 text-slate-600 hover:bg-slate-100 disabled:opacity-60"
         >
           <RefreshCw className={rows.isFetching ? 'h-4 w-4 animate-spin' : 'h-4 w-4'} />
         </button>
@@ -99,7 +92,7 @@ export default function StatusTab({ layer }: { layer: StatusLayer }) {
         <EmptyState title={t(all.length === 0 ? 'extras.status.empty' : 'extras.status.noMatch')} />
       ) : (
         <ul className="space-y-2">
-          {shown.map((r) => {
+          {visible.map((r) => {
             const name = text(r.props.name) || t(`services.${layer}`);
             const note = layer === 'road_barriers' ? text(r.props.des) : '';
             const place = text(r.props.location_name) || text(r.props.village_a);
@@ -115,9 +108,9 @@ export default function StatusTab({ layer }: { layer: StatusLayer }) {
                       {targetIcon(r.target)}
                     </span>
                     <span className="min-w-0 flex-1">
-                      <span className="block text-sm font-bold text-slate-800" dir="auto">
+                      <span className="block text-base font-bold text-slate-800" dir="auto">
                         {name}
-                        {note && <span className="font-normal text-slate-500"> ({note})</span>}
+                        {note && <span className="font-normal text-slate-600"> ({note})</span>}
                       </span>
                       {place && <span className="block truncate text-sm text-slate-600">{place}</span>}
                     </span>
@@ -134,6 +127,15 @@ export default function StatusTab({ layer }: { layer: StatusLayer }) {
             );
           })}
         </ul>
+      )}
+      {initialCount && !query.trim() && shown.length > initialCount && (
+        <button
+          type="button"
+          onClick={() => setExpanded((v) => !v)}
+          className="w-full rounded-lg border border-slate-200 py-2 text-sm font-semibold text-brand hover:bg-slate-50"
+        >
+          {expanded ? t('common.showLess') : t('common.showAll', { count: shown.length })}
+        </button>
       )}
     </div>
   );

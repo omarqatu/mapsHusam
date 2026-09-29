@@ -41,11 +41,12 @@ export default defineConfig([
   },
   {
     // The only places allowed to call fetch: the API client, the GeoServer reader (no app token to GeoServer),
-    // the map editor's write transport (the single WFS-T function; it sends the typed GeoServer login, never the app
+    // the third-party reader of the widgets (Open-Meteo / Aladhan — no app token to other origins), the map editor's write transport (the single WFS-T function; it sends the typed GeoServer login, never the app
     // token), and tests that stub it.
     files: [
       'src/api/client.ts',
       'src/api/geoserver.ts',
+      'src/api/external.ts',
       'src/features/map/edit/transport.ts',
       '**/*.test.{ts,tsx}',
     ],

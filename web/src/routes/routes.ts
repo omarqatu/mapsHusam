@@ -31,6 +31,7 @@ export const appRoutes: AppRoute[] = [
     titleKey: 'nav.widgets',
     access: 'public',
     legacy: 'widgets-portal.html',
+    nav: true,
   },
   { path: '/widgets/ticker', titleKey: 'nav.widgets', access: 'public', legacy: 'widgets-ticker.html' },
   {
