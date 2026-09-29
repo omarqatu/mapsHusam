@@ -607,7 +607,7 @@ Split `index.html` into features, in this order:
    - ✅ Change password (`POST /api/auth/change-password`): current password required, new one at least 6 chars, server message on failure, rotated `X-New-Token` stored by `api/client.ts`. Opened from the key icon in `UserMenu`.
    - ✅ Session check on start (`verify-session`, fails open) with the legacy per-reason messages (force logout / inactive / not found). Was a single generic message before.
    - ✅ `auth-fetch.js` (Bearer header, `X-New-Token`, 401 handling) is `api/client.ts` since Phase 0.
-   - ✅ Legal texts (`legal-content.js`): guide, search guide, provider guide, subscription guide, interactive-map guide, about, terms, privacy, contact → `features/legal/content.ts` as structured data (no HTML strings), shown by `LegalDocView` in a dialog (`LegalModal`/`LegalLinks`) and as pages `/legal/:key`. The Arabic wording is unchanged.
+   - ✅ Legal texts (`legal-content.js`): guide, search guide, provider guide, subscription guide, interactive-map guide, about, terms, privacy, contact → structured data (no HTML strings; first `features/legal/content.ts`, now `features/legal/texts/<key>.json`, see Phase 3 "Registry"), shown by `LegalDocView` in a dialog (`LegalModal`/`LegalLinks`) and as pages `/legal/:key`. The Arabic wording is unchanged.
    - ✅ Merge review (main session): /welcome, /register, /login, /legal/terms opened at desktop and 390 px against the dev server — layout fine, no console errors. Form submit flows are covered by the live-API tests.
    **Changed on purpose (better, documented):**
    - The promo splash, welcome/terms, login and register overlays (stacked over the map, toggled with `hidden`) are separate routes `/welcome`, `/register`, `/login`, so the back button and links work. Same texts and same steps.
@@ -754,7 +754,7 @@ Split `index.html` into features, in this order:
      coordinates (legacy: a bar of six counters incl. visits and users; those stay in the stats tab). Hidden on phones.
    - `/search`: the search box and three shortcuts (interactive map, road status, fuel status; legacy: the coloured header
      buttons) stay in view while scrolling (the top bar is sticky too); the hero shows providers and services only.
-   - Layer panel: the 65 service types are the same 13 groups as the search page (one table in `extras/featured.ts`),
+   - Layer panel: the 68 service types are the same 13 groups as the search page (the `group` of each registry entry, see "Registry"),
      collapsible, each with a tri-state box and a visible/total count (a filter opens the matching groups); the
      "no background" map is offered to admins only.
    - Requests: status labels lose their emoji (a coloured dot + text instead), "تم الاتفاق" has no ✅, the chat footer keeps
@@ -768,6 +768,31 @@ Split `index.html` into features, in this order:
      Cairo font (self-hosted), a real dark theme (header toggle, saved, no flash). All ~480 raw `slate-*`/`red-*`… classes were
      replaced by tokens with a codemod; ESLint now forbids raw palette classes; hex colours in components → tokens.
      Brand `#667eea` → `#4f46e5` (same family; white text on it now passes AA). See HOUSE-STYLE.md "Design system".
+   - **Registry** (user request: make the map code maintainable — one source of truth for the service types): the
+     service-type list was written five times (`config.ts` SERVICE_TYPES, the type → group table in `extras/featured.ts`, the
+     Arabic search tags in `edit/searchTagData.ts` (two 68-line tables), the extra-columns switch in `edit/schema.ts`, and the
+     locale keys). It is now ONE array, `features/map/registry/services.ts` (`SERVICE_REGISTRY`): per type `key`, `icon`,
+     `group`, `tier?`, `editProfile?`, `tagName`, `tagKeywords` (+ derived `labelKey` = `services.<key>`). Everything else derives
+     from it and keeps its old export name: `config.ts` (`SERVICE_TYPES`, `SERVICE_TYPE_BY_KEY`), `targets.ts` (`ALL_TARGETS`),
+     `featured.ts` (`groupOf`, `groupedTargets`), `edit/attributes.ts` (search tags), `edit/schema.ts` (`serviceTarget`,
+     `POINT_TARGETS`), the layer panel, the type filter and the category browser. Group ids/order live in `registry/types.ts`,
+     their icons in `registry/groupIcons.ts` (was copied in `TypeFilter` and `categories.ts`), label keys through
+     `serviceLabelKey()` / `groupLabelKey()` instead of ten template strings. `edit/searchTagData.ts` is deleted.
+     `edit/schema.ts` defines each field once (`NAME`, `PHONE`, `RATING_10` …) and the layer lists pick from them (same order).
+     `registry/registry.test.ts` fails when a type exists in one place but not another: registry vs `services.<key>` in ar and en
+     (both directions), vs `ALLOWED_LAYERS` parsed read-only from `server.js` (exact set), every type in exactly one group,
+     every group named + iconed, editor targets and search tags derived. Proof that nothing moved: a one-off golden dump of
+     SERVICE_TYPES / tiers / groups / labels / icons / API mapping / every edit target (fields, insert/update columns) / search
+     tag text taken from the previous commit compared equal against the registry-derived values (not kept as a test: a golden
+     file would make adding a type a two-file change).
+     Legal texts (`features/legal/content.ts`, 896 lines of Arabic inside TypeScript) moved to `features/legal/texts/<key>.json`
+     (9 files, Arabic is the source), loaded lazily per document (`import.meta.glob`, `useLegalDoc`; the page shows a spinner
+     for the moment it takes, the dialog opens when the text has arrived). `legal.content.test.ts` pins each document by
+     sha256 + length (`texts.sha256.json`, measured on the old `content.ts`), so a wording change is deliberate and shows up
+     in review. No rendering change.
+     Duplication (jscpd, src, min 5 lines / 40 tokens, tests + locales ignored): 15 clones / 150 duplicated lines (0.66 %) →
+     13 clones / 122 lines (0.55 %); the two TypeScript clones (`content.ts`, `schema.ts` fields) are gone, the rest are UI
+     components (search result rows, dialogs) outside this change.
    - Live tests run file by file (`fileParallelism` off when `VITE_LIVE_API` is set): they share the seeded accounts.
    - Media sections show only their own kind (photos section = pictures, videos section = videos); everything is still in the
      details card. Cards use the shared `MediaGallery` (enlarge on click, https-only URLs via `safeMediaUrl`) instead of the
