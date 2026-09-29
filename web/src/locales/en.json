@@ -331,5 +331,88 @@
       "printedOn": "Printed on:",
       "popupBlocked": "Allow pop-ups to print the report."
     }
+  },
+  "extras": {
+    "title": "Featured services & live info",
+    "tabs": {
+      "featured": "Featured",
+      "roads": "Roads",
+      "fuel": "Fuel",
+      "stats": "Stats"
+    },
+    "status": {
+      "updated": "Last update:",
+      "never": "no update yet",
+      "unknown": "unknown",
+      "justNow": "just now",
+      "refresh": "Refresh list",
+      "refreshHint": "The list refreshes automatically every minute",
+      "searchRoads": "Search by checkpoint name or area...",
+      "searchFuel": "Search by station name or area...",
+      "failed": "Could not load the data. Try again.",
+      "empty": "No data right now",
+      "noMatch": "No matching results"
+    },
+    "stats": {
+      "users": "Users",
+      "providers": "Service providers",
+      "services": "Services",
+      "viewsTotal": "Total platform visits",
+      "viewsMap": "Map visits",
+      "viewsQuick": "Quick-search visits",
+      "usersByRole": "Users by role",
+      "failed": "Could not load the statistics right now"
+    },
+    "featured": {
+      "intro": "Featured and top-rated services, plus those with photos, videos and before/after links.",
+      "nearMe": "Services near me",
+      "myLocation": "Locate me",
+      "nearHint": "Turn on location to see the nearest services and properties.",
+      "nearLoading": "Loading the nearest services and properties...",
+      "nearReady": "Nearest {{count}} results, sorted by distance from you.",
+      "nearNone": "No nearby results for the selected types",
+      "filterByType": "Filter by service or property type",
+      "showAllTypes": "Show all types",
+      "filterTypes": "Search for a service or property",
+      "selectGroup": "Select every type in this group",
+      "failed": "Could not load the featured services right now",
+      "empty": "No services available right now",
+      "none": "None",
+      "before": "Before",
+      "after": "After",
+      "showOnMap": "Show on map",
+      "sections": {
+        "featured": "Featured",
+        "topRated": "Top rated",
+        "recommended": "Recommended",
+        "photos": "Photos",
+        "videos": "Videos",
+        "beforeAfter": "Before & after"
+      },
+      "badge": {
+        "featured": "Featured",
+        "topRated": "Top rated",
+        "recommended": "Recommended",
+        "photos": "Photos",
+        "videos": "Video",
+        "beforeAfter": "Before & after",
+        "near": "Near you"
+      },
+      "groups": {
+        "roads": "Road checkpoints",
+        "fuel": "Fuel stations",
+        "realestate": "Real estate",
+        "technicians": "Technicians & maintenance",
+        "health": "Health & care",
+        "vehicles": "Vehicles & delivery",
+        "professional": "Freelancers & tutoring",
+        "events": "Events, hospitality & fun",
+        "misc": "Miscellaneous",
+        "landmarks": "City landmarks",
+        "commercial": "Shops & restaurants",
+        "education": "Schools & kindergartens",
+        "jobs": "Job vacancies"
+      }
+    }
   }
 }

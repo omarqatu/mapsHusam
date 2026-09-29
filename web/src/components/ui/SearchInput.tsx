@@ -6,7 +6,7 @@ interface SearchInputProps {
   value: string;
   onChange: (value: string) => void;
   placeholder?: string;
-  /** Delay before `onChange` fires while typing (ms). */
+  /** Delay before `onChange` fires while typing (ms); 0 = on every keystroke. */
   debounceMs?: number;
   className?: string;
 }
@@ -27,7 +27,7 @@ export default function SearchInput({
     setLocal(value);
   }
   useEffect(() => {
-    if (local === value) return;
+    if (debounceMs === 0 || local === value) return; // 0 = no debounce: `onChange` already fired while typing
     const id = setTimeout(() => onChange(local), debounceMs);
     return () => clearTimeout(id);
   }, [local, value, onChange, debounceMs]);
@@ -37,7 +37,10 @@ export default function SearchInput({
       <TextInput
         type="search"
         value={local}
-        onChange={(e) => setLocal(e.target.value)}
+        onChange={(e) => {
+          setLocal(e.target.value);
+          if (debounceMs === 0) onChange(e.target.value);
+        }}
         placeholder={placeholder}
         startIcon={<Search className="h-4 w-4" />}
         aria-label={placeholder}

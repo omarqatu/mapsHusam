@@ -114,7 +114,107 @@ Split `index.html` into features, in this order:
 8. ⬜ Auth UI: `auth-core-functions.js`, `auth-app-events.js`, `auth-fetch.js`, `legal-content.js`
 9. ⬜ Layout: `mobile-tabs.js`, `desktop-panels.js`, `resizable-panels.js`, `panel-controls.js`,
    `ui-collapse.js`, `viewport-guard.js`, `mobile-app-bridge.js`
-10. ⬜ Extras: `platform-stats.js`, `featured-services-portal.js`, widgets ticker on the map
+10. 🟨 Extras: `platform-stats.js`, `featured-services-portal.js`, the "road status" / "fuel status" buttons, widgets ticker on the map
+   ✅ **Done here (`features/map/extras/`):** the featured-services portal, the road-status and fuel-status lists and the
+   platform statistics. ⬜ **Not in this item (own items):** the widgets ticker strip + the full widgets portal (`widgets-ticker.js`,
+   `widgets-portal.html`), and the mobile "home" tab (`mobile-tabs.js`, item 9) — it can open the panel with
+   `useExtrasUi.getState().openPanel('roads' | 'fuel' | 'stats' | 'featured')` (`extras/store.ts`), as can the footer links.
+
+   **Inventory (read from the code; `server.js` is the source of truth).**
+
+   *What the legacy map shows.* Top-left, four pills: "الانتقال إلى البحث بدون خريطة" (already in the React top bar),
+   **خدمات مميزة** (`#open-featured-services-desktop`, green), **حالة الطرق** (`#btn-open-road-status`, orange), **حالة محطات
+   الوقود** (`#btn-open-fuel-status`, blue); a footer bar `#platform-stats-footer` with six counters. On phones the same two
+   status buttons live in the mobile "home" tab (`mobile-tabs.js` → `#mobile-btn-open-*-status`) together with the stats.
+
+   *The two status buttons do not have their own screen.* `widgets-ticker.js` (l.1036-1063) binds them to
+   `openWidgetsPortalToCard('portal-road-status-card' | 'portal-fuel-status-card')`: it opens the big widgets-portal modal
+   (8 cards: currency, gold, weather, fuel prices, transport, calendar, road status, fuel status) and scrolls to that card. Only
+   those two cards belong to this item; the other six are the widgets-portal item. The two cards:
+   - Rows = **every** feature of the layer. `GET /api/search-features?layer=road_barriers|fuel_stations&workspace=services`
+     (no other params; the server adds `status = 0 AND auto_status = 0`, orders by `display_order NULLS LAST, id`, max 2000).
+     Fields used: `name`, `des` (checkpoints: shown as "name (des)"), `stop` (inbound) + `stop2` (outbound; missing = "غير محدد"),
+     `diesel` / `banzen95` / `banzen98` (0 = available, else not). Status → icon/colour/label = `getRoadBarrierStopInfo`
+     (already in `config.ts` `ROAD_BARRIER_STATUS`) and `getFuelAvailabilityInfo`.
+   - "آخر تحديث": `GET /api/widgets-data` → `road_status_updated_at` / `fuel_status_updated_at` (MAX(`updated_at`) of the layer's
+     rows in `service_all`; the other fields of that response — `groups` — are the widgets-portal item). Shown relative: under
+     10 min "الآن" (green), else rounded to 5 min ("منذ ساعة و5 دقائق").
+   - A search box per card filters the rendered rows client-side (words AND-ed, Arabic letter variants folded, matches the
+     rendered text incl. status words). Lists and stamps refresh every 60 s while the tab is visible
+     (`createVisibilityAwareInterval`); "تحديث الكل" refreshes everything. Rows are not clickable in legacy.
+   - No `log-map-event`, no quota — plain reads.
+
+   *Platform stats* (`platform-stats.js`, 150 lines): `GET /api/platform-stats` (public, cached 60 s on the server, retried
+   3× with 1 s / 2 s back-off, then "تعذر تحميل الإحصائيات حالياً"). Response `{ success, data }`; used fields: `usersTotal`
+   (+ breakdown `usersAdmin` مشرف / `usersUser` مستخدم / `usersProvider` مزود), `viewsMap`, `viewsQuickSearch`, `viewsTotal`,
+   `servicesCount`, `featuresCount` (labelled "عدد مزودي الخدمات": every real-estate + service row). Six cards, numbers with
+   `toLocaleString()`. Targets: the map footer, the mobile home tab, and `no-map-search.html` (that page is the search item).
+   No user action. (`pstats-*` CSS is only the styling of those cards.)
+
+   *Featured services portal* (`featured-services-portal.js`, 720 lines): the green button opens `#featured-services-panel`
+   (side panel; closes other panels via `closeAllPanels`; on phones it is the mobile "featured" tab). Content is built once, on
+   first open, from these calls (all public, no auth):
+   - `GET /api/search-features?layer=service_all&workspace=services&field_0=rating&operator_0==&value_0=10&conditions_count=1`,
+     and the same with `layer=ApartRent|ApartSale|LandSale&workspace=realestate` (real-estate rows get `discriminator = layer`);
+     repeated with `value_0=9.9`. → sections "المميزين" (10) and "موصى بهم" (9.9). A failed request contributes nothing.
+   - `GET /api/top-rated-providers?limit=15` → `items[]` `{ service_layer, feature_id, avg_rating, total_ratings }` (real
+     customer ratings). Kept when `service_layer` is a known service type; grouped by layer; per layer
+     `POST /api/search-features-batch { layer, workspace: 'services', ids }` → FeatureCollection, matched back by `properties.id`.
+     → section "الأعلى تقييماً" (avg/total are carried but not displayed in legacy).
+   - Sections "صور" / "فيديوهات" / "قبل وبعد" are filtered from the featured + recommended rows: has `pic`-like field / `video`-like
+     field / both `details_link_1` and `details_link_2` (the "before" and "after" media).
+   - Each section shows at most 10 cards; the first of each real-estate layer (rent, sale, land) is always included.
+   - "خدمات قريبة من موقعي": button "تحديد موقعي" (geolocation → EPSG:28191, blue marker + fly to z18), shortcuts "حواجز الطرق" /
+     "محطات الوقود" (locate + only that type). Then `GET /api/search-features?layer=service_all&workspace=services` plus the three
+     real-estate layers (whole layers, ≤ 2000 rows each), the 10 closest by `getClosestPoint` distance, optional type filter
+     (13 groups, `SERVICE_GROUP_BY_LAYER`, per-group "select all", a filter box, "تطبيق الاختيارات" / "عرض الكل").
+   - A card: media (video → YouTube facade that turns into an iframe on click / `<video>` / link; images; before-after pair),
+     badge "label · type (رقم: id)", name, place, open/closed + `work_hours`, town, governorate, price + currency + area (real
+     estate), fuel availability (stations), inbound/outbound (checkpoints), description; actions: linked provider → "طلب الخدمة"
+     else call / WhatsApp (`handlePhoneCall` / `handleServiceRequest`: cooldown, quota, contact log), and "الانتقال إلى الخريطة"
+     (yellow highlight + fit to z19 + `log-map-event map_click`).
+   - Storage: none. Socket: none.
+
+   **Parity (all ✅ unless noted).**
+   - ✅ Road status list: every checkpoint, inbound + outbound status, "name (des)", "not set" for a missing `stop2`, search box,
+     "last updated" (relative, green when fresh), auto-refresh every 60 s, manual refresh, empty / loading / error states.
+   - ✅ Fuel status list: every station, diesel / 95 / 98 availability, search, last updated, refresh, same states.
+   - ✅ Platform stats: users (+ admin / user / provider), providers, services, map visits, quick-search visits, total visits;
+     loading / error; retried 3× like legacy.
+   - ✅ Featured portal: featured (10), top rated, recommended (9.9), photos, videos, before / after sections; ≤ 10 cards each with the
+     three real-estate kinds guaranteed; near-me (locate, road / fuel shortcuts, type filter with groups + select-all + filter box,
+     10 closest by distance); cards with media, facts, status, fuel / barrier status, call / WhatsApp (shared cooldown + quota + log),
+     "show on map" (+ `map_click` log); linked providers show the disabled "طلب الخدمة" (comes with item 7).
+   - ✅ Escape / phone bottom-sheet behaviour like the other panels (one sheet at a time; Escape closes the card first).
+
+   **Placement (UX).** The four coloured pills and the footer bar are replaced by **one round map button** (✦, end column, under
+   layers) that opens **one panel with four tabs**: مميزة · الطرق · الوقود · إحصائيات. Bottom sheet on phones. Tabs load their data
+   the first time they are shown and stay mounted (inputs survive tab switches). The map stays uncluttered: nothing floats over it
+   at rest. Road / fuel status are still two taps away (button → tab) and reachable in one call by `openPanel('roads' | 'fuel')`.
+
+   **Changed on purpose (better, documented):**
+   - Status rows are tappable: fly to the feature and open its details card (legacy rows were dead text). Road / fuel lists
+     therefore did not need the search `ResultsPanel` (it would also have counted against the search quota and shown neither
+     inbound/outbound nor fuel availability).
+   - "Last updated" shows one unit ("منذ ساعتين") through `Intl.RelativeTimeFormat`, not two ("منذ ساعتين و5 دقائق").
+   - Stats load when their tab is opened, not at page load (legacy fetched for the footer on every visit).
+   - Near me: the type filter applies as you tick (no "apply" button); the location marker is the same blue dot as
+     "search near a location" (one `nearbyCenter`), and the panel shares one geolocation helper (`geolocate.ts`) with that tab.
+   - Media sections show only their own kind (photos section = pictures, videos section = videos); everything is still in the
+     details card. Cards use the shared `MediaGallery` (enlarge on click, https-only URLs via `safeMediaUrl`) instead of the
+     YouTube facade; a top-rated card shows the real average and the number of ratings (legacy carried but hid them).
+   - Fuel search matches the fuel names, not the words "available / not available" ("available" is a substring of "not
+     available"); checkpoint search matches the status words ("مغلق", "مفتوح", "أزمة").
+   - XSS: legacy built every card and row with `innerHTML` and did not escape `name` in the ticker rows (`${name}` in
+     `buildPortalFuelStatusItemsHtml`, `renderFuelStationsStatusTicker`); all of it is JSX text now.
+   - Shared code introduced/extracted while doing this (no duplicates left): `components/ui/StatCard` (water-platform API) and
+     `Tabs` (SearchPanel uses it too); `search/ResultContact` (the call / WhatsApp block of a result row, now also used by
+     the cards); `popup/logMapClick`, `geolocate.ts`, `nearby.formatDistance` / `distanceToResult`, `featureModel`
+     `hoursLabel` / `priceLabel` / `labelMedia` / `detailLinks` (FeatureCard uses them too); `SearchInput` with `debounceMs={0}`
+     no longer drops letters typed fast (it had a stale-echo race).
+
+   Files: `web/src/features/map/extras/*`, `web/src/api/{platform,liveStatus,featured}.ts`, `search.ts` (`batch`). Tests:
+   `extras.logic.test.ts` (pure), `extras.test.tsx` (render, mocked fetch), `extras.live.test.ts` (real backend, `VITE_LIVE_API`).
 
 ## Phase 4 — Cut-over & cleanup
 
@@ -180,3 +280,14 @@ _(none yet)_
 - Results are filtered client-side for nearby search (whole layer fetched, up to 2000 rows) — a server-side distance filter
   would scale better.
 - CSP `connectSrc` allows any `https:`/`ws:`/`wss:` — tighten to own origin once the app is on React.
+- **Extras (item 10):** `/api/platform-stats` calls every row of `map_service_stats` a "visit" — those rows are events (map clicks,
+  searches, contact clicks; `source_page` only distinguishes `quick_search`), so "visits" over-counts a busy user; and
+  `featuresCount` is labelled "service providers" but counts every real-estate + service row (also inactive ones). Decide the
+  intended definitions (a real visit counter, active rows only) — the UI only shows what the server returns.
+- **Extras:** `/api/search-features-batch` has no cap on `ids` (unbounded `ANY($1)`) and ignores `status` / `auto_status`, so
+  "top rated" can show inactive or closed features. Cap the list (e.g. 50) and apply the same active filter as search.
+- **Extras:** "services near me" downloads four whole layers (`service_all` + 3 real-estate, ≤ 2000 rows each) to find the 10
+  closest; a `GET /api/nearest?x=&y=&types=&limit=` would make that one small request (same ask as the nearby search above).
+- **Extras:** `/api/widgets-data` `road_status_updated_at` / `fuel_status_updated_at` are `MAX(updated_at)` over all rows of the
+  layer, including inactive ones the list itself hides (`status = 0 AND auto_status = 0`), so the stamp can be newer than any row
+  shown. Also `/api/top-rated-providers` never checks that the rated feature still exists / is active (the UI drops missing ones).

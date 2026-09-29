@@ -56,7 +56,7 @@ export function findNearby(
 
   const withDistance = applyExtraFilters(all, target, extra).map((r) => ({
     ...r,
-    distance: dist(center, r.geometry.getClosestPoint(center)),
+    distance: distanceToResult(r, center),
   }));
   let picked: SearchResult[];
   if (radius === null) {
@@ -75,3 +75,13 @@ export function findNearby(
   picked.sort((a, b) => (a.distance ?? 0) - (b.distance ?? 0));
   return { ok: true, results: picked, radius };
 }
+
+/** "350 m" / "1.2 km" in the UI language. */
+export function formatDistance(m: number, t: (k: string) => string) {
+  return m >= 1000
+    ? `${(m / 1000).toFixed(1)} ${t('search.results.km')}`
+    : `${Math.round(m)} ${t('search.results.m')}`;
+}
+
+/** Distance from a point to a result's nearest part (polygons: to the nearest edge, also from inside). */
+export const distanceToResult = (r: SearchResult, from: Coordinate) => dist(from, r.geometry.getClosestPoint(from));

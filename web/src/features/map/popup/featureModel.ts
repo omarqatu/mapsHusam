@@ -1,3 +1,4 @@
+import type { MediaItem as GalleryItem } from '@/components/ui/MediaGallery';
 import { FUEL_FIELDS, roadBarrierStatus, type FuelField } from '../config';
 import type { MapTarget } from '../targets';
 
@@ -162,6 +163,16 @@ export function collectMedia(props: Props): MediaItem[] {
   });
 }
 
+/** `collectMedia` output for `<MediaGallery>`: link labels are translated here. */
+export function labelMedia(items: MediaItem[], t: (key: string) => string): GalleryItem[] {
+  return items.map((m) => (m.type === 'link' ? { type: 'link', url: m.url, label: t(m.labelKey) } : m));
+}
+
+/** The two "more details" links (legacy before / after), each a safe https URL or null. */
+export function detailLinks(props: Props): [string | null, string | null] {
+  return [safeMediaUrl(firstProp(props, MEDIA.details1)), safeMediaUrl(firstProp(props, MEDIA.details2))];
+}
+
 // --- availability ----------------------------------------------------------------------------
 export type WorkHours =
   { allDay: true } | { allDay: false; from: string; to: string } | { allDay: false; raw: string };
@@ -174,6 +185,14 @@ export function parseWorkHours(v: unknown): WorkHours {
   if (parts.length === 2 && parts.every((p) => /^\d{1,2}:\d{2}$/.test(p)))
     return { allDay: false, from: parts[0], to: parts[1] };
   return { allDay: false, raw: s };
+}
+
+/** "Available 8:00 AM to 5:30 PM" / "24 hours" / the text as typed. */
+export function hoursLabel(v: unknown, t: (key: string, o?: Record<string, unknown>) => string, locale: string) {
+  const h = parseWorkHours(v);
+  if (h.allDay) return t('popup.allDay');
+  if ('raw' in h) return h.raw;
+  return t('popup.availableFromTo', { from: formatClock(h.from, locale), to: formatClock(h.to, locale) });
 }
 
 /** "HH:MM" in the UI language, e.g. ar "٨:٠٠ ص" / en "8:00 AM". */
@@ -224,6 +243,14 @@ export function locationShareLink(origin: string, pathname: string, [x, y]: read
   u.searchParams.set('x', String(x));
   u.searchParams.set('y', String(y));
   return u.toString();
+}
+
+/** "50,000 USD" for real-estate rows, null when there is no positive price. */
+export function priceLabel(props: Props, t: (key: string) => string, language: string): string | null {
+  const price = Number(props.price);
+  if (!Number.isFinite(price) || price <= 0) return null;
+  const currency = CURRENCY_KEYS[text(props.currency)];
+  return `${price.toLocaleString(language === 'ar' ? 'ar-EG' : 'en-US')} ${currency ? t(currency) : ''}`.trim();
 }
 
 export const CURRENCY_KEYS: Record<string, string> = {

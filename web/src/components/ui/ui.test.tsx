@@ -2,7 +2,8 @@ import { describe, expect, it, vi } from 'vitest';
 import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import '@/i18n';
-import { Button, ConfirmDialog, DataTable, Modal, type Column } from '.';
+import { useState } from 'react';
+import { Button, ConfirmDialog, DataTable, Modal, SearchInput, StatCard, Tabs, type Column } from '.';
 
 interface Row {
   id: number;
@@ -91,5 +92,47 @@ describe('Modal / ConfirmDialog / Button', () => {
     );
     await userEvent.click(screen.getByRole('button'));
     expect(onClick).not.toHaveBeenCalled();
+  });
+});
+
+describe('SearchInput', () => {
+  function Harness({ debounceMs }: { debounceMs: number }) {
+    const [q, setQ] = useState('');
+    return <SearchInput value={q} onChange={setQ} debounceMs={debounceMs} placeholder="find" />;
+  }
+  it('debounceMs 0 keeps fast typing intact (no dropped letters)', async () => {
+    const user = userEvent.setup();
+    render(<Harness debounceMs={0} />);
+    await user.type(screen.getByRole('searchbox'), 'Painter');
+    expect(screen.getByRole('searchbox')).toHaveValue('Painter');
+  });
+});
+
+describe('StatCard', () => {
+  it('shows label and value', () => {
+    render(<StatCard label="Users" value="1,204" icon={<i />} chipClassName="bg-sky-500" tileClassName="bg-sky-50" />);
+    expect(screen.getByText('Users')).toBeInTheDocument();
+    expect(screen.getByText('1,204')).toBeInTheDocument();
+  });
+});
+
+describe('Tabs', () => {
+  it('marks the active tab, links tab and panel ids, and reports changes', async () => {
+    const onChange = vi.fn();
+    render(
+      <Tabs
+        tabs={[
+          { id: 'a', label: 'Alpha' },
+          { id: 'b', label: 'Beta' },
+        ]}
+        value="a"
+        onChange={onChange}
+        label="demo"
+        idPrefix="demo"
+      />,
+    );
+    expect(screen.getByRole('tab', { name: 'Alpha', selected: true })).toHaveAttribute('aria-controls', 'demo-tabpanel-a');
+    await userEvent.click(screen.getByRole('tab', { name: 'Beta' }));
+    expect(onChange).toHaveBeenCalledWith('b');
   });
 });

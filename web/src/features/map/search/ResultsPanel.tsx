@@ -1,16 +1,16 @@
 import clsx from 'clsx';
-import { Copy, MessageCircle, Phone, Printer, Star } from 'lucide-react';
+import { Copy, Printer, Star } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { useProviderLinked } from '@/api/mapEvents';
 import { toast } from '@/components/ui/toastStore';
 import { useOlMap } from '../MapContext';
 import { useMapUi } from '../store';
 import { text, type SelectedFeature } from '../popup/featureModel';
 import { targetIcon } from '../targets';
-import { useContactActions } from '../popup/useContactActions';
 import MapSheet from '../panels/MapSheet';
 import { targetLabelKey } from '../targets';
+import { formatDistance } from './nearby';
 import { printResults } from './printResults';
+import ResultContact from './ResultContact';
 import { toSelected, type SearchResult } from './results';
 import { buildShareLink } from './shareLink';
 import { useSearchUi } from './store';
@@ -18,12 +18,6 @@ import { useSearchUi } from './store';
 /** A card and a row show the same feature when both the id and the point match (ids repeat across types). */
 const isSameFeature = (s: SelectedFeature | null, r: SearchResult) =>
   !!s && s.id === r.id && s.coordinate[0] === r.center[0] && s.coordinate[1] === r.center[1];
-
-function formatDistance(m: number, t: (k: string) => string) {
-  return m >= 1000
-    ? `${(m / 1000).toFixed(1)} ${t('search.results.km')}`
-    : `${Math.round(m)} ${t('search.results.m')}`;
-}
 
 function ResultRow({
   r,
@@ -37,21 +31,12 @@ function ResultRow({
   onOpen: () => void;
 }) {
   const { t } = useTranslation();
-  const linked = useProviderLinked();
-  const contact = useContactActions();
   const p = r.props;
   const typeTitle = t(targetLabelKey(r.target));
   const place = [text(p.location_name) || text(p.location), text(p.village_a)].filter(Boolean).join(' · ');
   const name = text(p.name) || typeTitle;
   const isRe = r.target.kind === 'realEstate';
   const open = Number.parseInt(String(p.auto_status), 10) === 0;
-  const isLinked =
-    r.target.kind === 'service' && !!r.id && !!linked.data?.get(r.target.discriminator)?.has(r.id);
-  const phone = text(p.phone);
-  const whatsapp = text(p.whatsapp);
-  const providerName = text(p.name) || t(isRe ? 'popup.advertiser' : 'popup.provider');
-  const showContact =
-    !isLinked && !(r.target.kind === 'service' && r.target.discriminator === 'road_barriers');
 
   return (
     <li
@@ -101,28 +86,7 @@ function ResultRow({
           </span>
         </span>
       </button>
-      {showContact && (phone || whatsapp) && (
-        <div className="mt-2 flex gap-2 ps-8">
-          {phone && (
-            <button
-              type="button"
-              onClick={() => void contact.call(toSelected(r), providerName, phone)}
-              className="inline-flex items-center gap-1.5 rounded-lg bg-brand px-3 py-1.5 text-xs font-semibold text-white hover:bg-brand-hover"
-            >
-              <Phone className="h-3.5 w-3.5" aria-hidden /> {t('popup.call')}
-            </button>
-          )}
-          {whatsapp && (
-            <button
-              type="button"
-              onClick={() => void contact.whatsapp(toSelected(r), providerName, whatsapp, typeTitle)}
-              className="inline-flex items-center gap-1.5 rounded-lg bg-[#25d366] px-3 py-1.5 text-xs font-semibold text-white hover:bg-[#1fb956]"
-            >
-              <MessageCircle className="h-3.5 w-3.5" aria-hidden /> {t('popup.whatsapp')}
-            </button>
-          )}
-        </div>
-      )}
+      <ResultContact r={r} className="mt-2 flex gap-2 ps-8" />
     </li>
   );
 }

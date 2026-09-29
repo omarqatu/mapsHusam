@@ -60,6 +60,9 @@ export interface UniqueValuesQuery {
 }
 
 export const searchApi = {
+  /** POST /api/search-features-batch — several features of ONE type by id (services: `id`, real estate: `fid`). Public. */
+  batch: (body: { layer: string; workspace: Workspace; ids: (number | string)[] }, signal?: AbortSignal) =>
+    api.post<FeatureCollectionResponse>('/api/search-features-batch', body, { signal }),
   search: (q: SearchQuery, signal?: AbortSignal) =>
     api.get<FeatureCollectionResponse>('/api/search-features', buildSearchParams(q), { signal }),
   uniqueValues: (q: UniqueValuesQuery, signal?: AbortSignal) =>

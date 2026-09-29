@@ -7,13 +7,11 @@ import type Layer from 'ol/layer/Layer';
 import VectorLayer from 'ol/layer/Vector';
 import VectorSource from 'ol/source/Vector';
 import { Circle, Fill, Stroke, Style } from 'ol/style';
-import { mapEventsApi } from '@/api/mapEvents';
-import i18n from '@/i18n';
-import { useAuthStore } from '@/store/authStore';
 import { useOlMap } from '../MapContext';
 import { useMapUi } from '../store';
 import { useSearchUi } from '../search/store';
-import { text, type SelectedFeature } from './featureModel';
+import type { SelectedFeature } from './featureModel';
+import { logMapClick } from './logMapClick';
 import { featureToSelection } from './selection';
 
 /** Finger-sized hit area: markers are 32px and phones are imprecise (legacy used 0). */
@@ -78,25 +76,7 @@ export default function SelectionController() {
       );
       useMapUi.getState().setSelected(picked);
 
-      const user = useAuthStore.getState().user;
-      if (picked && user) {
-        const sel: SelectedFeature = picked;
-        const ar = i18n.getFixedT('ar');
-        const title =
-          sel.kind.kind === 'service'
-            ? ar(`services.${sel.kind.discriminator}`)
-            : sel.kind.kind === 'realEstate'
-              ? ar(`layers.${sel.kind.layer}`)
-              : '';
-        // Stats for the admin dashboard (legacy map_click). Never blocks or surfaces errors to the user.
-        void mapEventsApi
-          .logMapEvent({
-            event_type: 'map_click',
-            provider: text(sel.props.name) || text(sel.props.location_name) || 'غير معروف',
-            service: title,
-          })
-          .catch(() => undefined);
-      }
+      if (picked) logMapClick(picked);
     });
 
     const moveKey = map.on('pointermove', (e) => {

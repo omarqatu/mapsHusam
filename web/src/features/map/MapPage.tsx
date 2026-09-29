@@ -10,6 +10,8 @@ import LocateButton from './controls/LocateButton';
 import MapButton from './controls/MapButton';
 import RefreshButton from './controls/RefreshButton';
 import ZoomButtons from './controls/ZoomButtons';
+import ExtrasButton from './extras/ExtrasButton';
+import ExtrasPanel from './extras/ExtrasPanel';
 import MapView from './MapView';
 import FeatureCard from './popup/FeatureCard';
 import SelectionController from './popup/SelectionController';
@@ -100,6 +102,7 @@ export default function MapPage() {
             <MapButton label={t('map.layers')} active={layersOpen} onClick={toggleLayers}>
               <Layers className="h-5 w-5" />
             </MapButton>
+            <ExtrasButton />
             <LocateButton />
             <RefreshButton />
             <ZoomButtons />
@@ -112,6 +115,7 @@ export default function MapPage() {
           </div>
           <SearchPanel />
           <LayerPanel open={layersOpen} onClose={() => setLayersOpen(false)} />
+          <ExtrasPanel />
           <ResultsPanel className={selected ? 'max-sm:hidden' : undefined} />
           {results && selected && (
             <button
