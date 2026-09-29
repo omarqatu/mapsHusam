@@ -11,6 +11,7 @@ temp.txt
 node_modules
 .claude/hooks/.stop-verify-state.json
 dist
+.playwright/
 
 # Local private notes (security findings etc.) — never commit, repo is public
 notes/

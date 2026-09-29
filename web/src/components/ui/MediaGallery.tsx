@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
-import { ChevronRight, ExternalLink, Play } from 'lucide-react';
+import { ChevronRight, ExternalLink } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { hostOf, playBadge, ytThumb, ytWatch } from './media';
 import Modal from './Modal';
 
 export type MediaItem =
@@ -9,28 +10,12 @@ export type MediaItem =
   | { type: 'video'; url: string }
   | { type: 'link'; url: string; label: string };
 
-type Visual = Exclude<MediaItem, { type: 'link' }>;
-
-const ytThumb = (id: string) => `https://i.ytimg.com/vi/${encodeURIComponent(id)}/hqdefault.jpg`;
-const ytWatch = (id: string) => `https://www.youtube.com/watch?v=${encodeURIComponent(id)}`;
-const hostOf = (url: string) => {
-  try {
-    return new URL(url).hostname.replace(/^www\./, '');
-  } catch {
-    return url;
-  }
-};
+/** A picture, YouTube video or video file — what the viewer can show (a plain link cannot be viewed). */
+export type VisualItem = Exclude<MediaItem, { type: 'link' }>;
+type Visual = VisualItem;
 
 const tile =
   'relative block h-24 w-32 shrink-0 snap-start overflow-hidden rounded-lg border border-black/10 bg-subtle focus-visible:outline-2 focus-visible:outline-brand';
-const playBadge = (
-  <span className="absolute inset-0 flex items-center justify-center bg-black/25">
-    <span className="rounded-full bg-black/60 p-2 text-white">
-      <Play className="h-5 w-5 fill-current" aria-hidden />
-    </span>
-  </span>
-);
-
 function Tile({ m, onOpen, onBroken }: { m: Visual; onOpen: () => void; onBroken: () => void }) {
   const { t } = useTranslation();
   return (
@@ -94,6 +79,67 @@ function Viewer({ m }: { m: Visual }) {
   );
 }
 
+interface ViewerProps {
+  items: VisualItem[];
+  /** Index of the open item, or null when closed. */
+  index: number | null;
+  onIndex: (i: number | null) => void;
+}
+
+/** The lightbox: one item at a time with previous / next (arrow keys too, mirrored in RTL). */
+export function MediaViewer({ items, index, onIndex }: ViewerProps) {
+  const { t } = useTranslation();
+  const count = items.length;
+  const step = useCallback(
+    (d: 1 | -1) => onIndex(index === null ? null : (index + d + count) % count),
+    [count, index, onIndex],
+  );
+  useEffect(() => {
+    if (index === null) return;
+    const flip = document.dir === 'rtl' ? -1 : 1;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'ArrowRight') step((1 * flip) as 1 | -1);
+      if (e.key === 'ArrowLeft') step((-1 * flip) as 1 | -1);
+    };
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+  }, [index, step]);
+
+  const current = index !== null ? items[index] : undefined;
+  return (
+    <Modal open={current !== undefined} onClose={() => onIndex(null)} title={t('media.preview')} widthClass="max-w-3xl">
+      {current && (
+        <div className="space-y-3">
+          <Viewer key={current.type === 'youtube' ? current.id : current.url} m={current} />
+          {count > 1 && (
+            <div className="flex items-center justify-between">
+              <button
+                type="button"
+                onClick={() => step(-1)}
+                aria-label={t('media.prev')}
+                className="rounded-lg border border-line-strong p-2 hover:bg-subtle"
+              >
+                <ChevronRight className="h-5 w-5 rtl:rotate-0 ltr:rotate-180" aria-hidden />
+              </button>
+              <span className="text-sm text-muted">
+                {(index ?? 0) + 1} / {count}
+              </span>
+              <button
+                type="button"
+                onClick={() => step(1)}
+                aria-label={t('media.next')}
+                className="rounded-lg border border-line-strong p-2 hover:bg-subtle"
+              >
+                <ChevronRight className="h-5 w-5 rtl:rotate-180" aria-hidden />
+              </button>
+            </div>
+          )}
+        </div>
+      )}
+    </Modal>
+  );
+}
+
 /**
  * A strip of thumbnails (pictures, YouTube, video files) that opens in a viewer with previous / next, plus plain links.
  * Nothing heavy loads until it is tapped: YouTube is a thumbnail, not an iframe. A picture URL that is not a picture
@@ -111,25 +157,10 @@ export default function MediaGallery({ items }: { items: MediaItem[] }) {
   const links = items.filter((i): i is Extract<MediaItem, { type: 'link' }> => i.type === 'link');
   const brokenUrl = items.find((i) => i.type === 'image' && broken.has(i.url));
 
-  const step = useCallback(
-    (d: 1 | -1) => setOpen((i) => (i === null ? i : (i + d + visual.length) % visual.length)),
-    [visual.length],
-  );
-  useEffect(() => {
-    if (open === null) return;
-    const flip = document.dir === 'rtl' ? -1 : 1;
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'ArrowRight') step((1 * flip) as 1 | -1);
-      if (e.key === 'ArrowLeft') step((-1 * flip) as 1 | -1);
-    };
-    document.addEventListener('keydown', onKey);
-    return () => document.removeEventListener('keydown', onKey);
-  }, [open, step]);
-
   if (!items.length) return null;
-  const current = open !== null ? visual[open] : undefined;
+  // Links are secondary to pictures: small chips, the site's name in the tooltip.
   const linkClass =
-    'flex items-center gap-2 rounded-lg bg-subtle px-3 py-2 text-sm font-semibold text-brand-fg hover:bg-subtle';
+    'inline-flex h-8 items-center gap-1.5 rounded-full border border-line bg-subtle px-3 text-sm font-semibold text-brand-fg hover:border-brand';
 
   return (
     <div className="space-y-2">
@@ -145,55 +176,23 @@ export default function MediaGallery({ items }: { items: MediaItem[] }) {
           ))}
         </div>
       )}
-      {brokenUrl && brokenUrl.type === 'image' && (
-        <a href={brokenUrl.url} target="_blank" rel="noopener noreferrer" className={linkClass}>
-          <ExternalLink className="h-4 w-4 shrink-0" aria-hidden />
-          <span className="flex-1">{t('media.openImages')}</span>
-          <span className="text-xs font-normal text-muted" dir="ltr">
-            {hostOf(brokenUrl.url)}
-          </span>
-        </a>
+      {(links.length > 0 || brokenUrl) && (
+        <div className="flex flex-wrap gap-1.5">
+          {brokenUrl && brokenUrl.type === 'image' && (
+            <a href={brokenUrl.url} target="_blank" rel="noopener noreferrer" title={hostOf(brokenUrl.url)} className={linkClass}>
+              <ExternalLink className="h-3.5 w-3.5 shrink-0" aria-hidden />
+              {t('media.openImages')}
+            </a>
+          )}
+          {links.map((m) => (
+            <a key={m.url} href={m.url} target="_blank" rel="noopener noreferrer" title={hostOf(m.url)} className={linkClass}>
+              <ExternalLink className="h-3.5 w-3.5 shrink-0" aria-hidden />
+              {m.label}
+            </a>
+          ))}
+        </div>
       )}
-      {links.map((m) => (
-        <a key={m.url} href={m.url} target="_blank" rel="noopener noreferrer" className={linkClass}>
-          <ExternalLink className="h-4 w-4 shrink-0" aria-hidden />
-          <span className="flex-1">{m.label}</span>
-          <span className="text-xs font-normal text-muted" dir="ltr">
-            {hostOf(m.url)}
-          </span>
-        </a>
-      ))}
-
-      <Modal open={current !== undefined} onClose={() => setOpen(null)} title={t('media.preview')} widthClass="max-w-3xl">
-        {current && (
-          <div className="space-y-3">
-            <Viewer key={current.type === 'youtube' ? current.id : current.url} m={current} />
-            {visual.length > 1 && (
-              <div className="flex items-center justify-between">
-                <button
-                  type="button"
-                  onClick={() => step(-1)}
-                  aria-label={t('media.prev')}
-                  className="rounded-lg border border-line-strong p-2 hover:bg-subtle"
-                >
-                  <ChevronRight className="h-5 w-5 rtl:rotate-0 ltr:rotate-180" aria-hidden />
-                </button>
-                <span className="text-sm text-muted">
-                  {(open ?? 0) + 1} / {visual.length}
-                </span>
-                <button
-                  type="button"
-                  onClick={() => step(1)}
-                  aria-label={t('media.next')}
-                  className="rounded-lg border border-line-strong p-2 hover:bg-subtle"
-                >
-                  <ChevronRight className="h-5 w-5 rtl:rotate-180" aria-hidden />
-                </button>
-              </div>
-            )}
-          </div>
-        )}
-      </Modal>
+      <MediaViewer items={visual} index={open} onIndex={setOpen} />
     </div>
   );
 }

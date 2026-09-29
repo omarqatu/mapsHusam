@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import clsx from 'clsx';
 import { useTranslation } from 'react-i18next';
 import SearchInput from '@/components/ui/SearchInput';
@@ -13,111 +13,103 @@ interface Props {
   onPick: (t: MapTarget) => void;
 }
 
+/** "All" is 70 types: show the first rows (property comes first) and let the rest unfold. */
+const ALL_PREVIEW = 12;
+
 /**
- * Services, kept short: "all" shows only the 13 groups (legacy "branches") as compact cards — a group opens its types under a
- * one-line tab row. Typing in the filter box lists matching types from every group at once.
+ * Legacy layout: a line of group tabs (icon + name, the open one underlined) and, under it, the types of that group as
+ * icon tiles. "All" opens on the property types. Typing in the filter box lists matching types from every group.
  */
 export default function CategoryBrowser({ group, onGroup, onPick }: Props) {
   const { t } = useTranslation();
   const [query, setQuery] = useState('');
-  const targets = useMemo(
-    // Property has its own doors at the top of the page; the "all" grid lists services only.
-    () =>
-      targetsInGroup(group).filter(
-        (x) => (group !== 'all' || x.kind !== 'realEstate') && matchesQuery(t(targetLabelKey(x)), query),
-      ),
-    [group, query, t],
-  );
+  const [expanded, setExpanded] = useState(false);
+  const activeTab = useRef<HTMLButtonElement>(null);
 
-  const groupsView = group === 'all' && !query.trim();
-  const groupIds = GROUP_IDS.filter((g) => g !== 'all');
-  const tile =
-    'group flex h-full w-full items-center gap-2.5 rounded-xl border border-line bg-surface p-2.5 text-start text-sm font-semibold text-fg transition hover:border-brand hover:shadow-float focus-visible:outline-2 focus-visible:outline-brand';
-  const circle =
-    'flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-brand-light text-brand-fg text-lg leading-none transition group-hover:bg-brand group-hover:text-white';
+  // A deep link (?group=health) can point at a tab that is scrolled out of the line.
+  useEffect(() => {
+    activeTab.current?.scrollIntoView?.({ block: 'nearest', inline: 'center' });
+  }, [group]);
+
+  const searching = query.trim() !== '';
+  const targets = useMemo(
+    () => targetsInGroup(searching ? 'all' : group).filter((x) => !searching || matchesQuery(t(targetLabelKey(x)), query)),
+    [group, query, searching, t],
+  );
+  const preview = group === 'all' && !searching && !expanded;
+  const shown = preview ? targets.slice(0, ALL_PREVIEW) : targets;
 
   return (
     <section aria-labelledby="categories-title" className="space-y-3">
-      <div className="flex flex-wrap items-end justify-between gap-2">
-        <div>
-          <h2 id="categories-title" className="text-lg font-black text-fg">
-            {t('searchPage.servicesTitle')}
-          </h2>
-          <p className="text-sm text-muted">{t('searchPage.servicesHint')}</p>
-        </div>
-        <div className="w-full sm:w-64">
-          <SearchInput
-            value={query}
-            onChange={setQuery}
-            debounceMs={150}
-            placeholder={t('search.filterTypes')}
-          />
-        </div>
+      <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+        <h2 id="categories-title" className="text-lg font-black text-fg">
+          {t('searchPage.chooseCategory')}
+        </h2>
+        <SearchInput value={query} onChange={setQuery} debounceMs={150} placeholder={t('search.filterTypes')} className="md:w-56" />
       </div>
 
-      {group !== 'all' && (
-        <div
-          role="group"
-          aria-label={t('searchPage.groups')}
-          className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1 [scrollbar-width:none] md:mx-0 md:px-0 [&::-webkit-scrollbar]:hidden"
-        >
-          {GROUP_IDS.map((g) => {
-            const Icon = GROUP_ICON[g];
-            const on = g === group;
-            return (
-              <button
-                key={g}
-                type="button"
-                aria-pressed={on}
-                onClick={() => onGroup(g)}
-                className={clsx(
-                  'inline-flex h-9 shrink-0 items-center gap-1.5 rounded-full border px-3.5 text-sm font-semibold transition-colors',
-                  on
-                    ? 'border-brand bg-brand text-white'
-                    : 'border-line-strong bg-surface text-fg hover:border-brand hover:bg-brand-light',
-                )}
-              >
-                <Icon className="h-4 w-4" aria-hidden />
-                {t(g === 'all' ? 'searchPage.allGroups' : groupLabelKey(g))}
-              </button>
-            );
-          })}
-        </div>
-      )}
+      <div
+        role="group"
+        aria-label={t('searchPage.groups')}
+        className="-mx-4 flex overflow-x-auto border-b border-line px-4 [mask-image:linear-gradient(to_right,transparent,#000_16px,#000_calc(100%-16px),transparent)] [scrollbar-width:none] md:mx-0 md:px-0 [&::-webkit-scrollbar]:hidden"
+      >
+        {GROUP_IDS.map((g) => {
+          const Icon = GROUP_ICON[g];
+          const on = g === group && !searching;
+          return (
+            <button
+              key={g}
+              ref={g === group ? activeTab : undefined}
+              type="button"
+              aria-pressed={on}
+              onClick={() => {
+                setQuery('');
+                onGroup(g);
+              }}
+              className={clsx(
+                '-mb-px inline-flex h-11 shrink-0 items-center gap-1.5 whitespace-nowrap border-b-2 px-3 text-sm font-semibold transition-colors focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-brand',
+                on ? 'border-brand text-brand-fg' : 'border-transparent text-muted hover:text-fg',
+              )}
+            >
+              <Icon className="h-4 w-4" aria-hidden />
+              {t(g === 'all' ? 'searchPage.allGroups' : groupLabelKey(g))}
+            </button>
+          );
+        })}
+      </div>
 
-      {groupsView ? (
-        <ul className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
-          {groupIds.map((g) => {
-            const Icon = GROUP_ICON[g];
-            const count = targetsInGroup(g).length;
-            return (
-              <li key={g}>
-                <button type="button" onClick={() => onGroup(g)} className={tile}>
-                  <span aria-hidden className={circle}>
-                    <Icon className="h-5 w-5" />
-                  </span>
-                  <span className="min-w-0 flex-1 truncate">{t(groupLabelKey(g))}</span>
-                  <span className="text-xs font-normal text-muted">{count}</span>
-                </button>
-              </li>
-            );
-          })}
-        </ul>
-      ) : targets.length === 0 ? (
+      {shown.length === 0 ? (
         <p className="rounded-xl bg-surface p-4 text-sm text-muted">{t('searchPage.noCategories')}</p>
       ) : (
-        <ul className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
-          {targets.map((x) => (
+        <ul className="grid auto-rows-fr grid-cols-3 gap-2.5 sm:grid-cols-4 lg:grid-cols-6">
+          {shown.map((x) => (
             <li key={targetKey(x)}>
-              <button type="button" onClick={() => onPick(x)} className={tile}>
-                <span aria-hidden className={circle}>
+              <button
+                type="button"
+                onClick={() => onPick(x)}
+                className="group flex h-full w-full flex-col items-center justify-center gap-2 rounded-xl border border-line bg-surface px-2 py-3 text-center transition hover:-translate-y-0.5 hover:border-brand hover:shadow-float focus-visible:outline-2 focus-visible:outline-brand"
+              >
+                <span
+                  aria-hidden
+                  className="flex h-11 w-11 items-center justify-center rounded-full bg-brand-light text-2xl leading-none transition group-hover:bg-brand"
+                >
                   {targetIcon(x)}
                 </span>
-                <span className="min-w-0 flex-1">{t(targetLabelKey(x))}</span>
+                <span className="line-clamp-2 text-sm font-semibold leading-tight text-fg">{t(targetLabelKey(x))}</span>
               </button>
             </li>
           ))}
         </ul>
+      )}
+
+      {preview && targets.length > ALL_PREVIEW && (
+        <button
+          type="button"
+          onClick={() => setExpanded(true)}
+          className="mx-auto flex h-10 items-center rounded-full border border-line-strong bg-surface px-5 text-sm font-semibold text-fg hover:border-brand hover:bg-brand-light"
+        >
+          {t('searchPage.showAllTypes', { count: targets.length - ALL_PREVIEW })}
+        </button>
       )}
     </section>
   );

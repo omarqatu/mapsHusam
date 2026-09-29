@@ -1,7 +1,9 @@
 import { useState } from 'react';
+import clsx from 'clsx';
 import { MapPin, Star } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import MediaGallery from '@/components/ui/MediaGallery';
+import RatingSummary from '@/components/ui/RatingSummary';
 import {
   detailLinks,
   hoursLabel,
@@ -16,7 +18,8 @@ import { formatDistance } from '../search/nearby';
 import ResultContact from '../search/ResultContact';
 import { isFuelStation, isRoadBarrier, targetIcon, targetLabelKey } from '../targets';
 import { BarrierBadges, FuelBadges } from './StatusBadges';
-import { mediaForMode, sideMedia, type FeaturedEntry, type FeaturedMode } from './featured';
+import { manualStars, mediaForMode, sideMedia, type FeaturedEntry, type FeaturedMode } from './featured';
+import { FEATURED_FRAME } from './featuredStyle';
 import { useShowOnMap } from './useShowOnMap';
 
 interface CardProps {
@@ -28,6 +31,10 @@ interface CardProps {
   note?: string;
   /** Services: show the real customers' average + comments (one request per card) instead of the `rating` column. */
   customerRatings?: boolean;
+  /** A paid placement: the featured frame (see featuredStyle). */
+  highlight?: boolean;
+  /** Inside a dialog (the search preview): no frame of its own, and no name (the dialog's title carries it). */
+  bare?: boolean;
 }
 
 const LONG_DESCRIPTION = 160;
@@ -80,7 +87,7 @@ function BeforeAfter({ props }: { props: Props }) {
 }
 
 /** One provider / property in the featured portal: media, key facts, status, contact and "show on map". */
-export default function FeaturedCard({ entry, mode, badge, note, customerRatings }: CardProps) {
+export default function FeaturedCard({ entry, mode, badge, note, customerRatings, highlight, bare }: CardProps) {
   const { t, i18n } = useTranslation();
   const showOnMap = useShowOnMap();
   const { r, ratings } = entry;
@@ -96,12 +103,18 @@ export default function FeaturedCard({ entry, mode, badge, note, customerRatings
   const open = isOpenNow(p.auto_status);
   const price = priceLabel(p, t, i18n.language);
   const area = Number(p.area) > 0 ? text(p.area) : '';
-  const stars = ratings?.avg ?? r.rating;
+  const stars = ratings?.avg ?? manualStars(r.rating);
   const media = mode === 'beforeAfter' ? null : labelMedia(mediaForMode(p, mode), t);
   const showCustomerRatings = !!customerRatings && r.target.kind === 'service' && !!r.id;
 
   return (
-    <article className="flex h-full flex-col gap-2 rounded-xl border border-line bg-surface p-3 shadow-sm">
+    <article
+      className={clsx(
+        'flex h-full flex-col gap-2',
+        !bare && 'rounded-xl border p-3 shadow-sm',
+        !bare && (highlight ? FEATURED_FRAME : 'border-line bg-surface'),
+      )}
+    >
       {mode === 'beforeAfter' ? <BeforeAfter props={p} /> : media && <MediaGallery items={media} />}
 
       <div className="flex items-center gap-1.5 text-sm font-bold text-warn">
@@ -110,12 +123,14 @@ export default function FeaturedCard({ entry, mode, badge, note, customerRatings
         {r.id && <span className="font-normal text-muted">#{r.id}</span>}
       </div>
 
-      <h5 className="flex items-start gap-2 text-base font-bold text-fg" dir="auto">
-        <span aria-hidden className="text-lg leading-none">
-          {targetIcon(r.target)}
-        </span>
-        {name}
-      </h5>
+      {!bare && (
+        <h5 className="flex items-start gap-2 text-base font-bold text-fg" dir="auto">
+          <span aria-hidden className="text-lg leading-none">
+            {targetIcon(r.target)}
+          </span>
+          {name}
+        </h5>
+      )}
 
       {note && <p className="text-sm font-semibold text-brand-fg">{note}</p>}
 
@@ -127,10 +142,7 @@ export default function FeaturedCard({ entry, mode, badge, note, customerRatings
 
       <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm">
         {!showCustomerRatings && stars > 0 && (
-          <span className="inline-flex items-center gap-0.5 text-warn">
-            <Star className="h-3.5 w-3.5" fill="currentColor" aria-hidden /> {stars}
-            {ratings && <span className="text-muted">({ratings.total})</span>}
-          </span>
+          <RatingSummary value={stars} count={ratings?.total} />
         )}
         {hasStatus && (
           <span className={open ? 'text-ok' : 'text-danger'}>

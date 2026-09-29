@@ -4,6 +4,13 @@ on:
   push:
     branches: [main]
 
+concurrency:
+  group: production-deploy
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
 jobs:
   deploy:
     runs-on: [self-hosted, Windows]
@@ -11,8 +18,24 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      # Gate: the same checks CI runs on branches, executed in the runner's workspace BEFORE anything is copied. A red
-      # check stops the job here, so a broken `main` never replaces the running site.
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            web/package-lock.json
+
+      # Gate: install and validate both halves in the checkout before production is touched. These installed dependencies
+      # and web/dist become the staged release, so no install/build step can fail after the production copy starts.
+      - name: Check - install server dependencies
+        shell: cmd
+        run: npm ci
+
+      - name: Check - server syntax
+        shell: cmd
+        run: node --check server.js
+
       - name: Check - install web dependencies
         shell: cmd
         working-directory: web
@@ -38,31 +61,10 @@ jobs:
         working-directory: web
         run: npm run build
 
-      - name: Copy files to web folder
-        shell: cmd
-        run: |
-          robocopy "%GITHUB_WORKSPACE%" "C:\inetpub\wwwroot\psm\mapsHusam" /MIR /XD .git .github node_modules DB_Backups GeoServerData /XF .gitignore
-          if %ERRORLEVEL% LEQ 7 (exit 0) else (exit 1)
-
-      - name: Install dependencies
-        shell: cmd
-        working-directory: C:\inetpub\wwwroot\psm\mapsHusam
-        run: npm ci
-
-      # The React app (web/) is built on the server after the copy: web/dist is not in git, and the copy above
-      # mirrors the folder, so the build has to come after it and before the restart (server.js reads web/dist at start).
-      - name: Install web dependencies
-        shell: cmd
-        working-directory: C:\inetpub\wwwroot\psm\mapsHusam\web
-        run: npm ci
-
-      - name: Build web app
-        shell: cmd
-        working-directory: C:\inetpub\wwwroot\psm\mapsHusam\web
-        run: npm run build
-
-      - name: Restart app
-        shell: cmd
-        run: |
-          net stop mapsHusam
-          net start mapsHusam
+      - name: Stage, deploy, smoke-test, and rollback on failure
+        shell: powershell
+        run: >-
+          & "$env:GITHUB_WORKSPACE\tools\deploy-windows.ps1"
+          -DeployPath "C:\inetpub\wwwroot\psm\mapsHusam"
+          -ServiceName "mapsHusam"
+          -SmokeUrl "http://127.0.0.1:3000/"

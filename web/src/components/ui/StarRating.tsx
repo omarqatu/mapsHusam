@@ -3,7 +3,7 @@ import clsx from 'clsx';
 import { Star } from 'lucide-react';
 
 interface StarRatingProps {
-  /** 0-5 (an average is rounded to whole stars for display). */
+  /** 0-5. The picker rounds to whole stars; display-only fills fractions (4.5 = four and a half stars). */
   value: number;
   /** Given: the stars are buttons and the user picks 1-5. Absent: display only. */
   onChange?: (value: number) => void;
@@ -19,18 +19,26 @@ export default function StarRating({ value, onChange, label, size = 'sm', classN
   const shown = onChange && hover ? hover : Math.round(value);
   const icon = size === 'lg' ? 'h-8 w-8' : 'h-4 w-4';
 
-  if (!onChange)
+  if (!onChange) {
+    const v = Math.min(5, Math.max(0, value));
     return (
       <span
         className={clsx('inline-flex text-warn', className)}
         role="img"
-        aria-label={`${label ?? ''} ${value}/5`.trim()}
+        aria-label={`${label ?? ''} ${Math.round(v * 10) / 10}/5`.trim()}
       >
-        {[1, 2, 3, 4, 5].map((n) => (
-          <Star key={n} className={icon} fill={n <= shown ? 'currentColor' : 'none'} aria-hidden />
+        {[0, 1, 2, 3, 4].map((i) => (
+          // The outline star, and over it the filled one clipped to the covered share (from the reading-start side).
+          <span key={i} className={clsx('relative inline-block', icon)} aria-hidden>
+            <Star className={icon} />
+            <span className="absolute inset-y-0 start-0 overflow-hidden" style={{ width: `${Math.round(Math.min(1, Math.max(0, v - i)) * 100)}%` }}>
+              <Star className={clsx(icon, 'max-w-none')} fill="currentColor" />
+            </span>
+          </span>
         ))}
       </span>
     );
+  }
 
   return (
     <div role="radiogroup" aria-label={label} className={clsx('inline-flex text-warn', className)}>

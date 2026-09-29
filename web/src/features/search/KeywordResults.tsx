@@ -4,9 +4,9 @@ import { useTranslation } from 'react-i18next';
 import AlertMessage from '@/components/ui/AlertMessage';
 import EmptyState from '@/components/ui/EmptyState';
 import { CenteredSpinner } from '@/components/ui/Spinner';
-import FeaturedCard from '../map/extras/FeaturedCard';
 import { roadBarrierStatus } from '../map/config';
 import type { GlobalHit } from '../map/search/globalSearch';
+import ListingCard from './ListingCard';
 import PagedGrid from './PagedGrid';
 import { KEYWORD_LIMIT, useKeywordResults } from './queries';
 
@@ -57,7 +57,7 @@ export default function KeywordResults({ term }: { term: string }) {
             items={hits}
             getKey={(h) => h.result.key}
             render={(h) => (
-              <FeaturedCard entry={{ r: h.result }} mode="all" note={reason(h)} customerRatings />
+              <ListingCard entry={{ r: h.result }} note={reason(h) || undefined} rowOnPhone className="h-full" />
             )}
           />
         </>

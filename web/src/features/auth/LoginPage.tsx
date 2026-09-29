@@ -1,7 +1,7 @@
 import { useState, type FormEvent } from 'react';
 import { Link, Navigate, useLocation, useNavigate } from 'react-router';
 import { useTranslation } from 'react-i18next';
-import { Phone, Lock } from 'lucide-react';
+import { Eye, EyeOff, LogIn, Phone, Lock } from 'lucide-react';
 import { useLogin } from '@/api/auth';
 import { ApiError } from '@/api/client';
 import { useAuthStore } from '@/store/authStore';
@@ -20,6 +20,7 @@ export default function LoginPage() {
   const login = useLogin();
   const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [phoneError, setPhoneError] = useState('');
 
   if (user) return <Navigate to={from} replace />;
@@ -51,10 +52,15 @@ export default function LoginPage() {
         : '';
 
   return (
-    <div className="mx-auto mt-4 w-full max-w-sm rounded-2xl border border-line bg-surface p-6 shadow-sm">
-      <h1 className="text-2xl font-black text-fg">{t('auth.loginTitle')}</h1>
-      <p className="mt-1 text-sm text-muted">{t('auth.loginIntro')}</p>
-      <p className="mb-4 text-xs text-muted">{t('auth.phoneHint')}</p>
+    <div className="auth-glass-panel mx-auto w-full max-w-md rounded-[1.75rem] p-6 sm:p-8">
+      <div className="mb-5 text-center">
+        <span className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-[#4fc3f7] to-[#00e676] text-[#07131d] shadow-lg shadow-cyan-500/20">
+          <LogIn className="h-7 w-7" aria-hidden />
+        </span>
+        <h1 className="text-2xl font-black text-fg sm:text-3xl">{t('auth.loginTitle')}</h1>
+        <p className="mt-1 text-sm text-muted">{t('auth.loginIntro')}</p>
+        <p className="mt-1 text-xs text-muted">{t('auth.phoneHint')}</p>
+      </div>
       <form onSubmit={submit} noValidate>
         <AlertMessage type="error" message={errorMessage} className="mb-4" />
         <FormField label={t('auth.phone')} name="phone" required error={phoneError}>
@@ -68,6 +74,8 @@ export default function LoginPage() {
             value={phone}
             onChange={(e) => setPhone(e.target.value)}
             startIcon={<Phone className="h-4 w-4" />}
+            inputSize="lg"
+            className="bg-white/80"
             hasError={!!phoneError}
             placeholder="0598512667"
             required
@@ -77,24 +85,38 @@ export default function LoginPage() {
           <TextInput
             id="password"
             name="password"
-            type="password"
+            type={showPassword ? 'text' : 'password'}
             autoComplete="current-password"
             dir="ltr"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             startIcon={<Lock className="h-4 w-4" />}
+            endIcon={
+              <button
+                type="button"
+                onClick={() => setShowPassword((shown) => !shown)}
+                className="rounded p-1 text-muted hover:text-fg"
+                aria-label={t(showPassword ? 'auth.hideSecret' : 'auth.showSecret')}
+                title={t(showPassword ? 'auth.hidePassword' : 'auth.showPassword')}
+              >
+                {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+              </button>
+            }
+            inputSize="lg"
+            className="bg-white/80"
             required
           />
         </FormField>
         <Button
           type="submit"
-          className="mt-2 w-full"
+          size="lg"
+          className="mt-2 w-full bg-gradient-to-br from-[#29b6d1] to-[#00c978] text-[#07131d] shadow-lg shadow-emerald-500/20 hover:brightness-105"
           loading={login.isPending}
           disabled={!phone.trim() || !password}
         >
           {login.isPending ? t('auth.loggingIn') : t('auth.loginSubmit')}
         </Button>
-        <p className="mt-2 text-center text-sm text-muted">
+        <p className="mt-4 text-center text-sm text-muted">
           {t('auth.noAccount')}{' '}
           <Link to="/register" className="font-semibold text-brand-fg hover:underline">
             {t('auth.createAccount')}

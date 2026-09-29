@@ -22,7 +22,7 @@ export default function PagedGrid<T>({ items, getKey, render, pageSize = PAGE_SI
   const left = items.length - visible.length;
   return (
     <div className="space-y-4">
-      <ul className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+      <ul className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
         {visible.map((item, i) => (
           <li key={getKey(item)} className="min-w-0">
             {render(item, i)}

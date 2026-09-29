@@ -187,12 +187,10 @@ Authorization: Bearer <admin_token>
 
 ## 8. الموبايل والتطبيق الأصلي
 
-- الخريطة: `mobile-tabs.js` و`mobile-tabs.css`.
-- البحث: `no-map-mobile.js` و`no-map-search.css`.
-- WebView: `mobile-app-bridge.js`.
-- التطبيق الأصلي Android/iOS غير موجود داخل هذا المشروع؛ الموجود عقد تواصل جاهز.
+- الواجهة تتكيّف مع الموبايل (لوحات سفلية على الخريطة)، ويمكن تثبيتها كتطبيق PWA: `web/public/manifest.webmanifest` و`web/public/sw.js` و`web/src/lib/pwa.ts`.
+- لا يوجد تطبيق أصلي Android/iOS، وقد تقرّر عدم بنائه؛ حُذف `mobile-app-bridge.js` القديم (كان عقد تواصل مع تطبيق أصلي غير موجود). التفاصيل في `docs/MOBILE-APP-READINESS.md`.
 
-يجب اختبار الاتجاهين، لوحة المفاتيح، GPS، الإشعارات، زر الرجوع، safe-area، الشبكة البطيئة والروابط الخارجية.
+يجب اختبار الاتجاهين، لوحة المفاتيح، GPS، الإشعارات، safe-area، الشبكة البطيئة والروابط الخارجية على جهاز حقيقي.
 
 ## 9. النشر
 

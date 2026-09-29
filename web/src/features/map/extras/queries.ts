@@ -45,6 +45,8 @@ export function useRatedFeatures(value: string) {
     queryKey: extrasKeys.rating(value),
     queryFn: ({ signal }) => settle(fetchAcross([{ field: 'rating', operator: '=', value }], signal)),
     ...geoQueryOptions,
+    // Coming back to the tab after a while shows the current featured listings (only refetches once stale).
+    refetchOnWindowFocus: true,
   });
 }
 
@@ -87,6 +89,7 @@ export function useTopRatedFeatures() {
       });
     },
     ...geoQueryOptions,
+    refetchOnWindowFocus: true,
   });
 }
 

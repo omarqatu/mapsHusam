@@ -1,6 +1,10 @@
 import type { Coordinate } from '../map/config';
 import { distanceToResult } from '../map/search/nearby';
 import { byRatingDesc, type SearchResult } from '../map/search/results';
+import { FEATURED_RATING } from '../map/extras/featured';
+import { featuredOrder } from './featuredOrder';
+
+const FEATURED = Number(FEATURED_RATING);
 
 export type SortMode = 'rating' | 'name' | 'nearest' | 'priceAsc' | 'priceDesc';
 
@@ -35,4 +39,22 @@ export function sortResults(items: SearchResult[], mode: SortMode, from?: Coordi
     });
   }
   return list.sort(byRatingDesc);
+}
+
+/** Paid placements at the top of a type's list: at most this many. */
+export const PINNED_FEATURED = 2;
+
+/**
+ * Featured listings (rating 10) of the list being shown — so already of the chosen type and inside the chosen filters —
+ * go first, whatever the sort: up to `count`, picked in a shuffled order so equal advertisers take turns between
+ * visits. The rest keep the chosen sort. Pure: the randomness comes from `random`.
+ */
+export function pinFeatured(
+  items: SearchResult[],
+  random: () => number,
+  count = PINNED_FEATURED,
+): { pinned: SearchResult[]; rest: SearchResult[] } {
+  const pinned = featuredOrder([items.filter((r) => r.rating === FEATURED)], random, count);
+  const keys = new Set(pinned.map((r) => r.key));
+  return { pinned, rest: items.filter((r) => !keys.has(r.key)) };
 }

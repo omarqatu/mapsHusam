@@ -15,6 +15,21 @@ permissions:
   contents: read
 
 jobs:
+  server:
+    name: Server (install and syntax check)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: package-lock.json
+
+      - run: npm ci
+      - run: node --check server.js
+
   web:
     name: Web (typecheck, lint, unit tests, build)
     runs-on: ubuntu-latest

@@ -58,11 +58,12 @@ const router = createBrowserRouter([
       </Suspense>
     ),
   },
-  // Pre-login screens (legacy promo splash + auth overlay) and the legal texts.
+  // The public welcome route is the full-screen legacy promo splash.
+  { path: '/welcome', element: <WelcomePage /> },
+  // Pre-login forms and the legal texts.
   {
     element: <AuthLayout />,
     children: [
-      { path: '/welcome', element: <WelcomePage /> },
       { path: '/login', element: <LoginPage /> },
       { path: '/register', element: <RegisterPage /> },
       { path: '/legal/:key', element: <LegalPage /> },

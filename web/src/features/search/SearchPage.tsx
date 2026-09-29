@@ -1,20 +1,21 @@
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useSearchParams } from 'react-router';
 import type { StatusLayer } from '@/api/liveStatus';
-import { FeaturedSections } from '../map/extras/FeaturedTab';
 import type { MapTarget } from '../map/targets';
 import CategoryBrowser from './CategoryBrowser';
 import CategoryResults from './CategoryResults';
 import { isGroupId, singleTargetOf, type GroupId } from './categories';
-import Hero from './Hero';
-import QuickActions from './QuickActions';
+import LandingSections from './LandingSections';
+import LiveLinks from './LiveLinks';
 import KeywordResults from './KeywordResults';
-import KeywordSearch from './KeywordSearch';
-import PageFooter from './PageFooter';
+import Collections from './Collections';
+import SearchHero from './SearchHero';
+import StickySearch from './StickySearch';
 import { KEYWORD_MIN_CHARS } from './queries';
 import { readSelection, writeSelection, type Selection } from './selection';
 import StatusDialog from './StatusDialog';
 import TickerBar from '../widgets/components/TickerBar';
+import TodayStrip from './TodayStrip';
 
 /**
  * Search without a map (legacy no-map-search.html). What is shown is decided by the URL:
@@ -37,6 +38,18 @@ export default function SearchPage() {
   }, [explicit, group]);
 
   const keywordActive = term.length >= KEYWORD_MIN_CHARS;
+  const landing = !keywordActive && !selection;
+
+  // The slim search bar slides in once the hero's own search has scrolled under the header.
+  const heroSearch = useRef<HTMLDivElement>(null);
+  const [heroGone, setHeroGone] = useState(false);
+  useEffect(() => {
+    const el = heroSearch.current;
+    if (!landing || !el) return;
+    const io = new IntersectionObserver(([e]) => setHeroGone(!e.isIntersecting), { rootMargin: '-56px 0px 0px 0px' });
+    io.observe(el);
+    return () => io.disconnect();
+  }, [landing]);
 
   const commitKeyword = useCallback(
     (next: string) =>
@@ -69,36 +82,41 @@ export default function SearchPage() {
   };
 
   return (
-    <div className="space-y-6">
-      {/* Stays in view while scrolling: the search box and the three shortcuts are what people come back to. */}
-      <div className="sticky top-14 z-30 -mx-4 space-y-2 bg-canvas/95 px-4 py-2 backdrop-blur">
-        <KeywordSearch value={term} onCommit={commitKeyword} />
-        <QuickActions onRoads={() => setStatus('road_barriers')} onFuel={() => setStatus('fuel_stations')} />
-      </div>
-      {!keywordActive && !selection && <Hero onPick={openTarget} />}
-
-      {keywordActive ? (
-        <KeywordResults term={term} />
-      ) : selection ? (
-        <CategoryResults
-          key={`${selection.target.kind}:${JSON.stringify(selection.target)}`}
-          selection={selection}
-          onChange={changeSelection}
-          onBack={back}
-        />
+    <div className="space-y-5">
+      {landing ? (
+        <>
+          <StickySearch term={term} onCommit={commitKeyword} floating visible={heroGone} />
+          <SearchHero term={term} onCommit={commitKeyword} onPick={openTarget} searchRef={heroSearch} />
+          <LiveLinks onRoads={() => setStatus('road_barriers')} onFuel={() => setStatus('fuel_stations')} />
+          <TodayStrip />
+          {group === 'all' ? (
+            <Collections onGroup={pickGroup} onPick={openTarget} />
+          ) : (
+            <CategoryBrowser group={group} onGroup={pickGroup} onPick={openTarget} />
+          )}
+          <LandingSections />
+        </>
       ) : (
         <>
-          <CategoryBrowser group={group} onGroup={pickGroup} onPick={openTarget} />
-          <div className="space-y-4">
-            <FeaturedSections grid />
-          </div>
+          <StickySearch term={term} onCommit={commitKeyword} />
+          {keywordActive ? (
+            <KeywordResults term={term} />
+          ) : (
+            selection && (
+              <CategoryResults
+                key={`${selection.target.kind}:${JSON.stringify(selection.target)}`}
+                selection={selection}
+                onChange={changeSelection}
+                onBack={back}
+              />
+            )
+          )}
         </>
       )}
 
       <StatusDialog layer={status} onClose={() => setStatus(null)} />
       {/* Legacy footer bar: the live-information ticker (each item opens the information centre at its card). */}
       <TickerBar className="rounded-xl border" />
-      <PageFooter />
     </div>
   );
 }

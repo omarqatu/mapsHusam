@@ -25,6 +25,10 @@ export interface ServerToClientEvents {
   /** The requester gets all four numbers, the provider only the requester's two. */
   service_request_completed: (p: { requestId: number } & ContactNumbers) => void;
   service_request_cancelled: (p: { requestId: number; reason: string }) => void;
+  /** An admin changed road-checkpoint / fuel-station statuses (no data: refetch the list). */
+  status_updated: (p: { layer: 'road_barriers' | 'fuel_stations' }) => void;
+  /** An admin saved one of the information-centre groups. */
+  widgets_updated: (p: { group: string }) => void;
 }
 export interface ClientToServerEvents {
   /** The server ignores any argument: the user comes from the token. */

@@ -7,7 +7,7 @@ import {
   CloudSun,
   Coins,
   Fuel,
-  ChevronDown,
+  ChevronLeft,
   Gem,
   MoonStar,
   Pause,
@@ -67,15 +67,17 @@ function Item({ item, hidden, large }: { item: TickerItem; hidden?: boolean; lar
  * exchange rates, gold, weather, fuel and fares, the next prayer, the date — and the two status lists. Each item opens the
  * information centre at its card. Pauses on hover / focus / touch and with the button; users who ask for less motion get a
  * static row they can scroll. `bar` = one slim line for the bottom of a page, `page` = the large version of /widgets/ticker.
+ * `collapsible` (the map): a glass strip glued to the bottom edge of the page, over the map; its arrow points to the corner it folds
+ * into (the start side), where it becomes a small tab that the same arrow, reversed, unfolds again.
  */
 export default function TickerBar({
   variant = 'bar',
-  floating = false,
+  collapsible = false,
   className,
 }: {
   variant?: 'bar' | 'page';
-  /** Over the map: a glass pill at the bottom that folds into a small chip (the choice is remembered). */
-  floating?: boolean;
+  /** On the map (place it inside the map's `relative` box): glass strip that can fold into a small tab at the start corner (remembered). */
+  collapsible?: boolean;
   className?: string;
 }) {
   const { t, i18n } = useTranslation();
@@ -110,17 +112,18 @@ export default function TickerBar({
   );
 
   const title = t('widgets.ticker.title');
-  if (floating && hidden) {
+  if (collapsible && hidden) {
     return (
       <button
         type="button"
         onClick={() => setHidden(false)}
         aria-label={t('widgets.ticker.show')}
         title={t('widgets.ticker.show')}
-        className="glass absolute bottom-3 start-3 z-10 inline-flex h-9 items-center gap-1.5 rounded-full px-3 text-sm font-bold text-brand-fg focus-visible:outline-2 focus-visible:outline-brand"
+        className="glass-bar absolute bottom-0 start-0 z-10 inline-flex h-9 items-center gap-1.5 rounded-t-xl border-e ps-3 pe-2.5 text-sm font-bold text-brand-fg focus-visible:outline-2 focus-visible:outline-brand"
       >
         <Zap className="h-4 w-4" aria-hidden />
         <span className="max-sm:hidden">{title}</span>
+        <ChevronLeft className="h-4 w-4 ltr:rotate-180" aria-hidden />
       </button>
     );
   }
@@ -129,16 +132,24 @@ export default function TickerBar({
       aria-label={title}
       className={clsx(
         'flex items-center gap-2 px-3',
-        !floating && 'bg-surface',
-        floating && 'glass absolute inset-x-3 bottom-3 z-10 rounded-full [@media(max-height:560px)]:hidden',
-        large
-          ? 'h-16 rounded-2xl border border-line shadow-sm'
-          : floating
-            ? 'h-10'
-            : 'h-10 shrink-0 border-t border-line [@media(max-height:560px)]:hidden',
+        collapsible && 'glass-bar absolute inset-x-0 bottom-0 z-10 h-10 rounded-t-2xl [@media(max-height:560px)]:hidden',
+        !collapsible && 'bg-surface',
+        large && 'h-16 rounded-2xl border border-line shadow-sm',
+        !collapsible && !large && 'h-10 shrink-0 border-t border-line [@media(max-height:560px)]:hidden',
         className,
       )}
     >
+      {collapsible && (
+        <button
+          type="button"
+          onClick={() => setHidden(true)}
+          aria-label={t('widgets.ticker.hide')}
+          title={t('widgets.ticker.hide')}
+          className="shrink-0 rounded-md p-1.5 text-fg hover:bg-subtle"
+        >
+          <ChevronLeft className="h-4 w-4 rtl:rotate-180" aria-hidden />
+        </button>
+      )}
       <Link
         to="/widgets/portal"
         aria-label={title}
@@ -182,17 +193,6 @@ export default function TickerBar({
       >
         {paused ? <Play className="h-4 w-4" aria-hidden /> : <Pause className="h-4 w-4" aria-hidden />}
       </button>
-      {floating && (
-        <button
-          type="button"
-          onClick={() => setHidden(true)}
-          aria-label={t('widgets.ticker.hide')}
-          title={t('widgets.ticker.hide')}
-          className="shrink-0 rounded-md p-1.5 text-fg hover:bg-subtle"
-        >
-          <ChevronDown className="h-4 w-4" aria-hidden />
-        </button>
-      )}
     </section>
   );
 }

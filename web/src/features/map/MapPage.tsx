@@ -1,5 +1,5 @@
-import { useEffect } from 'react';
 import clsx from 'clsx';
+import { useEffect } from 'react';
 import { Layers, Search } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import AppHeader from '@/components/AppHeader';
@@ -8,7 +8,6 @@ import CoordinatesBar from './controls/CoordinatesBar';
 import QuickChips from './controls/QuickChips';
 import LocateButton from './controls/LocateButton';
 import MapButton from './controls/MapButton';
-import StatsPill from './controls/StatsPill';
 import RefreshButton from './controls/RefreshButton';
 import ZoomButtons from './controls/ZoomButtons';
 import ExtrasButton from './extras/ExtrasButton';
@@ -119,11 +118,10 @@ export default function MapPage() {
           <div
             className={clsx(
               'pointer-events-none absolute inset-x-0 z-10 flex items-center justify-center gap-2',
-              tickerHidden ? 'bottom-2' : 'bottom-16 [@media(max-height:560px)]:bottom-2',
+              tickerHidden ? 'bottom-2' : 'bottom-12 [@media(max-height:560px)]:bottom-2',
             )}
           >
             <CoordinatesBar />
-            <StatsPill />
           </div>
           {/* Centred over the map: a full-width bar on phones (tools sit below it), a 28rem pill on desktop. */}
           <div className="absolute inset-x-3 top-3 z-20 sm:mx-auto sm:max-w-md">
@@ -156,8 +154,8 @@ export default function MapPage() {
             />
           )}
         </MapView>
-        {/* Legacy "تحديثات فورية" bar: a glass pill over the bottom of the map that folds into a chip. */}
-        <TickerBar floating />
+        {/* Legacy "تحديثات فورية" bar: a glass strip glued to the bottom edge of the page; folds into a tab. */}
+        <TickerBar collapsible />
       </div>
       <Toaster />
     </div>

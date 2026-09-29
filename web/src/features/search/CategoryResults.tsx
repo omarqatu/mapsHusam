@@ -11,22 +11,26 @@ import { toast } from '@/components/ui/toastStore';
 import { copyText } from '@/lib/clipboard';
 import { formatDateTime } from '@/lib/format';
 import type { Coordinate } from '../map/config';
-import FeaturedCard from '../map/extras/FeaturedCard';
 import { GeoError, locateOnce } from '../map/geolocate';
 import { printResults } from '../map/search/printResults';
 import { targetIcon, targetLabelKey } from '../map/targets';
 import FiltersPanel from './FiltersPanel';
+import ListingCard from './ListingCard';
 import PagedGrid from './PagedGrid';
 import { SERVER_ROW_CAP, useCategoryResults } from './queries';
 import { mapSearchPath, type Selection } from './selection';
 import { EMPTY_FILTERS, fromConditions, toConditions, filterFields } from './filters';
-import { sortResults, type SortMode } from './sort';
+import { seededRandom } from './featuredOrder';
+import { pinFeatured, sortResults, type SortMode } from './sort';
 
 interface Props {
   selection: Selection;
   onChange: (next: Selection) => void;
   onBack: () => void;
 }
+
+const iconButton =
+  'inline-flex h-9 w-9 items-center justify-center rounded-lg text-fg hover:bg-subtle disabled:opacity-50 focus-visible:outline-2 focus-visible:outline-brand';
 
 /** One type opened: filters, sort, the cards, and the print / link / map actions. */
 export default function CategoryResults({ selection, onChange, onBack }: Props) {
@@ -43,10 +47,13 @@ export default function CategoryResults({ selection, onChange, onBack }: Props) 
   const isRealEstate = target.kind === 'realEstate';
   const canSortByPrice = isRealEstate && state.currency !== '';
 
-  const items = useMemo(
-    () => (query.data ? sortResults(query.data, sort, origin) : []),
-    [query.data, sort, origin],
-  );
+  // Paid placements in context: this type's featured listings (inside the filters) lead the list, taking turns per visit.
+  const [seed] = useState(() => Math.floor(Math.random() * 2 ** 32));
+  const { pinned, items } = useMemo(() => {
+    const sorted = query.data ? sortResults(query.data, sort, origin) : [];
+    const { pinned, rest } = pinFeatured(sorted, seededRandom(seed));
+    return { pinned: new Set(pinned.map((r) => r.key)), items: [...pinned, ...rest] };
+  }, [query.data, sort, origin, seed]);
 
   const pickSort = (mode: SortMode) => {
     if (mode !== 'nearest' || origin) return setSort(mode);
@@ -140,30 +147,19 @@ export default function CategoryResults({ selection, onChange, onBack }: Props) 
               options={sortOptions}
             />
           </div>
-          <Button
-            variant="secondary"
-            size="sm"
-            onClick={() => void copyLink()}
-            startIcon={<Copy className="h-4 w-4" aria-hidden />}
-          >
-            <span className="max-sm:sr-only">{t('search.results.copyLink')}</span>
-          </Button>
-          <Button
-            variant="secondary"
-            size="sm"
-            onClick={print}
-            disabled={items.length === 0}
-            startIcon={<Printer className="h-4 w-4" aria-hidden />}
-          >
-            <span className="max-sm:sr-only">{t('search.results.print')}</span>
-          </Button>
-          <Link
-            to={mapSearchPath(selection)}
-            className="inline-flex h-9 items-center gap-2 rounded-lg border border-line-strong bg-surface px-3 text-sm font-semibold text-fg hover:bg-subtle"
-          >
-            <MapIcon className="h-4 w-4" aria-hidden />
-            {t('searchPage.openOnMap')}
-          </Link>
+          {/* Secondary actions stay small: copy and print as icons, the map with a short word. */}
+          <div className="flex items-center gap-1">
+            <button type="button" onClick={() => void copyLink()} aria-label={t('search.results.copyLink')} title={t('search.results.copyLink')} className={iconButton}>
+              <Copy className="h-4 w-4" aria-hidden />
+            </button>
+            <button type="button" onClick={print} disabled={items.length === 0} aria-label={t('search.results.print')} title={t('search.results.print')} className={iconButton}>
+              <Printer className="h-4 w-4" aria-hidden />
+            </button>
+            <Link to={mapSearchPath(selection)} title={t('searchPage.openOnMap')} className={`${iconButton} w-auto gap-1.5 px-3 text-sm font-semibold`}>
+              <MapIcon className="h-4 w-4" aria-hidden />
+              {t('searchPage.onMap')}
+            </Link>
+          </div>
         </div>
       </div>
       {origin && effectiveSort === 'nearest' && (
@@ -191,7 +187,13 @@ export default function CategoryResults({ selection, onChange, onBack }: Props) 
             key={listKey}
             items={items}
             getKey={(r) => r.key}
-            render={(r) => <FeaturedCard entry={{ r }} mode="all" customerRatings />}
+            render={(r) =>
+              pinned.has(r.key) ? (
+                <ListingCard entry={{ r }} rowOnPhone highlight badge={t('extras.featured.badge.featured')} className="h-full" />
+              ) : (
+                <ListingCard entry={{ r }} rowOnPhone className="h-full" />
+              )
+            }
           />
         </>
       )}

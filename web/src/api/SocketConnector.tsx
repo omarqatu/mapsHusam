@@ -1,6 +1,8 @@
 import { useEffect } from 'react';
 import { io } from 'socket.io-client';
 import { useAuthStore } from '@/store/authStore';
+import { queryClient } from './queryClient';
+import { widgetsKeys } from './widgets';
 import { setSocket, type AppSocket } from './socket';
 
 /**
@@ -16,6 +18,12 @@ export default function SocketConnector() {
     s.on('connect', () => s.emit('user_connected'));
     // Server: an admin force-logged this user out.
     s.on('force_relogin', () => useAuthStore.getState().logout());
+    // Server: an admin changed statuses — refetch now instead of waiting for the minute poll (visitors have no socket and keep polling).
+    s.on('status_updated', ({ layer }) => {
+      void queryClient.invalidateQueries({ queryKey: ['status-rows', layer] });
+      void queryClient.invalidateQueries({ queryKey: widgetsKeys.data });
+    });
+    s.on('widgets_updated', () => void queryClient.invalidateQueries({ queryKey: widgetsKeys.data }));
     setSocket(s);
     return () => {
       s.disconnect();

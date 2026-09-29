@@ -184,6 +184,11 @@ The bar is the `<footer class="widgets-ticker-footer">` of `index.html` (the map
 | --- | --- | --- |
 | `/search` | `no-map-search.html`, `js/no-map-search.js` (2.4k lines), `no-map-mobile.js`, `market-search.js`, `global-search.js`, `search.js` | ✅ (legacy files kept, see below) |
 
+**Live data on `/search` and `/welcome` (UX changes):** the road / fuel pills show "updated 5 minutes ago" from `/api/widgets-data` (green dot only while the list was updated within a day, grey otherwise) and refetch at once when an admin saves (socket `status_updated`, logged-in users; visitors poll every minute). The section cards show the real number of listings (`GET /api/category-counts`) instead of the number of types, and the property tile's three kinds show theirs; nothing is shown until the numbers arrive. The featured / recommended / top-rated rows refetch when the tab is focused again after they went stale. `/welcome` shows the platform figures (providers, services, visits) from `/api/platform-stats`.
+
+**Ratings as stars out of five, "today" strip, real numbers instead of promises (UX changes):** every rating on a card is now `★★★★☆ 4.5 (12)` (`RatingSummary` over `StarRating`, which fills fractions). Customer ratings were already out of 5; the hand-set `rating` column (10 = featured) is shown as `rating / 2` (`manualStars`), where the cards used to print "10" / "9.9" next to a single star. Under the search a quiet line shows the weather (Open-Meteo, Ramallah), the next prayer (Aladhan) and, from `GET /api/market-rates`, the dollar and dinar in shekels and gold 21k per gram, each chip opening the information centre at its card; a source that is down just drops its chip. The "world price" hint says these can differ from exchange shops. "Most wanted" became "Most listed": rent and sale, then the three service types with the most listings (`/api/category-counts`; `map_service_stats.service_type` holds event names such as `map_click`, not the searched type, so real demand cannot be read from it). "Service providers" (388) is relabelled "listings", because it counts every feature on the map, not provider accounts. The welcome cards say "106 properties listed now" / "71 trades" from the API (neutral wording until the numbers arrive) instead of "thousands of properties" / "50+ trades".
+Left as constants on purpose: the `rating` values 10 / 9.9 that mean featured / recommended (a business rule, see Backend asks) and the promo pictures.
+
 ### `/search` — inventory (read from the legacy files + `server.js`; the map page's search code is reused, not copied)
 
 **Legacy behaviour that exists (parity checklist — tick when verified in the browser):**
@@ -251,6 +256,42 @@ The bar is the `<footer class="widgets-ticker-footer">` of `index.html` (the map
   clearing the box brings the browser back. Keyword search now counts against the request quota (`global_search`, source
   `quick_search`) like the map's box — legacy's market box did not count. Visitors without an account send no quota events
   (the server has no quota for guests and the endpoint needs a login).
+- **Landing redesigned (2026-09-30)** after the first React version was rejected by eye ("not liked at all"): a brand card
+  (the header's gradient, rounded, follows the scroll) holds one joined search control (field · clear · search) and, from
+  768 px, the two platform figures; the road / fuel status buttons are neutral pills with a live dot under it (was three
+  coloured chips). Categories as in legacy: a line of group tabs (icon + name, the open one underlined) with the types of
+  the open tab as uniform icon tiles; "all" shows 12 (property first) and unfolds; the type filter box searches every group.
+- One compact **listing card** (`search/ListingCard.tsx`) for the whole landing — picture or type icon first, badge over it,
+  name, place, price / open state, contact + map icon — instead of the map's text-heavy `FeaturedCard` and its boxed
+  `SectionCard`s. Tapping the picture opens the shared viewer (`MediaViewer`, split out of `MediaGallery`).
+- **Compact cards + preview (2026-09-30).** Result lists (type and keyword) use the same compact card as the landing
+  (picture or section illustration, name, place, price / open state, contact, map icon; on phones a row with a thumbnail,
+  four results per screen instead of one). Tapping a card opens its preview (`search/ListingPreview`, a bottom sheet on
+  phones): every picture / video / link, description, real customer ratings with comments, contact with the number, show
+  on the map — what the full card showed inline before. Contact and map buttons act without opening it. Media links are
+  small chips app-wide (`MediaGallery`); the results toolbar keeps sort, copy / print as icons and a short "Map" link.
+- **Featured (paid) placements, in context.** Side "ad" columns were tried (sticky, both sides) and removed on review:
+  people skip page edges (banner blindness), they squeezed the page to 736 px at 1440, repeated the featured row and
+  showed a restaurant to someone looking for a plumber. Instead: on a type's result list the featured listings (rating 10)
+  *of that type and inside the chosen filters* lead the list — at most two, whatever the sort, shuffled per visit so equal
+  advertisers take turns (`search/sort.ts` `pinFeatured`, `search/featuredOrder.ts`, tested). They and the landing's
+  "featured" row wear the legacy orange frame, quieter (`map/extras/featuredStyle.ts`: warm border, ring, warm wash) and
+  the "featured" badge. The landing's rows (featured, top rated, recommended, photos, videos, before / after) are headed
+  rows of the same card; an empty row is not shown.
+- **Landing, third pass (2026-09-30) — the one kept.** The user preferred the legacy page over both earlier React
+  versions and asked for a polished ("boutique") UI. What legacy had and the port had dropped was *pictures*: the
+  platform's own isometric illustrations (`web/public/promo`, also the welcome slideshow) are now the page's identity —
+  a light centred hero (promise, big search, popular types, three platform figures) on a calm animated backdrop —
+  dotted map grid, two drifting brand-colour fields, a few bobbing pins; no photo there, the user found it too heavy —
+  the sections as a picture mosaic (property the big tile with rent / sale / land on it, eight
+  illustrated sections as tiles, the rest as small icon cards; `search/art.ts` maps section → picture), a listing without
+  photos shows its section's illustration softened behind its icon. Rows of cards scroll with arrow buttons on desktop
+  (`ScrollRow`), cards rise in one after another (motion-safe only). A slim search bar slides in under the header once
+  the hero's search leaves the screen (results pages: always there). Road / fuel status stay two quiet pills (a
+  concept that put them first — live summaries on the page — was built and dropped: they are not the main need).
+- Layout shift on load fixed: the shell's loading spinner fills the screen (the footer showed mid-page, then jumped:
+  CLS 0.25–0.40); the hero figures keep their space while loading. Measured CLS now: 0.001 desktop, 0.000 phone.
+- Scrollbars are thin and tinted from the tokens app-wide (`index.css`; the browser default was a heavy dark bar).
 - Home sections (featured, top rated, recommended, photos, videos, before / after) are horizontal scroll rows with the map
   panel's data logic; the empty "advertising space" side columns and the bottom ad strip are gone, and so is the hero slideshow
   (decorative, always loading six photos). The intro, counters and map link stay.
@@ -622,16 +663,27 @@ Split `index.html` into features, in this order:
    **Routing kept as is:** `/` still requires a login and sends anonymous visitors to `/login` (not `/welcome`); see "Decisions for the user". `/welcome` is reachable by URL and from the header logo on the auth screens.
    Tests: `features/auth/{phone,RegisterPage,LoginPage}.test`, `features/legal/legal.test.tsx`, and the real-backend `features/auth/auth.live.test.ts` (register, duplicate phone, inactive account cannot log in, change password and back).
 9. ✅ Layout: `mobile-tabs.js`, `desktop-panels.js`, `resizable-panels.js`, `panel-controls.js`,
-   `ui-collapse.js`, `viewport-guard.js`, `mobile-app-bridge.js`
+   `ui-collapse.js`, `viewport-guard.js`, `mobile-app-bridge.js` (**the bridge is not ported on purpose** — it was a `postMessage`
+   contract for a native app shell that does not exist and was decided against, 2026-09-30; see PWA below and `docs/MOBILE-APP-READINESS.md`)
    Covered by: draggable panels (`useDraggablePanel`), and now **minimise** — every `MapSheet` has a chevron that folds it to its
    header (state is per open panel, not saved). Panel *resizing* (`resizable-panels.js`) is deliberately not ported: panels size to
    their content, and a saved width would only fight the phone bottom sheet.
-   *UX changes (2026-09-29):* the live-updates ticker on the map is a floating **glass** pill over the bottom of the map (the
-   coordinates / stats pill move up above it) with a button that folds it into a small chip; the choice is remembered
-   (`psm-ticker-hidden`). `.glass` is more opaque (90 %, blur 10 px) for readability. `/search` now leads with property (three doors:
+   *UX changes (2026-09-29):* the live-updates ticker on the map is a slim **glass** strip (68 % see-through, blurred, top corners rounded — `.glass-bar`) **glued to the bottom edge of the page**, over the map (coordinates sit above it). Its arrow sits at the start edge and points to the corner it folds into; folded, it is a small tab on that corner whose arrow points the other way to unfold it; the choice is remembered
+   (`psm-ticker-hidden`). The "N providers / N services" pill at the bottom of the map is removed (the counts stay in the stats tab of the extras panel). `.glass` is more opaque (90 %, blur 10 px) for readability. `/search` now leads with property (three doors:
    rent, sale, land) and lists services below with round icons; the "all" view shows only the 13 group cards (a group opens its types under a one-line tab row), so the page is short. The old ad-space look is gone: the intro is a title and three compact doors, no big banner.
    *Polish pass (2026-09-29):* Arabic UI uses **Latin digits** everywhere (`intlLocale('ar')` = `ar-u-nu-latn`; before, counts were Arabic-Indic and prices Latin); date+time is formatted as two pieces, 24 h, so RTL cannot shuffle it; per-row delete on the dashboard is a soft-red button (`dangerSoft`), and the `danger`/ok buttons now darken on hover (they had no hover change); phone header shows a short brand name instead of a truncated one.
+   *Shared footer (2026-09-29/30):* one `components/SiteFooter.tsx`, the legacy dark footer made compact: slate blue `#2c3e50` (`--color-footer*` tokens, same in both themes) with a brand-coloured top rule, brand + one line about the platform + round social icons (`SOCIAL` list in `SiteFooter.tsx`: an entry with an empty `url` is not shown — legacy WhatsApp / YouTube / LinkedIn buttons pointed at `#`, so only Facebook has an address for now), two link columns with underlined headings and small arrows (guides / the platform), copyright line with the year isolated LTR. Every link opens the legal dialog. It replaces the run-on row of links that only `/search` had and the bare links row of the welcome / login / register shell, and is part of `AppShell` (every regular page); the full-screen map has none.
    *Duplicates removed:* the map's "search without map" chip and the search page's "go to map" chip show on phones only (the header has both links from tablet width up); the ticker lost its second "open the information centre" button (its title already links there).
+   *PWA (2026-09-30, replaces the native-app bridge):* the app is installable — `web/public/manifest.webmanifest`, icons
+   (`public/icons/icon-{192,512,maskable-512}.png`, `apple-touch-icon.png`, source `public/icon.svg`), iOS meta tags in `index.html`,
+   and `public/sw.js` (registered by `lib/pwa.ts`, production only). The worker caches nothing (live data) and only exists so the
+   app installs and so system notifications work on Android, where `new Notification()` throws: `showSystemNotification()` uses
+   `registration.showNotification()` and falls back to the constructor. Also fixes the old call, which passed `lang: t('app.lang')`
+   (a key that does not exist → the literal string as the language) and an icon (`/favicon.ico`) that is not served. Server: no change
+   (`web/dist` files are already served; the CSP allows same-origin workers and manifest). Verified in Chrome against the real
+   server: worker active, manifest without errors, no console / CSP messages; unit test `lib/pwa.test.ts`. **Not verified:** install +
+   notifications on a real Android phone and iPhone. **Limit:** notifications still only arrive while the app is open (socket.io) —
+   Web Push is under "Backend asks".
 10. ✅ Extras: `platform-stats.js`, `featured-services-portal.js`, the "road status" / "fuel status" buttons, widgets ticker on the map
    ✅ **Done here (`features/map/extras/`):** the featured-services portal, the road-status and fuel-status lists and the
    platform statistics. ✅ The widgets ticker strip (bottom of the map) + the full widgets portal are ported in Phase 1 (`features/widgets/`). ✅ **Legacy mobile "home" tab** (`mobile-tabs.js`: platform stats + road + fuel buttons) — on phones the same three are one tap away: the fuel / roads / featured chips under the search box and the extras button (stats tab). Anything else can open the panel with
@@ -989,6 +1041,28 @@ Log each change here: **what · why · how to verify · commit**.
   without `exp` → 200 + `X-New-Token`; fresh token → 200, no header; token 1 day from expiry → renewed; expired → 401 `TOKEN_INVALID`.
   Commit: `feat(server): session tokens expire after 30 idle days, renewed while in use`.
 
+- **New public `GET /api/category-counts` (additive; no existing route changes).** Visible listings per type
+  (`{ success, data: { counts: { ApartRent, ApartSale, LandSale, <service discriminator>: n } } }`), counted with the same
+  `status = 0 AND auto_status = 0` filter the search applies, cached 60 s in memory like `/api/platform-stats`. Why: the section
+  cards on `/search` showed the number of *types* in a section, which says nothing to a visitor; they now show real listings.
+  Verify: `web/src/features/search/liveUpdates.live.test.ts` (the counts equal what the search returns for `plumber` and
+  `ApartRent`). Commit: `feat(server): public listing counts per type`.
+
+- **Socket push when an admin changes live data (additive events).** `broadcastLiveUpdate()` emits `status_updated { layer }`
+  after each road-barrier / fuel-station write (`update-road-barrier`, `bulk-`, `batch-`, `update-fuel-station`, `bulk-`, `batch-`) and
+  `widgets_updated { group }` after `POST /api/admin/widgets-data/:groupKey`. Payloads carry no data — the client refetches. Only
+  authenticated sockets exist (the server rejects a connection without a token), so logged-in users see the change at once and
+  visitors keep the one-minute poll. Verify: same live test (an admin save arrives on a connected socket; a token-less socket is
+  refused). Commit: `feat(server): push status/widgets updates over the socket`.
+
+- **New public `GET /api/market-rates` (additive): world exchange rates + gold price, fetched and cached by the server.** Sources
+  `open.er-api.com` (USD base → ILS / JOD / EUR) and `api.gold-api.com` (XAU in USD per ounce, → shekels per gram, 21k = 24k × 21/24),
+  no keys, `fetch` with an 8 s timeout, cached 10 min (a partial answer 1 min, then retried; a half that failed keeps its last good value;
+  both down and nothing cached → 502). Why on the server: the visitor's address is not sent to third parties, no per-browser rate
+  limits, the CSP stays as is. Response: `{ success, data: { rates: { USD_ILS, JOD_ILS, EUR_ILS } | null, gold: { usdPerOunce,
+  ilsPerGram24, ilsPerGram21 } | null, updatedAt } }`. Verify: `web/src/features/search/liveUpdates.live.test.ts` (shape, 21k = 0.875 × 24k;
+  tolerates a 502 when the sources are unreachable). Commit: `feat(server): cached world rates and gold price`.
+
 ## Backend asks (needs the user's decision — behaviour-changing or larger)
 
 - **Public map:** `/api/log-contact-click` is `requireAuth`, so a visitor's call / WhatsApp tap is not counted in the provider's
@@ -1023,3 +1097,20 @@ Log each change here: **what · why · how to verify · commit**.
 - **Admin dashboard:** `DELETE /api/admin/provider-success-stats/:id` hard-deletes the request row (and answers success for an id that does not exist; a non-numeric id gives 500). Consider a soft delete / audit trail, since it removes the request's chat history from the users' point of view.
 - **Widgets admin:** `POST /api/admin/update-fuel-station` overwrites all three columns (an omitted one becomes NULL) and answers success for an unknown id; the React page always sends the three current values. `widgets_manual_groups` accepts any JSON for `items` (no per-group schema).
 - **Widgets portal:** `GET /api/widgets-data` returns `groups.<key>.items` while the admin endpoint returns `groups.<key>.data` for the same rows, and always downloads all seven groups (the 106-row city fare list included, ~10 KB) every minute for every open ticker. A `?groups=` filter or an `ETag` would make the poll cheap. Prayer times and the weather forecast come straight from Aladhan / Open-Meteo in every visitor's browser; a small cached server proxy would remove the third-party dependency from the client (and the CSP `https:` allowance).
+- **Live push for visitors:** `status_updated` / `widgets_updated` (see Server changes) reach logged-in users only, because the socket
+  server refuses connections without a token. Public visitors on `/search` and `/widgets/*` keep the one-minute poll. A read-only
+  public namespace (e.g. `io.of('/live')`, no auth, no client → server events, rate-limited connections) would give them the same
+  instant refresh; it opens an unauthenticated socket surface, so it is left for the user to decide.
+- **Web Push (notifications with the app closed).** Today a new request / chat message reaches a provider only while the app is open
+  (socket.io); the phone locking or the tab sleeping cuts it. The installable PWA is in place (see Phase 3, item 9); real push needs
+  the server: VAPID keys in the environment, a table of push subscriptions per user, `POST /api/push/subscribe` + `DELETE` (auth), and
+  sending a push (e.g. `web-push`) wherever `service_request_new` / `service_request_message` / `new_notification` are emitted today,
+  dropping subscriptions the push service answers 404 / 410 for; then a `push` handler in `web/public/sw.js` and a subscribe call after
+  the user allows notifications. Adds endpoints, a table and a dependency — needs the user's decision. iOS: only for an app added to
+  the Home Screen (16.4+).
+- **Dead admin endpoints.** `GET /api/stats-detailed`, `GET /api/stats-summary`, `DELETE /api/delete-stat/:id`,
+  `GET /api/admin/all-service-requests-logs` and `GET /api/users` (all `requireAdmin`) are called by nothing — the legacy pages
+  did not call the first four either, and `/api/users` only fed the legacy `notifications-panel.html` (no send form). Delete them (own
+  commit, "Server changes"), or build admin pages on them (usage log, request log). `all-service-requests-logs` returns every
+  requester's and provider's phone / WhatsApp number.
+- **Featured / recommended rule and pictures are constants:** `rating = 10` (featured) and `9.9` (recommended) and the section / slideshow pictures are fixed in the web app. Making them editable by an admin needs a settings table + admin page (and an upload endpoint for the pictures); not done — say if you want it.

@@ -25,6 +25,9 @@ export const NEARBY_LIMIT = 10;
 export const FEATURED_RATING = '10';
 export const RECOMMENDED_RATING = '9.9';
 
+/** The `rating` column is a hand-set score out of 10 (10 = featured); shown to visitors as stars out of 5. Customer ratings are already out of 5. */
+export const manualStars = (rating: number) => Math.min(5, Math.max(0, rating / 2));
+
 /**
  * Up to `limit` cards, but the first of each real-estate kind (rent, sale, land) is always in — legacy wanted the
  * property types visible even when services with the same rating fill the list.

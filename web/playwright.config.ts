@@ -30,7 +30,8 @@ const common = { baseURL, locale: 'ar', timezoneId: 'Asia/Jerusalem', launchOpti
 
 export default defineConfig({
   testDir: './e2e',
-  outputDir: './e2e/.results',
+  // Generated traces must live outside Vite's web/ root; otherwise Vite sees each trace write and reloads the app.
+  outputDir: `../.playwright/${port}/results`,
   globalSetup: './e2e/global-setup.ts',
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
@@ -41,7 +42,10 @@ export default defineConfig({
   reporter: [['list']],
   use: { ...common, trace: 'retain-on-failure', screenshot: 'only-on-failure' },
   projects: [
-    { name: 'desktop', use: { ...devices['Desktop Chrome'], ...common, viewport: { width: 1440, height: 900 } } },
+    {
+      name: 'desktop',
+      use: { ...devices['Desktop Chrome'], ...common, viewport: { width: 1440, height: 900 } },
+    },
     {
       name: 'phone',
       use: {
@@ -54,9 +58,10 @@ export default defineConfig({
     },
   ],
   webServer: {
-    command: `npx vite --port ${port} --strictPort`,
+    command: `npm exec vite -- --port ${port} --strictPort`,
     url: baseURL,
-    reuseExistingServer: true,
+    // Reusing an arbitrary process on 5199 can test another branch/worktree. Make it an explicit local opt-in.
+    reuseExistingServer: process.env.E2E_REUSE_SERVER === '1',
     // Vite prints a stack trace for every websocket the closing browser tabs drop (harmless, and it buries the results).
     // If it cannot start, Playwright times out — run `npx vite` by hand to see why.
     stdout: 'ignore',

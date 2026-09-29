@@ -1,7 +1,8 @@
 import clsx from 'clsx';
-import { Copy, List, Printer, Star } from 'lucide-react';
+import { Copy, List, Printer } from 'lucide-react';
 import { Link } from 'react-router';
 import { useTranslation } from 'react-i18next';
+import RatingSummary from '@/components/ui/RatingSummary';
 import { toast } from '@/components/ui/toastStore';
 import { useOlMap } from '../MapContext';
 import { useMapUi } from '../store';
@@ -11,6 +12,7 @@ import { isOpenNow, priceLabel, text, type SelectedFeature } from '../popup/feat
 import { isRoadBarrier, targetIcon } from '../targets';
 import MapSheet from '../panels/MapSheet';
 import { targetLabelKey } from '../targets';
+import { manualStars } from '../extras/featured';
 import { formatDistance } from './nearby';
 import { printResults } from './printResults';
 import ResultContact from './ResultContact';
@@ -63,11 +65,7 @@ function ResultRow({
             {place ? ` · ${place}` : ''}
           </span>
           <span className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-xs text-muted">
-            {r.rating > 0 && (
-              <span className="inline-flex items-center gap-0.5 text-warn">
-                <Star className="h-3 w-3" fill="currentColor" aria-hidden /> {r.rating}
-              </span>
-            )}
+            {r.rating > 0 && <RatingSummary value={manualStars(r.rating)} />}
             {!barrier && (
               <span className={open ? 'text-ok' : 'text-danger'}>
                 {open ? t('popup.openNow') : t('popup.closedNow')}

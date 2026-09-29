@@ -1,47 +1,34 @@
-# Mobile App Readiness
+# Mobile readiness
 
-This project is prepared as a responsive web application first, with a small WebView bridge for a future Android or iOS shell.
+**Decision (2026-09-30): no native app (React Native / Android / iOS WebView).** The site is a responsive web app that
+can be installed as a PWA. The legacy `mobile-app-bridge.js` (a `postMessage` contract for a native shell) was deleted
+with the legacy frontend and is **not** ported: it only did something when a native shell existed to answer it, and
+in a browser it did nothing.
 
-## Current mobile surfaces
+## What is in place (`web/`)
 
-- Interactive map: `public/js/mobile-tabs.js` and `public/css/mobile-tabs.css`
-- No-map search: `public/js/no-map-mobile.js` and `public/css/no-map-search.css`
-- Native bridge: `public/js/mobile-app-bridge.js`
+- Responsive layouts: the map uses bottom sheets on phones, every other page works from 375 px (see the per-page
+  notes in `docs/react-migration/PLAN.md`).
+- Installable: `public/manifest.webmanifest` (name, `standalone`, start URL `/home`, RTL, theme colour), icons in
+  `public/icons/` (192, 512, maskable, `apple-touch-icon`; source `public/icon.svg`), and the iOS meta tags in `index.html`.
+- `public/sw.js`, registered by `src/lib/pwa.ts` in production builds only. It caches **nothing** (the map and lists are
+  live data); it exists for installability and for system notifications — Android refuses `new Notification()`, only
+  `registration.showNotification()` works, so `showSystemNotification()` goes through the worker and falls back to the
+  constructor. Tapping a notification focuses the open app or opens `/home`.
+- GPS uses the browser's own permission prompt (`geolocate.ts`, `LocateButton.tsx`) and needs HTTPS. Notification
+  permission is asked from the bell menu, not on page load.
 
-The no-map page is initialized for phone and tablet widths up to 1024px. The map page keeps its existing portrait and landscape tab system.
+## What is not there
 
-## Native bridge contract
-
-The web page sends JSON messages through one of these native targets when available:
-
-- React Native: `window.ReactNativeWebView.postMessage`
-- Android WebView: `window.AndroidBridge.postMessage`
-- iOS WKWebView: `window.webkit.messageHandlers.app.postMessage`
-
-Messages sent by the web page:
-
-- `web-ready`: page is ready; payload contains `screen`
-- `open-external`: request to open an external URL
-- `request-notifications`: request native notification permission
-- `request-location`: request native location permission
-
-The browser remains unaffected when none of these targets exists.
-
-## Native app responsibilities later
-
-1. Load the deployed web origin over HTTPS; do not bundle database credentials or server secrets.
-2. Handle the bridge commands above and return results through a documented custom event.
-3. Request GPS and notification permissions using native APIs.
-4. Forward the hardware back button to `mobileappback`, then let the page close a modal/panel before leaving the page.
-5. Preserve cookies or the application session securely inside the WebView.
-6. Test keyboard resize, safe-area insets, orientation changes, offline errors, and slow network states.
-7. Keep API URLs relative so development proxy and production hosting remain interchangeable.
+- **No background notifications.** Notifications arrive over socket.io, which stops when the phone locks or the tab
+  sleeps; a system notification is shown only while the app is open but hidden. Real push (works with the app closed)
+  needs Web Push: a server change — see PLAN.md → "Backend asks".
+- iOS shows web notifications only for an app added to the Home Screen (iOS 16.4+), never from a Safari tab.
 
 ## Release checklist
 
-- Run `npm run build`.
-- Deploy the generated `dist` directory to the web server.
-- Test the map at phone portrait, phone landscape, tablet portrait, and tablet landscape sizes.
-- Test no-map search at the same four sizes, including category navigation, filters, results, GPS actions, and notifications.
-- Verify the native app uses HTTPS and the production API origin.
-- Verify Android back, iOS swipe/back navigation, GPS denial, notification denial, and external links.
+- `cd web && npm run build`; the server serves `web/dist` (see PLAN.md → "Server changes").
+- Test the map and `/search` at phone portrait, phone landscape, tablet portrait and tablet landscape.
+- On a real Android phone: install from the browser menu, open from the Home Screen, deny and allow GPS, allow
+  notifications, send a request from another account while the app is hidden.
+- On a real iPhone: add to Home Screen, then the same.
