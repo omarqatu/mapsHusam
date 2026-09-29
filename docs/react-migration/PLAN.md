@@ -702,6 +702,10 @@ Split `index.html` into features, in this order:
    - Glass (`.glass` in `index.css`, iOS-26-like: translucent white, blur, light rim) only on small controls floating
      over the imagery — map tool buttons, the search pill, the coordinates bar, the chips. Not on panels, tables, forms
      or dialogs (contrast). Solid white when blur is unsupported or `prefers-reduced-transparency` is on.
+   - Bottom of the map: only the two figures that matter — service providers and services — as a glass pill next to the
+     coordinates (legacy: a bar of six counters incl. visits and users; those stay in the stats tab). Hidden on phones.
+   - `/search`: the search box and three shortcuts (interactive map, road status, fuel status; legacy: the coloured header
+     buttons) stay in view while scrolling (the top bar is sticky too); the hero shows providers and services only.
    - Live tests run file by file (`fileParallelism` off when `VITE_LIVE_API` is set): they share the seeded accounts.
    - Media sections show only their own kind (photos section = pictures, videos section = videos); everything is still in the
      details card. Cards use the shared `MediaGallery` (enlarge on click, https-only URLs via `safeMediaUrl`) instead of the

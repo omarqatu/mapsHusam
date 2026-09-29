@@ -7,6 +7,7 @@ import CoordinatesBar from './controls/CoordinatesBar';
 import QuickChips from './controls/QuickChips';
 import LocateButton from './controls/LocateButton';
 import MapButton from './controls/MapButton';
+import StatsPill from './controls/StatsPill';
 import RefreshButton from './controls/RefreshButton';
 import ZoomButtons from './controls/ZoomButtons';
 import ExtrasButton from './extras/ExtrasButton';
@@ -111,8 +112,9 @@ export default function MapPage() {
               </div>
             </div>
           </div>
-          <div className="pointer-events-none absolute inset-x-0 bottom-2 z-10 flex justify-center">
+          <div className="pointer-events-none absolute inset-x-0 bottom-2 z-10 flex items-center justify-center gap-2">
             <CoordinatesBar />
+            <StatsPill />
           </div>
           {/* Centred over the map: a full-width bar on phones (tools sit below it), a 28rem pill on desktop. */}
           <div className="absolute inset-x-3 top-3 z-20 sm:mx-auto sm:max-w-md">

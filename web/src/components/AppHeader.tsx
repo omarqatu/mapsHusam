@@ -42,7 +42,7 @@ export default function AppHeader() {
   useOutsideClick(menu, close, open);
 
   return (
-    <header className="z-40 flex h-14 shrink-0 items-center gap-2 bg-gradient-to-l from-brand to-brand-2 px-3 text-white shadow">
+    <header className="sticky top-0 z-40 flex h-14 shrink-0 items-center gap-2 bg-gradient-to-l from-brand to-brand-2 px-3 text-white shadow">
       <NavLink to="/" className="truncate text-base font-black sm:text-lg">
         {t('app.name')}
       </NavLink>

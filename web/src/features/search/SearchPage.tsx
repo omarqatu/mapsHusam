@@ -7,6 +7,7 @@ import CategoryBrowser from './CategoryBrowser';
 import CategoryResults from './CategoryResults';
 import { isGroupId, singleTargetOf, type GroupId } from './categories';
 import Hero from './Hero';
+import QuickActions from './QuickActions';
 import KeywordResults from './KeywordResults';
 import KeywordSearch from './KeywordSearch';
 import PageFooter from './PageFooter';
@@ -68,10 +69,12 @@ export default function SearchPage() {
 
   return (
     <div className="space-y-6">
-      <KeywordSearch value={term} onCommit={commitKeyword} />
-      {!keywordActive && !selection && (
-        <Hero onRoads={() => setStatus('road_barriers')} onFuel={() => setStatus('fuel_stations')} />
-      )}
+      {/* Stays in view while scrolling: the search box and the three shortcuts are what people come back to. */}
+      <div className="sticky top-14 z-30 -mx-4 space-y-2 bg-[#f3f6f9]/95 px-4 py-2 backdrop-blur">
+        <KeywordSearch value={term} onCommit={commitKeyword} />
+        <QuickActions onRoads={() => setStatus('road_barriers')} onFuel={() => setStatus('fuel_stations')} />
+      </div>
+      {!keywordActive && !selection && <Hero />}
 
       {keywordActive ? (
         <KeywordResults term={term} />
