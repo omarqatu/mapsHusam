@@ -227,16 +227,7 @@ export default function FeatureCard({ feature, onClose, className }: Props) {
           </div>
         )}
 
-        {media.length > 0 && (
-          <details open={media.length <= 1} className="group">
-            <summary className="cursor-pointer select-none text-sm font-bold text-slate-700">
-              {t('popup.media', { count: media.length })}
-            </summary>
-            <div className="mt-2">
-              <MediaGallery items={media} />
-            </div>
-          </details>
-        )}
+        {media.length > 0 && <MediaGallery items={media} />}
 
         <div className="flex items-center justify-between gap-2 border-t border-slate-100 pt-3">
           <Button

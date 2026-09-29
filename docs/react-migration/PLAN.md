@@ -387,6 +387,12 @@ Split `index.html` into features, in this order:
    - Side panels are as tall as their content (max: the map minus the header), not stretched top to bottom; the card hides
      an area of 0 (missing data), joins place names without repeating one another contains ("رام الله" inside "رام الله
      وسط البلد"), and says so when a feature has no contact details instead of ending without an action.
+   - Media (`MediaGallery`): a strip of thumbnails (pictures, YouTube, video files) that opens in a viewer with previous /
+     next and arrow keys; nothing heavy loads until tapped (YouTube is its thumbnail, not an iframe — legacy embedded them
+     all at once). The viewer's YouTube frame sets its own `referrerpolicy` because the server's `Referrer-Policy:
+     no-referrer` makes YouTube refuse embeds (error 153), and always offers "open on YouTube" for videos whose owner
+     disabled embedding. `youtubeId` also reads shorts / live / m. / music. links and `watch?feature=…&v=`. Other video
+     sites (Facebook, TikTok…) cannot be embedded under the server's `frame-src` and stay links, now with their host shown.
    - Live tests run file by file (`fileParallelism` off when `VITE_LIVE_API` is set): they share the seeded accounts.
    - Media sections show only their own kind (photos section = pictures, videos section = videos); everything is still in the
      details card. Cards use the shared `MediaGallery` (enlarge on click, https-only URLs via `safeMediaUrl`) instead of the

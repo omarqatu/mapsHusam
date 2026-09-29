@@ -119,9 +119,21 @@ export function parseUrlList(raw: unknown): string[] {
     .filter((x) => x && x !== '#' && !/^(undefined|null)$/i.test(x));
 }
 
+/** Video id of a YouTube link: watch (v may not be first), youtu.be, embed, shorts, live, m./music. hosts. */
 export function youtubeId(url: string): string | null {
-  const m = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([\w-]+)/);
-  return m ? m[1] : null;
+  let u: URL;
+  try {
+    u = new URL(url);
+  } catch {
+    return null;
+  }
+  const host = u.hostname.replace(/^(www|m|music)\./, '');
+  const valid = (id: string | null | undefined) => (id && /^[\w-]{11}$/.test(id) ? id : null);
+  if (host === 'youtu.be') return valid(u.pathname.split('/')[1]);
+  if (host !== 'youtube.com' && host !== 'youtube-nocookie.com') return null;
+  if (u.pathname === '/watch') return valid(u.searchParams.get('v'));
+  const m = u.pathname.match(/^\/(?:embed|shorts|live|v)\/([\w-]+)/);
+  return m ? valid(m[1]) : null;
 }
 export const isImageUrl = (url: string) => /\.(jpg|jpeg|png|gif|webp)(\?.*)?$/i.test(url);
 export const isVideoFileUrl = (url: string) => /\.(mp4|webm|ogg)(\?.*)?$/i.test(url);

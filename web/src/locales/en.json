@@ -335,12 +335,15 @@
     },
     "mapArea": "Area on the map",
     "mapLength": "Length on the map",
-    "media": "Media ({{count}})",
     "noContact": "No contact details are listed for this one."
   },
   "media": {
     "openImages": "Click to view the images",
-    "preview": "Image preview"
+    "preview": "Preview",
+    "prev": "Previous",
+    "next": "Next",
+    "openOnYoutube": "Open on YouTube",
+    "play": "Play"
   },
   "search": {
     "title": "Search",
