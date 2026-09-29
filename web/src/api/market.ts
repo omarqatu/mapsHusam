@@ -5,14 +5,18 @@ import { api } from './client';
 // server so a visitor's browser never talks to the third-party services. Each half is null when its source was down.
 
 export interface MarketRates {
-  /** Shekels per one unit. */
-  rates: { USD_ILS: number; JOD_ILS: number; EUR_ILS: number } | null;
+  /** Shekels per one unit; `asOf` = when the source published them (daily). */
+  rates: { USD_ILS: number; JOD_ILS: number; EUR_ILS: number; asOf: string | null } | null;
   gold: {
     usdPerOunce: number;
     /** Null when the exchange rate was unavailable. */
     ilsPerGram24: number | null;
     ilsPerGram21: number | null;
+    ilsPerGram18: number | null;
+    asOf: string | null;
   } | null;
+  silver: { usdPerOunce: number; asOf: string | null } | null;
+  /** When our server last fetched. */
   updatedAt: string;
 }
 

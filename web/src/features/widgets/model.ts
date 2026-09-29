@@ -1,5 +1,6 @@
 import type { CityPoint } from '@/api/external';
 import type { WidgetGroupKey, WidgetItem } from '@/api/adminWidgets';
+import type { MarketRates } from '@/api/market';
 import type { WidgetsData } from '@/api/widgets';
 import { toTextItem } from '@/features/admin-widgets/model';
 import { matchesQuery } from '@/features/map/extras/status';
@@ -217,6 +218,17 @@ export function mergeWeather(
 
 export const isKnownCity = (id: string) => CITIES.some((c) => c.id === id);
 
+/**
+ * What the ticker and the landing strip say about a city: today's high and low from the live forecast ("27°/15°"), so it is
+ * never a single number that could be mistaken for the temperature right now. Without a forecast, the admin's typed "now".
+ * The two figures are isolated left-to-right so an Arabic line cannot swap them.
+ */
+export function weatherLabel(c: CityWeather): string | null {
+  const today = c.days[0];
+  if (today) return `\u2066${today.max}°/${today.min}°\u2069`;
+  return c.current?.temp ? `${c.current.temp}°` : null;
+}
+
 /** The number shown for a city in the ticker: the admin's "now" temperature, else today's forecast high. */
 export function headlineTemp(c: CityWeather): string | null {
   if (c.current?.temp) return c.current.temp;
@@ -402,13 +414,13 @@ export function buildTickerItems(input: TickerInput): TickerItem[] {
   priceRows('currency');
   priceRows('gold');
   for (const c of input.weather.slice(0, 3)) {
-    const temp = headlineTemp(c);
+    const temp = weatherLabel(c);
     if (temp)
       out.push({
         key: `weather:${c.id}`,
         card: 'weather',
         label: isKnownCity(c.id) ? input.name('city', c.id) : (c.label ?? c.id),
-        value: `${temp}°`,
+        value: temp,
       });
   }
   priceRows('fuel');
@@ -427,4 +439,57 @@ export function buildTickerItems(input: TickerInput): TickerItem[] {
   out.push({ key: 'road-status', card: 'road-status', label: input.name('card', 'road-status') });
   out.push({ key: 'fuel-status', card: 'fuel-status', label: input.name('card', 'fuel-status') });
   return out;
+}
+
+// ---- live market prices ----
+
+/** Translated names of the live rows (the admin's rows carry their own text; these carry ours). */
+export interface MarketLabels {
+  usd: string;
+  eur: string;
+  jod: string;
+  gold24: string;
+  gold21: string;
+  gold18: string;
+  goldOunce: string;
+  silver: string;
+  perGram: string;
+  perOunce: string;
+}
+
+/**
+ * The currency and gold groups with the world market's numbers instead of what an admin once typed (those were the only
+ * hand-kept prices that the outside world moves every day). A part whose source is down keeps the admin's rows; the group's
+ * "last update" becomes the moment our server fetched. Fuel, fares and events stay the admin's: no public source has them.
+ */
+export function applyMarket(data: WidgetsData | undefined, market: MarketRates | undefined, l: MarketLabels): WidgetsData | undefined {
+  if (!data || !market) return data;
+  const groups = { ...data.groups };
+  const at = market.updatedAt;
+  const fixed = (n: number, digits: number) => n.toFixed(digits);
+  if (market.rates) {
+    const { USD_ILS, EUR_ILS, JOD_ILS } = market.rates;
+    groups.currency = {
+      updated_at: at,
+      items: [
+        { id: 'live-usd', code: 'USD/ILS', label: l.usd, value: fixed(USD_ILS, 2) },
+        { id: 'live-eur', code: 'EUR/ILS', label: l.eur, value: fixed(EUR_ILS, 2) },
+        { id: 'live-jod', code: 'JOD/ILS', label: l.jod, value: fixed(JOD_ILS, 2) },
+      ],
+    };
+  }
+  if (market.gold) {
+    const g = market.gold;
+    const rows: WidgetItem[] = [];
+    if (g.ilsPerGram24 && g.ilsPerGram21 && g.ilsPerGram18)
+      rows.push(
+        { id: 'live-gold-24', label: l.gold24, value: fixed(g.ilsPerGram24, 0), unit: l.perGram },
+        { id: 'live-gold-21', label: l.gold21, value: fixed(g.ilsPerGram21, 0), unit: l.perGram },
+        { id: 'live-gold-18', label: l.gold18, value: fixed(g.ilsPerGram18, 0), unit: l.perGram },
+      );
+    rows.push({ id: 'live-gold-ounce', label: l.goldOunce, value: fixed(g.usdPerOunce, 0), unit: l.perOunce });
+    if (market.silver) rows.push({ id: 'live-silver', label: l.silver, value: fixed(market.silver.usdPerOunce, 2), unit: l.perOunce });
+    groups.gold = { updated_at: at, items: rows };
+  }
+  return { ...data, groups };
 }

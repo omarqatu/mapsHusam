@@ -168,7 +168,8 @@
     "widgets": "Live info",
     "adminUsers": "Users",
     "adminWidgets": "Widgets admin",
-    "adminDashboard": "Dashboard"
+    "adminDashboard": "Dashboard",
+    "admin": "Admin"
   },
   "roles": {
     "admin": "Admin",
@@ -1005,7 +1006,8 @@
       "jod": "JOD",
       "gold21": "Gold 21k (gram)",
       "ils": "₪",
-      "worldPrice": "World market price — may differ from exchange shops and jewellers"
+      "worldPrice": "World market price — may differ from exchange shops and jewellers",
+      "highLow": "Today's high / low"
     }
   },
   "adminUsers": {
@@ -1345,7 +1347,8 @@
       "orderSavedRoad": "The checkpoint order was saved.",
       "orderSavedFuel": "The station order was saved.",
       "orderFailed": "Could not save the order."
-    }
+    },
+    "liveNote": "Currency and gold prices are shown to visitors automatically from the world market, refreshed every 10 minutes. What you enter here is used only when the source is unreachable."
   },
   "info": {
     "title": "Information and help"
@@ -1450,6 +1453,18 @@
       "pageTitle": "Live updates ticker",
       "pageDescription": "Prices, weather and prayer times in a large scrolling bar, made for a screen.",
       "hint": "Tap any item to open its card in the live information centre. The bar stops while the pointer is over it."
+    },
+    "live": {
+      "usd": "US dollar",
+      "eur": "Euro",
+      "jod": "Jordanian dinar",
+      "gold24": "Gold 24k",
+      "gold21": "Gold 21k",
+      "gold18": "Gold 18k",
+      "goldOunce": "Gold ounce (world)",
+      "silver": "Silver ounce (world)",
+      "perGram": "ILS/gram",
+      "perOunce": "USD/ounce"
     }
   },
   "home": {

@@ -187,6 +187,7 @@ The bar is the `<footer class="widgets-ticker-footer">` of `index.html` (the map
 **Live data on `/search` and `/welcome` (UX changes):** the road / fuel pills show "updated 5 minutes ago" from `/api/widgets-data` (green dot only while the list was updated within a day, grey otherwise) and refetch at once when an admin saves (socket `status_updated`, logged-in users; visitors poll every minute). The section cards show the real number of listings (`GET /api/category-counts`) instead of the number of types, and the property tile's three kinds show theirs; nothing is shown until the numbers arrive. The featured / recommended / top-rated rows refetch when the tab is focused again after they went stale. `/welcome` shows the platform figures (providers, services, visits) from `/api/platform-stats`.
 
 **Ratings as stars out of five, "today" strip, real numbers instead of promises (UX changes):** every rating on a card is now `★★★★☆ 4.5 (12)` (`RatingSummary` over `StarRating`, which fills fractions). Customer ratings were already out of 5; the hand-set `rating` column (10 = featured) is shown as `rating / 2` (`manualStars`), where the cards used to print "10" / "9.9" next to a single star. Under the search a quiet line shows the weather (Open-Meteo, Ramallah), the next prayer (Aladhan) and, from `GET /api/market-rates`, the dollar and dinar in shekels and gold 21k per gram, each chip opening the information centre at its card; a source that is down just drops its chip. The "world price" hint says these can differ from exchange shops. "Most wanted" became "Most listed": rent and sale, then the three service types with the most listings (`/api/category-counts`; `map_service_stats.service_type` holds event names such as `map_click`, not the searched type, so real demand cannot be read from it). "Service providers" (388) is relabelled "listings", because it counts every feature on the map, not provider accounts. The welcome cards say "106 properties listed now" / "71 trades" from the API (neutral wording until the numbers arrive) instead of "thousands of properties" / "50+ trades".
+**No more typed-in prices that the world moves (UX change):** the currency and gold cards of the information centre (`/widgets/portal`, the ticker on `/search` and the map) are now the live market rows (`applyMarket` in `widgets/model.ts`, applied in `useWidgetsData`): USD / EUR / JOD in shekels, gold 24 / 21 / 18 per gram, gold and silver ounce; the card's "last update" is the moment our server fetched. The admin's rows for these two groups are only the fallback when the source is unreachable (a note on `/admin/widgets` says so). The dev database still held rows nobody had refreshed (dollar 2.99, gold ounce 2450 $ against 3.07 and about 4185 $ today), which is why the site showed two different dollar rates. Weather shows today's high and low ("27°/15°" — the live forecast; an admin-typed "now" is only used when there is no forecast) on the landing and in the ticker. Still hand-kept because no public source exists: fuel prices, fares, events, and the admin's weather "now" values (fallback only).
 Left as constants on purpose: the `rating` values 10 / 9.9 that mean featured / recommended (a business rule, see Backend asks) and the promo pictures.
 
 ### `/search` — inventory (read from the legacy files + `server.js`; the map page's search code is reused, not copied)
@@ -1055,13 +1056,16 @@ Log each change here: **what · why · how to verify · commit**.
   visitors keep the one-minute poll. Verify: same live test (an admin save arrives on a connected socket; a token-less socket is
   refused). Commit: `feat(server): push status/widgets updates over the socket`.
 
-- **New public `GET /api/market-rates` (additive): world exchange rates + gold price, fetched and cached by the server.** Sources
-  `open.er-api.com` (USD base → ILS / JOD / EUR) and `api.gold-api.com` (XAU in USD per ounce, → shekels per gram, 21k = 24k × 21/24),
-  no keys, `fetch` with an 8 s timeout, cached 10 min (a partial answer 1 min, then retried; a half that failed keeps its last good value;
-  both down and nothing cached → 502). Why on the server: the visitor's address is not sent to third parties, no per-browser rate
-  limits, the CSP stays as is. Response: `{ success, data: { rates: { USD_ILS, JOD_ILS, EUR_ILS } | null, gold: { usdPerOunce,
-  ilsPerGram24, ilsPerGram21 } | null, updatedAt } }`. Verify: `web/src/features/search/liveUpdates.live.test.ts` (shape, 21k = 0.875 × 24k;
-  tolerates a 502 when the sources are unreachable). Commit: `feat(server): cached world rates and gold price`.
+- **New public `GET /api/market-rates` (additive): world exchange rates, gold and silver, fetched and cached by the server.** Sources
+  `open.er-api.com` (USD base → ILS / JOD / EUR; published once a day) and `api.gold-api.com` (XAU / XAG in USD per ounce, live;
+  → shekels per gram, 21k = 24k × 21/24, 18k = × 18/24), no keys, `fetch` with an 8 s timeout, cached 10 min (a partial answer
+  1 min, then retried; a part that failed keeps its last good value; every source down and nothing cached → 502). Cross-checked on
+  2026-09-29 against Frankfurter (ECB), fawazahmed0 currency-api and exchangerate-api v4: USD/ILS 3.056–3.074 in all four; gold
+  4129–4185 $/oz in the two that have it. Why on the server: the visitor's address is not sent to third parties, no per-browser
+  rate limits, the CSP stays as is. Response: `{ success, data: { rates: { USD_ILS, JOD_ILS, EUR_ILS, asOf } | null, gold: {
+  usdPerOunce, ilsPerGram24, ilsPerGram21, ilsPerGram18, asOf } | null, silver: { usdPerOunce, asOf } | null, updatedAt } }`.
+  Verify: `web/src/features/search/liveUpdates.live.test.ts` (shape, gold in the thousands of dollars, silver far below it, 21k =
+  0.875 × 24k; tolerates a 502 when the sources are unreachable). Commit: `feat(server): cached world rates, gold and silver`.
 
 ## Backend asks (needs the user's decision — behaviour-changing or larger)
 

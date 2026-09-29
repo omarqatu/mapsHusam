@@ -4,7 +4,7 @@ import { Link } from 'react-router';
 import { useTranslation } from 'react-i18next';
 import { useMarketRates } from '@/api/market';
 import { intlLocale } from '@/lib/format';
-import { headlineTemp, nextPrayer, palestineNow, type CardId } from '../widgets/model';
+import { nextPrayer, palestineNow, weatherLabel, type CardId } from '../widgets/model';
 import { useNow, usePrayerTimes, useWeather } from '../widgets/hooks/useWidgets';
 
 function Chip({ card, icon, title, children }: { card: CardId; icon: ReactNode; title?: string; children: ReactNode }) {
@@ -36,7 +36,7 @@ export default function TodayStrip() {
   const market = useMarketRates().data;
 
   const city = cities[0];
-  const temp = city ? headlineTemp(city) : null;
+  const temp = city ? weatherLabel(city) : null;
   const next = prayer ? nextPrayer(prayer, palestineNow(now).minutes) : null;
   const money = (n: number, digits: number) => n.toLocaleString(locale, { minimumFractionDigits: digits, maximumFractionDigits: digits });
   const worldPrice = t('searchPage.today.worldPrice');
@@ -45,8 +45,8 @@ export default function TodayStrip() {
   const chips: ReactNode[] = [];
   if (city && temp)
     chips.push(
-      <Chip key="weather" card="weather" icon={<CloudSun className="h-4 w-4 text-info" aria-hidden />}>
-        {city.label || t(`widgets.cities.${city.id}`)} <Value>{temp}°</Value>
+      <Chip key="weather" card="weather" title={t('searchPage.today.highLow')} icon={<CloudSun className="h-4 w-4 text-info" aria-hidden />}>
+        {city.label || t(`widgets.cities.${city.id}`)} <Value>{temp}</Value>
       </Chip>,
     );
   if (prayer && next)

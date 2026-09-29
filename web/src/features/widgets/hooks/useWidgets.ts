@@ -1,8 +1,11 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useIsFetching, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useTranslation } from 'react-i18next';
+import { useMarketRates } from '@/api/market';
 import { externalApi } from '@/api/external';
-import { WIDGETS_REFRESH_MS, widgetsApi, widgetsKeys } from '@/api/widgets';
+import { WIDGETS_REFRESH_MS, widgetsApi, widgetsKeys, type WidgetsData } from '@/api/widgets';
 import {
+  applyMarket,
   aladhanDate,
   CITIES,
   FORECAST_DAYS,
@@ -27,9 +30,29 @@ export const externalKeys = {
  * intervals in the background) and refetched on return when stale — legacy `createVisibilityAwareInterval`.
  */
 export function useWidgetsData() {
+  const { t } = useTranslation();
+  const market = useMarketRates().data;
+  // Currency and gold come from the world market (see applyMarket); everything else is what the admin saved.
+  const select = useCallback(
+    (d: WidgetsData) =>
+      applyMarket(d, market, {
+        usd: t('widgets.live.usd'),
+        eur: t('widgets.live.eur'),
+        jod: t('widgets.live.jod'),
+        gold24: t('widgets.live.gold24'),
+        gold21: t('widgets.live.gold21'),
+        gold18: t('widgets.live.gold18'),
+        goldOunce: t('widgets.live.goldOunce'),
+        silver: t('widgets.live.silver'),
+        perGram: t('widgets.live.perGram'),
+        perOunce: t('widgets.live.perOunce'),
+      }) as WidgetsData,
+    [market, t],
+  );
   return useQuery({
     queryKey: widgetsKeys.data,
     queryFn: ({ signal }) => widgetsApi.data(signal),
+    select,
     staleTime: WIDGETS_REFRESH_MS / 2,
     refetchInterval: WIDGETS_REFRESH_MS,
     refetchOnWindowFocus: true,

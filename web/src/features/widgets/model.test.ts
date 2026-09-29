@@ -11,7 +11,9 @@ import {
   formatHijri,
   fuelKind,
   groupItems,
+  applyMarket,
   headlineTemp,
+  weatherLabel,
   isCardId,
   mergeWeather,
   nextPrayer,
@@ -259,5 +261,59 @@ describe('ticker items', () => {
   it('leaves out what it does not have', () => {
     const items = buildTickerItems({ ...base, data: undefined, weather: [], prayer: null });
     expect(items.map((i) => i.card)).toEqual(['calendar', 'road-status', 'fuel-status']);
+  });
+});
+
+describe('weatherLabel', () => {
+  const day = { date: '2026-09-30', max: 27, min: 15, kind: 'clear' as const };
+  it('says today\'s high and low, ignoring what the admin once typed', () => {
+    expect(weatherLabel({ id: 'ramallah', current: { temp: '99' }, days: [day] })).toBe('\u20662' + '7°/15°\u2069');
+  });
+  it('falls back to the admin\'s typed temperature, else nothing', () => {
+    expect(weatherLabel({ id: 'x', current: { temp: '21' }, days: [] })).toBe('21°');
+    expect(weatherLabel({ id: 'x', days: [] })).toBeNull();
+  });
+});
+
+describe('applyMarket', () => {
+  const labels = {
+    usd: 'USD', eur: 'EUR', jod: 'JOD', gold24: 'G24', gold21: 'G21', gold18: 'G18',
+    goldOunce: 'OZ', silver: 'AG', perGram: '/g', perOunce: '/oz',
+  };
+  const data = {
+    success: true,
+    groups: {
+      currency: { items: [{ id: 'old', code: 'USD/ILS', label: 'old', value: '2.99' }], updated_at: '2020-01-01T00:00:00Z' },
+      fuel: { items: [{ id: 'f', label: 'diesel', value: '7' }], updated_at: '2026-09-01T00:00:00Z' },
+    },
+    road_status_updated_at: null,
+    fuel_status_updated_at: null,
+  };
+  const market = {
+    rates: { USD_ILS: 3.07, EUR_ILS: 3.49, JOD_ILS: 4.33, asOf: null },
+    gold: { usdPerOunce: 4185, ilsPerGram24: 413, ilsPerGram21: 361.4, ilsPerGram18: 309.8, asOf: null },
+    silver: { usdPerOunce: 61.69, asOf: null },
+    updatedAt: '2026-09-30T00:00:00Z',
+  };
+
+  it('replaces currency and gold with the live rows and stamps them with the fetch time', () => {
+    const out = applyMarket(data, market, labels)!;
+    expect(out.groups!.currency!.items).toEqual([
+      { id: 'live-usd', code: 'USD/ILS', label: 'USD', value: '3.07' },
+      { id: 'live-eur', code: 'EUR/ILS', label: 'EUR', value: '3.49' },
+      { id: 'live-jod', code: 'JOD/ILS', label: 'JOD', value: '4.33' },
+    ]);
+    expect((out.groups!.gold!.items as { id: string; value: string }[]).map((r) => [r.id, r.value])).toEqual([
+      ['live-gold-24', '413'], ['live-gold-21', '361'], ['live-gold-18', '310'], ['live-gold-ounce', '4185'], ['live-silver', '61.69'],
+    ]);
+    expect(out.groups!.currency!.updated_at).toBe(market.updatedAt);
+  });
+
+  it('leaves the admin\'s fuel group alone, and everything alone when the market is down', () => {
+    expect(applyMarket(data, market, labels)!.groups!.fuel).toBe(data.groups.fuel);
+    expect(applyMarket(data, undefined, labels)).toBe(data);
+    const noGold = applyMarket(data, { ...market, gold: null, silver: null }, labels)!;
+    expect(noGold.groups!.gold).toBeUndefined();
+    expect(noGold.groups!.currency!.items).toHaveLength(3);
   });
 });

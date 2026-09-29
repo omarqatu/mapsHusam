@@ -56,8 +56,14 @@ describe.skipIf(!BASE)('landing live data against the live backend', () => {
     if ('status' in res && res.status === 502) return;
     const d = (res as Awaited<ReturnType<typeof marketApi.rates>>).data!;
     expect(d.rates ?? d.gold).toBeTruthy();
-    if (d.rates) for (const v of Object.values(d.rates)) expect(v).toBeGreaterThan(0.5);
+    if (d.rates) for (const v of [d.rates.USD_ILS, d.rates.JOD_ILS, d.rates.EUR_ILS]) expect(v).toBeGreaterThan(0.5);
     if (d.gold?.ilsPerGram24 && d.gold.ilsPerGram21) expect(d.gold.ilsPerGram21).toBeCloseTo(d.gold.ilsPerGram24 * 0.875, 5);
+    // Gold is a real spot price (thousands of dollars an ounce, silver far below it) and the sources say when they published.
+    if (d.gold) {
+      expect(d.gold.usdPerOunce).toBeGreaterThan(1000);
+      if (d.silver) expect(d.silver.usdPerOunce).toBeLessThan(d.gold.usdPerOunce / 10);
+      expect(Number.isNaN(Date.parse(d.gold.asOf ?? ''))).toBe(false);
+    }
     expect(Number.isNaN(Date.parse(d.updatedAt))).toBe(false);
   });
 

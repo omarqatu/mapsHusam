@@ -112,12 +112,17 @@ export default function AdminWidgetsPage() {
                     onReload={() => features.refetch()}
                   />
                 ) : (
-                  <GroupPanel
-                    groupKey={id}
-                    items={groups.data?.[id]?.items ?? []}
-                    updatedAt={groups.data?.[id]?.updatedAt ?? null}
-                    onReload={() => groups.refetch()}
-                  />
+                  <>
+                    {(id === 'currency' || id === 'gold') && (
+                      <AlertMessage type="info" message={t('adminWidgets.liveNote')} className="mb-3" />
+                    )}
+                    <GroupPanel
+                      groupKey={id}
+                      items={groups.data?.[id]?.items ?? []}
+                      updatedAt={groups.data?.[id]?.updatedAt ?? null}
+                      onReload={() => groups.refetch()}
+                    />
+                  </>
                 )}
               </div>
             ))
