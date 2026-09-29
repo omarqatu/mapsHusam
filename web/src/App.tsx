@@ -11,6 +11,7 @@ import LoginPage from '@/features/auth/LoginPage';
 import RegisterPage from '@/features/auth/RegisterPage';
 import WelcomePage from '@/features/auth/WelcomePage';
 import NotificationsPage from '@/features/notifications/NotificationsPage';
+import SearchPage from '@/features/search/SearchPage';
 import RequestsHost from '@/features/requests/RequestsHost';
 import LegalPage from '@/features/legal/LegalPage';
 import { ProtectedRoute, RoleRoute } from '@/routes/guards';
@@ -23,7 +24,10 @@ import { CenteredSpinner } from '@/components/ui/Spinner';
 const MapPage = lazy(() => import('@/features/map/MapPage'));
 
 // Ported pages by path; everything else still shows its placeholder.
-const ported: Record<string, ReactElement> = { '/notifications': <NotificationsPage /> };
+const ported: Record<string, ReactElement> = {
+  '/notifications': <NotificationsPage />,
+  '/search': <SearchPage />,
+};
 
 const page = (r: AppRoute) => ({ path: r.path, element: ported[r.path] ?? <PlaceholderPage route={r} /> });
 

@@ -24,7 +24,7 @@ export default function TextInput({
   return (
     <div className="relative">
       {startIcon && (
-        <span className="pointer-events-none absolute inset-y-0 start-3 flex items-center text-slate-400">
+        <span className="pointer-events-none absolute inset-y-0 start-3 flex items-center text-slate-500">
           {startIcon}
         </span>
       )}
@@ -44,7 +44,7 @@ export default function TextInput({
         {...rest}
       />
       {endIcon && (
-        <span className="absolute inset-y-0 end-3 flex items-center text-slate-400">{endIcon}</span>
+        <span className="absolute inset-y-0 end-3 flex items-center text-slate-500">{endIcon}</span>
       )}
     </div>
   );

@@ -21,7 +21,9 @@
     "page": "Page {{page}} of {{pages}}",
     "language": "Language",
     "actions": "Actions",
-    "menu": "Menu"
+    "menu": "Menu",
+    "showMore": "Show more",
+    "showLess": "Show less"
   },
   "errors": {
     "network": "Could not reach the server. Check your connection and try again.",
@@ -93,7 +95,13 @@
       "terms": "Terms of use",
       "privacy": "Privacy policy",
       "guide": "User guide",
-      "and": "and"
+      "and": "and",
+      "guideSearch": "Searching for services",
+      "guideProvider": "Service provider account",
+      "guideSubscription": "How to join",
+      "guideMapInteractive": "The interactive map",
+      "about": "About us",
+      "contact": "Contact us"
     },
     "register": {
       "title": "Create an account with a WhatsApp number",
@@ -343,7 +351,8 @@
     "prev": "Previous",
     "next": "Next",
     "openOnYoutube": "Open on YouTube",
-    "play": "Play"
+    "play": "Play",
+    "playVideo": "Play video"
   },
   "search": {
     "title": "Search",
@@ -439,7 +448,8 @@
       "m": "m",
       "reportTitle": "Search results report",
       "printedOn": "Printed on:",
-      "popupBlocked": "Allow pop-ups to print the report."
+      "popupBlocked": "Allow pop-ups to print the report.",
+      "openAsList": "Open as a list on the search page"
     }
   },
   "tools": {
@@ -907,5 +917,48 @@
       "update": "Changes saved.",
       "delete": "Deleted."
     }
+  },
+  "searchPage": {
+    "clearKeyword": "Clear search",
+    "roadStatus": "Road status",
+    "fuelStatus": "Fuel station status",
+    "minChars": "Please type at least {{count}} letters to search.",
+    "keywordTitle": "Results for \"{{term}}\"",
+    "quotaBlocked": "Search was stopped because you reached your request limit.",
+    "noKeywordResults": "Nothing matches \"{{term}}\"",
+    "noKeywordHint": "Try another word or pick a service type from the categories.",
+    "showMore": "Show {{count}} more",
+    "shownOf": "Showing {{shown}} of {{total}}",
+    "chooseCategory": "Choose a service or property type",
+    "groups": "Service groups",
+    "allGroups": "All",
+    "noCategories": "No matching categories.",
+    "all": "All",
+    "valuesFailed": "Could not load the values.",
+    "filters": "Filter results",
+    "reset": "Reset",
+    "amount": "Amount",
+    "areaValue": "Area (m²)",
+    "backToCategories": "Back to all categories",
+    "searching": "Searching...",
+    "resultCount": "Results: {{count}}",
+    "sortBy": "Sort by",
+    "sort": {
+      "rating": "Top rated",
+      "name": "Name",
+      "nearest": "Nearest to me",
+      "priceAsc": "Price: low to high",
+      "priceDesc": "Price: high to low"
+    },
+    "openOnMap": "Show on the map",
+    "sortedFromYou": "Sorted by distance from your current location.",
+    "noResults": "No matching results right now",
+    "noResultsHint": "Try loosening or resetting the filters.",
+    "capped": "The server returns only the first {{count}} results. Use the filters to narrow the search.",
+    "heroTitle": "The easy way to search",
+    "heroText": "Pick the type of service or property below to see every available result at once, or type what you need in the search box. Narrow the results by area, price or any other detail, without opening the map.",
+    "goToMap": "Go to the interactive map",
+    "contactUs": "Contact us on Facebook",
+    "about": "A digital geographic platform connecting people with the nearest and best services, properties and technicians in Palestine, easily and without middlemen."
   }
 }
