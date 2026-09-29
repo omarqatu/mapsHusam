@@ -312,7 +312,6 @@
     "call": "Call",
     "whatsapp": "WhatsApp",
     "requestService": "Request service",
-    "requestSoon": "Service requests are being moved to the new version",
     "copyLink": "Copy location link",
     "linkCopied": "Location link copied! You can share it now.",
     "copyFailed": "Could not copy the link. Please try again manually.",
@@ -564,5 +563,134 @@
         "jobs": "Job vacancies"
       }
     }
+  },
+  "requests": {
+    "accept": "Accept",
+    "reject": "Decline",
+    "cancel": "Cancel request",
+    "new": "New!",
+    "rate": "Rate the service",
+    "writeComment": "Write a comment",
+    "listTitle": "My requests",
+    "empty": "No active or past service requests.",
+    "loadFailed": "Could not load the list.",
+    "statusLabel": "Status",
+    "noReason": "no reason",
+    "defaultService": "service",
+    "myRequests": "My requests",
+    "status": {
+      "pending": "⏳ Waiting for a reply",
+      "accepted": "💬 Accepted (open the chat)",
+      "rejected": "❌ Declined",
+      "completed": "✅ Agreed",
+      "cancelled": "🚫 Cancelled ({{reason}})"
+    },
+    "flow": {
+      "loginFirst": "Sign in first to request a service.",
+      "missingData": "Could not identify this provider.",
+      "alreadyPending": "⏳ You already have a pending request to this provider, waiting for a reply.",
+      "title": "Service request",
+      "send": "Send request",
+      "message": "A service request will be sent to \"{{provider}}\" ({{service}}). You will be notified when they reply. Continue?",
+      "sent": "Request sent. Follow it or cancel it from \"My requests\".",
+      "failed": "Could not send the request."
+    },
+    "incoming": {
+      "title": "New service request",
+      "text": "Request ({{type}}). Do you want to accept it?",
+      "others": "{{count}} more request(s) are waiting after this one",
+      "rejected": "Request declined.",
+      "respondFailed": "Could not send the reply."
+    },
+    "live": {
+      "accepted": "The provider accepted your request! Opening the chat.",
+      "rejected": "The provider declined your request.",
+      "completed": "The agreement is complete.",
+      "cancelled": "Request cancelled: {{reason}}"
+    },
+    "cancelDialog": {
+      "title": "Cancel request",
+      "label": "Please write the reason for cancelling:",
+      "placeholder": "Write the reason here (required)...",
+      "required": "Please write a reason.",
+      "submit": "Cancel request",
+      "done": "Request cancelled.",
+      "failed": "Could not cancel the request."
+    },
+    "chat": {
+      "title": "Chat with {{name}}",
+      "titleShort": "Chat",
+      "log": "Messages",
+      "placeholder": "Write your message...",
+      "send": "Send",
+      "empty": "No messages yet. Start the conversation!",
+      "loadFailed": "Could not load the messages.",
+      "sendFailed": "Could not send the message.",
+      "notFound": "Request not found.",
+      "hint": "Talk it over with the other side; when you agree, each side presses \"Agreed\".",
+      "archived": "Agreed (archive)",
+      "confirmTitle": "Agreed",
+      "confirmMessage": "Are you sure the deal is done? The contact options (call + WhatsApp) appear once the other side confirms too.",
+      "confirmYes": "Yes, agreed",
+      "confirmFailed": "Could not confirm the agreement.",
+      "closed": {
+        "rejected": "This request was declined; messages cannot be sent.",
+        "cancelled": "This request was cancelled; messages cannot be sent.",
+        "pending": "Waiting for the provider to accept.",
+        "other": "This conversation is closed."
+      }
+    },
+    "contact": {
+      "agreed": "Agreed!",
+      "none": "Contact numbers are not available.",
+      "title": "Agreed! Get in touch now",
+      "call": "Call {{phone}}",
+      "whatsapp": "WhatsApp {{number}}",
+      "otherFallback": "there",
+      "serviceFallback": "the service",
+      "waMessage": "Hello {{name}}, I am contacting you about the service ({{service}}) through the Palestine services map platform."
+    },
+    "rating": {
+      "title": "Rate the service",
+      "question": "How was your experience with {{provider}} ({{service}})?",
+      "info": "Your rating helps others choose a provider.",
+      "stars": "Star rating",
+      "pick": "Pick the number of stars",
+      "pickStars": "Please pick a star rating",
+      "labels": {
+        "1": "Very bad",
+        "2": "Bad",
+        "3": "Average",
+        "4": "Good",
+        "5": "Excellent"
+      },
+      "commentLabel": "Your comment (optional)",
+      "commentHint": "Write the comment now or later from \"My requests\".",
+      "commentPlaceholder": "Tell us about your experience with the provider... (optional)",
+      "skip": "Later",
+      "submit": "Send rating",
+      "failed": "Could not send the rating."
+    },
+    "comment": {
+      "title": "Write a comment",
+      "intro": "Share your experience; your comment shows on the service card.",
+      "label": "Your comment",
+      "placeholder": "Tell us about your experience with the provider...",
+      "required": "Please write a comment",
+      "submit": "Send comment",
+      "done": "Comment added. Thank you!",
+      "failed": "Could not add the comment."
+    }
+  },
+  "notificationsMenu": {
+    "title": "Notifications",
+    "open": "Notifications",
+    "unread": "{{count}} unread",
+    "empty": "No notifications",
+    "markAll": "Mark all as read",
+    "refresh": "Refresh",
+    "loadFailed": "Could not load notifications",
+    "enableSystem": "Enable browser notifications",
+    "justNow": "now"
   }
 }
