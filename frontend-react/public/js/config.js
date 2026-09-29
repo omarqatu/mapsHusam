@@ -51,7 +51,7 @@ const MAP_CONFIG = {
 
         // المناسبات والترفيه والضيافة
         'party_planner', 'zaffa_bands', 'music_bands', 'party_rental', 'clown_entertainer',
-        'martial_arts_gymnastics', 'public_parks_recreation', 'hotels',
+        'martial_arts_gymnastics', 'public_parks_recreation', 
         'barber_shop', 'video_design_ads', 'photographers',
 
         // المتاجر والمطاعم والتعليم والمعالم والوظائف وباقي الخدمات
@@ -124,6 +124,8 @@ const MAP_CONFIG = {
     serviceFields: [
         { name: 'name', label: 'اسم مزود الخدمة', type: 'text' },
         { name: 'location_name', label: 'المنطقة', type: 'text', autoFill: true },
+        { name: 'price', label: 'السعر ($)', type: 'number' },
+        { name: 'area', label: 'المساحة (م²)', type: 'number' },
         { name: 'whatsapp', label: 'رقم الواتساب', type: 'text' },
         { name: 'phone', label: 'رقم الهاتف', type: 'text' },
         { name: 'rating', label: 'التقييم (1-10)', type: 'number' },

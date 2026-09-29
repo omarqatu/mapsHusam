@@ -187,7 +187,8 @@
         const infoRow = (icon, title, value) => value !== undefined && value !== null && String(value).trim() !== ''
             ? `<div class="featured-services-card-detail"><b>${icon} ${title}:</b> ${escapeHtml(value)}</div>` : '';
         const currency = ({ USD: 'دولار', ILS: 'شيقل', JOD: 'دينار' })[props.currency] || '';
-        const propertyDetails = isRealEstate ? [
+        const isPropertyService = ['villas_rent', 'hotels'].includes(String(layer).toLowerCase());
+        const propertyDetails = (isRealEstate || isPropertyService) ? [
             infoRow('💰', 'السعر', props.price !== undefined && props.price !== '' ? `${Number(props.price).toLocaleString()} ${currency}` : ''),
             infoRow('📐', 'المساحة', props.area ? `${props.area} م²` : '')
         ].join('') : '';
@@ -210,11 +211,16 @@
         const status = props.auto_status !== undefined && props.auto_status !== null
             ? `<div class="featured-services-card-meta"><i class="fas fa-circle" style="color:${parseInt(props.auto_status, 10) === 0 ? '#20a05a' : '#d64545'};"></i> ${parseInt(props.auto_status, 10) === 0 ? 'متاح الآن' : 'مغلق حالياً'}${props.work_hours ? ` · ${escapeHtml(props.work_hours)}` : ''}</div>`
             : '';
+        const ratingFeatureId = props.id !== undefined && props.id !== null ? String(props.id) : '';
+        const actualRating = isPropertyService && ratingFeatureId
+            ? `<div class="featured-services-card-meta featured-service-rating" data-service-layer="${escapeHtml(layer)}" data-feature-id="${escapeHtml(ratingFeatureId)}"><i class="fas fa-star" style="color:#f5b301"></i> جارٍ تحميل التقييم...</div>`
+            : '';
         return `<div class="featured-services-card-content">
             <span class="featured-services-card-badge"><i class="fas fa-star"></i> ${escapeHtml(label)} · ${escapeHtml(layerLabel(layer))}${featureId !== '' ? ` <span class="featured-services-card-id">(رقم: ${escapeHtml(featureId)})</span>` : ''}</span>
             <h5 class="featured-services-card-title">${escapeHtml(name)}</h5>
             ${location ? `<div class="featured-services-card-meta"><i class="fas fa-map-marker-alt"></i> ${escapeHtml(location)}</div>` : ''}
             ${status}
+            ${actualRating}
             ${infoRow('🏘️', 'المدينة / القرية', props.village_a)}
             ${infoRow('🌍', 'المحافظة', props.gov_a)}
             ${propertyDetails}
@@ -222,6 +228,31 @@
             ${barrierDetails}
             ${description ? `<div class="featured-services-card-description">${escapeHtml(description)}</div>` : ''}
         </div>`;
+    }
+
+    async function loadPropertyServiceRatings(root) {
+        if (!root) return;
+        const widgets = [...root.querySelectorAll('.featured-service-rating[data-service-layer][data-feature-id]')];
+        await Promise.all(widgets.map(async widget => {
+            try {
+                const params = new URLSearchParams({
+                    service_layer: widget.dataset.serviceLayer,
+                    feature_id: widget.dataset.featureId
+                });
+                const response = await fetch(`${API_ROOT}api/service-ratings?${params}`);
+                if (!response.ok) throw new Error('تعذر جلب التقييم');
+                const data = await response.json();
+                if (!data.totalRatings) {
+                    widget.innerHTML = '<i class="fas fa-star" style="color:#bbb"></i> لا يوجد تقييمات';
+                    return;
+                }
+                const average = Number(data.averageRating) || 0;
+                const stars = '★'.repeat(Math.max(0, Math.min(5, Math.round(average))));
+                widget.innerHTML = `<span style="color:#f5b301">${stars}</span> ${average.toFixed(1)} (${Number(data.totalRatings)} تقييم)`;
+            } catch (_) {
+                widget.textContent = 'تعذر تحميل التقييم';
+            }
+        }));
     }
 
     function getEntryCoordinates(entry) {
@@ -334,6 +365,14 @@
         const propertyLayers = REAL_ESTATE_TARGETS.map(item => item.layer);
         const selected = propertyLayers.map(layer => items.find(item => item.properties?.discriminator === layer)).filter(Boolean);
         const selectedIds = new Set(selected);
+        // لا تُسقط الفنادق والفلل من الأقسام عند وجود عدد كبير من النتائج.
+        ['hotels', 'villas_rent'].forEach(layer => {
+            const item = items.find(candidate => candidate.properties?.discriminator === layer);
+            if (item && !selectedIds.has(item)) {
+                selected.push(item);
+                selectedIds.add(item);
+            }
+        });
         selected.push(...items.filter(item => !selectedIds.has(item)).slice(0, Math.max(0, 10 - selected.length)));
         const cards = selected.slice(0, 10).map(item => cardMarkup(item, mode, label)).filter(Boolean);
         return cards.join('');
@@ -360,6 +399,28 @@
             } catch (_) { return []; }
         }));
         return results.flat();
+    }
+
+    async function fetchBeforeAfterServices() {
+        const params = new URLSearchParams({
+            layer: 'service_all', workspace: 'services',
+            field_0: 'details_link_1', operator_0: 'notempty',
+            field_1: 'details_link_2', operator_1: 'notempty',
+            conditions_count: '2'
+        });
+        try {
+            const response = await fetch(`${API_ROOT}api/search-features?${params}`);
+            if (!response.ok) return [];
+            const data = await response.json();
+            return (data.features || []).filter(feature => {
+                const layer = feature.properties?.discriminator;
+                return layer && !isGloballyExcluded(layer)
+                    && detailsValue(feature.properties || {}, 1)
+                    && detailsValue(feature.properties || {}, 2);
+            }).map(feature => ({ ...feature, properties: { ...feature.properties } }));
+        } catch (_) {
+            return [];
+        }
     }
 
     async function fetchUserRatedServices() {
@@ -585,13 +646,12 @@
         if (!root || root.dataset.loaded === '1' || root.dataset.loaded === 'loading') return;
         root.dataset.loaded = 'loading';
         try {
-            const [featured, recommendedItems, userRated] = await Promise.all([
-                fetchRatingServices(10), fetchRatingServices(9.9), fetchUserRatedServices()
+            const [featured, recommendedItems, userRated, beforeAfter] = await Promise.all([
+                fetchRatingServices(10), fetchRatingServices(9.9), fetchUserRatedServices(), fetchBeforeAfterServices()
             ]);
             const mediaPool = [...featured, ...recommendedItems];
             const withImages = mediaPool.filter(item => mediaValue(item.properties || {}, 'image'));
             const withVideos = mediaPool.filter(item => mediaValue(item.properties || {}, 'video'));
-            const beforeAfter = mediaPool.filter(item => detailsValue(item.properties || {}, 1) && detailsValue(item.properties || {}, 2));
             root.innerHTML = `<p class="featured-services-intro">تضم هذه البوابة الخدمات المميزة والأكثر نشاطاً، والأعلى تقييماً، والخدمات التي تحتوي على صور وفيديوهات وروابط لعرض أعمالها قبل وبعد.</p>
                 <section class="featured-services-section featured-nearby-section"><h4><i class="fas fa-location-dot"></i> خدمات قريبة من موقعي</h4>${nearbyFilterMarkup()}</section>
                 ${sectionMarkup('المميزين', 'fa-star', featured, 'featured', 'مميز')}
@@ -600,6 +660,7 @@
                 ${sectionMarkup('صور', 'fa-image', withImages, 'photo', 'صور')}
                 ${sectionMarkup('فيديوهات', 'fa-video', withVideos, 'video', 'فيديو')}
                 ${sectionMarkup('قبل وبعد', 'fa-right-left', beforeAfter, 'beforeAfter', 'قبل وبعد')}`;
+            loadPropertyServiceRatings(root);
             root.dataset.userRatedCount = String(userRated.length);
             root.dataset.loaded = '1';
         } catch (error) {

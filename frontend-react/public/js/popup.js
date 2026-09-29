@@ -690,6 +690,7 @@ function initializePopup(map) {
 
         const isRealEstate = realEstateLayerNames.includes(layerTitle);
         const isService = isServiceAllLayer;
+        const isPropertyService = ['villas_rent', 'hotels'].includes(String(discriminator || '').toLowerCase());
         const isAreaLayer = layerTitle === areaLayerName; 
         const isRoadBarriers = discriminator === 'road_barriers';
 
@@ -794,9 +795,13 @@ function initializePopup(map) {
                 bodyHtml += window.buildFuelAvailabilityHtml(props);
             }
 
-            if (isRealEstate) {
-                if (props.price) bodyHtml += `<b>💰 السعر:</b> ${Number(props.price).toLocaleString()} ${getCurrencySymbol(props.currency)}<br>`;
+            if (isRealEstate || isPropertyService) {
+                if (props.price !== undefined && props.price !== null && props.price !== '') {
+                    bodyHtml += `<b>💰 السعر:</b> ${Number(props.price).toLocaleString()} ${getCurrencySymbol(props.currency)}<br>`;
+                }
                 if (props.area) bodyHtml += `<b>📐 المساحة:</b> ${props.area} م²<br>`;
+            }
+            if (isRealEstate) {
                 if (props.village_a) bodyHtml += `<b>🏘️ البلدة:</b> ${window.sanitizeHTML(props.village_a)}<br>`;
                 if (props.gov_a) bodyHtml += `<b>🌍 المحافظة:</b> ${window.sanitizeHTML(props.gov_a)}<br>`;
                 if (props.des) bodyHtml += `<div style="margin-top:5px; background:#f9f9f9; padding:5px; border-radius:4px; word-wrap:break-word; overflow-wrap:break-word; white-space:normal;"><b>📝 الوصف:</b> ${window.sanitizeHTML(props.des)}</div>`;

@@ -331,13 +331,37 @@ async function ensureSchemaColumns() {
         // 🆕 عمود مصدر الحدث (map / quick_search) لتمييز زيارات الخريطة عن زيارات
         // صفحة البحث السريع ضمن إحصائيات المنصة
         await servicesPool.query(`ALTER TABLE public.map_service_stats ADD COLUMN IF NOT EXISTS source_page TEXT`);
-        console.log('✅ تم التأكد من وجود أعمدة force_logout_flag و whatsapp_number و source_page');
+        console.log('✅ تم التأكد من أعمدة force_logout_flag و whatsapp_number و source_page');
     } catch (err) {
         console.error('⚠️ خطأ أثناء التأكد من مخطط قاعدة البيانات:', err.message);
     }
 }
 
 ensureSchemaColumns();
+
+// تأكد بشكل مستقل من حقول الخدمات العقارية؛ لا تجعل ترقية جدول آخر تمنعها.
+async function ensureServicePropertyColumns() {
+    try {
+        await servicesPool.query(`
+            ALTER TABLE public.service_all
+                ADD COLUMN IF NOT EXISTS price NUMERIC,
+                ADD COLUMN IF NOT EXISTS area NUMERIC
+        `);
+        const result = await servicesPool.query(`
+            SELECT column_name
+            FROM information_schema.columns
+            WHERE table_schema = 'public' AND table_name = 'service_all'
+              AND column_name = ANY($1::text[])
+        `, [['price', 'area']]);
+        const present = new Set(result.rows.map(row => row.column_name));
+        const missing = ['price', 'area'].filter(column => !present.has(column));
+        if (missing.length) throw new Error(`أعمدة غير موجودة بعد التهيئة: ${missing.join(', ')}`);
+        console.log('✅ service_all يحتوي أعمدة السعر والمساحة المطلوبة: price, area');
+    } catch (err) {
+        console.error('❌ تعذر تهيئة حقلي السعر والمساحة في service_all:', err.message);
+    }
+}
+ensureServicePropertyColumns();
 
 
 async function ensureWidgetsSchema() {
@@ -565,7 +589,6 @@ async function isActiveAdmin(uid) {
         return false;
     }
 }
-
 
 // 🆕 [إصلاح عرض اسم الطبقة بالعربي]: قاموس ترجمة موحّد يُستخدم عند تسجيل نقرات
 // الاتصال/الواتساب (log-contact-click) لتخزين service_type بالعربي بدل الاسم

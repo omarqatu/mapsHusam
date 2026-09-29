@@ -1249,8 +1249,8 @@ if (ytMatch) {
             try {
                 const params = new URLSearchParams({
                     layer: 'service_all', workspace: 'services',
-                    field_0: 'rating', operator_0: '=', value_0: '10',
-                    field_1: 'rating', operator_1: '=', value_1: '9.9',
+                    field_0: 'details_link_1', operator_0: 'notempty',
+                    field_1: 'details_link_2', operator_1: 'notempty',
                     conditions_count: '2'
                 });
                 const response = await fetch(`${baseUrl}api/search-features?${params.toString()}`);
@@ -1258,7 +1258,8 @@ if (ytMatch) {
                     const data = await response.json();
                     (data.features || []).forEach(f => {
                         const discriminator = f.properties.discriminator;
-                        if (!discriminator || window.isLayerGloballyExcluded(discriminator)) return;
+                        if (!discriminator || window.isLayerGloballyExcluded(discriminator)
+                            || !getMediaValue(f.properties, 'details1') || !getMediaValue(f.properties, 'details2')) return;
                         const item = { layer: discriminator, workspace: 'services', label: serviceNames[discriminator] || discriminator, isRealEstate: false };
                         collected.push({ feature: f, item });
                     });
@@ -1529,8 +1530,15 @@ if (ytMatch) {
                 { id: 'name', name: 'الاسم', type: 'dropdown' }
             ]
         };
+        fallbackFieldsConfig.propertyServices = fallbackFieldsConfig.services.concat([
+            { id: 'price', name: 'السعر', type: 'number' },
+            { id: 'area', name: 'المساحة (م²)', type: 'number' }
+        ]);
 
         const fieldsConfig = window.searchFieldsConfig || fallbackFieldsConfig;
+        if (!fieldsConfig.propertyServices) {
+            fieldsConfig.propertyServices = fallbackFieldsConfig.propertyServices;
+        }
 
         const filtersGrid = document.getElementById('nms-filters-grid');
         const clearSearchBtn = document.getElementById('nms-clear-search');
@@ -1550,6 +1558,8 @@ if (ytMatch) {
             let fields;
             if (cat.isRealEstate) {
                 fields = fieldsConfig.realEstate;
+            } else if (['villas_rentLayer', 'hotelsLayer'].includes(cat.key) && fieldsConfig.propertyServices) {
+                fields = fieldsConfig.propertyServices;
             } else if (cat.key === 'road_barriersLayer' && fieldsConfig.roadBarriers) {
                 fields = fieldsConfig.roadBarriers;
             } else if (cat.key === 'fuel_stationsLayer' && fieldsConfig.fuelStations) {
@@ -1570,6 +1580,7 @@ if (ytMatch) {
             fields.forEach((field, index) => {
                 const filterItem = document.createElement('div');
                 filterItem.className = 'nms-filter-item';
+                filterItem.dataset.fieldId = field.id;
 
                 const label = document.createElement('label');
                 label.textContent = field.name;
@@ -1899,7 +1910,7 @@ if (ytMatch) {
 
                 // معالجة العملة
                 const currencySelect = filterItem.querySelector('select[data-field-id="currency"]');
-                if (currencySelect && currencySelect.value) {
+                if (isRealEstate && currencySelect && currencySelect.value) {
                     params.append(`field_${conditionIndex}`, 'currency');
                     params.append(`operator_${conditionIndex}`, '=');
                     params.append(`value_${conditionIndex}`, currencySelect.value);

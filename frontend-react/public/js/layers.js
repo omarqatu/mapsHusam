@@ -361,9 +361,22 @@ if (MAP_CONFIG && MAP_CONFIG.globalExclusions) {
         let currentIcon = info.icon;
         let labelFieldName = 'name';
 
-        if (discriminator === 'road_barriers') {
+                if (discriminator === 'road_barriers') {
+            // 🆕 [stop2]: الأيقونة تعكس "أسوأ حالة" بين الاتجاهين (للداخل/للخارج) -
+            // فلو أحد الاتجاهين مغلق حتى لو الآخر مفتوح، تظهر الأيقونة بحالة الإغلاق
+            // لتنبيه المستخدم فوراً من نظرة الخريطة، والتفاصيل الكاملة بالبوب أب
+            const severityOrder = ['0', '2', '4', '3', '1']; // من الأقل خطورة للأكثر: مفتوح < أزمة خفيفة < تفتيش < أزمة خانقة < مغلق
             const rawStop = f.get('stop');
-            const statusInfo = window.getRoadBarrierStopInfo(rawStop);
+            const rawStop2 = f.get('stop2');
+            const hasStop2 = rawStop2 !== undefined && rawStop2 !== null && String(rawStop2).trim() !== '';
+
+            let worstVal = String(rawStop);
+            if (hasStop2) {
+                const idxStop = severityOrder.indexOf(String(rawStop));
+                const idxStop2 = severityOrder.indexOf(String(rawStop2));
+                if (idxStop2 > idxStop) worstVal = String(rawStop2);
+            }
+            const statusInfo = window.getRoadBarrierStopInfo(worstVal);
             currentIcon = statusInfo.icon;
 
             const featureName = f.get('name') || '';
@@ -374,7 +387,6 @@ if (MAP_CONFIG && MAP_CONFIG.globalExclusions) {
             }
             labelFieldName = 'display_label';
         }
-
         // نفس تصنيف مستويات الظهور الثلاثة المستخدم سابقاً لكل طبقة على حدة
         const alwaysVisibleLayers = ['road_barriers', 'fuel_stations', 'job_vacancies'];
         const mediumZoomLayers = ['schools_kindergartens', 'city_landmarks'];

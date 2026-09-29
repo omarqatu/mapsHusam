@@ -23,10 +23,21 @@ body {
     display: none;
 }
 
-/* إظهار الزر فقط على الشاشات الكبيرة (الكمبيوتر) */
-@media (min-width: 768px) {
+/* صف أدوات البحث والتنقل بالخريطة يظهر على الكمبيوتر فقط */
+@media (min-width: 1024px) and (hover: hover) and (pointer: fine) {
     .desktop-only-search-btn {
-        display: block;
+        display: flex;
+        position: fixed;
+        top: 20px;
+        left: 20px;
+        z-index: 2000;
+        flex-direction: row;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 8px;
+        direction: ltr;
+        width: max-content;
+        max-width: calc(100vw - 40px);
     }
 
     /* إظهار اللوحات الأصلية في مواقع ثابتة للكمبيوتر */
@@ -77,6 +88,46 @@ body {
         display: none !important;
     }
 }
+
+.map-desktop-action-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    min-height: 42px;
+    padding: 10px 15px;
+    border: 1px solid rgba(255, 255, 255, 0.8);
+    border-radius: 22px;
+    color: #fff;
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: 650;
+    line-height: 1.25;
+    text-decoration: none;
+    white-space: nowrap;
+    direction: rtl;
+    cursor: pointer;
+    box-shadow: 0 4px 12px rgba(15, 23, 42, 0.2);
+    transition: transform 0.18s ease, box-shadow 0.18s ease, filter 0.18s ease;
+}
+
+.map-desktop-action-btn:hover {
+    transform: translateY(-2px);
+    filter: brightness(1.06);
+    box-shadow: 0 7px 16px rgba(15, 23, 42, 0.24);
+}
+
+.map-desktop-action-btn:focus-visible {
+    outline: 3px solid rgba(255, 255, 255, 0.95);
+    outline-offset: 2px;
+}
+
+.map-desktop-action-btn--no-map { background: linear-gradient(135deg, #15803d, #059669); }
+.map-desktop-action-btn--smart-search { background: linear-gradient(135deg, #4f46e5, #2563eb); }
+.map-desktop-action-btn--location-search { background: linear-gradient(135deg, #0891b2, #2563eb); }
+.map-desktop-action-btn--featured { background: linear-gradient(135deg, #ca8a04, #ea580c); }
+.map-desktop-action-btn--roads { background: linear-gradient(135deg, #c2410c, #ea580c); }
+.map-desktop-action-btn--fuel { background: linear-gradient(135deg, #0369a1, #2563eb); }
 
 /* قواعد نهائية للكمبيوتر لتجاوز جميع القيود الأخرى */
 @media (min-width: 768px) {

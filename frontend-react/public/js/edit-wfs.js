@@ -83,6 +83,12 @@ async function sendWFS_T(feature, type) {
         ['name', 'price', 'currency', 'des', 'pic', 'video', 'area', 'end_date', 'work_hours', 'whatsapp', 'phone', 'rating', 'location', 'search_tags'] :
         ['name', 'whatsapp', 'phone', 'pic', 'video', 'rating', 'details_link_1', 'details_link_2', 'end_date', 'work_hours', 'des', 'search_tags'];
 
+    if (!isRealEstate && ['villas_rentLayer', 'hotelsLayer'].includes(selectedLayerName)) {
+        // currency اختيار للعرض في واجهة المنصة ولا يوجد كحقل في service_all.
+        allowedPropsAdd.push('price', 'area');
+        allowedPropsUpdate.push('price', 'area');
+    }
+
     // 🆕 عمود "stop" الخاص بحالة حاجز الطرق (0=مفتوح، 1=مغلق، 2=أزمة خفيفة،
     // 3=أزمة خانقة، 4=تفتيش) - يُضاف فقط عند تحرير طبقة حواجز الطرق
         if (selectedLayerName === 'road_barriersLayer') {
@@ -183,6 +189,10 @@ async function sendWFS_T(feature, type) {
             'geom', 'discriminator', 'name', 'whatsapp', 'phone', 'des', 'pic', 'video', 'rating', 'details_link_1', 'details_link_2', 'end_date', 'work_hours',
             'location_name', 'x_coord', 'y_coord', 'x_global', 'y_global', 'status', 'gov_a', 'village_a', 'start_date', 'auto_status', 'search_tags'
                 ];
+
+        if (!isRealEstate && ['villas_rentLayer', 'hotelsLayer'].includes(selectedLayerName)) {
+            servicesSchemaOrder.push('price', 'area');
+        }
 
         
         if (!isRealEstate) {
@@ -336,7 +346,6 @@ async function sendWFS_T(feature, type) {
     }).then(async res => {
         const text = await res.text();
         if (res.ok && !text.includes('Exception') && !text.includes('XpathException')) {
-            
             Swal.fire({
                 icon: 'success',
                 title: 'تم الحفظ بنجاح!',
@@ -349,13 +358,23 @@ async function sendWFS_T(feature, type) {
             }
             if (typeof deactivatePointEditTools === 'function') deactivatePointEditTools();
         } else {
+            let serverError = text.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
+            try {
+                const xml = new DOMParser().parseFromString(text, 'text/xml');
+                serverError = xml.getElementsByTagNameNS('*', 'ExceptionText')[0]?.textContent?.trim()
+                    || xml.getElementsByTagName('ServiceException')[0]?.textContent?.trim()
+                    || serverError;
+            } catch (_) { /* احتفظ بنص الاستجابة كما هو بعد تنظيف الوسوم */ }
+            console.error('[WFS Transaction failed]', `HTTP ${res.status}: ${serverError || text}`);
             Swal.fire({
                 icon: 'error',
                 title: 'فشل حفظ المعلم بالسيرفر',
-                text: 'حدثت مشكلة تعارض حقول أو صلاحيات داخل الجيوسيرفر. تفقد الكونسول لمشاهدة الـ XML Error.',
+                text: serverError.slice(0, 700) || `رفض GeoServer الحفظ (HTTP ${res.status}).`,
                 confirmButtonText: 'موافق'
             });
-            if (typeof deactivatePointEditTools === 'function') deactivatePointEditTools();
+            if (typeof window.recoverPointEditToolsAfterFailure === 'function') {
+                window.recoverPointEditToolsAfterFailure();
+            }
         }
     }).catch(err => {
         Swal.fire({
@@ -364,6 +383,8 @@ async function sendWFS_T(feature, type) {
             text: 'فشل الاتصال بسيرفر الخرائط الرئيسي، يرجى التحقق من البروكسي أو مسار الوصلة الخارجي.',
             confirmButtonText: 'موافق'
         });
-        if (typeof deactivatePointEditTools === 'function') deactivatePointEditTools();
+        if (typeof window.recoverPointEditToolsAfterFailure === 'function') {
+            window.recoverPointEditToolsAfterFailure();
+        }
     });
 }

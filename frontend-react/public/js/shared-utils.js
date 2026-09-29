@@ -510,6 +510,7 @@ window.buildPopupInfoBlock = function (props, opts) {
     const esc = window.nmsEscape;
     const layer = opts.layer || props.discriminator || '';
     const isRealEstate = !!opts.isRealEstate;
+    const isPropertyService = ['villas_rent', 'hotels'].includes(String(layer).replace(/Layer$/i, '').toLowerCase());
     const compact = !!opts.compact;
     const isRoad = layer === 'road_barriers';
     const isFuel = layer === 'fuel_stations';
@@ -542,14 +543,14 @@ window.buildPopupInfoBlock = function (props, opts) {
         html += window.buildFuelAvailabilityHtml(props);
     }
 
-    if (isRealEstate) {
+    if (isRealEstate || isPropertyService) {
         if (props.price) {
             const symbols = { USD: 'دولار', ILS: 'شيقل', JOD: 'دينار' };
             html += row('line', `<b>💰 السعر:</b> ${Number(props.price).toLocaleString()} ${symbols[props.currency] || ''}`);
         }
         if (props.area) html += row('line', `<b>📐 المساحة:</b> ${esc(props.area)} م²`);
-        if (props.village_a) html += row('line', `<b>🏘️ البلدة:</b> ${esc(props.village_a)}`);
-        if (props.gov_a) html += row('line', `<b>🌍 المحافظة:</b> ${esc(props.gov_a)}`);
+        if (isRealEstate && props.village_a) html += row('line', `<b>🏘️ البلدة:</b> ${esc(props.village_a)}`);
+        if (isRealEstate && props.gov_a) html += row('line', `<b>🌍 المحافظة:</b> ${esc(props.gov_a)}`);
     }
 
     if (props.des) html += row('desc', `<b>📝 ${isRoad ? 'ملاحظات' : 'الوصف'}:</b> ${esc(props.des)}`);
