@@ -8,7 +8,7 @@ Status legend: ⬜ not started · 🟨 in progress · ✅ ported & verified · �
   `dist/`, `frontend-react/dist/` — `git rm -r --cached`, own commit. Add `dist/` to `.gitignore`.
 - ✅ Review `frontend-react/` before deleting — it is **not** empty (src, docs,
   `MOBILE-APP-READINESS.md`). Done: its docs were 1–2KB stubs of the fuller root `docs/`; the 3 unique files moved to `docs/`, the rest (React 18 JS skeleton, HTML copies) deleted.
-- ⬜ `docs/react-migration/HOUSE-STYLE.md`: a ≤2-page digest of `../pwa-1/clients/web` conventions
+- ✅ `docs/react-migration/HOUSE-STYLE.md`: a ≤2-page digest of `../pwa-1/clients/web` conventions
   (folder layout, ui-kit component APIs, query/mutation hooks, forms, i18n, test style), so sessions
   read the digest instead of the reference repo.
 
@@ -99,7 +99,14 @@ For each page, list from the legacy code — not from memory:
 - `localStorage`/`sessionStorage` keys it reads or writes.
 - Mobile-specific behaviour.
 
-## Backend asks (don't fix in the migration — collect here)
+## Server changes (allowed: functionality-preserving improvements, one commit each)
+
+Rule: URLs, methods, auth rules and response shapes stay identical; legacy pages keep working.
+Log each change here: **what · why · how to verify · commit**.
+
+_(none yet)_
+
+## Backend asks (needs the user's decision — behaviour-changing or larger)
 
 - Tokens are signed without `expiresIn`, and `requireAuth` / `requireAdmin` verify with `ignoreExpiration: true` — a leaked token never expires.
 - WFS-T editing sends GeoServer credentials from the browser (`js/edit-wfs.js`); should move server-side.

@@ -32,9 +32,11 @@ cd web && npm run typecheck && npm run lint && npm test
 
 ## Invariants
 
-- **Backend is frozen during migration.** Don't change `server.js` endpoints or response shapes to
-  suit the new UI. If an endpoint is missing or wrong, write it down in PLAN.md → "Backend asks".
-  Security fixes are the exception and go in their own commit.
+- **Backend: functionality-preserving improvements only.** Existing endpoints keep their URLs,
+  methods, auth rules and response shapes (the legacy pages and the React app both depend on them).
+  Server improvements (security, performance, cleanup) are allowed, each in its **own commit** and
+  each **logged in PLAN.md → "Server changes"** (what, why, how to verify). Anything bigger or
+  behaviour-changing goes to "Backend asks" for the user to decide.
 - **Parity before polish.** A ported page must do everything the legacy page did (see its checklist
   in PLAN.md) before any redesign. Legacy files stay until the React page is verified, then are
   deleted in the same commit that switches the route.
