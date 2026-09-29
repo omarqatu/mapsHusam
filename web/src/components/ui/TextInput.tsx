@@ -32,7 +32,7 @@ export default function TextInput({
         ref={ref}
         aria-invalid={hasError || undefined}
         className={clsx(
-          'w-full rounded-lg border bg-white px-3.5 text-slate-800 placeholder:text-slate-400',
+          'w-full rounded-lg border bg-white px-3.5 text-slate-800 placeholder:text-slate-500',
           'focus:border-brand focus:outline-2 focus:outline-brand/30',
           'disabled:bg-slate-100 disabled:text-slate-500',
           hasError ? 'border-red-400' : 'border-slate-300',

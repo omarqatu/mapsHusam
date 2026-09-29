@@ -1,11 +1,12 @@
 import { useEffect } from 'react';
+import EditTool from '../edit/EditTool';
 import { useSearchUi } from '../search/store';
 import { useMapUi } from '../store';
 import MeasureTool from './MeasureTool';
 import ShareTool from './ShareTool';
 
 /**
- * Mounts the measure and share tools (their layers and panels) and keeps the end-side panels exclusive: opening a
+ * Mounts the measure, share and (admin) edit tools (their layers and panels) and keeps the end-side panels exclusive: opening a
  * tool closes the layer and search panels, and opening either of those closes the tool.
  */
 export default function MapTools() {
@@ -31,6 +32,7 @@ export default function MapTools() {
     <>
       <MeasureTool />
       <ShareTool />
+      <EditTool />
     </>
   );
 }

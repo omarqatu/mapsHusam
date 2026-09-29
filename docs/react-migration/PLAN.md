@@ -158,7 +158,124 @@ Split `index.html` into features, in this order:
    one `toLonLat` (both sides had added one), one Palestine-grid formatter (`formatGrid(coord, decimals)`), clipboard
    helper moved to `lib/clipboard.ts` and reused by the details card and the results link, landscape phones: the tool
    column scrolls and refresh/zoom hide below 560 px height (gestures + auto refresh cover them).
-5. ⬜ Editing (admin): `edit-core.js`, `edit-wfs.js`, `editLines.js`, `editPolygons.js`
+5. ✅ Editing (admin): `edit-core.js`, `edit-wfs.js`, `editLines.js`, `editPolygons.js` → `features/map/edit/`
+
+   **Inventory (read in full: the four `js/edit*.js` files, `index.html` #editPanel / #polygonEditPanel / #lineEditPanel + the three
+   attribute modals, `js/main.js` panel wiring, `js/mobile-tabs.js`, and the `/geoserver-proxy` block of `server.js`).**
+   - *Who:* the panels open only when `currentUserRole === 'admin'` (`main.js`: `display:block !important` for admins; the panel buttons
+     exist for everybody but the panel never shows). No server check: `/geoserver-proxy` is public, so the only real gate is the
+     **GeoServer login typed per save** (Basic auth, `btoa(user:pass)`, never stored). See Backend asks.
+   - *Three panels, three tools each, same shape:* **add**, **modify (data + geometry)**, **delete**. Every tool is a toggle button that
+     first calls `deactivate…()` (removes Draw/Modify/Snap/Select, closes the modal, resets the cursor), needs a layer chosen
+     (points/polygons: `<select>`; lines: fixed) and adds a `Snap` on the layer's source.
+   - *Points (`edit-core.js` + `edit-wfs.js`, workspace by layer):*
+     - Layer list = every vector overlay except the excluded ones → **rent** (`ApartRent`), **sale** (`ApartSale`), and one entry per service
+       type (≈ 68 `discriminator`s) that all write to the single table `services:service_all`.
+     - Add: `Draw Point` → attribute modal → save. A new service gets `discriminator` set at `drawend` (mandatory).
+     - Modify: `Select` (features of the chosen layer; for services ANY service feature — the real type is read from the clicked
+       feature's `discriminator`) → modal → **alert** "click the map for the new position or wait" → next map click moves the point
+       and saves, else after **4 s** it saves in place. (No Modify interaction for points.)
+     - Delete: `Select` → `confirm()` → delete.
+     - Fields (modal): real estate `name, price, currency(USD/ILS/JOD), des, pic, video, area, whatsapp, phone, end_date, work_hours
+       (+ "24 h" button = "متوفر 24 ساعة"), rating 0-10`; services `name, whatsapp, phone, des, pic, video, rating 0-10,
+       details_link_1/2, end_date, work_hours`. Extra selects: `road_barriers` → `stop` (in) and `stop2` (out), 0 open / 1 closed /
+       2 light jam / 3 heavy jam / 4 inspection; `fuel_stations` → `diesel`, `banzen95`, `banzen98` (0 available / 1 not).
+     - Computed on save: `search_tags` (services: Arabic type name + name + first 40 chars of `des` + a fixed keyword list per type;
+       rent/sale: a fixed sentence); `x_coord`/`y_coord` (Palestine grid, 2 dp); rent/sale `X`/`Y`, services `x_global`/`y_global`
+       (WGS84, 6 dp). Insert only: `start_date` = today, `status` 0, `auto_status` 0, `rating` 5 if empty; regional
+       `gov_a`/`village_a` (and `location` for rent/sale) from the `Location` polygon that contains the point (read from the already
+       loaded `locationLayer`; `'غير محدد'` when none); blank defaults `price`/`area` 0, `work_hours` "متوفر 24 ساعة", `name`
+       "خدمة جديدة", `currency` first option.
+     - WFS-T body: Insert in the **strict column order** of the layer (per-table list in the file), `rating` as `toFixed(1)`,
+       geometry `gml:Point srsName=EPSG:28191` `x,y`; Update = allowed-properties only and **only non-empty values** (so a field can
+       never be cleared) + `geom` + `x_coord/y_coord/X,Y|x_global,y_global` + `ogc:FeatureId fid="<typeName>.<n>"`; Delete by FeatureId.
+       Feature id: `feature.getId()` → `fid` → `id`, last segment after `.`.
+   - *Lines (`editLines.js`): one layer, `realestate:RoadsTest`, MultiLineString:* fields `name` (default "طريق جديد"), `road_type`
+     (int), `one_way` (int, 0 both / 1 one way); Add = `Draw LineString` (cursor crosshair, modal after 250 ms); Modify = `Select` +
+     `Modify` on the selected feature + modal; Delete = `confirm()`. On save `gov_a`/`village_a` from the `Location` polygon under the
+     first vertex; insert sets `source`=0, `target`=0, `cost`=0 (pgRouting columns). Geometry sent as `MultiLineString` with
+     `gml:posList`. Cancel in the modal removes the drawn line.
+   - *Polygons (`editPolygons.js`): `realestate:LandSale` (Polygon) and `realestate:Location` (MultiPolygon):* fields land = `name, phone,
+     price, currency, des, pic, video, area, whatsapp, end_date, work_hours, rating 0-5`; location = `gov_a, village_a, location`.
+     Add/Modify = `Draw Polygon` / `Select` → modal ("continue to shape") → **shape phase** with a sub-toolbar: *move points*
+     (`Modify`), *reshape* (a free `Draw LineString` that is never applied to the polygon — effectively a no-op), *new drawing*
+     (removes the polygon, draws another, restores properties and id) and **final save**. Land: `search_tags` from the fixed land
+     sentence + `des`; insert `start_date`/`status`/`auto_status`; regional fields from the `Location` polygon under the interior
+     point; no coordinate columns. Rings are closed before sending; `gml:exterior`/`gml:interior`. Double-click-zoom is off while a
+     polygon tool is active. Delete = SweetAlert confirm.
+   - *Transport (all three):* `POST /geoserver-proxy/wfs` (`text/xml`, WFS 1.1.0 Transaction), two SweetAlert prompts (user, then
+     password), "saving…" spinner, success = `res.ok` and no `Exception` in the text, then `source.refresh()` and deactivate.
+     The proxy whitelists the `typeName` found in the XML (`ALLOWED_LAYERS`) and passes the body and `Authorization` through.
+   - *Storage / sockets / API:* none (no `/api/*` call, no localStorage, no socket event). Mobile: the three panels are tabs of
+     `mobile-tabs.js` ("📝 تحرير نقاط", "🗺️ تحرير مضلعات", "🛣️ تحرير خطوط").
+   - *Legacy defects found while reading (fixed in the port, not copied):* update never clears a field (empty = skipped); real-estate
+     `location` is always "غير محدد" (the auto-fill branch is unreachable for it); a cancelled/failed point insert leaves the sketched
+     point in the layer; every failure closes the tool so the typed data is lost; polygon "reshape" does nothing; the regional
+     look-up only works if the `Location` layer happened to be loaded in the view; the success test is a substring search for
+     "Exception"; user-supplied text is interpolated into `innerHTML` in the modals (stored XSS) and every other page reads it.
+
+   **Built (`web/src/features/map/edit/`):**
+   - `schema.ts` (per-layer fields, insert column order, update columns — data) · `geometry.ts` (rounding, OL geometry → plain
+     EPSG:28191 data, validation) · `attributes.ts` (form ↔ properties, validation, `search_tags`) · `regional.ts` (region look-up)
+     · `buildTx.ts` (everything the legacy `sendWFS_T` decided: defaults, computed columns, allowed columns) · `tx.ts` (`FeatureTx`,
+     `SaveResult`, `featureFid`) · `wfst.ts` (WFS 1.1.0 XML + response parser) · **`transport.ts` → `saveFeature(tx)`, the only file
+     that knows WFS-T** (the UI builds a `FeatureTx`, awaits a `SaveResult`; switching to a server endpoint = change that one
+     function, drop `tx.credentials` and `TRANSPORT_NEEDS_CREDENTIALS`) · `EditPanel.tsx` (Draw / Modify / Snap / Select) ·
+     `AttributeDialog.tsx` · `CredentialsDialog.tsx` · `EditTool.tsx` (admin gate) · `editLayers.ts`.
+   - The admin *Edit* button is in the map's tool column (admins only; the panel also refuses non-admins, closes if the session is
+     lost). `MapTool` gained `'edit'`, so a tap on the map never opens a details card while editing.
+   - The GeoServer login is typed in `CredentialsDialog`: two inputs in that component's state, handed to the one `saveFeature` call,
+     password field emptied before the request starts; no store, storage, URL, log; never in the repo. `transport.ts` refuses to
+     send without it, uses `credentials: 'omit'` and does not attach the app token. (`eslint.config.js` lets `transport.ts` call
+     `fetch`, next to `client.ts` and `geoserver.ts`.)
+
+   **UX changes (each recorded, functionality kept):**
+   - One panel with three tabs (points / lines / polygons) instead of three panels + a select each; a phone shows only the hint and its
+     buttons while a tool is active so the map stays visible (legacy panels covered it).
+   - Real attribute form (labels, number/date inputs, inline errors, rating range) in the shared `Modal`; **Save** or **Move / Edit the
+     shape** (both kinds of legacy flow in one dialog). Legacy: alert + "click within 4 s or it saves in place" for points — now the
+     point is dragged (`Modify`) or the next tap moves it, then an explicit **Save**; lines get the same shape phase (legacy `Modify`
+     was active behind the modal), polygons keep their shape phase (move points, draw again) — and can also be saved without it.
+   - "Finish" and "Undo last point" buttons while drawing lines / polygons (legacy: double click only — impossible with a thumb).
+   - The login dialog stays open on a wrong password or a refusal with the reason (legacy closed the tool and lost the edit); one dialog
+     with both fields instead of two SweetAlert prompts; success / failure as toasts.
+   - Notices when the chosen layer is switched off (with a "Show the layer" button) or too far out to show (real estate is drawn from
+     1 m/px); Escape cancels the tool in progress; an abandoned move puts the point back.
+   - The edit-only layers (roads `RoadsTest`, regions `Location`) are drawn only while their target is chosen (legacy: loaded but never
+     visible unless the layer manager showed them).
+
+   **Legacy defects fixed while porting:** updating can now clear a field (empty → NULL; `name` and `rating` are never blanked); real-estate
+   `location` (and services `location_name`) is filled from the region; real-estate `phone` is no longer dropped on insert; a cancelled or
+   failed insert leaves no ghost point (new shapes are drawn on an overlay, not in the data layer); the region look-up asks GeoServer for
+   the polygon under the point instead of relying on the `Location` layer being loaded; success = a parsed `TransactionResponse` with
+   ≥ 1 feature changed (legacy: no "Exception" substring, so a stale id "succeeded"); a `Location` MultiPolygon with several parts gets
+   one `polygonMember` per polygon; the feature id must belong to the layer's table (`service_all.5` cannot delete a `LandSale` row);
+   user text is only ever JSX text or an escaped XML value (legacy modals: `innerHTML` with `value="${…}"`); shapes are validated (finite,
+   inside the grid box, line ≥ 2 distinct points, ring ≥ 3 corners, no area / self-intersection) before anything is sent.
+
+   **Not ported:** *polygon "reshape"* (`tool-reshape`): it drew a free line that was never applied to the polygon (a no-op). "Move points"
+   and "Draw again" cover what it promised; a real split/reshape needs its own design. No mobile tab bar entry is needed (one Edit
+   button). Legacy files stay until Phase 4 (like the other ported map features).
+
+   **Parity checklist (verified against the local GeoServer through the real UI, Playwright, desktop 1440 and phone 390):**
+   - [x] Admin only: button absent for `user` / `provider`; panel closes if the role is lost (unit) — the write itself is gated by GeoServer's login.
+   - [x] Points — rent (`ApartRent`): add → wrong password refused, nothing written → right password saves; modify data + move; delete (UI round trip, rows checked in Postgres, all removed).
+   - [x] Points — sale and every service type share the same code path; service insert / update / clear / delete, `discriminator`, tags, both coordinate systems, road-barrier (`stop`, `stop2`) and fuel (`diesel`, `banzen95`, `banzen98`) fields (live test, real GeoServer; dialog shown for `fuel_stations`). Not clicked through the UI for each of the 68 types.
+   - [x] Lines (`RoadsTest`): draw with finish button, form, insert (MultiLineString, region, `source`/`target`/`cost` = 0), shape edit view, delete.
+   - [x] Polygons — land (`LandSale`): draw, form, shape phase, *draw again*, save, delete; regions (`Location`, Polygon wrapped to MultiPolygon): add, delete.
+   - [x] Snap added on the layer's source in every tool and double-click zoom switched off while a tool is active (same helper as measure); wired and used in the browser runs, but snapping itself and the zoom restore were not asserted separately.
+   - [x] Computed columns (`search_tags`, `x_coord`/`y_coord`, `X`/`Y`, `x_global`/`y_global`, `start_date`, `status`, `auto_status`, rating 5, `price`/`area` 0, work hours default, region) — unit + live read-back.
+   - [x] Confirm before delete; cancel leaves the data and the geometry untouched (browser: a moved, unsaved point returns to its place).
+   - [x] Layer refresh after a save; no storage keys, no socket, no `/api` call (as legacy).
+   - [ ] **Not verifiable here:** the production GeoServer's own rules — its workspace namespace (`http://localhost/<ws>` is what legacy sent and what the local
+     setup now uses), whether its `fid` sequences are visible to GeoServer (locally an insert into `ApartRent`/`LandSale` answers `ApartRent.null`; the port then
+     just refreshes the layer), which GeoServer users may write, and the WFS-T body against the real production schema.
+
+   **Local dev additions (`dev/geoserver-setup.sh`, still idempotent and local-only):** each workspace's namespace URI is set to
+   `http://localhost/<workspace>` (a fresh local one is `http://<workspace>` and GeoServer then rejects the Transaction), and
+   `RoadsTest.id`'s default is pointed at its owned sequence (`RoadsTest_id_seq`; the copy defaulted to another one, so GeoServer
+   failed with "currval … not yet defined"). Live test: `cd web && VITE_LIVE_API=http://localhost:3000 VITE_GEOSERVER_DEV_PASSWORD=… npm test -- edit.live`
+   (skipped without the password; it deletes everything it creates).
 6. ✅ Provider panel: `provider-panel.js`, `services-bridge.js` → `features/map/provider/`
 
    **Inventory (read from `js/provider-panel.js`, `js/services-bridge.js`, `index.html` #provider-mini-panel, `css/provider-panel.css`,
@@ -473,6 +590,13 @@ Log each change here: **what · why · how to verify · commit**.
 
 - Sessions never expire by design (`requireAuth` uses `ignoreExpiration: true`); revocation is via `token_version` / `is_active` / `force_logout_flag` (checked on every request, cached). Not a hole by itself, but a stolen token stays valid until an admin force-logout or a password change — consider `expiresIn` + refresh, and a self-service "log out everywhere". Needs the user's decision.
 - WFS-T editing sends GeoServer credentials from the browser (`js/edit-wfs.js`); should move server-side.
+  Detail (from porting item 5): `/geoserver-proxy` has **no role check** — the proxy forwards any `POST` (a WFS-T Transaction whose layer is
+  whitelisted) and GeoServer's Basic login is the only gate, so anyone who knows a GeoServer account can write from anywhere, and every
+  admin has to know that account. Proposal: `POST /api/admin/features` (`requireAuth` + admin) taking the `FeatureTx` JSON that
+  `web/src/features/map/edit/tx.ts` already defines (`op`, `layer`, `fid`, `properties`, `geometry`), building the transaction with a
+  server-side GeoServer account from the environment; then only `saveFeature` in `transport.ts` changes. Until then, at minimum:
+  refuse non-`GET` methods on `/geoserver-proxy` unless the request carries an admin app token (needs a header other than `Authorization`,
+  which the Basic login uses).
 - `/api/search-features*` are public and return `SELECT *` — review exposed columns.
 - `/api/search-features?ignore_status=1` bypasses the `status=0 AND auto_status=0` filter with no auth check — anyone can list
   inactive/expired records.

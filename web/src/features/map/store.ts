@@ -2,8 +2,8 @@ import { create } from 'zustand';
 import { DEFAULT_BASEMAP, type BasemapKey, type RealEstateLayerKey } from './config';
 import type { SelectedFeature } from './popup/featureModel';
 
-/** Tools that own map clicks while active (measure draws, share drops a pin). */
-export type MapTool = 'measure' | 'share';
+/** Tools that own map clicks while active (measure draws, share drops a pin, edit draws / picks features — admins only). */
+export type MapTool = 'measure' | 'share' | 'edit';
 
 // Map UI state only (what is switched on). Features/data never live here.
 interface MapUiState {
