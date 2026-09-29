@@ -42,7 +42,8 @@ export async function saveFeature(tx: FeatureTx): Promise<SaveResult> {
     if (res.status === 401) return { ok: false, reason: 'auth' };
 
     const text = await res.text();
-    if (!res.ok && !text.trimStart().startsWith('<')) return { ok: false, reason: 'rejected', message: `HTTP ${res.status}` };
+    if (!res.ok && !text.trimStart().startsWith('<'))
+      return { ok: false, reason: 'rejected', message: `HTTP ${res.status}` };
 
     const outcome = parseTransactionResponse(text);
     if (outcome.kind === 'exception') {

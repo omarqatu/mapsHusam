@@ -47,9 +47,11 @@ const ringsOf = (polygon: Polygon | number[][][]) =>
  * for a single-polygon table, or a type that does not belong to the layer).
  */
 export function toGeometryData(geom: OlGeometry, stored: StoredGeometry): GeometryData | null {
-  if (geom instanceof Point && stored === 'Point') return { type: 'Point', coordinates: roundPos(geom.getCoordinates()) };
+  if (geom instanceof Point && stored === 'Point')
+    return { type: 'Point', coordinates: roundPos(geom.getCoordinates()) };
   if (stored === 'MultiLineString') {
-    if (geom instanceof LineString) return { type: 'MultiLineString', coordinates: [geom.getCoordinates().map(roundPos)] };
+    if (geom instanceof LineString)
+      return { type: 'MultiLineString', coordinates: [geom.getCoordinates().map(roundPos)] };
     if (geom instanceof MultiLineString)
       return { type: 'MultiLineString', coordinates: geom.getCoordinates().map((l) => l.map(roundPos)) };
     return null;
@@ -62,7 +64,8 @@ export function toGeometryData(geom: OlGeometry, stored: StoredGeometry): Geomet
   }
   if (stored === 'MultiPolygon') {
     if (geom instanceof Polygon) return { type: 'MultiPolygon', coordinates: [ringsOf(geom)] };
-    if (geom instanceof MultiPolygon) return { type: 'MultiPolygon', coordinates: geom.getCoordinates().map(ringsOf) };
+    if (geom instanceof MultiPolygon)
+      return { type: 'MultiPolygon', coordinates: geom.getCoordinates().map(ringsOf) };
     return null;
   }
   return null;
@@ -71,17 +74,13 @@ export function toGeometryData(geom: OlGeometry, stored: StoredGeometry): Geomet
 // --- validation ---------------------------------------------------------------------------------
 
 export type GeometryError =
-  | 'invalidCoordinates'
-  | 'outOfBounds'
-  | 'lineTooShort'
-  | 'ringTooShort'
-  | 'ringNoArea'
-  | 'selfIntersecting';
+  'invalidCoordinates' | 'outOfBounds' | 'lineTooShort' | 'ringTooShort' | 'ringNoArea' | 'selfIntersecting';
 
 /** Generous box around the Palestine Grid; anything outside is a mis-click or a broken projection, never data. */
 const BOUNDS = { minX: -50_000, maxX: 450_000, minY: -100_000, maxY: 500_000 };
 
-const inBounds = ([x, y]: Position) => x >= BOUNDS.minX && x <= BOUNDS.maxX && y >= BOUNDS.minY && y <= BOUNDS.maxY;
+const inBounds = ([x, y]: Position) =>
+  x >= BOUNDS.minX && x <= BOUNDS.maxX && y >= BOUNDS.minY && y <= BOUNDS.maxY;
 
 function cross(o: Position, a: Position, b: Position) {
   return (a[0] - o[0]) * (b[1] - o[1]) - (a[1] - o[1]) * (b[0] - o[0]);

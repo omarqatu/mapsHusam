@@ -86,7 +86,10 @@ const LAND_TAGS =
   'أرض للبيع، أراضي، كوشان، طابو، سكن، زراعي، تجاري، نمرة أرض، استثمار عقاري، مساحات، عقارات للبيع';
 const LAND_TAG_NAME = 'أرض للبيع';
 
-const descriptionStart = (v: PropValue | undefined) => String(v ?? '').trim().substring(0, 40);
+const descriptionStart = (v: PropValue | undefined) =>
+  String(v ?? '')
+    .trim()
+    .substring(0, 40);
 
 /**
  * The searchable keyword text of a row (`search_tags`), or `null` for layers without that column.

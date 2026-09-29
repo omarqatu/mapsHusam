@@ -1,8 +1,8 @@
 // @vitest-environment node
 // Real GeoServer check of the editor's transport. NOT mocked. Runs only against the LOCAL dev stack
 // (dev/README.md): backend on :3000 with GEOSERVER_TARGET at the local GeoServer, and the dev GeoServer login in
-// the environment — the password is never written in the repo:
-//   cd web && VITE_LIVE_API=http://localhost:3000 GEOSERVER_DEV_PASSWORD=... npm test -- edit.live
+// the environment (VITE_GEOSERVER_DEV_PASSWORD, optional VITE_GEOSERVER_DEV_USER) — the password is never written in the repo:
+//   cd web && VITE_LIVE_API=http://localhost:3000 VITE_GEOSERVER_DEV_PASSWORD=... npm test -- edit.live
 // Every feature the test creates is deleted again (also when an assertion fails).
 import GeoJSON from 'ol/format/GeoJSON';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
@@ -17,8 +17,8 @@ import { saveFeature } from './transport';
 import type { FeatureTx } from './tx';
 
 const BASE = import.meta.env.VITE_LIVE_API;
-const PASSWORD = process.env.GEOSERVER_DEV_PASSWORD;
-const USER = process.env.GEOSERVER_DEV_USER ?? 'admin';
+const PASSWORD = import.meta.env.VITE_GEOSERVER_DEV_PASSWORD as string | undefined;
+const USER = (import.meta.env.VITE_GEOSERVER_DEV_USER as string | undefined) ?? 'admin';
 const nativeFetch = globalThis.fetch;
 const credentials = { username: USER, password: PASSWORD ?? '' };
 
@@ -28,7 +28,12 @@ const geojson = new GeoJSON();
 const created: { target: EditTarget; fid: string }[] = [];
 
 /** The feature with this id — or, when GeoServer could not tell the new id (`ApartRent.null`), the one carrying the marker. */
-async function readBack(target: EditTarget, fid: string | undefined, marker: { field: string; value: string }, near = [X, Y]) {
+async function readBack(
+  target: EditTarget,
+  fid: string | undefined,
+  marker: { field: string; value: string },
+  near = [X, Y],
+) {
   const data = (await fetchWfs(
     {
       workspace: target.workspace,
@@ -49,7 +54,15 @@ async function save(tx: FeatureTx) {
 
 const tinySquare = (dx: number): GeometryData => ({
   type: 'Polygon',
-  coordinates: [[[X + dx, Y + 40], [X + dx + 8, Y + 40], [X + dx + 8, Y + 48], [X + dx, Y + 48], [X + dx, Y + 40]]],
+  coordinates: [
+    [
+      [X + dx, Y + 40],
+      [X + dx + 8, Y + 40],
+      [X + dx + 8, Y + 48],
+      [X + dx, Y + 48],
+      [X + dx, Y + 40],
+    ],
+  ],
 });
 
 /** What the editor sends for a drawn Polygon: converted to the type the table stores. */
@@ -61,11 +74,20 @@ const asStored = (dx: number, stored: 'MultiPolygon' | 'Polygon') => {
 describe.skipIf(!BASE || !PASSWORD)('live GeoServer — editor transport (insert / update / delete)', () => {
   beforeAll(() => {
     globalThis.fetch = ((input: RequestInfo | URL, init?: RequestInit) =>
-      nativeFetch(typeof input === 'string' && input.startsWith('/') ? BASE + input : input, init)) as typeof fetch;
+      nativeFetch(
+        typeof input === 'string' && input.startsWith('/') ? BASE + input : input,
+        init,
+      )) as typeof fetch;
   });
   afterAll(async () => {
     for (const { target, fid } of created) {
-      await saveFeature({ op: 'delete', layer: { workspace: target.workspace, typeName: target.typeName }, fid, properties: {}, credentials });
+      await saveFeature({
+        op: 'delete',
+        layer: { workspace: target.workspace, typeName: target.typeName },
+        fid,
+        properties: {},
+        credentials,
+      });
     }
     globalThis.fetch = nativeFetch;
   });
@@ -80,7 +102,13 @@ describe.skipIf(!BASE || !PASSWORD)('live GeoServer — editor transport (insert
     const marker = { field: markerField, value: `${values[markerField]}-${Date.now()}` };
     values = { ...values, [markerField]: marker.value };
     const regional = await lookupRegional([X, Y]);
-    const inserted = buildFeatureTx({ op: 'insert', target, geometry, values: initialValues(target, values), regional });
+    const inserted = buildFeatureTx({
+      op: 'insert',
+      target,
+      geometry,
+      values: initialValues(target, values),
+      regional,
+    });
     if (!inserted.ok) throw new Error(inserted.error);
     const result = await save(inserted.tx);
     if (result.fid) expect(result.fid).toMatch(new RegExp(`^${target.typeName}\\.\\d+$`));
@@ -138,15 +166,31 @@ describe.skipIf(!BASE || !PASSWORD)('live GeoServer — editor transport (insert
     const target = editTargetById('line', 'roads')!;
     const line = (dx: number): GeometryData => ({
       type: 'MultiLineString',
-      coordinates: [[[X + dx, Y + 20], [X + dx + 15, Y + 25], [X + dx + 30, Y + 22]]],
+      coordinates: [
+        [
+          [X + dx, Y + 20],
+          [X + dx + 15, Y + 25],
+          [X + dx + 30, Y + 22],
+        ],
+      ],
     });
-    const { row, after } = await roundTrip(target, line(0), { name: 'طريق اختبار', road_type: '2', one_way: '1' }, line(5));
+    const { row, after } = await roundTrip(
+      target,
+      line(0),
+      { name: 'طريق اختبار', road_type: '2', one_way: '1' },
+      line(5),
+    );
     expect(row.properties).toMatchObject({ road_type: 2, one_way: 1, source: 0, cost: 0 });
     expect(String(after.properties.name)).toMatch(/^طريق اختبار-\d+$/);
   });
 
   it('land polygon (Polygon) and region polygon (Polygon wrapped to MultiPolygon)', async () => {
-    const land = await roundTrip(editTargetById('polygon', 'land')!, tinySquare(0), { name: 'قطعة اختبار', price: '1000' }, tinySquare(2));
+    const land = await roundTrip(
+      editTargetById('polygon', 'land')!,
+      tinySquare(0),
+      { name: 'قطعة اختبار', price: '1000' },
+      tinySquare(2),
+    );
     expect(land.row.properties).toMatchObject({ price: 1000, status: 0 });
 
     const region = await roundTrip(
@@ -157,15 +201,33 @@ describe.skipIf(!BASE || !PASSWORD)('live GeoServer — editor transport (insert
       'gov_a',
     );
     expect(region.row.properties).toMatchObject({ village_a: 'اختبار', location: 'اختبار' });
-    const parsed = geojson.readFeatures({ type: 'FeatureCollection', features: [{ type: 'Feature', id: region.fid, geometry: { type: 'MultiPolygon', coordinates: [] }, properties: {} }] });
+    const parsed = geojson.readFeatures({
+      type: 'FeatureCollection',
+      features: [
+        {
+          type: 'Feature',
+          id: region.fid,
+          geometry: { type: 'MultiPolygon', coordinates: [] },
+          properties: {},
+        },
+      ],
+    });
     expect(parsed).toHaveLength(1);
   });
 
   it('a wrong GeoServer password is reported as `auth`, and nothing is written', async () => {
     const target = serviceTarget('plumber');
-    const built = buildFeatureTx({ op: 'insert', target, geometry: { type: 'Point', coordinates: [X + 50, Y + 50] }, values: initialValues(target, { name: 'must-not-exist' }) });
+    const built = buildFeatureTx({
+      op: 'insert',
+      target,
+      geometry: { type: 'Point', coordinates: [X + 50, Y + 50] },
+      values: initialValues(target, { name: 'must-not-exist' }),
+    });
     if (!built.ok) throw new Error(built.error);
-    const result = await saveFeature({ ...built.tx, credentials: { username: USER, password: `${PASSWORD}-wrong` } });
+    const result = await saveFeature({
+      ...built.tx,
+      credentials: { username: USER, password: `${PASSWORD}-wrong` },
+    });
     expect(result).toEqual({ ok: false, reason: 'auth' });
   });
 

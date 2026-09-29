@@ -49,7 +49,12 @@ export async function lookupRegional(coordinate: Coordinate): Promise<Regional> 
   try {
     const [x, y] = coordinate;
     const data = await fetchWfs(
-      { workspace: 'realestate', typeName: 'Location', srsName: PALESTINE_GRID, bbox: [x - 1, y - 1, x + 1, y + 1] },
+      {
+        workspace: 'realestate',
+        typeName: 'Location',
+        srsName: PALESTINE_GRID,
+        bbox: [x - 1, y - 1, x + 1, y + 1],
+      },
       { timeoutMs: WFS_TIMEOUT_MS },
     );
     return pickRegional(geojson.readFeatures(data), coordinate);

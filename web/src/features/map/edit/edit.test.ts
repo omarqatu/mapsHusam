@@ -4,13 +4,7 @@ import MultiPolygon from 'ol/geom/MultiPolygon';
 import Point from 'ol/geom/Point';
 import Polygon from 'ol/geom/Polygon';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import {
-  buildSearchTags,
-  initialValues,
-  parseValues,
-  validateValues,
-  ALWAYS_OPEN,
-} from './attributes';
+import { buildSearchTags, initialValues, parseValues, validateValues, ALWAYS_OPEN } from './attributes';
 import { buildFeatureTx, coordinateColumns } from './buildTx';
 import {
   fixed,
@@ -24,17 +18,20 @@ import { NO_REGION, pickRegional } from './regional';
 import { POINT_TARGETS, editTargetById, serviceTarget } from './schema';
 import { saveFeature } from './transport';
 import { featureFid, type FeatureTx } from './tx';
-import {
-  buildTransactionXml,
-  escapeXml,
-  geometryGml,
-  parseTransactionResponse,
-} from './wfst';
+import { buildTransactionXml, escapeXml, geometryGml, parseTransactionResponse } from './wfst';
 
 const point = (x = 169463.41, y = 145767.99): GeometryData => ({ type: 'Point', coordinates: [x, y] });
 const square: GeometryData = {
   type: 'Polygon',
-  coordinates: [[[100000, 100000], [100100, 100000], [100100, 100100], [100000, 100100], [100000, 100000]]],
+  coordinates: [
+    [
+      [100000, 100000],
+      [100100, 100000],
+      [100100, 100100],
+      [100000, 100100],
+      [100000, 100000],
+    ],
+  ],
 };
 const target = (kind: 'point' | 'line' | 'polygon', id: string) => editTargetById(kind, id)!;
 
@@ -68,24 +65,68 @@ describe('toGeometryData', () => {
     expect(g).toEqual({ type: 'Point', coordinates: [169463.41, 145767.99] });
   });
   it('wraps a drawn LineString into a MultiLineString', () => {
-    const g = toGeometryData(new LineString([[1, 2], [3, 4]]), 'MultiLineString');
-    expect(g).toEqual({ type: 'MultiLineString', coordinates: [[[1, 2], [3, 4]]] });
+    const g = toGeometryData(
+      new LineString([
+        [1, 2],
+        [3, 4],
+      ]),
+      'MultiLineString',
+    );
+    expect(g).toEqual({
+      type: 'MultiLineString',
+      coordinates: [
+        [
+          [1, 2],
+          [3, 4],
+        ],
+      ],
+    });
   });
   it('wraps a Polygon into a MultiPolygon for Location and keeps it a Polygon for land', () => {
-    const p = new Polygon([[[0, 0], [10, 0], [10, 10], [0, 0]]]);
+    const p = new Polygon([
+      [
+        [0, 0],
+        [10, 0],
+        [10, 10],
+        [0, 0],
+      ],
+    ]);
     expect(toGeometryData(p, 'MultiPolygon')?.type).toBe('MultiPolygon');
     expect(toGeometryData(p, 'Polygon')?.type).toBe('Polygon');
   });
   it('refuses a multi-part shape for a single-polygon table and a wrong type', () => {
     const multi = new MultiPolygon([
-      [[[0, 0], [1, 0], [1, 1], [0, 0]]],
-      [[[5, 5], [6, 5], [6, 6], [5, 5]]],
+      [
+        [
+          [0, 0],
+          [1, 0],
+          [1, 1],
+          [0, 0],
+        ],
+      ],
+      [
+        [
+          [5, 5],
+          [6, 5],
+          [6, 6],
+          [5, 5],
+        ],
+      ],
     ]);
     expect(toGeometryData(multi, 'Polygon')).toBeNull();
     expect(toGeometryData(new Point([1, 1]), 'Polygon')).toBeNull();
   });
   it('closes an open ring', () => {
-    const g = toGeometryData(new Polygon([[[0, 0], [10, 0], [10, 10]]]), 'Polygon');
+    const g = toGeometryData(
+      new Polygon([
+        [
+          [0, 0],
+          [10, 0],
+          [10, 10],
+        ],
+      ]),
+      'Polygon',
+    );
     expect(g?.type === 'Polygon' && g.coordinates[0].length).toBe(4);
   });
 });
@@ -93,7 +134,17 @@ describe('toGeometryData', () => {
 describe('validateGeometry', () => {
   it('accepts a normal point, line and polygon', () => {
     expect(validateGeometry(point())).toBeNull();
-    expect(validateGeometry({ type: 'MultiLineString', coordinates: [[[1, 2], [3, 4]]] })).toBeNull();
+    expect(
+      validateGeometry({
+        type: 'MultiLineString',
+        coordinates: [
+          [
+            [1, 2],
+            [3, 4],
+          ],
+        ],
+      }),
+    ).toBeNull();
     expect(validateGeometry(square)).toBeNull();
   });
   it('rejects NaN and far-away coordinates', () => {
@@ -102,28 +153,91 @@ describe('validateGeometry', () => {
   });
   it('rejects a one-point line and a zero-length line', () => {
     expect(validateGeometry({ type: 'MultiLineString', coordinates: [[[1, 2]]] })).toBe('lineTooShort');
-    expect(validateGeometry({ type: 'MultiLineString', coordinates: [[[1, 2], [1, 2]]] })).toBe('lineTooShort');
+    expect(
+      validateGeometry({
+        type: 'MultiLineString',
+        coordinates: [
+          [
+            [1, 2],
+            [1, 2],
+          ],
+        ],
+      }),
+    ).toBe('lineTooShort');
   });
   it('rejects a ring with too few points or no area', () => {
-    expect(validateGeometry({ type: 'Polygon', coordinates: [[[0, 0], [1, 1], [0, 0]]] })).toBe('ringTooShort');
-    expect(validateGeometry({ type: 'Polygon', coordinates: [[[0, 0], [1, 1], [2, 2], [0, 0]]] })).toBe('ringNoArea');
+    expect(
+      validateGeometry({
+        type: 'Polygon',
+        coordinates: [
+          [
+            [0, 0],
+            [1, 1],
+            [0, 0],
+          ],
+        ],
+      }),
+    ).toBe('ringTooShort');
+    expect(
+      validateGeometry({
+        type: 'Polygon',
+        coordinates: [
+          [
+            [0, 0],
+            [1, 1],
+            [2, 2],
+            [0, 0],
+          ],
+        ],
+      }),
+    ).toBe('ringNoArea');
   });
   it('rejects a bow-tie (self-intersecting) polygon', () => {
     const bowTie: GeometryData = {
       type: 'Polygon',
-      coordinates: [[[0, 0], [100, 100], [100, 0], [0, 100], [0, 0]]],
+      coordinates: [
+        [
+          [0, 0],
+          [100, 100],
+          [100, 0],
+          [0, 100],
+          [0, 0],
+        ],
+      ],
     };
     expect(validateGeometry(bowTie)).toBe('selfIntersecting');
   });
   it('checks every ring of a MultiPolygon', () => {
-    const bad: GeometryData = { type: 'MultiPolygon', coordinates: [square.type === 'Polygon' ? square.coordinates : [], [[[0, 0], [1, 1], [0, 0]]]] };
+    const bad: GeometryData = {
+      type: 'MultiPolygon',
+      coordinates: [
+        square.type === 'Polygon' ? square.coordinates : [],
+        [
+          [
+            [0, 0],
+            [1, 1],
+            [0, 0],
+          ],
+        ],
+      ],
+    };
     expect(validateGeometry(bad)).toBe('ringTooShort');
   });
 });
 
 describe('representativePoint', () => {
   it('is the first vertex of a line and inside a polygon', () => {
-    expect(representativePoint({ type: 'MultiLineString', coordinates: [[[7, 8], [9, 10]]] })).toEqual([7, 8]);
+    expect(
+      representativePoint({
+        type: 'MultiLineString',
+        coordinates: [
+          [
+            [7, 8],
+            [9, 10],
+          ],
+        ],
+      }),
+    ).toEqual([7, 8]);
     const [x, y] = representativePoint(square);
     expect(x).toBeGreaterThan(100000);
     expect(x).toBeLessThan(100100);
@@ -146,7 +260,12 @@ describe('featureFid', () => {
 describe('form values', () => {
   const svc = serviceTarget('plumber');
   it('fills the dialog from a feature: dates cut to the day, selects default to the first option', () => {
-    const v = initialValues(target('point', 'rent'), { name: 'Ali', end_date: '2027-01-31T00:00:00Z', currency: 'XYZ', price: 5 });
+    const v = initialValues(target('point', 'rent'), {
+      name: 'Ali',
+      end_date: '2027-01-31T00:00:00Z',
+      currency: 'XYZ',
+      price: 5,
+    });
     expect(v.name).toBe('Ali');
     expect(v.end_date).toBe('2027-01-31');
     expect(v.currency).toBe('USD');
@@ -188,7 +307,9 @@ describe('search tags', () => {
   it('rent / sale are fixed sentences; land adds the description; regions and roads have none', () => {
     expect(buildSearchTags(target('point', 'rent'), {})).toContain('شقة للايجار');
     expect(buildSearchTags(target('point', 'sale'), {})).toContain('شقة للبيع');
-    expect(buildSearchTags(target('polygon', 'land'), { des: 'قطعة' })).toMatch(/^أرض للبيع، قطعة، أرض للبيع، أراضي/);
+    expect(buildSearchTags(target('polygon', 'land'), { des: 'قطعة' })).toMatch(
+      /^أرض للبيع، قطعة، أرض للبيع، أراضي/,
+    );
     expect(buildSearchTags(target('polygon', 'locations'), {})).toBeNull();
     expect(buildSearchTags(target('line', 'roads'), {})).toBeNull();
   });
@@ -196,9 +317,24 @@ describe('search tags', () => {
 
 describe('pickRegional', () => {
   const zone = new Feature({ gov_a: 'رام الله', village_a: 'البيرة', location: '' });
-  zone.setGeometry(new Polygon([[[0, 0], [100, 0], [100, 100], [0, 100], [0, 0]]]));
+  zone.setGeometry(
+    new Polygon([
+      [
+        [0, 0],
+        [100, 0],
+        [100, 100],
+        [0, 100],
+        [0, 0],
+      ],
+    ]),
+  );
   it('returns the containing polygon; empty texts become the default', () => {
-    expect(pickRegional([zone], [50, 50])).toEqual({ gov_a: 'رام الله', village_a: 'البيرة', location: 'غير محدد', found: true });
+    expect(pickRegional([zone], [50, 50])).toEqual({
+      gov_a: 'رام الله',
+      village_a: 'البيرة',
+      location: 'غير محدد',
+      found: true,
+    });
   });
   it('returns the default when nothing contains the point', () => {
     expect(pickRegional([zone], [500, 500])).toBe(NO_REGION);
@@ -208,7 +344,14 @@ describe('pickRegional', () => {
 describe('buildFeatureTx', () => {
   const region = { gov_a: 'رام الله', village_a: 'البيرة', location: 'المنارة', found: true };
   const insert = (t = serviceTarget('fuel_stations'), values = {}, g: GeometryData = point()) =>
-    buildFeatureTx({ op: 'insert', target: t, geometry: g, values: initialValues(t, values), regional: region, today: '2026-09-29' });
+    buildFeatureTx({
+      op: 'insert',
+      target: t,
+      geometry: g,
+      values: initialValues(t, values),
+      regional: region,
+      today: '2026-09-29',
+    });
 
   it('insert (service): defaults, tags, region, discriminator, both coordinate systems', () => {
     const r = insert();
@@ -237,14 +380,40 @@ describe('buildFeatureTx', () => {
     const t = target('point', 'rent');
     const r = insert(t, { phone: '0598000000' });
     if (!r.ok) throw new Error(r.error);
-    expect(r.tx.properties).toMatchObject({ location: 'المنارة', phone: '0598000000', price: 0, area: 0, currency: 'USD' });
+    expect(r.tx.properties).toMatchObject({
+      location: 'المنارة',
+      phone: '0598000000',
+      price: 0,
+      area: 0,
+      currency: 'USD',
+    });
     expect(r.tx.columns).toContain('phone');
   });
   it('insert (road): name default, pgRouting columns, region of the first vertex', () => {
     const t = target('line', 'roads');
-    const r = insert(t, {}, { type: 'MultiLineString', coordinates: [[[169000, 145000], [169100, 145100]]] });
+    const r = insert(
+      t,
+      {},
+      {
+        type: 'MultiLineString',
+        coordinates: [
+          [
+            [169000, 145000],
+            [169100, 145100],
+          ],
+        ],
+      },
+    );
     if (!r.ok) throw new Error(r.error);
-    expect(r.tx.properties).toMatchObject({ name: 'طريق جديد', road_type: 0, one_way: 0, source: 0, target: 0, cost: 0, gov_a: 'رام الله' });
+    expect(r.tx.properties).toMatchObject({
+      name: 'طريق جديد',
+      road_type: 0,
+      one_way: 0,
+      source: 0,
+      target: 0,
+      cost: 0,
+      gov_a: 'رام الله',
+    });
   });
   it('insert (region polygon): typed texts win over "not specified"', () => {
     const t = target('polygon', 'locations');
@@ -272,14 +441,22 @@ describe('buildFeatureTx', () => {
   });
   it('update needs an id of the right table; delete too', () => {
     const t = target('polygon', 'land');
-    expect(buildFeatureTx({ op: 'update', target: t, featureId: 'ApartRent.1', geometry: square, values: {} })).toEqual({ ok: false, error: 'noFid' });
-    expect(buildFeatureTx({ op: 'delete', target: t, featureId: null })).toEqual({ ok: false, error: 'noFid' });
+    expect(
+      buildFeatureTx({ op: 'update', target: t, featureId: 'ApartRent.1', geometry: square, values: {} }),
+    ).toEqual({ ok: false, error: 'noFid' });
+    expect(buildFeatureTx({ op: 'delete', target: t, featureId: null })).toEqual({
+      ok: false,
+      error: 'noFid',
+    });
     const del = buildFeatureTx({ op: 'delete', target: t, featureId: 'LandSale.3' });
     expect(del).toMatchObject({ ok: true, tx: { op: 'delete', fid: 'LandSale.3' } });
   });
   it('refuses an invalid shape before anything is built', () => {
     expect(insert(undefined, {}, point(NaN, 1))).toEqual({ ok: false, error: 'invalidCoordinates' });
-    expect(buildFeatureTx({ op: 'insert', target: serviceTarget('plumber'), values: {} })).toEqual({ ok: false, error: 'noGeometry' });
+    expect(buildFeatureTx({ op: 'insert', target: serviceTarget('plumber'), values: {} })).toEqual({
+      ok: false,
+      error: 'noGeometry',
+    });
   });
   it('every point target lists `geom` and only known columns', () => {
     for (const t of POINT_TARGETS) {
@@ -306,7 +483,9 @@ describe('WFS-T XML', () => {
     };
     const xml = buildTransactionXml(tx);
     expect(xml).toContain('<wfs:Insert><services:service_all xmlns:services="http://localhost/services">');
-    expect(xml).toContain('<services:geom><gml:Point srsName="EPSG:28191"><gml:coordinates>1,2</gml:coordinates></gml:Point></services:geom>');
+    expect(xml).toContain(
+      '<services:geom><gml:Point srsName="EPSG:28191"><gml:coordinates>1,2</gml:coordinates></gml:Point></services:geom>',
+    );
     expect(xml).toContain('<services:name>&lt;/services:name&gt;&lt;x/&gt;</services:name>');
     expect(xml).toContain('<services:rating>5.0</services:rating>');
     expect(xml).not.toContain('phone');
@@ -323,8 +502,12 @@ describe('WFS-T XML', () => {
       properties: { name: 'Ali & Sons', phone: null, rating: '7' },
       geometry: point(1, 2),
     });
-    expect(xml).toContain('<wfs:Update typeName="services:service_all" xmlns:services="http://localhost/services">');
-    expect(xml).toContain('<wfs:Property><wfs:Name>services:name</wfs:Name><wfs:Value>Ali &amp; Sons</wfs:Value></wfs:Property>');
+    expect(xml).toContain(
+      '<wfs:Update typeName="services:service_all" xmlns:services="http://localhost/services">',
+    );
+    expect(xml).toContain(
+      '<wfs:Property><wfs:Name>services:name</wfs:Name><wfs:Value>Ali &amp; Sons</wfs:Value></wfs:Property>',
+    );
     expect(xml).toContain('<wfs:Property><wfs:Name>services:phone</wfs:Name></wfs:Property>');
     expect(xml).toContain('<wfs:Value>7.0</wfs:Value>');
     expect(xml).toContain('<wfs:Name>services:geom</wfs:Name>');
@@ -344,21 +527,52 @@ describe('WFS-T XML', () => {
   });
 
   it('GML: MultiLineString as posList members, MultiPolygon with one polygonMember per polygon', () => {
-    expect(geometryGml({ type: 'MultiLineString', coordinates: [[[1, 2], [3, 4]], [[5, 6], [7, 8]]] })).toBe(
+    expect(
+      geometryGml({
+        type: 'MultiLineString',
+        coordinates: [
+          [
+            [1, 2],
+            [3, 4],
+          ],
+          [
+            [5, 6],
+            [7, 8],
+          ],
+        ],
+      }),
+    ).toBe(
       '<gml:MultiLineString srsName="EPSG:28191">' +
         '<gml:lineStringMember><gml:LineString srsName="EPSG:28191"><gml:posList>1 2 3 4</gml:posList></gml:LineString></gml:lineStringMember>' +
         '<gml:lineStringMember><gml:LineString srsName="EPSG:28191"><gml:posList>5 6 7 8</gml:posList></gml:LineString></gml:lineStringMember>' +
         '</gml:MultiLineString>',
     );
-    const ring = [[0, 0], [10, 0], [10, 10], [0, 0]] as [number, number][];
+    const ring = [
+      [0, 0],
+      [10, 0],
+      [10, 10],
+      [0, 0],
+    ] as [number, number][];
     const multi = geometryGml({ type: 'MultiPolygon', coordinates: [[ring], [ring]] });
     expect(multi.match(/<gml:polygonMember>/g)).toHaveLength(2);
-    expect(multi).toContain('<gml:exterior><gml:LinearRing><gml:coordinates decimal="." cs="," ts=" ">0,0 10,0 10,10 0,0</gml:coordinates>');
+    expect(multi).toContain(
+      '<gml:exterior><gml:LinearRing><gml:coordinates decimal="." cs="," ts=" ">0,0 10,0 10,10 0,0</gml:coordinates>',
+    );
   });
 
   it('a polygon with a hole writes gml:interior', () => {
-    const outer = [[0, 0], [10, 0], [10, 10], [0, 0]] as [number, number][];
-    const hole = [[2, 1], [4, 1], [4, 3], [2, 1]] as [number, number][];
+    const outer = [
+      [0, 0],
+      [10, 0],
+      [10, 10],
+      [0, 0],
+    ] as [number, number][];
+    const hole = [
+      [2, 1],
+      [4, 1],
+      [4, 3],
+      [2, 1],
+    ] as [number, number][];
     expect(geometryGml({ type: 'Polygon', coordinates: [outer, hole] })).toContain('<gml:interior>');
   });
 });
@@ -368,12 +582,30 @@ describe('parseTransactionResponse', () => {
     `<?xml version="1.0"?><wfs:TransactionResponse xmlns:wfs="http://www.opengis.net/wfs" version="1.1.0"><wfs:TransactionSummary><wfs:totalInserted>${ins}</wfs:totalInserted><wfs:totalUpdated>${upd}</wfs:totalUpdated><wfs:totalDeleted>${del}</wfs:totalDeleted></wfs:TransactionSummary><wfs:TransactionResults/>${extra}</wfs:TransactionResponse>`;
 
   it('reads counts and the new id of an insert', () => {
-    const xml = ok('<wfs:InsertResults><wfs:Feature><ogc:FeatureId xmlns:ogc="http://www.opengis.net/ogc" fid="service_all.77"/></wfs:Feature></wfs:InsertResults>', 1);
-    expect(parseTransactionResponse(xml)).toEqual({ kind: 'done', inserted: 1, updated: 0, deleted: 0, fid: 'service_all.77' });
+    const xml = ok(
+      '<wfs:InsertResults><wfs:Feature><ogc:FeatureId xmlns:ogc="http://www.opengis.net/ogc" fid="service_all.77"/></wfs:Feature></wfs:InsertResults>',
+      1,
+    );
+    expect(parseTransactionResponse(xml)).toEqual({
+      kind: 'done',
+      inserted: 1,
+      updated: 0,
+      deleted: 0,
+      fid: 'service_all.77',
+    });
   });
   it('an id GeoServer could not determine (`Table.null`) is reported as unknown', () => {
-    const xml = ok('<wfs:InsertResults><wfs:Feature><ogc:FeatureId xmlns:ogc="http://www.opengis.net/ogc" fid="ApartRent.null"/></wfs:Feature></wfs:InsertResults>', 1);
-    expect(parseTransactionResponse(xml)).toEqual({ kind: 'done', inserted: 1, updated: 0, deleted: 0, fid: undefined });
+    const xml = ok(
+      '<wfs:InsertResults><wfs:Feature><ogc:FeatureId xmlns:ogc="http://www.opengis.net/ogc" fid="ApartRent.null"/></wfs:Feature></wfs:InsertResults>',
+      1,
+    );
+    expect(parseTransactionResponse(xml)).toEqual({
+      kind: 'done',
+      inserted: 1,
+      updated: 0,
+      deleted: 0,
+      fid: undefined,
+    });
   });
   it('reads update and delete counts', () => {
     expect(parseTransactionResponse(ok('', 0, 1, 0))).toMatchObject({ kind: 'done', updated: 1 });
@@ -408,7 +640,10 @@ describe('saveFeature (mocked network — failure cases the real server cannot p
     expect(spy).not.toHaveBeenCalled();
   });
   it('sends the login only as a Basic header of this one request, credentials omitted', async () => {
-    const spy = respond(200, '<wfs:TransactionResponse><wfs:TransactionSummary><wfs:totalDeleted>1</wfs:totalDeleted></wfs:TransactionSummary></wfs:TransactionResponse>');
+    const spy = respond(
+      200,
+      '<wfs:TransactionResponse><wfs:TransactionSummary><wfs:totalDeleted>1</wfs:totalDeleted></wfs:TransactionSummary></wfs:TransactionResponse>',
+    );
     expect(await saveFeature(tx)).toEqual({ ok: true, fid: undefined });
     const [url, init] = spy.mock.calls[0];
     expect(url).toBe('/geoserver-proxy/wfs');
@@ -421,11 +656,17 @@ describe('saveFeature (mocked network — failure cases the real server cannot p
     expect(await saveFeature(tx)).toEqual({ ok: false, reason: 'auth' });
   });
   it('an exception report -> rejected with the server text', async () => {
-    respond(200, '<ows:ExceptionReport><ows:Exception><ows:ExceptionText>no such column</ows:ExceptionText></ows:Exception></ows:ExceptionReport>');
+    respond(
+      200,
+      '<ows:ExceptionReport><ows:Exception><ows:ExceptionText>no such column</ows:ExceptionText></ows:Exception></ows:ExceptionReport>',
+    );
     expect(await saveFeature(tx)).toEqual({ ok: false, reason: 'rejected', message: 'no such column' });
   });
   it('0 features changed -> rejected (a stale id must not look like success)', async () => {
-    respond(200, '<wfs:TransactionResponse><wfs:TransactionSummary><wfs:totalDeleted>0</wfs:totalDeleted></wfs:TransactionSummary></wfs:TransactionResponse>');
+    respond(
+      200,
+      '<wfs:TransactionResponse><wfs:TransactionSummary><wfs:totalDeleted>0</wfs:totalDeleted></wfs:TransactionSummary></wfs:TransactionResponse>',
+    );
     expect(await saveFeature(tx)).toMatchObject({ ok: false, reason: 'rejected' });
   });
   it('network failure -> network', async () => {
@@ -434,6 +675,9 @@ describe('saveFeature (mocked network — failure cases the real server cannot p
   });
   it('a non-Latin password does not throw', async () => {
     respond(401, '');
-    expect(await saveFeature({ ...tx, credentials: { username: 'مدير', password: 'كلمة' } })).toEqual({ ok: false, reason: 'auth' });
+    expect(await saveFeature({ ...tx, credentials: { username: 'مدير', password: 'كلمة' } })).toEqual({
+      ok: false,
+      reason: 'auth',
+    });
   });
 });

@@ -734,5 +734,174 @@
     "all": "All ({{count}})",
     "unread": "Unread ({{count}})",
     "noUnread": "No unread notifications"
+  },
+  "edit": {
+    "button": "Edit map data",
+    "title": "Edit the map",
+    "tabsLabel": "Type of feature",
+    "tabs": {
+      "point": "Points",
+      "line": "Lines",
+      "polygon": "Polygons"
+    },
+    "layer": "Layer to edit",
+    "groups": {
+      "realEstate": "Real estate",
+      "services": "Services"
+    },
+    "targets": {
+      "roads": "Roads and streets",
+      "locations": "Regions (governorate / village)"
+    },
+    "actions": {
+      "add": "Add",
+      "modify": "Edit",
+      "delete": "Delete"
+    },
+    "hint": {
+      "idle": "Choose a layer, then Add, Edit or Delete. You will be asked for the GeoServer login when you save.",
+      "draw": {
+        "point": "Tap the map where the new point goes.",
+        "line": "Tap to add points. Finish with the button below or a double tap.",
+        "polygon": "Tap to add corners. Finish with the button below or a double tap."
+      },
+      "pick": {
+        "modify": "Tap the feature you want to edit.",
+        "delete": "Tap the feature you want to delete."
+      },
+      "shape": {
+        "point": "Drag the point, or tap its new place, then press Save.",
+        "line": "Drag the points of the line (drag a segment to add one), then press Save.",
+        "polygon": "Drag the corners (drag an edge to add one), then press Save."
+      },
+      "redraw": "Draw the new outline of the polygon."
+    },
+    "undoPoint": "Undo last point",
+    "finishShape": "Finish shape",
+    "shape": {
+      "points": "Move points",
+      "redraw": "Draw again"
+    },
+    "layerHidden": "This layer is switched off, so its features cannot be tapped.",
+    "showLayer": "Show the layer",
+    "zoomIn": "Zoom in to see this layer's features on the map.",
+    "dialog": {
+      "addTitle": "New: {{name}}",
+      "editTitle": "Edit: {{name}}",
+      "save": "Save",
+      "movePoint": "Move on the map",
+      "editShape": "Edit the shape",
+      "position": "Position (Palestine Grid):",
+      "hours24": "24 hours",
+      "hoursExample": "e.g. 08:00-16:00"
+    },
+    "fields": {
+      "name": {
+        "realEstate": "Owner name",
+        "service": "Service provider name",
+        "road": "Road name"
+      },
+      "des": {
+        "realEstate": "Property description",
+        "service": "Service and experience description",
+        "road": "Description"
+      },
+      "price": "Price",
+      "currency": "Currency",
+      "pic": "Picture link",
+      "video": "Video link",
+      "area": "Area (m²)",
+      "whatsapp": "WhatsApp number with country code (e.g. 00970...)",
+      "phone": "Phone number (starts with 0, e.g. 0598...)",
+      "end_date": "Subscription end date",
+      "work_hours": "Working hours",
+      "rating": "Rating (0-{{max}})",
+      "details_link_1": "Details link 1",
+      "details_link_2": "Details link 2",
+      "stop": "Barrier status (inbound)",
+      "stop2": "Barrier status (outbound)",
+      "diesel": "Diesel",
+      "banzen95": "Petrol 95",
+      "banzen98": "Petrol 98",
+      "gov_a": "Governorate",
+      "village_a": "City / village",
+      "location": "Area name",
+      "road_type": "Road type (number)",
+      "one_way": "Direction (0 = both ways, 1 = one way)"
+    },
+    "options": {
+      "currency": {
+        "USD": "US dollar $",
+        "ILS": "Shekel ₪",
+        "JOD": "Dinar JD"
+      },
+      "stop": {
+        "0": "Open",
+        "1": "Closed",
+        "2": "Light jam",
+        "3": "Heavy jam",
+        "4": "Inspection and heavy jam"
+      },
+      "stop2": {
+        "0": "Open",
+        "1": "Closed",
+        "2": "Light jam",
+        "3": "Heavy jam",
+        "4": "Inspection and heavy jam"
+      },
+      "diesel": {
+        "0": "Available",
+        "1": "Not available"
+      },
+      "banzen95": {
+        "0": "Available",
+        "1": "Not available"
+      },
+      "banzen98": {
+        "0": "Available",
+        "1": "Not available"
+      }
+    },
+    "errors": {
+      "number": "Enter a valid number",
+      "rating": "Enter a number between 0 and {{max}}",
+      "integer": "Whole numbers only",
+      "noFid": "This feature has no id. Reload the map and try again.",
+      "noGeometry": "Nothing is drawn yet.",
+      "invalidCoordinates": "The shape has invalid coordinates.",
+      "outOfBounds": "The shape is outside the map area.",
+      "lineTooShort": "A line needs two different points.",
+      "ringTooShort": "A polygon needs at least three corners.",
+      "ringNoArea": "The polygon has no area.",
+      "selfIntersecting": "The polygon crosses itself. Move the corners so the edges do not cross.",
+      "badShape": "This shape cannot be saved on this layer."
+    },
+    "delete": {
+      "title": "Delete this feature?",
+      "message": "It is deleted from the database for good.",
+      "messageNamed": "“{{name}}” is deleted from the database for good.",
+      "confirm": "Delete"
+    },
+    "credentials": {
+      "title": "GeoServer login",
+      "intro": "Saving to the map database needs the GeoServer account. It is used for this one save only and is never stored.",
+      "username": "User name",
+      "password": "Password",
+      "confirm": {
+        "insert": "Add to the map",
+        "update": "Save changes",
+        "delete": "Delete"
+      },
+      "failed": {
+        "auth": "Wrong user name or password.",
+        "rejected": "GeoServer refused the change.",
+        "network": "Could not reach the map server. Check the connection and try again."
+      }
+    },
+    "saved": {
+      "insert": "Added to the map.",
+      "update": "Changes saved.",
+      "delete": "Deleted."
+    }
   }
 }

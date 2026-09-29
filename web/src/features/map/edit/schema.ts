@@ -96,39 +96,140 @@ const LAND_FIELDS: readonly FieldDef[] = [
   f('rating', 'number', { max: 5 }),
 ];
 
-const LOCATION_FIELDS: readonly FieldDef[] = [f('gov_a', 'text'), f('village_a', 'text'), f('location', 'text')];
+const LOCATION_FIELDS: readonly FieldDef[] = [
+  f('gov_a', 'text'),
+  f('village_a', 'text'),
+  f('location', 'text'),
+];
 
-const ROAD_FIELDS: readonly FieldDef[] = [f('name', 'text'), f('road_type', 'integer'), f('one_way', 'integer')];
+const ROAD_FIELDS: readonly FieldDef[] = [
+  f('name', 'text'),
+  f('road_type', 'integer'),
+  f('one_way', 'integer'),
+];
 
 // Column order = the GeoServer schema order the legacy editor insisted on. Real-estate `phone` was missing from the
 // legacy insert list (typed, then silently dropped); it is appended here.
 const REAL_ESTATE_INSERT = [
-  'geom', 'location', 'name', 'price', 'currency', 'des', 'pic', 'video', 'area',
-  'x_coord', 'y_coord', 'status', 'gov_a', 'village_a', 'X', 'Y', 'start_date', 'end_date', 'work_hours',
-  'auto_status', 'whatsapp', 'search_tags', 'rating', 'phone',
+  'geom',
+  'location',
+  'name',
+  'price',
+  'currency',
+  'des',
+  'pic',
+  'video',
+  'area',
+  'x_coord',
+  'y_coord',
+  'status',
+  'gov_a',
+  'village_a',
+  'X',
+  'Y',
+  'start_date',
+  'end_date',
+  'work_hours',
+  'auto_status',
+  'whatsapp',
+  'search_tags',
+  'rating',
+  'phone',
 ] as const;
 const REAL_ESTATE_UPDATE = [
-  'name', 'price', 'currency', 'des', 'pic', 'video', 'area', 'end_date', 'work_hours', 'whatsapp', 'phone',
-  'rating', 'location', 'search_tags',
+  'name',
+  'price',
+  'currency',
+  'des',
+  'pic',
+  'video',
+  'area',
+  'end_date',
+  'work_hours',
+  'whatsapp',
+  'phone',
+  'rating',
+  'location',
+  'search_tags',
 ] as const;
 
 const SERVICE_INSERT = [
-  'geom', 'discriminator', 'name', 'whatsapp', 'phone', 'des', 'pic', 'video', 'rating', 'details_link_1',
-  'details_link_2', 'end_date', 'work_hours', 'location_name', 'x_coord', 'y_coord', 'x_global', 'y_global',
-  'status', 'gov_a', 'village_a', 'start_date', 'auto_status', 'search_tags',
+  'geom',
+  'discriminator',
+  'name',
+  'whatsapp',
+  'phone',
+  'des',
+  'pic',
+  'video',
+  'rating',
+  'details_link_1',
+  'details_link_2',
+  'end_date',
+  'work_hours',
+  'location_name',
+  'x_coord',
+  'y_coord',
+  'x_global',
+  'y_global',
+  'status',
+  'gov_a',
+  'village_a',
+  'start_date',
+  'auto_status',
+  'search_tags',
 ] as const;
 const SERVICE_UPDATE = [
-  'name', 'whatsapp', 'phone', 'pic', 'video', 'rating', 'details_link_1', 'details_link_2', 'end_date',
-  'work_hours', 'des', 'search_tags',
+  'name',
+  'whatsapp',
+  'phone',
+  'pic',
+  'video',
+  'rating',
+  'details_link_1',
+  'details_link_2',
+  'end_date',
+  'work_hours',
+  'des',
+  'search_tags',
 ] as const;
 
 const LAND_INSERT = [
-  'geom', 'location', 'name', 'phone', 'price', 'currency', 'des', 'pic', 'video', 'area', 'status', 'gov_a',
-  'village_a', 'start_date', 'end_date', 'work_hours', 'auto_status', 'whatsapp', 'search_tags', 'rating',
+  'geom',
+  'location',
+  'name',
+  'phone',
+  'price',
+  'currency',
+  'des',
+  'pic',
+  'video',
+  'area',
+  'status',
+  'gov_a',
+  'village_a',
+  'start_date',
+  'end_date',
+  'work_hours',
+  'auto_status',
+  'whatsapp',
+  'search_tags',
+  'rating',
 ] as const;
 const LAND_UPDATE = [
-  'name', 'phone', 'price', 'currency', 'des', 'pic', 'video', 'area', 'end_date', 'work_hours', 'whatsapp',
-  'rating', 'search_tags',
+  'name',
+  'phone',
+  'price',
+  'currency',
+  'des',
+  'pic',
+  'video',
+  'area',
+  'end_date',
+  'work_hours',
+  'whatsapp',
+  'rating',
+  'search_tags',
 ] as const;
 
 const realEstate = (id: 'rent' | 'sale', typeName: string): EditTarget => ({
@@ -146,7 +247,10 @@ const realEstate = (id: 'rent' | 'sale', typeName: string): EditTarget => ({
 
 /** Road barriers and fuel stations carry extra status columns on top of the common service fields. */
 const SERVICE_EXTRAS: Readonly<Record<string, readonly FieldDef[]>> = {
-  road_barriers: [f('stop', 'select', { options: BARRIER_STATES }), f('stop2', 'select', { options: BARRIER_STATES })],
+  road_barriers: [
+    f('stop', 'select', { options: BARRIER_STATES }),
+    f('stop2', 'select', { options: BARRIER_STATES }),
+  ],
   fuel_stations: [
     f('diesel', 'select', { options: FUEL_STATES }),
     f('banzen95', 'select', { options: FUEL_STATES }),

@@ -41,8 +41,14 @@ export default defineConfig([
   },
   {
     // The only places allowed to call fetch: the API client, the GeoServer reader (no app token to GeoServer),
-    // and tests that stub it.
-    files: ['src/api/client.ts', 'src/api/geoserver.ts', '**/*.test.{ts,tsx}'],
+    // the map editor's write transport (the single WFS-T function; it sends the typed GeoServer login, never the app
+    // token), and tests that stub it.
+    files: [
+      'src/api/client.ts',
+      'src/api/geoserver.ts',
+      'src/features/map/edit/transport.ts',
+      '**/*.test.{ts,tsx}',
+    ],
     rules: { 'no-restricted-globals': 'off' },
   },
 ]);

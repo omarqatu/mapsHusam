@@ -107,7 +107,8 @@ export function buildFeatureTx(input: BuildInput): BuildResult {
   if (withRegion) {
     properties.gov_a = regional.gov_a;
     properties.village_a = regional.village_a;
-    if (target.id === 'land' || target.id === 'rent' || target.id === 'sale') properties.location = regional.location;
+    if (target.id === 'land' || target.id === 'rent' || target.id === 'sale')
+      properties.location = regional.location;
     if (target.workspace === 'services') properties.location_name = regional.location;
   } else {
     // A new region: what the admin typed, else "not specified".

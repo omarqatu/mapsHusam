@@ -152,7 +152,10 @@ const count = (xml: string, tag: string) => {
  */
 export function parseTransactionResponse(xml: string): TransactionOutcome {
   if (/<(?:\w+:)?(?:ExceptionReport|ServiceExceptionReport)\b/.test(xml)) {
-    const text = /<(?:\w+:)?(?:ExceptionText|ServiceException)\b[^>]*>([\s\S]*?)<\/(?:\w+:)?(?:ExceptionText|ServiceException)>/.exec(xml);
+    const text =
+      /<(?:\w+:)?(?:ExceptionText|ServiceException)\b[^>]*>([\s\S]*?)<\/(?:\w+:)?(?:ExceptionText|ServiceException)>/.exec(
+        xml,
+      );
     return { kind: 'exception', message: text ? decodeEntities(text[1]).trim() : '' };
   }
   if (!/<(?:\w+:)?TransactionResponse\b/.test(xml)) return { kind: 'exception', message: '' };
