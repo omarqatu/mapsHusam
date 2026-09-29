@@ -23,3 +23,7 @@ export type { MediaItem } from './MediaGallery';
 export { default as StatCard } from './StatCard';
 export { default as Tabs } from './Tabs';
 export type { TabDef } from './Tabs';
+export { default as Badge } from './Badge';
+export type { BadgeTone } from './Badge';
+export { default as Checkbox } from './Checkbox';
+export { default as FilterField } from './FilterField';

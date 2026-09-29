@@ -39,12 +39,95 @@ Status legend: ⬜ not started · 🟨 in progress · ✅ ported & verified · �
 
 | Route | Legacy source | Status |
 | --- | --- | --- |
-| `/admin/users` | `admin-users.html` (+ `css/admin-users.css`) | ⬜ |
-| `/admin/users/:id/view` | `admin-view-user.html` | ⬜ |
-| `/admin/widgets` | `widgets-admin.html`, `js/widgets-config.js` | ⬜ |
-| `/admin/dashboard` | `dashboard.html` | ⬜ |
+| `/admin/users` | `admin-users.html` (+ `css/admin-users.css`) | ✅ (legacy kept until `web/dist` is served) |
+| `/admin/users/:id/view` | `admin-view-user.html` | ✅ (legacy kept until `web/dist` is served) |
+| `/admin/widgets` | `widgets-admin.html`, `js/widgets-config.js` | ✅ (legacy kept until `web/dist` is served) |
+| `/admin/dashboard` | `dashboard.html` | ✅ (legacy kept until `web/dist` is served) |
 | `/notifications` | `notifications-panel.html` (socket.io) | ✅ |
 | `/widgets/portal`, `/widgets/ticker` | `widgets-portal.html`, `widgets-ticker.html`, `js/widgets-ticker.js` | ⬜ |
+
+### Admin pages — parity checklists (Phase 1, written before the code; ticked after verification)
+
+All four pages: legacy guard = `map_user.role === 'admin'` else redirect; React = `RoleRoute roles={['admin']}`. Every `/api/admin/*`
+call needs `Authorization: Bearer <admin token>` and the server re-checks role + `is_active` + `force_logout_flag` + `token_version`
+on each request (`requireAdmin`). Errors come back as `{ success:false, error }`.
+
+**`/admin/users`** — `admin-users.html`
+- API: `GET /api/admin/users` → `{ users[], onlineUserIds[] (strings), total }`; user = `user_id, full_name, email, phone, role,
+  is_active, status, service_layer, feature_id, x_coord, y_coord, created_at, request_limit, request_limit_period, is_online`
+  (the server's `search` / `status_filter` / `role_filter` query params exist but legacy filters client-side; so do we).
+  `GET /api/admin/online-users` → `{ onlineUserIds }` polled every 8 s (dots only). `POST /api/admin/users/update`
+  `{ user_id, role?, is_active?, service_layer?, feature_id?, new_password?, request_limit?, request_limit_period? }` → `{ success, message }`
+  (server: 400 when nothing to change, 404 unknown user, saving always notifies the user + emits `force_relogin`; role / active / password
+  change bump `token_version` unless the admin edits himself). `POST /api/admin/users/force-logout { user_id }` → `{ message, wasOnline }`.
+  `POST /api/admin/users/force-logout-all { target_type: all|online|offline|selected, user_ids? }` → `{ message, total, online, offline }`.
+  `POST /api/admin/view-session { user_id }` → `{ token, expires_in, user }`.
+- [x] Filters (client side): text (name / email / phone), role, active state, online, linked-to-service, created (2 days / week / month /
+  exact day). [ ] Newest first. [ ] Count of shown users. [ ] "Refresh list".
+- [x] Selection kept across filter changes; select-all acts on the visible rows only (tri-state); counter of all selected.
+- [x] Bulk force-logout: all / online only / offline only / selected (confirm first; selection cleared after success).
+- [x] Row: role badge, online dot, active badge, service layer, feature id, request quota (limit + period, or unlimited), created at.
+- [x] Row actions: view read-only (new page), edit, activate / deactivate (confirm), force-logout (confirm, text differs online/offline).
+- [x] Edit dialog: active, role, service layer (66 layers, none), feature id (only with a layer), request limit (empty = none) + period
+  (enabled only with a limit), new password (>= 6, empty = keep). Sends the payload; success closes + reloads.
+- Storage: none. Mobile: legacy is a 13-column table with sideways scroll.
+
+- **Changed on purpose (users):**
+  - One "User" cell (name, phone, email, id) and one "Service" cell (layer + feature id) instead of 13 columns; phone / email / id are all still shown. Status = active badge + online dot together. Below `md` every row is a card with the same cells and actions.
+  - Native `confirm()` / `alert()` / the alert strip → confirm dialogs and toasts (5 s → 4 s / 8 s for errors). Success texts are translated locally; error texts are the server's.
+  - The "view read-only" button opens the page in the same tab (`/admin/users/:id/view`, back button) instead of a new tab with the token in the URL — the token never appears in a URL any more.
+  - The edit dialog sends only the fields that changed (legacy sent everything, so every save also notified the user and forced a re-login even when nothing changed) and says "nothing was changed" without a request. A new password shorter than 6 is now an error (legacy silently ignored it). Feature id / request limit are validated as whole numbers.
+  - **Dropped: "force the user to change the password at next login".** The legacy checkbox was never sent and the server has no such field — it did nothing. See Backend asks.
+  - Your own row can't be deactivated or force-logged-out (legacy let an admin lock himself out); editing yourself shows a warning; a bulk log-out that includes you says so.
+  - Service-layer list = the map's `SERVICE_TYPES` (68 keys; legacy list had 68 — differences: none) with translated names, searchable.
+  - Paging (25 per page) and sortable columns; "select all shown" applies to every filtered row (as legacy), the counter to all selected.
+  - Online dots poll every 8 s only while the page is open and the tab visible.
+- **Not live-tested on purpose:** bulk log-out targets `all` / `online` / `offline` (they would log out the seeded accounts and flag them); `selected` is tested on throwaway users.
+
+**`/admin/users/:id/view`** — `admin-view-user.html`
+- Legacy: opened in a new tab as `admin-view-user.html?token=<view token>` from `POST /api/admin/view-session`. Read-only, 30 min.
+  `GET /api/admin/view-session/profile` → `{ user }`; `GET /api/admin/view-session/requests` → `{ requests[] }` (as requester or provider:
+  `id, service_type, status, requester_name, provider_full_name, created_at …`); `GET .../requests/:id/messages` → `{ messages[] }`
+  (`sender_role, message, created_at`; 403 if the request is not the viewed user's). These three take the VIEW token (401 when expired).
+- [x] Read-only badge + expiry note. [ ] Profile: name, id, phone, email, role, active, service layer, feature id.
+- [x] Requests list (type + #id, status, requester, provider, date); messages load on first expand, toggle hides.
+- [x] Empty / error states ("invalid link" when there is no token → here: unknown user / failed session).
+
+- **Changed on purpose (view):** the page creates its own 30-minute view session from `/admin/users/:id/view` (legacy needed a token in the URL from the users page), so the link works from bookmarks / history. Role and status are translated; messages / dates use the UI language. The view token is sent through `client.ts` with its own `Authorization` header; a 401 on it (expired) no longer ends the admin's session (`client.ts` change + test).
+
+**`/admin/dashboard`** — `dashboard.html` (provider success stats)
+- API: `GET /api/admin/provider-success-stats` → `{ stats[] }` (`id, username, provider_name, provider_phone, service_layer, service_type, status,
+  contact_type, cancellation_reason, created_at, updated_at …`, newest first, no limit). `DELETE /api/admin/provider-success-stats/:id`.
+- [x] Status mapping: completed/success → successful, cancelled/rejected → cancelled, anything else (accepted, pending) → pending.
+- [x] Contact type: call / whatsapp / service request (default). [ ] Layer shown by its Arabic name.
+- [x] Column filters: user (contains + exact), provider (contains + exact), layer, phone (contains), date (picker + typed dd/mm/yyyy,
+  Arabic digits accepted), contact type, status, cancel reason (contains + exact). [ ] "Shown N of M". [ ] Reload.
+- [x] Delete a record (confirm, irreversible). [ ] Shortcuts: send notification, live-info centre, users.
+
+- **Changed on purpose (dashboard):** the header filter row is a labelled grid (a table header row cannot work on a phone); "contains" text + "exact" drop-downs for user / provider / reason are kept, the exact ones and phone / reason sit under "More filters". Four summary tiles (records in view, successful, pending, cancelled) are new. Layer names follow the UI language; contact-type emoji → icons; browser `alert` / `confirm` → toast / dialog. The three shortcut buttons are links (no new tab); "send notification" goes to `/notifications`, which is the bell's list — legacy `notifications-panel.html` had no send form either.
+
+**`/admin/widgets`** — `widgets-admin.html` + `js/widgets-config.js`
+- API: `GET /api/admin/widgets-data` → `{ groups: { <key>: { data[], updated_at } } }`; `POST /api/admin/widgets-data/:key { items[] }` (keys:
+  currency, gold, weather, fuel, transport_inter_city, transport_intra_city, events — else 400); `GET /api/widgets-data` (public) for the
+  road / fuel "last update"; `GET /api/admin/road-fuel-features` → `{ roadBarriers[{id,name,stop,stop2,updated_at}], fuelStations[{id,name,diesel,banzen95,banzen98,updated_at}] }`
+  (numbers, may be null); `POST /api/admin/update-road-barrier { id, stop?, stop2? }`, `update-fuel-station { id, diesel, banzen95, banzen98 }`,
+  `bulk-update-road-barriers { ids, stop?, stop2? }`, `bulk-update-fuel-stations { ids, diesel?, banzen95?, banzen98? }`,
+  `batch-update-road-barriers { items:[{id,stop?,stop2?}] }`, `batch-update-fuel-stations { items }` (one transaction), `reorder-features { layer, orderedIds }`.
+  Values: road 0 open · 1 closed · 2 light jam · 3 heavy jam · 4 inspection; fuel 0 available · 1 unavailable.
+- [x] 9 tabs: 7 editable groups (currency, gold, weather, fuel, transport between cities, transport in city, events) + roads + fuel stations.
+- [x] Group tab: editable rows (id, label, value, unit / code / weather fields / event date + notes), add row, delete row, reorder rows,
+  save (rows without id are dropped, empty fields omitted, values trimmed), "last update" stamp, refresh.
+  Empty server group → the defaults of `js/widgets-config.js` (weather: three demo cities) are shown as the starting rows.
+- [x] Roads tab: table (id, name, direction in / out select incl. "not set"), single-row save, save all (changed rows only, one
+  transaction), unsaved-row highlight + count, bulk bar (checkboxes + select-all, in / out, confirm, "no change" keeps a direction),
+  reorder + save order, last-update stamp, refresh (asks when unsaved).
+- [x] Fuel tab: same with diesel / 95 / 98 availability.
+- Storage: none. Legacy note: "add a checkpoint / station = use the map editing tool" (item 5, not here).
+- **Changed on purpose (widgets):** 9 scrollable tabs (all panels stay mounted, so unsaved edits survive switching tabs; legacy re-rendered everything after each save and lost other tabs' edits). Rows are cards on phones. Reordering = drag handle (desktop, tables) **plus** move-up / move-down buttons everywhere (HTML5 drag & drop does not work on touch; group rows use the buttons only). Save-order is offered with an "unsaved order" badge. Road / fuel tables show a colour dot by direction; a station with a NULL fuel column shows "not set" instead of silently showing "available" (legacy) and saving keeps the NULL. Single-row saves patch the cached row (no full reload, other unsaved rows keep their edits). The saved group restarts from what the server stored; a row with data but no id is flagged (legacy dropped it silently). Unknown keys inside stored rows are kept (legacy dropped them on save). Defaults for a never-saved group are copied into `features/admin-widgets/model.ts` (`js/widgets-config.js` stays: `widgets-ticker.js` still loads it).
+- **Live tests restore what they touch** (one group's rows, checkpoint / station values, manual order); afterwards only `updated_at` stamps and `display_order` (same visible order) differ.
+
+- **Switch status:** routes are registered in `App.tsx` (`ported`) and verified against the real backend at 1440 px and 390 px (Arabic + English). The legacy `admin-users.html`, `admin-view-user.html`, `dashboard.html`, `widgets-admin.html` (+ `css/admin-users.css`) are **not deleted yet**: `server.js` still does not serve `web/dist` (Phase 0 item), so production would lose the pages, and `index.html` / other legacy pages link to them. Delete them in the commit that makes the server serve these routes. `js/widgets-config.js` must stay (ticker).
+- Tests: `admin-users/model.test.ts`, `admin-dashboard/model.test.ts`, `admin-widgets/model.test.ts`, DataTable phone-cards + client 401 test, live `admin-users/admin.live.test.ts` and `admin-widgets/admin.live.test.ts` (throwaway users `LIVE-ADMIN-*`, removed from the dev DB through `web/src/test/liveDb.ts`).
 
 ## Phase 2 — Search without map
 
@@ -718,3 +801,6 @@ Log each change here: **what · why · how to verify · commit**.
 - **Extras:** `/api/widgets-data` `road_status_updated_at` / `fuel_status_updated_at` are `MAX(updated_at)` over all rows of the
   layer, including inactive ones the list itself hides (`status = 0 AND auto_status = 0`), so the stamp can be newer than any row
   shown. Also `/api/top-rated-providers` never checks that the rated feature still exists / is active (the UI drops missing ones).
+- **Admin users:** no endpoint deletes a user, and there is no "force password change at next login" field (the legacy checkbox did nothing) — decide if either is wanted. `POST /api/admin/users/update` always notifies the user and emits `force_relogin`, even for a quota-only change; it does not check that the service layer / feature exists or is already linked to another account, and role `provider` does not require a link. `POST /api/admin/users/force-logout-all` with `target_type: 'selected'` and a non-array `user_ids` answers 500; `all` / `online` include the calling admin. `GET /api/admin/users` returns every row without paging.
+- **Admin dashboard:** `DELETE /api/admin/provider-success-stats/:id` hard-deletes the request row (and answers success for an id that does not exist; a non-numeric id gives 500). Consider a soft delete / audit trail, since it removes the request's chat history from the users' point of view.
+- **Widgets admin:** `POST /api/admin/update-fuel-station` overwrites all three columns (an omitted one becomes NULL) and answers success for an unknown id; the React page always sends the three current values. `widgets_manual_groups` accepts any JSON for `items` (no per-group schema).

@@ -8,3 +8,17 @@ export const formatDate = (d: Date | string, lang: string) =>
   new Date(d).toLocaleDateString(intlLocale(lang));
 export const formatDateTime = (d: Date | string, lang: string) =>
   new Date(d).toLocaleString(intlLocale(lang));
+
+/**
+ * Postgres timestamps: the server sends ISO (`2026-06-28T22:35:58.529Z`), but other drivers / older rows give
+ * `2026-06-28 22:35:58.529724` (space, microseconds) which `new Date` rejects. Legacy `parseServerDate`.
+ */
+export function parseServerDate(value: string | null | undefined): Date | null {
+  if (!value) return null;
+  const normalized = String(value)
+    .trim()
+    .replace(' ', 'T')
+    .replace(/(\.\d{3})\d+/, '$1');
+  const d = new Date(normalized);
+  return Number.isNaN(d.getTime()) ? null : d;
+}

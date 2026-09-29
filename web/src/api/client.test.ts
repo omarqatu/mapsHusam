@@ -42,6 +42,14 @@ describe('api client', () => {
     expect(useAuthStore.getState().user).not.toBeNull(); // 403 is not a dead session
   });
 
+  it('a 401 on a request with its own Authorization header does not end the app session', async () => {
+    vi.stubGlobal('fetch', respond(401, { error: 'view expired' }));
+    await expect(
+      api.get('/api/x', undefined, { headers: { Authorization: 'Bearer view' } }),
+    ).rejects.toMatchObject({ status: 401 });
+    expect(useAuthStore.getState().user).not.toBeNull();
+  });
+
   it('logs out on 401 (dead session)…', async () => {
     vi.stubGlobal('fetch', respond(401, { error: 'x', code: 'SESSION_REVOKED' }));
     await expect(api.get('/api/x')).rejects.toBeInstanceOf(ApiError);

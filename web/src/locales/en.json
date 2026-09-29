@@ -23,7 +23,8 @@
     "actions": "Actions",
     "menu": "Menu",
     "showMore": "Show more",
-    "showLess": "Show less"
+    "showLess": "Show less",
+    "reorder": "Reorder"
   },
   "errors": {
     "network": "Could not reach the server. Check your connection and try again.",
@@ -960,5 +961,344 @@
     "goToMap": "Go to the interactive map",
     "contactUs": "Contact us on Facebook",
     "about": "A digital geographic platform connecting people with the nearest and best services, properties and technicians in Palestine, easily and without middlemen."
+  },
+  "adminUsers": {
+    "title": "User management",
+    "subtitle": "Activate accounts, link service providers, change roles and passwords",
+    "refresh": "Refresh list",
+    "loadFailed": "Could not load the users.",
+    "noName": "No name",
+    "count": "Users: {{count}}",
+    "countFiltered": "Showing {{shown}} of {{total}} users",
+    "selectAllShown": "Select all shown ({{count}})",
+    "selectUser": "Select {{name}}",
+    "empty": "There are no users yet.",
+    "noMatch": "No users match the filters.",
+    "active": "Active",
+    "inactive": "Not active",
+    "online": "Online now",
+    "offline": "Offline",
+    "unlimited": "Unlimited",
+    "featureShort": "Feature",
+    "selfLocked": "This is your own account — it can't be deactivated or logged out from here.",
+    "period": {
+      "daily": "daily",
+      "weekly": "weekly",
+      "monthly": "monthly"
+    },
+    "col": {
+      "select": "Select",
+      "user": "User",
+      "role": "Role",
+      "status": "Status",
+      "service": "Service link",
+      "quota": "Request limit",
+      "created": "Created"
+    },
+    "filters": {
+      "all": "All",
+      "search": "Search",
+      "searchPlaceholder": "Name, email, phone number...",
+      "role": "Role",
+      "active": "Account",
+      "online": "Connection",
+      "linked": "Linked to a service",
+      "created": "Created",
+      "customDate": "Day",
+      "activeOptions": {
+        "active": "Active",
+        "inactive": "Not active"
+      },
+      "onlineOptions": {
+        "online": "Online now",
+        "offline": "Offline"
+      },
+      "linkedOptions": {
+        "linked": "Linked",
+        "unlinked": "Not linked"
+      },
+      "createdOptions": {
+        "2days": "Last 2 days",
+        "week": "Last week",
+        "month": "Last month",
+        "custom": "A specific day"
+      }
+    },
+    "actions": {
+      "view": "View",
+      "viewHint": "View the account read-only",
+      "edit": "Edit",
+      "activate": "Activate",
+      "deactivate": "Deactivate",
+      "forceLogout": "Log out",
+      "forceLogoutHint": "Log the user out now and notify them"
+    },
+    "bulk": {
+      "title": "Log users out",
+      "all": "Log everyone out",
+      "online": "Log out online users",
+      "offline": "Log out offline users",
+      "selected": "Log out selected ({{count}})",
+      "selectFirst": "Select at least one user first."
+    },
+    "confirm": {
+      "activateTitle": "Activate account",
+      "deactivateTitle": "Deactivate account",
+      "activate": "Activate the account of \"{{name}}\"? They will be able to log in.",
+      "deactivate": "Deactivate the account of \"{{name}}\"? They will be blocked from logging in.",
+      "logoutTitle": "Log user out",
+      "logoutOnline": "\"{{name}}\" is online right now. Log them out immediately and notify them to contact the administration?",
+      "logoutOffline": "\"{{name}}\" is offline. Their session will be revoked and the notification waits for them. Continue?",
+      "bulkTitle": "Log users out",
+      "includesYou": "This includes your own account, so you will be logged out too.",
+      "bulk": {
+        "all": "Log out ALL users? They will be notified and must log in again.",
+        "online": "Log out the users who are online now? They will be notified and must log in again.",
+        "offline": "Log out the users who are offline? They will be notified and must log in again.",
+        "selected": "Log out the selected users ({{count}})? They will be notified and must log in again."
+      }
+    },
+    "toast": {
+      "updated": "The user was updated.",
+      "activated": "The account was activated.",
+      "deactivated": "The account was deactivated.",
+      "loggedOutOnline": "The user was logged out and notified.",
+      "loggedOutOffline": "The user is offline: the session was revoked and the notice will reach them on their next visit.",
+      "bulkLoggedOut": "Users logged out: {{total}} ({{online}} online, {{offline}} offline)."
+    },
+    "edit": {
+      "title": "Edit user",
+      "user": "User",
+      "save": "Save changes",
+      "noChanges": "Nothing was changed.",
+      "selfWarning": "You are editing your own account. Deactivating it or taking away the admin role locks you out of this page.",
+      "active": "Account active",
+      "activeHint": "An active user can log in; a deactivated one is blocked.",
+      "role": "Account type",
+      "providerHint": "A service provider also needs a service layer and a feature id below.",
+      "serviceLink": "Service provider link",
+      "layer": "Service layer",
+      "notLinked": "-- not linked --",
+      "featureId": "Feature id in the layer",
+      "featureIdPlaceholder": "e.g. 14",
+      "quota": "Request limit (events)",
+      "limit": "Maximum requests (calls / WhatsApp)",
+      "limitPlaceholder": "Empty = unlimited (default)",
+      "limitHint": "One request = one call or WhatsApp click on a map feature. Leave empty for no limit.",
+      "period": "Limit renewal period",
+      "password": "Change password",
+      "newPassword": "New password",
+      "newPasswordPlaceholder": "Enter a new password",
+      "passwordHint": "Leave empty to keep the current password. At least {{min}} characters.",
+      "errors": {
+        "integer": "Enter a whole number (1 or more).",
+        "limit": "Enter a whole number of 1 or more, or leave empty.",
+        "password": "The password must be at least {{min}} characters."
+      }
+    }
+  },
+  "adminView": {
+    "title": "View user account",
+    "temporary": "Temporary read-only session",
+    "expires": "Temporary read-only session, valid until about {{time}} (30 minutes).",
+    "readOnly": "Read only: no editing, no sending",
+    "back": "Back to users",
+    "invalid": "This link is not valid.",
+    "sessionFailed": "Could not open a view session for this user.",
+    "profile": "Account details",
+    "profileFailed": "Could not load the account details.",
+    "name": "Name",
+    "id": "User id",
+    "phone": "Phone",
+    "email": "Email",
+    "role": "Role",
+    "account": "Account",
+    "serviceLayer": "Service layer",
+    "featureId": "Feature id",
+    "requestsTitle": "Requests and chats",
+    "requestsFailed": "Could not load the requests.",
+    "noRequests": "There are no requests.",
+    "requester": "Requester",
+    "provider": "Provider",
+    "date": "Date",
+    "cancelReason": "Cancellation reason",
+    "showMessages": "Show messages",
+    "hideMessages": "Hide messages",
+    "messages": "Messages",
+    "messagesFailed": "Could not load the messages.",
+    "noMessages": "There are no messages.",
+    "defaultService": "Service request",
+    "status": {
+      "pending": "Waiting for reply",
+      "accepted": "Accepted",
+      "completed": "Agreed",
+      "rejected": "Rejected",
+      "cancelled": "Cancelled"
+    },
+    "sender": {
+      "user": "Requester",
+      "provider": "Provider"
+    }
+  },
+  "adminDashboard": {
+    "title": "Provider success dashboard",
+    "subtitle": "Every service request, call and WhatsApp click with its outcome",
+    "reload": "Reload",
+    "links": {
+      "notifications": "Notifications",
+      "widgets": "Live information centre",
+      "users": "User management"
+    },
+    "loadFailed": "Could not load the statistics.",
+    "stat": {
+      "total": "Records in view"
+    },
+    "status": {
+      "success": "Successful",
+      "pending": "Pending",
+      "cancelled": "Cancelled"
+    },
+    "shownOf": "Showing {{shown}} of {{total}} records",
+    "total": "Total records: {{count}}",
+    "noMatch": "No records match the chosen filters.",
+    "empty": "No data recorded yet.",
+    "col": {
+      "user": "User",
+      "provider": "Service provider",
+      "layer": "Layer",
+      "phone": "Phone",
+      "date": "Date and time",
+      "contact": "Contact type",
+      "status": "Request status",
+      "reason": "Cancellation reason"
+    },
+    "contact": {
+      "service_request": "Service request",
+      "call": "Call",
+      "whatsapp": "WhatsApp"
+    },
+    "delete": {
+      "aria": "Delete record {{id}}",
+      "title": "Delete record",
+      "message": "Delete this record? This cannot be undone.",
+      "done": "The record was deleted.",
+      "failed": "Could not delete the record."
+    },
+    "filters": {
+      "all": "All",
+      "allLayers": "All layers",
+      "userPlaceholder": "Search by user name...",
+      "providerPlaceholder": "Search by provider...",
+      "phonePlaceholder": "Search by number...",
+      "reasonPlaceholder": "Search by reason...",
+      "userExact": "User (exact)",
+      "providerExact": "Provider (exact)",
+      "reasonExact": "Reason (exact)",
+      "dayPicker": "Day (calendar)",
+      "dayTyped": "Day (day/month/year)",
+      "more": "More filters"
+    },
+    "extraLayers": {
+      "ApartRent": "Apartment for rent",
+      "ApartSale": "Apartment for sale",
+      "LandSale": "Land for sale"
+    }
+  },
+  "adminWidgets": {
+    "title": "Live information centre",
+    "subtitle": "Edit every live-updates group directly, with a real last-update time for each",
+    "loadFailed": "Could not load the live information data.",
+    "refresh": "Refresh",
+    "unsaved": "Unsaved changes",
+    "lastUpdate": "Last update",
+    "noUpdateYet": "no update yet",
+    "unknownDate": "unknown",
+    "moveUp": "Move up",
+    "moveDown": "Move down",
+    "tab": {
+      "currency": "Currency rates",
+      "gold": "Gold and precious metals",
+      "weather": "Weather",
+      "fuel": "Fuel and gas prices",
+      "transport_inter_city": "Fares between cities",
+      "transport_intra_city": "Fares inside the city",
+      "events": "Upcoming events",
+      "road": "Road status",
+      "fuelStations": "Fuel station status"
+    },
+    "field": {
+      "id": "ID",
+      "label": "Displayed name",
+      "code": "Symbol",
+      "value": "Value (shown as is)",
+      "unit": "Unit",
+      "cityId": "City id",
+      "cityName": "City name",
+      "temp": "Temperature °C",
+      "humidity": "Humidity %",
+      "wind": "Wind km/h",
+      "condition": "Condition",
+      "date": "Date",
+      "eventName": "Event name",
+      "notes": "Notes"
+    },
+    "group": {
+      "hint": "Edit the values, add or delete rows, and use the arrows to reorder. Nothing is saved until you press \"Save this group\".",
+      "empty": "There are no items in this group yet.",
+      "add": "Add item",
+      "save": "Save this group",
+      "saved": "\"{{name}}\" was saved and its last-update time refreshed.",
+      "saveFailed": "Could not save the group.",
+      "needsId": "An ID is required or the row is not saved."
+    },
+    "discard": {
+      "title": "Unsaved changes",
+      "message": "You have unsaved changes that will be lost when the list is refreshed. Continue?"
+    },
+    "road": {
+      "stop": "Inbound status",
+      "stop2": "Outbound status"
+    },
+    "status": {
+      "select": "Select",
+      "selectRow": "Select {{name}}",
+      "roadName": "Checkpoint name",
+      "fuelName": "Station name",
+      "notSet": "— not set —",
+      "unsavedRows": "Unsaved rows: {{count}}",
+      "unsavedOrder": "Unsaved order",
+      "saveAll": "Save all",
+      "saveOrder": "Save order",
+      "roadHint": "Inbound = the traffic status going in, outbound = going out. To add a checkpoint use the point-editing tool on the map. Reorder with the handle or the arrows, then press \"Save order\".",
+      "fuelHint": "To add a station use the point-editing tool on the map. Reorder with the handle or the arrows, then press \"Save order\".",
+      "bulkTitle": "Bulk edit",
+      "selectedOf": "Selected: {{count}} of {{total}}",
+      "selectAll": "Select all",
+      "noChange": "— no change —",
+      "applyToSelected": "Apply to selected",
+      "bulkHint": "Tick the rows (or \"Select all\"), choose a status and press apply. \"No change\" leaves that column as it is.",
+      "noRoad": "No checkpoints registered yet.",
+      "noFuel": "No fuel stations registered yet.",
+      "chooseFirst": "Choose an inbound and/or outbound status before saving.",
+      "roadSaved": "The checkpoint status was updated.",
+      "fuelSaved": "The station's fuel availability was updated.",
+      "saveFailed": "Could not save.",
+      "nothingToSave": "There are no unsaved changes.",
+      "allSavedRoad": "Saved in one go — checkpoints: {{count}}.",
+      "allSavedFuel": "Saved in one go — stations: {{count}}.",
+      "nothingSaved": "nothing was saved",
+      "selectFirst": "Tick at least one row (or use \"Select all\").",
+      "chooseDirection": "Choose an inbound and/or outbound status to apply.",
+      "chooseFuel": "Choose the availability of at least one fuel type to apply.",
+      "bulkConfirmTitle": "Apply to selected",
+      "bulkConfirmRoad": "Change the selected checkpoints ({{count}}): {{changes}}. Continue?",
+      "bulkConfirmFuel": "Change the selected stations ({{count}}): {{changes}}. Continue?",
+      "bulkDoneRoad": "Checkpoints updated: {{count}}.",
+      "bulkDoneFuel": "Stations updated: {{count}}.",
+      "bulkFailed": "The bulk update failed.",
+      "orderSavedRoad": "The checkpoint order was saved.",
+      "orderSavedFuel": "The station order was saved.",
+      "orderFailed": "Could not save the order."
+    }
   }
 }

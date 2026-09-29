@@ -16,7 +16,7 @@ export default function PageHeader({ title, description, icon, actions, filters 
         <div className="flex min-w-0 items-center gap-4">
           {icon && <div className="rounded-xl bg-brand-light p-3 text-brand">{icon}</div>}
           <div className="min-w-0">
-            <h1 className="truncate text-2xl font-black text-slate-800">{title}</h1>
+            <h1 className="break-words text-2xl font-black text-slate-800">{title}</h1>
             {description && <p className="mt-1 text-sm font-medium text-slate-500">{description}</p>}
           </div>
         </div>
