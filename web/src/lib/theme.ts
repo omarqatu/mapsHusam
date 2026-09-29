@@ -6,7 +6,7 @@ const KEY = 'psm-theme';
 export function currentTheme(): ThemeChoice {
   const set = document.documentElement.getAttribute('data-theme');
   if (set === 'dark' || set === 'light') return set;
-  return window.matchMedia?.('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+  return window.matchMedia?.('(prefers-color-scheme: dark)')?.matches ? 'dark' : 'light';
 }
 
 /** Saves the choice and applies it at once (public/theme-init.js applies it before first paint on the next visit). */

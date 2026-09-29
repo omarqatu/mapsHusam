@@ -2,6 +2,7 @@ import { mapEventsApi } from '@/api/mapEvents';
 import i18n from '@/i18n';
 import { useAuthStore } from '@/store/authStore';
 import { text, type SelectedFeature } from './featureModel';
+import { serviceLabelKey } from '../registry';
 
 /**
  * Stats row for the admin dashboard (legacy `map_click`): who opened which provider. Logged-in users only; never blocks
@@ -12,7 +13,7 @@ export function logMapClick(sel: SelectedFeature) {
   const ar = i18n.getFixedT('ar');
   const title =
     sel.kind.kind === 'service'
-      ? ar(`services.${sel.kind.discriminator}`)
+      ? ar(serviceLabelKey(sel.kind.discriminator))
       : sel.kind.kind === 'realEstate'
         ? ar(`layers.${sel.kind.layer}`)
         : '';

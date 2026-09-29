@@ -39,6 +39,7 @@ import {
   type StatRow,
   type StatusKey,
 } from './model';
+import { serviceLabelKey } from '@/features/map/registry';
 
 const statusTone: Record<StatusKey, BadgeTone> = { success: 'green', pending: 'amber', cancelled: 'red' };
 const contactIcon: Record<ContactKey, typeof Phone> = {
@@ -61,7 +62,8 @@ export default function AdminDashboardPage() {
   const all = useMemo(() => stats.data ?? [], [stats.data]);
   const shown = useMemo(() => filterRows(all, filters), [all, filters]);
   const counts = useMemo(() => countByStatus(shown), [shown]);
-  const layerLabel = (key: string) => t([`services.${key}`, `adminDashboard.extraLayers.${key}`], key || '—');
+  const layerLabel = (key: string) =>
+    t([serviceLabelKey(key), `adminDashboard.extraLayers.${key}`], key || '—');
   const layerOptions = useMemo(
     () => distinct(all, 'layer').map((k) => ({ value: k, label: layerLabel(k) })),
     // eslint-disable-next-line react-hooks/exhaustive-deps -- layerLabel only depends on t

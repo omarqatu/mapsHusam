@@ -154,6 +154,7 @@
     }
   },
   "nav": {
+    "home": "Home",
     "map": "Map",
     "search": "Search",
     "notifications": "Notifications",
@@ -1411,6 +1412,97 @@
       "pageTitle": "Live updates ticker",
       "pageDescription": "Prices, weather and prayer times in a large scrolling bar, made for a screen.",
       "hint": "Tap any item to open its card in the live information centre. The bar stops while the pointer is over it."
+    }
+  },
+  "home": {
+    "greeting": {
+      "morning": "Good morning",
+      "afternoon": "Good afternoon",
+      "evening": "Good evening"
+    },
+    "hello": "{{greeting}}, {{name}}",
+    "subtitle": {
+      "user": "Find a service, follow your requests, or open the map.",
+      "provider": "Follow incoming requests and update your status so customers can find you.",
+      "admin": "Keep an eye on accounts and activity, and manage the platform's content."
+    },
+    "search": {
+      "placeholder": "Search services or providers…",
+      "label": "Search the platform"
+    },
+    "needs": {
+      "title": "Needs you",
+      "loadFailed": "Some of the data could not be loaded.",
+      "empty": {
+        "title": "Nothing is waiting for you",
+        "text": "All clear. You can search for a service or open the map."
+      },
+      "items": {
+        "incoming": "New service requests waiting for your answer",
+        "unseen": "Requests with new updates",
+        "rate": "Completed services waiting for your rating",
+        "waiting": "Requests you sent, waiting for the provider",
+        "active": "Chats in progress",
+        "unread": "Unread notifications",
+        "inactive": "Inactive accounts waiting for your review",
+        "busy": "Your status is “Unavailable”: you are hidden from the map and search",
+        "frozen": "Your provider account is frozen. Contact the administration"
+      },
+      "open": "Open"
+    },
+    "cardsTitle": "Where to?",
+    "cards": {
+      "map": {
+        "title": "Interactive map",
+        "desc": "Find services and properties around you on the map."
+      },
+      "search": {
+        "title": "Search without a map",
+        "desc": "Browse services with lists and filters, quicker on a phone."
+      },
+      "live": {
+        "title": "Live info",
+        "desc": "Prices, weather, road status and fuel stations in one place."
+      },
+      "requests": {
+        "title": "My requests",
+        "desc": "Follow your service requests and chats with providers."
+      },
+      "notifications": {
+        "title": "Notifications",
+        "desc": "Every reply and alert that reached you."
+      },
+      "service": {
+        "title": "Manage my service",
+        "desc": "Change your status and your location on the map."
+      },
+      "users": {
+        "title": "Users",
+        "desc": "Activate and manage accounts, and review each user's activity."
+      },
+      "dashboard": {
+        "title": "Dashboard",
+        "desc": "Usage statistics and successful requests."
+      },
+      "widgets": {
+        "title": "Widgets admin",
+        "desc": "Edit the prices and information everyone sees."
+      }
+    },
+    "figures": {
+      "features": "places",
+      "services": "service types",
+      "open": "open requests",
+      "unread": "unread",
+      "users": "users",
+      "visits": "visits",
+      "inactive": "awaiting activation",
+      "available": "Available",
+      "busy": "Unavailable"
+    },
+    "platform": {
+      "title": "The platform in numbers",
+      "failed": "Could not load the platform figures."
     }
   }
 }

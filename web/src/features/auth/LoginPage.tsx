@@ -16,7 +16,7 @@ export default function LoginPage() {
   const { t } = useTranslation();
   const user = useAuthStore((s) => s.user);
   const navigate = useNavigate();
-  const from = (useLocation().state as { from?: string } | null)?.from ?? '/';
+  const from = (useLocation().state as { from?: string } | null)?.from ?? '/home';
   const login = useLogin();
   const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');

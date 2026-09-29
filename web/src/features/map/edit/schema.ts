@@ -1,6 +1,6 @@
 // What the admin editor may write, per layer — data only, ported from the legacy field lists in js/edit-core.js,
 // js/edit-wfs.js, js/editLines.js and js/editPolygons.js. Field labels live in the locale files (edit.fields.<name>).
-import { SERVICE_TYPES } from '../config';
+import { SERVICE_REGISTRY, SERVICE_BY_KEY, type EditProfile } from '../registry';
 
 export type EditKind = 'point' | 'line' | 'polygon';
 export type FieldType = 'text' | 'number' | 'integer' | 'url' | 'date' | 'select' | 'hours';
@@ -52,48 +52,66 @@ const f = (name: string, type: FieldType, extra: Partial<FieldDef> = {}): FieldD
   ...extra,
 });
 
+// Each field is defined once; a layer picks the ones it has, in the order its form shows them.
+const NAME = f('name', 'text');
+const PHONE = f('phone', 'text', { ltr: true });
+const WHATSAPP = f('whatsapp', 'text', { ltr: true });
+const DES = f('des', 'text');
+const PIC = f('pic', 'url', { ltr: true });
+const VIDEO = f('video', 'url', { ltr: true });
+const LINK_1 = f('details_link_1', 'url', { ltr: true });
+const LINK_2 = f('details_link_2', 'url', { ltr: true });
+const PRICE = f('price', 'number');
+const CURRENCY = f('currency', 'select', { options: CURRENCIES });
+const AREA = f('area', 'number');
+const END_DATE = f('end_date', 'date');
+const WORK_HOURS = f('work_hours', 'hours');
+/** Real estate and services rate out of 10; land out of 5. */
+const RATING_10 = f('rating', 'number', { max: 10 });
+const RATING_5 = f('rating', 'number', { max: 5 });
+
 const REAL_ESTATE_FIELDS: readonly FieldDef[] = [
-  f('name', 'text'),
-  f('price', 'number'),
-  f('currency', 'select', { options: CURRENCIES }),
-  f('des', 'text'),
-  f('pic', 'url', { ltr: true }),
-  f('video', 'url', { ltr: true }),
-  f('area', 'number'),
-  f('whatsapp', 'text', { ltr: true }),
-  f('phone', 'text', { ltr: true }),
-  f('end_date', 'date'),
-  f('work_hours', 'hours'),
-  f('rating', 'number', { max: 10 }),
+  NAME,
+  PRICE,
+  CURRENCY,
+  DES,
+  PIC,
+  VIDEO,
+  AREA,
+  WHATSAPP,
+  PHONE,
+  END_DATE,
+  WORK_HOURS,
+  RATING_10,
 ];
 
 const SERVICE_FIELDS: readonly FieldDef[] = [
-  f('name', 'text'),
-  f('whatsapp', 'text', { ltr: true }),
-  f('phone', 'text', { ltr: true }),
-  f('des', 'text'),
-  f('pic', 'url', { ltr: true }),
-  f('video', 'url', { ltr: true }),
-  f('rating', 'number', { max: 10 }),
-  f('details_link_1', 'url', { ltr: true }),
-  f('details_link_2', 'url', { ltr: true }),
-  f('end_date', 'date'),
-  f('work_hours', 'hours'),
+  NAME,
+  WHATSAPP,
+  PHONE,
+  DES,
+  PIC,
+  VIDEO,
+  RATING_10,
+  LINK_1,
+  LINK_2,
+  END_DATE,
+  WORK_HOURS,
 ];
 
 const LAND_FIELDS: readonly FieldDef[] = [
-  f('name', 'text'),
-  f('phone', 'text', { ltr: true }),
-  f('price', 'number'),
-  f('currency', 'select', { options: CURRENCIES }),
-  f('des', 'text'),
-  f('pic', 'url', { ltr: true }),
-  f('video', 'url', { ltr: true }),
-  f('area', 'number'),
-  f('whatsapp', 'text', { ltr: true }),
-  f('end_date', 'date'),
-  f('work_hours', 'hours'),
-  f('rating', 'number', { max: 5 }),
+  NAME,
+  PHONE,
+  PRICE,
+  CURRENCY,
+  DES,
+  PIC,
+  VIDEO,
+  AREA,
+  WHATSAPP,
+  END_DATE,
+  WORK_HOURS,
+  RATING_5,
 ];
 
 const LOCATION_FIELDS: readonly FieldDef[] = [
@@ -102,11 +120,7 @@ const LOCATION_FIELDS: readonly FieldDef[] = [
   f('location', 'text'),
 ];
 
-const ROAD_FIELDS: readonly FieldDef[] = [
-  f('name', 'text'),
-  f('road_type', 'integer'),
-  f('one_way', 'integer'),
-];
+const ROAD_FIELDS: readonly FieldDef[] = [NAME, f('road_type', 'integer'), f('one_way', 'integer')];
 
 // Column order = the GeoServer schema order the legacy editor insisted on. Real-estate `phone` was missing from the
 // legacy insert list (typed, then silently dropped); it is appended here.
@@ -245,21 +259,23 @@ const realEstate = (id: 'rent' | 'sale', typeName: string): EditTarget => ({
   coordColumns: 'realEstate',
 });
 
-/** Road barriers and fuel stations carry extra status columns on top of the common service fields. */
-const SERVICE_EXTRAS: Readonly<Record<string, readonly FieldDef[]>> = {
-  road_barriers: [
+/** The extra columns of each registry `editProfile` (road barriers and fuel stations carry status columns). */
+const PROFILE_FIELDS: Readonly<Record<EditProfile, readonly FieldDef[]>> = {
+  standard: [],
+  roadBarrier: [
     f('stop', 'select', { options: BARRIER_STATES }),
     f('stop2', 'select', { options: BARRIER_STATES }),
   ],
-  fuel_stations: [
+  fuelStation: [
     f('diesel', 'select', { options: FUEL_STATES }),
     f('banzen95', 'select', { options: FUEL_STATES }),
     f('banzen98', 'select', { options: FUEL_STATES }),
   ],
 };
 
+/** The edit target of one service type; a discriminator the registry does not know gets the common fields only. */
 export function serviceTarget(discriminator: string): EditTarget {
-  const extras = SERVICE_EXTRAS[discriminator] ?? [];
+  const extras = PROFILE_FIELDS[SERVICE_BY_KEY.get(discriminator)?.editProfile ?? 'standard'];
   const extraColumns = extras.map((x) => x.name);
   return {
     id: discriminator,
@@ -318,7 +334,7 @@ const ROADS: EditTarget = {
 export const POINT_TARGETS: readonly EditTarget[] = [
   realEstate('rent', 'ApartRent'),
   realEstate('sale', 'ApartSale'),
-  ...SERVICE_TYPES.map((s) => serviceTarget(s.key)),
+  ...SERVICE_REGISTRY.map((s) => serviceTarget(s.key)),
 ];
 export const LINE_TARGETS: readonly EditTarget[] = [ROADS];
 export const POLYGON_TARGETS: readonly EditTarget[] = [LAND, LOCATIONS];

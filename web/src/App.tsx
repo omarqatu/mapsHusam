@@ -18,6 +18,7 @@ import { appRoutes, type AppRoute } from '@/routes/routes';
 import { CenteredSpinner } from '@/components/ui/Spinner';
 
 // One chunk per page: a visitor on the login screen downloads neither OpenLayers nor the admin and search code.
+const HomePage = lazy(() => import('@/features/home/HomePage'));
 const MapPage = lazy(() => import('@/features/map/MapPage'));
 const AdminDashboardPage = lazy(() => import('@/features/admin-dashboard/AdminDashboardPage'));
 const AdminUsersPage = lazy(() => import('@/features/admin-users/AdminUsersPage'));
@@ -31,6 +32,7 @@ const LegalPage = lazy(() => import('@/features/legal/LegalPage'));
 
 // Ported pages by path; everything else still shows its placeholder.
 const ported: Record<string, ReactElement> = {
+  '/home': <HomePage />,
   '/notifications': <NotificationsPage />,
   '/search': <SearchPage />,
   '/widgets/portal': <WidgetsPortalPage />,
@@ -74,7 +76,12 @@ const router = createBrowserRouter([
     element: <AppShell />,
     children: [
       ...shelled.filter((r) => r.access === 'public').map(page),
-      { element: <ProtectedRoute />, children: shelled.filter((r) => r.access === 'auth').map(page) },
+      // Like the map, the landing page sends a visitor to /welcome (log in / register) rather than to a bare form.
+      { element: <ProtectedRoute to="/welcome" />, children: shelled.filter((r) => r.path === '/home').map(page) },
+      {
+        element: <ProtectedRoute />,
+        children: shelled.filter((r) => r.access === 'auth' && r.path !== '/home').map(page),
+      },
       {
         element: <RoleRoute roles={['admin']} />,
         children: appRoutes.filter((r) => Array.isArray(r.access) && r.access.join() === 'admin').map(page),

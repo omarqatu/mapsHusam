@@ -4,6 +4,7 @@ import { mapEventsApi, type ContactType } from '@/api/mapEvents';
 import { toast } from '@/components/ui/toastStore';
 import { useAuthStore } from '@/store/authStore';
 import { telLink, whatsappLink, type SelectedFeature } from './featureModel';
+import { serviceLabelKey } from '../registry';
 
 const COOLDOWN_S = 10;
 
@@ -25,7 +26,7 @@ export function cooldownRemaining(type: ContactType, featureId: string, now = Da
 export function contactContext(f: SelectedFeature) {
   const ar = i18n.getFixedT('ar');
   if (f.kind.kind === 'service')
-    return { layer: f.kind.discriminator, typeTitleAr: ar(`services.${f.kind.discriminator}`) };
+    return { layer: f.kind.discriminator, typeTitleAr: ar(serviceLabelKey(f.kind.discriminator)) };
   if (f.kind.kind === 'realEstate') return { layer: f.kind.layer, typeTitleAr: ar(`layers.${f.kind.layer}`) };
   return { layer: 'location', typeTitleAr: '' };
 }
