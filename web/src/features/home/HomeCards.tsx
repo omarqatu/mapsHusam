@@ -59,7 +59,7 @@ export default function HomeCards({ data }: { data: HomeData }) {
       </h2>
       <ul className="grid gap-3 sm:grid-cols-2">
         {cardsFor(role).map((c) => (
-          <li key={c.id}>
+          <li key={c.id} className="sm:[&:last-child:nth-child(odd)]:col-span-2">
             <HomeCard
               icon={c.icon}
               tone={c.tone}

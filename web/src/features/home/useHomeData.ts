@@ -9,6 +9,7 @@ import { useAuthStore } from '@/store/authStore';
 import {
   buildSignals,
   countInactive,
+  countUnseen,
   summarizeRequests,
   type ProviderState,
   type RequestSummary,
@@ -47,13 +48,15 @@ export function useHomeData(): HomeData {
   const notifications = useNotifications();
   const users = useAdminUsers(isAdmin);
   const platform = usePlatformStats();
-  const unseen = useUnseen((s) => s.ids.length);
+  const unseenIds = useUnseen((s) => s.ids);
 
   const requests = useMemo<RequestSummary>(() => {
     const s = summarizeRequests(mine.data ?? [], uid ?? -1);
     // The provider's own queue is polled every 15 s, so it is fresher than the list of all requests.
     return isProvider && incoming.data ? { ...s, incoming: incoming.data.length } : s;
   }, [mine.data, incoming.data, uid, isProvider]);
+
+  const unseen = useMemo(() => countUnseen(unseenIds, mine.data ?? [], uid ?? -1), [unseenIds, mine.data, uid]);
 
   const provider: ProviderState | null = useMemo(() => {
     if (!isProvider || !account.data) return null;

@@ -31,7 +31,7 @@ export default function HomeCard({ icon: Icon, tone, title, description, figure,
       to={to}
       onClick={onClick}
       className={clsx(
-        'group flex h-full min-h-40 w-full flex-col rounded-2xl border border-line bg-surface p-4 text-start shadow-card',
+        'group flex h-full w-full sm:min-h-40 flex-col rounded-2xl border border-line bg-surface p-4 text-start shadow-card',
         'transition-all hover:-translate-y-0.5 hover:border-brand/40 hover:shadow-float',
         'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand',
       )}

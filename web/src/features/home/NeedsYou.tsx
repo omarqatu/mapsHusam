@@ -106,7 +106,7 @@ export default function NeedsYou({ data }: { data: HomeData }) {
   return (
     <section
       aria-labelledby="needs-you-title"
-      className="overflow-hidden rounded-2xl border border-line bg-surface shadow-card"
+      className="overflow-hidden rounded-2xl border border-line bg-surface shadow-card lg:sticky lg:top-20"
     >
       <header className="flex items-center gap-2 border-b border-line px-4 py-3">
         <BellRing className="h-5 w-5 text-brand-fg" aria-hidden />

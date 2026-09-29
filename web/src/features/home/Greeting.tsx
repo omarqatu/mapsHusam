@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from 'react';
-import { CalendarDays, Search } from 'lucide-react';
+import { CalendarDays, MapPinned, Search } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router';
 import Badge from '@/components/ui/Badge';
@@ -31,9 +31,13 @@ export default function Greeting() {
 
   return (
     <section className="relative overflow-hidden rounded-2xl border border-line bg-surface p-5 shadow-card md:p-8">
-      {/* Decoration only: two soft brand circles in the corner. */}
-      <span aria-hidden className="pointer-events-none absolute -end-16 -top-20 h-56 w-56 rounded-full bg-brand-light" />
-      <span aria-hidden className="pointer-events-none absolute -end-2 -top-8 h-24 w-24 rounded-full bg-brand/10" />
+      {/* Decoration only: a soft brand disc in the corner, with a map mark on wide screens. */}
+      <span
+        aria-hidden
+        className="pointer-events-none absolute -end-12 -top-16 flex h-40 w-40 items-end justify-start rounded-full bg-brand-light p-0 md:h-72 md:w-72 md:p-16"
+      >
+        <MapPinned className="hidden h-16 w-16 text-brand-fg/50 md:block" />
+      </span>
 
       <div className="relative">
         <p className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm font-semibold text-muted">
@@ -51,7 +55,7 @@ export default function Greeting() {
         </h1>
         <p className="mt-1.5 max-w-2xl text-base text-muted">{t(`home.subtitle.${user.role}`)}</p>
 
-        <form onSubmit={submit} role="search" className="mt-5 max-w-2xl" aria-label={t('home.search.label')}>
+        <form onSubmit={submit} role="search" className="mt-5 max-w-3xl" aria-label={t('home.search.label')}>
           <div className="flex gap-2">
             <div className="min-w-0 flex-1">
               <TextInput

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { ServiceRequest } from '@/api/requests';
-import { buildSignals, countInactive, dayPart, firstName, summarizeRequests, type SignalInput } from './model';
+import { buildSignals, countInactive, countUnseen, dayPart, firstName, summarizeRequests, type SignalInput } from './model';
 
 const req = (over: Partial<ServiceRequest>): ServiceRequest =>
   ({
@@ -55,6 +55,18 @@ describe('summarizeRequests', () => {
     expect(summarizeRequests(list, 10)).toEqual({ waitingReply: 1, active: 2, incoming: 1 });
   });
   it('is empty for no requests', () => expect(summarizeRequests([], 10)).toEqual(none));
+});
+
+describe('countUnseen', () => {
+  const list = [
+    req({ id: 1, user_id: 30, provider_user_id: 10, status: 'pending' }), // waiting for my answer: the incoming row
+    req({ id: 2, user_id: 30, provider_user_id: 10, status: 'accepted' }),
+    req({ id: 3, user_id: 10, provider_user_id: 20, status: 'pending' }), // mine, waiting: a real mark counts
+  ];
+  it('skips requests already shown as incoming and marks of requests that are gone', () => {
+    expect(countUnseen([1, 2, 3, 99], list, 10)).toBe(2);
+  });
+  it('is zero before the list has loaded', () => expect(countUnseen([1, 2], [], 10)).toBe(0));
 });
 
 describe('countInactive', () => {

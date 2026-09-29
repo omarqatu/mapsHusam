@@ -43,6 +43,18 @@ export function summarizeRequests(requests: readonly ServiceRequest[], uid: numb
   return s;
 }
 
+/**
+ * How many of the locally remembered "new activity" marks are still worth a row. A provider's request that is only
+ * waiting for an answer is already the "incoming" row, and a mark whose request is gone from the list is stale.
+ */
+export function countUnseen(ids: readonly number[], requests: readonly ServiceRequest[], uid: number): number {
+  const byId = new Map(requests.map((r) => [r.id, r]));
+  return ids.filter((id) => {
+    const r = byId.get(id);
+    return !!r && !(r.status === 'pending' && Number(r.provider_user_id) === uid);
+  }).length;
+}
+
 /** Accounts an admin still has to switch on: new registrations start inactive. */
 export const countInactive = (users: readonly Pick<AdminUser, 'is_active'>[]) =>
   users.filter((u) => !u.is_active).length;
