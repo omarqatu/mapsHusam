@@ -620,20 +620,44 @@ const isValidSqlIdentifier = (name) => typeof name === 'string' && SQL_IDENTIFIE
 // 🆕 مسار إحصائيات المنصة العامة (صفحة البحث بدون خريطة + فوتر/تبويب الخريطة)
 // عام بدون حماية (لا يحتاج تسجيل دخول) لأنه عرض أرقام إجمالية فقط بلا تفاصيل حساسة
 // =========================================================================
-let platformStatsCache = { data: null, expiresAt: 0 };
-let platformStatsRefreshStartedAt = 0;
+const platformStatsCache = new Map();
+const PLATFORM_PROPERTY_LAYERS = ['ApartRent', 'ApartSale', 'LandSale'];
+const PLATFORM_SERVICE_LAYERS = ALLOWED_LAYERS.filter(layer =>
+    !REAL_ESTATE_LAYERS.includes(layer) && !['service_all', 'Location', 'RoadsTest'].includes(layer)
+);
+
+function parseStatsExclusions(rawValue) {
+    if (!rawValue) return [];
+    try {
+        const parsed = Array.isArray(rawValue) ? rawValue : JSON.parse(rawValue);
+        return Array.isArray(parsed) ? parsed.map(value => String(value).trim()).filter(Boolean) : [];
+    } catch (_) {
+        return [];
+    }
+}
+
+function statsLayerIsExcluded(layerName, exclusions) {
+    const aliases = {
+        ApartRent: ['ApartRent', 'rentLayer', 'rent'],
+        ApartSale: ['ApartSale', 'saleLayer', 'sale'],
+        LandSale: ['LandSale', 'landLayer', 'land']
+    };
+    const candidates = aliases[layerName] || [layerName];
+    const normalized = new Set(exclusions.map(value => value.toLocaleLowerCase()));
+    return candidates.some(value => normalized.has(value.toLocaleLowerCase()));
+}
 
 app.get('/api/platform-stats', async (req, res) => {
     try {
-        // ⚡ كاش بسيط بالذاكرة لمدة 60 ثانية لتفادي ضغط الاستعلامات مع كل زائر
-        if (platformStatsCache.data && Date.now() < platformStatsCache.expiresAt) {
-            return res.json({ success: true, data: platformStatsCache.data });
+        // يرسل المتصفح استثناءات config.js كي تتطابق الإحصائيات مع الطبقات الظاهرة.
+        const exclusions = parseStatsExclusions(req.query.excludedLayers);
+        const visiblePropertyLayers = PLATFORM_PROPERTY_LAYERS.filter(layer => !statsLayerIsExcluded(layer, exclusions));
+        const visibleServiceLayers = PLATFORM_SERVICE_LAYERS.filter(layer => !statsLayerIsExcluded(layer, exclusions));
+        const cacheKey = [...visiblePropertyLayers, '|', ...visibleServiceLayers].join(',');
+        const cached = platformStatsCache.get(cacheKey);
+        if (cached && Date.now() < cached.expiresAt) {
+            return res.json({ success: true, data: cached.data });
         }
-        // 🔒 إذا كان طلب آخر يعيد الحساب الآن نُرجع النسخة السابقة بدل تكرار الاستعلامات الثقيلة
-        if (platformStatsCache.data && Date.now() - platformStatsRefreshStartedAt < 30000) {
-            return res.json({ success: true, data: platformStatsCache.data });
-        }
-        platformStatsRefreshStartedAt = Date.now();
 
         // 1) إحصائيات المستخدمين مجمّعة حسب الدور
         const usersResult = await servicesPool.query(`
@@ -664,17 +688,12 @@ app.get('/api/platform-stats', async (req, res) => {
         const viewsQuickSearch = parseInt(viewsResult.rows[0].quick_search, 10) || 0;
         const viewsMap = Math.max(0, viewsTotal - viewsQuickSearch);
 
-        // 3) عدد الخدمات (الطبقات) = القائمة البيضاء المعتمدة بالسيرفر بعد استثناء طبقات العقارات/المواقع
-        const realEstateAndLocationLayers = ['ApartRent', 'ApartSale', 'LandSale', 'Location', 'RoadsTest'];
-        const servicesCount = ALLOWED_LAYERS.filter(l => !realEstateAndLocationLayers.includes(l)).length;
+        // عدد الفئات المتاحة = العقارات والخدمات التي لم يستثنها config.js.
+        const servicesCount = visiblePropertyLayers.length + visibleServiceLayers.length;
 
-        // 🆕 4) عدد مزودي الخدمات = مجموع كل معالم طبقات العقارات (شقق إيجار/بيع + أراضي)
-        // وكل معالم طبقات الخدمات الفعلية (أكثر من 65 طبقة)، وليس فقط حسابات المزودين
-        // المرتبطة - أي كل معلم موجود فعلياً على الخريطة ضمن هذه الطبقات
-        const realEstateFeatureLayers = ['ApartRent', 'ApartSale', 'LandSale'];
-
+        // عدد المعالم يضم فقط الطبقات المتاحة حالياً في config.js.
         let featuresCount = 0;
-        for (const layerName of realEstateFeatureLayers) {
+        for (const layerName of visiblePropertyLayers) {
             try {
                 const countRes = await realestatePool.query(`SELECT COUNT(*) FROM public."${layerName}"`);
                 featuresCount += parseInt(countRes.rows[0].count, 10) || 0;
@@ -682,12 +701,17 @@ app.get('/api/platform-stats', async (req, res) => {
                 console.warn(`⚠️ تعذر عد معالم طبقة العقار [${layerName}]:`, layerErr.message);
             }
         }
-        // 🆕 عدّ كل معالم الخدمات دفعة واحدة من الجدول الموحّد بدل لوب على 66 جدول منفصل (توفير أداء حقيقي)
-        try {
-            const servicesCountRes = await servicesPool.query(`SELECT COUNT(*) FROM public.service_all`);
-            featuresCount += parseInt(servicesCountRes.rows[0].count, 10) || 0;
-        } catch (err) {
-            console.warn('⚠️ تعذر عد معالم service_all:', err.message);
+        // الخدمات موحّدة في service_all؛ نعدّ فقط discriminators المتاحة.
+        if (visibleServiceLayers.length) {
+            try {
+                const servicesCountRes = await servicesPool.query(
+                    'SELECT COUNT(*) FROM public.service_all WHERE discriminator = ANY($1::text[])',
+                    [visibleServiceLayers]
+                );
+                featuresCount += parseInt(servicesCountRes.rows[0].count, 10) || 0;
+            } catch (err) {
+                console.warn('⚠️ تعذر عد معالم service_all:', err.message);
+            }
         }
 
         const statsData = {
@@ -696,8 +720,7 @@ app.get('/api/platform-stats', async (req, res) => {
             servicesCount, featuresCount
         };
 
-        platformStatsCache = { data: statsData, expiresAt: Date.now() + 60000 };
-        platformStatsRefreshStartedAt = 0;
+        platformStatsCache.set(cacheKey, { data: statsData, expiresAt: Date.now() + 60000 });
 
         res.json({ success: true, data: statsData });
     } catch (err) {

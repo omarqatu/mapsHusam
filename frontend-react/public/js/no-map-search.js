@@ -634,11 +634,13 @@ window.__nmsPageHandlesOwnAds = true;
 
             adSpaces.forEach((space) => {
                 space.innerHTML = '';
-
                 if (allValidCards.length === 0) {
-                    space.innerHTML = `<div style="padding:10px; text-align:center; font-size:11px; color:#777;">لا توجد إعلانات مميزة</div>`;
+                    space.hidden = true;
+                    space.style.setProperty('display', 'none', 'important');
                     return;
                 }
+                space.hidden = false;
+                space.style.removeProperty('display');
 
                 const randomizedCards = shuffleArray(allValidCards);
 

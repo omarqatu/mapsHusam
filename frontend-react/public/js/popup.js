@@ -310,7 +310,7 @@ function initializePopup(map) {
             return;
         }
         
-        const quota = await checkRequestQuotaOrwindow.toast(currentUserId, null, 'info');
+        const quota = await checkRequestQuotaOrAlert(currentUserId, null);
         if (!quota.allowed) return;
 
         // 🆕 تسجيل نقرة الاتصال في قاعدة البيانات
@@ -353,7 +353,7 @@ function initializePopup(map) {
             return;
         }
         
-        const quota = await checkRequestQuotaOrwindow.toast(currentUserId, newTab, 'info');
+        const quota = await checkRequestQuotaOrAlert(currentUserId, newTab);
         if (!quota.allowed) return;
 
         // 🆕 تسجيل نقرة الواتساب في قاعدة البيانات

@@ -51,7 +51,7 @@ const MAP_CONFIG = {
 
         // المناسبات والترفيه والضيافة
         'party_planner', 'zaffa_bands', 'music_bands', 'party_rental', 'clown_entertainer',
-        'martial_arts_gymnastics', 'public_parks_recreation', 'hotels', 'villas_rent',
+        'martial_arts_gymnastics', 'public_parks_recreation', 'hotels',
         'barber_shop', 'video_design_ads', 'photographers',
 
         // المتاجر والمطاعم والتعليم والمعالم والوظائف وباقي الخدمات

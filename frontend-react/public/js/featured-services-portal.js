@@ -336,7 +336,7 @@
         const selectedIds = new Set(selected);
         selected.push(...items.filter(item => !selectedIds.has(item)).slice(0, Math.max(0, 10 - selected.length)));
         const cards = selected.slice(0, 10).map(item => cardMarkup(item, mode, label)).filter(Boolean);
-        return cards.length ? cards.join('') : '<div class="featured-services-empty">لا توجد خدمات متاحة حالياً</div>';
+        return cards.join('');
     }
 
     async function fetchRatingServices(value) {
@@ -575,7 +575,9 @@
     }
 
     function sectionMarkup(title, icon, items, mode, label) {
-        return `<section class="featured-services-section"><h4><i class="fas ${icon}"></i> ${title}</h4><div class="featured-services-row">${rowMarkup(items, mode, label)}</div></section>`;
+        const cards = rowMarkup(items, mode, label);
+        if (!cards) return '';
+        return `<section class="featured-services-section"><h4><i class="fas ${icon}"></i> ${title}</h4><div class="featured-services-row">${cards}</div></section>`;
     }
 
     async function loadPortal() {
