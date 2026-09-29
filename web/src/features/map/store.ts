@@ -22,6 +22,8 @@ interface MapUiState {
   setBasemap: (b: BasemapKey) => void;
   setRealEstateVisible: (key: RealEstateLayerKey, visible: boolean) => void;
   setServiceVisible: (discriminator: string, visible: boolean) => void;
+  /** Shows or hides a set of service types at once (a group in the layer panel). */
+  setServicesVisible: (keys: string[], visible: boolean) => void;
   /** "Show all" / "Hide all" of the layer panel. */
   setAllVisible: (visible: boolean, allServiceKeys: string[]) => void;
 }
@@ -45,6 +47,15 @@ export const useMapUi = create<MapUiState>((set) => ({
       if (visible) next.delete(discriminator);
       else next.add(discriminator);
       return { hiddenServices: next };
+    }),
+  setServicesVisible: (keys, visible) =>
+    set((s) => {
+      const hidden = new Set(s.hiddenServices);
+      for (const k of keys) {
+        if (visible) hidden.delete(k);
+        else hidden.add(k);
+      }
+      return { hiddenServices: hidden };
     }),
   setAllVisible: (visible, allServiceKeys) =>
     set({

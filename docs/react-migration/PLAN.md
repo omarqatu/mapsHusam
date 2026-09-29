@@ -754,6 +754,9 @@ Split `index.html` into features, in this order:
      coordinates (legacy: a bar of six counters incl. visits and users; those stay in the stats tab). Hidden on phones.
    - `/search`: the search box and three shortcuts (interactive map, road status, fuel status; legacy: the coloured header
      buttons) stay in view while scrolling (the top bar is sticky too); the hero shows providers and services only.
+   - Layer panel: the 65 service types are the same 13 groups as the search page (one table in `extras/featured.ts`),
+     collapsible, each with a tri-state box and a visible/total count (a filter opens the matching groups); the
+     "no background" map is offered to admins only.
    - Live tests run file by file (`fileParallelism` off when `VITE_LIVE_API` is set): they share the seeded accounts.
    - Media sections show only their own kind (photos section = pictures, videos section = videos); everything is still in the
      details card. Cards use the shared `MediaGallery` (enlarge on click, https-only URLs via `safeMediaUrl`) instead of the
