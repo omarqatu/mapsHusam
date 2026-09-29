@@ -1739,7 +1739,8 @@ app.get('/api/search-features', async (req, res) => {
         // 🆕 اسم الجدول الفعلي: العقارات بجدولها الخاص، وكل الخدمات أصبحت service_all
         const tableName = isRealEstate ? `"${layer}"` : `service_all`;
 
-        const ignoreStatusFilter = req.query.ignore_status === '1';
+        // 🔒 عرض السجلات غير الفعّالة/المنتهية للمشرف فقط؛ لغيره يُتجاهل المعامل وتُطبَّق الفلترة العادية
+        const ignoreStatusFilter = req.query.ignore_status === '1' && !!(await activeAdminUidFromToken(bearerToken(req)));
 
         let query = `SELECT *, ST_AsGeoJSON(geom) as geom_json FROM public.${tableName} WHERE 1=1`;
         const params = [];

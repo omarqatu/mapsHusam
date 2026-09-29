@@ -968,6 +968,11 @@ Log each change here: **what · why · how to verify · commit**.
   `/geoserver-proxy/wfs` with no token or a user's token → 403, with an admin's → forwarded; reads (`GET`) unchanged. Server-side WFS-T
   (Backend asks) is still the full fix. Commit: `fix(server): only admins may write through the GeoServer proxy`.
 
+- **`/api/search-features?ignore_status=1` is honoured for admins only.** For anyone else the flag is ignored and the usual
+  `status = 0 AND auto_status = 0` filter applies (nothing in the legacy or React frontend sends it). Why: anyone could list inactive /
+  expired records. Verify (dev): `ApartRent` with the flag → 49 rows as visitor or user, 53 as admin. Commit:
+  `fix(server): ignore_status only for admins`.
+
 ## Backend asks (needs the user's decision — behaviour-changing or larger)
 
 - Sessions never expire by design (`requireAuth` uses `ignoreExpiration: true`); revocation is via `token_version` / `is_active` / `force_logout_flag` (checked on every request, cached). Not a hole by itself, but a stolen token stays valid until an admin force-logout or a password change — consider `expiresIn` + refresh, and a self-service "log out everywhere". Needs the user's decision.
@@ -979,8 +984,6 @@ Log each change here: **what · why · how to verify · commit**.
   server-side GeoServer account from the environment; then only `saveFeature` in `transport.ts` changes. (The interim guard — writes only with an admin app token in
   `X-App-Token` — is in place, see Server changes; the GeoServer login still travels from the browser.)
 - `/api/search-features*` are public and return `SELECT *` — review exposed columns.
-- `/api/search-features?ignore_status=1` bypasses the `status=0 AND auto_status=0` filter with no auth check — anyone can list
-  inactive/expired records.
 - Search returns at most 2000 rows with no offset/pagination; a text search ORs its words (broadens instead of narrowing).
 - `/api/log-map-event` ignores the `service` field for search events (only `provider` and `event_type` are stored), so the
   dashboard can't tell WHAT was searched.
