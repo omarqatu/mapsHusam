@@ -331,5 +331,45 @@
       "printedOn": "Printed on:",
       "popupBlocked": "Allow pop-ups to print the report."
     }
+  },
+  "tools": {
+    "buttonMeasure": "Measure & draw",
+    "buttonShare": "Share a location",
+    "measure": {
+      "title": "Measure & draw",
+      "length": "Measure distance (m)",
+      "area": "Measure area (m²)",
+      "point": "Draw a point",
+      "clear": "Clear measurements",
+      "empty": "Results appear here",
+      "cleared": "Results cleared",
+      "hintLine": "Click to add points. Double-click, or press Finish, to end.",
+      "hintPoint": "Click on the map to place the point.",
+      "finish": "Finish",
+      "undo": "Undo last point",
+      "distance": "Distance: {{value}} m",
+      "areaResult": "Area: {{value}} m²",
+      "pointTitle": "Precise coordinates (EPSG:28191)",
+      "easting": "E: {{value}}",
+      "northing": "N: {{value}}"
+    },
+    "share": {
+      "title": "Share location",
+      "hint": "Click on the map to choose a location and share it.",
+      "selected": "Location selected:",
+      "fromLink": "Location received from the link:",
+      "linkPlaceholder": "The link appears here…",
+      "copyLink": "Copy link",
+      "shareLink": "Share link",
+      "copy": "Copy",
+      "copied": "Copied!",
+      "gridTitle": "Palestine Grid coordinates (ArcGIS Pro):",
+      "wgsTitle": "World coordinates (Google Maps):",
+      "openGoogle": "Google Maps",
+      "clear": "Clear selection",
+      "shareTitle": "Shared location on the map",
+      "copyLinkFailed": "Could not copy the link. Please copy it manually.",
+      "copyCoordsFailed": "Could not copy the coordinates."
+    }
   }
 }

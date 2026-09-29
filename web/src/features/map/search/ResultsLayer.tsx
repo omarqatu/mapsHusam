@@ -8,6 +8,7 @@ import VectorLayer from 'ol/layer/Vector';
 import VectorSource from 'ol/source/Vector';
 import { Circle, Fill, Stroke, Style } from 'ol/style';
 import { useOlMap } from '../MapContext';
+import { useMapUi } from '../store';
 import { useSearchUi } from './store';
 
 const RESULT = new Style({
@@ -90,7 +91,7 @@ export default function ResultsLayer() {
     // Nearby search: the next tap chooses the search point (SelectionController ignores taps while picking).
     const tap = map.on('singleclick', (e) => {
       const ui = useSearchUi.getState();
-      if (!ui.picking) return;
+      if (!ui.picking || useMapUi.getState().activeTool) return;
       ui.setNearbyCenter(e.coordinate as [number, number]);
       ui.setPicking(false);
     });

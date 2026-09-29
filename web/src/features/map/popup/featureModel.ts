@@ -218,11 +218,17 @@ export function telLink(phone: string) {
   return cleaned ? `tel:${cleaned}` : null;
 }
 
-/** Legacy share link: current page + ?x=&y= (Palestine Grid). */
-export function locationShareLink(origin: string, pathname: string, [x, y]: readonly number[]) {
+/** Legacy share link: current page + ?x=&y= (Palestine Grid), optionally &z= (zoom) for the share tool. */
+export function locationShareLink(
+  origin: string,
+  pathname: string,
+  [x, y]: readonly number[],
+  zoom?: number,
+) {
   const u = new URL(pathname, origin);
   u.searchParams.set('x', String(x));
   u.searchParams.set('y', String(y));
+  if (zoom !== undefined) u.searchParams.set('z', String(zoom));
   return u.toString();
 }
 

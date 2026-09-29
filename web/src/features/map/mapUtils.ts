@@ -8,6 +8,12 @@ export function readSharedCenter(search: string): Coordinate | null {
   return Number.isFinite(x) && Number.isFinite(y) ? [x, y] : null;
 }
 
+/** `?z=..` zoom of a shared-location link (share tool); null when absent or not a number. */
+export function readSharedZoom(search: string): number | null {
+  const z = Number.parseFloat(new URLSearchParams(search).get('z') ?? '');
+  return Number.isFinite(z) ? z : null;
+}
+
 export function formatGrid([e, n]: readonly number[]) {
   return `E: ${e.toFixed(2)}, N: ${n.toFixed(2)}`;
 }

@@ -20,6 +20,8 @@ import ResultsPanel from './search/ResultsPanel';
 import SearchPanel from './search/SearchPanel';
 import { useSearchUi } from './search/store';
 import { useMapUi } from './store';
+import MapTools from './tools/MapTools';
+import ToolButtons from './tools/ToolButtons';
 import LayerPanel from './panels/LayerPanel';
 
 /** `/` — the map. Full-screen: a slim brand bar and the map; every tool floats on the map's end edge. */
@@ -100,6 +102,7 @@ export default function MapPage() {
             <MapButton label={t('map.layers')} active={layersOpen} onClick={toggleLayers}>
               <Layers className="h-5 w-5" />
             </MapButton>
+            <ToolButtons />
             <LocateButton />
             <RefreshButton />
             <ZoomButtons />
@@ -111,6 +114,7 @@ export default function MapPage() {
             <GlobalSearchBox />
           </div>
           <SearchPanel />
+          <MapTools />
           <LayerPanel open={layersOpen} onClose={() => setLayersOpen(false)} />
           <ResultsPanel className={selected ? 'max-sm:hidden' : undefined} />
           {results && selected && (

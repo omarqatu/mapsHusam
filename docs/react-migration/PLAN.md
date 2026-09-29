@@ -107,7 +107,52 @@ Split `index.html` into features, in this order:
    global-search) → JSX; global-search highlight built HTML and its regex crashed on `(`; print report built HTML
    strings and printed the literal text `${new Date()}` instead of the date; media shown twice when two fields hold
    the same video.
-4. ⬜ Tools: `measure.js`, `share-location.js`
+4. ✅ Tools: `measure.js`, `share-location.js` → `features/map/tools/`
+   **Inventory (read from `js/measure.js`, `js/share-location.js`, `index.html`, `main.js`, `shared-utils.js`):**
+   - Two top-bar buttons (`measure-tools-toggle-btn`, `share-location-btn`) open `#measurePanel` / `#shareLocationPanel`
+     (draggable, minimisable, closable; on phones tabs from `mobile-tabs.js`). `rolePermissions` says canMeasure/canShare
+     for every role, so nothing is role-gated.
+   - Measure: own vector layer (yellow `#ffcc33` 3 px line, 20 % fill, dot r7 with white ring); buttons 📏 distance (m),
+     📐 area (m²), 📍 draw point — each starts ONE `ol/interaction/Draw` (removed on `drawend`); 🧹 clear (empties the layer,
+     removes the interaction, text "تم مسح النتائج"); ✕ closes the panel and removes the interaction (drawn shapes stay).
+     While drawing, `DoubleClickZoom` is switched off and switched back on in a `setTimeout(0)` after end/abort/clear/close
+     (a double click both ends a shape and zooms). Results: planar `getLength()` / `getArea()` in metres of EPSG:28191
+     (no geodesic), `toFixed(3)`: "المسافة: X متر طولي", "المساحة: X متر مربع", point → "E: … N: …" (EPSG:28191, 3 dp);
+     on `drawstart` the box shows "جاري الحساب بدقة...". Only the last result is shown.
+   - Share: panel open ⇒ `singleclick` listener + crosshair cursor (panel closed ⇒ removed; the `MutationObserver` on the
+     panel's `hidden` class and `window.toggleShareLocationTool` are the DOM glue). A tap replaces the single red pin
+     (layer zIndex 10000, PNG from a CDN) and shows: Palestine Grid `E: x , N: y` (3 dp), WGS84 `Lat: … , Lon: …` (6 dp,
+     `ol/proj.transform` 28191→4326), and the link `origin+pathname?x=<3 dp>&y=<3 dp>&z=<zoom 0 dp>`; status line "تم تحديد الموقع
+     بنجاح:". Buttons: copy link (phones: `navigator.share({title,url})` only; desktop: `clipboard.writeText`, fallback
+     `execCommand('copy')`, success = button turns green "تم النسخ!" for 2 s, failure/empty = toast), copy grid coords as
+     `E,N` (ArcGIS Pro), copy WGS as `lat,lon` (Google Maps), open `https://www.google.com/maps?q=lat,lon` in a new tab,
+     🧹 clear (pin, link, both coordinate texts back to `---`, hint text).
+   - On page load `?x=&y=[&z=]` centres the map, sets zoom `z`, drops the pin and fills the coordinate texts ("عرض الموقع
+     المستلم من الرابط:") — the link box stayed empty. (The details card for that point is item 2; `MapView` centres.)
+   **Kept (parity):** all three draw modes with the same numbers/precision/units; clear; one-shape-per-press; drawn shapes
+   survive closing the panel; double-click-zoom suppression while drawing; share pin by tap, link format
+   `?x=&y=&z=` (built by the existing `locationShareLink`, now with an optional zoom), grid + WGS coordinates with their
+   copy formats, Google Maps button, native share sheet on phones / clipboard elsewhere with 2 s "copied" feedback,
+   clear; the pin survives closing the panel; opening a `?x=&y=&z=` link zooms to `z`, shows the pin and the coordinates in
+   the share panel; crosshair cursor while a tool is active.
+   **Changed on purpose (better, documented):**
+   - While a tool is open, map taps no longer select features / open the details card / pick a nearby-search point
+     (`activeTool` flag in `store.ts`, honoured by `SelectionController` and `ResultsLayer`). Legacy let a tap both drop a
+     pin and open a popup.
+   - One end-side panel at a time: opening measure/share closes the layer and search panels and vice versa (legacy
+     stacked several `panel-right` panels on top of each other). On phones a tool also closes the details card.
+   - Measure: the result is live while a line/polygon is being drawn (legacy: "calculating…" until the end); a Finish and an
+     "Undo last point" button appear while drawing (a double tap is hard on phones); pressing the active mode again or Esc
+     cancels the shape; a hint line says how to draw.
+   - Share: copy/Google/clear buttons are disabled until a location exists (legacy showed a warning toast); the pin is an
+     inline SVG (no CDN request); Google Maps opens with `noopener,noreferrer`; the link box now also shows the link of an
+     opened shared link (legacy left it empty); the phone button says "Share link".
+   - The panels use the shared `MapSheet` (side card / bottom sheet) instead of draggable/minimisable floating panels; the
+     tool buttons are round map buttons in the end-side column (ruler, share) instead of top-bar pills.
+   **Not ported:** panel drag/minimise (replaced by the sheet), `alert()` fallbacks when `window.toast` is missing.
+   Tests: `tools/*.test.ts(x)` — geometry math, number/coordinate/link formats and their round trip through the map's own
+   `?x=&y=&z=` reader, clipboard helper, panel exclusivity, and that layers / interactions / click listeners / cursor /
+   double-click zoom are restored on close (real `ol/Map` in jsdom).
 5. ⬜ Editing (admin): `edit-core.js`, `edit-wfs.js`, `editLines.js`, `editPolygons.js`
 6. ⬜ Provider panel: `provider-panel.js`, `services-bridge.js`
 7. ⬜ Service requests & chat: `service-chat.js` (1.7k lines), `notifications.js`

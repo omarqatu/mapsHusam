@@ -2,6 +2,9 @@ import { create } from 'zustand';
 import { DEFAULT_BASEMAP, type BasemapKey, type RealEstateLayerKey } from './config';
 import type { SelectedFeature } from './popup/featureModel';
 
+/** Tools that own map clicks while active (measure draws, share drops a pin). */
+export type MapTool = 'measure' | 'share';
+
 // Map UI state only (what is switched on). Features/data never live here.
 interface MapUiState {
   basemap: BasemapKey;
@@ -9,6 +12,9 @@ interface MapUiState {
   /** Service types switched off by the user. */
   hiddenServices: ReadonlySet<string>;
   layersOpen: boolean;
+  /** The measure / share tool that is open. While set, map clicks must not select features or pick search points. */
+  activeTool: MapTool | null;
+  setActiveTool: (tool: MapTool | null) => void;
   setLayersOpen: (open: boolean) => void;
   /** The feature whose details card is open. */
   selected: SelectedFeature | null;
@@ -25,6 +31,8 @@ export const useMapUi = create<MapUiState>((set) => ({
   realEstateVisible: { rent: true, sale: true, land: true },
   hiddenServices: new Set(),
   layersOpen: false,
+  activeTool: null,
+  setActiveTool: (activeTool) => set({ activeTool }),
   setLayersOpen: (layersOpen) => set({ layersOpen }),
   selected: null,
   setSelected: (selected) => set({ selected }),
