@@ -44,7 +44,7 @@ Status legend: ⬜ not started · 🟨 in progress · ✅ ported & verified · �
 | `/admin/widgets` | `widgets-admin.html`, `js/widgets-config.js` | ✅ (legacy kept until `web/dist` is served) |
 | `/admin/dashboard` | `dashboard.html` | ✅ (legacy kept until `web/dist` is served) |
 | `/notifications` | `notifications-panel.html` (socket.io) | ✅ |
-| `/widgets/portal`, `/widgets/ticker` | `widgets-portal.html`, `widgets-ticker.html`, `js/widgets-ticker.js` | ⬜ |
+| `/widgets/portal`, `/widgets/ticker` | `widgets-portal.html`, `widgets-ticker.html`, `js/widgets-ticker.js`, `css/widgets-{portal,ticker}.css` (+ the ticker bar on the map and on `/search`) | 🟨 (checklist below) |
 
 ### Admin pages — parity checklists (Phase 1, written before the code; ticked after verification)
 
@@ -128,6 +128,32 @@ on each request (`requireAdmin`). Errors come back as `{ success:false, error }`
 
 - **Switch status:** routes are registered in `App.tsx` (`ported`) and verified against the real backend at 1440 px and 390 px (Arabic + English). The legacy `admin-users.html`, `admin-view-user.html`, `dashboard.html`, `widgets-admin.html` (+ `css/admin-users.css`) are **not deleted yet**: `server.js` still does not serve `web/dist` (Phase 0 item), so production would lose the pages, and `index.html` / other legacy pages link to them. Delete them in the commit that makes the server serve these routes. `js/widgets-config.js` must stay (ticker).
 - Tests: `admin-users/model.test.ts`, `admin-dashboard/model.test.ts`, `admin-widgets/model.test.ts`, DataTable phone-cards + client 401 test, live `admin-users/admin.live.test.ts` and `admin-widgets/admin.live.test.ts` (throwaway users `LIVE-ADMIN-*`, removed from the dev DB through `web/src/test/liveDb.ts`).
+
+### `/widgets/portal`, `/widgets/ticker` — inventory (read from `widgets-portal.html`, `widgets-ticker.html`, `js/widgets-ticker.js`, `js/widgets-config.js`, `server.js`)
+
+Neither HTML file is a page: both are fragments that `widgets-ticker.js` injects. `widgets-ticker.html` = the ticker bar + an overlay modal;
+`widgets-portal.html` = the ten cards, loaded into that modal (desktop) and cloned into a "معلومات حية" tab of `mobile-tabs.js` (phones).
+The bar is the `<footer class="widgets-ticker-footer">` of `index.html` (the map) and `no-map-search.html`.
+
+- API: `GET /api/widgets-data` (public, every 60 s while the tab is visible) → `{ success, groups: { <key>: { items[], updated_at } }, road_status_updated_at,
+  fuel_status_updated_at }` (note: `items`, the admin endpoint says `data`); keys currency, gold, fuel, transport_inter_city, transport_intra_city,
+  weather, events; a group nobody saved is absent. Row fields: `id, label, value, unit`, currency also `code`, weather `temp, humidity, wind, condition`,
+  events `date, notes` — all free text (values like `28 - الحافلة 18.5` exist). `GET /api/search-features?layer=road_barriers|fuel_stations&workspace=services`
+  (every 60 s) — already ported as `api/liveStatus.ts` + map `StatusTab`. **External, from the browser:** Open-Meteo forecast (11 West-Bank cities,
+  3 days, every 30 min), Aladhan `timingsByCity` (Jerusalem, method 23 + tune, hourly) and Aladhan `gToH` (hijri date, daily). No storage keys, no socket.
+- [ ] 1 currency card: rows label + code + value, flag emoji by code, search by name. [ ] 2 gold card: label + unit + value, medal emoji, search.
+- [ ] 3 weather card: per city, 3 days (today / tomorrow / day after) with icon by WMO code and max (day) / min (night) °C, search. The admin's `weather` group
+  (`temp, humidity, wind, condition`) is fetched too but legacy lost it (it replaced the forecast objects that have no `days`, so the card showed empty rows until the next 30-min forecast).
+- [ ] 4 fuel prices card (95 / 98 / diesel / gas cylinders …, icon by id, search). [ ] 5 fares between cities. [ ] 6 fares inside the city (Al-Bireh). Both: bus icon, search.
+- [ ] 7 prayer times (Fajr, Sunrise, Dhuhr, Asr, Maghrib, Isha) + today's date; hard-coded fallback times when the API fails.
+- [ ] 8 calendar: hijri + gregorian date, "today", upcoming events from the `events` group (sorted by date, `label — notes`), hard-coded demo events when empty.
+- [ ] 9 road status card and [ ] 10 fuel station status card: live lists (search, "last update") — **ported earlier** as `map/extras/StatusTab`, reused here.
+- [ ] "Last update" per card: relative (`now` under 10 min, else rounded to 5 min) from each group's `updated_at`; road / fuel from `*_status_updated_at`; prayer / calendar show today's date.
+- [ ] "Refresh all" button; per-card search boxes that ignore Arabic letter variants (`normalizeSearchText`); "no items yet" text for an empty group.
+- [ ] Ticker bar: title "تحديثات فورية", a marquee of the ten group shortcuts (icon + name, no values) — click = open the portal scrolled to that card; drag / wheel / touch scroll,
+  auto-scroll pauses while the user interacts; expand button = open the portal. Footer links "مركز المعلومات الحية" (10 links, `data-widgets-card`) and the map's road / fuel buttons open the portal at a card (road / fuel done in item 10).
+- [ ] Mobile: the same ten cards as a tab (phones) instead of a modal. Role differences: none (public, no auth). Not used in legacy: the ticker's static
+  currency / gold / weather / market items in `widgets-ticker.html` (overwritten by the ten shortcuts at start-up), `/api/currency|gold|weather|market|prayer|calendar` (do not exist on the server).
 
 ## Phase 2 — Search without map
 
