@@ -626,16 +626,16 @@
     "defaultService": "service",
     "myRequests": "My requests",
     "status": {
-      "pending": "⏳ Waiting for a reply",
-      "accepted": "💬 Accepted (open the chat)",
-      "rejected": "❌ Declined",
-      "completed": "✅ Agreed",
-      "cancelled": "🚫 Cancelled ({{reason}})"
+      "pending": "Waiting for a reply",
+      "accepted": "Accepted (open the chat)",
+      "rejected": "Declined",
+      "completed": "Agreed",
+      "cancelled": "Cancelled ({{reason}})"
     },
     "flow": {
       "loginFirst": "Sign in first to request a service.",
       "missingData": "Could not identify this provider.",
-      "alreadyPending": "⏳ You already have a pending request to this provider, waiting for a reply.",
+      "alreadyPending": "You already have a pending request to this provider, waiting for a reply.",
       "title": "Service request",
       "send": "Send request",
       "message": "A service request will be sent to \"{{provider}}\" ({{service}}). You will be notified when they reply. Continue?",
@@ -688,7 +688,7 @@
       },
       "completedToast": "Agreement complete; the contact numbers are now shown!",
       "waitingToast": "Your confirmation was recorded; waiting for the other side to confirm.",
-      "confirm": "Agreed ✅",
+      "confirm": "Agreed",
       "confirmWaiting": "Waiting for the other side"
     },
     "contact": {

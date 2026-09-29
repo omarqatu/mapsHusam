@@ -581,7 +581,7 @@ Split `index.html` into features, in this order:
    - Live-tracking ticks are silent (no success toast); a failed tick shows the error in the panel.
    - The "no service layer linked" click error of legacy is impossible: the buttons stay locked until the account has loaded.
    **Not ported:** `services-bridge.js` (dead code, see above); dragging/minimising the panel.
-7. 🟨 (typecheck, lint, live tests pass; browser walk pending) Service requests & chat: `service-chat.js` (1.7k lines), `notifications.js`
+7. ✅ (browser walk done on desktop: request → live banner at the provider → accept → chat at the user; phone not walked end to end) Service requests & chat: `service-chat.js` (1.7k lines), `notifications.js`
    **Done (`features/requests/`, `features/notifications/`, `api/{requests,notifications,socket}.ts`):**
    - "Request service" on the details card and on search / featured rows (was disabled) → confirm dialog → `POST /api/service-requests`; an open pending request is not duplicated, an accepted one reopens its chat.
    - "My requests" list (status, accept/reject for the provider, cancel with a mandatory reason, open chat / archive, rate, write comment), chat (messages, polling + socket push, "agreed" confirmation from both sides, then call / WhatsApp with the legacy greeting), star rating + later comment, provider's incoming banner with ring and queue counter.
@@ -757,6 +757,8 @@ Split `index.html` into features, in this order:
    - Layer panel: the 65 service types are the same 13 groups as the search page (one table in `extras/featured.ts`),
      collapsible, each with a tri-state box and a visible/total count (a filter opens the matching groups); the
      "no background" map is offered to admins only.
+   - Requests: status labels lose their emoji (a coloured dot + text instead), "تم الاتفاق" has no ✅, the chat footer keeps
+     "cancel request" on one line on phones, hint and date text raised to 14 / 12 px.
    - Live tests run file by file (`fileParallelism` off when `VITE_LIVE_API` is set): they share the seeded accounts.
    - Media sections show only their own kind (photos section = pictures, videos section = videos); everything is still in the
      details card. Cards use the shared `MediaGallery` (enlarge on click, https-only URLs via `safeMediaUrl`) instead of the

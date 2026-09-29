@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import clsx from 'clsx';
+import StatusDot from '@/components/ui/StatusDot';
 import { Archive, Ban, Check, MessageCircle, MessageSquarePlus, Star, X } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import {
@@ -65,18 +66,19 @@ function RequestCard({ r, uid, onCancel }: { r: ServiceRequest; uid: number; onC
           {service} ({otherLabel})
         </span>
         {unseen && (
-          <span className="rounded-full bg-whatsapp px-2 py-0.5 text-[10px] font-bold text-white">
+          <span className="rounded-full bg-whatsapp px-2 py-0.5 text-xs font-bold text-white">
             {t('requests.new')}
           </span>
         )}
       </div>
-      <p className={clsx('text-xs font-bold', TONE[r.status])}>
+      <p className={clsx('flex items-center gap-1.5 text-sm font-bold', TONE[r.status])}>
+        <StatusDot color="currentColor" className="h-2 w-2" />
         {t('requests.statusLabel')}:{' '}
         {r.status === 'cancelled'
           ? t('requests.status.cancelled', { reason: r.cancellation_reason || t('requests.noReason') })
           : t(`requests.status.${r.status}`)}
       </p>
-      <p className="text-[11px] text-slate-400">{formatDateTime(r.created_at, i18n.language)}</p>
+      <p className="text-xs text-slate-500">{formatDateTime(r.created_at, i18n.language)}</p>
 
       <div className="mt-1 flex flex-wrap gap-2">
         {(r.status === 'accepted' || r.status === 'completed') && (

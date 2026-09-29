@@ -137,7 +137,7 @@ function Chat({ req, uid }: { req: ServiceRequest; uid: number }) {
           open ? (
             <>
               <Button
-                className="flex-[2]"
+                className="flex-[3]"
                 startIcon={<Handshake className="h-4 w-4" aria-hidden />}
                 onClick={() => setAskConfirm(true)}
                 disabled={iConfirmed}
@@ -146,7 +146,7 @@ function Chat({ req, uid }: { req: ServiceRequest; uid: number }) {
               </Button>
               <Button
                 variant="danger"
-                className="flex-1"
+                className="shrink-0 whitespace-nowrap"
                 startIcon={<Ban className="h-4 w-4" aria-hidden />}
                 onClick={() => setAskCancel(true)}
               >
@@ -161,7 +161,7 @@ function Chat({ req, uid }: { req: ServiceRequest; uid: number }) {
         }
       >
         <div className="space-y-3">
-          <div className="rounded-lg bg-slate-50 p-2.5 text-xs text-slate-600">
+          <div className="rounded-lg bg-slate-50 p-2.5 text-sm text-slate-700">
             {completed ? (
               <ContactBox contact={contact} otherName={other} serviceType={req.service_type} />
             ) : open ? (
