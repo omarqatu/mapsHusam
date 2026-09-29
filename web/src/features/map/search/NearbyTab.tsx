@@ -147,7 +147,7 @@ export default function NearbyTab() {
           value={radius}
           onChange={(e) => setRadius(e.target.value)}
         />
-        <p className="text-xs text-slate-500">{t('search.nearby.radiusHint')}</p>
+        <p className="text-sm text-slate-600">{t('search.nearby.radiusHint')}</p>
       </FormField>
 
       <div className="flex gap-2">

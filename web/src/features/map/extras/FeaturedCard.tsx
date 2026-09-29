@@ -33,7 +33,7 @@ function BeforeAfter({ props }: { props: Props }) {
       {url ? (
         <MediaGallery items={labelMedia(sideMedia(url, labelKey), t)} />
       ) : (
-        <div className="rounded-lg bg-slate-50 p-3 text-center text-xs text-slate-400">
+        <div className="rounded-lg bg-slate-50 p-3 text-center text-xs text-slate-500">
           {t('extras.featured.none')}
         </div>
       )}
@@ -71,12 +71,12 @@ export default function FeaturedCard({ entry, mode, badge }: CardProps) {
     <article className="space-y-2 rounded-xl border border-slate-200 bg-white p-3 shadow-sm">
       {mode === 'beforeAfter' ? <BeforeAfter props={p} /> : media && <MediaGallery items={media} />}
 
-      <div className="flex items-center gap-1.5 text-[11px] font-bold text-amber-700">
+      <div className="flex items-center gap-1.5 text-xs font-bold text-amber-700">
         <Star className="h-3 w-3" fill="currentColor" aria-hidden />
         <span>
           {badge} · {typeTitle}
         </span>
-        {r.id && <span className="font-normal text-slate-400">#{r.id}</span>}
+        {r.id && <span className="font-normal text-slate-500">#{r.id}</span>}
       </div>
 
       <h5 className="flex items-start gap-2 text-sm font-bold text-slate-800" dir="auto">
@@ -87,12 +87,12 @@ export default function FeaturedCard({ entry, mode, badge }: CardProps) {
       </h5>
 
       {place && (
-        <div className="flex items-center gap-1 text-xs text-slate-500" dir="auto">
+        <div className="flex items-center gap-1 text-sm text-slate-600" dir="auto">
           <MapPin className="h-3 w-3 shrink-0" aria-hidden /> {place}
         </div>
       )}
 
-      <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5 text-xs">
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm">
         {stars > 0 && (
           <span className="inline-flex items-center gap-0.5 text-amber-600">
             <Star className="h-3 w-3" fill="currentColor" aria-hidden /> {stars}
@@ -120,7 +120,7 @@ export default function FeaturedCard({ entry, mode, badge }: CardProps) {
       {isFuel && <FuelBadges props={p} />}
 
       {text(p.des) && (
-        <p className="line-clamp-3 text-xs text-slate-600" dir="auto">
+        <p className="line-clamp-3 text-sm text-slate-700" dir="auto">
           {text(p.des)}
         </p>
       )}
@@ -130,7 +130,7 @@ export default function FeaturedCard({ entry, mode, badge }: CardProps) {
         <button
           type="button"
           onClick={() => showOnMap(r)}
-          className="inline-flex items-center gap-1.5 rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50"
+          className="inline-flex items-center gap-1.5 rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50"
         >
           <MapPin className="h-3.5 w-3.5" aria-hidden /> {t('extras.featured.showOnMap')}
         </button>

@@ -62,7 +62,7 @@ export default function LayerPanel({ open, onClose }: { open: boolean; onClose: 
     <MapSheet title={t('map.layers')} label={t('map.layers')} side="end" onClose={onClose}>
       <div className="space-y-5">
         <section>
-          <h3 className="mb-2 text-xs font-bold tracking-wide text-slate-500">{t('map.basemap')}</h3>
+          <h3 className="mb-2 text-sm font-bold text-slate-700">{t('map.basemap')}</h3>
           <div className="grid grid-cols-2 gap-2" role="radiogroup" aria-label={t('map.basemap')}>
             {BASEMAPS.map((b) => (
               <button
@@ -104,7 +104,7 @@ export default function LayerPanel({ open, onClose }: { open: boolean; onClose: 
         </div>
 
         <section>
-          <h3 className="mb-1 text-xs font-bold tracking-wide text-slate-500">{t('map.realEstate')}</h3>
+          <h3 className="mb-1 text-sm font-bold text-slate-700">{t('map.realEstate')}</h3>
           {REAL_ESTATE_LAYERS.map((l) => (
             <Toggle
               key={l.key}
@@ -118,7 +118,7 @@ export default function LayerPanel({ open, onClose }: { open: boolean; onClose: 
         </section>
 
         <section>
-          <h3 className="mb-2 text-xs font-bold tracking-wide text-slate-500">{t('map.services')}</h3>
+          <h3 className="mb-2 text-sm font-bold text-slate-700">{t('map.services')}</h3>
           <SearchInput
             value={filter}
             onChange={setFilter}

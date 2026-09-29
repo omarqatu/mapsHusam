@@ -381,6 +381,9 @@ Split `index.html` into features, in this order:
      village · governorate) instead of four fields, no name repeated under the header, only filled-in fields shown,
      media folded into a section (open when there is a single item), share link + coordinates in one footer row. A URL
      in the image field that is not an image (e.g. a Facebook page) shows as a plain link with an external-link icon.
+   - Readability pass on every map panel: hints are 14 px `slate-600` (were 12 px `slate-500`), nothing below 12 px, no
+     `slate-400` text; panels are 22 rem wide; quick-search types are an equal two-column grid (were ragged pills);
+     layer section headings 14 px bold; featured cards use 14 px for the data lines.
    - Live tests run file by file (`fileParallelism` off when `VITE_LIVE_API` is set): they share the seeded accounts.
    - Media sections show only their own kind (photos section = pictures, videos section = videos); everything is still in the
      details card. Cards use the shared `MediaGallery` (enlarge on click, https-only URLs via `safeMediaUrl`) instead of the

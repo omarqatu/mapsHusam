@@ -47,7 +47,7 @@ export default function RatingsBlock({ layer, featureId }: { layer: string; feat
                     <StarRating value={r.rating} />
                   </div>
                   {r.comment && <p className="mt-1 text-xs leading-relaxed text-slate-600">{r.comment}</p>}
-                  <p className="mt-1 text-[10px] text-slate-400">{formatDate(r.created_at, i18n.language)}</p>
+                  <p className="mt-1 text-xs text-slate-500">{formatDate(r.created_at, i18n.language)}</p>
                 </li>
               ))}
             </ul>

@@ -49,7 +49,7 @@ function ResultRow({
       )}
     >
       <button type="button" onClick={onOpen} className="flex w-full items-start gap-3 text-start">
-        <span className="mt-0.5 w-5 shrink-0 text-center text-xs font-bold text-slate-400">{index + 1}</span>
+        <span className="mt-0.5 w-5 shrink-0 text-center text-xs font-bold text-slate-500">{index + 1}</span>
         <span aria-hidden className="text-xl">
           {targetIcon(r.target)}
         </span>
@@ -57,7 +57,7 @@ function ResultRow({
           <span className="block truncate text-sm font-bold text-slate-800" dir="auto">
             {name}
           </span>
-          <span className="block truncate text-xs text-slate-500">
+          <span className="block truncate text-xs text-slate-600">
             {typeTitle}
             {place ? ` · ${place}` : ''}
           </span>

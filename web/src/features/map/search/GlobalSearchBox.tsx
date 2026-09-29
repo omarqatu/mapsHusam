@@ -180,7 +180,7 @@ export default function GlobalSearchBox() {
                       <span className="block truncate text-sm font-bold text-slate-800" dir="auto">
                         <Highlighted text={name} term={term} />
                       </span>
-                      <span className="block truncate text-xs text-slate-500" dir="auto">
+                      <span className="block truncate text-xs text-slate-600" dir="auto">
                         <Highlighted text={sub} term={term} />
                       </span>
                       {reason && <span className="block text-xs font-semibold text-brand">{reason}</span>}

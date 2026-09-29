@@ -129,7 +129,7 @@ export default function TypeFilter({ selected, onChange }: Props) {
               <summary className="flex cursor-pointer items-center gap-2 rounded px-1 py-1 text-sm font-semibold text-slate-800 hover:bg-slate-50">
                 <Icon className="h-4 w-4 text-slate-500" aria-hidden />
                 {t(`extras.featured.groups.${group}`)}
-                <span className="text-xs font-normal text-slate-400">({targets.length})</span>
+                <span className="text-xs font-normal text-slate-500">({targets.length})</span>
               </summary>
               <div className="ms-3 border-s border-slate-100 ps-2">
                 <Check

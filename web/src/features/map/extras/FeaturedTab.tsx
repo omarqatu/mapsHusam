@@ -76,7 +76,7 @@ export default function FeaturedTab() {
 
   return (
     <div className="space-y-3">
-      <p className="text-xs text-slate-500">{t('extras.featured.intro')}</p>
+      <p className="text-sm text-slate-600">{t('extras.featured.intro')}</p>
       <SectionCard title={t('extras.featured.nearMe')} icon={<LocateFixed className={icon} aria-hidden />}>
         <NearMeSection />
       </SectionCard>

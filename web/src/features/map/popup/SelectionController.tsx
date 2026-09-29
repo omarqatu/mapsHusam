@@ -37,8 +37,8 @@ function fitAboveSheet(map: OlMap, coordinate: [number, number] | null) {
     return;
   }
   if (window.innerWidth >= 640) {
-    // Desktop: the card (20rem + gutter) covers the start edge, so centre in what is left. Start is the right in RTL.
-    const cardWidth = 344;
+    // Desktop: the card (22rem + gutter) covers the start edge, so centre in what is left. Start is the right in RTL.
+    const cardWidth = 364;
     view.padding = document.dir === 'rtl' ? [0, cardWidth, 0, 0] : [0, 0, 0, cardWidth];
   } else view.padding = [0, 0, Math.round(size[1] * 0.5), 0];
   // A running fly-to already ends at the padded centre; only a plain tap needs its own pan.

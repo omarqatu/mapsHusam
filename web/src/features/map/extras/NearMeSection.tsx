@@ -82,7 +82,7 @@ export default function NearMeSection() {
           );
         })}
       </div>
-      <p className="flex items-center gap-2 text-xs text-slate-500" role="status" aria-live="polite">
+      <p className="flex items-center gap-2 text-sm text-slate-600" role="status" aria-live="polite">
         {center && candidates.isPending && <Spinner size="sm" />}
         {status}
       </p>

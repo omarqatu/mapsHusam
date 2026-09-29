@@ -180,7 +180,7 @@ function MeasurePanel({ source, display, setDisplay, onClose }: PanelProps) {
       </div>
 
       {mode && (
-        <p className="mt-3 text-xs text-slate-500">
+        <p className="mt-3 text-sm text-slate-600">
           {t(mode === 'point' ? 'tools.measure.hintPoint' : 'tools.measure.hintLine')}
         </p>
       )}

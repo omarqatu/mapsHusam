@@ -119,7 +119,7 @@ export default function StatusTab({ layer }: { layer: StatusLayer }) {
                         {name}
                         {note && <span className="font-normal text-slate-500"> ({note})</span>}
                       </span>
-                      {place && <span className="block truncate text-xs text-slate-500">{place}</span>}
+                      {place && <span className="block truncate text-xs text-slate-600">{place}</span>}
                     </span>
                   </span>
                   <span className="mt-2 block">

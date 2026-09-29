@@ -145,11 +145,11 @@ export default function FeatureCard({ feature, onClose, className }: Props) {
         {dirs && (
           <div className="grid grid-cols-2 gap-2">
             <div>
-              <div className="mb-1 text-center text-[11px] text-slate-500">{t('popup.inbound')}</div>
+              <div className="mb-1 text-center text-xs text-slate-500">{t('popup.inbound')}</div>
               <StatusTile tone={dirs.inbound.color} label={t(`roadStatus.${dirs.inbound.key}`)} />
             </div>
             <div>
-              <div className="mb-1 text-center text-[11px] text-slate-500">{t('popup.outbound')}</div>
+              <div className="mb-1 text-center text-xs text-slate-500">{t('popup.outbound')}</div>
               {dirs.outbound ? (
                 <StatusTile tone={dirs.outbound.color} label={t(`roadStatus.${dirs.outbound.key}`)} />
               ) : (
@@ -239,7 +239,7 @@ export default function FeatureCard({ feature, onClose, className }: Props) {
           >
             {t('popup.copyLink')}
           </Button>
-          <span className="text-[11px] text-slate-400" dir="ltr">
+          <span className="text-xs text-slate-500" dir="ltr">
             {feature.coordinate.map((n) => n.toFixed(1)).join(', ')}
           </span>
         </div>
