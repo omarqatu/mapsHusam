@@ -158,7 +158,68 @@ Split `index.html` into features, in this order:
    one `toLonLat` (both sides had added one), one Palestine-grid formatter (`formatGrid(coord, decimals)`), clipboard
    helper moved to `lib/clipboard.ts` and reused by the details card and the results link, landscape phones: the tool
    column scrolls and refresh/zoom hide below 560 px height (gestures + auto refresh cover them).
-5. ⬜ Editing (admin): `edit-core.js`, `edit-wfs.js`, `editLines.js`, `editPolygons.js`
+5. 🟨 Editing (admin): `edit-core.js`, `edit-wfs.js`, `editLines.js`, `editPolygons.js` → `features/map/edit/`
+
+   **Inventory (read in full: the four `js/edit*.js` files, `index.html` #editPanel / #polygonEditPanel / #lineEditPanel + the three
+   attribute modals, `js/main.js` panel wiring, `js/mobile-tabs.js`, and the `/geoserver-proxy` block of `server.js`).**
+   - *Who:* the panels open only when `currentUserRole === 'admin'` (`main.js`: `display:block !important` for admins; the panel buttons
+     exist for everybody but the panel never shows). No server check: `/geoserver-proxy` is public, so the only real gate is the
+     **GeoServer login typed per save** (Basic auth, `btoa(user:pass)`, never stored). See Backend asks.
+   - *Three panels, three tools each, same shape:* **add**, **modify (data + geometry)**, **delete**. Every tool is a toggle button that
+     first calls `deactivate…()` (removes Draw/Modify/Snap/Select, closes the modal, resets the cursor), needs a layer chosen
+     (points/polygons: `<select>`; lines: fixed) and adds a `Snap` on the layer's source.
+   - *Points (`edit-core.js` + `edit-wfs.js`, workspace by layer):*
+     - Layer list = every vector overlay except the excluded ones → **rent** (`ApartRent`), **sale** (`ApartSale`), and one entry per service
+       type (≈ 68 `discriminator`s) that all write to the single table `services:service_all`.
+     - Add: `Draw Point` → attribute modal → save. A new service gets `discriminator` set at `drawend` (mandatory).
+     - Modify: `Select` (features of the chosen layer; for services ANY service feature — the real type is read from the clicked
+       feature's `discriminator`) → modal → **alert** "click the map for the new position or wait" → next map click moves the point
+       and saves, else after **4 s** it saves in place. (No Modify interaction for points.)
+     - Delete: `Select` → `confirm()` → delete.
+     - Fields (modal): real estate `name, price, currency(USD/ILS/JOD), des, pic, video, area, whatsapp, phone, end_date, work_hours
+       (+ "24 h" button = "متوفر 24 ساعة"), rating 0-10`; services `name, whatsapp, phone, des, pic, video, rating 0-10,
+       details_link_1/2, end_date, work_hours`. Extra selects: `road_barriers` → `stop` (in) and `stop2` (out), 0 open / 1 closed /
+       2 light jam / 3 heavy jam / 4 inspection; `fuel_stations` → `diesel`, `banzen95`, `banzen98` (0 available / 1 not).
+     - Computed on save: `search_tags` (services: Arabic type name + name + first 40 chars of `des` + a fixed keyword list per type;
+       rent/sale: a fixed sentence); `x_coord`/`y_coord` (Palestine grid, 2 dp); rent/sale `X`/`Y`, services `x_global`/`y_global`
+       (WGS84, 6 dp). Insert only: `start_date` = today, `status` 0, `auto_status` 0, `rating` 5 if empty; regional
+       `gov_a`/`village_a` (and `location` for rent/sale) from the `Location` polygon that contains the point (read from the already
+       loaded `locationLayer`; `'غير محدد'` when none); blank defaults `price`/`area` 0, `work_hours` "متوفر 24 ساعة", `name`
+       "خدمة جديدة", `currency` first option.
+     - WFS-T body: Insert in the **strict column order** of the layer (per-table list in the file), `rating` as `toFixed(1)`,
+       geometry `gml:Point srsName=EPSG:28191` `x,y`; Update = allowed-properties only and **only non-empty values** (so a field can
+       never be cleared) + `geom` + `x_coord/y_coord/X,Y|x_global,y_global` + `ogc:FeatureId fid="<typeName>.<n>"`; Delete by FeatureId.
+       Feature id: `feature.getId()` → `fid` → `id`, last segment after `.`.
+   - *Lines (`editLines.js`): one layer, `realestate:RoadsTest`, MultiLineString:* fields `name` (default "طريق جديد"), `road_type`
+     (int), `one_way` (int, 0 both / 1 one way); Add = `Draw LineString` (cursor crosshair, modal after 250 ms); Modify = `Select` +
+     `Modify` on the selected feature + modal; Delete = `confirm()`. On save `gov_a`/`village_a` from the `Location` polygon under the
+     first vertex; insert sets `source`=0, `target`=0, `cost`=0 (pgRouting columns). Geometry sent as `MultiLineString` with
+     `gml:posList`. Cancel in the modal removes the drawn line.
+   - *Polygons (`editPolygons.js`): `realestate:LandSale` (Polygon) and `realestate:Location` (MultiPolygon):* fields land = `name, phone,
+     price, currency, des, pic, video, area, whatsapp, end_date, work_hours, rating 0-5`; location = `gov_a, village_a, location`.
+     Add/Modify = `Draw Polygon` / `Select` → modal ("continue to shape") → **shape phase** with a sub-toolbar: *move points*
+     (`Modify`), *reshape* (a free `Draw LineString` that is never applied to the polygon — effectively a no-op), *new drawing*
+     (removes the polygon, draws another, restores properties and id) and **final save**. Land: `search_tags` from the fixed land
+     sentence + `des`; insert `start_date`/`status`/`auto_status`; regional fields from the `Location` polygon under the interior
+     point; no coordinate columns. Rings are closed before sending; `gml:exterior`/`gml:interior`. Double-click-zoom is off while a
+     polygon tool is active. Delete = SweetAlert confirm.
+   - *Transport (all three):* `POST /geoserver-proxy/wfs` (`text/xml`, WFS 1.1.0 Transaction), two SweetAlert prompts (user, then
+     password), "saving…" spinner, success = `res.ok` and no `Exception` in the text, then `source.refresh()` and deactivate.
+     The proxy whitelists the `typeName` found in the XML (`ALLOWED_LAYERS`) and passes the body and `Authorization` through.
+   - *Storage / sockets / API:* none (no `/api/*` call, no localStorage, no socket event). Mobile: the three panels are tabs of
+     `mobile-tabs.js` ("📝 تحرير نقاط", "🗺️ تحرير مضلعات", "🛣️ تحرير خطوط").
+   - *Legacy defects found while reading (fixed in the port, not copied):* update never clears a field (empty = skipped); real-estate
+     `location` is always "غير محدد" (the auto-fill branch is unreachable for it); a cancelled/failed point insert leaves the sketched
+     point in the layer; every failure closes the tool so the typed data is lost; polygon "reshape" does nothing; the regional
+     look-up only works if the `Location` layer happened to be loaded in the view; the success test is a substring search for
+     "Exception"; user-supplied text is interpolated into `innerHTML` in the modals (stored XSS) and every other page reads it.
+
+   **Plan (React):** admin-only *Edit* button in the map's tool column → one `MapSheet` with three tabs (points / lines / polygons),
+   the layer picker and Add / Modify / Delete. `edit/schema.ts` (per-target fields + column order, data) · `edit/geometry.ts`
+   (rounding, validation, GML-free plain geometry) · `edit/attributes.ts` (form → properties, search tags, regional) ·
+   `edit/transport.ts` → **`saveFeature(tx)`** (the only place that knows WFS-T; XML in `edit/wfst.ts`) · `edit/EditTool.tsx` (the
+   interactions: Draw / Modify / Snap / Select) · `AttributeDialog`, `CredentialsDialog`. Credentials live only in the dialog's
+   state for the one call.
 6. ✅ Provider panel: `provider-panel.js`, `services-bridge.js` → `features/map/provider/`
 
    **Inventory (read from `js/provider-panel.js`, `js/services-bridge.js`, `index.html` #provider-mini-panel, `css/provider-panel.css`,
