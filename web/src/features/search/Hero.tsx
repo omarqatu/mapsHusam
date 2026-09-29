@@ -25,14 +25,12 @@ export default function Hero({ onPick }: { onPick: (t: MapTarget) => void }) {
       ]
     : [];
   return (
-    <section className="relative overflow-hidden rounded-3xl border border-line bg-surface p-5 shadow-card md:p-8">
-      <div aria-hidden className="pointer-events-none absolute -end-20 -top-24 h-64 w-64 rounded-full bg-brand/15 blur-3xl" />
-      <div aria-hidden className="pointer-events-none absolute -start-16 -bottom-24 h-56 w-56 rounded-full bg-ok-solid/10 blur-3xl" />
-      <div className="relative">
-        <h1 className="text-2xl font-black text-fg md:text-4xl">{t('searchPage.heroTitle')}</h1>
-        <p className="mt-2 max-w-2xl text-base leading-relaxed text-muted">{t('searchPage.heroText')}</p>
+    <section>
+      <div>
+        <h1 className="text-xl font-black text-fg md:text-2xl">{t('searchPage.heroTitle')}</h1>
+        <p className="mt-1 max-w-2xl text-sm text-muted max-sm:hidden">{t('searchPage.heroText')}</p>
 
-        <ul className="mt-5 grid gap-3 sm:grid-cols-3">
+        <ul className="mt-3 grid gap-2.5 sm:grid-cols-3">
           {TILES.map(({ layer, icon: Icon }) => {
             const target: MapTarget = { kind: 'realEstate', layer };
             return (
@@ -40,16 +38,19 @@ export default function Hero({ onPick }: { onPick: (t: MapTarget) => void }) {
                 <button
                   type="button"
                   onClick={() => onPick(target)}
-                  className="group flex w-full items-center gap-3 rounded-2xl border border-line bg-canvas p-4 text-start transition hover:-translate-y-0.5 hover:border-brand hover:shadow-float focus-visible:outline-2 focus-visible:outline-brand"
+                  className="group flex w-full items-center gap-3 rounded-xl border border-line bg-surface p-3 text-start shadow-sm transition hover:-translate-y-0.5 hover:border-brand hover:shadow-float focus-visible:outline-2 focus-visible:outline-brand"
                 >
-                  <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-brand-light text-brand-fg transition group-hover:bg-brand group-hover:text-white">
-                    <Icon className="h-6 w-6" aria-hidden />
+                  <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-brand-light text-brand-fg transition group-hover:bg-brand group-hover:text-white">
+                    <Icon className="h-5 w-5" aria-hidden />
                   </span>
                   <span className="min-w-0 flex-1">
                     <b className="block text-base text-fg">{t(targetLabelKey(target))}</b>
                     <span className="text-sm text-muted">{t(`searchPage.reHint_${layer}`)}</span>
                   </span>
-                  <ArrowLeft className="h-4 w-4 shrink-0 text-muted rtl:rotate-0 ltr:rotate-180" aria-hidden />
+                  <ArrowLeft
+                    className="h-4 w-4 shrink-0 text-muted rtl:rotate-0 ltr:rotate-180"
+                    aria-hidden
+                  />
                 </button>
               </li>
             );
@@ -57,7 +58,10 @@ export default function Hero({ onPick }: { onPick: (t: MapTarget) => void }) {
         </ul>
 
         {stats.length > 0 && (
-          <ul className="mt-4 flex flex-wrap gap-x-5 gap-y-1 text-sm text-muted" aria-label={t('extras.tabs.stats')}>
+          <ul
+            className="mt-3 flex flex-wrap gap-x-5 gap-y-1 text-sm text-muted"
+            aria-label={t('extras.tabs.stats')}
+          >
             {stats.map(({ icon: Icon, value, label }) => (
               <li key={label} className="inline-flex items-center gap-1.5">
                 <Icon className="h-4 w-4" aria-hidden />

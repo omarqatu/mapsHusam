@@ -629,7 +629,7 @@ Split `index.html` into features, in this order:
    *UX changes (2026-09-29):* the live-updates ticker on the map is a floating **glass** pill over the bottom of the map (the
    coordinates / stats pill move up above it) with a button that folds it into a small chip; the choice is remembered
    (`psm-ticker-hidden`). `.glass` is more opaque (90 %, blur 10 px) for readability. `/search` now leads with property (three doors:
-   rent, sale, land) and lists services below with round icons; the "all" grid no longer repeats the three property types.
+   rent, sale, land) and lists services below with round icons; the "all" view shows only the 13 group cards (a group opens its types under a one-line tab row), so the page is short. The old ad-space look is gone: the intro is a title and three compact doors, no big banner.
 10. 🟨 Extras: `platform-stats.js`, `featured-services-portal.js`, the "road status" / "fuel status" buttons, widgets ticker on the map
    ✅ **Done here (`features/map/extras/`):** the featured-services portal, the road-status and fuel-status lists and the
    platform statistics. ✅ The widgets ticker strip (bottom of the map) + the full widgets portal are ported in Phase 1 (`features/widgets/`). ⬜ **Not in this item (own items):** the mobile "home" tab (`mobile-tabs.js`, item 9) — it can open the panel with
