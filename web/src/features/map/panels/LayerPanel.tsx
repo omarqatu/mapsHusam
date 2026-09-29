@@ -7,7 +7,6 @@ import { useMapUi } from '../store';
 import MapSheet from './MapSheet';
 
 const ALL_SERVICE_KEYS = SERVICE_TYPES.map((s) => s.key);
-const RE_ICON: Record<string, string> = { rent: '🏠', sale: '🏡', land: '🟥' };
 
 function Toggle({
   id,
@@ -107,7 +106,7 @@ export default function LayerPanel({ open, onClose }: { open: boolean; onClose: 
             <Toggle
               key={l.key}
               id={`layer-${l.key}`}
-              icon={RE_ICON[l.key]}
+              icon={l.icon}
               label={t(`layers.${l.key}`)}
               checked={ui.realEstateVisible[l.key]}
               onChange={(v) => ui.setRealEstateVisible(l.key, v)}

@@ -1,5 +1,6 @@
 import type { Coordinate } from '../config';
-import { FUEL_FIELDS, type SearchTarget } from './model';
+import { FUEL_FIELDS } from './model';
+import { type MapTarget } from '../targets';
 import type { SearchResult } from './results';
 
 export interface NearbyExtra {
@@ -13,7 +14,7 @@ export const EMPTY_EXTRA: NearbyExtra = { stop: '', fuel: { diesel: '', banzen95
 /** Legacy applyExtraFilters — barrier status only looks at `stop` (inbound), fuel filters are AND-ed. */
 export function applyExtraFilters(
   results: SearchResult[],
-  target: SearchTarget,
+  target: MapTarget,
   extra: NearbyExtra,
 ): SearchResult[] {
   if (target.kind !== 'service') return results;
@@ -43,7 +44,7 @@ const dist = (a: Coordinate, b: readonly number[]) => Math.hypot(a[0] - b[0], a[
  */
 export function findNearby(
   all: SearchResult[],
-  target: SearchTarget,
+  target: MapTarget,
   center: Coordinate,
   radiusText: string,
   extra: NearbyExtra,

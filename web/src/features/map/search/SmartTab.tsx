@@ -8,15 +8,8 @@ import FormField from '@/components/ui/FormField';
 import SelectInput from '@/components/ui/SelectInput';
 import TextInput from '@/components/ui/TextInput';
 import { toast } from '@/components/ui/toastStore';
-import {
-  cascadeFilters,
-  fieldsFor,
-  OPERATOR_SYMBOL,
-  operatorsFor,
-  targetToApi,
-  withCurrency,
-  type SearchTarget,
-} from './model';
+import { cascadeFilters, fieldsFor, OPERATOR_SYMBOL, operatorsFor, withCurrency } from './model';
+import { targetToApi, type MapTarget } from '../targets';
 import { useSearchUi } from './store';
 import TargetSelect from './TargetSelect';
 import { useSearchActions } from './useSearchActions';
@@ -35,7 +28,7 @@ export default function SmartTab() {
   const { t } = useTranslation();
   const actions = useSearchActions();
   const busy = useSearchUi((s) => s.busy);
-  const [target, setTarget] = useState<SearchTarget | null>(null);
+  const [target, setTarget] = useState<MapTarget | null>(null);
   const [fieldId, setFieldId] = useState('');
   const [operator, setOperator] = useState<SearchOperator>('=');
   const [value, setValue] = useState('');
@@ -60,7 +53,7 @@ export default function SmartTab() {
     select: (d) => (d.values ?? []).map(String).sort((a, b) => a.localeCompare(b, 'ar')),
   });
 
-  const pickTarget = (x: SearchTarget | null) => {
+  const pickTarget = (x: MapTarget | null) => {
     setTarget(x);
     setChips([]);
     setFieldId('');
@@ -188,6 +181,7 @@ export default function SmartTab() {
                 onChange={(e) =>
                   e.target.value === CUSTOM ? (setCustom(true), setValue('')) : setValue(e.target.value)
                 }
+                searchable
                 placeholder={unique.isLoading ? t('app.loading') : t('search.chooseValue')}
                 options={[
                   { value: CUSTOM, label: t('search.customValue') },
@@ -202,8 +196,10 @@ export default function SmartTab() {
                 id="smart-currency"
                 value={currency}
                 onChange={(e) => setCurrency(e.target.value)}
-                placeholder={t('search.allCurrencies')}
-                options={CURRENCIES.map((c) => ({ value: c, label: t(`search.currencies.${c}`) }))}
+                options={[
+                  { value: '', label: t('search.allCurrencies') },
+                  ...CURRENCIES.map((c) => ({ value: c, label: t(`search.currencies.${c}`) })),
+                ]}
               />
             </FormField>
           )}

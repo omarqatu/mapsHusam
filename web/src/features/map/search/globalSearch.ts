@@ -1,6 +1,6 @@
 import { searchApi } from '@/api/search';
 import { toResults, byRatingDesc, type SearchResult } from './results';
-import { ALL_TARGETS, targetFromKey, type SearchTarget } from './model';
+import { ALL_TARGETS, targetFromKey, type MapTarget } from '../targets';
 
 // Keyword search across everything (legacy global-search.js). Server contract: `search_tags contains <text>` matches
 // search_tags / des (+ name for services) with Arabic letter variants folded together; the words of the text are OR-ed.
@@ -112,11 +112,7 @@ export function wordHits(result: SearchResult, term: string): number {
  * Rank: rows whose TYPE name contains the text first (typing "كهرباء" puts electricians on top), then rows matching more of
  * the typed words (the server ORs the words), then rating.
  */
-export function rankHits(
-  hits: GlobalHit[],
-  term: string,
-  typeTitle: (t: SearchTarget) => string,
-): GlobalHit[] {
+export function rankHits(hits: GlobalHit[], term: string, typeTitle: (t: MapTarget) => string): GlobalHit[] {
   const n = normalizeArabic(term);
   const scored = hits.map((h) => ({
     h,

@@ -27,6 +27,7 @@ import {
   text,
   type SelectedFeature,
 } from './featureModel';
+import { targetIcon, targetLabelKey } from '../targets';
 import RatingsBlock from './RatingsBlock';
 import { useContactActions } from './useContactActions';
 
@@ -73,13 +74,8 @@ export default function FeatureCard({ feature, onClose, className }: Props) {
   const { props, kind, id } = feature;
 
   const isBarrier = kind.kind === 'service' && kind.discriminator === 'road_barriers';
-  const typeTitle =
-    kind.kind === 'service'
-      ? t(`services.${kind.discriminator}`)
-      : kind.kind === 'realEstate'
-        ? t(`layers.${kind.layer}`)
-        : t('popup.sharedLocation');
-  const icon = kind.kind === 'service' ? kind.icon : kind.kind === 'realEstate' ? '🏠' : '📍';
+  const typeTitle = kind.kind === 'location' ? t('popup.sharedLocation') : t(targetLabelKey(kind));
+  const icon = kind.kind === 'location' ? '📍' : targetIcon(kind);
   const name = text(props.name);
   const providerName = name || (kind.kind === 'realEstate' ? t('popup.advertiser') : t('popup.provider'));
   const place = text(props.location_name) || text(props.location);

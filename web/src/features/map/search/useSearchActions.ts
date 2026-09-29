@@ -6,7 +6,7 @@ import { searchApi, type SearchCondition, type SearchQuery } from '@/api/search'
 import { toast } from '@/components/ui/toastStore';
 import type { Coordinate } from '../config';
 import { useOlMap } from '../MapContext';
-import { targetKey, targetLabelKey, targetFromKey, targetToApi, type SearchTarget } from './model';
+import { targetKey, targetLabelKey, targetFromKey, targetToApi, type MapTarget } from '../targets';
 import { findNearby, type NearbyExtra } from './nearby';
 import type { ShareState } from './shareLink';
 import { toResults, byRatingDesc } from './results';
@@ -85,7 +85,7 @@ export function useSearchActions() {
 
   /** Everything of one type inside the current map view (legacy quick search). */
   const quick = useCallback(
-    async (target: SearchTarget, bboxOverride?: string) => {
+    async (target: MapTarget, bboxOverride?: string) => {
       const title = t(targetLabelKey(target));
       const extent = bboxOverride
         ? bboxOverride.split(',').map(Number)
@@ -118,7 +118,7 @@ export function useSearchActions() {
 
   /** Type + conditions across the whole layer (legacy smart search). */
   const smart = useCallback(
-    async (target: SearchTarget, conditions: SearchCondition[]) => {
+    async (target: MapTarget, conditions: SearchCondition[]) => {
       const title = t(targetLabelKey(target));
       const query: SearchQuery = { ...targetToApi(target), conditions };
       const items = await run('attribute_search', title, async (signal) =>
@@ -138,7 +138,7 @@ export function useSearchActions() {
 
   /** Everything of one type around a point (legacy "search by location"); the layer is fetched whole and filtered here. */
   const nearby = useCallback(
-    async (target: SearchTarget, center: Coordinate, radiusText: string, extra: NearbyExtra) => {
+    async (target: MapTarget, center: Coordinate, radiusText: string, extra: NearbyExtra) => {
       const title = t(targetLabelKey(target));
       const outcome = await run('location_search', title, async (signal) => {
         const all = toResults(await searchApi.search(targetToApi(target), signal), target);

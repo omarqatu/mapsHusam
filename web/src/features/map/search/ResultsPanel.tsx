@@ -6,16 +6,15 @@ import { useProviderLinked } from '@/api/mapEvents';
 import { toast } from '@/components/ui/toastStore';
 import { useOlMap } from '../MapContext';
 import { useMapUi } from '../store';
-import { serviceIcon, text } from '../popup/featureModel';
+import { text } from '../popup/featureModel';
+import { targetIcon } from '../targets';
 import { useContactActions } from '../popup/useContactActions';
 import MapSheet from '../panels/MapSheet';
-import { targetLabelKey } from './model';
+import { targetLabelKey } from '../targets';
 import { printResults } from './printResults';
 import { toSelected, type SearchResult } from './results';
 import { buildShareLink } from './shareLink';
 import { useSearchUi } from './store';
-
-const RE_ICON: Record<string, string> = { rent: '🏠', sale: '🏡', land: '🟥' };
 
 function formatDistance(m: number, t: (k: string) => string) {
   return m >= 1000
@@ -61,7 +60,7 @@ function ResultRow({
       <button type="button" onClick={onOpen} className="flex w-full items-start gap-3 text-start">
         <span className="mt-0.5 w-5 shrink-0 text-center text-xs font-bold text-slate-400">{index + 1}</span>
         <span aria-hidden className="text-xl">
-          {r.target.kind === 'service' ? serviceIcon(r.target.discriminator) : RE_ICON[r.target.layer]}
+          {targetIcon(r.target)}
         </span>
         <span className="min-w-0 flex-1">
           <span className="block truncate text-sm font-bold text-slate-800" dir="auto">

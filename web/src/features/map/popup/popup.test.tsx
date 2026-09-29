@@ -182,7 +182,7 @@ describe('FeatureCard', () => {
 
   it('renders user text as text (no HTML injection) and shows call + WhatsApp', () => {
     wrap({
-      kind: { kind: 'service', discriminator: 'plumber', icon: '🔧' },
+      kind: { kind: 'service', discriminator: 'plumber' },
       id: '5',
       coordinate: [1, 2],
       props: {
@@ -203,7 +203,7 @@ describe('FeatureCard', () => {
 
   it('road barrier: two direction tiles, no contact buttons', () => {
     wrap({
-      kind: { kind: 'service', discriminator: 'road_barriers', icon: '🚧' },
+      kind: { kind: 'service', discriminator: 'road_barriers' },
       id: '1',
       coordinate: [1, 2],
       props: { name: 'Atara', stop: 1, stop2: 0, phone: '059', whatsapp: '970' },

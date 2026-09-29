@@ -5,10 +5,10 @@ import { useTranslation } from 'react-i18next';
 import { CenteredSpinner } from '@/components/ui/Spinner';
 import { roadBarrierStatus } from '../config';
 import { useOlMap } from '../MapContext';
-import { serviceIcon } from '../popup/featureModel';
+import { targetIcon } from '../targets';
 import { useMapUi } from '../store';
 import { fetchGlobalHits, highlightParts, rankHits, type GlobalHit } from './globalSearch';
-import { targetLabelKey } from './model';
+import { targetLabelKey } from '../targets';
 import { toSelected } from './results';
 import { passesSearchQuota } from './useSearchActions';
 
@@ -173,7 +173,7 @@ export default function GlobalSearchBox() {
                     className={`flex cursor-pointer items-start gap-3 border-b border-slate-100 px-4 py-2.5 last:border-0 ${i === active ? 'bg-brand-light/50' : ''}`}
                   >
                     <span aria-hidden className="text-lg">
-                      {h.result.target.kind === 'service' ? serviceIcon(h.result.target.discriminator) : '🏠'}
+                      {targetIcon(h.result.target)}
                     </span>
                     <span className="min-w-0 flex-1">
                       <span className="block truncate text-sm font-bold text-slate-800" dir="auto">

@@ -12,15 +12,8 @@ import {
   wordHits,
   type GlobalHit,
 } from './globalSearch';
-import {
-  ALL_TARGETS,
-  cascadeFilters,
-  fieldsFor,
-  operatorsFor,
-  targetFromKey,
-  targetToApi,
-  withCurrency,
-} from './model';
+import { cascadeFilters, fieldsFor, operatorsFor, withCurrency } from './model';
+import { ALL_TARGETS, targetFromKey, targetToApi } from '../targets';
 import { applyExtraFilters, EMPTY_EXTRA, findNearby } from './nearby';
 import { toResults, type SearchResult } from './results';
 

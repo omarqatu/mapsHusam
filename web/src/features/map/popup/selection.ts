@@ -1,5 +1,6 @@
 import type { FeatureLike } from 'ol/Feature';
-import { REAL_ESTATE_LAYERS, SERVICE_TYPE_BY_KEY, type Coordinate } from '../config';
+import { REAL_ESTATE_LAYERS, type Coordinate } from '../config';
+import { targetFromKey } from '../targets';
 import { resolveFeatureId, type Props, type SelectedFeature } from './featureModel';
 
 /** Minimal shape of an OpenLayers layer we read from (its `key` was set in layers.ts). */
@@ -23,9 +24,9 @@ export function featureToSelection(
   if (key === 'services') {
     const discriminator = props.discriminator;
     if (typeof discriminator !== 'string') return null;
-    const type = SERVICE_TYPE_BY_KEY.get(discriminator);
-    if (!type) return null;
-    return { kind: { kind: 'service', discriminator, icon: type.icon }, id, props, coordinate };
+    const target = targetFromKey(discriminator);
+    if (target?.kind !== 'service') return null;
+    return { kind: target, id, props, coordinate };
   }
   const re = REAL_ESTATE_LAYERS.find((l) => l.key === key);
   if (re) return { kind: { kind: 'realEstate', layer: re.key }, id: id, props, coordinate };

@@ -9,7 +9,8 @@ import { toast } from '@/components/ui/toastStore';
 import { useOlMap } from '../MapContext';
 import { geolocationErrorKey } from '../mapUtils';
 import { fromLonLat } from '../projection';
-import { FUEL_FIELDS, FUEL_OPTIONS, STOP_OPTIONS, type SearchTarget } from './model';
+import { FUEL_FIELDS, FUEL_OPTIONS, STOP_OPTIONS } from './model';
+import { type MapTarget } from '../targets';
 import { EMPTY_EXTRA, MAX_RADIUS_M, type NearbyExtra } from './nearby';
 import { useSearchUi } from './store';
 import TargetSelect from './TargetSelect';
@@ -23,7 +24,7 @@ export default function NearbyTab() {
   const { busy, picking, nearbyCenter } = useSearchUi();
   const setPicking = useSearchUi((s) => s.setPicking);
   const setNearbyCenter = useSearchUi((s) => s.setNearbyCenter);
-  const [target, setTarget] = useState<SearchTarget | null>(null);
+  const [target, setTarget] = useState<MapTarget | null>(null);
   const [radius, setRadius] = useState('500');
   const [extra, setExtra] = useState<NearbyExtra>(EMPTY_EXTRA);
   const [locating, setLocating] = useState(false);
@@ -117,8 +118,10 @@ export default function NearbyTab() {
             id="nearby-stop"
             value={extra.stop}
             onChange={(e) => setExtra({ ...extra, stop: e.target.value })}
-            placeholder={t('search.nearby.anyStatus')}
-            options={STOP_OPTIONS.map((o) => ({ value: o.value, label: `${o.icon} ${t(o.labelKey)}` }))}
+            options={[
+              { value: '', label: t('search.nearby.anyStatus') },
+              ...STOP_OPTIONS.map((o) => ({ value: o.value, label: `${o.icon} ${t(o.labelKey)}` })),
+            ]}
           />
         </FormField>
       )}
@@ -133,8 +136,10 @@ export default function NearbyTab() {
               id={`nearby-${f}`}
               value={extra.fuel[f]}
               onChange={(e) => setExtra({ ...extra, fuel: { ...extra.fuel, [f]: e.target.value } })}
-              placeholder={t('search.nearby.noCondition')}
-              options={FUEL_OPTIONS.map((o) => ({ value: o.value, label: `${o.icon} ${t(o.labelKey)}` }))}
+              options={[
+                { value: '', label: t('search.nearby.noCondition') },
+                ...FUEL_OPTIONS.map((o) => ({ value: o.value, label: `${o.icon} ${t(o.labelKey)}` })),
+              ]}
             />
           </FormField>
         ))}

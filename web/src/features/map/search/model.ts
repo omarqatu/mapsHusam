@@ -1,30 +1,15 @@
-import type { SearchCondition, SearchOperator, Workspace } from '@/api/search';
-import { REAL_ESTATE_LAYERS, SERVICE_TYPES, type RealEstateLayerKey } from '../config';
+import type { SearchCondition, SearchOperator } from '@/api/search';
+import { FUEL_FIELDS, ROAD_BARRIER_STATUS } from '../config';
 
-/** What a search runs against: one real-estate layer or one service type (discriminator of service_all). */
-export type SearchTarget =
-  { kind: 'realEstate'; layer: RealEstateLayerKey } | { kind: 'service'; discriminator: string };
-
-export const targetKey = (t: SearchTarget) => (t.kind === 'realEstate' ? t.layer : t.discriminator);
-
-export const ALL_TARGETS: SearchTarget[] = [
-  ...REAL_ESTATE_LAYERS.map((l): SearchTarget => ({ kind: 'realEstate', layer: l.key })),
-  ...SERVICE_TYPES.map((s): SearchTarget => ({ kind: 'service', discriminator: s.key })),
-];
-
-const TARGET_BY_KEY = new Map(ALL_TARGETS.map((t) => [targetKey(t), t]));
-export const targetFromKey = (key: string) => TARGET_BY_KEY.get(key) ?? null;
-
-/** i18n key of the type's display name. */
-export const targetLabelKey = (t: SearchTarget) =>
-  t.kind === 'realEstate' ? `layers.${t.layer}` : `services.${t.discriminator}`;
-
-/** `layer` + `workspace` params the search endpoints expect. */
-export function targetToApi(t: SearchTarget): { layer: string; workspace: Workspace } {
-  if (t.kind === 'service') return { layer: t.discriminator, workspace: 'services' };
-  const layer = REAL_ESTATE_LAYERS.find((l) => l.key === t.layer)!;
-  return { layer: layer.typeName, workspace: 'realestate' };
-}
+export {
+  ALL_TARGETS,
+  targetFromKey,
+  targetKey,
+  targetLabelKey,
+  targetToApi,
+  type MapTarget as MapTarget,
+} from '../targets';
+import type { MapTarget as MapTarget } from '../targets';
 
 // --- fields the smart search offers per target (legacy fieldsConfig) -------------------------
 export type FieldType = 'dropdown' | 'number' | 'fixed';
@@ -40,18 +25,17 @@ export interface FieldDef {
 const dd = (id: string, labelKey = `search.fields.${id}`): FieldDef => ({ id, labelKey, type: 'dropdown' });
 const num = (id: string): FieldDef => ({ id, labelKey: `search.fields.${id}`, type: 'number' });
 
-export const STOP_OPTIONS = [
-  { value: '0', labelKey: 'roadStatus.open', icon: '🟢' },
-  { value: '1', labelKey: 'roadStatus.closed', icon: '🔴' },
-  { value: '2', labelKey: 'roadStatus.light', icon: '🟠' },
-  { value: '3', labelKey: 'roadStatus.heavy', icon: '🟤' },
-  { value: '4', labelKey: 'roadStatus.inspection', icon: '🟣' },
-];
+/** Checkpoint statuses for pickers — derived from the one status table in config. */
+export const STOP_OPTIONS = Object.entries(ROAD_BARRIER_STATUS).map(([value, s]) => ({
+  value,
+  labelKey: `roadStatus.${s.key}`,
+  icon: s.icon,
+}));
 export const FUEL_OPTIONS = [
   { value: '0', labelKey: 'popup.fuel.available', icon: '✔️' },
   { value: '1', labelKey: 'popup.fuel.unavailable', icon: '❌' },
 ];
-export const FUEL_FIELDS = ['diesel', 'banzen95', 'banzen98'] as const;
+export { FUEL_FIELDS };
 
 const fixed = (id: string, labelKey: string, options: FieldDef['options']): FieldDef => ({
   id,
@@ -60,7 +44,7 @@ const fixed = (id: string, labelKey: string, options: FieldDef['options']): Fiel
   options,
 });
 
-export function fieldsFor(t: SearchTarget): FieldDef[] {
+export function fieldsFor(t: MapTarget): FieldDef[] {
   if (t.kind === 'realEstate')
     return [dd('gov_a'), dd('village_a'), dd('location'), num('price'), num('area')];
   const base = [dd('gov_a'), dd('village_a'), dd('location_name')];

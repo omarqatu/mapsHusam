@@ -2,16 +2,10 @@ import { useMemo, useState } from 'react';
 import clsx from 'clsx';
 import { useTranslation } from 'react-i18next';
 import SearchInput from '@/components/ui/SearchInput';
-import { SERVICE_TYPE_BY_KEY } from '../config';
-import { ALL_TARGETS, targetKey, targetLabelKey, type SearchTarget } from './model';
+import { targetIcon } from '../targets';
+import { ALL_TARGETS, targetKey, targetLabelKey } from '../targets';
 import { useSearchUi } from './store';
 import { useSearchActions } from './useSearchActions';
-
-const REAL_ESTATE_ICON: Record<string, string> = { rent: '🏠', sale: '🏡', land: '🟥' };
-const iconOf = (t: SearchTarget) =>
-  t.kind === 'realEstate'
-    ? REAL_ESTATE_ICON[t.layer]
-    : (SERVICE_TYPE_BY_KEY.get(t.discriminator)?.icon ?? '📍');
 
 /** Quick search: tap a type → everything of that type in the part of the map you are looking at. */
 export default function QuickTab() {
@@ -42,7 +36,7 @@ export default function QuickTab() {
               'hover:border-brand hover:bg-brand-light disabled:opacity-60',
             )}
           >
-            <span aria-hidden>{iconOf(x)}</span>
+            <span aria-hidden>{targetIcon(x)}</span>
             {label}
           </button>
         ))}

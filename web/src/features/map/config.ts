@@ -32,10 +32,10 @@ export interface WfsLayerDef {
 
 // Legacy helper layers (Governorate, City, Location, RoadsTest) are in MAP_CONFIG.globalExclusions and never
 // shown, so they are not ported. Add them here if the exclusion is lifted.
-export const REAL_ESTATE_LAYERS: (WfsLayerDef & { key: RealEstateLayerKey })[] = [
-  { key: 'rent', workspace: 'realestate', typeName: 'ApartRent', maxResolution: 1, zIndex: 20 },
-  { key: 'sale', workspace: 'realestate', typeName: 'ApartSale', maxResolution: 1, zIndex: 20 },
-  { key: 'land', workspace: 'realestate', typeName: 'LandSale', maxResolution: 1, zIndex: 10 },
+export const REAL_ESTATE_LAYERS: (WfsLayerDef & { key: RealEstateLayerKey; icon: string })[] = [
+  { key: 'rent', icon: '🏠', workspace: 'realestate', typeName: 'ApartRent', maxResolution: 1, zIndex: 20 },
+  { key: 'sale', icon: '🏡', workspace: 'realestate', typeName: 'ApartSale', maxResolution: 1, zIndex: 20 },
+  { key: 'land', icon: '🟥', workspace: 'realestate', typeName: 'LandSale', maxResolution: 1, zIndex: 10 },
 ];
 
 /** One layer holds every service; `discriminator` tells the type (legacy "service_all"). */
@@ -152,3 +152,7 @@ export function roadBarrierStatus(stop: unknown) {
   const n = typeof stop === 'number' ? stop : Number.parseInt(String(stop), 10);
   return ROAD_BARRIER_STATUS[n] ?? ROAD_BARRIER_UNKNOWN;
 }
+
+/** Fuel availability columns of fuel_stations: 0 = available, anything else = not available. */
+export const FUEL_FIELDS = ['diesel', 'banzen95', 'banzen98'] as const;
+export type FuelField = (typeof FUEL_FIELDS)[number];

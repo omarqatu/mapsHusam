@@ -6,12 +6,12 @@ import type { ApiFeature, FeatureCollectionResponse } from '@/api/search';
 import type { Coordinate } from '../config';
 import { PALESTINE_GRID } from '../projection';
 import { resolveFeatureId, type Props, type SelectedFeature } from '../popup/featureModel';
-import { targetFromKey, type SearchTarget } from './model';
+import { targetFromKey, type MapTarget } from '../targets';
 
 /** One row of a result list: plain data + the OL geometry (needed to fit/draw). Distance is set by nearby search. */
 export interface SearchResult {
   key: string;
-  target: SearchTarget;
+  target: MapTarget;
   id: string | null;
   props: Props;
   geometry: Geometry;
@@ -28,7 +28,7 @@ export const ratingOf = (props: Props) => Number.parseFloat(String(props.rating)
 /** Legacy order everywhere: rating, highest first. */
 export const byRatingDesc = (a: { rating: number }, b: { rating: number }) => b.rating - a.rating;
 
-function toResult(f: ApiFeature, target: SearchTarget, index: number): SearchResult | null {
+function toResult(f: ApiFeature, target: MapTarget, index: number): SearchResult | null {
   if (!f.geometry) return null;
   const geometry = reader.readGeometry(f.geometry);
   const extent = geometry.getExtent();
@@ -47,13 +47,13 @@ function toResult(f: ApiFeature, target: SearchTarget, index: number): SearchRes
   };
 }
 
-const targetKeyOf = (t: SearchTarget) => (t.kind === 'realEstate' ? t.layer : t.discriminator);
+const targetKeyOf = (t: MapTarget) => (t.kind === 'realEstate' ? t.layer : t.discriminator);
 
 /**
  * API response → results. `target` is fixed for single-type queries; for `service_all` / mixed queries each row's
  * `discriminator` decides (unknown types are dropped — the map can't draw or describe them).
  */
-export function toResults(fc: FeatureCollectionResponse, target: SearchTarget | null): SearchResult[] {
+export function toResults(fc: FeatureCollectionResponse, target: MapTarget | null): SearchResult[] {
   const out: SearchResult[] = [];
   fc.features.forEach((f, i) => {
     const t =
@@ -68,10 +68,7 @@ export function toResults(fc: FeatureCollectionResponse, target: SearchTarget | 
 /** Snapshot for the details card (FeatureCard). */
 export function toSelected(r: SearchResult): SelectedFeature {
   return {
-    kind:
-      r.target.kind === 'service'
-        ? { kind: 'service', discriminator: r.target.discriminator, icon: '' }
-        : { kind: 'realEstate', layer: r.target.layer },
+    kind: r.target,
     id: r.id,
     props: r.props,
     coordinate: r.center,

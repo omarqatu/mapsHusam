@@ -1,12 +1,12 @@
-import { roadBarrierStatus, SERVICE_TYPE_BY_KEY, type RealEstateLayerKey } from '../config';
+import { FUEL_FIELDS, roadBarrierStatus, type FuelField } from '../config';
+import type { MapTarget } from '../targets';
 
 // Pure helpers behind the feature details card (legacy popup.js + shared-utils.js), testable without a map.
 
 export type Props = Record<string, unknown>;
 
 export type SelectedKind =
-  | { kind: 'service'; discriminator: string; icon: string }
-  | { kind: 'realEstate'; layer: RealEstateLayerKey }
+  | MapTarget
   /** A bare location opened from a shared `?x=&y=` link. */
   | { kind: 'location' };
 
@@ -188,8 +188,8 @@ export function formatClock(hhmm: string, locale: string) {
 export const isOpenNow = (autoStatus: unknown) => Number.parseInt(String(autoStatus), 10) === 0;
 
 /** diesel / banzen95 / banzen98: 0 = available, anything else = not available. */
-export const FUEL_FIELDS = ['diesel', 'banzen95', 'banzen98'] as const;
-export const fuelAvailable = (props: Props, key: (typeof FUEL_FIELDS)[number]) =>
+export { FUEL_FIELDS };
+export const fuelAvailable = (props: Props, key: FuelField) =>
   Number.parseInt(String(prop(props, key)), 10) === 0;
 
 /** Road checkpoint: `stop` = inbound, `stop2` = outbound (missing stop2 → "not set"). */
@@ -231,7 +231,3 @@ export const CURRENCY_KEYS: Record<string, string> = {
   ILS: 'popup.currency.ILS',
   JOD: 'popup.currency.JOD',
 };
-
-export function serviceIcon(discriminator: string) {
-  return SERVICE_TYPE_BY_KEY.get(discriminator)?.icon ?? '📍';
-}
