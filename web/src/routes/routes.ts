@@ -12,11 +12,13 @@ export interface AppRoute {
   legacy: string;
   /** Show in the header navigation. */
   nav?: boolean;
+  /** Has its own full-screen layout and a real page (not rendered inside AppShell). */
+  own?: boolean;
 }
 
 // Every route from docs/react-migration/PLAN.md. Replace `element` in App.tsx as pages are ported.
 export const appRoutes: AppRoute[] = [
-  { path: '/', titleKey: 'nav.map', access: 'public', legacy: 'index.html', nav: true },
+  { path: '/', titleKey: 'nav.map', access: 'auth', legacy: 'index.html', nav: true, own: true },
   { path: '/search', titleKey: 'nav.search', access: 'public', legacy: 'no-map-search.html', nav: true },
   {
     path: '/notifications',

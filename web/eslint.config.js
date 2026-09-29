@@ -40,8 +40,9 @@ export default defineConfig([
     },
   },
   {
-    // The one place allowed to call fetch, and tests that stub it.
-    files: ['src/api/client.ts', '**/*.test.{ts,tsx}'],
+    // The only places allowed to call fetch: the API client, the GeoServer reader (no app token to GeoServer),
+    // and tests that stub it.
+    files: ['src/api/client.ts', 'src/api/geoserver.ts', '**/*.test.{ts,tsx}'],
     rules: { 'no-restricted-globals': 'off' },
   },
 ]);

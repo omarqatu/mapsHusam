@@ -1,9 +1,14 @@
 @import 'tailwindcss';
 
+/* Platform identity — values from legacy css/design-system.css (--brand-500 / --brand-700 …). */
 @theme {
-  --color-brand: #0f766e;
-  --color-brand-hover: #115e59;
-  --color-brand-light: #ccfbf1;
+  --color-brand: #667eea;
+  --color-brand-2: #764ba2;
+  --color-brand-hover: #5a6cd4;
+  --color-brand-light: #e6eafb;
+  --color-role-admin: #e74c3c;
+  --color-role-provider: #2980b9;
+  --color-role-user: #27ae60;
 }
 
 html,
@@ -14,7 +19,7 @@ body,
 
 body {
   background: #f3f6f9;
-  color: #1e293b;
+  color: #2c3e50;
   font-family:
     system-ui,
     -apple-system,
