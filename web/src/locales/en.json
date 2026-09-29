@@ -335,7 +335,8 @@
     },
     "mapArea": "Area on the map",
     "mapLength": "Length on the map",
-    "media": "Media ({{count}})"
+    "media": "Media ({{count}})",
+    "noContact": "No contact details are listed for this one."
   },
   "media": {
     "openImages": "Click to view the images",

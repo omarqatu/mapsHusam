@@ -29,7 +29,7 @@ export default function MapSheet({ title, onClose, side, label, children, classN
       className={clsx(
         'absolute z-20 flex flex-col bg-white shadow-xl',
         'inset-x-0 bottom-0 max-h-[70%] rounded-t-2xl',
-        'sm:inset-x-auto sm:bottom-3 sm:max-h-none sm:w-[22rem] sm:rounded-2xl sm:[transform:translate(var(--dx),var(--dy))]',
+        'sm:inset-x-auto sm:bottom-auto sm:max-h-[calc(100%-4.75rem)] sm:w-[22rem] sm:rounded-2xl sm:[transform:translate(var(--dx),var(--dy))]',
         // end side leaves room for the tool buttons; start side leaves room for the search box on top
         side === 'start' ? 'sm:start-3 sm:top-16' : 'sm:end-16 sm:top-3',
         className,

@@ -384,6 +384,9 @@ Split `index.html` into features, in this order:
    - Readability pass on every map panel: hints are 14 px `slate-600` (were 12 px `slate-500`), nothing below 12 px, no
      `slate-400` text; panels are 22 rem wide; quick-search types are an equal two-column grid (were ragged pills);
      layer section headings 14 px bold; featured cards use 14 px for the data lines.
+   - Side panels are as tall as their content (max: the map minus the header), not stretched top to bottom; the card hides
+     an area of 0 (missing data), joins place names without repeating one another contains ("رام الله" inside "رام الله
+     وسط البلد"), and says so when a feature has no contact details instead of ending without an action.
    - Live tests run file by file (`fileParallelism` off when `VITE_LIVE_API` is set): they share the seeded accounts.
    - Media sections show only their own kind (photos section = pictures, videos section = videos); everything is still in the
      details card. Cards use the shared `MediaGallery` (enlarge on click, https-only URLs via `safeMediaUrl`) instead of the

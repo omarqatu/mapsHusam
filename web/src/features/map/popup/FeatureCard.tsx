@@ -67,6 +67,12 @@ function StatusPill({ tone, label, sub }: { tone: string; label: string; sub?: s
   );
 }
 
+/** "رام الله وسط البلد · رام الله · محافظة رام الله" → the first one alone: drop names another one already contains. */
+function distinctPlaces(parts: string[]) {
+  const all = [...new Set(parts.filter(Boolean))];
+  return all.filter((p) => !all.some((o) => o !== p && o.includes(p))).join(' · ');
+}
+
 async function shareLocation(feature: SelectedFeature, title: string, t: (k: string) => string) {
   const url = locationShareLink(window.location.origin, window.location.pathname, feature.coordinate);
   // Phones: native share sheet (closing it is not an error). Elsewhere: clipboard.
@@ -98,9 +104,9 @@ export default function FeatureCard({ feature, onClose, className }: Props) {
   const dirs = isBarrier ? barrierDirections(props) : null;
 
   // The header already shows the name; the body shows where it is, then only what is filled in.
-  const where = [...new Set([place, text(props.village_a), text(props.gov_a)].filter(Boolean))].join(' · ');
+  const where = distinctPlaces([place, text(props.village_a), text(props.gov_a)]);
   const price = kind.kind === 'realEstate' ? priceLabel(props, t, i18n.language) : null;
-  const area = kind.kind === 'realEstate' && text(props.area) ? `${text(props.area)} ${t('map.areaUnit')}` : null;
+  const area = kind.kind === 'realEstate' && Number(text(props.area)) > 0 ? `${text(props.area)} ${t('map.areaUnit')}` : null;
   const measure = feature.measure
     ? feature.measure.kind === 'area'
       ? formatArea(feature.measure.squareMeters, t)
@@ -190,6 +196,10 @@ export default function FeatureCard({ feature, onClose, className }: Props) {
               onWhatsapp={() => void contact.whatsapp(feature, providerName, whatsapp, typeTitle)}
             />
           ))}
+
+        {kind.kind !== 'location' && !isBarrier && !isLinkedProvider && !phone && !whatsapp && (
+          <p className="text-sm text-slate-600">{t('popup.noContact')}</p>
+        )}
 
         {kind.kind !== 'location' && (hasDetails || isFuelStation(kind)) && (
           <div className="space-y-3 rounded-lg border border-slate-200 p-3">
