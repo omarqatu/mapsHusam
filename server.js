@@ -3943,14 +3943,23 @@ app.get('/js/main.js', (req, res) => res.sendFile(path.join(__dirname, 'frontend
 app.get('/texts-admin.js', (req, res) => res.sendFile(path.join(__dirname, 'frontend-react', 'public', 'texts-admin.js')));
 app.get('/texts-admin.html', (req, res) => res.sendFile(path.join(__dirname, 'frontend-react', 'public', 'texts-admin.html')));
 app.get('/dashboard.html', (req, res, next) => res.sendFile(path.join(__dirname, 'frontend-react', 'public', 'dashboard.html'), err => err && next(err)));
+app.use(express.static(path.join(__dirname, 'frontend-react', 'public'), { dotfiles: 'ignore', index: false, redirect: false }));
 app.use(express.static(path.join(__dirname), { dotfiles: 'ignore', index: false, redirect: false }));
 
 app.get('/', (req, res) => {
-    res.sendFile(path.join(__dirname, 'index.html'));
+    res.sendFile(path.join(__dirname, 'frontend-react', 'public', 'original-index.html'));
 });
 
 app.get('/index.html', (req, res) => {
-    res.sendFile(path.join(__dirname, 'index.html'));
+    res.sendFile(path.join(__dirname, 'frontend-react', 'public', 'original-index.html'));
+});
+
+app.get('/original-index.html', (req, res) => {
+    res.sendFile(path.join(__dirname, 'frontend-react', 'public', 'original-index.html'));
+});
+
+app.get('/no-map-search.html', (req, res) => {
+    res.sendFile(path.join(__dirname, 'frontend-react', 'public', 'no-map-search.html'));
 });
 
 // 10. خطأ عام للميدل وير

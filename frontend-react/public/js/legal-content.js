@@ -154,6 +154,25 @@
             `
         },
 
+        noMapIntro: {
+            title: 'كيف تبحث بأسهل طريقة؟',
+            icon: 'fa-lightbulb',
+            html: `اختر نوع الخدمة أو العقار الذي تبحث عنه من المربعات أدناه، وستظهر لك فوراً جميع النتائج المتاحة. يمكنك أيضاً استخدام الفلاتر لتضييق النتائج حسب المنطقة، السعر، أو أي تفاصيل أخرى — بدون الحاجة لفتح الخريطة أو الانتظار حتى تحمّل.`
+        },
+
+        promoFeatures: {
+            title: 'مزايا المنصة في صفحة البرومو',
+            icon: 'fa-star',
+            html: `
+                <div class="promo-feature-item"><span class="icon">🏘️</span><span class="label">شقق للبيع والإيجار</span><span class="desc">آلاف العقارات المحدثة يومياً</span></div>
+                <div class="promo-feature-item"><span class="icon">🔧</span><span class="label">مزودو خدمات</span><span class="desc">أكثر من ٥٠ تخصص مهني</span></div>
+                <div class="promo-feature-item"><span class="icon">📍</span><span class="label">تحديد مواقع دقيق</span><span class="desc">GPS + خريطة تفاعلية</span></div>
+                <div class="promo-feature-item"><span class="icon">💬</span><span class="label">تواصل مباشر</span><span class="desc">واتساب — دون وسطاء</span></div>
+                <div class="promo-feature-item"><span class="icon">📋</span><span class="label">بحث ذكي</span><span class="desc">فلترة بالموقع والسعر والفئة</span></div>
+                <div class="promo-feature-item"><span class="icon">🆓</span><span class="label">مجاني بالكامل</span><span class="desc">لكافة المستفيدين من الخدمات</span></div>
+            `
+        },
+
         guideProvider: {
             title: 'حساب مزود الخدمة',
             icon: 'fa-user-tie',
@@ -590,6 +609,10 @@
                         if (classes.length) el.className = classes.join(' '); else el.removeAttribute('class');
                     } else if (name === 'class' && el.tagName === 'BUTTON') {
                         if (attr.value === 'splash-opt-btn') el.className = attr.value; else el.removeAttribute(name);
+                    } else if (name === 'class' && el.tagName === 'DIV') {
+                        if (attr.value === 'promo-feature-item') el.className = attr.value; else el.removeAttribute(name);
+                    } else if (name === 'class' && el.tagName === 'SPAN') {
+                        if (['icon','label','desc'].includes(attr.value)) el.className = attr.value; else el.removeAttribute(name);
                     } else if (name === 'id' && ['no-map-link','splash-options-container'].includes(attr.value)) {
                         // معرّفات ثابتة لزر الانتقال وحاوية خيارات الخريطة.
                     } else if (name === 'data-type' && el.tagName === 'BUTTON') {
@@ -646,6 +669,23 @@
             html: override ? window.sanitizePlatformRichText(override.html) : content.html
         };
     };
+
+    async function hydrateInlineLegalContent() {
+        const targets = document.querySelectorAll('[data-inline-legal]');
+        for (const target of targets) {
+            if (target.dataset.inlineLoaded) continue;
+            target.dataset.inlineLoaded = '1';
+            const content = await window.getAppLegalContent(target.dataset.inlineLegal);
+            if (content) target.innerHTML = content.html;
+        }
+        const titleTargets = document.querySelectorAll('[data-inline-legal-title]');
+        for (const target of titleTargets) {
+            if (target.dataset.inlineTitleLoaded) continue;
+            target.dataset.inlineTitleLoaded = '1';
+            const content = await window.getAppLegalContent(target.dataset.inlineLegalTitle);
+            if (content) target.textContent = content.title;
+        }
+    }
 
     // ==========================================================================
     // 2) بناء مودال عام واحد (يُنشأ مرة واحدة فقط) لعرض أي من المحتويات أعلاه
@@ -775,6 +815,7 @@
     };
 
     function wireTriggers() {
+        hydrateInlineLegalContent();
         // عبر خاصية data-legal (الطريقة العامة الموصى بها لأي زر جديد مستقبلاً)
         document.querySelectorAll('[data-legal]').forEach(function (el) {
             if (el.dataset.legalWired) return;

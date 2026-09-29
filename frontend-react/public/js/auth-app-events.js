@@ -215,6 +215,11 @@ function initAuthAppEvents() {
 
     const btnGoToRegisterEmail = document.getElementById("btn-go-to-register-email");
 
+    // الموافقة والإعجاب صالحان لهذه الزيارة فقط؛ المتصفح قد يعيد استرجاع
+    // حالة مربعات الاختيار بعد التحديث أو الرجوع من ذاكرة الصفحة.
+    if (agreeCheckbox) agreeCheckbox.checked = false;
+    if (likedCheckbox) likedCheckbox.checked = false;
+
     if (typeof hideAllEditPanelsAndButtonsGlobally === 'function') {
         hideAllEditPanelsAndButtonsGlobally();
     }
@@ -241,6 +246,14 @@ function initAuthAppEvents() {
                 buttonsGroup.classList.add("auth-buttons-disabled");
             }
         }
+    }
+
+    if (authOverlay && agreeCheckbox && likedCheckbox && buttonsGroup) {
+        window.addEventListener('pageshow', function resetWelcomeAcknowledgements() {
+            agreeCheckbox.checked = false;
+            likedCheckbox.checked = false;
+            validateWelcomeTerms();
+        });
     }
 
     if (!authOverlay || !agreeCheckbox || !likedCheckbox || !buttonsGroup) {

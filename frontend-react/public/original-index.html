@@ -85,7 +85,7 @@
             تواصل مباشرة مع مزودي الخدمات، وكن على بعد خطوة من كل ما تريد.
         </p>
 
-        <div class="promo-features-grid">
+        <div class="promo-features-grid" data-inline-legal="promoFeatures">
             <div class="promo-feature-item">
                 <span class="icon">🏘️</span>
                 <span class="label">شقق للبيع والإيجار</span>
@@ -93,8 +93,8 @@
             </div>
             <div class="promo-feature-item">
                 <span class="icon">🔧</span>
-                <span class="label">مزودو خدمات</span>
-                <span class="desc">أكثر من ٥٠ تخصص مهني</span>
+                <span class="label">مالكي العقارات</span>
+                <span class="desc">عقارات للبيع و الإيجار</span>
             </div>
             <div class="promo-feature-item">
                 <span class="icon">📍</span>
@@ -132,13 +132,14 @@
             تفضل بزيارة الخريطة — ابدأ بإنشاء حساب جديد، أو إذا كان لديك حساب قم بتسجيل الدخول
         </p>
 
-        <!-- 🆕 روابط موحّدة لسياسة الاستخدام وسياسة الخصوصية ودليل الاستخدام، تفتح
+        <!-- روابط موحّدة للشروط والخصوصية و"من نحن" ودليل الاستخدام، تفتح
              نفس المحتوى المستخدم بكل صفحات المنصة (مصدرها الموحّد: js/legal-content.js) -->
         <p class="promo-footer-text" style="font-size:12px; opacity:0.85; margin-top:8px;">
             بمتابعتك أنت توافق على
             <a href="#" id="footer-terms-btn" style="color:#fff; text-decoration:underline; font-weight:bold;">شروط الاستخدام</a>
-            و<a href="#" id="footer-privacy-btn" style="color:#fff; text-decoration:underline; font-weight:bold;">سياسة الخصوصية</a>
-            الخاصتين بالمنصة، ويمكنك أيضاً
+            و<a href="#" id="footer-privacy-btn" style="color:#fff; text-decoration:underline; font-weight:bold;">سياسة الخصوصية</a> الخاصتين بالمنصة.
+            <a href="#" id="promo-contact-link" style="color:#fff; text-decoration:underline; font-weight:bold;">تواصل معنا</a>،
+            تعرّف على المنصة عبر <a href="#" id="promo-about-link" style="color:#fff; text-decoration:underline; font-weight:bold;">من نحن</a>، ويمكنك أيضاً
             <a href="#" id="footer-guide-map" style="color:#fff; text-decoration:underline; font-weight:bold;">الاطلاع على دليل استخدام منصة خريطة الخدمات الفلسطينية</a>
             قبل التسجيل.
         </p>
@@ -188,11 +189,11 @@
             <i class="fas fa-map-marked-alt"></i> الخريطة التفاعلية
         </a>
 
-        <a href="/no-map-search.html" target="_blank" class="btn-guide-top">
+        <a href="#" id="profile-guide-search" class="btn-guide-top">
             <i class="fas fa-search"></i> البحث السريع
         </a>
 
-        <a href="#" id="profile-guide-search" class="btn-guide-top">
+        <a href="/no-map-search.html" target="_blank" id="profile-open-search" class="btn-guide-top">
             <i class="fas fa-list"></i> البحث عن الخدمات
         </a>
 
@@ -214,6 +215,10 @@
 
         <a href="#" id="profile-privacy-btn" class="btn-guide-top">
             <i class="fas fa-user-shield"></i> سياسة الخصوصية
+        </a>
+
+        <a href="#" id="profile-contact-btn" class="btn-guide-top">
+            <i class="fas fa-headset"></i> تواصل معنا
         </a>
 
     </div>
@@ -639,20 +644,21 @@
 
         <hr class="auth-divider">
 
-        <h4 class="auth-section-title">سياسة وشروط الاستخدام:</h4>
         <div class="auth-terms-container">
-            <ul>
-                <li>المنصة عبارة عن وسيط جيو-رقمي يربط المستخدم بمزود الخدمة عبر الواتساب فقط.</li>
-                <li>الاتفاق على الأسعار، المواعيد، أو تفاصيل الخدمة يتم بين الطرفين مباشرة دون أي تدخل منا.</li>
-                <li>المنصة تخلي مسؤوليتها بالكامل عن أي خلاف، سوء معاملة، أو إخلال بالاتفاق بين الأطراف.</li>
-                <li>في حال وجود شكاوى، يتم مراسلتنا عبر صفحة الفيسبوك لاتخاذ الإجراءات الإدارية (كالحظر).</li>
-            </ul>
+            <section class="auth-inline-legal-section">
+                <h4 class="auth-section-title">سياسة الخصوصية</h4>
+                <div data-inline-legal="privacy"><p>جارٍ تحميل سياسة الخصوصية...</p></div>
+            </section>
+            <section class="auth-inline-legal-section">
+                <h4 class="auth-section-title">شروط الاستخدام</h4>
+                <div data-inline-legal="terms"><p>جارٍ تحميل شروط الاستخدام...</p></div>
+            </section>
         </div>
 
         <div class="auth-requirements-container">
             <label class="auth-checkbox-label">
                 <input type="checkbox" id="agree-to-terms">
-                <span>أوافق على سياسة الاستخدام وسياسة الخصوصية وإخلاء المسؤولية المذكورة أعلاه.</span>
+                <span>أوافق على سياسة الخصوصية وشروط الاستخدام المذكورة أعلاه.</span>
             </label>
 
             <div class="facebook-like-section">
@@ -676,18 +682,13 @@
                 ⬅️ إذا كنت مسجلاً مسبقاً، انقر هنا لتسجيل الدخول
             </button>
 
-            <!-- أزرار الشروط والسياسات -->
-            <div style="display: flex; gap: 10px; margin-top: 20px; flex-wrap: wrap; justify-content: center;">
-                <button data-legal="terms" class="btn-auth" style="background-color: #3498db; flex: 1; min-width: 120px; color: white; padding: 10px; border: none; border-radius: 5px; cursor: pointer; font-size: 14px;">
-                    📄 شروط الاستخدام
-                </button>
-                <button data-legal="privacy" class="btn-auth" style="background-color: #e74c3c; flex: 1; min-width: 120px; color: white; padding: 10px; border: none; border-radius: 5px; cursor: pointer; font-size: 14px;">
-                    🛡️ سياسة الخصوصية
-                </button>
-                <button data-legal="guide" class="btn-auth" style="background-color: #16a085; flex: 1; min-width: 120px; color: white; padding: 10px; border: none; border-radius: 5px; cursor: pointer; font-size: 14px;">
-                    📖 دليل الاستخدام
-                </button>
-            </div>
+        </div>
+        <!-- روابط المحتوى مستقلة عن موافقة التسجيل والإعجاب بصفحة فيسبوك. -->
+        <div class="auth-legal-links" style="display:flex;gap:10px;margin-top:20px;flex-wrap:wrap;justify-content:center;">
+            <button type="button" data-legal="terms" class="btn-auth" style="background-color:#3498db;flex:1;min-width:120px;color:white;padding:10px;border:none;border-radius:5px;cursor:pointer;font-size:14px;">📄 شروط الاستخدام</button>
+            <button type="button" data-legal="privacy" class="btn-auth" style="background-color:#e74c3c;flex:1;min-width:120px;color:white;padding:10px;border:none;border-radius:5px;cursor:pointer;font-size:14px;">🛡️ سياسة الخصوصية</button>
+            <button type="button" data-legal="contact" class="btn-auth" style="background-color:#2980b9;flex:1;min-width:120px;color:white;padding:10px;border:none;border-radius:5px;cursor:pointer;font-size:14px;">📞 تواصل معنا</button>
+            <button type="button" data-legal="guide" class="btn-auth" style="background-color:#16a085;flex:1;min-width:120px;color:white;padding:10px;border:none;border-radius:5px;cursor:pointer;font-size:14px;">📖 دليل الاستخدام</button>
         </div>
     </div>
 
@@ -1160,6 +1161,7 @@ document.addEventListener('DOMContentLoaded', checkBannerStatus);
                 <li><a href="#" id="footer-about-btn"><i class="fas fa-angle-left"></i> من نحن</a></li>
                 <li><a href="#" id="footer-terms-btn" data-legal="terms"><i class="fas fa-angle-left"></i> شروط الاستخدام</a></li>
                 <li><a href="#" id="footer-privacy-btn" data-legal="privacy"><i class="fas fa-angle-left"></i> سياسة الخصوصية</a></li>
+                <li><a href="#" id="footer-contact-btn"><i class="fas fa-angle-left"></i> تواصل معنا</a></li>
             </ul>
         </div>
 
