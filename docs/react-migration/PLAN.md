@@ -835,6 +835,20 @@ Log each change here: **what · why · how to verify · commit**.
   البيانات الخلفية" whenever a provider sent coordinates. Response and request unchanged. Verify: `web/src/features/map/provider/provider.live.test.ts`
   (moves the point and reads it back). Commit: `fix(server): cast provider coords to float8…`.
 
+- **Serve the React app (`web/dist`) — Phase 4.** When `web/dist/index.html` exists the server serves it: `/assets/*` (hashed
+  names, cached a year), the other built files (icons, sounds; an hour), and every path without a file extension except `/api`,
+  `/geoserver-proxy`, `/socket.io` gets `index.html` (`no-cache`) so React Router handles it. The old pages redirect (301, query
+  kept) to their new routes: `index.html`→`/`, `no-map-search.html`→`/search`, `widgets-portal.html`→`/widgets/portal`,
+  `widgets-ticker.html`→`/widgets/ticker`, `notifications-panel.html`→`/notifications`, `admin-users.html`→`/admin/users`,
+  `admin-view-user.html`→`/admin/users` (it used a token in the URL), `dashboard.html`→`/admin/dashboard`,
+  `widgets-admin.html`→`/admin/widgets`. **Without `web/dist` nothing changes** (legacy pages as before), and
+  `SERVE_REACT_APP=off` forces the legacy pages without deleting the build — the one-line rollback. All API routes, the
+  proxy, socket.io, the static allow-list and the forbidden-path list are untouched (`/.env`, `/server.js` etc. still 404).
+  Verify: `cd web && npm run build`, start the server, `curl -I localhost:3000/search` (200 html), `/no-map-search.html?group=fuel`
+  (301 → `/search?group=fuel`), `/assets/<hash>.js` (200), `/api/nope` (404 JSON); log "🆕 يُقدَّم تطبيق React". Checked in a
+  browser against the real server (helmet CSP on): no CSP violations on login, map, search, widgets, admin, notifications.
+  The deploy workflow builds `web/` after the copy (see `.github/workflows/deploy.yml`).
+
 ## Backend asks (needs the user's decision — behaviour-changing or larger)
 
 - Sessions never expire by design (`requireAuth` uses `ignoreExpiration: true`); revocation is via `token_version` / `is_active` / `force_logout_flag` (checked on every request, cached). Not a hole by itself, but a stolen token stays valid until an admin force-logout or a password change — consider `expiresIn` + refresh, and a self-service "log out everywhere". Needs the user's decision.

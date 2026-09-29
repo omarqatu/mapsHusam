@@ -9,6 +9,7 @@ dotenv.config();
 import express from 'express';
 import { createProxyMiddleware } from 'http-proxy-middleware';
 import path from 'path';
+import fs from 'fs';
 import { fileURLToPath } from 'url';
 import { Pool } from 'pg';
 import cors from 'cors';
@@ -3839,6 +3840,44 @@ app.get('/healthz', async (req, res) => {
 app.use('/api', (req, res) => {
     res.status(404).json({ error: 'API endpoint not found', path: req.path });
 });
+
+// 9أ. تطبيق React (web/dist)
+// إذا كان web/dist/index.html موجوداً يُقدَّم التطبيق الجديد (ملفات مبنية + مسارات SPA + تحويل روابط الصفحات القديمة).
+// وإلا يعمل الموقع بصفحاته القديمة كما كان. SERVE_REACT_APP=off يعيد الصفحات القديمة فوراً دون حذف البناء.
+const REACT_DIST = path.join(__dirname, 'web', 'dist');
+const SERVE_REACT = (process.env.SERVE_REACT_APP || 'auto').toLowerCase() !== 'off'
+    && fs.existsSync(path.join(REACT_DIST, 'index.html'));
+console.log(SERVE_REACT ? `🆕 يُقدَّم تطبيق React من ${REACT_DIST}` : 'ℹ️ web/dist غير موجود (أو SERVE_REACT_APP=off): تُقدَّم الصفحات القديمة');
+
+if (SERVE_REACT) {
+    // الصفحات القديمة → مساراتها الجديدة (مع الاستعلام: ?group=fuel ما زال يعمل بصفحة البحث)
+    const LEGACY_PAGE_TO_ROUTE = {
+        '/index.html': '/',
+        '/no-map-search.html': '/search',
+        '/widgets-portal.html': '/widgets/portal',
+        '/widgets-ticker.html': '/widgets/ticker',
+        '/notifications-panel.html': '/notifications',
+        '/admin-users.html': '/admin/users',
+        '/admin-view-user.html': '/admin/users', // كانت تعتمد رمزاً في الرابط؛ الصفحة الجديدة تفتح جلستها بنفسها
+        '/dashboard.html': '/admin/dashboard',
+        '/widgets-admin.html': '/admin/widgets'
+    };
+    app.get(Object.keys(LEGACY_PAGE_TO_ROUTE), (req, res) => {
+        const query = req.originalUrl.includes('?') && req.path !== '/admin-view-user.html'
+            ? req.originalUrl.slice(req.originalUrl.indexOf('?')) : '';
+        res.redirect(301, LEGACY_PAGE_TO_ROUTE[req.path] + query);
+    });
+
+    // ملفات مبنية بأسماء تحمل بصمة المحتوى: تُخزَّن سنة. باقي الملفات (أيقونات، أصوات) ساعة.
+    app.use('/assets', express.static(path.join(REACT_DIST, 'assets'), { immutable: true, maxAge: '1y', index: false, fallthrough: false }));
+    app.use(express.static(REACT_DIST, { index: false, maxAge: '1h', redirect: false, dotfiles: 'ignore' }));
+
+    // مسارات التطبيق (بلا امتداد ملف) → index.html دون تخزين مؤقت حتى يلتقط كل نشر جديد فوراً
+    app.get(/^\/(?!api(?:\/|$)|geoserver-proxy(?:\/|$)|socket\.io(?:\/|$))[^.]*$/, (req, res) => {
+        res.set('Cache-Control', 'no-cache');
+        res.sendFile(path.join(REACT_DIST, 'index.html'));
+    });
+}
 
 // 9. تقديم الملفات الثابتة
 // 🔒 قائمة سماح للملفات الثابتة: لا يُقدَّم إلا مجلدات الموقع المعروفة وصفحات .html بالجذر.
