@@ -30,17 +30,13 @@ export function featureToSelection(
     return { kind: target, id, props, coordinate };
   }
   const re = REAL_ESTATE_LAYERS.find((l) => l.key === key);
-  if (re) {
-    const geom = feature.getGeometry();
+  if (re)
     return {
       kind: { kind: 'realEstate', layer: re.key },
       id,
       props,
       coordinate,
-      measure: geometryMeasure(
-        geom && 'getType' in geom && geom.getType() !== 'Point' ? (geom as never) : null,
-      ),
+      measure: geometryMeasure(feature.getGeometry()),
     };
-  }
   return null;
 }
