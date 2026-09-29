@@ -276,6 +276,10 @@ Split `index.html` into features, in this order:
      search pick or tap (before it hid under the card); the +/- zoom buttons are hidden on phones (pinch / double-tap
      work, and the tool column no longer covers half the screen). A lone `0` in `work_hours` (placeholder) is not shown
      as a schedule.
+   - Map UX pass 2: the search box is centred over the map (legacy: a bar stretched inside the header); on phones it is
+     a full-width bar with the tool column below it. A selected marker is centred in the *visible* map — beside the
+     side card on desktop, above the sheet on phones (view padding in `SelectionController`). Focus state of the box
+     uses the legacy `.global-search-wrapper` look (brand border + soft ring).
    - Media sections show only their own kind (photos section = pictures, videos section = videos); everything is still in the
      details card. Cards use the shared `MediaGallery` (enlarge on click, https-only URLs via `safeMediaUrl`) instead of the
      YouTube facade; a top-rated card shows the real average and the number of ratings (legacy carried but hid them).

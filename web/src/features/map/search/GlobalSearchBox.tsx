@@ -105,7 +105,7 @@ export default function GlobalSearchBox() {
 
   return (
     <div ref={root} className="relative">
-      <div className="flex items-center gap-2 rounded-full bg-white px-4 shadow-md focus-within:outline-2 focus-within:outline-brand">
+      <div className="flex items-center gap-2 rounded-full border-2 border-transparent bg-white px-4 shadow-md transition-shadow focus-within:border-brand focus-within:shadow-lg focus-within:ring-4 focus-within:ring-brand/10">
         <Search className="h-4 w-4 shrink-0 text-slate-400" aria-hidden />
         <input
           role="combobox"

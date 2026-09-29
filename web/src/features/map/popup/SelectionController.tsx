@@ -26,17 +26,21 @@ const highlightStyle = new Style({
 });
 
 /**
- * On phones the card is a bottom sheet: give the view a bottom padding so "centre" means the visible part above it —
+ * The card is a bottom sheet on phones and a side card on desktop: pad the view so "centre" means the visible part above it —
  * a marker reached by a fly-to (search pick) or a tap then stays in sight. Cleared when the card closes.
  */
 function fitAboveSheet(map: OlMap, coordinate: [number, number] | null) {
   const view = map.getView();
   const size = map.getSize();
-  if (!coordinate || window.innerWidth >= 640 || !size) {
+  if (!coordinate || !size) {
     view.padding = [0, 0, 0, 0];
     return;
   }
-  view.padding = [0, 0, Math.round(size[1] * 0.5), 0];
+  if (window.innerWidth >= 640) {
+    // Desktop: the card (20rem + gutter) covers the start edge, so centre in what is left. Start is the right in RTL.
+    const cardWidth = 344;
+    view.padding = document.dir === 'rtl' ? [0, cardWidth, 0, 0] : [0, 0, 0, cardWidth];
+  } else view.padding = [0, 0, Math.round(size[1] * 0.5), 0];
   // A running fly-to already ends at the padded centre; only a plain tap needs its own pan.
   if (!view.getAnimating()) view.animate({ center: coordinate, duration: 250 });
 }

@@ -99,7 +99,7 @@ export default function MapPage() {
           <ReplayShared />
           {/* Short screens (landscape phones): the column scrolls, and refresh/zoom — which have gestures and a
               one-minute auto refresh — step aside so the primary tools stay reachable. */}
-          <div className="absolute end-3 top-3 z-10 flex max-h-[calc(100%-1.5rem)] flex-col gap-2 overflow-y-auto">
+          <div className="absolute end-3 top-16 z-10 flex max-h-[calc(100%-4.75rem)] flex-col gap-2 overflow-y-auto sm:top-3 sm:max-h-[calc(100%-1.5rem)]">
             <MapButton label={t('search.title')} active={searchOpen} onClick={toggleSearch}>
               <Search className="h-5 w-5" />
             </MapButton>
@@ -120,7 +120,8 @@ export default function MapPage() {
           <div className="absolute bottom-2 start-3 z-10">
             <CoordinatesBar />
           </div>
-          <div className="absolute end-16 start-3 top-3 z-20 sm:end-auto sm:w-96">
+          {/* Centred over the map: a full-width bar on phones (tools sit below it), a 28rem pill on desktop. */}
+          <div className="absolute inset-x-3 top-3 z-20 sm:mx-auto sm:max-w-md">
             <GlobalSearchBox />
           </div>
           <SearchPanel />
