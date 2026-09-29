@@ -1,19 +1,18 @@
 import clsx from 'clsx';
 import { Copy, Printer, Star } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { useProviderLinked } from '@/api/mapEvents';
 import { toast } from '@/components/ui/toastStore';
 import { useOlMap } from '../MapContext';
 import { useMapUi } from '../store';
 import { copyText } from '@/lib/clipboard';
-import { formatDateTime, formatNumber } from '@/lib/format';
-import ContactButtons from '../popup/ContactButtons';
-import { isOpenNow, text, type SelectedFeature } from '../popup/featureModel';
+import { formatDateTime } from '@/lib/format';
+import { isOpenNow, priceLabel, text, type SelectedFeature } from '../popup/featureModel';
 import { isRoadBarrier, targetIcon } from '../targets';
-import { useContactActions } from '../popup/useContactActions';
 import MapSheet from '../panels/MapSheet';
 import { targetLabelKey } from '../targets';
+import { formatDistance } from './nearby';
 import { printResults } from './printResults';
+import ResultContact from './ResultContact';
 import { toSelected, type SearchResult } from './results';
 import { buildShareLink } from './shareLink';
 import { useSearchUi } from './store';
@@ -21,12 +20,6 @@ import { useSearchUi } from './store';
 /** A card and a row show the same feature when both the id and the point match (ids repeat across types). */
 const isSameFeature = (s: SelectedFeature | null, r: SearchResult) =>
   !!s && s.id === r.id && s.coordinate[0] === r.center[0] && s.coordinate[1] === r.center[1];
-
-function formatDistance(m: number, t: (k: string) => string) {
-  return m >= 1000
-    ? `${(m / 1000).toFixed(1)} ${t('search.results.km')}`
-    : `${Math.round(m)} ${t('search.results.m')}`;
-}
 
 function ResultRow({
   r,
@@ -40,8 +33,6 @@ function ResultRow({
   onOpen: () => void;
 }) {
   const { t, i18n } = useTranslation();
-  const linked = useProviderLinked();
-  const contact = useContactActions();
   const p = r.props;
   const typeTitle = t(targetLabelKey(r.target));
   const place = [text(p.location_name) || text(p.location), text(p.village_a)].filter(Boolean).join(' · ');
@@ -49,12 +40,6 @@ function ResultRow({
   const isRe = r.target.kind === 'realEstate';
   const open = isOpenNow(p.auto_status);
   const barrier = isRoadBarrier(r.target);
-  const isLinked =
-    r.target.kind === 'service' && !!r.id && !!linked.data?.get(r.target.discriminator)?.has(r.id);
-  const phone = text(p.phone);
-  const whatsapp = text(p.whatsapp);
-  const providerName = text(p.name) || t(isRe ? 'popup.advertiser' : 'popup.provider');
-  const showContact = !isLinked && !barrier;
 
   return (
     <li
@@ -87,12 +72,7 @@ function ResultRow({
                 {open ? t('popup.openNow') : t('popup.closedNow')}
               </span>
             )}
-            {isRe && Number(p.price) > 0 && (
-              <span>
-                {formatNumber(Number(p.price), i18n.language)}{' '}
-                {t(`popup.currency.${text(p.currency)}`, { defaultValue: '' })}
-              </span>
-            )}
+            {isRe && priceLabel(p, t, i18n.language) && <span>{priceLabel(p, t, i18n.language)}</span>}
             {isRe && text(p.area) && (
               <span>
                 {text(p.area)} {t('map.areaUnit')}
@@ -104,16 +84,7 @@ function ResultRow({
           </span>
         </span>
       </button>
-      {showContact && (
-        <ContactButtons
-          layout="row"
-          className="mt-2 ps-8"
-          phone={phone}
-          whatsapp={whatsapp}
-          onCall={() => void contact.call(toSelected(r), providerName, phone)}
-          onWhatsapp={() => void contact.whatsapp(toSelected(r), providerName, whatsapp, typeTitle)}
-        />
-      )}
+      <ResultContact r={r} className="mt-2 ps-8" />
     </li>
   );
 }

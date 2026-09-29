@@ -1,3 +1,4 @@
+import { isFuelStation, isRoadBarrier } from '../targets';
 import type { Coordinate } from '../config';
 import { FUEL_FIELDS } from './model';
 import { type MapTarget } from '../targets';
@@ -18,9 +19,9 @@ export function applyExtraFilters(
   extra: NearbyExtra,
 ): SearchResult[] {
   if (target.kind !== 'service') return results;
-  if (target.discriminator === 'road_barriers' && extra.stop !== '')
+  if (isRoadBarrier(target) && extra.stop !== '')
     return results.filter((r) => String(r.props.stop) === extra.stop);
-  if (target.discriminator === 'fuel_stations') {
+  if (isFuelStation(target)) {
     const active = FUEL_FIELDS.filter((f) => extra.fuel[f] !== '');
     if (active.length)
       return results.filter((r) => active.every((f) => String(r.props[f]) === extra.fuel[f]));
@@ -56,7 +57,7 @@ export function findNearby(
 
   const withDistance = applyExtraFilters(all, target, extra).map((r) => ({
     ...r,
-    distance: dist(center, r.geometry.getClosestPoint(center)),
+    distance: distanceToResult(r, center),
   }));
   let picked: SearchResult[];
   if (radius === null) {
@@ -75,3 +76,14 @@ export function findNearby(
   picked.sort((a, b) => (a.distance ?? 0) - (b.distance ?? 0));
   return { ok: true, results: picked, radius };
 }
+
+/** "350 m" / "1.2 km" in the UI language. */
+export function formatDistance(m: number, t: (k: string) => string) {
+  return m >= 1000
+    ? `${(m / 1000).toFixed(1)} ${t('search.results.km')}`
+    : `${Math.round(m)} ${t('search.results.m')}`;
+}
+
+/** Distance from a point to a result's nearest part (polygons: to the nearest edge, also from inside). */
+export const distanceToResult = (r: SearchResult, from: Coordinate) =>
+  dist(from, r.geometry.getClosestPoint(from));

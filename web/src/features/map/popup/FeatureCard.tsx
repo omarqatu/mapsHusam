@@ -10,26 +10,25 @@ function Field(props: Parameters<typeof DataField>[0]) {
     <DataField {...props} />
   );
 }
-import MediaGallery, { type MediaItem as GalleryItem } from '@/components/ui/MediaGallery';
+import MediaGallery from '@/components/ui/MediaGallery';
 import SectionCard from '@/components/ui/SectionCard';
 import { toast } from '@/components/ui/toastStore';
 import MapSheet from '../panels/MapSheet';
 import {
   barrierDirections,
   collectMedia,
-  CURRENCY_KEYS,
-  formatClock,
   FUEL_FIELDS,
   fuelAvailable,
+  hoursLabel,
   isOpenNow,
+  labelMedia,
   locationShareLink,
-  parseWorkHours,
+  priceLabel,
   text,
   type SelectedFeature,
 } from './featureModel';
 import { isFuelStation, isRoadBarrier, targetIcon, targetLabelKey } from '../targets';
 import { copyText, isMobileBrowser, nativeShare } from '@/lib/clipboard';
-import { formatNumber } from '@/lib/format';
 import ContactButtons from './ContactButtons';
 import { formatArea, formatLength } from '../tools/measure';
 import RatingsBlock from './RatingsBlock';
@@ -77,26 +76,14 @@ export default function FeatureCard({ feature, onClose, className }: Props) {
   const name = text(props.name);
   const providerName = name || (kind.kind === 'realEstate' ? t('popup.advertiser') : t('popup.provider'));
   const place = text(props.location_name) || text(props.location);
-  const media = collectMedia(props).map<GalleryItem>((m) =>
-    m.type === 'link' ? { type: 'link', url: m.url, label: t(m.labelKey) } : m,
-  );
-
-  const hours = parseWorkHours(props.work_hours);
-  const hoursText = hours.allDay
-    ? t('popup.allDay')
-    : 'raw' in hours
-      ? hours.raw
-      : t('popup.availableFromTo', {
-          from: formatClock(hours.from, i18n.language),
-          to: formatClock(hours.to, i18n.language),
-        });
+  const media = labelMedia(collectMedia(props), t);
+  const hoursText = hoursLabel(props.work_hours, t, i18n.language);
   const open = isOpenNow(props.auto_status);
 
   const whatsapp = text(props.whatsapp);
   const phone = text(props.phone);
   const isLinkedProvider = kind.kind === 'service' && !!id && !!linked.data?.get(kind.discriminator)?.has(id);
   const dirs = isBarrier ? barrierDirections(props) : null;
-  const price = Number(props.price);
 
   return (
     <MapSheet
@@ -171,14 +158,7 @@ export default function FeatureCard({ feature, onClose, className }: Props) {
               <Field label={t('popup.place')} value={place} wide />
               {kind.kind === 'realEstate' && (
                 <>
-                  <Field
-                    label={t('popup.price')}
-                    value={
-                      Number.isFinite(price) && price > 0
-                        ? `${formatNumber(price, i18n.language)} ${CURRENCY_KEYS[text(props.currency)] ? t(CURRENCY_KEYS[text(props.currency)]) : ''}`.trim()
-                        : null
-                    }
-                  />
+                  <Field label={t('popup.price')} value={priceLabel(props, t, i18n.language)} />
                   <Field
                     label={t('popup.area')}
                     value={text(props.area) ? `${text(props.area)} ${t('map.areaUnit')}` : null}

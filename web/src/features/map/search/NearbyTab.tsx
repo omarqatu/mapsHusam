@@ -7,8 +7,7 @@ import SelectInput from '@/components/ui/SelectInput';
 import TextInput from '@/components/ui/TextInput';
 import { toast } from '@/components/ui/toastStore';
 import { useOlMap } from '../MapContext';
-import { geolocationErrorKey } from '../mapUtils';
-import { fromLonLat } from '../projection';
+import { GeoError, locateOnce } from '../geolocate';
 import { FUEL_FIELDS, FUEL_OPTIONS, STOP_OPTIONS } from './model';
 import { type MapTarget } from '../targets';
 import { EMPTY_EXTRA, MAX_RADIUS_M, type NearbyExtra } from './nearby';
@@ -34,23 +33,15 @@ export default function NearbyTab() {
   const isFuel = isFuelStation(target);
 
   const useMyLocation = () => {
-    const secure = window.isSecureContext;
-    if (!('geolocation' in navigator) || !secure) return toast.error(t(geolocationErrorKey(2, secure)));
     setPicking(false);
     setLocating(true);
-    navigator.geolocation.getCurrentPosition(
-      (pos) => {
-        const c = fromLonLat(pos.coords.longitude, pos.coords.latitude);
+    locateOnce()
+      .then((c) => {
         setNearbyCenter(c);
         map?.getView().animate({ center: c, zoom: 18, duration: 1000 });
-        setLocating(false);
-      },
-      (err) => {
-        setLocating(false);
-        toast.error(t(geolocationErrorKey(err.code, true)));
-      },
-      { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 },
-    );
+      })
+      .catch((e: unknown) => toast.error(t(e instanceof GeoError ? e.messageKey : 'map.gps.failed')))
+      .finally(() => setLocating(false));
   };
 
   const run = () => {

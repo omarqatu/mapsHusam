@@ -20,3 +20,6 @@ export { default as DataField } from './DataField';
 export { default as SectionCard } from './SectionCard';
 export { default as MediaGallery } from './MediaGallery';
 export type { MediaItem } from './MediaGallery';
+export { default as StatCard } from './StatCard';
+export { default as Tabs } from './Tabs';
+export type { TabDef } from './Tabs';
