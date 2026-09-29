@@ -3,7 +3,8 @@ import clsx from 'clsx';
 import { useTranslation } from 'react-i18next';
 import SearchInput from '@/components/ui/SearchInput';
 import { targetIcon } from '../targets';
-import { ALL_TARGETS, targetKey, targetLabelKey } from '../targets';
+import { useShownTargets } from '@/features/visibility/store';
+import { targetKey, targetLabelKey } from '../targets';
 import { useSearchUi } from './store';
 import { useSearchActions } from './useSearchActions';
 
@@ -13,12 +14,13 @@ export default function QuickTab() {
   const actions = useSearchActions();
   const busy = useSearchUi((s) => s.busy);
   const [filter, setFilter] = useState('');
+  const targets = useShownTargets();
 
   const items = useMemo(() => {
     const q = filter.trim().toLowerCase();
-    const all = ALL_TARGETS.map((x) => ({ x, label: t(targetLabelKey(x)) }));
+    const all = targets.map((x) => ({ x, label: t(targetLabelKey(x)) }));
     return q ? all.filter((i) => i.label.toLowerCase().includes(q)) : all;
-  }, [filter, t]);
+  }, [filter, t, targets]);
 
   return (
     <div className="space-y-3">

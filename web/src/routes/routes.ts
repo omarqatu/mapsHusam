@@ -56,6 +56,13 @@ export const appRoutes: AppRoute[] = [
     nav: true,
   },
   {
+    path: '/admin/visibility',
+    titleKey: 'nav.adminVisibility',
+    access: ['admin'],
+    legacy: '(new page — replaces the hand-edited MAP_CONFIG.globalExclusions of legacy config.js)',
+    nav: true,
+  },
+  {
     path: '/admin/dashboard',
     titleKey: 'nav.adminDashboard',
     access: ['admin'],

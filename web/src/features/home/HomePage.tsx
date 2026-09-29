@@ -3,6 +3,7 @@ import HomeCards from './HomeCards';
 import NeedsYou from './NeedsYou';
 import PlatformFigures from './PlatformFigures';
 import { useHomeData } from './useHomeData';
+import { useSectionShown } from '@/features/visibility/store';
 
 /**
  * Signed-in landing page (`/home`): a greeting and search, what is waiting for the user, and the entrances to the
@@ -11,6 +12,7 @@ import { useHomeData } from './useHomeData';
  */
 export default function HomePage() {
   const data = useHomeData();
+  const statsOn = useSectionShown('stats');
   return (
     <div className="space-y-6">
       <Greeting />
@@ -18,7 +20,7 @@ export default function HomePage() {
         <NeedsYou data={data} />
         <HomeCards data={data} />
       </div>
-      <PlatformFigures platform={data.platform} />
+      {statsOn && <PlatformFigures platform={data.platform} />}
     </div>
   );
 }

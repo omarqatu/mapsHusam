@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router';
 import type { ReactNode } from 'react';
 import { useExtrasUi, type ExtrasTab } from '../extras/store';
+import { useShownExtrasTabs } from '../extras/useShownTabs';
 import { useSearchUi } from '../search/store';
 import { useMapUi } from '../store';
 
@@ -15,17 +16,19 @@ const chip =
  */
 export default function QuickChips() {
   const { t } = useTranslation();
+  const shown = useShownExtrasTabs();
   const open = (tab: ExtrasTab) => {
     useMapUi.getState().setLayersOpen(false);
     useSearchUi.getState().closePanel();
     useExtrasUi.getState().openPanel(tab);
   };
-  const button = (tab: ExtrasTab, icon: ReactNode, label: string) => (
-    <button type="button" className={chip} onClick={() => open(tab)}>
-      {icon}
-      {label}
-    </button>
-  );
+  const button = (tab: ExtrasTab, icon: ReactNode, label: string) =>
+    shown.includes(tab) && (
+      <button type="button" className={chip} onClick={() => open(tab)}>
+        {icon}
+        {label}
+      </button>
+    );
   return (
     <div className="flex gap-2 overflow-x-auto pb-1 [scrollbar-width:none] sm:justify-center [&::-webkit-scrollbar]:hidden">
       {button('fuel', <Fuel className="h-4 w-4 text-info" aria-hidden />, t('extras.chips.fuel'))}

@@ -6,6 +6,7 @@ import SocketConnector from '@/api/SocketConnector';
 import AppShell from '@/components/AppShell';
 import ErrorBoundary from '@/components/ErrorBoundary';
 import SessionVerifier from '@/components/SessionVerifier';
+import { VisibilitySync } from '@/features/visibility/store';
 import AuthLayout from '@/features/auth/AuthLayout';
 import LoginPage from '@/features/auth/LoginPage';
 import RegisterPage from '@/features/auth/RegisterPage';
@@ -24,6 +25,7 @@ const AdminDashboardPage = lazy(() => import('@/features/admin-dashboard/AdminDa
 const AdminUsersPage = lazy(() => import('@/features/admin-users/AdminUsersPage'));
 const AdminViewUserPage = lazy(() => import('@/features/admin-users/AdminViewUserPage'));
 const AdminWidgetsPage = lazy(() => import('@/features/admin-widgets/AdminWidgetsPage'));
+const AdminVisibilityPage = lazy(() => import('@/features/admin-visibility/AdminVisibilityPage'));
 const NotificationsPage = lazy(() => import('@/features/notifications/NotificationsPage'));
 const SearchPage = lazy(() => import('@/features/search/SearchPage'));
 const WidgetsPortalPage = lazy(() => import('@/features/widgets/WidgetsPortalPage'));
@@ -41,6 +43,7 @@ const ported: Record<string, ReactElement> = {
   '/admin/users/:id/view': <AdminViewUserPage />,
   '/admin/dashboard': <AdminDashboardPage />,
   '/admin/widgets': <AdminWidgetsPage />,
+  '/admin/visibility': <AdminVisibilityPage />,
 };
 
 const page = (r: AppRoute) => ({ path: r.path, element: ported[r.path] ?? <PlaceholderPage route={r} /> });
@@ -94,6 +97,7 @@ export default function App() {
       <QueryClientProvider client={queryClient}>
         <SocketConnector />
         <SessionVerifier />
+        <VisibilitySync />
         <RequestsHost />
         <RouterProvider router={router} />
       </QueryClientProvider>

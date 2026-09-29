@@ -1,6 +1,7 @@
 import { useTranslation } from 'react-i18next';
 import { useProviderLinked } from '@/api/mapEvents';
 import RequestServiceButton from '@/features/requests/RequestServiceButton';
+import { useSectionShown } from '@/features/visibility/store';
 import ContactButtons from '../popup/ContactButtons';
 import { text } from '../popup/featureModel';
 import { useContactActions } from '../popup/useContactActions';
@@ -23,11 +24,15 @@ export default function ResultContact({ r, className, showRequest }: Props) {
   const { t } = useTranslation();
   const linked = useProviderLinked();
   const contact = useContactActions();
+  const requestsOn = useSectionShown('requests');
   const p = r.props;
   if (isRoadBarrier(r.target)) return null;
 
   const isLinked =
-    r.target.kind === 'service' && !!r.id && !!linked.data?.get(r.target.discriminator)?.has(r.id);
+    requestsOn &&
+    r.target.kind === 'service' &&
+    !!r.id &&
+    !!linked.data?.get(r.target.discriminator)?.has(r.id);
   if (isLinked) {
     if (!showRequest) return null;
     return (

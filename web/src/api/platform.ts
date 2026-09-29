@@ -24,18 +24,23 @@ export interface CategoryCounts {
 }
 
 export const platformApi = {
-  stats: () => api.get<{ success: boolean; data?: PlatformStats }>('/api/platform-stats'),
+  /** `excludedLayers`: JSON array of hidden layer keys, so the counts match what the public sees. */
+  stats: (excludedLayers?: string) =>
+    api.get<{ success: boolean; data?: PlatformStats }>('/api/platform-stats', { excludedLayers }),
   categoryCounts: () => api.get<{ success: boolean; data?: CategoryCounts }>('/api/category-counts'),
 };
 
 export const platformKeys = { stats: ['platform-stats'] as const, categoryCounts: ['category-counts'] as const };
 
-/** Platform counters. Legacy retried 3x with a growing delay; the server caches for a minute, so a minute is fresh enough. */
-export function usePlatformStats(enabled = true) {
+/**
+ * Platform counters; `excluded` = JSON list of the layers hidden from the public (`useExcludedLayers`), left out.
+ * Legacy retried 3x with a growing delay; the server caches for a minute, so a minute is fresh enough.
+ */
+export function usePlatformStats(enabled = true, excluded?: string) {
   return useQuery({
-    queryKey: platformKeys.stats,
+    queryKey: [...platformKeys.stats, excluded ?? ''],
     queryFn: async () => {
-      const res = await platformApi.stats();
+      const res = await platformApi.stats(excluded);
       if (!res.success || !res.data) throw new Error('platform-stats');
       return res.data;
     },

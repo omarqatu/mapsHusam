@@ -915,6 +915,58 @@ call, search), live tests against the real backend (`home.live.test.ts`); headle
 Arabic and English, as the three seeded accounts (including a real request + a "busy" provider), login landing and deep-link
 flows, provider card → panel on the map. **Not verified:** a real phone; the browser-notification permission prompt.
 
+## Show & hide (`/admin/visibility`) — new page, replaces legacy `MAP_CONFIG.globalExclusions`
+
+Husam's legacy work on `main` (q4/q6, merged 2026-09-30) hid almost every service layer by editing `globalExclusions` in
+`config.js` (a code change per decision). Here it is an admin setting instead, stored with Husam's `platform_content` table
+under the key `settings.visibility` = `{"hiddenLayers": [...], "hiddenSections": [...]}`.
+
+- ✅ **Model** (`features/visibility/model.ts`): hidden layers are `targetKey`s (`rent` / `sale` / `land` / discriminators);
+  sections are `ticker` (live strip on the map and /search), `featured`, `stats`, `requests`. Road status and fuel status have
+  no switch of their own: they follow the `road_barriers` / `fuel_stations` layers. Unknown keys are dropped on read.
+- ✅ **One rule, one place** (`features/visibility/store.ts`): admins see everything (they edit hidden layers); everyone else
+  sees what is left on. `VisibilitySync` (App) loads the setting (`GET /api/platform-content/:key`, refreshed every 5 min and
+  on focus) into a Zustand store; the last value is kept in `localStorage` `psm-visibility` so hidden layers do not flash in
+  before the answer. Hooks: `useLayerFilter`, `useShownTargets`, `useSectionShown`, `useExcludedLayers`; plain code:
+  `layerShownToViewer`, `hiddenOnMap`.
+- ✅ **Where it applies**: `toResults` (every result list of the app — map search, global search, /search results, featured,
+  near me) drops hidden types; the map does not draw them (`MapView` style + real-estate layers); layer panel, quick search,
+  type picker, near-me filter and the /search group browser do not offer them (a group left empty disappears); the extras
+  panel and its chips lose the roads / fuel / featured / stats tabs that are off (no tab left → no button); the ticker drops
+  road / fuel items and the whole strip when `ticker` is off (the full `/widgets/ticker` page stays); the information centre
+  drops the road / fuel cards and its status tab when both are hidden; platform figures are counted without hidden layers
+  (`/api/platform-stats?excludedLayers=`) and disappear with `stats` off; with `requests` off a registered provider shows
+  call / WhatsApp instead of "request service" ("My requests" stays, so earlier chats remain reachable).
+- ✅ **Admin page**: sections as four checkboxes with a line each; layers by group (tri-state group box, count), a type filter,
+  "real estate only" and "show all" presets; a draft until "save" (discard button); the layer panel on the map marks hidden
+  types / groups "hidden" for the admin. UX: one page instead of editing `config.js`.
+- Verified: unit tests (`visibility.test.ts`), real backend (`visibility.live.test.ts`: save as admin, read as visitor, 404
+  for a missing key, a user is refused), browser: "real estate only" + ticker off → visitor map shows real estate only,
+  only the "featured" chip, no ticker; admin map keeps everything with "hidden" badges.
+- ⬜ The new /search landing (other work in progress: `Collections`, `LandingSections`, `SearchHero`, …) must use
+  `useShownTargets` / `useSectionShown` for its category cards, road / fuel shortcuts and featured rails, and hide empty rails.
+- Not done on purpose: the server does not filter hidden layers out of `/api/search-features` (the setting is presentation;
+  the data is public on GeoServer anyway). See Backend asks if that should change.
+
+### Husam's legacy changes on `main` (q1–q7, merged into this branch 2026-09-30) — to port
+
+Server parts came in with the merge. The legacy UI changes are not in React yet:
+
+- ✅ Real-estate-only mode (`globalExclusions`, `applyGlobalExclusionsToDom`) → the show & hide page above.
+- ✅ `platform-stats?excludedLayers=` → sent from React (`useExcludedLayers`).
+- ⬜ Platform texts admin (`texts-admin.html/js`): rich-text editor over every legal text key, backups (`legal.backup.<key>`),
+  restore default; `GET /api/platform-content`, `PUT/DELETE /api/admin/platform-content/legal.<key>`, value `{title, html}`.
+  React: a `/admin/texts` page; rendering server HTML needs a sanitiser (allow-list, like his `sanitizePlatformRichText`) —
+  it is the one place HTML from data would be rendered, so decide the approach first (see Backend asks).
+- ⬜ Legal texts read the admin overrides (`legal-content.js`), new keys `mapEntryChoice`, `noMapIntro`, `promoFeatures`;
+  `guideMap` = `guide`.
+- ⬜ Price / area / currency for `hotels` and `villas_rent` (service_all): edit fields, popup price, search filters.
+- ⬜ Featured: before/after via `details_link_1/2 notempty` query; hotel / villa cards with property details and live rating;
+  empty sections hidden.
+- ⬜ Smaller: road-barrier icon = the worse of `stop` / `stop2`; edit tool stays active after a failed save; weather widget off
+  when its request fails; register-consent box shows the full privacy / terms text inline.
+- Reference: `docs/TEXT_CONTENT_AUDIT.md` (from his branch).
+
 ## Phase 4 — Cut-over & cleanup
 
 - 🟨 All routes verified on desktop + mobile width (served by the real server with its CSP: login, welcome, map, search, widgets, admin, notifications, 404; phone width verified per page during each port). Still to do by hand: a pass on a real phone, and on production after the deploy.
@@ -1066,6 +1118,11 @@ Log each change here: **what · why · how to verify · commit**.
   usdPerOunce, ilsPerGram24, ilsPerGram21, ilsPerGram18, asOf } | null, silver: { usdPerOunce, asOf } | null, updatedAt } }`.
   Verify: `web/src/features/search/liveUpdates.live.test.ts` (shape, gold in the thousands of dollars, silver far below it, 21k =
   0.875 × 24k; tolerates a 502 when the sources are unreachable). Commit: `feat(server): cached world rates, gold and silver`.
+
+- **`GET /api/platform-content/:key` (new, public).** One row of `platform_content` by key (`{success, item}`, 404 when
+  absent). Why: the list endpoint returns every platform text (~140 KB) and the React app needs one small setting
+  (`settings.visibility`) on every load. Nothing existing changes. Verify: `curl /api/platform-content/settings.visibility`
+  → 404 before the first save, the item after; `visibility.live.test.ts`. Commit: `feat(server): GET /api/platform-content/:key …`.
 
 ## Backend asks (needs the user's decision — behaviour-changing or larger)
 

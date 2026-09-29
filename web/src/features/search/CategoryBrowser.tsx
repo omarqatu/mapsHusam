@@ -5,7 +5,8 @@ import SearchInput from '@/components/ui/SearchInput';
 import { matchesQuery } from '../map/extras/status';
 import { groupLabelKey } from '../map/registry';
 import { targetIcon, targetKey, targetLabelKey, type MapTarget } from '../map/targets';
-import { GROUP_ICON, GROUP_IDS, targetsInGroup, type GroupId } from './categories';
+import { useLayerFilter } from '@/features/visibility/store';
+import { GROUP_ICON, targetsInGroup, useShownGroupIds, type GroupId } from './categories';
 
 interface Props {
   group: GroupId;
@@ -31,10 +32,15 @@ export default function CategoryBrowser({ group, onGroup, onPick }: Props) {
     activeTab.current?.scrollIntoView?.({ block: 'nearest', inline: 'center' });
   }, [group]);
 
+  const layerShown = useLayerFilter();
+  const groupIds = useShownGroupIds();
   const searching = query.trim() !== '';
   const targets = useMemo(
-    () => targetsInGroup(searching ? 'all' : group).filter((x) => !searching || matchesQuery(t(targetLabelKey(x)), query)),
-    [group, query, searching, t],
+    () =>
+      targetsInGroup(searching ? 'all' : group, layerShown).filter(
+        (x) => !searching || matchesQuery(t(targetLabelKey(x)), query),
+      ),
+    [group, query, searching, t, layerShown],
   );
   const preview = group === 'all' && !searching && !expanded;
   const shown = preview ? targets.slice(0, ALL_PREVIEW) : targets;
@@ -53,7 +59,7 @@ export default function CategoryBrowser({ group, onGroup, onPick }: Props) {
         aria-label={t('searchPage.groups')}
         className="-mx-4 flex overflow-x-auto border-b border-line px-4 [mask-image:linear-gradient(to_right,transparent,#000_16px,#000_calc(100%-16px),transparent)] [scrollbar-width:none] md:mx-0 md:px-0 [&::-webkit-scrollbar]:hidden"
       >
-        {GROUP_IDS.map((g) => {
+        {groupIds.map((g) => {
           const Icon = GROUP_ICON[g];
           const on = g === group && !searching;
           return (

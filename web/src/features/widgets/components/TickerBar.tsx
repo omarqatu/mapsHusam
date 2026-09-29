@@ -16,6 +16,7 @@ import {
   Zap,
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { useLayerFilter, useSectionShown } from '@/features/visibility/store';
 import { formatHijri, buildTickerItems, palestineNow, type CardId, type TickerItem } from '../model';
 import { useTickerUi } from '../tickerStore';
 import { useNow, usePrayerTimes, useWeather, useWidgetsData } from '../hooks/useWidgets';
@@ -89,6 +90,8 @@ export default function TickerBar({
   const hidden = useTickerUi((s) => s.hidden);
   const setHidden = useTickerUi((s) => s.setHidden);
   const large = variant === 'page';
+  const stripOn = useSectionShown('ticker');
+  const layerShown = useLayerFilter();
 
   const items = useMemo(
     () =>
@@ -107,9 +110,17 @@ export default function TickerBar({
                 : `widgets.prayer.${id}`,
           ),
         nextLabel: (name) => t('widgets.ticker.nextPrayer', { name }),
-      }),
-    [data.data, cities, prayer.data, now, i18n.language, t],
+      }).filter(
+        // road / fuel status follow their layers (hidden by the admin → not advertised here either)
+        (i) =>
+          (i.card !== 'road-status' || layerShown('road_barriers')) &&
+          (i.card !== 'fuel-status' || layerShown('fuel_stations')),
+      ),
+    [data.data, cities, prayer.data, now, i18n.language, t, layerShown],
   );
+
+  // The admin can switch the strip off (map, search page); the full-page version (/widgets/ticker) stays.
+  if (!stripOn && !large) return null;
 
   const title = t('widgets.ticker.title');
   if (collapsible && hidden) {

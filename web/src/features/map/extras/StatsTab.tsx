@@ -2,6 +2,7 @@ import type { ReactNode } from 'react';
 import { Eye, Layers, MapPin, MapPinned, ScanSearch, Users } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { usePlatformStats, type PlatformStats } from '@/api/platform';
+import { useExcludedLayers } from '@/features/visibility/store';
 import AlertMessage from '@/components/ui/AlertMessage';
 import DataField from '@/components/ui/DataField';
 import { CenteredSpinner } from '@/components/ui/Spinner';
@@ -74,7 +75,7 @@ const TILES: Tile[] = [
 /** Platform counters (legacy bottom bar / mobile "home" tab): users, providers, services, visits. */
 export default function StatsTab() {
   const { t, i18n } = useTranslation();
-  const stats = usePlatformStats();
+  const stats = usePlatformStats(true, useExcludedLayers());
   const fmt = (n: number) => formatNumber(Number(n) || 0, i18n.language);
 
   if (stats.isPending) return <CenteredSpinner minHeight="8rem" />;

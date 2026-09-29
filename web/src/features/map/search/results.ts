@@ -6,6 +6,7 @@ import type { ApiFeature, FeatureCollectionResponse } from '@/api/search';
 import type { Coordinate } from '../config';
 import { PALESTINE_GRID } from '../projection';
 import { resolveFeatureId, type Props, type SelectedFeature } from '../popup/featureModel';
+import { layerShownToViewer } from '@/features/visibility/store';
 import { targetFromKey, type MapTarget } from '../targets';
 import { geometryMeasure } from '../popup/geometryMeasure';
 
@@ -52,7 +53,8 @@ const targetKeyOf = (t: MapTarget) => (t.kind === 'realEstate' ? t.layer : t.dis
 
 /**
  * API response → results. `target` is fixed for single-type queries; for `service_all` / mixed queries each row's
- * `discriminator` decides (unknown types are dropped — the map can't draw or describe them).
+ * `discriminator` decides. Dropped: unknown types (the map can't draw or describe them) and types the admin hid from
+ * the public — every result list of the app comes through here, so this is where hidden types leave all of them.
  */
 export function toResults(fc: FeatureCollectionResponse, target: MapTarget | null): SearchResult[] {
   const out: SearchResult[] = [];
@@ -60,7 +62,7 @@ export function toResults(fc: FeatureCollectionResponse, target: MapTarget | nul
     const t =
       target ??
       (typeof f.properties.discriminator === 'string' ? targetFromKey(f.properties.discriminator) : null);
-    const r = t && toResult(f, t, i);
+    const r = t && layerShownToViewer(t) && toResult(f, t, i);
     if (r) out.push(r);
   });
   return out;

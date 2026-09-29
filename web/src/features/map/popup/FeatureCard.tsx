@@ -2,6 +2,7 @@ import { Copy, Link2, MapPin } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useProviderLinked } from '@/api/mapEvents';
 import RequestServiceButton from '@/features/requests/RequestServiceButton';
+import { useSectionShown } from '@/features/visibility/store';
 import Button from '@/components/ui/Button';
 import DataField from '@/components/ui/DataField';
 
@@ -87,6 +88,7 @@ export default function FeatureCard({ feature, onClose, className }: Props) {
   const { t, i18n } = useTranslation();
   const linked = useProviderLinked();
   const contact = useContactActions();
+  const requestsOn = useSectionShown('requests');
   const { props, kind, id } = feature;
 
   const isBarrier = isRoadBarrier(kind);
@@ -100,7 +102,9 @@ export default function FeatureCard({ feature, onClose, className }: Props) {
 
   const whatsapp = text(props.whatsapp);
   const phone = text(props.phone);
-  const isLinkedProvider = kind.kind === 'service' && !!id && !!linked.data?.get(kind.discriminator)?.has(id);
+  // With requests switched off (admin) a registered provider is contacted like any other: call / WhatsApp.
+  const isLinkedProvider =
+    requestsOn && kind.kind === 'service' && !!id && !!linked.data?.get(kind.discriminator)?.has(id);
   const dirs = isBarrier ? barrierDirections(props) : null;
 
   // The header already shows the name; the body shows where it is, then only what is filled in.

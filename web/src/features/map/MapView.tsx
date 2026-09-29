@@ -23,6 +23,8 @@ import { createBasemaps, createWfsLayer } from './layers';
 import { MapContext } from './MapContext';
 import { palestineGrid } from './projection';
 import { useMapUi } from './store';
+import { hiddenOnMap, useVisibilityStore } from '@/features/visibility/store';
+import { useAuthStore } from '@/store/authStore';
 import { realEstateStyle, serviceStyle, type Translate } from './styles';
 
 /**
@@ -50,7 +52,10 @@ export default function MapView({ children }: { children?: ReactNode }) {
     );
     const services = createWfsLayer(
       SERVICE_ALL_LAYER,
-      serviceStyle({ t: translate, isHidden: (d) => useMapUi.getState().hiddenServices.has(d) }),
+      serviceStyle({
+        t: translate,
+        isHidden: (d) => useMapUi.getState().hiddenServices.has(d) || hiddenOnMap(d),
+      }),
       onLayerError,
     );
 
@@ -75,7 +80,10 @@ export default function MapView({ children }: { children?: ReactNode }) {
     // --- follow the store ---
     const applyUi = (s = useMapUi.getState()) => {
       BASEMAPS.forEach((k) => basemaps[k]?.setVisible(k === s.basemap));
-      realEstate.forEach((l, i) => l.setVisible(s.realEstateVisible[REAL_ESTATE_LAYERS[i].key]));
+      realEstate.forEach((l, i) => {
+        const key = REAL_ESTATE_LAYERS[i].key;
+        l.setVisible(s.realEstateVisible[key] && !hiddenOnMap(key));
+      });
       services.changed(); // hidden service types are applied inside the style function
     };
     applyUi();
@@ -87,6 +95,11 @@ export default function MapView({ children }: { children?: ReactNode }) {
       )
         applyUi(s);
     });
+    // The admin's public visibility (and who is looking: admins see hidden layers) changes what is drawn too.
+    const unsubscribeVisibility = useVisibilityStore.subscribe(() => applyUi());
+    const unsubscribeAuth = useAuthStore.subscribe(
+      (s, prev) => s.user?.role !== prev.user?.role && applyUi(),
+    );
 
     // Legacy refreshed visible data layers every minute (road barrier / fuel status change live).
     const dataLayers: VectorLayer[] = [...realEstate, services];
@@ -107,6 +120,8 @@ export default function MapView({ children }: { children?: ReactNode }) {
     setMap(olMap);
     return () => {
       unsubscribe();
+      unsubscribeVisibility();
+      unsubscribeAuth();
       window.clearInterval(refresh);
       resize.disconnect();
       olMap.setTarget(undefined);

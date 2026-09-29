@@ -2,6 +2,7 @@ import { useEffect, useState, type ReactNode } from 'react';
 import { useSearchParams } from 'react-router';
 import { Coins, CloudSun, RefreshCw, TrafficCone, Zap } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { useLayerFilter } from '@/features/visibility/store';
 import AlertMessage from '@/components/ui/AlertMessage';
 import Button from '@/components/ui/Button';
 import PageHeader from '@/components/ui/PageHeader';
@@ -51,6 +52,7 @@ function useScrollToCard(card: CardId | null) {
  */
 export default function WidgetsPortalPage() {
   const { t } = useTranslation();
+  const layerShown = useLayerFilter();
   const [params] = useSearchParams();
   const wanted = params.get('card');
   const card = isCardId(wanted) ? wanted : null;
@@ -69,7 +71,12 @@ export default function WidgetsPortalPage() {
   const data = useWidgetsData();
   const { refresh, busy } = useRefreshAll();
 
-  const tabs: TabDef<PortalTab>[] = PORTAL_TABS.map((id) => ({
+  // Road / fuel status follow their layers; with both hidden by the admin the status tab goes too.
+  const statusShown = layerShown('road_barriers') || layerShown('fuel_stations');
+  const shownTabs = PORTAL_TABS.filter((id) => id !== 'status' || statusShown);
+  const current = shownTabs.includes(tab) ? tab : shownTabs[0];
+
+  const tabs: TabDef<PortalTab>[] = shownTabs.map((id) => ({
     id,
     label: t(`widgets.tabs.${id}`),
     icon: TAB_ICON[id],
@@ -81,9 +88,9 @@ export default function WidgetsPortalPage() {
       role="tabpanel"
       id={`widgets-tabpanel-${id}`}
       aria-labelledby={`widgets-tab-${id}`}
-      hidden={tab !== id}
+      hidden={current !== id}
     >
-      {(visited.has(id) || tab === id) && children}
+      {(visited.has(id) || current === id) && children}
     </div>
   );
 
@@ -117,7 +124,7 @@ export default function WidgetsPortalPage() {
       <Tabs
         className="sticky top-14 z-30 mb-4 shadow-sm"
         tabs={tabs}
-        value={tab}
+        value={current}
         onChange={setTab}
         label={t('widgets.title')}
         idPrefix="widgets"
@@ -158,13 +165,18 @@ export default function WidgetsPortalPage() {
           </div>
         </div>,
       )}
-      {panel(
-        'status',
-        <div className="grid items-start gap-4 lg:grid-cols-2">
-          <StatusCard id={anchor('road-status')} title={title('road-status')} layer="road_barriers" />
-          <StatusCard id={anchor('fuel-status')} title={title('fuel-status')} layer="fuel_stations" />
-        </div>,
-      )}
+      {statusShown &&
+        panel(
+          'status',
+          <div className="grid items-start gap-4 lg:grid-cols-2">
+            {layerShown('road_barriers') && (
+              <StatusCard id={anchor('road-status')} title={title('road-status')} layer="road_barriers" />
+            )}
+            {layerShown('fuel_stations') && (
+              <StatusCard id={anchor('fuel-status')} title={title('fuel-status')} layer="fuel_stations" />
+            )}
+          </div>,
+        )}
     </div>
   );
 }

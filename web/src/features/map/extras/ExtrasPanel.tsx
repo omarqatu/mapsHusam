@@ -8,7 +8,8 @@ import { useMapUi } from '../store';
 import FeaturedTab from './FeaturedTab';
 import StatsTab from './StatsTab';
 import StatusTab from './StatusTab';
-import { EXTRAS_TABS, useExtrasUi, type ExtrasTab } from './store';
+import { useExtrasUi, type ExtrasTab } from './store';
+import { useShownExtrasTabs } from './useShownTabs';
 
 const TAB_ICON: Record<ExtrasTab, typeof Star> = {
   featured: Star,
@@ -31,12 +32,15 @@ function renderTab(tab: ExtrasTab) {
 export default function ExtrasPanel() {
   const { t } = useTranslation();
   const open = useExtrasUi((s) => s.open);
-  const tab = useExtrasUi((s) => s.tab);
+  const shown = useShownExtrasTabs();
+  const wanted = useExtrasUi((s) => s.tab);
+  // A tab the admin has hidden (or that was asked for by a link) falls back to the first one still shown.
+  const tab = shown.includes(wanted) ? wanted : shown[0];
   const setTab = useExtrasUi((s) => s.setTab);
   const close = useExtrasUi((s) => s.closePanel);
   const [visited, setVisited] = useState<ReadonlySet<ExtrasTab>>(new Set());
   // Tabs shown so far (adjust state while rendering — no effect needed).
-  if (open && !visited.has(tab)) setVisited(new Set(visited).add(tab));
+  if (open && tab && !visited.has(tab)) setVisited(new Set(visited).add(tab));
 
   // One sheet at a time on the end edge (search and layer panels take the same place); on phones the details card and
   // a new result list also need the room.
@@ -66,9 +70,9 @@ export default function ExtrasPanel() {
     };
   }, []);
 
-  if (!open) return null;
+  if (!open || !tab) return null;
 
-  const tabs: TabDef<ExtrasTab>[] = EXTRAS_TABS.map((id) => {
+  const tabs: TabDef<ExtrasTab>[] = shown.map((id) => {
     const Icon = TAB_ICON[id];
     return { id, label: t(`extras.tabs.${id}`), icon: <Icon className="h-4 w-4" aria-hidden /> };
   });
@@ -83,7 +87,7 @@ export default function ExtrasPanel() {
         label={t('extras.title')}
         idPrefix="extras"
       />
-      {EXTRAS_TABS.map((id) => (
+      {shown.map((id) => (
         <div
           key={id}
           role="tabpanel"

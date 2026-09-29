@@ -1,10 +1,12 @@
 import { useMemo, useState } from 'react';
-import { ChevronDown } from 'lucide-react';
+import { ChevronDown, EyeOff } from 'lucide-react';
 import clsx from 'clsx';
 import { useTranslation } from 'react-i18next';
 import Button from '@/components/ui/Button';
 import SearchInput from '@/components/ui/SearchInput';
 import { useAuthStore } from '@/store/authStore';
+import { isLayerShown } from '@/features/visibility/model';
+import { useLayerFilter, useVisibility } from '@/features/visibility/store';
 import { GROUP_ICON } from '@/features/search/categories';
 import { BASEMAPS, REAL_ESTATE_LAYERS, SERVICE_TYPES } from '../config';
 import { groupedTargets } from '../extras/featured';
@@ -24,13 +26,17 @@ function Toggle({
   icon,
   checked,
   onChange,
+  publicHidden = false,
 }: {
   id: string;
   label: string;
   icon?: string;
   checked: boolean;
   onChange: (v: boolean) => void;
+  /** Admins only see this: the type is hidden from the public (admin page "show & hide"). */
+  publicHidden?: boolean;
 }) {
+  const { t } = useTranslation();
   return (
     <label
       htmlFor={id}
@@ -49,6 +55,12 @@ function Toggle({
         </span>
       )}
       <span className="flex-1 text-sm text-fg">{label}</span>
+      {publicHidden && (
+        <span className="inline-flex items-center gap-1 rounded-full bg-subtle px-2 py-0.5 text-xs font-semibold text-muted">
+          <EyeOff className="h-3 w-3" aria-hidden />
+          {t('visibility.hiddenBadge')}
+        </span>
+      )}
     </label>
   );
 }
@@ -57,6 +69,7 @@ interface GroupItem {
   key: string;
   icon: string;
   label: string;
+  publicHidden: boolean;
 }
 
 /** One collapsible group of service types with a tri-state "all" box (visible / total). */
@@ -68,12 +81,27 @@ function ServiceGroup({ id, items, forceOpen }: { id: TypeGroupId; items: GroupI
   const Icon = GROUP_ICON[id];
   const on = items.filter((i) => !hidden.has(i.key)).length;
   const all = on === items.length;
+  // Admins only: how many of these the public does not see.
+  const publicHidden = items.filter((i) => i.publicHidden).length;
   return (
     <details open={forceOpen || undefined} className="group rounded-xl border border-line bg-surface">
       <summary className="flex cursor-pointer list-none items-center gap-2.5 px-3 py-2.5 [&::-webkit-details-marker]:hidden">
         <ChevronDown className="h-4 w-4 shrink-0 text-muted transition-transform group-open:rotate-180" aria-hidden />
         <Icon className="h-4 w-4 shrink-0 text-muted" aria-hidden />
         <span className="flex-1 text-sm font-bold text-fg">{t(groupLabelKey(id))}</span>
+        {publicHidden > 0 && (
+          <span
+            className="inline-flex items-center gap-1 rounded-full bg-subtle px-2 py-0.5 text-xs font-semibold text-muted"
+            title={t('visibility.hiddenBadge')}
+          >
+            <EyeOff className="h-3 w-3" aria-hidden />
+            {publicHidden === items.length ? (
+              t('visibility.hiddenBadge')
+            ) : (
+              <span dir="ltr">{publicHidden}</span>
+            )}
+          </span>
+        )}
         <span className="text-xs font-semibold text-muted" dir="ltr">
           {on}/{items.length}
         </span>
@@ -98,6 +126,7 @@ function ServiceGroup({ id, items, forceOpen }: { id: TypeGroupId; items: GroupI
             label={s.label}
             checked={!hidden.has(s.key)}
             onChange={(v) => setServiceVisible(s.key, v)}
+            publicHidden={s.publicHidden}
           />
         ))}
       </div>
@@ -112,6 +141,9 @@ export default function LayerPanel({ open, onClose }: { open: boolean; onClose: 
   const [filter, setFilter] = useState('');
 
   const isAdmin = useAuthStore((s) => s.user?.role === 'admin');
+  // Types hidden by the admin are not offered to the public at all; admins see them, marked.
+  const visibility = useVisibility();
+  const shown = useLayerFilter();
   // "No background" is for admins (editing, printing); everyone else has three real maps to choose from.
   const basemaps = BASEMAPS.filter((b) => b !== 'none' || isAdmin || ui.basemap === 'none');
 
@@ -122,10 +154,14 @@ export default function LayerPanel({ open, onClose }: { open: boolean; onClose: 
       group: g.group,
       items: g.keys.flatMap((k) => {
         const s = byKey.get(k);
-        return s && (!q || s.label.toLowerCase().includes(q)) ? [s] : [];
+        return s && shown(k) && (!q || s.label.toLowerCase().includes(q))
+          ? [{ ...s, publicHidden: !isLayerShown(visibility, k) }]
+          : [];
       }),
     })).filter((g) => g.items.length > 0);
-  }, [filter, t]);
+  }, [filter, t, shown, visibility]);
+  const realEstate = REAL_ESTATE_LAYERS.filter((l) => shown(l.key));
+  const serviceKeys = ALL_SERVICE_KEYS.filter(shown);
 
   if (!open) return null;
 
@@ -160,7 +196,7 @@ export default function LayerPanel({ open, onClose }: { open: boolean; onClose: 
             variant="secondary"
             size="sm"
             className="flex-1"
-            onClick={() => ui.setAllVisible(true, ALL_SERVICE_KEYS)}
+            onClick={() => ui.setAllVisible(true, serviceKeys)}
           >
             {t('map.showAll')}
           </Button>
@@ -168,42 +204,47 @@ export default function LayerPanel({ open, onClose }: { open: boolean; onClose: 
             variant="secondary"
             size="sm"
             className="flex-1"
-            onClick={() => ui.setAllVisible(false, ALL_SERVICE_KEYS)}
+            onClick={() => ui.setAllVisible(false, serviceKeys)}
           >
             {t('map.hideAll')}
           </Button>
         </div>
 
-        <section>
-          <h3 className="mb-1 text-sm font-bold text-fg">{t('map.realEstate')}</h3>
-          {REAL_ESTATE_LAYERS.map((l) => (
-            <Toggle
-              key={l.key}
-              id={`layer-${l.key}`}
-              icon={l.icon}
-              label={t(`layers.${l.key}`)}
-              checked={ui.realEstateVisible[l.key]}
-              onChange={(v) => ui.setRealEstateVisible(l.key, v)}
-            />
-          ))}
-        </section>
-
-        <section>
-          <h3 className="mb-2 text-sm font-bold text-fg">{t('map.services')}</h3>
-          <SearchInput
-            value={filter}
-            onChange={setFilter}
-            placeholder={t('map.filterServices')}
-            debounceMs={0}
-            className="mb-2"
-          />
-          <div className="space-y-2">
-            {groups.map((g) => (
-              <ServiceGroup key={g.group} id={g.group} items={g.items} forceOpen={filter.trim() !== ''} />
+        {realEstate.length > 0 && (
+          <section>
+            <h3 className="mb-1 text-sm font-bold text-fg">{t('map.realEstate')}</h3>
+            {realEstate.map((l) => (
+              <Toggle
+                key={l.key}
+                id={`layer-${l.key}`}
+                icon={l.icon}
+                label={t(`layers.${l.key}`)}
+                checked={ui.realEstateVisible[l.key]}
+                onChange={(v) => ui.setRealEstateVisible(l.key, v)}
+                publicHidden={!isLayerShown(visibility, l.key)}
+              />
             ))}
-            {groups.length === 0 && <p className="text-sm text-muted">{t('common.noData')}</p>}
-          </div>
-        </section>
+          </section>
+        )}
+
+        {serviceKeys.length > 0 && (
+          <section>
+            <h3 className="mb-2 text-sm font-bold text-fg">{t('map.services')}</h3>
+            <SearchInput
+              value={filter}
+              onChange={setFilter}
+              placeholder={t('map.filterServices')}
+              debounceMs={0}
+              className="mb-2"
+            />
+            <div className="space-y-2">
+              {groups.map((g) => (
+                <ServiceGroup key={g.group} id={g.group} items={g.items} forceOpen={filter.trim() !== ''} />
+              ))}
+              {groups.length === 0 && <p className="text-sm text-muted">{t('common.noData')}</p>}
+            </div>
+          </section>
+        )}
       </div>
     </MapSheet>
   );

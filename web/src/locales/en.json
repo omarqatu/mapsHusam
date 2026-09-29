@@ -168,6 +168,7 @@
     "widgets": "Live info",
     "adminUsers": "Users",
     "adminWidgets": "Widgets admin",
+    "adminVisibility": "Show & hide",
     "adminDashboard": "Dashboard",
     "admin": "Admin"
   },
@@ -1251,6 +1252,41 @@
       "ApartSale": "Apartment for sale",
       "LandSale": "Land for sale"
     }
+  },
+  "visibility": {
+    "title": "Show & hide",
+    "subtitle": "Choose what visitors see: sections of the site and map layers.",
+    "adminNote": "As an admin you always see everything; what you hid from the public is marked “hidden”. To see the site as a visitor does, open it in a private window.",
+    "sectionsTitle": "Site sections",
+    "sectionsHint": "Road status and fuel stations follow their layers in the list below.",
+    "sections": {
+      "ticker": {
+        "name": "Live strip",
+        "hint": "The prices, weather and prayer-times strip under the map and on the search page."
+      },
+      "featured": {
+        "name": "Featured services",
+        "hint": "The “featured” tab of the extras panel and its shortcut on the map."
+      },
+      "stats": {
+        "name": "Platform statistics",
+        "hint": "User and visit figures in the extras panel and on the home page."
+      },
+      "requests": {
+        "name": "Service requests",
+        "hint": "The “request service” button and the chat with the provider. When off, call and WhatsApp show instead; earlier requests stay available."
+      }
+    },
+    "layersTitle": "Map layers",
+    "layersHint": "A hidden layer leaves the map, search, lists and statistics; a group left empty goes with it.",
+    "realEstateOnly": "Real estate only",
+    "showAll": "Show all",
+    "hiddenBadge": "Hidden",
+    "save": "Save",
+    "discard": "Discard",
+    "saved": "Saved. Visitors see it within minutes.",
+    "saveFailed": "Could not save.",
+    "loadFailed": "Could not load the settings."
   },
   "adminWidgets": {
     "title": "Live information centre",

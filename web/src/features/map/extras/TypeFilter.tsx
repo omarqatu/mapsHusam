@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import SearchInput from '@/components/ui/SearchInput';
+import { useLayerFilter } from '@/features/visibility/store';
 import { targetIcon, targetKey, targetLabelKey, type MapTarget } from '../targets';
 import { groupLabelKey } from '../registry';
 import { GROUP_ICON } from '../registry/groupIcons';
@@ -48,15 +49,16 @@ interface Props {
 export default function TypeFilter({ selected, onChange }: Props) {
   const { t } = useTranslation();
   const [query, setQuery] = useState('');
+  const shown = useLayerFilter();
 
   const label = (x: MapTarget) => t(targetLabelKey(x));
   const groups = useMemo(
     () =>
       GROUPS.map((g) => ({
         ...g,
-        visible: g.targets.filter((x) => matchesQuery(t(targetLabelKey(x)), query)),
+        visible: g.targets.filter((x) => shown(x) && matchesQuery(t(targetLabelKey(x)), query)),
       })).filter((g) => g.visible.length > 0),
-    [query, t],
+    [query, t, shown],
   );
 
   const toggle = (keys: string[], on: boolean) => {
