@@ -32,7 +32,7 @@ export default function CoordinatesBar() {
 
   return (
     <div
-      className="pointer-events-none hidden items-center gap-2 rounded-full bg-white/85 px-3 py-1 font-mono text-xs text-slate-700 shadow sm:flex"
+      className="pointer-events-none hidden items-center gap-2 glass rounded-full px-3 py-1 font-mono text-xs text-slate-800 sm:flex"
       dir="ltr"
     >
       <span ref={grid}>E: —, N: —</span>

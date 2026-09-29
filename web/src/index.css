@@ -30,3 +30,30 @@ body {
     'Noto Sans Arabic',
     sans-serif;
 }
+
+/*
+ * "Glass" for small controls floating over the map imagery (tool buttons, search pill, coordinates, quick chips):
+ * a mostly-white translucent fill, blur and a light rim. Kept off text-heavy panels, tables and forms, where it
+ * would only cost contrast. Falls back to solid white when blur is unavailable or transparency is reduced.
+ */
+.glass {
+  background: color-mix(in srgb, #fff 78%, transparent);
+  -webkit-backdrop-filter: blur(14px) saturate(170%);
+  backdrop-filter: blur(14px) saturate(170%);
+  border: 1px solid rgb(255 255 255 / 0.65);
+  box-shadow:
+    0 4px 16px rgb(0 0 0 / 0.18),
+    inset 0 1px 0 rgb(255 255 255 / 0.75);
+}
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .glass {
+    background: #fff;
+  }
+}
+@media (prefers-reduced-transparency: reduce) {
+  .glass {
+    background: #fff;
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+}

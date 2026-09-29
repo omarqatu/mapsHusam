@@ -580,6 +580,12 @@
         "education": "Schools & kindergartens",
         "jobs": "Job vacancies"
       }
+    },
+    "chips": {
+      "fuel": "Fuel stations",
+      "roads": "Road status",
+      "featured": "Featured",
+      "search": "Search without map"
     }
   },
   "provider": {
@@ -1300,5 +1306,8 @@
       "orderSavedFuel": "The station order was saved.",
       "orderFailed": "Could not save the order."
     }
+  },
+  "info": {
+    "title": "Information and help"
   }
 }

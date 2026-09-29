@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import AppHeader from '@/components/AppHeader';
 import Toaster from '@/components/ui/Toaster';
 import CoordinatesBar from './controls/CoordinatesBar';
+import QuickChips from './controls/QuickChips';
 import LocateButton from './controls/LocateButton';
 import MapButton from './controls/MapButton';
 import RefreshButton from './controls/RefreshButton';
@@ -91,7 +92,7 @@ export default function MapPage() {
           <ReplayShared />
           {/* Short screens (landscape phones): the column scrolls, and refresh/zoom — which have gestures and a
               one-minute auto refresh — step aside so the primary tools stay reachable. */}
-          <div className="absolute end-3 top-16 z-10 flex max-h-[calc(100%-4.75rem)] flex-col gap-2 overflow-y-auto sm:top-3 sm:max-h-[calc(100%-1.5rem)]">
+          <div className="absolute end-3 top-[6.75rem] z-10 flex max-h-[calc(100%-7.5rem)] flex-col gap-2 overflow-y-auto sm:top-3 sm:max-h-[calc(100%-1.5rem)]">
             <MapButton label={t('search.title')} active={searchOpen} onClick={toggleSearch}>
               <Search className="h-5 w-5" />
             </MapButton>
@@ -116,6 +117,10 @@ export default function MapPage() {
           {/* Centred over the map: a full-width bar on phones (tools sit below it), a 28rem pill on desktop. */}
           <div className="absolute inset-x-3 top-3 z-20 sm:mx-auto sm:max-w-md">
             <GlobalSearchBox />
+          </div>
+          {/* Below the search box, wide enough for all four (the box itself is 28 rem). Under its suggestion list. */}
+          <div className="absolute inset-x-3 top-[4.25rem] z-10 sm:mx-auto sm:max-w-xl">
+            <QuickChips />
           </div>
           <SearchPanel />
           <MapTools />

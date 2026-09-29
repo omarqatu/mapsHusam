@@ -694,6 +694,14 @@ Split `index.html` into features, in this order:
      no-referrer` makes YouTube refuse embeds (error 153), and always offers "open on YouTube" for videos whose owner
      disabled embedding. `youtubeId` also reads shorts / live / m. / music. links and `watch?feature=…&v=`. Other video
      sites (Facebook, TikTok…) cannot be embedded under the server's `frame-src` and stay links, now with their host shown.
+   - Faster access, taken from the legacy screens: a chip row under the map's search box (fuel status, road status,
+     featured, search without map) — legacy had them as four coloured buttons on top of the map, we had them two taps
+     deep in the extras panel; an information menu in the shared top bar (about, how to join, service-provider account,
+     user guide, terms, privacy, contact — legacy: the top links and footer of the search page, not reachable from
+     the map or the other pages at all), also inside the phone menu.
+   - Glass (`.glass` in `index.css`, iOS-26-like: translucent white, blur, light rim) only on small controls floating
+     over the imagery — map tool buttons, the search pill, the coordinates bar, the chips. Not on panels, tables, forms
+     or dialogs (contrast). Solid white when blur is unsupported or `prefers-reduced-transparency` is on.
    - Live tests run file by file (`fileParallelism` off when `VITE_LIVE_API` is set): they share the seeded accounts.
    - Media sections show only their own kind (photos section = pictures, videos section = videos); everything is still in the
      details card. Cards use the shared `MediaGallery` (enlarge on click, https-only URLs via `safeMediaUrl`) instead of the

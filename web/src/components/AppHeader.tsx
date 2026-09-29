@@ -1,11 +1,14 @@
 import { useCallback, useRef, useState } from 'react';
-import { Menu } from 'lucide-react';
+import { CircleHelp, Menu } from 'lucide-react';
+import LegalModal from '@/features/legal/LegalModal';
+import type { LegalKey } from '@/features/legal/types';
 import { NavLink } from 'react-router';
 import { useTranslation } from 'react-i18next';
 import clsx from 'clsx';
 import { useOutsideClick } from '@/hooks/useOutsideClick';
 import { useAuthStore } from '@/store/authStore';
 import { appRoutes, canAccess } from '@/routes/routes';
+import { InfoList } from './InfoMenu';
 import LanguageSwitcher from './LanguageSwitcher';
 import UserMenu from './UserMenu';
 
@@ -23,6 +26,16 @@ export default function AppHeader() {
   const { t } = useTranslation();
   const role = useAuthStore((s) => s.user?.role);
   const [open, setOpen] = useState(false);
+  const [infoOpen, setInfoOpen] = useState(false);
+  const [legal, setLegal] = useState<LegalKey | null>(null);
+  const info = useRef<HTMLDivElement>(null);
+  const closeInfo = useCallback(() => setInfoOpen(false), []);
+  useOutsideClick(info, closeInfo, infoOpen);
+  const pick = (k: LegalKey) => {
+    setOpen(false);
+    setInfoOpen(false);
+    setLegal(k);
+  };
   const links = appRoutes.filter((r) => r.nav && canAccess(r.access, role));
   const menu = useRef<HTMLDivElement>(null);
   const close = useCallback(() => setOpen(false), []);
@@ -74,12 +87,32 @@ export default function AppHeader() {
                 {t(r.titleKey)}
               </NavLink>
             ))}
+            <div className="my-1 border-t border-slate-100" role="separator" />
+            <InfoList onPick={pick} />
           </nav>
         )}
       </div>
 
+      <div ref={info} className="relative hidden md:block">
+        <button
+          type="button"
+          onClick={() => setInfoOpen((v) => !v)}
+          aria-expanded={infoOpen}
+          aria-label={t('info.title')}
+          title={t('info.title')}
+          className="rounded-lg p-2 hover:bg-white/15"
+        >
+          <CircleHelp className="h-5 w-5" aria-hidden />
+        </button>
+        {infoOpen && (
+          <div className="absolute end-0 top-full z-50 mt-1.5 w-64 rounded-xl border border-slate-200 bg-white p-1 text-slate-700 shadow-xl">
+            <InfoList onPick={pick} />
+          </div>
+        )}
+      </div>
       <LanguageSwitcher tone="onBrand" />
       <UserMenu tone="onBrand" />
+      <LegalModal docKey={legal} onClose={() => setLegal(null)} />
     </header>
   );
 }

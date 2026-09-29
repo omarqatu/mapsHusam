@@ -16,9 +16,9 @@ export default function MapButton({ label, active, className, children, ...rest 
       title={label}
       aria-pressed={active}
       className={clsx(
-        'flex h-11 w-11 items-center justify-center rounded-full shadow-md transition-colors',
+        'flex h-11 w-11 items-center justify-center rounded-full transition-colors',
         'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand',
-        active ? 'bg-brand text-white' : 'bg-white text-slate-700 hover:bg-slate-50',
+        active ? 'bg-brand text-white shadow-md' : 'glass text-slate-800 hover:bg-white/90',
         className,
       )}
       {...rest}
