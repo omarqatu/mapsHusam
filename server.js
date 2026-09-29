@@ -332,13 +332,37 @@ async function ensureSchemaColumns() {
         // 🆕 عمود مصدر الحدث (map / quick_search) لتمييز زيارات الخريطة عن زيارات
         // صفحة البحث السريع ضمن إحصائيات المنصة
         await servicesPool.query(`ALTER TABLE public.map_service_stats ADD COLUMN IF NOT EXISTS source_page TEXT`);
-        console.log('✅ تم التأكد من وجود أعمدة force_logout_flag و whatsapp_number و source_page');
+        console.log('✅ تم التأكد من أعمدة force_logout_flag و whatsapp_number و source_page');
     } catch (err) {
         console.error('⚠️ خطأ أثناء التأكد من مخطط قاعدة البيانات:', err.message);
     }
 }
 
 ensureSchemaColumns();
+
+// تأكد بشكل مستقل من حقول الخدمات العقارية؛ لا تجعل ترقية جدول آخر تمنعها.
+async function ensureServicePropertyColumns() {
+    try {
+        await servicesPool.query(`
+            ALTER TABLE public.service_all
+                ADD COLUMN IF NOT EXISTS price NUMERIC,
+                ADD COLUMN IF NOT EXISTS area NUMERIC
+        `);
+        const result = await servicesPool.query(`
+            SELECT column_name
+            FROM information_schema.columns
+            WHERE table_schema = 'public' AND table_name = 'service_all'
+              AND column_name = ANY($1::text[])
+        `, [['price', 'area']]);
+        const present = new Set(result.rows.map(row => row.column_name));
+        const missing = ['price', 'area'].filter(column => !present.has(column));
+        if (missing.length) throw new Error(`أعمدة غير موجودة بعد التهيئة: ${missing.join(', ')}`);
+        console.log('✅ service_all يحتوي أعمدة السعر والمساحة المطلوبة: price, area');
+    } catch (err) {
+        console.error('❌ تعذر تهيئة حقلي السعر والمساحة في service_all:', err.message);
+    }
+}
+ensureServicePropertyColumns();
 
 
 async function ensureWidgetsSchema() {
@@ -574,11 +598,14 @@ async function requireAuth(req, res, next) {
 
     try {
         const status = await getAuthStatus(uid);
+
         if (!status.exists || !status.active) {
             return res.status(401).json({ success: false, error: 'تم إنهاء جلستك أو تعطيل حسابك، يرجى تسجيل الدخول من جديد.', code: 'SESSION_REVOKED' });
         }
         // 🔒 التوكن يجب أن يطابق رقم نسخة الجلسة الحالي بقاعدة البيانات (توكنات ما قبل هذا التعديل بلا tv = 0)
-        if ((Number(decoded.tv) || 0) !== status.tokenVersion) {
+        const tokenTv = Number(decoded.tv) || 0;
+        const dbTv = status.tokenVersion;
+        if (tokenTv !== dbTv) {
             return res.status(401).json({ success: false, error: 'تم إنهاء جلستك، يرجى تسجيل الدخول من جديد.', code: 'SESSION_REVOKED' });
         }
         req.auth = { uid, role: status.role };
@@ -601,7 +628,6 @@ async function isActiveAdmin(uid) {
         return false;
     }
 }
-
 
 // 🆕 [إصلاح عرض اسم الطبقة بالعربي]: قاموس ترجمة موحّد يُستخدم عند تسجيل نقرات
 // الاتصال/الواتساب (log-contact-click) لتخزين service_type بالعربي بدل الاسم
@@ -656,20 +682,44 @@ const isValidSqlIdentifier = (name) => typeof name === 'string' && SQL_IDENTIFIE
 // 🆕 مسار إحصائيات المنصة العامة (صفحة البحث بدون خريطة + فوتر/تبويب الخريطة)
 // عام بدون حماية (لا يحتاج تسجيل دخول) لأنه عرض أرقام إجمالية فقط بلا تفاصيل حساسة
 // =========================================================================
-let platformStatsCache = { data: null, expiresAt: 0 };
-let platformStatsRefreshStartedAt = 0;
+const platformStatsCache = new Map();
+const PLATFORM_PROPERTY_LAYERS = ['ApartRent', 'ApartSale', 'LandSale'];
+const PLATFORM_SERVICE_LAYERS = ALLOWED_LAYERS.filter(layer =>
+    !REAL_ESTATE_LAYERS.includes(layer) && !['service_all', 'Location', 'RoadsTest'].includes(layer)
+);
+
+function parseStatsExclusions(rawValue) {
+    if (!rawValue) return [];
+    try {
+        const parsed = Array.isArray(rawValue) ? rawValue : JSON.parse(rawValue);
+        return Array.isArray(parsed) ? parsed.map(value => String(value).trim()).filter(Boolean) : [];
+    } catch (_) {
+        return [];
+    }
+}
+
+function statsLayerIsExcluded(layerName, exclusions) {
+    const aliases = {
+        ApartRent: ['ApartRent', 'rentLayer', 'rent'],
+        ApartSale: ['ApartSale', 'saleLayer', 'sale'],
+        LandSale: ['LandSale', 'landLayer', 'land']
+    };
+    const candidates = aliases[layerName] || [layerName];
+    const normalized = new Set(exclusions.map(value => value.toLocaleLowerCase()));
+    return candidates.some(value => normalized.has(value.toLocaleLowerCase()));
+}
 
 app.get('/api/platform-stats', async (req, res) => {
     try {
-        // ⚡ كاش بسيط بالذاكرة لمدة 60 ثانية لتفادي ضغط الاستعلامات مع كل زائر
-        if (platformStatsCache.data && Date.now() < platformStatsCache.expiresAt) {
-            return res.json({ success: true, data: platformStatsCache.data });
+        // يرسل المتصفح استثناءات config.js كي تتطابق الإحصائيات مع الطبقات الظاهرة.
+        const exclusions = parseStatsExclusions(req.query.excludedLayers);
+        const visiblePropertyLayers = PLATFORM_PROPERTY_LAYERS.filter(layer => !statsLayerIsExcluded(layer, exclusions));
+        const visibleServiceLayers = PLATFORM_SERVICE_LAYERS.filter(layer => !statsLayerIsExcluded(layer, exclusions));
+        const cacheKey = [...visiblePropertyLayers, '|', ...visibleServiceLayers].join(',');
+        const cached = platformStatsCache.get(cacheKey);
+        if (cached && Date.now() < cached.expiresAt) {
+            return res.json({ success: true, data: cached.data });
         }
-        // 🔒 إذا كان طلب آخر يعيد الحساب الآن نُرجع النسخة السابقة بدل تكرار الاستعلامات الثقيلة
-        if (platformStatsCache.data && Date.now() - platformStatsRefreshStartedAt < 30000) {
-            return res.json({ success: true, data: platformStatsCache.data });
-        }
-        platformStatsRefreshStartedAt = Date.now();
 
         // 1) إحصائيات المستخدمين مجمّعة حسب الدور
         const usersResult = await servicesPool.query(`
@@ -700,17 +750,12 @@ app.get('/api/platform-stats', async (req, res) => {
         const viewsQuickSearch = parseInt(viewsResult.rows[0].quick_search, 10) || 0;
         const viewsMap = Math.max(0, viewsTotal - viewsQuickSearch);
 
-        // 3) عدد الخدمات (الطبقات) = القائمة البيضاء المعتمدة بالسيرفر بعد استثناء طبقات العقارات/المواقع
-        const realEstateAndLocationLayers = ['ApartRent', 'ApartSale', 'LandSale', 'Location', 'RoadsTest'];
-        const servicesCount = ALLOWED_LAYERS.filter(l => !realEstateAndLocationLayers.includes(l)).length;
+        // عدد الفئات المتاحة = العقارات والخدمات التي لم يستثنها config.js.
+        const servicesCount = visiblePropertyLayers.length + visibleServiceLayers.length;
 
-        // 🆕 4) عدد مزودي الخدمات = مجموع كل معالم طبقات العقارات (شقق إيجار/بيع + أراضي)
-        // وكل معالم طبقات الخدمات الفعلية (أكثر من 65 طبقة)، وليس فقط حسابات المزودين
-        // المرتبطة - أي كل معلم موجود فعلياً على الخريطة ضمن هذه الطبقات
-        const realEstateFeatureLayers = ['ApartRent', 'ApartSale', 'LandSale'];
-
+        // عدد المعالم يضم فقط الطبقات المتاحة حالياً في config.js.
         let featuresCount = 0;
-        for (const layerName of realEstateFeatureLayers) {
+        for (const layerName of visiblePropertyLayers) {
             try {
                 const countRes = await realestatePool.query(`SELECT COUNT(*) FROM public."${layerName}"`);
                 featuresCount += parseInt(countRes.rows[0].count, 10) || 0;
@@ -718,12 +763,17 @@ app.get('/api/platform-stats', async (req, res) => {
                 console.warn(`⚠️ تعذر عد معالم طبقة العقار [${layerName}]:`, layerErr.message);
             }
         }
-        // 🆕 عدّ كل معالم الخدمات دفعة واحدة من الجدول الموحّد بدل لوب على 66 جدول منفصل (توفير أداء حقيقي)
-        try {
-            const servicesCountRes = await servicesPool.query(`SELECT COUNT(*) FROM public.service_all`);
-            featuresCount += parseInt(servicesCountRes.rows[0].count, 10) || 0;
-        } catch (err) {
-            console.warn('⚠️ تعذر عد معالم service_all:', err.message);
+        // الخدمات موحّدة في service_all؛ نعدّ فقط discriminators المتاحة.
+        if (visibleServiceLayers.length) {
+            try {
+                const servicesCountRes = await servicesPool.query(
+                    'SELECT COUNT(*) FROM public.service_all WHERE discriminator = ANY($1::text[])',
+                    [visibleServiceLayers]
+                );
+                featuresCount += parseInt(servicesCountRes.rows[0].count, 10) || 0;
+            } catch (err) {
+                console.warn('⚠️ تعذر عد معالم service_all:', err.message);
+            }
         }
 
         const statsData = {
@@ -732,8 +782,7 @@ app.get('/api/platform-stats', async (req, res) => {
             servicesCount, featuresCount
         };
 
-        platformStatsCache = { data: statsData, expiresAt: Date.now() + 60000 };
-        platformStatsRefreshStartedAt = 0;
+        platformStatsCache.set(cacheKey, { data: statsData, expiresAt: Date.now() + 60000 });
 
         res.json({ success: true, data: statsData });
     } catch (err) {
@@ -840,7 +889,6 @@ app.get('/api/get-provider-service', requireAuth, async (req, res) => {
 
         // 🛑 [تعديل حاسم]: تم حذف الإسناد التلقائي للنجار 14. إذا كانت الحقول فارغة، نرفض فتح اللوحة فوراً.
         if (!discriminator || !featId) {
-            console.log(`⚠️ مزود الخدمة رقم ${user_id} غير مربوط بأي طبقة جغرافية أو معلم. تم حظر اللوحة ومنع الإسناد الوهمي.`);
             return res.json({
                 success: false,
                 show_panel: false,
@@ -857,8 +905,6 @@ app.get('/api/get-provider-service', requireAuth, async (req, res) => {
             // العقارات تستخدم fid، الخدمات تستخدم id
             const idField = isRealEstate ? 'fid' : 'id';
 
-            console.log(`🔍 جلب الإحداثيات: discriminator=${discriminator}, idField=${idField}, featId=${featId}, isRealEstate=${isRealEstate}`);
-
             // 🆕 كل الخدمات أصبحت بجدول service_all موحّد، ولازم فلترة إضافية بعمود discriminator
             const coordsQuery = isRealEstate
                 ? `SELECT x_coord, y_coord, status FROM public."${discriminator}" WHERE ${idField} = $1 LIMIT 1`
@@ -866,10 +912,6 @@ app.get('/api/get-provider-service', requireAuth, async (req, res) => {
             const coordsParams = isRealEstate ? [featId] : [featId, discriminator];
 
             const coordsResult = await targetPool.query(coordsQuery, coordsParams);
-            console.log(`🔍 نتيجة الاستعلام: ${coordsResult.rows.length} صفوف`);
-            if (coordsResult.rows.length > 0) {
-                console.log(`🔍 البيانات المسترجعة:`, coordsResult.rows[0]);
-            }
             if (coordsResult.rows.length > 0) {
                 const cRow = coordsResult.rows[0];
                 coordsData.x_coord = cRow.x_coord;
@@ -923,20 +965,14 @@ app.post('/api/update-service-status', requireAuth, async (req, res) => {
         y_coord
     } = req.body;
 
-    console.log('📥 [update-service-status] Request body:', { user_id, service_layer, feature_id, id, status, x_coord, y_coord });
-
     const targetIdValue = feature_id || id;
     const layerName = service_layer ? service_layer.trim() : null;
 
-    console.log('📥 [update-service-status] Parsed values:', { targetIdValue, layerName });
-
     if (!user_id || !layerName || !targetIdValue) {
-        console.log('❌ [update-service-status] Missing required fields');
         return res.status(400).json({ success: false, error: 'بيانات التحديث غير مكتملة، المعرفات والطبقة الجغرافية حقول إجبارية.' });
     }
 
     if (!isValidLayer(layerName)) {
-        console.log('❌ [update-service-status] Invalid layer:', layerName);
         return res.status(403).json({ success: false, error: 'غير مسموح بالتعامل مع هذه الطبقة برمجياً' });
     }
 
@@ -2019,6 +2055,69 @@ async function requireAdmin(req, res, next) {
         return res.status(500).json({ success: false, error: 'تعذر التحقق من صلاحية المشرف.' });
     }
 }
+
+// محتوى المنصة القابل للتحرير: القيمة العامة للقراءة، والتعديل محصور بالأدمن.
+async function ensurePlatformContentSchema() {
+    try {
+        await servicesPool.query(`
+            CREATE TABLE IF NOT EXISTS public.platform_content (
+                content_key TEXT PRIMARY KEY,
+                label TEXT NOT NULL,
+                content_value TEXT NOT NULL DEFAULT '',
+                updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+                updated_by BIGINT
+            )
+        `);
+    } catch (err) {
+        console.error('تعذر إنشاء جدول محتوى المنصة:', err.message);
+    }
+}
+ensurePlatformContentSchema();
+
+app.get('/api/platform-content', async (req, res) => {
+    try {
+        const result = await servicesPool.query(
+            'SELECT content_key, label, content_value, updated_at FROM public.platform_content ORDER BY content_key'
+        );
+        res.json({ success: true, items: result.rows });
+    } catch (err) {
+        console.error('تعذر جلب محتوى المنصة:', err.message);
+        res.status(500).json({ success: false, error: 'تعذر جلب محتوى المنصة.' });
+    }
+});
+
+app.put('/api/admin/platform-content/:key', requireAdmin, async (req, res) => {
+    const key = String(req.params.key || '').trim();
+    const label = typeof req.body?.label === 'string' ? req.body.label.trim() : '';
+    const value = typeof req.body?.value === 'string' ? req.body.value : null;
+    if (!/^[a-z0-9][a-z0-9._-]{1,99}$/i.test(key) || !label || label.length > 160 || value === null || value.length > 100000) {
+        return res.status(400).json({ success: false, error: 'تحقق من المفتاح والعنوان والنص (الحد الأقصى للنص 100,000 حرف).' });
+    }
+    try {
+        const result = await servicesPool.query(
+            `INSERT INTO public.platform_content (content_key, label, content_value, updated_by)
+             VALUES ($1, $2, $3, $4)
+             ON CONFLICT (content_key) DO UPDATE SET label = EXCLUDED.label,
+                content_value = EXCLUDED.content_value, updated_at = NOW(), updated_by = EXCLUDED.updated_by
+             RETURNING content_key, label, content_value, updated_at`,
+            [key, label, value, req.adminUserId]
+        );
+        res.json({ success: true, item: result.rows[0] });
+    } catch (err) {
+        console.error('تعذر حفظ محتوى المنصة:', err.message);
+        res.status(500).json({ success: false, error: 'تعذر حفظ المحتوى.' });
+    }
+});
+
+app.delete('/api/admin/platform-content/:key', requireAdmin, async (req, res) => {
+    try {
+        await servicesPool.query('DELETE FROM public.platform_content WHERE content_key = $1', [req.params.key]);
+        res.json({ success: true });
+    } catch (err) {
+        console.error('تعذر حذف محتوى المنصة:', err.message);
+        res.status(500).json({ success: false, error: 'تعذر حذف المحتوى.' });
+    }
+});
 
 // جلسة مشاهدة مؤقتة للمشرف: قراءة الطلبات والرسائل فقط دون انتحال جلسة المستخدم.
 async function requireReadOnlyView(req, res, next) {
@@ -3958,6 +4057,7 @@ io.use(async (socket, next) => {
     try {
         const token = socket.handshake.auth && socket.handshake.auth.token;
         if (!token) return next(new Error('unauthorized'));
+        // التوكن يحمل exp ويتجدد مع الاستخدام (signSessionToken)، فلا حاجة لـ ignoreExpiration هنا أيضاً
         const decoded = jwt.verify(token, ADMIN_JWT_SECRET, { algorithms: ['HS256'] });
         const uid = Number(decoded.uid);
         if (!Number.isInteger(uid) || uid <= 0) return next(new Error('unauthorized'));
