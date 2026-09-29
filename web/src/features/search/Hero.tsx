@@ -42,10 +42,10 @@ export default function Hero({ onRoads, onFuel }: Props) {
           <MapIcon className="h-4 w-4" aria-hidden /> {t('searchPage.goToMap')}
         </Link>
         <button type="button" onClick={onRoads} className={action}>
-          <Signpost className="h-4 w-4" aria-hidden /> {t('extras.tabs.roads')}
+          <Signpost className="h-4 w-4" aria-hidden /> {t('searchPage.roadStatus')}
         </button>
         <button type="button" onClick={onFuel} className={action}>
-          <Fuel className="h-4 w-4" aria-hidden /> {t('extras.tabs.fuel')}
+          <Fuel className="h-4 w-4" aria-hidden /> {t('searchPage.fuelStatus')}
         </button>
       </div>
     </section>

@@ -42,7 +42,7 @@ function LastUpdated({ layer }: { layer: StatusLayer }) {
           ? t('extras.status.justNow')
           : formatAgo(rel, i18n.language);
   return (
-    <span className="text-xs text-slate-500">
+    <span className="text-sm text-slate-500">
       {t('extras.status.updated')}{' '}
       <span className={rel.kind === 'now' ? 'font-bold text-green-600' : undefined}>{label}</span>
     </span>
@@ -119,7 +119,7 @@ export default function StatusTab({ layer }: { layer: StatusLayer }) {
                         {name}
                         {note && <span className="font-normal text-slate-500"> ({note})</span>}
                       </span>
-                      {place && <span className="block truncate text-xs text-slate-600">{place}</span>}
+                      {place && <span className="block truncate text-sm text-slate-600">{place}</span>}
                     </span>
                   </span>
                   <span className="mt-2 block">

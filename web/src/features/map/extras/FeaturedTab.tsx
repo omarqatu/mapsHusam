@@ -45,9 +45,16 @@ function Section({ title, icon: sectionIcon, badge, mode, entries, failed, grid 
       ) : shown.length === 0 ? (
         <p className="text-sm text-slate-600">{t('extras.featured.empty')}</p>
       ) : (
-        <div className={grid ? 'grid gap-3 md:grid-cols-2 xl:grid-cols-3' : 'space-y-2'}>
+        <div
+          className={grid ? 'relative flex snap-x gap-3 overflow-x-auto pb-2' : 'space-y-2'}
+          tabIndex={grid ? 0 : undefined}
+          role={grid ? 'group' : undefined}
+          aria-label={grid ? title : undefined}
+        >
           {shown.map((entry) => (
-            <FeaturedCard key={entry.r.key} entry={entry} mode={mode} badge={badge} />
+            <div key={entry.r.key} className={grid ? 'w-[85%] shrink-0 snap-start sm:w-80' : undefined}>
+              <FeaturedCard entry={entry} mode={mode} badge={badge} />
+            </div>
           ))}
         </div>
       )}

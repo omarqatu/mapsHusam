@@ -95,7 +95,7 @@ export default function FeaturedCard({ entry, mode, badge, note, customerRatings
   const hasStatus = !isBarrier && text(p.auto_status) !== '';
   const open = isOpenNow(p.auto_status);
   const price = priceLabel(p, t, i18n.language);
-  const area = text(p.area);
+  const area = Number(p.area) > 0 ? text(p.area) : '';
   const stars = ratings?.avg ?? r.rating;
   const media = mode === 'beforeAfter' ? null : labelMedia(mediaForMode(p, mode), t);
   const showCustomerRatings = !!customerRatings && r.target.kind === 'service' && !!r.id;

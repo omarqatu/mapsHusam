@@ -110,9 +110,8 @@ function RangeFilter({ field, state, onChange, fields }: CommonProps & { field: 
   return (
     <div className="flex min-w-0 flex-col gap-3 sm:col-span-2 lg:col-span-1">
       <Field label={t(field.labelKey)} id={id}>
-        <div className="flex gap-2">
+        <div className="flex flex-col gap-2">
           <SelectInput
-            className="w-36 shrink-0"
             aria-label={t('search.operator')}
             value={operator}
             onChange={(e) =>
@@ -128,7 +127,7 @@ function RangeFilter({ field, state, onChange, fields }: CommonProps & { field: 
               label: `${OPERATOR_SYMBOL[o]}  ${t(`search.operators.${o}`)}`,
             }))}
           />
-          <div className="min-w-0 flex-1">
+          <div className="min-w-0">
             <TextInput
               id={id}
               type="number"
@@ -215,7 +214,7 @@ export default function FiltersPanel({ target, state, onChange, onReset }: Panel
       </div>
       <div
         id={bodyId}
-        className={`${open ? 'grid' : 'hidden'} mt-3 gap-3 sm:grid-cols-2 md:grid lg:grid-cols-3 xl:grid-cols-4`}
+        className={`${open ? 'grid' : 'hidden'} mt-3 items-start gap-3 sm:grid-cols-2 md:grid lg:grid-cols-3 xl:grid-cols-4`}
       >
         {fields.map((f) =>
           f.type === 'dropdown' ? (

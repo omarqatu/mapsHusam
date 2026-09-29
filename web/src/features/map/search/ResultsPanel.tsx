@@ -1,5 +1,6 @@
 import clsx from 'clsx';
-import { Copy, Printer, Star } from 'lucide-react';
+import { Copy, List, Printer, Star } from 'lucide-react';
+import { Link } from 'react-router';
 import { useTranslation } from 'react-i18next';
 import { toast } from '@/components/ui/toastStore';
 import { useOlMap } from '../MapContext';
@@ -14,7 +15,7 @@ import { formatDistance } from './nearby';
 import { printResults } from './printResults';
 import ResultContact from './ResultContact';
 import { toSelected, type SearchResult } from './results';
-import { buildShareLink } from './shareLink';
+import { buildShareLink, encodeShareState } from './shareLink';
 import { useSearchUi } from './store';
 
 /** A card and a row show the same feature when both the id and the point match (ids repeat across types). */
@@ -159,6 +160,16 @@ export default function ResultsPanel({ className }: { className?: string }) {
             >
               <Printer className="h-4 w-4" />
             </button>
+            {results.share?.type === 'attribute' && (
+              <Link
+                to={`/search?resultsShare=${encodeShareState(results.share)}`}
+                className={iconBtn}
+                aria-label={t('search.results.openAsList')}
+                title={t('search.results.openAsList')}
+              >
+                <List className="h-4 w-4" />
+              </Link>
+            )}
           </span>
         </div>
       }

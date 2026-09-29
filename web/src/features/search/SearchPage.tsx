@@ -68,8 +68,10 @@ export default function SearchPage() {
 
   return (
     <div className="space-y-6">
-      <Hero onRoads={() => setStatus('road_barriers')} onFuel={() => setStatus('fuel_stations')} />
       <KeywordSearch value={term} onCommit={commitKeyword} />
+      {!keywordActive && !selection && (
+        <Hero onRoads={() => setStatus('road_barriers')} onFuel={() => setStatus('fuel_stations')} />
+      )}
 
       {keywordActive ? (
         <KeywordResults term={term} />

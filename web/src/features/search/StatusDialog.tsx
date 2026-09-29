@@ -10,7 +10,7 @@ export default function StatusDialog({ layer, onClose }: { layer: StatusLayer | 
     <Modal
       open={layer !== null}
       onClose={onClose}
-      title={t(layer === 'fuel_stations' ? 'extras.tabs.fuel' : 'extras.tabs.roads')}
+      title={t(layer === 'fuel_stations' ? 'searchPage.fuelStatus' : 'searchPage.roadStatus')}
       widthClass="max-w-2xl"
     >
       {layer && <StatusTab layer={layer} />}
