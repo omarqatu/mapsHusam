@@ -2141,15 +2141,15 @@ const WIDGETS_CONFIG_GROUPS = ['currency', 'gold', 'weather', 'fuel', 'transport
 // لجلب تاريخ آخر تحديث حقيقي لحالة الطرق ومحطات الوقود
 app.get('/api/widgets-data', async (req, res) => {
     try {
-        const result = await servicesPool.query(`SELECT group_key, data, updated_at FROM public.widgets_manual_groups`);
+        const result = await servicesPool.query(`SELECT group_key, data, updated_at AT TIME ZONE current_setting('TimeZone') AS updated_at FROM public.widgets_manual_groups`);
         const groups = {};
         result.rows.forEach(row => {
             
             groups[row.group_key] = { items: row.data, updated_at: row.updated_at };
         });
 
-        const roadResult = await servicesPool.query(`SELECT MAX(updated_at) as last FROM public.service_all WHERE discriminator = 'road_barriers'`);
-        const fuelResult = await servicesPool.query(`SELECT MAX(updated_at) as last FROM public.service_all WHERE discriminator = 'fuel_stations'`);
+        const roadResult = await servicesPool.query(`SELECT MAX(updated_at) AT TIME ZONE current_setting('TimeZone') as last FROM public.service_all WHERE discriminator = 'road_barriers'`);
+        const fuelResult = await servicesPool.query(`SELECT MAX(updated_at) AT TIME ZONE current_setting('TimeZone') as last FROM public.service_all WHERE discriminator = 'fuel_stations'`);
 
         res.json({
             success: true,
@@ -2166,7 +2166,7 @@ app.get('/api/widgets-data', async (req, res) => {
 // 🔒 للمشرف: جلب كل المجموعات الست للتعديل من صفحة الإدارة
 app.get('/api/admin/widgets-data', requireAdmin, async (req, res) => {
     try {
-        const result = await servicesPool.query(`SELECT group_key, data, updated_at FROM public.widgets_manual_groups`);
+        const result = await servicesPool.query(`SELECT group_key, data, updated_at AT TIME ZONE current_setting('TimeZone') AS updated_at FROM public.widgets_manual_groups`);
         const groups = {};
         result.rows.forEach(row => {
             groups[row.group_key] = { data: row.data, updated_at: row.updated_at };
@@ -2208,10 +2208,10 @@ app.post('/api/admin/widgets-data/:groupKey', requireAdmin, async (req, res) => 
 app.get('/api/admin/road-fuel-features', requireAdmin, async (req, res) => {
     try {
         const roadResult = await servicesPool.query(
-            `SELECT id, name, stop, stop2, updated_at FROM public.service_all WHERE discriminator = 'road_barriers' ORDER BY display_order NULLS LAST, id ASC`
+            `SELECT id, name, stop, stop2, updated_at AT TIME ZONE current_setting('TimeZone') AS updated_at FROM public.service_all WHERE discriminator = 'road_barriers' ORDER BY display_order NULLS LAST, id ASC`
         );
         const fuelResult = await servicesPool.query(
-            `SELECT id, name, diesel, banzen95, banzen98, updated_at FROM public.service_all WHERE discriminator = 'fuel_stations' ORDER BY display_order NULLS LAST, id ASC`
+            `SELECT id, name, diesel, banzen95, banzen98, updated_at AT TIME ZONE current_setting('TimeZone') AS updated_at FROM public.service_all WHERE discriminator = 'fuel_stations' ORDER BY display_order NULLS LAST, id ASC`
         );
         res.json({ success: true, roadBarriers: roadResult.rows, fuelStations: fuelResult.rows });
     } catch (err) {

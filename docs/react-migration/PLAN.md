@@ -973,6 +973,13 @@ Log each change here: **what · why · how to verify · commit**.
   expired records. Verify (dev): `ApartRent` with the flag → 49 rows as visitor or user, 53 as admin. Commit:
   `fix(server): ignore_status only for admins`.
 
+- **"Last update" times read in the database's zone.** `widgets_manual_groups.updated_at` and the road / fuel `updated_at` are
+  `TIMESTAMP` filled by `NOW()` (the DB session zone) but `node-postgres` read them as Node's local time, so every stamp was off by the
+  zone difference (3 h in dev). The widget queries now select `updated_at AT TIME ZONE current_setting('TimeZone')` (a
+  `timestamptz`), so the JSON carries the true instant; same field names and ISO format. No schema change. Verify: save a widget group,
+  `GET /api/widgets-data` → `updated_at` equals the save time (dev: 3 h later than before the fix). Commit:
+  `fix(server): read widget timestamps in the database time zone`.
+
 ## Backend asks (needs the user's decision — behaviour-changing or larger)
 
 - Sessions never expire by design (`requireAuth` uses `ignoreExpiration: true`); revocation is via `token_version` / `is_active` / `force_logout_flag` (checked on every request, cached). Not a hole by itself, but a stolen token stays valid until an admin force-logout or a password change — consider `expiresIn` + refresh, and a self-service "log out everywhere". Needs the user's decision.
@@ -1004,5 +1011,4 @@ Log each change here: **what · why · how to verify · commit**.
 - **Admin users:** no endpoint deletes a user, and there is no "force password change at next login" field (the legacy checkbox did nothing) — decide if either is wanted. `POST /api/admin/users/update` always notifies the user and emits `force_relogin`, even for a quota-only change; it does not check that the service layer / feature exists or is already linked to another account, and role `provider` does not require a link. `POST /api/admin/users/force-logout-all` with `target_type: 'selected'` and a non-array `user_ids` answers 500; `all` / `online` include the calling admin. `GET /api/admin/users` returns every row without paging.
 - **Admin dashboard:** `DELETE /api/admin/provider-success-stats/:id` hard-deletes the request row (and answers success for an id that does not exist; a non-numeric id gives 500). Consider a soft delete / audit trail, since it removes the request's chat history from the users' point of view.
 - **Widgets admin:** `POST /api/admin/update-fuel-station` overwrites all three columns (an omitted one becomes NULL) and answers success for an unknown id; the React page always sends the three current values. `widgets_manual_groups` accepts any JSON for `items` (no per-group schema).
-- **Widgets portal:** `widgets_manual_groups.updated_at` (and the road / fuel `updated_at` columns) are `TIMESTAMP` without a time zone filled by `NOW()`; `node-postgres` reads such a value as the Node process's local time. When the database session zone differs from the Node process zone (the dev container: DB in UTC, Node in Asia/Hebron) every "last update" is off by whole hours — measured 3 h too early in dev ("4 hours ago" for a save made an hour earlier). Fix on the server: `TIMESTAMPTZ`, or `pg.types.setTypeParser` for `timestamp` that reads it as UTC; then the admin page and the portal agree with the clock. Not changed here (schema / driver behaviour).
 - **Widgets portal:** `GET /api/widgets-data` returns `groups.<key>.items` while the admin endpoint returns `groups.<key>.data` for the same rows, and always downloads all seven groups (the 106-row city fare list included, ~10 KB) every minute for every open ticker. A `?groups=` filter or an `ETag` would make the poll cheap. Prayer times and the weather forecast come straight from Aladhan / Open-Meteo in every visitor's browser; a small cached server proxy would remove the third-party dependency from the client (and the CSP `https:` allowance).
