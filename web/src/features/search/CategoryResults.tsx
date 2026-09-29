@@ -89,7 +89,8 @@ export default function CategoryResults({ selection, onChange, onBack }: Props) 
       : []),
   ];
   // A price sort only makes sense with one currency chosen; falling back keeps the list and the picker in step.
-  const effectiveSort: SortMode = (sort === 'priceAsc' || sort === 'priceDesc') && !canSortByPrice ? 'rating' : sort;
+  const effectiveSort: SortMode =
+    (sort === 'priceAsc' || sort === 'priceDesc') && !canSortByPrice ? 'rating' : sort;
 
   const data = query.data;
   const capped = !!data && data.length >= SERVER_ROW_CAP;
@@ -145,7 +146,7 @@ export default function CategoryResults({ selection, onChange, onBack }: Props) 
             onClick={() => void copyLink()}
             startIcon={<Copy className="h-4 w-4" aria-hidden />}
           >
-            {t('search.results.copyLink')}
+            <span className="max-sm:sr-only">{t('search.results.copyLink')}</span>
           </Button>
           <Button
             variant="secondary"
@@ -154,7 +155,7 @@ export default function CategoryResults({ selection, onChange, onBack }: Props) 
             disabled={items.length === 0}
             startIcon={<Printer className="h-4 w-4" aria-hidden />}
           >
-            {t('search.results.print')}
+            <span className="max-sm:sr-only">{t('search.results.print')}</span>
           </Button>
           <Link
             to={mapSearchPath(selection)}
@@ -185,16 +186,12 @@ export default function CategoryResults({ selection, onChange, onBack }: Props) 
         />
       ) : (
         <>
-          {capped && (
-            <AlertMessage type="info" message={t('searchPage.capped', { count: SERVER_ROW_CAP })} />
-          )}
+          {capped && <AlertMessage type="info" message={t('searchPage.capped', { count: SERVER_ROW_CAP })} />}
           <PagedGrid
             key={listKey}
             items={items}
             getKey={(r) => r.key}
-            render={(r) => (
-              <FeaturedCard entry={{ r }} mode="all" customerRatings />
-            )}
+            render={(r) => <FeaturedCard entry={{ r }} mode="all" customerRatings />}
           />
         </>
       )}

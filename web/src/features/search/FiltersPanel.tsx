@@ -108,26 +108,29 @@ function RangeFilter({ field, state, onChange, fields }: CommonProps & { field: 
 
   const isPrice = field.id === 'price';
   return (
-    <div className="flex min-w-0 flex-col gap-3 sm:col-span-2 lg:col-span-1">
+    <div className={`min-w-0 ${isPrice ? 'sm:col-span-2' : ''}`}>
       <Field label={t(field.labelKey)} id={id}>
-        <div className="flex flex-col gap-2">
-          <SelectInput
-            aria-label={t('search.operator')}
-            value={operator}
-            onChange={(e) =>
-              onChange(
-                setFilter(state, fields, field.id, {
-                  value: committed?.value ?? '',
-                  operator: e.target.value as SearchOperator,
-                }),
-              )
-            }
-            options={RANGE_OPERATORS.map((o) => ({
-              value: o,
-              label: `${OPERATOR_SYMBOL[o]}  ${t(`search.operators.${o}`)}`,
-            }))}
-          />
-          <div className="min-w-0">
+        {/* One row: "at most / at least", the number, and (price only) the currency. */}
+        <div className="flex gap-2">
+          <div className="w-32 shrink-0">
+            <SelectInput
+              aria-label={t('search.operator')}
+              value={operator}
+              onChange={(e) =>
+                onChange(
+                  setFilter(state, fields, field.id, {
+                    value: committed?.value ?? '',
+                    operator: e.target.value as SearchOperator,
+                  }),
+                )
+              }
+              options={RANGE_OPERATORS.map((o) => ({
+                value: o,
+                label: `${OPERATOR_SYMBOL[o]}  ${t(`search.operators.${o}`)}`,
+              }))}
+            />
+          </div>
+          <div className="min-w-0 flex-1">
             <TextInput
               id={id}
               type="number"
@@ -139,28 +142,22 @@ function RangeFilter({ field, state, onChange, fields }: CommonProps & { field: 
               placeholder={t(isPrice ? 'searchPage.amount' : 'searchPage.areaValue')}
             />
           </div>
+          {isPrice && (
+            <div className="w-40 shrink-0">
+              <SelectInput
+                aria-label={t('search.currency')}
+                value={state.currency}
+                onChange={(e) => onChange({ ...state, currency: e.target.value })}
+                options={[
+                  { value: '', label: t('search.allCurrencies') },
+                  ...CURRENCIES.map((c) => ({ value: c, label: t(`search.currencies.${c}`) })),
+                ]}
+              />
+            </div>
+          )}
         </div>
       </Field>
-      {isPrice && <CurrencyFilter state={state} onChange={onChange} />}
     </div>
-  );
-}
-
-function CurrencyFilter({ state, onChange }: { state: FilterState; onChange: (n: FilterState) => void }) {
-  const { t } = useTranslation();
-  const id = useId();
-  return (
-    <Field label={t('search.currency')} id={id}>
-      <SelectInput
-        id={id}
-        value={state.currency}
-        onChange={(e) => onChange({ ...state, currency: e.target.value })}
-        options={[
-          { value: '', label: t('search.allCurrencies') },
-          ...CURRENCIES.map((c) => ({ value: c, label: t(`search.currencies.${c}`) })),
-        ]}
-      />
-    </Field>
   );
 }
 

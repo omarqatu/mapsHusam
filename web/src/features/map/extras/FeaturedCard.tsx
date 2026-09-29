@@ -39,7 +39,7 @@ function Description({ value }: { value: string }) {
   const long = value.length > LONG_DESCRIPTION;
   return (
     <div>
-      <p className={open || !long ? 'text-sm text-fg' : 'line-clamp-3 text-sm text-fg'} dir="auto">
+      <p className={open || !long ? 'text-sm text-fg' : 'line-clamp-2 text-sm text-fg'} dir="auto">
         {value}
       </p>
       {long && (
@@ -101,7 +101,7 @@ export default function FeaturedCard({ entry, mode, badge, note, customerRatings
   const showCustomerRatings = !!customerRatings && r.target.kind === 'service' && !!r.id;
 
   return (
-    <article className="space-y-2 rounded-xl border border-line bg-surface p-3 shadow-sm">
+    <article className="flex h-full flex-col gap-2 rounded-xl border border-line bg-surface p-3 shadow-sm">
       {mode === 'beforeAfter' ? <BeforeAfter props={p} /> : media && <MediaGallery items={media} />}
 
       <div className="flex items-center gap-1.5 text-sm font-bold text-warn">
@@ -138,7 +138,7 @@ export default function FeaturedCard({ entry, mode, badge, note, customerRatings
             {hoursLabel(p.work_hours, t, i18n.language) && ` · ${hoursLabel(p.work_hours, t, i18n.language)}`}
           </span>
         )}
-        {price && <span className="font-semibold text-fg">{price}</span>}
+        {price && <span className="text-base font-black text-brand-fg">{price}</span>}
         {area && (
           <span className="text-muted">
             {area} {t('map.areaUnit')}
@@ -158,7 +158,7 @@ export default function FeaturedCard({ entry, mode, badge, note, customerRatings
 
       {text(p.des) && <Description value={text(p.des)} />}
 
-      <div className="flex flex-wrap gap-2 pt-1">
+      <div className="mt-auto flex flex-wrap gap-2 pt-2">
         <ResultContact r={r} showRequest className="contents" />
         <button
           type="button"
