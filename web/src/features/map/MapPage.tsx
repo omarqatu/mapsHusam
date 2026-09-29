@@ -10,12 +10,17 @@ import LocateButton from './controls/LocateButton';
 import MapButton from './controls/MapButton';
 import ZoomButtons from './controls/ZoomButtons';
 import MapView from './MapView';
+import FeatureCard from './popup/FeatureCard';
+import SelectionController from './popup/SelectionController';
+import { useMapUi } from './store';
 import LayerPanel from './panels/LayerPanel';
 
 /** `/` — the map. Full-screen: a slim brand bar and the map; every tool floats on the map's end edge. */
 export default function MapPage() {
   const { t } = useTranslation();
   const [layersOpen, setLayersOpen] = useState(false);
+  const selected = useMapUi((s) => s.selected);
+  const setSelected = useMapUi((s) => s.setSelected);
 
   return (
     <div className="fixed inset-0 flex flex-col">
@@ -35,6 +40,7 @@ export default function MapPage() {
 
       <div className="relative flex-1 overflow-hidden">
         <MapView>
+          <SelectionController />
           <div className="absolute end-3 top-3 z-10 flex flex-col gap-2">
             <MapButton label={t('map.layers')} active={layersOpen} onClick={() => setLayersOpen((o) => !o)}>
               <Layers className="h-5 w-5" />
@@ -46,6 +52,13 @@ export default function MapPage() {
             <CoordinatesBar />
           </div>
           <LayerPanel open={layersOpen} onClose={() => setLayersOpen(false)} />
+          {selected && (
+            <FeatureCard
+              key={`${selected.id}-${selected.coordinate.join()}`}
+              feature={selected}
+              onClose={() => setSelected(null)}
+            />
+          )}
         </MapView>
       </div>
       <Toaster />

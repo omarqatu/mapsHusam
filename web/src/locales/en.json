@@ -167,5 +167,70 @@
     "supermarket": "Supermarket",
     "commercial_shops": "Shops",
     "restaurants": "Restaurants & cafés"
+  },
+  "popup": {
+    "details": "Details",
+    "name": "Name",
+    "place": "Location",
+    "price": "Price",
+    "area": "Area",
+    "village": "Town",
+    "governorate": "Governorate",
+    "description": "Description",
+    "notes": "Notes",
+    "openNow": "Open now",
+    "closedNow": "Closed now",
+    "allDay": "Open 24 hours",
+    "availableFromTo": "Open from {{from}} to {{to}}",
+    "inbound": "Inbound",
+    "outbound": "Outbound",
+    "notSet": "Not set",
+    "advertiser": "Advertiser",
+    "provider": "Service provider",
+    "sharedLocation": "Shared location",
+    "sharedLocationHint": "You were taken to this shared location.",
+    "fuel": {
+      "title": "Fuel availability",
+      "diesel": "Diesel",
+      "banzen95": "Petrol 95",
+      "banzen98": "Petrol 98",
+      "available": "Available",
+      "unavailable": "Not available"
+    },
+    "rating": {
+      "loading": "Loading rating...",
+      "none": "No ratings yet",
+      "count": "({{count}} ratings)",
+      "showComments": "Show comments ({{count}})",
+      "hideComments": "Hide comments",
+      "user": "User"
+    },
+    "call": "Call",
+    "whatsapp": "WhatsApp",
+    "requestService": "Request service",
+    "requestSoon": "Service requests are being moved to the new version",
+    "copyLink": "Copy location link",
+    "linkCopied": "Location link copied! You can share it now.",
+    "copyFailed": "Could not copy the link. Please try again manually.",
+    "cooldown": "Please wait {{seconds}} seconds before trying again",
+    "quotaExceeded": "⛔ You have exceeded your request limit ({{limit}}) {{period}}. Please try later or contact the administration.",
+    "period": {
+      "daily": "today",
+      "weekly": "this week",
+      "monthly": "this month"
+    },
+    "whatsappGreeting": "Hello {{name}}, I would like to ask about ({{service}}) via the map.",
+    "watchVideo": "Watch video",
+    "moreDetails1": "More details 1",
+    "moreDetails2": "More details 2",
+    "currency": {
+      "USD": "USD",
+      "ILS": "ILS",
+      "JOD": "JOD"
+    }
+  },
+  "media": {
+    "openImages": "Click to view the images",
+    "preview": "Image preview"
   }
 }

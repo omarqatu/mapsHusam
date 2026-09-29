@@ -98,6 +98,11 @@ export default function MapView({ children }: { children?: ReactNode }) {
     const resize = new ResizeObserver(() => olMap.updateSize());
     resize.observe(target.current!);
 
+    if (shared)
+      useMapUi
+        .getState()
+        .setSelected({ kind: { kind: 'location' }, id: null, props: {}, coordinate: shared });
+
     olMap.set('dataLayers', dataLayers);
     setMap(olMap);
     return () => {

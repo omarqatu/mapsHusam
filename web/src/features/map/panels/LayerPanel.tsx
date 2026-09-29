@@ -1,10 +1,10 @@
 import { useMemo, useState } from 'react';
 import clsx from 'clsx';
-import { X } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import SearchInput from '@/components/ui/SearchInput';
 import { BASEMAPS, REAL_ESTATE_LAYERS, SERVICE_TYPES } from '../config';
 import { useMapUi } from '../store';
+import MapSheet from './MapSheet';
 
 const ALL_SERVICE_KEYS = SERVICE_TYPES.map((s) => s.key);
 const RE_ICON: Record<string, string> = { rent: '🏠', sale: '🏡', land: '🟥' };
@@ -59,27 +59,8 @@ export default function LayerPanel({ open, onClose }: { open: boolean; onClose: 
   if (!open) return null;
 
   return (
-    <aside
-      aria-label={t('map.layers')}
-      className={clsx(
-        'absolute z-20 flex flex-col bg-white shadow-xl',
-        'inset-x-0 bottom-0 max-h-[70%] rounded-t-2xl',
-        'sm:inset-x-auto sm:end-3 sm:top-3 sm:bottom-3 sm:max-h-none sm:w-80 sm:rounded-2xl',
-      )}
-    >
-      <header className="flex items-center justify-between border-b border-slate-100 px-4 py-3">
-        <h2 className="font-bold text-slate-800">{t('map.layers')}</h2>
-        <button
-          type="button"
-          onClick={onClose}
-          aria-label={t('common.close')}
-          className="rounded p-1 text-slate-500 hover:bg-slate-100"
-        >
-          <X className="h-5 w-5" />
-        </button>
-      </header>
-
-      <div className="flex-1 space-y-5 overflow-y-auto p-4">
+    <MapSheet title={t('map.layers')} label={t('map.layers')} side="end" onClose={onClose}>
+      <div className="space-y-5">
         <section>
           <h3 className="mb-2 text-xs font-bold tracking-wide text-slate-500">{t('map.basemap')}</h3>
           <div className="grid grid-cols-2 gap-2" role="radiogroup" aria-label={t('map.basemap')}>
@@ -155,6 +136,6 @@ export default function LayerPanel({ open, onClose }: { open: boolean; onClose: 
           ))}
         </section>
       </div>
-    </aside>
+    </MapSheet>
   );
 }

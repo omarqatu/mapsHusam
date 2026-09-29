@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { DEFAULT_BASEMAP, type BasemapKey, type RealEstateLayerKey } from './config';
+import type { SelectedFeature } from './popup/featureModel';
 
 // Map UI state only (what is switched on). Features/data never live here.
 interface MapUiState {
@@ -7,6 +8,9 @@ interface MapUiState {
   realEstateVisible: Record<RealEstateLayerKey, boolean>;
   /** Service types switched off by the user. */
   hiddenServices: ReadonlySet<string>;
+  /** The feature whose details card is open. */
+  selected: SelectedFeature | null;
+  setSelected: (f: SelectedFeature | null) => void;
   setBasemap: (b: BasemapKey) => void;
   setRealEstateVisible: (key: RealEstateLayerKey, visible: boolean) => void;
   setServiceVisible: (discriminator: string, visible: boolean) => void;
@@ -18,6 +22,8 @@ export const useMapUi = create<MapUiState>((set) => ({
   basemap: DEFAULT_BASEMAP,
   realEstateVisible: { rent: true, sale: true, land: true },
   hiddenServices: new Set(),
+  selected: null,
+  setSelected: (selected) => set({ selected }),
   setBasemap: (basemap) => set({ basemap }),
   setRealEstateVisible: (key, visible) =>
     set((s) => ({ realEstateVisible: { ...s.realEstateVisible, [key]: visible } })),

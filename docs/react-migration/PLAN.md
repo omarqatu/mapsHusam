@@ -65,7 +65,17 @@ Split `index.html` into features, in this order:
    is the locate button, "search without map" is in the top bar; overlapping labels decluttered (icons
    always drawn); layer panel has a type filter and is a bottom sheet on phones; failed WFS extents retry.
    Deferred to their own items: popup (2), search (3), measure/share tools (4), editing (5).
-2. ⬜ Popup / feature details: `popup.js`
+2. ✅ Popup / feature details: `popup.js` → `features/map/popup/`
+   Parity: click a marker → card with type/name/id, open-now + hours, ratings (avg + comments), fuel
+   availability, road-barrier inbound/outbound, real-estate price+currency/area, description, pictures /
+   YouTube / video / details links, call + WhatsApp (10 s cooldown, quota check fail-open, `log-contact-click`
+   + `save-stat`), copy/share location link, `?x=&y=` shared-location card, `log-map-event` on click.
+   XSS fix: ratings comments/user names and all feature text are JSX text (legacy injected raw HTML);
+   media URLs must be https (`safeMediaUrl`), javascript:/data: dropped.
+   UX changes: no hover popups (touch-unfriendly, flicker) — click only, pointer cursor on markers; empty fields
+   hidden; 8 px hit tolerance; bottom sheet on phones with auto-pan; contact buttons stacked; highlight ring;
+   Esc closes; a provider with only a phone (no WhatsApp) can now be called (legacy showed nothing).
+   NOT yet: "طلب الخدمة" for provider-linked features is shown disabled — comes with item 7 (service requests).
 3. ⬜ Search on map: `search.js`, `global-search.js`, `location-search.js`, `quick-search.js`, `results-share.js`
 4. ⬜ Tools: `measure.js`, `share-location.js`
 5. ⬜ Editing (admin): `edit-core.js`, `edit-wfs.js`, `editLines.js`, `editPolygons.js`

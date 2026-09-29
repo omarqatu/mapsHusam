@@ -167,5 +167,70 @@
     "supermarket": "سوبرماركت",
     "commercial_shops": "محلات تجارية",
     "restaurants": "مطاعم وكوفي شوبات"
+  },
+  "popup": {
+    "details": "التفاصيل",
+    "name": "الاسم",
+    "place": "الموقع",
+    "price": "السعر",
+    "area": "المساحة",
+    "village": "البلدة",
+    "governorate": "المحافظة",
+    "description": "الوصف",
+    "notes": "ملاحظات",
+    "openNow": "متاح الآن",
+    "closedNow": "مغلق حالياً",
+    "allDay": "دوام 24 ساعة",
+    "availableFromTo": "متاح من {{from}} حتى {{to}}",
+    "inbound": "للداخل",
+    "outbound": "للخارج",
+    "notSet": "غير محدد",
+    "advertiser": "المعلن",
+    "provider": "مزود الخدمة",
+    "sharedLocation": "الموقع المشارك",
+    "sharedLocationHint": "تم توجيهك إلى هذا الموقع.",
+    "fuel": {
+      "title": "توفر الوقود",
+      "diesel": "ديزل",
+      "banzen95": "بنزين 95",
+      "banzen98": "بنزين 98",
+      "available": "متوفر",
+      "unavailable": "غير متوفر"
+    },
+    "rating": {
+      "loading": "جاري تحميل التقييم...",
+      "none": "لا توجد تقييمات بعد",
+      "count": "({{count}} تقييم)",
+      "showComments": "عرض التعليقات ({{count}})",
+      "hideComments": "إخفاء التعليقات",
+      "user": "مستخدم"
+    },
+    "call": "اتصال",
+    "whatsapp": "واتساب",
+    "requestService": "طلب الخدمة",
+    "requestSoon": "طلب الخدمة قيد النقل إلى النسخة الجديدة",
+    "copyLink": "نسخ رابط الموقع",
+    "linkCopied": "تم نسخ رابط الموقع بنجاح! يمكنك مشاركته الآن.",
+    "copyFailed": "فشل نسخ الرابط. يرجى المحاولة يدوياً.",
+    "cooldown": "يرجى الانتظار {{seconds}} ثوانٍ قبل المحاولة مرة أخرى",
+    "quotaExceeded": "⛔ لقد تجاوزت الحد المسموح من الطلبات ({{limit}}) {{period}}. يرجى المحاولة لاحقاً أو التواصل مع الإدارة.",
+    "period": {
+      "daily": "اليوم",
+      "weekly": "هذا الأسبوع",
+      "monthly": "هذا الشهر"
+    },
+    "whatsappGreeting": "مرحباً {{name}}، أرغب بالاستفسار عن ({{service}}) من خلال الخريطة.",
+    "watchVideo": "عرض الفيديو",
+    "moreDetails1": "تفاصيل إضافية 1",
+    "moreDetails2": "تفاصيل إضافية 2",
+    "currency": {
+      "USD": "دولار",
+      "ILS": "شيقل",
+      "JOD": "دينار"
+    }
+  },
+  "media": {
+    "openImages": "انقر هنا لعرض الصور",
+    "preview": "معاينة الصورة"
   }
 }
