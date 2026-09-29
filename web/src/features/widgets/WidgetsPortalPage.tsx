@@ -39,7 +39,7 @@ function useScrollToCard(card: CardId | null) {
     if (!card) return;
     const timer = setTimeout(() => {
       const behavior = window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches ? 'auto' : 'smooth';
-      document.getElementById(anchor(card))?.scrollIntoView({ behavior, block: 'start' });
+      document.getElementById(anchor(card))?.scrollIntoView?.({ behavior, block: 'start' });
     }, 250);
     return () => clearTimeout(timer);
   }, [card]);
