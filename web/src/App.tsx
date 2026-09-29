@@ -6,7 +6,11 @@ import SocketConnector from '@/api/SocketConnector';
 import AppShell from '@/components/AppShell';
 import ErrorBoundary from '@/components/ErrorBoundary';
 import SessionVerifier from '@/components/SessionVerifier';
+import AuthLayout from '@/features/auth/AuthLayout';
 import LoginPage from '@/features/auth/LoginPage';
+import RegisterPage from '@/features/auth/RegisterPage';
+import WelcomePage from '@/features/auth/WelcomePage';
+import LegalPage from '@/features/legal/LegalPage';
 import { ProtectedRoute, RoleRoute } from '@/routes/guards';
 import NotFoundPage from '@/routes/NotFoundPage';
 import PlaceholderPage from '@/routes/PlaceholderPage';
@@ -35,10 +39,19 @@ const router = createBrowserRouter([
       },
     ],
   },
+  // Pre-login screens (legacy promo splash + auth overlay) and the legal texts.
+  {
+    element: <AuthLayout />,
+    children: [
+      { path: '/welcome', element: <WelcomePage /> },
+      { path: '/login', element: <LoginPage /> },
+      { path: '/register', element: <RegisterPage /> },
+      { path: '/legal/:key', element: <LegalPage /> },
+    ],
+  },
   {
     element: <AppShell />,
     children: [
-      { path: '/login', element: <LoginPage /> },
       ...shelled.filter((r) => r.access === 'public').map(page),
       { element: <ProtectedRoute />, children: shelled.filter((r) => r.access === 'auth').map(page) },
       {
