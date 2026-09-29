@@ -959,8 +959,8 @@ app.post('/api/update-service-status', requireAuth, async (req, res) => {
                     UPDATE public.${tableName}
                     SET
                         status = $1,
-                        x_coord = $2,
-                        y_coord = $3,
+                        x_coord = $2::float8,
+                        y_coord = $3::float8,
                         geom = ST_SetSRID(ST_MakePoint($2, $3), 28191)
                     WHERE ${idField} = $4${discriminatorWhere}
                 `;

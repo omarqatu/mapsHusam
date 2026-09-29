@@ -159,7 +159,78 @@ Split `index.html` into features, in this order:
    helper moved to `lib/clipboard.ts` and reused by the details card and the results link, landscape phones: the tool
    column scrolls and refresh/zoom hide below 560 px height (gestures + auto refresh cover them).
 5. ⬜ Editing (admin): `edit-core.js`, `edit-wfs.js`, `editLines.js`, `editPolygons.js`
-6. ⬜ Provider panel: `provider-panel.js`, `services-bridge.js`
+6. ✅ Provider panel: `provider-panel.js`, `services-bridge.js` → `features/map/provider/`
+
+   **Inventory (read from `js/provider-panel.js`, `js/services-bridge.js`, `index.html` #provider-mini-panel, `css/provider-panel.css`,
+   `js/mobile-tabs.js`, `js/main.js`, `js/auth-core-functions.js`, and the handlers in `server.js`, which are the source of truth).**
+   - *Who:* `role = 'provider'` (or `account_type`), read from `map_user` (localStorage → sessionStorage → `user`). The provider's account is
+     linked to ONE feature by two `users` columns, `service_layer` (a service `discriminator` such as `plumber`, or a real-estate layer name;
+     the server also accepts the old `services:plumberLayer` spelling and returns the clean form) and `feature_id`. An admin sets them with
+     `POST /api/admin/users/update { user_id, service_layer, feature_id }` (no validation that the layer/feature exists).
+   - *What the panel is:* a fixed panel bottom-left ("🛠️ لوحة إدارة الخدمة الحية"; draggable, minimisable, position kept in
+     `localStorage.provider_panel_pos`; on phones/tablets a tab "🛠️ إدارة الخدمة" of `mobile-tabs.js`, drag disabled). Welcome badge
+     ("مرحباً، {full_name}"), a status sentence, buttons **🟢 متوفر (موقعي)**, **🟢 متوفر (السابق)**, **🔴 غير متوفر**,
+     **📍 تتبع مباشر (كل 10 ثوانٍ)**, **📍 الانتقال إلى موقعي على الخريطة**, and one indicator line (checking / cooldown / error / status).
+   - *What a provider can do — only this:* set the linked feature's **status** (0 = available = visible on the map and in search, 1 = busy =
+     hidden: search filters `status = 0 AND auto_status = 0`) and **move the feature's point** to the phone's GPS position. Nothing else:
+     no editing of name / description / hours / pictures, no WFS-T, no GeoServer write. (`auto_status` = closed by work hours, set by a DB
+     trigger; a provider cannot change it, so "available" during closed hours is still hidden.)
+   - *Button rules (legacy):* "available (my location)" = GPS fix (`requestGeolocationPosition`: high accuracy, 15 s timeout, no cache) →
+     EPSG:4326→28191 (`proj4`) → 2-decimals → send status 0 + x/y; on a GPS error a warning toast ("previous location will be used") and it
+     sends status 0 without coordinates. "available (previous)" = status 0, no coordinates. "busy" = status 1, no coordinates.
+     After every **successful** update all four buttons lock for **10 s** ("⏳ يرجى الانتظار N ثانية…", client-side only) and the map
+     layer is cleared + refreshed. A failed update unlocks at once and shows the server message in the indicator + a toast.
+   - *Live tracking:* the toggle calls "available (my location)" immediately and then every **10 s** (`setInterval`, no in-flight guard) until
+     pressed again (button text swaps). Ticks bypass the cooldown. Never stopped by logout / busy / errors: pressing "busy" while tracking
+     is impossible (locked by the cooldown the ticks keep restarting) — but after a 10 s gap it would be flipped back to available by the next
+     tick.
+   - *Fly to my location:* uses the coordinates from the last `get-provider-service` (or the last update); only when `x > 100000`; puts a red
+     circle (r 12, white ring, layer `providerFlyToLayer`, kept until the next fly) and animates to zoom 19 (1.2 s). Otherwise only a
+     `console.warn`.
+   - *Account states (from `get-provider-service`):* `success:false` (not linked) OR `user_status !== 0` (account frozen) OR no `service` →
+     one red sentence "ليس لديك صلاحية تعديل حالة أي معلم جاري حالياً." and the buttons locked (`isAccountFrozen`). A network failure of that
+     call unlocks the buttons with a stale status (but then a click says "no service layer linked").
+   - *API calls (every one; nothing goes to GeoServer — the "line ~151 fetch" is `get-provider-service`):*
+     - `GET /api/get-provider-service?user_id=<id>` (`requireAuth`; the legacy page sends the token through `auth-fetch.js`). The server
+       **ignores** `user_id` and uses the token's uid. Response: not linked `{ success:false, show_panel:false, message }`; linked
+       `{ success:true, show_panel:true, user_status (users.status: 0 active / other frozen), service:{ service_layer (clean discriminator),
+       feature_id, id, status (0/1 of the feature row), x_coord, y_coord (Palestine Grid; **strings** from Postgres numeric), x_global,
+       y_global (always undefined) } }`. 403 = layer not whitelisted, 404 = user missing, 500. Side effect on a GET: copies the feature's
+       coordinates into `users.x_coord/y_coord` when those are null.
+     - `POST /api/update-service-status` (`requireAuth`) body used by the server: `{ user_id (must equal the token uid), service_layer, feature_id|id,
+       status (0|1 else 400), x_coord?, y_coord? }` (legacy also sent `account_status`, `layer_status`, a duplicate `id` — ignored).
+       Server checks: caller is an active provider whose `users.service_layer/feature_id` equal the body (else **403** "هذا المعلم غير
+       مرتبط بحسابك"); layer whitelisted (403); if `x_coord > 100000` and `y_coord` set → `status, x_coord, y_coord, geom =
+       ST_SetSRID(ST_MakePoint(x,y),28191)` (real-estate polygons: only the two columns) else `status` only; also copies x/y to `users`.
+       Response `{ success:true, status, message }`; 404 if no row; 500 with `error`.
+     - `services-bridge.js` calls `/api/provider-linked-features`, `/api/service-ratings…`, `/api/platform-stats`, `/api/search-features` but
+       **none of it is used** (see below), and the provider panel itself never calls it.
+   - *Socket events:* none (neither emitted nor listened to; the server does not broadcast a status change either).
+   - *Storage:* reads `map_user` / `user`; **writes** `map_user` (overwrites `status` — the ACCOUNT status — with the feature status, and
+     `x_coord`, `y_coord`, `service_layer`, `feature_id`); `provider_panel_pos` (drag position); `provider_status_{uid}` is only *removed* at
+     logout (`auth-core-functions.js`) — nothing ever writes it (dead key).
+   - *Mobile:* the panel is a tab of `mobile-tabs.js` (only for providers), drag/saved position ignored, `max-width: 90vw`.
+   - *XSS sinks:* none in `provider-panel.js` (only `innerText` / `textContent`, the welcome name included). `services-bridge.js` has the
+     safe helpers `sanitizeHTML` (textContent → innerHTML) / `escapeForAttribute`; no caller.
+   - *`services-bridge.js`:* a 450-line `window.AppServices` facade of fallbacks for a `window.CoreService` that no script defines. Nothing in
+     `js/` or any HTML reads `AppServices` (`grep` = only its own file); its `providerLinkedFeaturesCache` is re-implemented in
+     `shared-utils.js`. **Dead code — nothing to port.** The React equivalents already exist (`api/mapEvents.ts` `providerLinked`,
+     `lib/format.ts`, `lib/clipboard.ts`, `featureModel.ts` time/URL helpers); it is deleted with the legacy `index.html` at cut-over.
+   **Ported (checklist):** ✅ linked-feature lookup (`get-provider-service`) with the three account states (not linked / frozen / ready) ·
+   ✅ available (my location) with GPS→28191 and the GPS-error fallback · ✅ available (previous) · ✅ busy · ✅ 10 s cooldown after a
+   success, none after a failure · ✅ live tracking every 10 s (timer lives in `ProviderTracker`, so it runs with the panel closed) ·
+   ✅ fly to my location (red circle, zoom 19) · ✅ layer refresh after an update · ✅ `provider_status_<id>` removed on logout (`authStore.logout`).
+   Tests: `provider.model.test`, `provider.test.tsx`, and real-backend `provider.live.test.ts` (run against a server started from this branch).
+   **Changed on purpose:**
+   - The floating draggable panel is a normal map panel opened by a tool button (`ProviderButton`, providers only); on wide screens it opens by
+     itself once, on phones it stays closed so it does not cover the map. No drag, no saved position (`provider_panel_pos` is not written).
+   - Requests are sent one at a time (in-flight guard); legacy live tracking could overlap requests. Tracking stops when the account can
+     no longer update or the user leaves the map, instead of running forever after logout.
+   - The legacy code overwrote `map_user.status` (the ACCOUNT status) with the feature status and copied coordinates into `map_user`; React
+     keeps the session untouched and reads the feature status from the server (TanStack Query, refetched after each update).
+   - Live-tracking ticks are silent (no success toast); a failed tick shows the error in the panel.
+   - The "no service layer linked" click error of legacy is impossible: the buttons stay locked until the account has loaded.
+   **Not ported:** `services-bridge.js` (dead code, see above); dragging/minimising the panel.
 7. ⬜ Service requests & chat: `service-chat.js` (1.7k lines), `notifications.js`
 8. ✅ Auth UI: `auth-core-functions.js`, `auth-app-events.js`, `auth-fetch.js`, `legal-content.js`
    **Parity checklist (from the legacy code).**
@@ -350,7 +421,10 @@ For each page, list from the legacy code — not from memory:
 Rule: URLs, methods, auth rules and response shapes stay identical; legacy pages keep working.
 Log each change here: **what · why · how to verify · commit**.
 
-_(none yet)_
+- **`POST /api/update-service-status`: cast `x_coord`/`y_coord` to `float8`.** The same `$2`/`$3` were used as column values and as
+  `ST_MakePoint` arguments; PostgreSQL deduced conflicting types (numeric vs double) and the update failed with 500 "فشل تحديث قاعدة
+  البيانات الخلفية" whenever a provider sent coordinates. Response and request unchanged. Verify: `web/src/features/map/provider/provider.live.test.ts`
+  (moves the point and reads it back). Commit: `fix(server): cast provider coords to float8…`.
 
 ## Backend asks (needs the user's decision — behaviour-changing or larger)
 

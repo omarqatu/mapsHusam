@@ -564,5 +564,27 @@
         "jobs": "Job vacancies"
       }
     }
+  },
+  "provider": {
+    "title": "Manage my service",
+    "welcome": "Welcome, {{name}}",
+    "checking": "Checking your service…",
+    "loadFailed": "Could not load your service. Try again.",
+    "noAccess": "You do not have permission to change the status of any listing right now.",
+    "statusAvailable": "Your status: available (shown on the map and in search)",
+    "statusBusy": "Your status: not available (hidden)",
+    "availableHere": "Available (my location)",
+    "availablePrevious": "Available (previous location)",
+    "busy": "Not available",
+    "trackStart": "Live tracking (every 10 s)",
+    "trackStop": "Stop live tracking",
+    "flyToMe": "Go to my location on the map",
+    "cooldown": "Please wait {{seconds}} s…",
+    "gpsFallback": "Could not get your location — the previous location will be used.",
+    "updatedAvailable": "You are now available.",
+    "updatedBusy": "You are now not available.",
+    "updateFailed": "Could not update your status.",
+    "noLocation": "No saved location yet. Use \"Available (my location)\" first.",
+    "trackingOn": "Live tracking is on"
   }
 }

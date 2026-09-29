@@ -53,6 +53,13 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     set({ user: next });
   },
   logout: () => {
+    // Legacy `logoutPlatform` also dropped this per-user key (nothing writes it any more; old browsers may still hold it).
+    try {
+      const id = get().user?.user_id ?? get().user?.id;
+      if (id != null) localStorage.removeItem(`provider_status_${id}`);
+    } catch {
+      /* ignore */
+    }
     writeStored(null);
     set({ user: null });
   },

@@ -13,6 +13,9 @@ import ZoomButtons from './controls/ZoomButtons';
 import ExtrasButton from './extras/ExtrasButton';
 import ExtrasPanel from './extras/ExtrasPanel';
 import MapView from './MapView';
+import ProviderButton from './provider/ProviderButton';
+import ProviderPanel from './provider/ProviderPanel';
+import ProviderTracker from './provider/ProviderTracker';
 import FeatureCard from './popup/FeatureCard';
 import SelectionController from './popup/SelectionController';
 import GlobalSearchBox from './search/GlobalSearchBox';
@@ -21,6 +24,7 @@ import ResultsLayer from './search/ResultsLayer';
 import ResultsPanel from './search/ResultsPanel';
 import SearchPanel from './search/SearchPanel';
 import { useSearchUi } from './search/store';
+import { useIsProvider } from './provider/queries';
 import { useMapUi } from './store';
 import MapTools from './tools/MapTools';
 import ToolButtons from './tools/ToolButtons';
@@ -35,6 +39,7 @@ export default function MapPage() {
   const setSelected = useMapUi((s) => s.setSelected);
   const searchOpen = useSearchUi((s) => s.panelOpen);
   const results = useSearchUi((s) => s.results);
+  const isProvider = useIsProvider();
 
   // Phones show one bottom sheet at a time: a tapped marker or a new result list makes room for itself.
   useEffect(() => {
@@ -95,6 +100,7 @@ export default function MapPage() {
       <div className="relative flex-1 overflow-hidden">
         <MapView>
           <SelectionController />
+          {isProvider && <ProviderTracker />}
           <ResultsLayer />
           <ReplayShared />
           {/* Short screens (landscape phones): the column scrolls, and refresh/zoom — which have gestures and a
@@ -107,6 +113,7 @@ export default function MapPage() {
               <Layers className="h-5 w-5" />
             </MapButton>
             <ExtrasButton />
+            <ProviderButton />
             <ToolButtons />
             <LocateButton />
             <div className="flex flex-col gap-2 [@media(max-height:560px)]:hidden">
@@ -128,6 +135,7 @@ export default function MapPage() {
           <MapTools />
           <LayerPanel open={layersOpen} onClose={() => setLayersOpen(false)} />
           <ExtrasPanel />
+          <ProviderPanel />
           <ResultsPanel className={selected ? 'max-sm:hidden' : undefined} />
           {results && selected && (
             <button
