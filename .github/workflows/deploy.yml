@@ -11,6 +11,33 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      # Gate: the same checks CI runs on branches, executed in the runner's workspace BEFORE anything is copied. A red
+      # check stops the job here, so a broken `main` never replaces the running site.
+      - name: Check - install web dependencies
+        shell: cmd
+        working-directory: web
+        run: npm ci
+
+      - name: Check - typecheck
+        shell: cmd
+        working-directory: web
+        run: npm run typecheck
+
+      - name: Check - lint
+        shell: cmd
+        working-directory: web
+        run: npm run lint
+
+      - name: Check - unit tests
+        shell: cmd
+        working-directory: web
+        run: npm test
+
+      - name: Check - build
+        shell: cmd
+        working-directory: web
+        run: npm run build
+
       - name: Copy files to web folder
         shell: cmd
         run: |
