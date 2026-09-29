@@ -10,6 +10,7 @@ interface RouteCheck {
 }
 
 const loggedIn: RouteCheck[] = [
+  { path: '/home', ready: 'h1' },
   { path: '/', ready: '.ol-viewport canvas' },
   { path: '/search', ready: 'h2' },
   { path: '/notifications', ready: 'h1' },

@@ -14,19 +14,26 @@ test.describe('visitor', () => {
     await expect(page.getByRole('link', { name: t('auth.welcome.register') })).toBeVisible();
   });
 
-  test('a user logs in through the form and reaches the map', async ({ page, problems }) => {
+  test('a user logs in through the form and lands on the home page; the map opens from there', async ({
+    page,
+    problems,
+  }) => {
     await page.goto('/login');
     await page.getByLabel(t('auth.phone')).fill(ACCOUNTS.user.phone);
     await page.getByLabel(t('auth.password')).fill(ACCOUNTS.user.password);
     await page.getByRole('button', { name: t('auth.loginSubmit') }).click();
 
-    await expect(page).toHaveURL(/\/$/);
-    await waitForMap(page);
-    // The session is the one the seeded "user" account gets: a plain user, no admin entries in the bar.
+    await expect(page).toHaveURL(/\/home$/);
+    await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
+    // The session is the one the seeded "user" account gets: a plain user.
     await expect
       .poll(() => page.evaluate(() => JSON.parse(localStorage.getItem('map_user') ?? '{}').role))
       .toBe('user');
-    await expect(page.getByRole('button', { name: t('requests.myRequests') })).toBeVisible();
+    await expect(page.getByRole('banner').getByRole('button', { name: t('requests.myRequests') })).toBeVisible();
+
+    // The map is a page of its own (`/`), reachable with the session the login created.
+    await page.goto('/');
+    await waitForMap(page);
     expect(problems.list).toEqual([]);
   });
 });

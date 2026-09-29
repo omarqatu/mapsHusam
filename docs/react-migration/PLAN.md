@@ -869,7 +869,7 @@ flows, provider card → panel on the map. **Not verified:** a real phone; the b
 | `npm run e2e` (Playwright, `web/e2e/`, desktop 1440 + phone 390, Arabic) | **your machine only** — it needs the dev Postgres, the seeded accounts, the local GeoServer and the backend on :3000 | before merging anything that touches a page; not in CI (see `dev/README.md` → Browser tests) |
 
 - Browser specs (all read-only — any write to `/api` is answered by the test harness, never by the server): visitor on `/`
-  lands on `/welcome`; login through the form; the map loads with markers and no console errors; a provider found in the
+  lands on `/welcome`; login through the form lands on `/home` (greeting + search box that continues on `/search`); the map (`/`) loads with markers and no console errors; a provider found in the
   search box opens its card with a contact / request button; the layers panel hides a whole group; keyword search on
   `/search`; `/widgets/portal` price cards; admin sees `/admin/users`, a normal user gets the forbidden page; the theme toggle
   (dark and back); no horizontal overflow on every route.
