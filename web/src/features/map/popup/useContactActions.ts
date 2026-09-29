@@ -45,6 +45,8 @@ export function useContactActions() {
       toast.warning(t('popup.cooldown', { seconds: wait }));
       return false;
     }
+    // Visitors have no account, so no quota (same as search); the check and the click log need a session.
+    if (!user) return true;
     try {
       const quota = await mapEventsApi.checkRequestLimit();
       if (quota.allowed === false) {
@@ -65,7 +67,7 @@ export function useContactActions() {
   function log(type: ContactType, f: SelectedFeature, providerName: string) {
     const { layer, typeTitleAr } = contactContext(f);
     const label = type === 'call' ? 'اتصال مباشر' : 'واتساب'; // stored as data (legacy wording)
-    if (f.id)
+    if (f.id && user)
       void mapEventsApi
         .logContactClick({
           service_layer: layer,

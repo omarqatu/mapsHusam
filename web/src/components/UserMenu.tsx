@@ -34,7 +34,7 @@ export default function UserMenu({ tone = 'default' }: { tone?: 'default' | 'onB
 
   if (!user) {
     return (
-      <Link to="/login" className={clsx(btn, 'gap-1.5 text-sm font-semibold')}>
+      <Link to="/login" className={clsx(btn, 'gap-1.5 whitespace-nowrap text-sm font-semibold')}>
         <LogIn className="h-4 w-4" aria-hidden />
         {t('auth.login')}
       </Link>

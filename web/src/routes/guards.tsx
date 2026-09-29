@@ -3,7 +3,7 @@ import { useAuthStore } from '@/store/authStore';
 import type { Role } from '@/types/auth';
 import ForbiddenPage from './ForbiddenPage';
 
-/** Any logged-in user; otherwise → `to` (default /login) and back afterwards. The map sends visitors to /welcome. */
+/** Any logged-in user; otherwise → `to` (default /login) and back afterwards. The home page sends visitors to /welcome. */
 export function ProtectedRoute({ to = '/login' }: { to?: string }) {
   const user = useAuthStore((s) => s.user);
   const location = useLocation();

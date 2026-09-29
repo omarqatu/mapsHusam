@@ -926,11 +926,12 @@ For each page, list from the legacy code — not from memory:
 
 ## Decisions for the user
 
-- **Login wall before the map.** Legacy shows the map only after login (welcome → login → start modal). The
-  React route keeps that for parity. But the WFS data (names, phones, prices) is public on GeoServer anyway,
-  so the wall protects nothing and costs users. Recommend: public map, login only for actions (request,
-  chat, provider panel). Flip `access` of `/` in `web/src/routes/routes.ts`.
-  Related: with a login wall, should anonymous visitors land on `/welcome` (the legacy promo) instead of `/login`? Not decided; today `ProtectedRoute` redirects to `/login`.
+- ✅ **Login wall before the map — decided 2026-09-30: the map is public.** Legacy showed the map only after login; the
+  WFS data is public on GeoServer anyway, so the wall protected nothing. `/` is `access: 'public'` and outside
+  `ProtectedRoute` (`App.tsx`). Visitors browse, search, call and WhatsApp; the contact quota check and the click log
+  (`/api/check-request-limit`, `/api/log-contact-click`, both `requireAuth`) are skipped for them, like the search quota
+  already was. "Request service" sends a visitor to `/login` and back to the same map URL; chat, requests and the provider
+  panel need a session as before. `/home` still sends visitors to `/welcome`. Header login link no longer wraps on phones.
 
 ## Server changes (allowed: functionality-preserving improvements, one commit each)
 
@@ -989,6 +990,9 @@ Log each change here: **what · why · how to verify · commit**.
   Commit: `feat(server): session tokens expire after 30 idle days, renewed while in use`.
 
 ## Backend asks (needs the user's decision — behaviour-changing or larger)
+
+- **Public map:** `/api/log-contact-click` is `requireAuth`, so a visitor's call / WhatsApp tap is not counted in the provider's
+  statistics (and has no quota). If visitor contacts should count, the endpoint needs a public, rate-limited variant.
 
 - WFS-T editing sends GeoServer credentials from the browser (`js/edit-wfs.js`); should move server-side.
   Detail (from porting item 5): `/geoserver-proxy` has **no role check** — the proxy forwards any `POST` (a WFS-T Transaction whose layer is

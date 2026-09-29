@@ -48,19 +48,15 @@ const page = (r: AppRoute) => ({ path: r.path, element: ported[r.path] ?? <Place
 const shelled = appRoutes.filter((r) => !r.own);
 
 const router = createBrowserRouter([
-  // Full-screen pages with their own layout. Same access as legacy: the map needs a login.
+  // The map: full screen, its own layout, open to visitors (legacy needed a login; the data is public on GeoServer
+  // anyway). Requests, chat and the provider panel still need a session.
   {
-    element: <ProtectedRoute to="/welcome" />, // like legacy: a visitor sees the welcome page (log in / register), not a bare form
-    children: [
-      {
-        path: '/',
-        element: (
-          <Suspense fallback={<CenteredSpinner minHeight="100vh" />}>
-            <MapPage />
-          </Suspense>
-        ),
-      },
-    ],
+    path: '/',
+    element: (
+      <Suspense fallback={<CenteredSpinner minHeight="100vh" />}>
+        <MapPage />
+      </Suspense>
+    ),
   },
   // Pre-login screens (legacy promo splash + auth overlay) and the legal texts.
   {
@@ -76,7 +72,7 @@ const router = createBrowserRouter([
     element: <AppShell />,
     children: [
       ...shelled.filter((r) => r.access === 'public').map(page),
-      // Like the map, the landing page sends a visitor to /welcome (log in / register) rather than to a bare form.
+      // The landing page sends a visitor to /welcome (log in / register) rather than to a bare form.
       { element: <ProtectedRoute to="/welcome" />, children: shelled.filter((r) => r.path === '/home').map(page) },
       {
         element: <ProtectedRoute />,

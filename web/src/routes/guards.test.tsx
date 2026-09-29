@@ -36,7 +36,7 @@ describe('route guards', () => {
     expect(screen.getByText('login page')).toBeInTheDocument();
   });
 
-  it('can send them somewhere else, e.g. the welcome page for the map', () => {
+  it('can send them somewhere else, e.g. the welcome page for the home page', () => {
     renderAt('/map');
     expect(screen.getByText('welcome page')).toBeInTheDocument();
   });

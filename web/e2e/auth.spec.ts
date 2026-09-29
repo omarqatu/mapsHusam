@@ -6,9 +6,15 @@ import { t } from './support/i18n';
 test.describe('visitor', () => {
   test.use(asVisitor);
 
-  test('opening the map lands on the welcome page', async ({ page }) => {
+  test('the map opens without an account', async ({ page, problems }) => {
     await page.goto('/');
-    await expect(page).toHaveURL(/\/welcome$/);
+    await waitForMap(page);
+    await expect(page).toHaveURL(/\/$/);
+    expect(problems.list).toEqual([]);
+  });
+
+  test('the welcome page offers log in and register', async ({ page }) => {
+    await page.goto('/welcome');
     await expect(page.getByRole('heading', { level: 1 })).toContainText(t('auth.welcome.title'));
     await expect(page.getByRole('link', { name: t('auth.welcome.login') })).toBeVisible();
     await expect(page.getByRole('link', { name: t('auth.welcome.register') })).toBeVisible();
