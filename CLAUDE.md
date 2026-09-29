@@ -7,9 +7,12 @@ live in [`docs/react-migration/PLAN.md`](docs/react-migration/PLAN.md) — read 
 
 ## Reference project
 
-The house style comes from the water platform (Enterprise-APP), `clients/web`. When it is available
-on disk (e.g. `../Enterprise-APP`), read its conventions before inventing one:
-`clients/web/src/components/ui/` (shared components), `.agents/skills/react/SKILL.md` (patterns).
+The house style comes from the water platform (Enterprise-APP), `clients/web`. It lives on disk at
+`../pwa-1` (git remote `Alameentech/Enterprise-APP`); add it to the session with
+`/add-dir ../pwa-1` (or `permissions.additionalDirectories` in `.claude/settings.json`). Read the digest
+[`docs/react-migration/HOUSE-STYLE.md`](docs/react-migration/HOUSE-STYLE.md) first; open
+`../pwa-1/clients/web/src/components/ui/<Component>.tsx` only when mirroring that specific component
+(don't bulk-read the reference — it is large).
 Copy the *pattern*, not its domain code (no tenancy, no module RBAC, no MapLibre — see below).
 
 ## Stack (fixed — do not re-litigate)

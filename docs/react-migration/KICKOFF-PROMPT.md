@@ -1,19 +1,20 @@
 # Prompts to paste into Claude Code (local machine)
 
-Open Claude Code in `mapsHusam/` and add the water project as an extra directory, so it can read
-the reference without leaving this repo:
+Open Claude Code in `mapsHusam/` and add the water project (`../pwa-1`, remote Enterprise-APP) as an
+extra directory, so it can read the reference without leaving this repo:
 
 ```
-claude --add-dir ../Enterprise-APP
+claude --add-dir ../pwa-1
 ```
 
-(or, inside a running session: `/add-dir ../Enterprise-APP`)
+(or `/add-dir ../pwa-1` inside a running session, or once in `.claude/settings.json` →
+`permissions.additionalDirectories`)
 
 ## Session 1 — Foundation (Phase 0)
 
 ```
 Read CLAUDE.md and docs/react-migration/PLAN.md. Do Phase 0 only, no pages.
-Reference for style and shared components: ../Enterprise-APP/clients/web (read
+Reference for style and shared components: ../pwa-1/clients/web (read
 .agents/skills/react/SKILL.md and src/components/ui/ first; mirror component APIs, drop tenancy
 and module RBAC). Delete frontend-react/. Scaffold web/ with the fixed stack. Before building the
 API client and auth store, read the login/verify-session/change-password handlers in server.js
