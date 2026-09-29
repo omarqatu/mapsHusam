@@ -24,7 +24,7 @@ export default function UserFiltersBar({ value, onChange }: Props) {
 
   return (
     <div className="space-y-3">
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-7">
+      <div className="grid grid-cols-2 gap-3 lg:grid-cols-3 xl:grid-cols-7">
         <div className="sm:col-span-2 lg:col-span-3 xl:col-span-2">
           <Field label={t('adminUsers.filters.search')}>
             <SearchInput

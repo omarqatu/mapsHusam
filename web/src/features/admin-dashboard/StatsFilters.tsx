@@ -59,7 +59,7 @@ export default function StatsFilters({ value, onChange, users, providers, reason
 
   return (
     <div className="space-y-3">
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
         {text('username', t('adminDashboard.col.user'), t('adminDashboard.filters.userPlaceholder'))}
         {text('provider', t('adminDashboard.col.provider'), t('adminDashboard.filters.providerPlaceholder'))}
         <FilterField label={t('adminDashboard.col.layer')}>
@@ -122,7 +122,7 @@ export default function StatsFilters({ value, onChange, users, providers, reason
         <summary className="cursor-pointer text-sm font-semibold text-slate-700">
           {t('adminDashboard.filters.more')}
         </summary>
-        <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="mt-3 grid grid-cols-2 gap-3 lg:grid-cols-4">
           {text('phone', t('adminDashboard.col.phone'), t('adminDashboard.filters.phonePlaceholder'), true)}
           {text('reason', t('adminDashboard.col.reason'), t('adminDashboard.filters.reasonPlaceholder'))}
           {exact('usernameExact', t('adminDashboard.filters.userExact'), users)}
