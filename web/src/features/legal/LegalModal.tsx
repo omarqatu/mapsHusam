@@ -2,13 +2,13 @@ import { useTranslation } from 'react-i18next';
 import Modal from '@/components/ui/Modal';
 import LegalDocView from './LegalDocView';
 import { legalTitleIcons } from './legalIcons';
-import { legalContent } from './content';
+import { useLegalDoc } from './useLegalDoc';
 import type { LegalKey } from './types';
 
 /** The legacy `openAppLegalModal(key)`: a dialog over whatever page the visitor is on (the register form keeps its input). */
 export default function LegalModal({ docKey, onClose }: { docKey: LegalKey | null; onClose: () => void }) {
   const { t } = useTranslation();
-  const doc = docKey ? legalContent[docKey] : null;
+  const { doc } = useLegalDoc(docKey);
   if (!doc) return null;
   const Icon = legalTitleIcons[doc.icon];
   return (

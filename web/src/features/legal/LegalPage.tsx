@@ -1,14 +1,18 @@
 import { useParams } from 'react-router';
+import { CenteredSpinner } from '@/components/ui/Spinner';
 import NotFoundPage from '@/routes/NotFoundPage';
 import LegalDocView from './LegalDocView';
 import { legalTitleIcons } from './legalIcons';
-import { legalContent } from './content';
-import type { LegalKey } from './types';
+import { isLegalKey } from './content';
+import { useLegalDoc } from './useLegalDoc';
 
 /** `/legal/:key` — the same texts as the dialog, as a shareable page (terms, privacy, guides, about, contact). */
 export default function LegalPage() {
   const { key } = useParams();
-  const doc = key && Object.hasOwn(legalContent, key) ? legalContent[key as LegalKey] : null;
+  const legalKey = isLegalKey(key) ? key : null;
+  const { doc, isLoading } = useLegalDoc(legalKey);
+  if (!legalKey) return <NotFoundPage />;
+  if (isLoading) return <CenteredSpinner />;
   if (!doc) return <NotFoundPage />;
   const Icon = legalTitleIcons[doc.icon];
   return (

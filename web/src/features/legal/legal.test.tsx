@@ -1,17 +1,43 @@
-import { describe, expect, it } from 'vitest';
+import { beforeAll, describe, expect, it } from 'vitest';
+import type { ReactNode } from 'react';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { MemoryRouter, Route, Routes } from 'react-router';
 import '@/i18n';
 import LegalDocView from './LegalDocView';
 import LegalLinks from './LegalLinks';
 import LegalPage from './LegalPage';
-import { legalContent } from './content';
-import type { LegalKey } from './types';
+import { LEGAL_KEYS, loadLegalDoc } from './content';
+import type { LegalDoc, LegalKey } from './types';
 
-const keys = Object.keys(legalContent) as LegalKey[];
+const keys = LEGAL_KEYS;
+const legalContent = {} as Record<LegalKey, LegalDoc>;
+beforeAll(async () => {
+  for (const k of keys) legalContent[k] = await loadLegalDoc(k);
+});
+
+const withQuery = (ui: ReactNode) => (
+  <QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>
+    {ui}
+  </QueryClientProvider>
+);
 
 describe('legal content', () => {
+  it('every LegalKey has a text file and vice versa', () => {
+    expect([...keys].sort()).toEqual([
+      'about',
+      'contact',
+      'guide',
+      'guideMapInteractive',
+      'guideProvider',
+      'guideSearch',
+      'guideSubscription',
+      'privacy',
+      'terms',
+    ]);
+  });
+
   it.each(keys)('%s renders as plain JSX text (no markup leaks)', (key) => {
     const { container } = render(
       <MemoryRouter>
@@ -30,17 +56,19 @@ describe('legal content', () => {
     expect(JSON.stringify(legalContent)).not.toMatch(/\.html/);
   });
 
-  it('/legal/:key shows the document and /legal/unknown is a 404', () => {
+  it('/legal/:key shows the document and /legal/unknown is a 404', async () => {
     const at = (path: string) =>
       render(
-        <MemoryRouter initialEntries={[path]}>
-          <Routes>
-            <Route path="/legal/:key" element={<LegalPage />} />
-          </Routes>
-        </MemoryRouter>,
+        withQuery(
+          <MemoryRouter initialEntries={[path]}>
+            <Routes>
+              <Route path="/legal/:key" element={<LegalPage />} />
+            </Routes>
+          </MemoryRouter>,
+        ),
       );
     const { unmount } = at('/legal/terms');
-    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent(legalContent.terms.title);
+    expect(await screen.findByRole('heading', { level: 1 })).toHaveTextContent(legalContent.terms.title);
     unmount();
     at('/legal/__proto__');
     expect(screen.queryByRole('article')).toBeNull();
@@ -48,12 +76,14 @@ describe('legal content', () => {
 
   it('LegalLinks opens a text in a dialog and Escape closes it', async () => {
     render(
-      <MemoryRouter>
-        <LegalLinks keys={['privacy']} />
-      </MemoryRouter>,
+      withQuery(
+        <MemoryRouter>
+          <LegalLinks keys={['privacy']} />
+        </MemoryRouter>,
+      ),
     );
     await userEvent.click(screen.getByRole('button', { name: /سياسة الخصوصية|Privacy policy/ }));
-    expect(screen.getByRole('dialog')).toHaveTextContent(legalContent.privacy.title);
+    expect(await screen.findByRole('dialog')).toHaveTextContent(legalContent.privacy.title);
     await userEvent.keyboard('{Escape}');
     expect(screen.queryByRole('dialog')).toBeNull();
   });
