@@ -43,7 +43,7 @@ Status legend: ⬜ not started · 🟨 in progress · ✅ ported & verified · �
 | `/admin/users/:id/view` | `admin-view-user.html` | ⬜ |
 | `/admin/widgets` | `widgets-admin.html`, `js/widgets-config.js` | ⬜ |
 | `/admin/dashboard` | `dashboard.html` | ⬜ |
-| `/notifications` | `notifications-panel.html` (socket.io) | ⬜ |
+| `/notifications` | `notifications-panel.html` (socket.io) | ✅ |
 | `/widgets/portal`, `/widgets/ticker` | `widgets-portal.html`, `widgets-ticker.html`, `js/widgets-ticker.js` | ⬜ |
 
 ## Phase 2 — Search without map
