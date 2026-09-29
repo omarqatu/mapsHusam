@@ -42,13 +42,15 @@ server can't produce on demand (network failure, 401 mid-session).
   Server improvements (security, performance, cleanup) are allowed, each in its **own commit** and
   each **logged in PLAN.md → "Server changes"** (what, why, how to verify). Anything bigger or
   behaviour-changing goes to "Backend asks" for the user to decide.
-- **Parity before polish.** A ported page must do everything the legacy page did (see its checklist
-  in PLAN.md) before any redesign. Legacy files stay until the React page is verified, then are
+- **Functionality parity, better UX.** A ported page must do everything the legacy page did (see its
+  checklist in PLAN.md). The *experience* may change (fewer modals, less clutter, mobile-first) — record each
+  UX change under the page's PLAN item. Visual identity comes from legacy `css/design-system.css` tokens. Legacy files stay until the React page is verified, then are
   deleted in the same commit that switches the route.
 - **No `innerHTML` / `dangerouslySetInnerHTML`.** User content (names, descriptions, chat, ratings)
   is rendered through JSX only. This is the main XSS fix of the migration.
 - **All HTTP goes through `web/src/api/client.ts`** (Bearer token, 401 → logout). No raw `fetch`
-  in components. Every server call is a typed function in `web/src/api/*.ts` + a Query hook.
+  in components. GeoServer reads go through `web/src/api/geoserver.ts` instead (it must not send the app
+  token to GeoServer). Every server call is a typed function in `web/src/api/*.ts` + a Query hook.
 - **Arabic is data, English is code.** Comments and identifiers in English; UI text in
   `web/src/locales/{ar,en}.json`, never hard-coded in JSX.
 - **RTL-safe Tailwind:** use logical classes (`ms-`, `me-`, `ps-`, `pe-`, `start-`, `end-`), never

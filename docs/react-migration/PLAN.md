@@ -52,11 +52,19 @@ Status legend: ⬜ not started · 🟨 in progress · ✅ ported & verified · �
 | --- | --- | --- |
 | `/search` | `no-map-search.html`, `js/no-map-search.js` (2.4k lines), `no-map-mobile.js`, `market-search.js`, `global-search.js`, `search.js` | ⬜ |
 
-## Phase 3 — The map (`/`)
+## Phase 3 — The map (`/`) — **priority** (user, 2026-09-29: map → UI/UX → security & performance)
 
 Split `index.html` into features, in this order:
 
-1. ⬜ Map core: `config.js`, `layers.js`, `layer-manager.js`, `main.js` → `features/map/`
+1. ✅ Map core: `config.js`, `layers.js`, `layer-manager.js`, `main.js` → `features/map/`
+   Parity: EPSG:28191 view, default centre (Al-Manara) z19, basemaps Esri/OSM/aerial-2023/none, WFS layers
+   ApartRent/ApartSale/LandSale + service_all by `discriminator` (68 types, 3 visibility tiers, road-barrier
+   status icon + label), layer panel (per type, show/hide all), GPS tracking (10 s throttle, blue dot),
+   pointer grid coordinates, `?x=&y=` share link, 60 s refresh of visible layers.
+   UX changes (functionality kept): no blocking "choose start location" modal — map opens at Al-Manara, GPS
+   is the locate button, "search without map" is in the top bar; overlapping labels decluttered (icons
+   always drawn); layer panel has a type filter and is a bottom sheet on phones; failed WFS extents retry.
+   Deferred to their own items: popup (2), search (3), measure/share tools (4), editing (5).
 2. ⬜ Popup / feature details: `popup.js`
 3. ⬜ Search on map: `search.js`, `global-search.js`, `location-search.js`, `quick-search.js`, `results-share.js`
 4. ⬜ Tools: `measure.js`, `share-location.js`
@@ -104,6 +112,13 @@ For each page, list from the legacy code — not from memory:
 - Every user action (buttons, forms, keyboard shortcuts) and every role difference.
 - `localStorage`/`sessionStorage` keys it reads or writes.
 - Mobile-specific behaviour.
+
+## Decisions for the user
+
+- **Login wall before the map.** Legacy shows the map only after login (welcome → login → start modal). The
+  React route keeps that for parity. But the WFS data (names, phones, prices) is public on GeoServer anyway,
+  so the wall protects nothing and costs users. Recommend: public map, login only for actions (request,
+  chat, provider panel). Flip `access` of `/` in `web/src/routes/routes.ts`.
 
 ## Server changes (allowed: functionality-preserving improvements, one commit each)
 
