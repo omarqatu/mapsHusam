@@ -1601,6 +1601,14 @@ app.post('/api/auth/register', authLimiter, async (req, res) => {
         return res.status(400).json({ error: 'صيغة رقم الجوال غير صحيحة، يجب أن يبدأ بـ 05 ويتكون من 10 أرقام.' });
     }
 
+    // 🆕 صاحب نشاط يسجّل حسابه ونشاطه معاً: طلب واحد ينتظر موافقة واحدة (الموافقة تفعّل الحساب وتنشر النشاط)
+    let listing = null;
+    if (req.body.listing) {
+        const parsedListing = parseListingInput(req.body.listing);
+        if (parsedListing.error) return res.status(400).json({ error: parsedListing.error });
+        listing = parsedListing.value;
+    }
+
     try {
         if (normalizedEmail) {
             const checkEmailQuery = 'SELECT email FROM public.users WHERE email = $1';
@@ -1629,16 +1637,36 @@ app.post('/api/auth/register', authLimiter, async (req, res) => {
             RETURNING user_id, full_name, email, phone, role, whatsapp_number
         `;
 
-        const result = await servicesPool.query(insertUserQuery, [
-            cleanName,
-            normalizedEmail,
-            phone.trim(),
-            hashedPassword,
-            role,
-            normalizedWhatsapp
-        ]);
+        const client = await servicesPool.connect();
+        let newUser;
+        try {
+            await client.query('BEGIN');
+            const result = await client.query(insertUserQuery, [
+                cleanName,
+                normalizedEmail,
+                phone.trim(),
+                hashedPassword,
+                role,
+                normalizedWhatsapp
+            ]);
+            newUser = result.rows[0];
+            if (listing) await client.query(INSERT_SUBMISSION_SQL, submissionParams(newUser.user_id, listing));
+            await client.query('COMMIT');
+        } catch (txErr) {
+            await client.query('ROLLBACK').catch(() => {});
+            throw txErr;
+        } finally {
+            client.release();
+        }
+        if (listing) {
+            try {
+                const admins = await servicesPool.query(`SELECT user_id FROM public.users WHERE role = 'admin' AND is_active = true`);
+                await Promise.all(admins.rows.map(a => notifyUser(a.user_id, '📥 طلب إضافة نشاط جديد', `«${listing.name}» (حساب جديد) بانتظار المراجعة من صفحة طلبات الإضافة.`)));
+            } catch (notifyErr) {
+                console.error('⚠️ تعذر إشعار المشرفين بالطلب الجديد:', notifyErr.message);
+            }
+        }
 
-        const newUser = result.rows[0];
         console.log(`✅ تم إنشاء حساب جديد بنجاح برقم ID: ${newUser.user_id}`);
 
         res.status(201).json({
@@ -4265,8 +4293,9 @@ async function notifyUser(userId, title, message, type = 'info') {
 
 app.get('/api/listing-submissions/layers', (req, res) => res.json({ success: true, layers: SUBMITTABLE_LAYERS }));
 
-app.post('/api/listing-submissions', requireAuth, submissionLimiter, async (req, res) => {
-    const body = req.body || {};
+// يفحص بيانات نشاط مُرسلة (من نموذج "أضف نشاطي" أو من التسجيل) ويُرجع { value } أو { error }
+function parseListingInput(body) {
+    body = body || {};
     const layer = String(body.layer || '').trim();
     const name = cleanText(body.name, SUBMISSION_MAX_LEN.name);
     const des = cleanText(body.des, SUBMISSION_MAX_LEN.des);
@@ -4277,17 +4306,26 @@ app.post('/api/listing-submissions', requireAuth, submissionLimiter, async (req,
     const y = Number(body.y_coord);
     const price = body.price === undefined || body.price === null || body.price === '' ? null : Number(body.price);
 
-    if (!SUBMITTABLE_LAYERS.includes(layer)) return res.status(400).json({ success: false, error: 'نوع النشاط غير مسموح به.' });
-    if (!name) return res.status(400).json({ success: false, error: 'اسم النشاط مطلوب.' });
-    if (!/^05\d{8}$/.test(phone)) return res.status(400).json({ success: false, error: 'رقم الجوال غير صالح.' });
-    if (body.whatsapp && !whatsapp) return res.status(400).json({ success: false, error: 'رقم واتساب غير صالح.' });
+    if (!SUBMITTABLE_LAYERS.includes(layer)) return { error: 'نوع النشاط غير مسموح به.' };
+    if (!name) return { error: 'اسم النشاط مطلوب.' };
+    if (!/^05\d{8}$/.test(phone)) return { error: 'رقم جوال النشاط غير صالح.' };
+    if (body.whatsapp && !whatsapp) return { error: 'رقم واتساب النشاط غير صالح.' };
     if (!Number.isFinite(x) || !Number.isFinite(y) ||
         x < GRID_X_RANGE[0] || x > GRID_X_RANGE[1] || y < GRID_Y_RANGE[0] || y > GRID_Y_RANGE[1]) {
-        return res.status(400).json({ success: false, error: 'الموقع على الخريطة غير صالح.' });
+        return { error: 'الموقع على الخريطة غير صالح.' };
     }
-    if (price !== null && (!Number.isFinite(price) || price < 0 || price > 1e9)) {
-        return res.status(400).json({ success: false, error: 'السعر غير صالح.' });
-    }
+    if (price !== null && (!Number.isFinite(price) || price < 0 || price > 1e9)) return { error: 'السعر غير صالح.' };
+    return { value: { layer, name, des: des || null, phone, whatsapp, workHours: workHours || null, price, x, y } };
+}
+
+const INSERT_SUBMISSION_SQL = `INSERT INTO public.listing_submissions (user_id, layer, name, des, phone, whatsapp, work_hours, price, x_coord, y_coord)
+             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) RETURNING id, status, created_at`;
+const submissionParams = (userId, v) => [userId, v.layer, v.name, v.des, v.phone, v.whatsapp, v.workHours, v.price, v.x, v.y];
+
+app.post('/api/listing-submissions', requireAuth, submissionLimiter, async (req, res) => {
+    const parsed = parseListingInput(req.body);
+    if (parsed.error) return res.status(400).json({ success: false, error: parsed.error });
+    const listing = parsed.value;
 
     try {
         const owner = await servicesPool.query('SELECT role, service_layer, feature_id FROM public.users WHERE user_id = $1', [req.auth.uid]);
@@ -4295,16 +4333,12 @@ app.post('/api/listing-submissions', requireAuth, submissionLimiter, async (req,
         if (!row || row.role !== 'user' || row.feature_id) {
             return res.status(403).json({ success: false, error: 'حسابك مرتبط بنشاط بالفعل أو لا يملك صلاحية التقديم.' });
         }
-        const inserted = await servicesPool.query(
-            `INSERT INTO public.listing_submissions (user_id, layer, name, des, phone, whatsapp, work_hours, price, x_coord, y_coord)
-             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) RETURNING id, status, created_at`,
-            [req.auth.uid, layer, name, des || null, phone, whatsapp, workHours || null, price, x, y]
-        );
+        const inserted = await servicesPool.query(INSERT_SUBMISSION_SQL, submissionParams(req.auth.uid, listing));
         res.json({ success: true, submission: inserted.rows[0] });
         // المشرفون يعرفون بالطلب فوراً (إشعار + بث حي لمن هو متصل)
         try {
             const admins = await servicesPool.query(`SELECT user_id FROM public.users WHERE role = 'admin' AND is_active = true`);
-            await Promise.all(admins.rows.map(a => notifyUser(a.user_id, '📥 طلب إضافة نشاط جديد', `«${name}» بانتظار المراجعة من صفحة طلبات الإضافة.`)));
+            await Promise.all(admins.rows.map(a => notifyUser(a.user_id, '📥 طلب إضافة نشاط جديد', `«${listing.name}» بانتظار المراجعة من صفحة طلبات الإضافة.`)));
         } catch (notifyErr) {
             console.error('⚠️ تعذر إشعار المشرفين بالطلب الجديد:', notifyErr.message);
         }
@@ -4397,7 +4431,7 @@ app.post('/api/admin/listing-submissions/:id/approve', requireAdmin, async (req,
         const feature = created.rows[0];
 
         await client.query(
-            `UPDATE public.users SET role = 'provider', service_layer = $1, feature_id = $2, x_coord = $3, y_coord = $4,
+            `UPDATE public.users SET role = 'provider', is_active = true, service_layer = $1, feature_id = $2, x_coord = $3, y_coord = $4,
                     token_version = token_version + 1 WHERE user_id = $5`,
             [sub.layer, feature.id, feature.x_coord, feature.y_coord, sub.user_id]
         );
@@ -4411,7 +4445,7 @@ app.post('/api/admin/listing-submissions/:id/approve', requireAdmin, async (req,
         providerLinkedCache = { data: null, expiresAt: 0 };
         platformStatsCache.clear();
         await notifyUser(sub.user_id, '✅ تمت الموافقة على نشاطك',
-            `تمت إضافة «${name}» إلى الخريطة وأصبح حسابك حساب مزوّد خدمة. يرجى تسجيل الخروج ثم الدخول من جديد لتفعيل الصلاحيات.`, 'success');
+            `تمت إضافة «${name}» إلى الخريطة وأصبح حسابك حساب مزوّد خدمة. ${owner.is_active ? 'يرجى تسجيل الخروج ثم الدخول من جديد لتفعيل الصلاحيات.' : 'حسابك مفعّل الآن، يمكنك تسجيل الدخول.'}`, 'success');
         res.json({ success: true, feature_id: feature.id });
     } catch (err) {
         await client.query('ROLLBACK').catch(() => {});

@@ -1265,6 +1265,14 @@ Log each change here: **what · why · how to verify · commit**.
     page is not in the header (it already holds eight admin links and overflowed). Registration still needs an admin to activate the
     account before the first login (unchanged), so a submitter is always an activated account. `serviceSearchTags` was extracted
     from the editor so the admin page writes the same search keywords as the edit tool. Live test: `listingSubmissions.live.test.ts`.
+- **Register + business in one step, one approval.** `POST /api/auth/register` accepts an optional `listing` object (same fields and
+  checks as `POST /api/listing-submissions`, now one shared `parseListingInput`). The account (still inactive, as always) and the
+  pending request are created in one transaction, so a bad listing creates no account; admins are notified. Approving a request now
+  also sets `is_active = true` on the owner, so a business owner waits for one decision, not two (activation, then approval); the
+  notification says they can log in (or to log in again if they were already active). A rejected new account stays inactive: the
+  admin decides about it separately from the users page. Without `listing` nothing changes. Verified on the real server: bad
+  listing → 400 and no user row; register+listing → login refused; approve → login works as `provider` linked to the new point.
+  Commit: `feat(server): register with a business, approved once`.
 
 ## Backend asks (needs the user's decision — behaviour-changing or larger)
 
