@@ -1,8 +1,10 @@
 import {
   Bell,
   ClipboardList,
+  Inbox,
   LayoutDashboard,
   Map as MapIcon,
+  PlusCircle,
   Radio,
   Search,
   SlidersHorizontal,
@@ -13,7 +15,18 @@ import {
 import type { Role } from '@/types/auth';
 import type { ChipTone } from './tones';
 
-export type CardId = 'map' | 'search' | 'live' | 'requests' | 'notifications' | 'service' | 'users' | 'dashboard' | 'widgets';
+export type CardId =
+  | 'map'
+  | 'search'
+  | 'live'
+  | 'requests'
+  | 'notifications'
+  | 'service'
+  | 'users'
+  | 'dashboard'
+  | 'widgets'
+  | 'addListing'
+  | 'submissions';
 
 export interface CardDef {
   id: CardId;
@@ -32,8 +45,10 @@ export const CARDS: CardDef[] = [
   { id: 'live', icon: Radio, tone: 'warn', to: '/widgets/portal' },
   { id: 'requests', icon: ClipboardList, tone: 'ok' },
   { id: 'service', icon: Wrench, tone: 'brand', roles: ['provider'] },
+  { id: 'addListing', icon: PlusCircle, tone: 'ok', to: '/add-listing', roles: ['user'] },
   { id: 'notifications', icon: Bell, tone: 'info', to: '/notifications' },
   { id: 'users', icon: Users, tone: 'brand', to: '/admin/users', roles: ['admin'] },
+  { id: 'submissions', icon: Inbox, tone: 'warn', to: '/admin/submissions', roles: ['admin'] },
   { id: 'dashboard', icon: LayoutDashboard, tone: 'info', to: '/admin/dashboard', roles: ['admin'] },
   { id: 'widgets', icon: SlidersHorizontal, tone: 'warn', to: '/admin/widgets', roles: ['admin'] },
 ];

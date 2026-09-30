@@ -20,6 +20,12 @@ export interface AppRoute {
 export const appRoutes: AppRoute[] = [
   { path: '/home', titleKey: 'nav.home', access: 'auth', legacy: '(new page — no legacy counterpart)', nav: true },
   { path: '/', titleKey: 'nav.map', access: 'public', legacy: 'index.html', nav: true, own: true },
+  {
+    path: '/add-listing',
+    titleKey: 'nav.addListing',
+    access: 'auth',
+    legacy: '(new page — "add my business")',
+  },
   { path: '/search', titleKey: 'nav.search', access: 'public', legacy: 'no-map-search.html', nav: true },
   {
     path: '/notifications',
@@ -68,6 +74,13 @@ export const appRoutes: AppRoute[] = [
     access: ['admin'],
     legacy: '(new page — replaces the hand-edited MAP_CONFIG.globalExclusions of legacy config.js)',
     nav: true,
+  },
+  {
+    path: '/admin/submissions',
+    titleKey: 'nav.adminSubmissions',
+    access: ['admin'],
+    legacy:
+      '(new page — approve or reject "add my business" requests; reached from the home card, not the header)',
   },
   {
     path: '/admin/dashboard',

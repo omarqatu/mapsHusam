@@ -169,7 +169,9 @@
     "adminVisibility": "Show & hide",
     "adminTexts": "Platform texts",
     "adminDashboard": "Dashboard",
-    "admin": "Admin"
+    "admin": "Admin",
+    "addListing": "Add your business",
+    "adminSubmissions": "Add requests"
   },
   "roles": {
     "admin": "Admin",
@@ -1679,6 +1681,14 @@
       "widgets": {
         "title": "Widgets admin",
         "desc": "Edit the prices and information everyone sees."
+      },
+      "addListing": {
+        "title": "Add your business",
+        "desc": "Send your shop or service to appear on the map after the admins review it."
+      },
+      "submissions": {
+        "title": "Add requests",
+        "desc": "Review the businesses people sent, approve or reject them."
       }
     },
     "figures": {
@@ -1695,6 +1705,90 @@
     "platform": {
       "title": "The platform in numbers",
       "failed": "Could not load the platform figures."
+    }
+  },
+  "submit": {
+    "title": "Add your business to the map",
+    "subtitle": "Own a shop or offer a service? Send your details. After the admins review it, it appears on the map and your account becomes a service provider account.",
+    "adminNote": "You are an admin: add businesses directly with the map's edit tool, and review people's requests on the add-requests page.",
+    "providerNote": "Your account is already linked to a business. Edit it from “Manage my service” on the map.",
+    "loadFailed": "Could not load the data. Try again.",
+    "sent": "Your request was received. We will review it and notify you.",
+    "sendFailed": "Could not send the request.",
+    "send": "Send for review",
+    "reviewNote": "The admins review every request before it is published. After approval, sign out and in again to get the provider tools.",
+    "approved": "“{{name}}” was approved and is now on the map. Sign out and in again to activate your provider account.",
+    "rejected": "“{{name}}” was not approved: {{reason}}. You can fix it and send a new request.",
+    "sections": {
+      "about": "About the business",
+      "contact": "Contact",
+      "location": "Location on the map"
+    },
+    "fields": {
+      "layer": "Type of business",
+      "layerPlaceholder": "Choose a type…",
+      "name": "Business name",
+      "des": "Short description",
+      "workHours": "Working hours",
+      "workHoursHint": "e.g. 8 am – 6 pm",
+      "price": "Price in US dollars",
+      "phone": "Mobile number",
+      "whatsappSame": "Same number on WhatsApp"
+    },
+    "map": {
+      "label": "Location picker map",
+      "hint": "Tap the map to mark where the business is.",
+      "picked": "Location set. Tap somewhere else to change it.",
+      "myLocation": "My location"
+    },
+    "errors": {
+      "layer": {
+        "required": "Choose the type of business."
+      },
+      "name": {
+        "required": "Enter the business name."
+      },
+      "phone": {
+        "required": "Enter the mobile number.",
+        "invalid": "Invalid mobile number: it starts with 05 and has 10 digits."
+      },
+      "price": {
+        "invalid": "Enter a valid number."
+      },
+      "point": {
+        "required": "Mark the business on the map.",
+        "invalid": "That location is outside the allowed area."
+      }
+    },
+    "pending": {
+      "title": "Your request is being reviewed",
+      "body": "You will get a notification as soon as the admins review it. You can cancel it and send a new one.",
+      "cancel": "Cancel request",
+      "cancelled": "Request cancelled.",
+      "cancelFailed": "Could not cancel the request."
+    },
+    "admin": {
+      "title": "Add-business requests",
+      "subtitle": "Review what people sent. Approving publishes the business on the map and makes its owner a service provider.",
+      "empty": "No requests here.",
+      "status": {
+        "label": "Request status",
+        "pending": "Waiting for review",
+        "approved": "Approved",
+        "rejected": "Rejected"
+      },
+      "by": "From {{name}}",
+      "location": "Location",
+      "openOnMap": "Open on the map",
+      "approve": "Approve and publish",
+      "reject": "Reject",
+      "approved": "Published and the account is linked.",
+      "approveFailed": "Could not approve.",
+      "rejected": "Rejected and the sender was told.",
+      "rejectFailed": "Could not reject.",
+      "rejectTitle": "Reject the request",
+      "reason": "Reason",
+      "reasonHint": "The sender gets the reason as a notification, so write it clearly."
     }
   }
 }

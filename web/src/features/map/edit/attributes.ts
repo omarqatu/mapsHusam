@@ -86,7 +86,7 @@ const LAND_TAGS =
   'أرض للبيع، أراضي، كوشان، طابو، سكن، زراعي، تجاري، نمرة أرض، استثمار عقاري، مساحات، عقارات للبيع';
 const LAND_TAG_NAME = 'أرض للبيع';
 
-const descriptionStart = (v: PropValue | undefined) =>
+const descriptionStart = (v: unknown) =>
   String(v ?? '')
     .trim()
     .substring(0, 40);
@@ -103,9 +103,13 @@ export function buildSearchTags(target: EditTarget, props: Props): string | null
   }
   if (target.kind !== 'point') return null;
 
-  const key = target.discriminator ?? target.id;
+  return serviceSearchTags(target.discriminator ?? target.id, props.name, props.des);
+}
+
+/** `search_tags` of a service row: type name + name + start of the description + the type's fixed keywords. */
+export function serviceSearchTags(key: string, name: unknown, des: unknown): string {
   const service = SERVICE_BY_KEY.get(key);
-  const head = [service?.tagName ?? key, String(props.name ?? '').trim(), descriptionStart(props.des)]
+  const head = [service?.tagName ?? key, String(name ?? '').trim(), descriptionStart(des)]
     .map((s) => s.trim())
     .filter((s) => s.length > 0)
     .join('، ');
