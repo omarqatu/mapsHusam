@@ -2,6 +2,7 @@ import clsx from 'clsx';
 import { Fuel, Map as MapIcon, Signpost, type LucideIcon } from 'lucide-react';
 import { Link } from 'react-router';
 import { useTranslation } from 'react-i18next';
+import { useLayerFilter } from '@/features/visibility/store';
 import { useStatusUpdatedAt, type StatusLayer } from '@/api/liveStatus';
 import { formatAgo, relativeUpdate } from '../map/extras/status';
 
@@ -39,13 +40,18 @@ function StatusPill({ layer, icon: Icon, label, onClick }: { layer: StatusLayer;
 /** Under the search (legacy: the three coloured header buttons): road status, fuel-station status — and the map on phones. */
 export default function LiveLinks({ onRoads, onFuel }: Props) {
   const { t } = useTranslation();
+  const layerShown = useLayerFilter(); // road / fuel status follow their layers
   return (
     <div className="-mx-4 flex gap-2 overflow-x-auto px-4 [scrollbar-width:none] md:mx-0 md:justify-center md:px-0 [&::-webkit-scrollbar]:hidden">
       <Link to="/" className={`${pill} md:hidden`}>
         <MapIcon className="h-4 w-4 text-brand-fg" aria-hidden /> {t('searchPage.goToMap')}
       </Link>
-      <StatusPill layer="road_barriers" icon={Signpost} label={t('searchPage.roadStatus')} onClick={onRoads} />
-      <StatusPill layer="fuel_stations" icon={Fuel} label={t('searchPage.fuelStatus')} onClick={onFuel} />
+      {layerShown('road_barriers') && (
+        <StatusPill layer="road_barriers" icon={Signpost} label={t('searchPage.roadStatus')} onClick={onRoads} />
+      )}
+      {layerShown('fuel_stations') && (
+        <StatusPill layer="fuel_stations" icon={Fuel} label={t('searchPage.fuelStatus')} onClick={onFuel} />
+      )}
     </div>
   );
 }

@@ -15,6 +15,7 @@ import { KEYWORD_MIN_CHARS } from './queries';
 import { readSelection, writeSelection, type Selection } from './selection';
 import StatusDialog from './StatusDialog';
 import TickerBar from '../widgets/components/TickerBar';
+import { useSectionShown } from '@/features/visibility/store';
 import TodayStrip from './TodayStrip';
 
 /**
@@ -25,6 +26,8 @@ import TodayStrip from './TodayStrip';
 export default function SearchPage() {
   const [params, setParams] = useSearchParams();
   const [status, setStatus] = useState<StatusLayer | null>(null);
+  const featuredOn = useSectionShown('featured'); // the featured / top-rated rows of the landing
+  const tickerOn = useSectionShown('ticker');
 
   const term = (params.get('q') ?? '').trim();
   const groupParam = params.get('group');
@@ -88,13 +91,14 @@ export default function SearchPage() {
           <StickySearch term={term} onCommit={commitKeyword} floating visible={heroGone} />
           <SearchHero term={term} onCommit={commitKeyword} onPick={openTarget} searchRef={heroSearch} />
           <LiveLinks onRoads={() => setStatus('road_barriers')} onFuel={() => setStatus('fuel_stations')} />
-          <TodayStrip />
+          {/* The same live data as the ticker: it follows the same switch. */}
+          {tickerOn && <TodayStrip />}
           {group === 'all' ? (
             <Collections onGroup={pickGroup} onPick={openTarget} />
           ) : (
             <CategoryBrowser group={group} onGroup={pickGroup} onPick={openTarget} />
           )}
-          <LandingSections />
+          {featuredOn && <LandingSections />}
         </>
       ) : (
         <>

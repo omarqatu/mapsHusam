@@ -1,6 +1,7 @@
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useCategoryCounts, usePlatformStats } from '@/api/platform';
+import { useExcludedLayers, useLayerFilter, useSectionShown } from '@/features/visibility/store';
 import { formatNumber } from '@/lib/format';
 import { ALL_TARGETS, targetFromKey, targetLabelKey, targetToApi, type MapTarget } from '../map/targets';
 import HeroBackdrop from './HeroBackdrop';
@@ -26,7 +27,9 @@ interface Props {
  */
 export default function SearchHero({ term, onCommit, onPick, searchRef }: Props) {
   const { t, i18n } = useTranslation();
-  const s = usePlatformStats().data;
+  const statsOn = useSectionShown('stats');
+  const layerShown = useLayerFilter();
+  const s = usePlatformStats(statsOn, useExcludedLayers()).data;
   const n = (v: number | undefined) => (v === undefined ? '—' : formatNumber(v, i18n.language));
   const figures = [
     { value: s?.featuresCount, label: t('searchPage.statProviders') },
@@ -38,15 +41,15 @@ export default function SearchHero({ term, onCommit, onPick, searchRef }: Props)
   const popular = useMemo(() => {
     const fixed = FALLBACK_POPULAR.slice(0, 2).map((k) => targetFromKey(k));
     const services = counts
-      ? ALL_TARGETS.filter((x) => x.kind === 'service' && !NOT_POPULAR.has(x.discriminator))
+      ? ALL_TARGETS.filter((x) => x.kind === 'service' && !NOT_POPULAR.has(x.discriminator) && layerShown(x))
           .map((x) => ({ x, n: counts[targetToApi(x).layer] ?? 0 }))
           .filter(({ n }) => n > 0)
           .sort((a, b) => b.n - a.n)
           .slice(0, POPULAR_SERVICES)
           .map(({ x }) => x)
       : FALLBACK_POPULAR.slice(2).map((k) => targetFromKey(k));
-    return [...fixed, ...services].filter((x): x is MapTarget => !!x);
-  }, [counts]);
+    return [...fixed, ...services].filter((x): x is MapTarget => !!x && layerShown(x));
+  }, [counts, layerShown]);
 
   return (
     <section className="relative overflow-hidden rounded-3xl border border-line bg-surface shadow-sm motion-safe:animate-[rise_0.5s_ease-out_both]">
@@ -80,7 +83,8 @@ export default function SearchHero({ term, onCommit, onPick, searchRef }: Props)
           ))}
         </div>
 
-        {/* Fixed height before the figures arrive: nothing below moves. */}
+        {/* Fixed height before the figures arrive: nothing below moves. Off when the admin hides the statistics. */}
+        {statsOn && (
         <dl className="mx-auto grid max-w-md grid-cols-3 divide-x divide-line pt-2">
           {figures.map((f) => (
             <div key={f.label} className="px-3">
@@ -89,6 +93,7 @@ export default function SearchHero({ term, onCommit, onPick, searchRef }: Props)
             </div>
           ))}
         </dl>
+        )}
       </div>
     </section>
   );

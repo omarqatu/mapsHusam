@@ -943,8 +943,9 @@ under the key `settings.visibility` = `{"hiddenLayers": [...], "hiddenSections":
 - Verified: unit tests (`visibility.test.ts`), real backend (`visibility.live.test.ts`: save as admin, read as visitor, 404
   for a missing key, a user is refused), browser: "real estate only" + ticker off → visitor map shows real estate only,
   only the "featured" chip, no ticker; admin map keeps everything with "hidden" badges.
-- ⬜ The new /search landing (other work in progress: `Collections`, `LandingSections`, `SearchHero`, …) must use
-  `useShownTargets` / `useSectionShown` for its category cards, road / fuel shortcuts and featured rails, and hide empty rails.
+- ✅ The /search landing: section tiles and their counts leave hidden types out (a section with none left goes; property
+  alone is centred), "most listed" chips and the road / fuel links follow the layers, the hero figures follow `stats`, the
+  featured rows follow `featured`, and the today strip (same live data as the ticker) follows `ticker`.
 - Not done on purpose: the server does not filter hidden layers out of `/api/search-features` (the setting is presentation;
   the data is public on GeoServer anyway). See Backend asks if that should change.
 

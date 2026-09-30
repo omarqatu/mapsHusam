@@ -6,7 +6,8 @@ import { formatNumber } from '@/lib/format';
 import { groupLabelKey } from '../map/registry';
 import { targetIcon, targetLabelKey, targetToApi, type MapTarget } from '../map/targets';
 import { GROUP_ART } from './art';
-import { GROUP_ICON, GROUP_IDS, targetsInGroup, type GroupId } from './categories';
+import { useLayerFilter } from '@/features/visibility/store';
+import { GROUP_ICON, targetsInGroup, useShownGroupIds, type GroupId } from './categories';
 
 type Section = Exclude<GroupId, 'all'>;
 
@@ -28,10 +29,12 @@ const riseClass = 'motion-safe:animate-[rise_0.5s_ease-out_both]';
 export default function Collections({ onGroup, onPick }: Props) {
   const { t, i18n } = useTranslation();
   const counts = useCategoryCounts().data;
-  const sections = GROUP_IDS.filter((g): g is Section => g !== 'all');
+  // Sections and types hidden by the admin are left out; a section with nothing left disappears.
+  const layerShown = useLayerFilter();
+  const sections = useShownGroupIds().filter((g): g is Section => g !== 'all');
   const pictured = sections.filter((g) => g !== 'realestate' && GROUP_ART[g]);
   const plain = sections.filter((g) => !GROUP_ART[g]);
-  const property = targetsInGroup('realestate');
+  const property = targetsInGroup('realestate', layerShown);
 
   const cover = 'absolute inset-0 h-full w-full object-cover object-left-bottom transition duration-500 group-hover:scale-105';
   const shade = 'absolute inset-0 bg-gradient-to-t from-black/75 via-black/20 to-transparent';
@@ -39,7 +42,7 @@ export default function Collections({ onGroup, onPick }: Props) {
   const listings = (list: MapTarget[]) => (counts ? list.reduce((sum, x) => sum + (counts[targetToApi(x).layer] ?? 0), 0) : null);
   const badge = 'rounded-full px-2 py-0.5 text-xs font-semibold tabular-nums';
   const count = (g: Section) => {
-    const n = listings(targetsInGroup(g));
+    const n = listings(targetsInGroup(g, layerShown));
     return n === null ? null : (
       <span className={`${badge} bg-white/20 text-white ring-1 ring-white/30 backdrop-blur`}>{formatNumber(n, i18n.language)}</span>
     );
@@ -58,7 +61,16 @@ export default function Collections({ onGroup, onPick }: Props) {
 
       <ul className="grid auto-rows-[9.5rem] grid-cols-2 gap-3 md:auto-rows-[11rem] md:grid-cols-4">
         {/* Property: the big tile, its three kinds as buttons on the picture. */}
-        <li className={clsx('group relative col-span-2 row-span-2 overflow-hidden rounded-3xl bg-brand-light', riseClass)} style={rise(0)}>
+        {property.length > 0 && (
+        <li
+          className={clsx(
+            'group relative col-span-2 row-span-2 overflow-hidden rounded-3xl bg-brand-light',
+            // alone (the admin hid every other section): centred, not pushed to one side of an empty row
+            sections.length === 1 && 'md:col-start-2',
+            riseClass,
+          )}
+          style={rise(0)}
+        >
           <img src={GROUP_ART.realestate} alt="" className={cover} />
           <div className={shade} />
           <button
@@ -87,6 +99,7 @@ export default function Collections({ onGroup, onPick }: Props) {
             </div>
           </div>
         </li>
+        )}
 
         {pictured.map((g, i) => (
           // An odd count leaves a hole in the last row: the last tile takes two columns (2 per row on phones, 4 wide).
@@ -131,7 +144,7 @@ export default function Collections({ onGroup, onPick }: Props) {
                 </span>
                 <span className="min-w-0 flex-1 leading-tight">{t(groupLabelKey(g))}</span>
                 {counts && (
-                  <span className={`${badge} bg-subtle-2 text-muted`}>{formatNumber(listings(targetsInGroup(g)) ?? 0, i18n.language)}</span>
+                  <span className={`${badge} bg-subtle-2 text-muted`}>{formatNumber(listings(targetsInGroup(g, layerShown)) ?? 0, i18n.language)}</span>
                 )}
               </button>
             </li>
