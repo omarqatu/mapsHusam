@@ -429,13 +429,18 @@ function initializePopup(map) {
     }
 
     // 🆕 عرض الفيديو مضمّناً داخل البوب أب (يوتيوب أو mp4/webm) بدل فتح رابط خارجي فقط
-    function createVideoEmbedElement(url) {
+        function createVideoEmbedElement(url) {
         const validatedUrl = cleanUrl(url);
         if (!validatedUrl) return '';
         const ytMatch = validatedUrl.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([\w-]+)/);
         if (ytMatch) {
             return `<div class="popup-img-container" style="margin-top:10px;">
-                        <iframe src="https://www.youtube.com/embed/${ytMatch[1]}" style="width:100%; aspect-ratio:16/9; border:none; border-radius:8px; display:block;" allow="autoplay; encrypted-media" allowfullscreen loading="lazy"></iframe>
+                        <div class="popup-video-facade" data-yt-id="${ytMatch[1]}" role="button" tabindex="0"
+                             style="position:relative; width:100%; aspect-ratio:16/9; border-radius:8px; cursor:pointer; background:#000 url('https://img.youtube.com/vi/${ytMatch[1]}/hqdefault.jpg') center/cover no-repeat;">
+                            <span style="position:absolute; inset:0; display:flex; align-items:center; justify-content:center; color:#fff; font-size:44px; text-shadow:0 2px 8px rgba(0,0,0,.6);">
+                                <i class="fas fa-play-circle"></i>
+                            </span>
+                        </div>
                     </div>`;
         }
         if (/\.(mp4|webm|ogg)(\?.*)?$/i.test(validatedUrl)) {
