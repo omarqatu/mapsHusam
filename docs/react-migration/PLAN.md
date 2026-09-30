@@ -1255,6 +1255,16 @@ Log each change here: **what · why · how to verify · commit**.
   twice → 409, old token → session ended, submit as provider → 403, reject needs a reason, resubmit after reject and cancel work.
   Note: new accounts are inactive until an admin activates them (existing behaviour), so a submitter must already be active.
   Commit: `feat(server): "add my business" requests with admin approval`.
+  - **Web side (`/add-listing`, `/admin/submissions`).** A signed-in `user` fills one form: type (searchable, grouped like the layer
+    panel; only the types the server offers), name, description, hours, phone (+ "same number on WhatsApp"), a price for hotels and
+    villas, and taps the location on a small satellite map (or uses the GPS). One request waits at a time; the page then shows its
+    state with a cancel button, and after a decision shows the approval or the admin's reason. Providers and admins get a short note
+    instead of the form. The admin page lists pending / approved / rejected requests with editable name, description and hours, an
+    "open on the map" link, approve (publishes, links the account) and reject (a reason is required and reaches the sender). Admins
+    are notified on every new request. Entrances: a home card "Add your business" (users) and "Add requests" (admins); the admin
+    page is not in the header (it already holds eight admin links and overflowed). Registration still needs an admin to activate the
+    account before the first login (unchanged), so a submitter is always an activated account. `serviceSearchTags` was extracted
+    from the editor so the admin page writes the same search keywords as the edit tool. Live test: `listingSubmissions.live.test.ts`.
 
 ## Backend asks (needs the user's decision — behaviour-changing or larger)
 
