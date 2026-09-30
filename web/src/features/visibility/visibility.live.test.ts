@@ -13,14 +13,7 @@ const BASE = import.meta.env.VITE_LIVE_API;
 const nativeFetch = globalThis.fetch;
 let original: string | null = null;
 
-async function readStored(): Promise<string | null> {
-  try {
-    return (await platformContentApi.get(VISIBILITY_KEY)).item?.content_value ?? null;
-  } catch (e) {
-    if (e instanceof ApiError && e.status === 404) return null;
-    throw e;
-  }
-}
+const readStored = async () => (await platformContentApi.get(VISIBILITY_KEY)).item?.content_value ?? null;
 
 describe.skipIf(!BASE)('visibility setting against the live backend', () => {
   beforeAll(async () => {
@@ -49,8 +42,8 @@ describe.skipIf(!BASE)('visibility setting against the live backend', () => {
     expect([...stored.hiddenSections]).toEqual(['ticker']);
   });
 
-  it('a missing key is a 404, not an error page', async () => {
-    await expect(platformContentApi.get('settings.no-such-key')).rejects.toMatchObject({ status: 404 });
+  it('a key nobody saved answers item: null (not an error: every visitor asks for it)', async () => {
+    expect(await platformContentApi.get('settings.no-such-key')).toEqual({ success: true, item: null });
   });
 
   it('a normal user cannot change it', async () => {

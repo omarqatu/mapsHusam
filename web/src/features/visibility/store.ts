@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useMemo } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { create } from 'zustand';
-import { ApiError } from '@/api/client';
 import { platformContentApi, platformContentKeys } from '@/api/platformContent';
 import { ALL_TARGETS, type MapTarget } from '@/features/map/targets';
 import { useAuthStore } from '@/store/authStore';
@@ -75,15 +74,10 @@ export function useSectionShown(id: SectionId): boolean {
   return useViewerIsAdmin() || on;
 }
 
-/** Nothing saved yet (404) = everything visible. */
+/** Nothing saved yet (`item: null`) = everything visible. */
 async function fetchVisibility(): Promise<Visibility> {
-  try {
-    const res = await platformContentApi.get(VISIBILITY_KEY);
-    return parseVisibility(res.item?.content_value);
-  } catch (e) {
-    if (e instanceof ApiError && e.status === 404) return ALL_VISIBLE;
-    throw e;
-  }
+  const res = await platformContentApi.get(VISIBILITY_KEY);
+  return parseVisibility(res.item?.content_value);
 }
 
 /** The stored setting as a query (the admin page needs its loading / error state). */

@@ -26,6 +26,7 @@ const AdminUsersPage = lazy(() => import('@/features/admin-users/AdminUsersPage'
 const AdminViewUserPage = lazy(() => import('@/features/admin-users/AdminViewUserPage'));
 const AdminWidgetsPage = lazy(() => import('@/features/admin-widgets/AdminWidgetsPage'));
 const AdminVisibilityPage = lazy(() => import('@/features/admin-visibility/AdminVisibilityPage'));
+const AdminTextsPage = lazy(() => import('@/features/admin-texts/AdminTextsPage'));
 const NotificationsPage = lazy(() => import('@/features/notifications/NotificationsPage'));
 const SearchPage = lazy(() => import('@/features/search/SearchPage'));
 const WidgetsPortalPage = lazy(() => import('@/features/widgets/WidgetsPortalPage'));
@@ -44,6 +45,7 @@ const ported: Record<string, ReactElement> = {
   '/admin/dashboard': <AdminDashboardPage />,
   '/admin/widgets': <AdminWidgetsPage />,
   '/admin/visibility': <AdminVisibilityPage />,
+  '/admin/texts': <AdminTextsPage />,
 };
 
 const page = (r: AppRoute) => ({ path: r.path, element: ported[r.path] ?? <PlaceholderPage route={r} /> });

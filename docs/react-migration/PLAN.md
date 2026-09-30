@@ -956,12 +956,33 @@ Server parts came in with the merge. The legacy UI changes are not in React yet:
 
 - ✅ Real-estate-only mode (`globalExclusions`, `applyGlobalExclusionsToDom`) → the show & hide page above.
 - ✅ `platform-stats?excludedLayers=` → sent from React (`useExcludedLayers`).
-- ⬜ Platform texts admin (`texts-admin.html/js`): rich-text editor over every legal text key, backups (`legal.backup.<key>`),
-  restore default; `GET /api/platform-content`, `PUT/DELETE /api/admin/platform-content/legal.<key>`, value `{title, html}`.
-  React: a `/admin/texts` page; rendering server HTML needs a sanitiser (allow-list, like his `sanitizePlatformRichText`) —
-  it is the one place HTML from data would be rendered, so decide the approach first (see Backend asks).
-- ⬜ Legal texts read the admin overrides (`legal-content.js`), new keys `mapEntryChoice`, `noMapIntro`, `promoFeatures`;
-  `guideMap` = `guide`.
+- ✅ Platform texts admin → `/admin/texts` (details below). Same rows as his page: `legal.<key>` / `legal.backup.<key>` =
+  JSON `{title, html}`, so either editor reads what the other saved.
+- ✅ Legal texts read the admin's replacement (`features/legal/overrides.ts`, `useLegalDoc` → `custom`), for the nine texts
+  React has. ⬜ Not ported: his new keys `mapEntryChoice`, `noMapIntro`, `promoFeatures` — they fill legacy screens React
+  does not have (the post-login choice screen, the old search intro, the promo list); the React welcome / search pages
+  word those parts in the locale files. Decide whether they should become admin-editable too.
+
+#### `/admin/texts` — how HTML from data is shown (user decision 2026-09-30: option A, allow-list → React elements)
+
+- `lib/richText.ts`: stored HTML is parsed by `DOMParser` (inert document) and walked into a small tree; only paragraphs,
+  headings, bold / italic / underline, lists, quotes, line breaks, links through `safeUrl` (http(s), mailto, tel, in-app
+  `/…`), direction, centring and "boxes" (a block with a background) survive. Scripts, handlers, forms, buttons and media
+  go with their content; everything else is unwrapped. The tree is rendered as React elements (`components/RichText.tsx`)
+  in the theme's look — no HTML string is ever handed to the DOM, so the no-`innerHTML` rule holds.
+- The editor (`components/RichTextEditor.tsx`): a `contentEditable` surface drawn once from the tree, the browser's
+  editing commands (bold, italic, underline, heading, paragraph, lists, centre, link, unlink, clear), paste goes through
+  the allow-list first, and the text is read back by walking the live DOM through the same filter; the save is clean HTML
+  (`richTreeToHtml`, text escaped). Title field, save / discard, save a backup / load the backup, back to the built-in
+  text (confirmation). A text never edited opens as the built-in text converted to rich text (`legalDocToRich`).
+- UX change (accepted with option A): the editor's colours and font sizes are not kept; boxes are drawn in the theme's
+  colours (so dark mode works). Husam's saved texts show with their structure (boxes, headings, centring, bold, links).
+- Verified: `lib/richText.test.tsx` (scripts, handlers, `javascript:` links, forms, media dropped; escaping; stable;
+  every built-in text converts), `overrides.test.tsx` (the page shows a replacement, a script inside it is gone),
+  `overrides.live.test.ts` (real server: save as admin, read as visitor, restore default, a user is refused); browser:
+  select + bold, a new paragraph, a paste carrying `<img onerror>` / `<script>` / `javascript:` → saved without them,
+  nothing ran on the admin or the visitor page, the visitor sees the edit.
+- The admin menu of the new header (other work in progress) will need icons for `/admin/texts` and `/admin/visibility`.
 - ⬜ Price / area / currency for `hotels` and `villas_rent` (service_all): edit fields, popup price, search filters.
 - ⬜ Featured: before/after via `details_link_1/2 notempty` query; hotel / villa cards with property details and live rating;
   empty sections hidden.
@@ -1012,7 +1033,7 @@ Server parts came in with the merge. The legacy UI changes are not in React yet:
 ## Security baseline (frontend — applies to every page)
 
 - Render user content via JSX only; no `innerHTML`, no `eval`/`new Function`, no inline `<script>`.
-  URLs from data (links, images) go through a `safeUrl()` helper (http/https/relative only).
+  URLs from data (links, images) go through a `safeUrl()` helper (http/https/relative only) — `lib/richText.ts`.
 - Token: kept in the auth store; sent only by `api/client.ts`; cleared on 401 and on logout
   (also disconnect the socket). Never put tokens in URLs or logs.
 - Role checks in the UI are for UX only — the server is the authority. Never hide a security gap
@@ -1121,10 +1142,11 @@ Log each change here: **what · why · how to verify · commit**.
   Verify: `web/src/features/search/liveUpdates.live.test.ts` (shape, gold in the thousands of dollars, silver far below it, 21k =
   0.875 × 24k; tolerates a 502 when the sources are unreachable). Commit: `feat(server): cached world rates, gold and silver`.
 
-- **`GET /api/platform-content/:key` (new, public).** One row of `platform_content` by key (`{success, item}`, 404 when
-  absent). Why: the list endpoint returns every platform text (~140 KB) and the React app needs one small setting
+- **`GET /api/platform-content/:key` (new, public).** One row of `platform_content` by key (`{success, item}`; a key nobody
+  saved yet answers `item: null` with 200 — every visitor asks for `settings.visibility`, and a 404 would log a browser error
+  on every page). Why: the list endpoint returns every platform text (~140 KB) and the React app needs one small setting
   (`settings.visibility`) on every load. Nothing existing changes. Verify: `curl /api/platform-content/settings.visibility`
-  → 404 before the first save, the item after; `visibility.live.test.ts`. Commit: `feat(server): GET /api/platform-content/:key …`.
+  → `item: null` before the first save, the item after; `visibility.live.test.ts`. Commit: `feat(server): GET /api/platform-content/:key …`.
 
 - **New public `GET /api/fuel-prices` (additive): Palestinian retail fuel prices, read from thefuelprice.com by the server.** There is
   no API for them, so the server reads the public page `https://www.thefuelprice.com/Fps/ar` (allowed by its `robots.txt`; we identify

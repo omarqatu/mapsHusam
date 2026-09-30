@@ -56,6 +56,13 @@ export const appRoutes: AppRoute[] = [
     nav: true,
   },
   {
+    path: '/admin/texts',
+    titleKey: 'nav.adminTexts',
+    access: ['admin'],
+    legacy: 'texts-admin.html (Husam, main q2/q3)',
+    nav: true,
+  },
+  {
     path: '/admin/visibility',
     titleKey: 'nav.adminVisibility',
     access: ['admin'],

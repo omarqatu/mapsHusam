@@ -1,7 +1,7 @@
 import { useParams } from 'react-router';
 import { CenteredSpinner } from '@/components/ui/Spinner';
 import NotFoundPage from '@/routes/NotFoundPage';
-import LegalDocView from './LegalDocView';
+import LegalBody from './LegalBody';
 import { legalTitleIcons } from './legalIcons';
 import { isLegalKey } from './content';
 import { useLegalDoc } from './useLegalDoc';
@@ -10,7 +10,7 @@ import { useLegalDoc } from './useLegalDoc';
 export default function LegalPage() {
   const { key } = useParams();
   const legalKey = isLegalKey(key) ? key : null;
-  const { doc, isLoading } = useLegalDoc(legalKey);
+  const { doc, custom, isLoading } = useLegalDoc(legalKey);
   if (!legalKey) return <NotFoundPage />;
   if (isLoading) return <CenteredSpinner />;
   if (!doc) return <NotFoundPage />;
@@ -19,9 +19,9 @@ export default function LegalPage() {
     <article className="mx-auto w-full max-w-2xl rounded-2xl border border-line bg-surface p-5 shadow-sm">
       <h1 className="mb-4 flex items-center gap-2 border-b-2 border-brand pb-3 text-xl font-black text-brand-fg">
         <Icon className="h-6 w-6 shrink-0" aria-hidden />
-        {doc.title}
+        {custom?.title || doc.title}
       </h1>
-      <LegalDocView doc={doc} />
+      <LegalBody doc={doc} custom={custom} />
     </article>
   );
 }

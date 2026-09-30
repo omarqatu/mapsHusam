@@ -1,9 +1,19 @@
 import { useQuery } from '@tanstack/react-query';
+import { platformContentKeys } from '@/api/platformContent';
 import { loadLegalDoc } from './content';
+import { fetchOverride, overrideKey, type LegalOverride } from './overrides';
 import type { LegalDoc, LegalKey } from './types';
 
-/** One legal text, loaded on demand (a lazy chunk, not an HTTP call); cached for the rest of the session. */
-export function useLegalDoc(key: LegalKey | null): { doc: LegalDoc | null; isLoading: boolean } {
+/**
+ * One legal text: the built-in document (a lazy chunk, cached for the session) and, when the admin has replaced it, the
+ * replacement (`custom`, shown instead). While either is on its way `isLoading` is true, so the built-in text never
+ * flashes before a replacement. If the replacement cannot be fetched the built-in text shows.
+ */
+export function useLegalDoc(key: LegalKey | null): {
+  doc: LegalDoc | null;
+  custom: LegalOverride | null;
+  isLoading: boolean;
+} {
   const q = useQuery({
     queryKey: ['legal-text', key],
     queryFn: () => loadLegalDoc(key as LegalKey),
@@ -11,5 +21,12 @@ export function useLegalDoc(key: LegalKey | null): { doc: LegalDoc | null; isLoa
     staleTime: Infinity,
     gcTime: Infinity,
   });
-  return { doc: q.data ?? null, isLoading: q.isLoading };
+  const o = useQuery({
+    queryKey: platformContentKeys.item(key ? overrideKey(key) : ''),
+    queryFn: () => fetchOverride(overrideKey(key as LegalKey)),
+    enabled: key !== null,
+    staleTime: 5 * 60_000,
+    retry: false, // on failure the built-in text shows at once
+  });
+  return { doc: q.data ?? null, custom: o.data ?? null, isLoading: q.isLoading || o.isLoading };
 }
