@@ -1033,7 +1033,7 @@ Server parts came in with the merge. The legacy UI changes are not in React yet:
 - Verified: `textOverrides.test.ts` (rules, applying, restoring, interpolation, markup stays text), `textOverrides.live.test.ts`
   (real server: admin saves, visitor reads, a user is refused), browser: Arabic override shows on `/search`, English override on
   the English page, clearing restores the built-in wording.
-- This is the seed of the generic "settings" module the architecture review recommends (see the review notes in this file).
+- This is the seed of the generic "settings" module the architecture review recommends (see [`docs/REVIEW-2026-09-30.md`](../REVIEW-2026-09-30.md) §2).
 - Reference: `docs/TEXT_CONTENT_AUDIT.md` (from his branch).
 
 ## Phase 4 — Cut-over & cleanup
@@ -1204,6 +1204,14 @@ Log each change here: **what · why · how to verify · commit**.
   sourceUpdatedOn, source, fetchedAt } }` for petrol 95 / 98, diesel, kerosene and gas 5 / 12 / 48 kg. Risk: a scraped page can change or
   disappear; the checks above make that fail safe, not silent-wrong. Verify: `lib/thefuelprice.test.js`, `web/src/features/search/liveUpdates.live.test.ts`.
   Commit: `feat(server): fuel prices read from thefuelprice.com`.
+
+- **`GET /api/search-features`: `conditions_count` is capped at 30.** The condition loop is synchronous and the count came straight
+  from the query string: `conditions_count=300000000` from any visitor froze the whole Node process (health check timed out for
+  50 s+, sockets and every other request with it). Real use is a handful of conditions (filter fields, currency, smart-search
+  chips), so 30 leaves room; response shape and behaviour below the cap are unchanged. Verify: with the fix the same request
+  answers in ~17 ms and `/healthz` stays up; `web/src/features/search/search.live.test.ts` (huge count → 200 in < 5 s, health
+  check up). Found by the 2026-09-30 review ([`docs/REVIEW-2026-09-30.md`](../REVIEW-2026-09-30.md) B1).
+  Commit: `fix(server): cap the search condition count`.
 
 ## Backend asks (needs the user's decision — behaviour-changing or larger)
 

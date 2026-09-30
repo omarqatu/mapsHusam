@@ -43,6 +43,18 @@ describe.skipIf(!BASE)('live backend — /search page', () => {
     expect(sortResults(all, 'rating')[0].rating).toBeGreaterThanOrEqual(sortResults(all, 'rating').at(-1)!.rating);
   });
 
+  it('a huge conditions_count is capped: it answers at once and the server stays up', async () => {
+    // Before the cap one such request froze the whole server (a synchronous loop of that many rounds).
+    const started = Date.now();
+    const res = await fetch(
+      '/api/search-features?layer=plumber&workspace=services&conditions_count=300000000&field_0=name&operator_0=contains&value_0=a',
+      { signal: AbortSignal.timeout(10_000) },
+    );
+    expect(res.status).toBe(200);
+    expect(Date.now() - started).toBeLessThan(5_000);
+    expect((await fetch('/healthz', { signal: AbortSignal.timeout(5_000) })).status).toBe(200);
+  });
+
   it('dropdown values come back for the governorate field', async () => {
     const rent = targetFromKey('rent')!;
     const r = await searchApi.uniqueValues({ ...targetToApi(rent), field: 'gov_a' });

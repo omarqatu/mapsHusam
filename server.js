@@ -2003,7 +2003,10 @@ app.get('/api/search-features', async (req, res) => {
             return fieldName;
         }
 
-        const count = parseInt(conditions_count) || 0;
+        // 🔒 سقف لعدد الشروط: الحلقة أدناه متزامنة، وقيمة ضخمة من زائر (conditions_count=300000000) كانت تجمّد السيرفر كله.
+        // أكبر استعمال حقيقي بالواجهات بضعة شروط (حقول الفلترة + العملة + رقائق البحث الذكي).
+        const MAX_SEARCH_CONDITIONS = 30;
+        const count = Math.min(parseInt(conditions_count) || 0, MAX_SEARCH_CONDITIONS);
         const rawConditions = [];
         if (count > 0) {
             for (let i = 0; i < count; i++) {
