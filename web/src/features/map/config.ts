@@ -78,6 +78,22 @@ export function roadBarrierStatus(stop: unknown) {
   return ROAD_BARRIER_STATUS[n] ?? ROAD_BARRIER_UNKNOWN;
 }
 
+/** From the least to the most serious: open < light traffic < inspection < heavy traffic < closed (legacy layers.js). */
+const BARRIER_SEVERITY = [0, 2, 4, 3, 1];
+
+const barrierCode = (v: unknown) => (typeof v === 'number' ? v : Number.parseInt(String(v ?? ''), 10));
+
+/**
+ * The status the map icon shows: the worse of the two directions, so a checkpoint closed one way is not drawn green
+ * because the other way is open (the card has both). A missing or unknown `stop2` leaves `stop`.
+ */
+export function worstBarrierStatus(stop: unknown, stop2: unknown) {
+  const a = barrierCode(stop);
+  const b = barrierCode(stop2);
+  const rank = (n: number) => BARRIER_SEVERITY.indexOf(n);
+  return roadBarrierStatus(rank(b) > rank(a) ? b : a);
+}
+
 /** Fuel availability columns of fuel_stations: 0 = available, anything else = not available. */
 export const FUEL_FIELDS = ['diesel', 'banzen95', 'banzen98'] as const;
 export type FuelField = (typeof FUEL_FIELDS)[number];

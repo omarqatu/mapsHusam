@@ -263,6 +263,12 @@ describe('ticker items', () => {
     const items = buildTickerItems({ ...base, data: undefined, weather: [], prayer: null });
     expect(items.map((i) => i.card)).toEqual(['calendar', 'road-status', 'fuel-status']);
   });
+  it('a failed forecast leaves no half-empty weather item (legacy switched the widget off)', () => {
+    // no admin "now" value and no forecast days: nothing to say, so no item, and nothing else is affected
+    const items = buildTickerItems({ ...base, weather: [{ id: 'ramallah', days: [] }] });
+    expect(items.some((i) => i.card === 'weather')).toBe(false);
+    expect(items.some((i) => i.card === 'prayer')).toBe(true);
+  });
 });
 
 describe('weatherLabel', () => {

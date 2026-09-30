@@ -1,6 +1,6 @@
 import type { FeatureLike } from 'ol/Feature';
 import { Circle, Fill, Icon, Stroke, Style, Text } from 'ol/style';
-import { roadBarrierStatus, SERVICE_TYPE_BY_KEY, TIER_RULES, type RealEstateLayerKey } from './config';
+import { SERVICE_TYPE_BY_KEY, TIER_RULES, worstBarrierStatus, type RealEstateLayerKey } from './config';
 
 // Port of legacy js/layers.js createStyle + per-layer styles. Style objects that don't depend on the feature
 // (icons, fills, strokes) are built once and reused; legacy rebuilt them for every feature on every frame.
@@ -140,7 +140,7 @@ export function serviceStyle({ t, isHidden }: ServiceStyleOptions) {
       text = typeof name === 'string' || typeof name === 'number' ? String(name) : '';
     }
     if (discriminator === 'road_barriers') {
-      const status = roadBarrierStatus(feature.get('stop'));
+      const status = worstBarrierStatus(feature.get('stop'), feature.get('stop2')); // the worse direction
       icon = status.icon;
       if (resolution < rule.labelBelow) {
         const statusText = t(`roadStatus.${status.key}`);

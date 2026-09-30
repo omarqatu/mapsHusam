@@ -3,7 +3,7 @@ import Feature from 'ol/Feature';
 import Point from 'ol/geom/Point';
 import Polygon from 'ol/geom/Polygon';
 import { wfsUrls } from '@/api/geoserver';
-import { roadBarrierStatus, SERVICE_TYPES } from './config';
+import { roadBarrierStatus, SERVICE_TYPES, worstBarrierStatus } from './config';
 import { formatGrid, formatLatLon, geolocationErrorKey, readSharedCenter } from './mapUtils';
 import { fromLonLat, toLonLat } from './projection';
 import { useMapUi } from './store';
@@ -46,6 +46,19 @@ describe('service style (service_all, by discriminator)', () => {
     expect(labelOf(style(svc({ discriminator: 'road_barriers', stop: '0' }), 2))).toBe('[roadStatus.open]');
     expect(roadBarrierStatus('x').key).toBe('unknown');
     expect(roadBarrierStatus(4).key).toBe('inspection');
+  });
+
+  it('the icon shows the worse of the two directions (open < light < inspection < heavy < closed)', () => {
+    expect(worstBarrierStatus(0, 1).key).toBe('closed'); // open in, closed out
+    expect(worstBarrierStatus(1, 0).key).toBe('closed');
+    expect(worstBarrierStatus(2, 4).key).toBe('inspection');
+    expect(worstBarrierStatus(4, 3).key).toBe('heavy');
+    expect(worstBarrierStatus(3, 2).key).toBe('heavy');
+    expect(worstBarrierStatus('0', '2').key).toBe('light'); // the WFS gives numbers or text
+    expect(worstBarrierStatus(1, null).key).toBe('closed'); // no `stop2` yet: `stop` decides
+    expect(worstBarrierStatus(0, '').key).toBe('open');
+    expect(worstBarrierStatus(undefined, 1).key).toBe('closed'); // an unknown `stop` never hides a known one
+    expect(worstBarrierStatus(undefined, undefined).key).toBe('unknown');
   });
 
   it('feature text is used as plain text, never as markup', () => {
