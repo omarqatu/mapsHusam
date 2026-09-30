@@ -2255,14 +2255,14 @@ app.get('/api/platform-content', async (req, res) => {
 });
 
 // قيمة واحدة بمفتاحها (عام): الواجهة تحتاج إعداداً صغيراً (مثل settings.visibility) دون تنزيل كل نصوص المنصة (~140KB).
+// مفتاح غير محفوظ بعد ليس خطأً: item = null (لا 404، حتى لا يسجّل متصفح كل زائر خطأً في كل صفحة).
 app.get('/api/platform-content/:key', async (req, res) => {
     try {
         const result = await servicesPool.query(
             'SELECT content_key, label, content_value, updated_at FROM public.platform_content WHERE content_key = $1',
             [String(req.params.key || '')]
         );
-        if (!result.rows.length) return res.status(404).json({ success: false, error: 'غير موجود.' });
-        res.json({ success: true, item: result.rows[0] });
+        res.json({ success: true, item: result.rows[0] || null });
     } catch (err) {
         console.error('تعذر جلب محتوى المنصة:', err.message);
         res.status(500).json({ success: false, error: 'تعذر جلب محتوى المنصة.' });
