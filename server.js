@@ -21,6 +21,7 @@ import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
 import compression from 'compression';
 import crypto from 'crypto';
+import { SOURCE_URL as FUEL_SOURCE_URL, parseFuelPrices } from './lib/thefuelprice.js';
 
 // تعريف __dirname لـ ES modules
 const __filename = fileURLToPath(import.meta.url);
@@ -833,15 +834,17 @@ app.get('/api/category-counts', async (req, res) => {
 });
 
 // =========================================================================
-// 💱 أسعار السوق العالمية (عملات + ذهب + فضة) من مصادر خارجية مجانية بلا مفتاح، مكاشّة 10 دقائق بالسيرفر
+// 💱 أسعار السوق العالمية (عملات + ذهب + فضة) من مصادر خارجية مجانية بلا مفتاح، مكاشّة بالسيرفر
 // لماذا من السيرفر: زائر المنصة لا يُرسل عنوانه لطرف ثالث، ولا نعتمد على CORS/حدود الطلب لكل متصفح، وإذا تعطّل المصدر نُرجع آخر نسخة ناجحة.
+// الكاش 6.5 دقيقة لأن العميل يسحب كل 7 دقائق: كل سحبة تصل إلى نسخة جديدة (لا سحبتان متتاليتان على نفس النسخة).
 // المصادر: open.er-api.com (أسعار الصرف، تحديث يومي) و api.gold-api.com (الذهب والفضة بالدولار للأونصة، لحظي).
 // كل مصدر مستقل: فشل أحدهما يترك جزأه null (أو آخر قيمة ناجحة). asOf = وقت المصدر نفسه لا وقت جلبنا.
 // الاستجابة: { success, data: { rates: { USD_ILS, JOD_ILS, EUR_ILS, asOf } | null,
 //   gold: { usdPerOunce, ilsPerGram24, ilsPerGram21, ilsPerGram18, asOf } | null, silver: { usdPerOunce, asOf } | null, updatedAt } }
 // =========================================================================
-let marketRatesCache = { data: null, expiresAt: 0 };
+let marketRatesCache = { data: null, expiresAt: 0, cachedAt: 0 };
 const TROY_OUNCE_GRAMS = 31.1035;
+const LIVE_CACHE_MS = 6.5 * 60 * 1000;
 
 async function fetchJsonWithTimeout(url, ms = 8000) {
     const r = await fetch(url, { signal: AbortSignal.timeout(ms), headers: { Accept: 'application/json' } });
@@ -849,8 +852,11 @@ async function fetchJsonWithTimeout(url, ms = 8000) {
     return r.json();
 }
 
+// ?fresh=1 (زر «تحديث الكل» في الواجهة) يتجاوز الكاش، لكن فقط إذا مضت دقيقة على آخر قراءة من المصدر (حماية المصادر من الإغراق)
+const wantsFresh = (req, cachedAt) => req.query.fresh === '1' && Date.now() - cachedAt >= 60 * 1000;
+
 app.get('/api/market-rates', async (req, res) => {
-    if (marketRatesCache.data && Date.now() < marketRatesCache.expiresAt) {
+    if (marketRatesCache.data && Date.now() < marketRatesCache.expiresAt && !wantsFresh(req, marketRatesCache.cachedAt)) {
         return res.json({ success: true, data: marketRatesCache.data });
     }
     const [fx, gold, silver] = await Promise.allSettled([
@@ -915,8 +921,43 @@ app.get('/api/market-rates', async (req, res) => {
         updatedAt: new Date().toISOString(),
     };
     const complete = !!(rates && goldData && silverData);
-    marketRatesCache = { data, expiresAt: Date.now() + (complete ? 10 * 60 * 1000 : 60 * 1000) };
+    marketRatesCache = { data, expiresAt: Date.now() + (complete ? LIVE_CACHE_MS : 60 * 1000), cachedAt: Date.now() };
     res.json({ success: true, data });
+});
+
+// =========================================================================
+// ⛽ أسعار المحروقات من thefuelprice.com (قراءة الصفحة من السيرفر، تحليل صارم في lib/thefuelprice.js)
+// لا يوجد API رسمي للأسعار؛ الصفحة تُعرض للعموم و robots.txt يسمح بها. نكاشّ 6.5 دقيقة فلا نزيد على طلب واحد لكل هذه المدة،
+// ونعرّف أنفسنا بوضوح. صفحة تغيّر شكلها أو أرقام غير منطقية = فشل (نبقي آخر أسعار ناجحة، وإلا 502 والواجهة تعود لأرقام الإدارة).
+// الاستجابة: { success, data: { items: [{ key, value, previous, unit: 'liter'|'cylinder', effectiveFrom }], sourceUpdatedOn, source, fetchedAt } }
+// =========================================================================
+let fuelPricesCache = { data: null, expiresAt: 0, cachedAt: 0 };
+
+app.get('/api/fuel-prices', async (req, res) => {
+    if (fuelPricesCache.data && Date.now() < fuelPricesCache.expiresAt && !wantsFresh(req, fuelPricesCache.cachedAt)) {
+        return res.json({ success: true, data: fuelPricesCache.data });
+    }
+    try {
+        const r = await fetch(FUEL_SOURCE_URL, {
+            signal: AbortSignal.timeout(10000),
+            headers: { 'User-Agent': 'PSM-Map/1.0 (fuel price reader; cached 6.5 min)', 'Accept-Language': 'ar' },
+        });
+        if (!r.ok) throw new Error(`HTTP ${r.status}`);
+        const parsed = parseFuelPrices(await r.text());
+        if (!parsed) throw new Error('تغيّر شكل صفحة المصدر');
+        const data = { ...parsed, source: FUEL_SOURCE_URL, fetchedAt: new Date().toISOString() };
+        fuelPricesCache = { data, expiresAt: Date.now() + LIVE_CACHE_MS, cachedAt: Date.now() };
+        res.json({ success: true, data });
+    } catch (err) {
+        console.warn('⚠️ تعذر جلب أسعار المحروقات:', err.message);
+        // آخر نسخة ناجحة (حتى لو منتهية) أفضل من لا شيء؛ نعيد المحاولة بعد دقيقة
+        if (fuelPricesCache.data) {
+            fuelPricesCache.expiresAt = Date.now() + 60 * 1000;
+            fuelPricesCache.cachedAt = Date.now();
+            return res.json({ success: true, data: fuelPricesCache.data });
+        }
+        res.status(502).json({ success: false, error: 'تعذر جلب أسعار المحروقات' });
+    }
 });
 
 async function checkUserRequestQuota(userId) {
