@@ -1237,6 +1237,12 @@ Log each change here: **what · why · how to verify · commit**.
   random key. The deploy workflow's restart smoke test turns a missing variable into an automatic rollback rather than an outage.
   Verified: `NODE_ENV=production JWT_SECRET=` and `=changeme` → exit 1; a valid secret starts as before. Commit:
   `fix(server): production must have a real JWT_SECRET`.
+- **Login lockout is per phone + device, not per phone alone.** Ten wrong passwords typed by *anyone* locked the real owner of that
+  number out for 15 minutes (a trivial harassment attack on any provider). The counter now keys on `phone|ip` (`LOGIN_MAX_FAILS`,
+  default 10), so a stranger only locks themselves out; a second counter per phone across all addresses (5× the limit) still stops
+  distributed guessing. Verified on the real server with `X-Forwarded-For`: 10 bad tries from one address → 11th is 429 and stays
+  429 even with the right password; the owner from another address → 200; 54 failures spread over six addresses → locked for all.
+  Commit: `fix(server): lock out a phone per device, not for everyone`.
 
 ## Backend asks (needs the user's decision — behaviour-changing or larger)
 

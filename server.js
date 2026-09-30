@@ -178,28 +178,35 @@ const authLimiter = rateLimit({
     message: { success: false, error: 'محاولات تسجيل دخول كثيرة، يرجى المحاولة لاحقاً' }
 });
 
-// 🔒 قفل مؤقت لكل رقم جوال بعد محاولات دخول فاشلة كثيرة (يحمي الحساب حتى لو تغيّرت عناوين IP)
+// 🔒 قفل مؤقت بعد محاولات دخول فاشلة كثيرة. المفتاح رقم الجوال + عنوان الجهاز، فلا يستطيع غريب قفل حساب غيره
+// بإرسال محاولات خاطئة باسمه؛ وسقف أعلى لرقم الجوال من كل العناوين معاً يوقف التخمين الموزّع.
 const LOGIN_MAX_FAILS = Number(process.env.LOGIN_MAX_FAILS || 10);
+const LOGIN_MAX_FAILS_ANY_IP = LOGIN_MAX_FAILS * 5;
 const LOGIN_LOCK_WINDOW_MS = 15 * 60 * 1000;
-const loginFailures = new Map(); // phone -> { count, firstAt }
-function isLoginLocked(phone) {
-    const rec = loginFailures.get(phone);
-    if (!rec) return false;
-    if (Date.now() - rec.firstAt > LOGIN_LOCK_WINDOW_MS) { loginFailures.delete(phone); return false; }
-    return rec.count >= LOGIN_MAX_FAILS;
+const loginFailures = new Map(); // "phone|ip" و "phone" -> { count, firstAt }
+const loginKeys = (phone, ip) => [[`${phone}|${ip}`, LOGIN_MAX_FAILS], [phone, LOGIN_MAX_FAILS_ANY_IP]];
+function isLoginLocked(phone, ip) {
+    return loginKeys(phone, ip).some(([key, max]) => {
+        const rec = loginFailures.get(key);
+        if (!rec) return false;
+        if (Date.now() - rec.firstAt > LOGIN_LOCK_WINDOW_MS) { loginFailures.delete(key); return false; }
+        return rec.count >= max;
+    });
 }
-function recordLoginFailure(phone) {
+function recordLoginFailure(phone, ip) {
     const now = Date.now();
     if (loginFailures.size > 50000) loginFailures.clear(); // حماية من تضخم الذاكرة
-    const rec = loginFailures.get(phone);
-    if (!rec || now - rec.firstAt > LOGIN_LOCK_WINDOW_MS) loginFailures.set(phone, { count: 1, firstAt: now });
-    else rec.count++;
+    for (const [key] of loginKeys(phone, ip)) {
+        const rec = loginFailures.get(key);
+        if (!rec || now - rec.firstAt > LOGIN_LOCK_WINDOW_MS) loginFailures.set(key, { count: 1, firstAt: now });
+        else rec.count++;
+    }
 }
-function clearLoginFailures(phone) { loginFailures.delete(phone); }
+function clearLoginFailures(phone, ip) { loginFailures.delete(`${phone}|${ip}`); }
 setInterval(() => {
     const now = Date.now();
-    for (const [phone, rec] of loginFailures) {
-        if (now - rec.firstAt > LOGIN_LOCK_WINDOW_MS) loginFailures.delete(phone);
+    for (const [key, rec] of loginFailures) {
+        if (now - rec.firstAt > LOGIN_LOCK_WINDOW_MS) loginFailures.delete(key);
     }
 }, 10 * 60 * 1000).unref();
 
@@ -1793,7 +1800,7 @@ app.post('/api/auth/login', authLimiter, async (req, res) => {
     }
 
     try {
-        if (isLoginLocked(normalizedPhone)) {
+        if (isLoginLocked(normalizedPhone, req.ip)) {
             return res.status(429).json({ message: 'تم إيقاف تسجيل الدخول مؤقتاً لكثرة المحاولات الخاطئة. حاول بعد 15 دقيقة.' });
         }
 
@@ -1809,7 +1816,7 @@ app.post('/api/auth/login', authLimiter, async (req, res) => {
         const result = await servicesPool.query(userQuery, queryParams);
 
         if (result.rows.length === 0) {
-            recordLoginFailure(normalizedPhone);
+            recordLoginFailure(normalizedPhone, req.ip);
             return res.status(401).json({ message: 'رقم الجوال أو كلمة المرور غير صحيحة.' });
         }
 
@@ -1824,10 +1831,10 @@ app.post('/api/auth/login', authLimiter, async (req, res) => {
         // أول تسجيل دخول ناجح لها، بدل مقارنة نصية مباشرة كما كان سابقاً.
         const { valid: passwordValid, needsRehash } = await verifyPasswordWithMigration(password, user.password_hash);
         if (!passwordValid) {
-            recordLoginFailure(normalizedPhone);
+            recordLoginFailure(normalizedPhone, req.ip);
             return res.status(401).json({ message: 'رقم الجوال أو كلمة المرور غير صحيحة.' });
         }
-        clearLoginFailures(normalizedPhone);
+        clearLoginFailures(normalizedPhone, req.ip);
 
         if (needsRehash) {
             const migratedHash = await bcrypt.hash(password, BCRYPT_SALT_ROUNDS);
