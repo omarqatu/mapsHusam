@@ -1243,6 +1243,18 @@ Log each change here: **what · why · how to verify · commit**.
   distributed guessing. Verified on the real server with `X-Forwarded-For`: 10 bad tries from one address → 11th is 429 and stays
   429 even with the right password; the owner from another address → 200; 54 failures spread over six addresses → locked for all.
   Commit: `fix(server): lock out a phone per device, not for everyone`.
+- **New: "add my business" (`listing_submissions`).** Requested by the owner (this adds endpoints; nothing existing changes). A logged-in
+  `user` submits a service (`POST /api/listing-submissions`: layer, name, phone, optional description / WhatsApp / hours / price, and a
+  point in EPSG:28191); one pending request per user (partial unique index), 10 per day. `GET /api/listing-submissions/mine`,
+  `DELETE /api/listing-submissions/:id` (own, pending only), `GET /api/listing-submissions/layers` (types offered: service types minus
+  road barriers, fuel, landmarks, jobs, free distribution; property stays admin-only). Admin: `GET /api/admin/listing-submissions?status=`,
+  `POST …/:id/approve` (one transaction: inserts the row into `service_all`, the DB trigger fills place/coordinates/visibility; makes the
+  account a `provider` linked to it, bumps `token_version`, clears the caches; the admin may correct name/description/hours and send
+  `search_tags`), `POST …/:id/reject` (reason required). The user gets a notification either way (after approval they must log in again,
+  same as when the admin links an account by hand). Verified on the real server: bad layer/coordinates → 400, duplicate → 409, approve
+  twice → 409, old token → session ended, submit as provider → 403, reject needs a reason, resubmit after reject and cancel work.
+  Note: new accounts are inactive until an admin activates them (existing behaviour), so a submitter must already be active.
+  Commit: `feat(server): "add my business" requests with admin approval`.
 
 ## Backend asks (needs the user's decision — behaviour-changing or larger)
 
