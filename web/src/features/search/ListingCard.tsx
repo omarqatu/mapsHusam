@@ -12,7 +12,7 @@ import { useShowOnMap } from '../map/extras/useShowOnMap';
 import { detailLinks, isOpenNow, priceLabel, text, type MediaItem } from '../map/popup/featureModel';
 import { formatDistance } from '../map/search/nearby';
 import ResultContact from '../map/search/ResultContact';
-import { isFuelStation, isRoadBarrier, targetIcon, targetLabelKey } from '../map/targets';
+import { hasPrice, isFuelStation, isRoadBarrier, priceCurrencyDefault, targetIcon, targetLabelKey } from '../map/targets';
 import { GROUP_ART } from './art';
 import ListingPreview from './ListingPreview';
 
@@ -57,8 +57,9 @@ export default function ListingCard({ entry, mode = 'all', badge, note, highligh
   const name = text(p.name) || text(p.location_name) || typeTitle;
   // The place people recognise (street / area, town); the governorate is only a fallback.
   const place = [text(p.location_name) || text(p.location), text(p.village_a)].filter(Boolean).join(' · ') || text(p.gov_a);
-  const price = priceLabel(p, t, i18n.language);
-  const area = Number(p.area) > 0 ? text(p.area) : '';
+  const priced = hasPrice(r.target);
+  const price = priced ? priceLabel(p, t, i18n.language, priceCurrencyDefault(r.target)) : null;
+  const area = priced && Number(p.area) > 0 ? text(p.area) : '';
   const hasStatus = !isRoadBarrier(r.target) && text(p.auto_status) !== '';
   const openNow = isOpenNow(p.auto_status);
   const notBroken = (m: VisualItem) => !(m.type === 'image' && broken.has(m.url));

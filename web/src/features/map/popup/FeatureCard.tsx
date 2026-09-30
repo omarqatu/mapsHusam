@@ -28,7 +28,7 @@ import {
   text,
   type SelectedFeature,
 } from './featureModel';
-import { isFuelStation, isRoadBarrier, targetIcon, targetLabelKey } from '../targets';
+import { hasPrice, isFuelStation, isRoadBarrier, priceCurrencyDefault, targetIcon, targetLabelKey } from '../targets';
 import { copyText, isMobileBrowser, nativeShare } from '@/lib/clipboard';
 import ContactButtons from './ContactButtons';
 import { formatArea, formatLength } from '../tools/measure';
@@ -109,8 +109,10 @@ export default function FeatureCard({ feature, onClose, className }: Props) {
 
   // The header already shows the name; the body shows where it is, then only what is filled in.
   const where = distinctPlaces([place, text(props.village_a), text(props.gov_a)]);
-  const price = kind.kind === 'realEstate' ? priceLabel(props, t, i18n.language) : null;
-  const area = kind.kind === 'realEstate' && Number(text(props.area)) > 0 ? `${text(props.area)} ${t('map.areaUnit')}` : null;
+  // Property, and the services priced like it (hotels, holiday villas: dollars).
+  const priced = hasPrice(kind);
+  const price = priced ? priceLabel(props, t, i18n.language, priceCurrencyDefault(kind)) : null;
+  const area = priced && Number(text(props.area)) > 0 ? `${text(props.area)} ${t('map.areaUnit')}` : null;
   const measure = feature.measure
     ? feature.measure.kind === 'area'
       ? formatArea(feature.measure.squareMeters, t)

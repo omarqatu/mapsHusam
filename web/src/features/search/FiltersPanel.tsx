@@ -84,7 +84,7 @@ function FixedFilter({ field, state, onChange, fields }: CommonProps & { field: 
 }
 
 /** Price / area: "at most" or "at least" a number. The number applies 300 ms after typing stops. */
-function RangeFilter({ field, state, onChange, fields }: CommonProps & { field: FieldDef }) {
+function RangeFilter({ field, target, state, onChange, fields }: CommonProps & { field: FieldDef }) {
   const { t } = useTranslation();
   const id = useId();
   const committed = state.values[field.id];
@@ -107,6 +107,8 @@ function RangeFilter({ field, state, onChange, fields }: CommonProps & { field: 
   }, [draft, committed?.value, state, fields, field.id, operator, onChange]);
 
   const isPrice = field.id === 'price';
+  // Property prices choose a currency; a service's price (hotels, villas) is always dollars.
+  const chooseCurrency = isPrice && target.kind === 'realEstate';
   return (
     <div className={`min-w-0 ${isPrice ? 'sm:col-span-2' : ''}`}>
       <Field label={t(field.labelKey)} id={id}>
@@ -142,7 +144,7 @@ function RangeFilter({ field, state, onChange, fields }: CommonProps & { field: 
               placeholder={t(isPrice ? 'searchPage.amount' : 'searchPage.areaValue')}
             />
           </div>
-          {isPrice && (
+          {chooseCurrency && (
             <div className="w-40 shrink-0">
               <SelectInput
                 aria-label={t('search.currency')}

@@ -25,9 +25,10 @@ export type ServiceGroupId = Exclude<TypeGroupId, 'realestate'>;
 
 /**
  * Which extra columns the editor offers on top of the common service fields (`edit/schema.ts` maps each profile to
- * its fields). Omitted = `standard`: the common fields only.
+ * its fields). Omitted = `standard`: the common fields only. `propertyService` (hotels, holiday villas) adds a price
+ * in dollars and an area: they are services in `service_all` but are priced like property.
  */
-export type EditProfile = 'standard' | 'roadBarrier' | 'fuelStation';
+export type EditProfile = 'standard' | 'roadBarrier' | 'fuelStation' | 'propertyService';
 
 /** What one service type is, everywhere. Adding a type = adding one entry to `SERVICE_REGISTRY`. */
 export interface ServiceEntry {

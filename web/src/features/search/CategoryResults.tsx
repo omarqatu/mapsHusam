@@ -13,7 +13,7 @@ import { formatDateTime } from '@/lib/format';
 import type { Coordinate } from '../map/config';
 import { GeoError, locateOnce } from '../map/geolocate';
 import { printResults } from '../map/search/printResults';
-import { targetIcon, targetLabelKey } from '../map/targets';
+import { hasPrice, targetIcon, targetLabelKey } from '../map/targets';
 import FiltersPanel from './FiltersPanel';
 import ListingCard from './ListingCard';
 import PagedGrid from './PagedGrid';
@@ -45,7 +45,8 @@ export default function CategoryResults({ selection, onChange, onBack }: Props) 
 
   const title = t(targetLabelKey(target));
   const isRealEstate = target.kind === 'realEstate';
-  const canSortByPrice = isRealEstate && state.currency !== '';
+  // Property needs one currency chosen; a service's price (hotels, villas) is always dollars.
+  const canSortByPrice = isRealEstate ? state.currency !== '' : hasPrice(target);
 
   // Paid placements in context: this type's featured listings (inside the filters) lead the list, taking turns per visit.
   const [seed] = useState(() => Math.floor(Math.random() * 2 ** 32));

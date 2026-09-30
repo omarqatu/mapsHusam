@@ -107,14 +107,23 @@ describe('service registry', () => {
     }
   });
 
-  it('only road barriers and fuel stations have extra editor columns', () => {
+  it('only road barriers, fuel stations, hotels and holiday villas have extra editor columns', () => {
     const extra = SERVICE_REGISTRY.filter((s) => s.editProfile && s.editProfile !== 'standard').map(
       (s) => s.key,
     );
-    expect(extra.sort()).toEqual(['fuel_stations', 'road_barriers']);
+    expect(extra.sort()).toEqual(['fuel_stations', 'hotels', 'road_barriers', 'villas_rent']);
     const fields = (k: string) => POINT_TARGETS.find((t) => t.discriminator === k)!.fields.map((f) => f.name);
     expect(fields('road_barriers')).toEqual(expect.arrayContaining(['stop', 'stop2']));
     expect(fields('fuel_stations')).toEqual(expect.arrayContaining(['diesel', 'banzen95', 'banzen98']));
     expect(fields('plumber')).not.toContain('stop');
+    // hotels and villas: a price and an area, no currency (service_all has no currency column)
+    for (const k of ['hotels', 'villas_rent']) {
+      expect(fields(k)).toEqual(expect.arrayContaining(['price', 'area']));
+      expect(fields(k)).not.toContain('currency');
+      const target = POINT_TARGETS.find((t) => t.discriminator === k)!;
+      expect(target.insertColumns.slice(-2)).toEqual(['price', 'area']); // GeoServer's column order
+      expect(target.updateColumns).toEqual(expect.arrayContaining(['price', 'area']));
+    }
+    expect(fields('plumber')).not.toContain('price');
   });
 });

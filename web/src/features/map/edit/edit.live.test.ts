@@ -5,6 +5,8 @@
 //   cd web && VITE_LIVE_API=http://localhost:3000 VITE_GEOSERVER_DEV_PASSWORD=... npm test -- edit.live
 // Every feature the test creates is deleted again (also when an assertion fails).
 import GeoJSON from 'ol/format/GeoJSON';
+import { authApi } from '@/api/auth';
+import { useAuthStore } from '@/store/authStore';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { fetchWfs } from '@/api/geoserver';
 import { initialValues } from './attributes';
@@ -72,12 +74,15 @@ const asStored = (dx: number, stored: 'MultiPolygon' | 'Polygon') => {
 };
 
 describe.skipIf(!BASE || !PASSWORD)('live GeoServer — editor transport (insert / update / delete)', () => {
-  beforeAll(() => {
+  beforeAll(async () => {
     globalThis.fetch = ((input: RequestInfo | URL, init?: RequestInit) =>
       nativeFetch(
         typeof input === 'string' && input.startsWith('/') ? BASE + input : input,
         init,
       )) as typeof fetch;
+    // The proxy only lets an admin write (X-App-Token, sent by `saveFeature` from the session); the GeoServer login is on top.
+    const { user } = await authApi.login({ phone: '0590000001', password: 'Admin#12345' });
+    useAuthStore.getState().setSession(user);
   });
   afterAll(async () => {
     for (const { target, fid } of created) {
@@ -89,6 +94,7 @@ describe.skipIf(!BASE || !PASSWORD)('live GeoServer — editor transport (insert
         credentials,
       });
     }
+    useAuthStore.setState({ user: null });
     globalThis.fetch = nativeFetch;
   });
 
@@ -147,6 +153,19 @@ describe.skipIf(!BASE || !PASSWORD)('live GeoServer — editor transport (insert
     expect(Number(after.properties.x_coord)).toBeCloseTo(X + 3, 1);
     expect(fid.startsWith('service_all.')).toBe(true);
     expect(await readBack(target, fid, { field: 'name', value: '' })).toBeDefined();
+  });
+
+  it('hotel: price and area are saved and read back; no currency column exists', async () => {
+    const target = serviceTarget('hotels');
+    const { row, after } = await roundTrip(
+      target,
+      { type: 'Point', coordinates: [X + 6, Y - 6] },
+      { name: 'فندق اختبار', phone: '0590000009', price: '120.5', area: '300' },
+      { type: 'Point', coordinates: [X + 8, Y - 6] },
+    );
+    expect(row.properties).toMatchObject({ discriminator: 'hotels', price: 120.5, area: 300 });
+    expect(row.properties).not.toHaveProperty('currency');
+    expect(after.properties).toMatchObject({ price: 120.5, area: 300 }); // the update kept both
   });
 
   it('real-estate point (phone is kept on insert, X / Y in WGS84)', async () => {

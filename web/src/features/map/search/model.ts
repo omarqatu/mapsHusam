@@ -7,9 +7,9 @@ export {
   targetKey,
   targetLabelKey,
   targetToApi,
-  type MapTarget as MapTarget,
+  type MapTarget,
 } from '../targets';
-import type { MapTarget as MapTarget } from '../targets';
+import { hasPrice, type MapTarget } from '../targets';
 
 // --- fields the smart search offers per target (legacy fieldsConfig) -------------------------
 export type FieldType = 'dropdown' | 'number' | 'fixed';
@@ -23,7 +23,7 @@ export interface FieldDef {
 }
 
 const dd = (id: string, labelKey = `search.fields.${id}`): FieldDef => ({ id, labelKey, type: 'dropdown' });
-const num = (id: string): FieldDef => ({ id, labelKey: `search.fields.${id}`, type: 'number' });
+const num = (id: string, labelKey = `search.fields.${id}`): FieldDef => ({ id, labelKey, type: 'number' });
 
 /** Checkpoint statuses for pickers — derived from the one status table in config. */
 export const STOP_OPTIONS = Object.entries(ROAD_BARRIER_STATUS).map(([value, s]) => ({
@@ -63,6 +63,8 @@ export function fieldsFor(t: MapTarget): FieldDef[] {
       ...FUEL_FIELDS.map((f) => fixed(f, `popup.fuel.${f}`, FUEL_OPTIONS)),
     ];
   }
+  // Hotels and holiday villas are priced like property: a price (dollars, no currency choice) and an area.
+  if (hasPrice(t)) return [...base, dd('name'), num('price', 'search.fields.priceUsd'), num('area')];
   return [...base, dd('name')];
 }
 

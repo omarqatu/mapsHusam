@@ -9,7 +9,7 @@ import { useMapUi } from '../store';
 import { copyText } from '@/lib/clipboard';
 import { formatDateTime } from '@/lib/format';
 import { isOpenNow, priceLabel, text, type SelectedFeature } from '../popup/featureModel';
-import { isRoadBarrier, targetIcon } from '../targets';
+import { hasPrice, isRoadBarrier, priceCurrencyDefault, targetIcon } from '../targets';
 import MapSheet from '../panels/MapSheet';
 import { targetLabelKey } from '../targets';
 import { manualStars } from '../extras/featured';
@@ -40,7 +40,8 @@ function ResultRow({
   const typeTitle = t(targetLabelKey(r.target));
   const place = [text(p.location_name) || text(p.location), text(p.village_a)].filter(Boolean).join(' · ');
   const name = text(p.name) || typeTitle;
-  const isRe = r.target.kind === 'realEstate';
+  const priced = hasPrice(r.target);
+  const price = priced ? priceLabel(p, t, i18n.language, priceCurrencyDefault(r.target)) : null;
   const open = isOpenNow(p.auto_status);
   const barrier = isRoadBarrier(r.target);
 
@@ -71,8 +72,8 @@ function ResultRow({
                 {open ? t('popup.openNow') : t('popup.closedNow')}
               </span>
             )}
-            {isRe && priceLabel(p, t, i18n.language) && <span>{priceLabel(p, t, i18n.language)}</span>}
-            {isRe && text(p.area) && (
+            {price && <span>{price}</span>}
+            {priced && text(p.area) && (
               <span>
                 {text(p.area)} {t('map.areaUnit')}
               </span>

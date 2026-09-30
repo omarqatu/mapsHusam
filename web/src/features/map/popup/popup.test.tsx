@@ -233,6 +233,25 @@ describe('FeatureCard', () => {
     expect(screen.getByRole('button', { name: /واتساب|WhatsApp/ })).toBeInTheDocument();
   });
 
+  it('hotel: price in dollars (no currency column) and area; a plumber shows neither', async () => {
+    const hotel = wrap({
+      kind: { kind: 'service', discriminator: 'hotels' },
+      id: '4',
+      coordinate: [1, 2],
+      props: { name: 'Grand', price: 120, area: 300, auto_status: 0, phone: '059' },
+    });
+    expect(await screen.findByText(/120 (USD|\$|دولار)/)).toBeInTheDocument();
+    expect(screen.getByText(/300 (م²|m²)/)).toBeInTheDocument();
+    hotel.unmount();
+    wrap({
+      kind: { kind: 'service', discriminator: 'plumber' },
+      id: '5',
+      coordinate: [1, 2],
+      props: { name: 'Plumber', price: 120, area: 300, auto_status: 0, phone: '059' },
+    });
+    expect(screen.queryByText(/300 (م²|m²)/)).toBeNull();
+  });
+
   it('road barrier: two direction tiles, no contact buttons', () => {
     wrap({
       kind: { kind: 'service', discriminator: 'road_barriers' },

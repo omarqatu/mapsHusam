@@ -271,11 +271,19 @@ export function locationShareLink(
   return u.toString();
 }
 
-/** "50,000 USD" for real-estate rows, null when there is no positive price. */
-export function priceLabel(props: Props, t: (key: string) => string, language: string): string | null {
+/**
+ * "50,000 USD" for a row that has a price, null when there is no positive price. `defaultCurrency` is used when the row
+ * names none (a service's price has no currency column: it is dollars, see `priceCurrencyDefault`).
+ */
+export function priceLabel(
+  props: Props,
+  t: (key: string) => string,
+  language: string,
+  defaultCurrency?: string,
+): string | null {
   const price = Number(props.price);
   if (!Number.isFinite(price) || price <= 0) return null;
-  const currency = CURRENCY_KEYS[text(props.currency)];
+  const currency = CURRENCY_KEYS[text(props.currency) || defaultCurrency || ''];
   return `${formatNumber(price, language)} ${currency ? t(currency) : ''}`.trim();
 }
 

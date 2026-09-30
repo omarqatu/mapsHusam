@@ -983,7 +983,25 @@ Server parts came in with the merge. The legacy UI changes are not in React yet:
   select + bold, a new paragraph, a paste carrying `<img onerror>` / `<script>` / `javascript:` → saved without them,
   nothing ran on the admin or the visitor page, the visitor sees the edit.
 - The admin menu of the new header (other work in progress) will need icons for `/admin/texts` and `/admin/visibility`.
-- ⬜ Price / area / currency for `hotels` and `villas_rent` (service_all): edit fields, popup price, search filters.
+- ✅ Price and area for `hotels` and `villas_rent` (`service_all.price` / `.area`, added by `ensureServicePropertyColumns`):
+  - **One rule:** registry `editProfile: 'propertyService'` on the two types; `hasPrice(target)` (`map/targets.ts`) is "property or
+    priced like property" and every place that showed a price for property asks it (map card, map result list, /search
+    cards, featured cards); `priceCurrencyDefault` = USD for a service.
+  - **Editor:** the two types get a price and an area (`edit/schema.ts`, `insertColumns` end with `price, area` = GeoServer's
+    column order, as in his `servicesSchemaOrder`). **Dropped: the currency box.** His form offered one but the column does not
+    exist and the value was never saved (his own comment says so); the price label says "السعر ($)" instead and the price is
+    shown in dollars everywhere. If a real currency is wanted it needs a column — see Backend asks.
+  - **Search (map smart search and /search):** price ($) and area filters for the two types; the currency box only for property;
+    the price sort is offered for them without picking a currency.
+  - **Verified:** unit tests (`propertyServices.test.ts`, registry, popup); real GeoServer (`edit.live.test.ts`: a hotel saved
+    with price 120.5 / area 300, read back through WFS, kept after an update, no `currency` property); browser: `/search?type=hotels`
+    shows the filters and "120 دولار · 300 م²" on the card (dev data put back).
+  - **Deploy step (production):** GeoServer keeps a table's columns from when the layer was published, so after the server has
+    created `price` / `area` GeoServer must re-read `service_all` or the map will not return them and saving them fails:
+    GeoServer admin → *Layers* → `service_all` → *Reload feature type* (or *Server Status* → *Reload*; REST: `POST /rest/reset`).
+    Dev: `dev/geoserver-setup.sh` now does the reset. Check: WFS `DescribeFeatureType` for `services:service_all` lists `price` and `area`.
+  - **Also fixed:** `edit.live.test.ts` did not log in as an admin, so the proxy lock (`X-App-Token`, "Server changes") would refuse
+    its writes; it logs in now.
 - ⬜ Featured: before/after via `details_link_1/2 notempty` query; hotel / villa cards with property details and live rating;
   empty sections hidden.
 - ⬜ Smaller: road-barrier icon = the worse of `stop` / `stop2`; edit tool stays active after a failed save; weather widget off
@@ -1178,6 +1196,9 @@ Log each change here: **what · why · how to verify · commit**.
 - Results are filtered client-side for nearby search (whole layer fetched, up to 2000 rows) — a server-side distance filter
   would scale better.
 - CSP `connectSrc` allows any `https:`/`ws:`/`wss:` — tighten to own origin once the app is on React.
+- **Hotels / villas price currency:** `service_all` has `price` and `area` but no currency column, so a service's price is shown as
+  dollars (legacy showed a currency box that saved nothing). Add a `currency` column (and expose it in GeoServer) if prices in
+  shekels / dinars are wanted; the editor and the filters already know how to handle a currency for property.
 - **Extras (item 10):** `/api/platform-stats` calls every row of `map_service_stats` a "visit" — those rows are events (map clicks,
   searches, contact clicks; `source_page` only distinguishes `quick_search`), so "visits" over-counts a busy user; and
   `featuresCount` is labelled "service providers" but counts every real-estate + service row (also inactive ones). Decide the

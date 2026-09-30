@@ -190,7 +190,7 @@ export default function SmartTab() {
               />
             )}
           </FormField>
-          {field.id === 'price' && (
+          {field.id === 'price' && target.kind === 'realEstate' && (
             <FormField label={t('search.currency')} name="smart-currency">
               <SelectInput
                 id="smart-currency"

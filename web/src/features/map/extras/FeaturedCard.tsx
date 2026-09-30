@@ -16,7 +16,7 @@ import {
 import RatingsBlock from '../popup/RatingsBlock';
 import { formatDistance } from '../search/nearby';
 import ResultContact from '../search/ResultContact';
-import { isFuelStation, isRoadBarrier, targetIcon, targetLabelKey } from '../targets';
+import { hasPrice, isFuelStation, isRoadBarrier, priceCurrencyDefault, targetIcon, targetLabelKey } from '../targets';
 import { BarrierBadges, FuelBadges } from './StatusBadges';
 import { manualStars, mediaForMode, sideMedia, type FeaturedEntry, type FeaturedMode } from './featured';
 import { FEATURED_FRAME } from './featuredStyle';
@@ -101,8 +101,9 @@ export default function FeaturedCard({ entry, mode, badge, note, customerRatings
     .join(' · ');
   const hasStatus = !isBarrier && text(p.auto_status) !== '';
   const open = isOpenNow(p.auto_status);
-  const price = priceLabel(p, t, i18n.language);
-  const area = Number(p.area) > 0 ? text(p.area) : '';
+  const priced = hasPrice(r.target);
+  const price = priced ? priceLabel(p, t, i18n.language, priceCurrencyDefault(r.target)) : null;
+  const area = priced && Number(p.area) > 0 ? text(p.area) : '';
   const stars = ratings?.avg ?? manualStars(r.rating);
   const media = mode === 'beforeAfter' ? null : labelMedia(mediaForMode(p, mode), t);
   const showCustomerRatings = !!customerRatings && r.target.kind === 'service' && !!r.id;

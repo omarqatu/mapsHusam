@@ -1,6 +1,6 @@
 import type { Workspace } from '@/api/search';
 import { REAL_ESTATE_LAYERS, SERVICE_TYPE_BY_KEY, SERVICE_TYPES, type RealEstateLayerKey } from './config';
-import { serviceLabelKey } from './registry';
+import { SERVICE_BY_KEY, serviceLabelKey } from './registry';
 
 /**
  * What a map feature / search is about: one real-estate layer, or one service type (a `discriminator` of service_all).
@@ -36,6 +36,14 @@ export function targetToApi(t: MapTarget): { layer: string; workspace: Workspace
 }
 
 export const isTarget = (t: MapTarget, key: string) => targetKey(t) === key;
+
+/** Rows of this type carry a price and an area: property, and the services priced like it (hotels, holiday villas). */
+export const hasPrice = (t: MaybeTarget) =>
+  t?.kind === 'realEstate' ||
+  (t?.kind === 'service' && SERVICE_BY_KEY.get(t.discriminator)?.editProfile === 'propertyService');
+
+/** Property prices come with a currency (USD / ILS / JOD); a service's price is always dollars (no currency column). */
+export const priceCurrencyDefault = (t: MaybeTarget) => (t?.kind === 'service' ? 'USD' : undefined);
 
 type MaybeTarget = MapTarget | { kind: 'location' } | null | undefined;
 export const isRoadBarrier = (t: MaybeTarget) => t?.kind === 'service' && t.discriminator === 'road_barriers';

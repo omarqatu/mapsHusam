@@ -259,7 +259,7 @@ const realEstate = (id: 'rent' | 'sale', typeName: string): EditTarget => ({
   coordColumns: 'realEstate',
 });
 
-/** The extra columns of each registry `editProfile` (road barriers and fuel stations carry status columns). */
+/** The extra columns of each registry `editProfile` (road barriers and fuel stations carry status columns, hotels and villas a price and an area). */
 const PROFILE_FIELDS: Readonly<Record<EditProfile, readonly FieldDef[]>> = {
   standard: [],
   roadBarrier: [
@@ -271,6 +271,9 @@ const PROFILE_FIELDS: Readonly<Record<EditProfile, readonly FieldDef[]>> = {
     f('banzen95', 'select', { options: FUEL_STATES }),
     f('banzen98', 'select', { options: FUEL_STATES }),
   ],
+  // Hotels and villas: `service_all` has `price` and `area` but no currency column, so the price is in dollars (the
+  // legacy form offered a currency box for these that was never saved).
+  propertyService: [PRICE, AREA],
 };
 
 /** The edit target of one service type; a discriminator the registry does not know gets the common fields only. */
