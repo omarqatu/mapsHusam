@@ -20,23 +20,37 @@ export interface MarketRates {
   updatedAt: string;
 }
 
+/**
+ * How often the live prices (world market, fuel) are read again while a page is open: every 7 minutes, and at once when the tab
+ * comes back after that long. The server's own cache lasts a little less (6.5 min), so every read reaches a fresh fetch.
+ */
+export const LIVE_REFRESH_MS = 7 * 60_000;
+
 export const marketApi = {
-  rates: () => api.get<{ success: boolean; data?: MarketRates }>('/api/market-rates'),
+  /** `fresh`: ask the server to read the sources now instead of answering from its cache (it allows that once a minute). */
+  rates: (fresh = false) =>
+    api.get<{ success: boolean; data?: MarketRates }>(
+      '/api/market-rates',
+      fresh ? { fresh: '1' } : undefined,
+    ),
 };
 
 export const marketKeys = { rates: ['market-rates'] as const };
+
+export async function readMarketRates(fresh = false) {
+  const res = await marketApi.rates(fresh);
+  if (!res.success || !res.data) throw new Error('market-rates');
+  return res.data;
+}
 
 /** World rates for the landing strip; a failure just hides the prices (the admin's own price cards are unaffected). */
 export function useMarketRates() {
   return useQuery({
     queryKey: marketKeys.rates,
-    queryFn: async () => {
-      const res = await marketApi.rates();
-      if (!res.success || !res.data) throw new Error('market-rates');
-      return res.data;
-    },
-    staleTime: 10 * 60_000,
-    refetchInterval: 10 * 60_000,
+    queryFn: () => readMarketRates(),
+    staleTime: LIVE_REFRESH_MS,
+    refetchInterval: LIVE_REFRESH_MS,
+    refetchOnWindowFocus: true,
     retry: 1,
   });
 }

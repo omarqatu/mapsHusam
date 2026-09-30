@@ -1,5 +1,6 @@
 import type { CityPoint } from '@/api/external';
 import type { WidgetGroupKey, WidgetItem } from '@/api/adminWidgets';
+import type { FuelPrices } from '@/api/fuel';
 import type { MarketRates } from '@/api/market';
 import type { WidgetsData } from '@/api/widgets';
 import { toTextItem } from '@/features/admin-widgets/model';
@@ -455,14 +456,22 @@ export interface MarketLabels {
   silver: string;
   perGram: string;
   perOunce: string;
+  /** Fuel row names by id (`fuel-95` …), and the two units. */
+  fuel: Record<string, string>;
+  perLiter: string;
+  perCylinder: string;
 }
 
 /**
  * The currency and gold groups with the world market's numbers instead of what an admin once typed (those were the only
  * hand-kept prices that the outside world moves every day). A part whose source is down keeps the admin's rows; the group's
- * "last update" becomes the moment our server fetched. Fuel, fares and events stay the admin's: no public source has them.
+ * "last update" is the moment the source itself published (the rates once a day, gold live). Fuel, fares and events stay the admin's: no public source has them.
  */
-export function applyMarket(data: WidgetsData | undefined, market: MarketRates | undefined, l: MarketLabels): WidgetsData | undefined {
+export function applyMarket(
+  data: WidgetsData | undefined,
+  market: MarketRates | undefined,
+  l: MarketLabels,
+): WidgetsData | undefined {
   if (!data || !market) return data;
   const groups = { ...data.groups };
   const at = market.updatedAt;
@@ -470,7 +479,7 @@ export function applyMarket(data: WidgetsData | undefined, market: MarketRates |
   if (market.rates) {
     const { USD_ILS, EUR_ILS, JOD_ILS } = market.rates;
     groups.currency = {
-      updated_at: at,
+      updated_at: market.rates.asOf ?? at,
       items: [
         { id: 'live-usd', code: 'USD/ILS', label: l.usd, value: fixed(USD_ILS, 2) },
         { id: 'live-eur', code: 'EUR/ILS', label: l.eur, value: fixed(EUR_ILS, 2) },
@@ -487,9 +496,47 @@ export function applyMarket(data: WidgetsData | undefined, market: MarketRates |
         { id: 'live-gold-21', label: l.gold21, value: fixed(g.ilsPerGram21, 0), unit: l.perGram },
         { id: 'live-gold-18', label: l.gold18, value: fixed(g.ilsPerGram18, 0), unit: l.perGram },
       );
-    rows.push({ id: 'live-gold-ounce', label: l.goldOunce, value: fixed(g.usdPerOunce, 0), unit: l.perOunce });
-    if (market.silver) rows.push({ id: 'live-silver', label: l.silver, value: fixed(market.silver.usdPerOunce, 2), unit: l.perOunce });
-    groups.gold = { updated_at: at, items: rows };
+    rows.push({
+      id: 'live-gold-ounce',
+      label: l.goldOunce,
+      value: fixed(g.usdPerOunce, 0),
+      unit: l.perOunce,
+    });
+    if (market.silver)
+      rows.push({
+        id: 'live-silver',
+        label: l.silver,
+        value: fixed(market.silver.usdPerOunce, 2),
+        unit: l.perOunce,
+      });
+    groups.gold = { updated_at: g.asOf ?? at, items: rows };
   }
   return { ...data, groups };
+}
+
+/**
+ * The fuel group with the prices read from the source: its rows first (same ids as the admin's, so they replace them), then the
+ * admin's rows the source does not have (a 2.5 kg cylinder, gas delivered to buildings). Without prices the admin's group is untouched.
+ */
+export function applyFuel(
+  data: WidgetsData | undefined,
+  fuel: FuelPrices | undefined,
+  l: MarketLabels,
+): WidgetsData | undefined {
+  if (!data || !fuel || fuel.items.length === 0) return data;
+  const live: WidgetItem[] = fuel.items.map((p) => ({
+    id: p.key,
+    label: l.fuel[p.key] ?? p.key,
+    value: p.value.toFixed(2).replace(/\.00$/, ''),
+    unit: p.unit === 'liter' ? l.perLiter : l.perCylinder,
+  }));
+  const taken = new Set(live.map((r) => r.id));
+  const kept = groupItems(data, 'fuel').filter((r) => !taken.has(r.id ?? ''));
+  return {
+    ...data,
+    groups: {
+      ...data.groups,
+      fuel: { updated_at: fuel.sourceUpdatedOn ?? fuel.fetchedAt, items: [...live, ...kept] },
+    },
+  };
 }

@@ -1,10 +1,12 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useIsFetching, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
-import { useMarketRates } from '@/api/market';
+import { fuelKeys, readFuelPrices, useFuelPrices } from '@/api/fuel';
+import { marketKeys, readMarketRates, useMarketRates } from '@/api/market';
 import { externalApi } from '@/api/external';
 import { WIDGETS_REFRESH_MS, widgetsApi, widgetsKeys, type WidgetsData } from '@/api/widgets';
 import {
+  applyFuel,
   applyMarket,
   aladhanDate,
   CITIES,
@@ -32,10 +34,11 @@ export const externalKeys = {
 export function useWidgetsData() {
   const { t } = useTranslation();
   const market = useMarketRates().data;
-  // Currency and gold come from the world market (see applyMarket); everything else is what the admin saved.
+  const fuel = useFuelPrices().data;
+  // Currency, gold and fuel come from live sources (see applyMarket / applyFuel); the rest is what the admin saved.
   const select = useCallback(
-    (d: WidgetsData) =>
-      applyMarket(d, market, {
+    (d: WidgetsData) => {
+      const labels = {
         usd: t('widgets.live.usd'),
         eur: t('widgets.live.eur'),
         jod: t('widgets.live.jod'),
@@ -46,8 +49,21 @@ export function useWidgetsData() {
         silver: t('widgets.live.silver'),
         perGram: t('widgets.live.perGram'),
         perOunce: t('widgets.live.perOunce'),
-      }) as WidgetsData,
-    [market, t],
+        perLiter: t('widgets.live.perLiter'),
+        perCylinder: t('widgets.live.perCylinder'),
+        fuel: {
+          'fuel-95': t('widgets.live.fuel95'),
+          'fuel-98': t('widgets.live.fuel98'),
+          'fuel-diesel': t('widgets.live.fuelDiesel'),
+          kas: t('widgets.live.kas'),
+          'fuel-gas-small5': t('widgets.live.gas5'),
+          'fuel-gas-cylinder': t('widgets.live.gas12'),
+          'fuel-gas-large': t('widgets.live.gas48'),
+        },
+      };
+      return applyFuel(applyMarket(d, market, labels), fuel, labels) as WidgetsData;
+    },
+    [market, fuel, t],
   );
   return useQuery({
     queryKey: widgetsKeys.data,
@@ -108,14 +124,24 @@ export function useNow(ms = 60_000): Date {
 }
 
 const REFRESH_ROOTS = [widgetsKeys.data, ['status-rows'], externalKeys.all] as const;
+/** The live prices are read from their sources by the server; "refresh all" asks it to do so now, so they are fetched, not just invalidated. */
+const LIVE_PRICE_ROOTS = [marketKeys.rates, fuelKeys.prices] as const;
 
 /** "Refresh all" (legacy button): refetch every widget query that is on screen; `busy` while any of them loads. */
 export function useRefreshAll() {
   const qc = useQueryClient();
   const busy =
     useIsFetching({
-      predicate: (q) => REFRESH_ROOTS.some((root) => root.every((part, i) => q.queryKey[i] === part)),
+      predicate: (q) =>
+        [...REFRESH_ROOTS, ...LIVE_PRICE_ROOTS].some((root) =>
+          root.every((part, i) => q.queryKey[i] === part),
+        ),
     }) > 0;
-  const refresh = () => void Promise.all(REFRESH_ROOTS.map((queryKey) => qc.invalidateQueries({ queryKey })));
+  const refresh = () =>
+    void Promise.allSettled([
+      ...REFRESH_ROOTS.map((queryKey) => qc.invalidateQueries({ queryKey })),
+      qc.fetchQuery({ queryKey: marketKeys.rates, queryFn: () => readMarketRates(true), staleTime: 0 }),
+      qc.fetchQuery({ queryKey: fuelKeys.prices, queryFn: () => readFuelPrices(true), staleTime: 0 }),
+    ]);
   return { refresh, busy };
 }

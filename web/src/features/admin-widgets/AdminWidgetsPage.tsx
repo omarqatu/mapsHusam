@@ -113,8 +113,12 @@ export default function AdminWidgetsPage() {
                   />
                 ) : (
                   <>
-                    {(id === 'currency' || id === 'gold') && (
-                      <AlertMessage type="info" message={t('adminWidgets.liveNote')} className="mb-3" />
+                    {(id === 'currency' || id === 'gold' || id === 'fuel') && (
+                      <AlertMessage
+                        type="info"
+                        message={t(id === 'fuel' ? 'adminWidgets.liveNoteFuel' : 'adminWidgets.liveNote')}
+                        className="mb-3"
+                      />
                     )}
                     <GroupPanel
                       groupKey={id}

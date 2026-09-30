@@ -7,6 +7,7 @@ import { io, type Socket } from 'socket.io-client';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { adminWidgetsApi } from '@/api/adminWidgets';
 import { authApi } from '@/api/auth';
+import { fuelApi } from '@/api/fuel';
 import { marketApi } from '@/api/market';
 import { platformApi } from '@/api/platform';
 import { searchApi } from '@/api/search';
@@ -65,6 +66,20 @@ describe.skipIf(!BASE)('landing live data against the live backend', () => {
       expect(Number.isNaN(Date.parse(d.gold.asOf ?? ''))).toBe(false);
     }
     expect(Number.isNaN(Date.parse(d.updatedAt))).toBe(false);
+  });
+
+  // The server reads thefuelprice.com: a 502 means it is unreachable from here (offline) or the page changed shape.
+  it('serves the fuel prices the source publishes, all in a plausible range (or a clean 502)', async () => {
+    const res = await fuelApi.prices().catch((e: { status?: number }) => e);
+    if ('status' in res && res.status === 502) return;
+    const d = (res as Awaited<ReturnType<typeof fuelApi.prices>>).data!;
+    const by = Object.fromEntries(d.items.map((i) => [i.key, i]));
+    expect(d.items.length).toBeGreaterThanOrEqual(4);
+    for (const key of ['fuel-95', 'fuel-98', 'fuel-diesel']) if (by[key]) expect(by[key].value).toBeGreaterThan(3);
+    // petrol 98 costs more than 95; a 48 kg cylinder more than a 12 kg one
+    if (by['fuel-95'] && by['fuel-98']) expect(by['fuel-98'].value).toBeGreaterThan(by['fuel-95'].value);
+    if (by['fuel-gas-cylinder'] && by['fuel-gas-large']) expect(by['fuel-gas-large'].value).toBeGreaterThan(by['fuel-gas-cylinder'].value);
+    expect(Number.isNaN(Date.parse(d.fetchedAt))).toBe(false);
   });
 
   it('pushes widgets_updated and status_updated to a logged-in socket when an admin saves', async () => {

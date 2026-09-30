@@ -11,6 +11,7 @@ import {
   formatHijri,
   fuelKind,
   groupItems,
+  applyFuel,
   applyMarket,
   headlineTemp,
   weatherLabel,
@@ -279,6 +280,8 @@ describe('applyMarket', () => {
   const labels = {
     usd: 'USD', eur: 'EUR', jod: 'JOD', gold24: 'G24', gold21: 'G21', gold18: 'G18',
     goldOunce: 'OZ', silver: 'AG', perGram: '/g', perOunce: '/oz',
+    perLiter: '/l', perCylinder: '/cyl',
+    fuel: { 'fuel-95': 'P95', 'fuel-diesel': 'DSL', 'fuel-gas-large': 'G48' } as Record<string, string>,
   };
   const data = {
     success: true,
@@ -290,8 +293,8 @@ describe('applyMarket', () => {
     fuel_status_updated_at: null,
   };
   const market = {
-    rates: { USD_ILS: 3.07, EUR_ILS: 3.49, JOD_ILS: 4.33, asOf: null },
-    gold: { usdPerOunce: 4185, ilsPerGram24: 413, ilsPerGram21: 361.4, ilsPerGram18: 309.8, asOf: null },
+    rates: { USD_ILS: 3.07, EUR_ILS: 3.49, JOD_ILS: 4.33, asOf: '2026-09-29T00:02:31Z' },
+    gold: { usdPerOunce: 4185, ilsPerGram24: 413, ilsPerGram21: 361.4, ilsPerGram18: 309.8, asOf: '2026-09-29T23:47:41Z' },
     silver: { usdPerOunce: 61.69, asOf: null },
     updatedAt: '2026-09-30T00:00:00Z',
   };
@@ -306,7 +309,8 @@ describe('applyMarket', () => {
     expect((out.groups!.gold!.items as { id: string; value: string }[]).map((r) => [r.id, r.value])).toEqual([
       ['live-gold-24', '413'], ['live-gold-21', '361'], ['live-gold-18', '310'], ['live-gold-ounce', '4185'], ['live-silver', '61.69'],
     ]);
-    expect(out.groups!.currency!.updated_at).toBe(market.updatedAt);
+    expect(out.groups!.currency!.updated_at).toBe('2026-09-29T00:02:31Z'); // when the source published, not when we fetched
+    expect(out.groups!.gold!.updated_at).toBe('2026-09-29T23:47:41Z');
   });
 
   it('leaves the admin\'s fuel group alone, and everything alone when the market is down', () => {
@@ -315,5 +319,55 @@ describe('applyMarket', () => {
     const noGold = applyMarket(data, { ...market, gold: null, silver: null }, labels)!;
     expect(noGold.groups!.gold).toBeUndefined();
     expect(noGold.groups!.currency!.items).toHaveLength(3);
+  });
+});
+
+describe('applyFuel', () => {
+  const labels = {
+    usd: '', eur: '', jod: '', gold24: '', gold21: '', gold18: '', goldOunce: '', silver: '', perGram: '', perOunce: '',
+    perLiter: '/l', perCylinder: '/cyl',
+    fuel: { 'fuel-95': 'P95', 'fuel-diesel': 'DSL', 'fuel-gas-large': 'G48' } as Record<string, string>,
+  };
+  const data = {
+    success: true,
+    groups: {
+      fuel: {
+        items: [
+          { id: 'fuel-95', label: 'old 95', value: '7.99', unit: 'x' },
+          { id: 'fuel-gas-small2.5', label: 'gas 2.5', value: '18', unit: 'x' },
+        ],
+        updated_at: '2020-01-01T00:00:00Z',
+      },
+    },
+    road_status_updated_at: null,
+    fuel_status_updated_at: null,
+  };
+  const fuel = {
+    items: [
+      { key: 'fuel-95', value: 8.15, previous: 7.99, unit: 'liter' as const, effectiveFrom: '2026-09-01' },
+      { key: 'fuel-diesel', value: 8.39, previous: 8.56, unit: 'liter' as const, effectiveFrom: '2026-09-01' },
+      { key: 'fuel-gas-large', value: 340, previous: 340, unit: 'cylinder' as const, effectiveFrom: '2026-09-01' },
+    ],
+    sourceUpdatedOn: '2026-09-04',
+    source: 'https://www.thefuelprice.com/Fps/ar',
+    fetchedAt: '2026-09-30T00:00:00Z',
+  };
+
+  it('puts the source\'s rows first, replacing the admin\'s by id, and keeps the admin rows the source lacks', () => {
+    const group = applyFuel(data, fuel, labels)!.groups!.fuel!;
+    const out = { ...group, items: group.items as { id: string; label: string; value: string; unit: string; source?: string }[] };
+    expect(out.items.map((r) => [r.id, r.value, r.unit])).toEqual([
+      ['fuel-95', '8.15', '/l'],
+      ['fuel-diesel', '8.39', '/l'],
+      ['fuel-gas-large', '340', '/cyl'],
+      ['fuel-gas-small2.5', '18', 'x'],
+    ]);
+    expect(out.items[0].label).toBe('P95');
+    expect(out.updated_at).toBe('2026-09-04'); // the date the source says it updated, not when we read it
+  });
+
+  it('changes nothing without prices', () => {
+    expect(applyFuel(data, undefined, labels)).toBe(data);
+    expect(applyFuel(data, { ...fuel, items: [] }, labels)).toBe(data);
   });
 });

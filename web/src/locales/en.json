@@ -1384,7 +1384,8 @@
       "orderSavedFuel": "The station order was saved.",
       "orderFailed": "Could not save the order."
     },
-    "liveNote": "Currency and gold prices are shown to visitors automatically from the world market, refreshed every 10 minutes. What you enter here is used only when the source is unreachable."
+    "liveNote": "Currency and gold prices are shown to visitors automatically from the world market, refreshed every 7 minutes. What you enter here is used only when the source is unreachable.",
+    "liveNoteFuel": "Fuel prices (gasoline, diesel, kerosene and 5 / 12 / 48 kg gas) are read automatically from TheFuelPrice.com every 7 minutes; no need to type them. Add here only what the source does not cover (a 2.5 kg cylinder, gas delivered to buildings); the other rows are used only when the source is unreachable."
   },
   "info": {
     "title": "Information and help"
@@ -1500,7 +1501,16 @@
       "goldOunce": "Gold ounce (world)",
       "silver": "Silver ounce (world)",
       "perGram": "ILS/gram",
-      "perOunce": "USD/ounce"
+      "perOunce": "USD/ounce",
+      "perLiter": "ILS/litre",
+      "perCylinder": "ILS/cylinder",
+      "fuel95": "Gasoline 95",
+      "fuel98": "Gasoline 98",
+      "fuelDiesel": "Diesel",
+      "kas": "Kerosene",
+      "gas5": "Gas 5 kg",
+      "gas12": "Gas 12 kg",
+      "gas48": "Gas 48 kg"
     }
   },
   "home": {
