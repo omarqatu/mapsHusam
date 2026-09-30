@@ -431,6 +431,13 @@ body.mobile-tabs-portrait #map-header {
 body.mobile-tabs-portrait .quick-search-wrapper {
     top: 55px !important;
 }
+body.mobile-tabs-portrait .quick-search-wrapper:not(.has-overflow) {
+    width: max-content !important;
+    max-width: 92vw !important;
+}
+body.mobile-tabs-portrait .quick-search-wrapper.has-overflow {
+    width: 92% !important;
+}
 body.mobile-tabs-portrait #map-controls {
     top: 120px !important;
 }
@@ -445,6 +452,10 @@ body.mobile-tabs-landscape .quick-search-wrapper {
     left: calc((100vw - var(--mt-size)) / 2) !important;
     width: calc((100vw - var(--mt-size)) * 0.9) !important;
     max-width: none !important;
+}
+body.mobile-tabs-landscape .quick-search-wrapper:not(.has-overflow) {
+    width: max-content !important;
+    max-width: calc((100vw - var(--mt-size)) * 0.9) !important;
 }
 body.mobile-tabs-landscape #map-controls {
     left: calc((100vw - var(--mt-size)) / 2) !important;

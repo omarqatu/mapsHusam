@@ -186,8 +186,10 @@
         const description = props.des || props.description || '';
         const infoRow = (icon, title, value) => value !== undefined && value !== null && String(value).trim() !== ''
             ? `<div class="featured-services-card-detail"><b>${icon} ${title}:</b> ${escapeHtml(value)}</div>` : '';
-        const currency = ({ USD: 'دولار', ILS: 'شيقل', JOD: 'دينار' })[props.currency] || '';
-        const propertyDetails = isRealEstate ? [
+        const currencyValue = window.getCaseInsensitiveProp?.(props, 'currency') ?? props.currency;
+        const currency = window.currencyDisplayLabel ? window.currencyDisplayLabel(currencyValue) : String(currencyValue || '');
+        const isPropertyService = ['villas_rent', 'hotels'].includes(String(layer).toLowerCase());
+        const propertyDetails = (isRealEstate || isPropertyService) ? [
             infoRow('💰', 'السعر', props.price !== undefined && props.price !== '' ? `${Number(props.price).toLocaleString()} ${currency}` : ''),
             infoRow('📐', 'المساحة', props.area ? `${props.area} م²` : '')
         ].join('') : '';
@@ -210,11 +212,17 @@
         const status = props.auto_status !== undefined && props.auto_status !== null
             ? `<div class="featured-services-card-meta"><i class="fas fa-circle" style="color:${parseInt(props.auto_status, 10) === 0 ? '#20a05a' : '#d64545'};"></i> ${parseInt(props.auto_status, 10) === 0 ? 'متاح الآن' : 'مغلق حالياً'}${props.work_hours ? ` · ${escapeHtml(props.work_hours)}` : ''}</div>`
             : '';
+        const ratingFeatureId = props.id !== undefined && props.id !== null ? String(props.id) : '';
+        const supportsServiceRatings = !isRealEstate && !['road_barriers', 'fuel_stations'].includes(String(layer).toLowerCase());
+        const actualRating = supportsServiceRatings && ratingFeatureId
+            ? `<div class="featured-services-card-meta featured-service-rating" data-service-layer="${escapeHtml(layer)}" data-feature-id="${escapeHtml(ratingFeatureId)}"><i class="fas fa-star" style="color:#f5b301"></i> جارٍ تحميل التقييم...</div>`
+            : '';
         return `<div class="featured-services-card-content">
             <span class="featured-services-card-badge"><i class="fas fa-star"></i> ${escapeHtml(label)} · ${escapeHtml(layerLabel(layer))}${featureId !== '' ? ` <span class="featured-services-card-id">(رقم: ${escapeHtml(featureId)})</span>` : ''}</span>
+            ${actualRating}
+            ${status}
             <h5 class="featured-services-card-title">${escapeHtml(name)}</h5>
             ${location ? `<div class="featured-services-card-meta"><i class="fas fa-map-marker-alt"></i> ${escapeHtml(location)}</div>` : ''}
-            ${status}
             ${infoRow('🏘️', 'المدينة / القرية', props.village_a)}
             ${infoRow('🌍', 'المحافظة', props.gov_a)}
             ${propertyDetails}
@@ -222,6 +230,67 @@
             ${barrierDetails}
             ${description ? `<div class="featured-services-card-description">${escapeHtml(description)}</div>` : ''}
         </div>`;
+    }
+
+    async function loadPropertyServiceRatings(root) {
+        if (!root) return;
+        const widgets = [...root.querySelectorAll('.featured-service-rating[data-service-layer][data-feature-id]')];
+        await Promise.all(widgets.map(async widget => {
+            try {
+                const params = new URLSearchParams({
+                    service_layer: widget.dataset.serviceLayer,
+                    feature_id: widget.dataset.featureId
+                });
+                const response = await fetch(`${API_ROOT}api/service-ratings?${params}`);
+                if (!response.ok) throw new Error('تعذر جلب التقييم');
+                const data = await response.json();
+                const totalRatings = Number(data?.totalRatings) || 0;
+                if (!data?.success || totalRatings <= 0) {
+                    widget.innerHTML = '<div style="padding:8px 10px; margin:6px 0; border:1px solid #eee; border-radius:7px; color:#888; background:#fafafa;"><i class="fas fa-star" style="color:#bbb"></i> لا توجد تقييمات بعد</div>';
+                    return;
+                }
+                const average = Number(data.averageRating) || 0;
+                const rounded = Math.max(0, Math.min(5, Math.round(average)));
+                const stars = '★'.repeat(rounded) + '☆'.repeat(5 - rounded);
+                widget.innerHTML = `<div style="padding:8px 10px; margin:6px 0; border:1px solid #ffe082; border-radius:7px; background:#fff9e6;">
+                    <div style="display:flex; align-items:center; gap:7px; color:#333;"><span style="color:#ffc107; font-size:16px;">${stars}</span><b>${average.toFixed(1)}</b><span style="color:#666;">(${Number(data.totalRatings)} تقييم)</span></div>
+                </div>`;
+                const commentsButton = document.createElement('button');
+                commentsButton.type = 'button';
+                commentsButton.textContent = `💬 عرض التعليقات (${Number(data.totalRatings)})`;
+                commentsButton.style.cssText = 'margin-top:5px; padding:5px 9px; background:#1a73e8; color:#fff; border:0; border-radius:5px; cursor:pointer; font-size:11px;';
+                const commentsPanel = document.createElement('div');
+                commentsPanel.style.cssText = 'display:none; margin-top:7px; max-height:170px; overflow:auto; border-top:1px solid #eee; padding-top:7px;';
+                (data.ratings || []).forEach(rating => {
+                    const row = document.createElement('div');
+                    row.style.cssText = 'padding:6px; margin-bottom:5px; border-radius:5px; background:#f8f9fa; font-size:11px;';
+                    const header = document.createElement('div');
+                    header.style.cssText = 'display:flex; justify-content:space-between; gap:8px; font-weight:bold;';
+                    const userName = document.createElement('span');
+                    userName.textContent = rating.user_name || 'مستخدم';
+                    const userStars = document.createElement('span');
+                    userStars.style.color = '#ffc107';
+                    userStars.textContent = '★'.repeat(Math.max(0, Math.min(5, Number(rating.rating) || 0)));
+                    header.append(userName, userStars);
+                    row.appendChild(header);
+                    if (rating.comment) {
+                        const comment = document.createElement('div');
+                        comment.style.cssText = 'margin-top:4px; color:#555; white-space:pre-wrap;';
+                        comment.textContent = rating.comment;
+                        row.appendChild(comment);
+                    }
+                    commentsPanel.appendChild(row);
+                });
+                commentsButton.onclick = () => {
+                    const opening = commentsPanel.style.display === 'none';
+                    commentsPanel.style.display = opening ? 'block' : 'none';
+                    commentsButton.textContent = `${opening ? 'إخفاء' : '💬 عرض'} التعليقات (${Number(data.totalRatings)})`;
+                };
+                widget.append(commentsButton, commentsPanel);
+            } catch (_) {
+                widget.innerHTML = '<div style="padding:8px 10px; margin:6px 0; border:1px solid #eee; border-radius:7px; color:#888; background:#fafafa;"><i class="fas fa-star" style="color:#bbb"></i> لا توجد تقييمات بعد</div>';
+            }
+        }));
     }
 
     function getEntryCoordinates(entry) {
@@ -334,9 +403,17 @@
         const propertyLayers = REAL_ESTATE_TARGETS.map(item => item.layer);
         const selected = propertyLayers.map(layer => items.find(item => item.properties?.discriminator === layer)).filter(Boolean);
         const selectedIds = new Set(selected);
+        // لا تُسقط الفنادق والفلل من الأقسام عند وجود عدد كبير من النتائج.
+        ['hotels', 'villas_rent'].forEach(layer => {
+            const item = items.find(candidate => candidate.properties?.discriminator === layer);
+            if (item && !selectedIds.has(item)) {
+                selected.push(item);
+                selectedIds.add(item);
+            }
+        });
         selected.push(...items.filter(item => !selectedIds.has(item)).slice(0, Math.max(0, 10 - selected.length)));
         const cards = selected.slice(0, 10).map(item => cardMarkup(item, mode, label)).filter(Boolean);
-        return cards.length ? cards.join('') : '<div class="featured-services-empty">لا توجد خدمات متاحة حالياً</div>';
+        return cards.join('');
     }
 
     async function fetchRatingServices(value) {
@@ -360,6 +437,28 @@
             } catch (_) { return []; }
         }));
         return results.flat();
+    }
+
+    async function fetchBeforeAfterServices() {
+        const params = new URLSearchParams({
+            layer: 'service_all', workspace: 'services',
+            field_0: 'details_link_1', operator_0: 'notempty',
+            field_1: 'details_link_2', operator_1: 'notempty',
+            conditions_count: '2'
+        });
+        try {
+            const response = await fetch(`${API_ROOT}api/search-features?${params}`);
+            if (!response.ok) return [];
+            const data = await response.json();
+            return (data.features || []).filter(feature => {
+                const layer = feature.properties?.discriminator;
+                return layer && !isGloballyExcluded(layer)
+                    && detailsValue(feature.properties || {}, 1)
+                    && detailsValue(feature.properties || {}, 2);
+            }).map(feature => ({ ...feature, properties: { ...feature.properties } }));
+        } catch (_) {
+            return [];
+        }
     }
 
     async function fetchUserRatedServices() {
@@ -575,7 +674,9 @@
     }
 
     function sectionMarkup(title, icon, items, mode, label) {
-        return `<section class="featured-services-section"><h4><i class="fas ${icon}"></i> ${title}</h4><div class="featured-services-row">${rowMarkup(items, mode, label)}</div></section>`;
+        const cards = rowMarkup(items, mode, label);
+        if (!cards) return '';
+        return `<section class="featured-services-section"><h4><i class="fas ${icon}"></i> ${title}</h4><div class="featured-services-row">${cards}</div></section>`;
     }
 
     async function loadPortal() {
@@ -583,13 +684,12 @@
         if (!root || root.dataset.loaded === '1' || root.dataset.loaded === 'loading') return;
         root.dataset.loaded = 'loading';
         try {
-            const [featured, recommendedItems, userRated] = await Promise.all([
-                fetchRatingServices(10), fetchRatingServices(9.9), fetchUserRatedServices()
+            const [featured, recommendedItems, userRated, beforeAfter] = await Promise.all([
+                fetchRatingServices(10), fetchRatingServices(9.9), fetchUserRatedServices(), fetchBeforeAfterServices()
             ]);
             const mediaPool = [...featured, ...recommendedItems];
             const withImages = mediaPool.filter(item => mediaValue(item.properties || {}, 'image'));
             const withVideos = mediaPool.filter(item => mediaValue(item.properties || {}, 'video'));
-            const beforeAfter = mediaPool.filter(item => detailsValue(item.properties || {}, 1) && detailsValue(item.properties || {}, 2));
             root.innerHTML = `<p class="featured-services-intro">تضم هذه البوابة الخدمات المميزة والأكثر نشاطاً، والأعلى تقييماً، والخدمات التي تحتوي على صور وفيديوهات وروابط لعرض أعمالها قبل وبعد.</p>
                 <section class="featured-services-section featured-nearby-section"><h4><i class="fas fa-location-dot"></i> خدمات قريبة من موقعي</h4>${nearbyFilterMarkup()}</section>
                 ${sectionMarkup('المميزين', 'fa-star', featured, 'featured', 'مميز')}
@@ -598,6 +698,7 @@
                 ${sectionMarkup('صور', 'fa-image', withImages, 'photo', 'صور')}
                 ${sectionMarkup('فيديوهات', 'fa-video', withVideos, 'video', 'فيديو')}
                 ${sectionMarkup('قبل وبعد', 'fa-right-left', beforeAfter, 'beforeAfter', 'قبل وبعد')}`;
+            loadPropertyServiceRatings(root);
             root.dataset.userRatedCount = String(userRated.length);
             root.dataset.loaded = '1';
         } catch (error) {

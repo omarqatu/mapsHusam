@@ -17,7 +17,11 @@
             
             while (retryCount < maxRetries) {
                 try {
-                    const res = await fetch(window.location.origin + '/api/platform-stats');
+                    const config = typeof MAP_CONFIG !== 'undefined' ? MAP_CONFIG : window.MAP_CONFIG;
+                    const excludedLayers = Array.isArray(config?.globalExclusions) ? config.globalExclusions : [];
+                    const url = new URL('/api/platform-stats', window.location.origin);
+                    url.searchParams.set('excludedLayers', JSON.stringify(excludedLayers));
+                    const res = await fetch(url.toString());
                     if (!res.ok) {
                         throw new Error(`HTTP error! status: ${res.status}`);
                     }

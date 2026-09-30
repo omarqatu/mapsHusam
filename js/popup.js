@@ -310,7 +310,7 @@ function initializePopup(map) {
             return;
         }
         
-        const quota = await checkRequestQuotaOrwindow.toast(currentUserId, null, 'info');
+        const quota = await checkRequestQuotaOrAlert(currentUserId, null);
         if (!quota.allowed) return;
 
         // 🆕 تسجيل نقرة الاتصال في قاعدة البيانات
@@ -353,7 +353,7 @@ function initializePopup(map) {
             return;
         }
         
-        const quota = await checkRequestQuotaOrwindow.toast(currentUserId, newTab, 'info');
+        const quota = await checkRequestQuotaOrAlert(currentUserId, newTab);
         if (!quota.allowed) return;
 
         // 🆕 تسجيل نقرة الواتساب في قاعدة البيانات
@@ -429,13 +429,18 @@ function initializePopup(map) {
     }
 
     // 🆕 عرض الفيديو مضمّناً داخل البوب أب (يوتيوب أو mp4/webm) بدل فتح رابط خارجي فقط
-    function createVideoEmbedElement(url) {
+        function createVideoEmbedElement(url) {
         const validatedUrl = cleanUrl(url);
         if (!validatedUrl) return '';
         const ytMatch = validatedUrl.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([\w-]+)/);
         if (ytMatch) {
             return `<div class="popup-img-container" style="margin-top:10px;">
-                        <iframe src="https://www.youtube.com/embed/${ytMatch[1]}" style="width:100%; aspect-ratio:16/9; border:none; border-radius:8px; display:block;" allow="autoplay; encrypted-media" allowfullscreen loading="lazy"></iframe>
+                        <div class="popup-video-facade" data-yt-id="${ytMatch[1]}" role="button" tabindex="0"
+                             style="position:relative; width:100%; aspect-ratio:16/9; border-radius:8px; cursor:pointer; background:#000 url('https://img.youtube.com/vi/${ytMatch[1]}/hqdefault.jpg') center/cover no-repeat;">
+                            <span style="position:absolute; inset:0; display:flex; align-items:center; justify-content:center; color:#fff; font-size:44px; text-shadow:0 2px 8px rgba(0,0,0,.6);">
+                                <i class="fas fa-play-circle"></i>
+                            </span>
+                        </div>
                     </div>`;
         }
         if (/\.(mp4|webm|ogg)(\?.*)?$/i.test(validatedUrl)) {
@@ -670,8 +675,7 @@ function initializePopup(map) {
     }
 
     function getCurrencySymbol(code) {
-        const symbols = { USD: 'دولار', ILS: 'شيقل', JOD: 'دينار' };
-        return symbols[code] || '';
+        return window.currencyDisplayLabel ? window.currencyDisplayLabel(code) : String(code || '');
     }
 
         window.generateFeatureHtml = function(feature, layer) {
@@ -690,6 +694,7 @@ function initializePopup(map) {
 
         const isRealEstate = realEstateLayerNames.includes(layerTitle);
         const isService = isServiceAllLayer;
+        const isPropertyService = ['villas_rent', 'hotels'].includes(String(discriminator || '').toLowerCase());
         const isAreaLayer = layerTitle === areaLayerName; 
         const isRoadBarriers = discriminator === 'road_barriers';
 
@@ -794,9 +799,14 @@ function initializePopup(map) {
                 bodyHtml += window.buildFuelAvailabilityHtml(props);
             }
 
-            if (isRealEstate) {
-                if (props.price) bodyHtml += `<b>💰 السعر:</b> ${Number(props.price).toLocaleString()} ${getCurrencySymbol(props.currency)}<br>`;
+            if (isRealEstate || isPropertyService) {
+                if (props.price !== undefined && props.price !== null && props.price !== '') {
+                    const currencyText = getCurrencySymbol(window.getCaseInsensitiveProp(props, 'currency'));
+                    bodyHtml += `<b>💰 السعر:</b> ${Number(props.price).toLocaleString()} ${currencyText}<br>`;
+                }
                 if (props.area) bodyHtml += `<b>📐 المساحة:</b> ${props.area} م²<br>`;
+            }
+            if (isRealEstate) {
                 if (props.village_a) bodyHtml += `<b>🏘️ البلدة:</b> ${window.sanitizeHTML(props.village_a)}<br>`;
                 if (props.gov_a) bodyHtml += `<b>🌍 المحافظة:</b> ${window.sanitizeHTML(props.gov_a)}<br>`;
                 if (props.des) bodyHtml += `<div style="margin-top:5px; background:#f9f9f9; padding:5px; border-radius:4px; word-wrap:break-word; overflow-wrap:break-word; white-space:normal;"><b>📝 الوصف:</b> ${window.sanitizeHTML(props.des)}</div>`;

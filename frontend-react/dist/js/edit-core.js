@@ -51,6 +51,15 @@ function initializeEditTools(map, overlayLayersObjParam) {
         { name: 'end_date', label: 'تاريخ انتهاء الاشتراك', type: 'date' },
         { name: 'work_hours', label: 'ساعات العمل', type: 'hours' }
     ];
+    const fieldsPropertyServices = [
+        { name: 'price', label: 'السعر', type: 'number' },
+        { name: 'currency', label: 'العملة', type: 'select', options: [
+            { value: 'USD', label: 'دولار $' },
+            { value: 'ILS', label: 'شيكل ₪' },
+            { value: 'JOD', label: 'دينار د.أ' }
+        ] },
+        { name: 'area', label: 'المساحة (م²)', type: 'number' }
+    ];
 
     // عناصر الواجهة المستهدفة من الـ HTML
     const editLayerSelect = document.getElementById('edit-layer-select');
@@ -68,30 +77,23 @@ function initializeEditTools(map, overlayLayersObjParam) {
         editLayerSelect.innerHTML = '<option value="">--- اختر طبقة للتحرير ---</option>';
         if (!overlayLayersObj) return;
 
-        // 🆕 أضفنا serviceAllLayer لقائمة الاستثناء لأننا لن نعرضها كخيار مباشر،
-        // بل نعرض كل نوع خدمة (discriminator) كخيار مستقل يرمز لها
-        const excluded = ['locationLayer', 'cityLayer', 'landLayer', 'governorateLayer','providerFlyToLayer', 'userLiveLocationLayer', 'roadsLayer', 'searchMarkerLayer', 'searchResultsHighlightLayer', 'landSaleLayer', 'villagesLayer', 'governoratesLayer', 'areasLayer', 'serviceAllLayer'];
-
-        // الطبقات الحقيقية المستقلة (العقارات: شقق إيجار/بيع)
+        const excluded = ['locationLayer', 'cityLayer', 'landLayer', 'governorateLayer', 'providerFlyToLayer', 'userLiveLocationLayer', 'roadsLayer', 'searchMarkerLayer', 'searchResultsHighlightLayer', 'landSaleLayer', 'villagesLayer', 'governoratesLayer', 'areasLayer', 'serviceAllLayer'];
         Object.keys(overlayLayersObj).forEach(key => {
             const layer = overlayLayersObj[key];
-            if (!layer || !(layer.getSource() instanceof ol.source.Vector)) return;
-            if (excluded.includes(key)) return;
-            const opt = document.createElement('option');
-            opt.value = key;
-            opt.textContent = layer.get('title') || key;
-            editLayerSelect.appendChild(opt);
+            if (!layer || !(layer.getSource() instanceof ol.source.Vector) || excluded.includes(key)) return;
+            const option = document.createElement('option');
+            option.value = key;
+            option.textContent = layer.get('title') || key;
+            editLayerSelect.appendChild(option);
         });
 
-        // 🆕 كل نوع خدمة (discriminator) يُعرض كخيار وهمي منفصل بنفس التسمية القديمة
-        // (مثلاً 'electricianLayer')، لكنه فعلياً يرمز لطبقة service_all الموحّدة
         if (window.serviceSubtypes) {
             Object.keys(window.serviceSubtypes).forEach(discriminator => {
                 const info = window.serviceSubtypes[discriminator];
-                const opt = document.createElement('option');
-                opt.value = discriminator + 'Layer';
-                opt.textContent = info.title;
-                editLayerSelect.appendChild(opt);
+                const option = document.createElement('option');
+                option.value = `${discriminator}Layer`;
+                option.textContent = info.title;
+                editLayerSelect.appendChild(option);
             });
         }
     }
@@ -121,6 +123,20 @@ function initializeEditTools(map, overlayLayersObjParam) {
         currentFeature = null;
     };
 
+    // عند رفض GeoServer للمعاملة أبقِ أداة التحرير مفعّلة، لكن امسح التحديد
+    // كي يستطيع المستخدم اختيار المعلم نفسه والمحاولة مجدداً دون إعادة تحميل الصفحة.
+    window.recoverPointEditToolsAfterFailure = function() {
+        if (updateTimeoutToken) {
+            clearTimeout(updateTimeoutToken);
+            updateTimeoutToken = null;
+        }
+        if (select) select.getFeatures().clear();
+        currentFeature = null;
+        isWaitingForNewLocation = false;
+        if (attributeModal) attributeModal.style.display = 'none';
+        if (map.getTargetElement()) map.getTargetElement().style.cursor = '';
+    };
+
     map.on('singleclick', (evt) => {
         if (isWaitingForNewLocation && currentFeature) {
             if (updateTimeoutToken) clearTimeout(updateTimeoutToken);
@@ -131,7 +147,7 @@ function initializeEditTools(map, overlayLayersObjParam) {
             map.getTargetElement().style.cursor = '';
             
             const coordsGlobal = ol.proj.toLonLat(newCoords, 'EPSG:28191');
-            const isRealEstate = realEstateLayers.some(layer => selectedLayerName.includes(layer));
+            const isRealEstate = realEstateLayers.includes(selectedLayerName);
             
             currentFeature.set('x_coord', Number(newCoords[0].toFixed(2)));
             currentFeature.set('y_coord', Number(newCoords[1].toFixed(2)));
@@ -221,7 +237,7 @@ function initializeEditTools(map, overlayLayersObjParam) {
         return { layer: null, discriminator: null, isService: false };
     }
 
-    function showAttributeModal(feature) {
+    async function showAttributeModal(feature) {
         modalTitle.textContent = currentTransactionType === 'insert' ? 'إضافة معلم جديد' : 'تعديل البيانات الحالية';
         attributeForm.innerHTML = '';
         
@@ -240,8 +256,9 @@ function initializeEditTools(map, overlayLayersObjParam) {
         attributeModal.style.padding = '20px';
         attributeModal.style.boxShadow = '0 4px 20px rgba(0,0,0,0.4)';
         
-                const isRealEstate = realEstateLayers.some(layer => selectedLayerName.includes(layer));
-        let activeFields = isRealEstate ? fieldsRealEstate : fieldsServices;
+        const isRealEstate = realEstateLayers.includes(selectedLayerName);
+        const isPropertyService = ['villas_rentLayer', 'hotelsLayer'].includes(selectedLayerName);
+        let activeFields = isRealEstate ? fieldsRealEstate : (isPropertyService ? fieldsServices.concat(fieldsPropertyServices) : fieldsServices);
 
         // 🆕 حقول إضافية حسب الطبقة: حالة الحاجز (اتجاهين) لحواجز الطرق، وتوفر الوقود لمحطات الوقود
         if (selectedLayerName === 'road_barriersLayer') {
@@ -310,8 +327,9 @@ function initializeEditTools(map, overlayLayersObjParam) {
         if (!currentFeature) return;
 
         const formData = new FormData(attributeForm);
-                const isRealEstate = realEstateLayers.some(layer => selectedLayerName.includes(layer));
-        let activeFields = isRealEstate ? fieldsRealEstate : fieldsServices;
+        const isRealEstate = realEstateLayers.includes(selectedLayerName);
+        const isPropertyService = ['villas_rentLayer', 'hotelsLayer'].includes(selectedLayerName);
+        let activeFields = isRealEstate ? fieldsRealEstate : (isPropertyService ? fieldsServices.concat(fieldsPropertyServices) : fieldsServices);
 
                 if (selectedLayerName === 'road_barriersLayer') {
             activeFields = activeFields.concat([

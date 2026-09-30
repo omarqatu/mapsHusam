@@ -39,10 +39,7 @@ function initializeQuickSearch(map, overlayLayersObj) {
     }
 
     // --- 2. تفعيل أزرار التمرير (يمين/يسار) للشريط العلوي ---
-    if (btnLeft && btnRight) {
-        btnLeft.onclick = () => container.scrollBy({ left: -250, behavior: 'smooth' });
-        btnRight.onclick = () => container.scrollBy({ left: 250, behavior: 'smooth' });
-    }
+    const quickSearchWrapper = container.closest('.quick-search-wrapper');
 
     // --- 3. بناء مصفوفة الطبقات ديناميكياً ---
     const dynamicQuickLayers = [];
@@ -109,6 +106,18 @@ function initializeQuickSearch(map, overlayLayersObj) {
         btn.onclick = () => executeQuickSearch(item.key, item.title); 
         container.appendChild(btn);
     });
+
+    // الشريط يتبع العرض الطبيعي لعناوين الفئات حتى 10 عناصر، ويصبح قابلاً
+    // للتمرير مع سهمين عندما يزيد عددها على ذلك.
+    const hasMoreThanTenItems = dynamicQuickLayers.length > 10;
+    quickSearchWrapper?.classList.toggle('has-overflow', hasMoreThanTenItems);
+    if (btnLeft) btnLeft.hidden = !hasMoreThanTenItems;
+    if (btnRight) btnRight.hidden = !hasMoreThanTenItems;
+
+    if (hasMoreThanTenItems && btnLeft && btnRight) {
+        btnLeft.onclick = () => container.scrollBy({ left: -Math.max(250, container.clientWidth * 0.8), behavior: 'smooth' });
+        btnRight.onclick = () => container.scrollBy({ left: Math.max(250, container.clientWidth * 0.8), behavior: 'smooth' });
+    }
 
     // --- دالة البحث المحدثة لاستقبال العنوان والتعامل مع الخطأ ---
         async function executeQuickSearch(layerKey, layerTitle) {

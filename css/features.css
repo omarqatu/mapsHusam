@@ -11,9 +11,9 @@
 /* --- أشرطة البحث السريع والتصنيفات الدائرية المحدثة لمنع التداخل --- */
 .quick-search-wrapper {
     position: fixed !important; 
-    top: 50px !important; /* تم دفعه للأسفل على الكمبيوتر ليكون مصفوفاً بانتظام أسفل مربع البحث والمستخدم */
-    width: 85vw !important;
-    max-width: 1400px !important; 
+    top: 57.5px !important; /* تم دفعه للأسفل على الكمبيوتر ليكون مصفوفاً بانتظام أسفل مربع البحث والمستخدم */
+    width: max-content !important;
+    max-width: min(1400px, 92vw) !important;
     left: 50% !important; 
     transform: translateX(-50%) !important;
     display: flex !important; 
@@ -25,16 +25,28 @@
     padding: 5px !important;
 }
 
+.quick-search-wrapper.has-overflow {
+    width: 85vw !important;
+    max-width: min(1400px, 92vw) !important;
+}
+
 
 .quick-search-bar { 
     display: flex !important; 
-    flex: 1 !important; 
+    flex: 0 0 auto !important;
+    width: max-content !important;
+    max-width: 100% !important;
     gap: 12px !important; 
     overflow-x: auto !important; 
     scroll-behavior: smooth !important; 
     padding: 10px 5px !important; 
     flex-wrap: nowrap !important; 
     scrollbar-width: none; 
+}
+.quick-search-wrapper.has-overflow .quick-search-bar {
+    flex: 1 1 auto !important;
+    width: auto !important;
+    min-width: 0 !important;
 }
 .quick-search-bar::-webkit-scrollbar { display: none; }
 
@@ -63,7 +75,7 @@
     width: 38px !important; 
     height: 38px !important;
     cursor: pointer !important; 
-    display: flex !important; 
+    display: none !important;
     justify-content: center !important;
     align-items: center !important; 
     color: var(--brand-600, #3b5bdb) !important; 
@@ -71,6 +83,7 @@
     border: none;
     transition: var(--transition-fast, transform .15s ease) !important;
 }
+.quick-search-wrapper.has-overflow .scroll-btn:not([hidden]) { display: flex !important; }
 .scroll-btn:hover { transform: scale(1.08) !important; }
 
 /* --- طباعة ومخرجات الخريطة --- */

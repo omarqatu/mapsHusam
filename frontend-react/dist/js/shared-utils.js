@@ -188,6 +188,17 @@ window.getCaseInsensitiveProp = function (obj, keyName) {
     return foundKey !== undefined ? obj[foundKey] : undefined;
 };
 
+window.currencyDisplayLabel = function (value) {
+    const raw = value == null ? '' : String(value).trim();
+    const normalized = raw.toUpperCase();
+    const labels = {
+        USD: 'دولار', '$': 'دولار', 'دولار': 'دولار',
+        ILS: 'شيكل', '₪': 'شيكل', 'شيكل': 'شيكل', 'شيقل': 'شيكل',
+        JOD: 'دينار', 'د.أ': 'دينار', 'دينار': 'دينار'
+    };
+    return labels[normalized] || labels[raw] || raw;
+};
+
 window.getFirstValidMediaValue = function (obj, keys) {
     if (!obj || !Array.isArray(keys) || !keys.length) return undefined;
     for (const key of keys) {
@@ -510,6 +521,7 @@ window.buildPopupInfoBlock = function (props, opts) {
     const esc = window.nmsEscape;
     const layer = opts.layer || props.discriminator || '';
     const isRealEstate = !!opts.isRealEstate;
+    const isPropertyService = ['villas_rent', 'hotels'].includes(String(layer).replace(/Layer$/i, '').toLowerCase());
     const compact = !!opts.compact;
     const isRoad = layer === 'road_barriers';
     const isFuel = layer === 'fuel_stations';
@@ -542,14 +554,14 @@ window.buildPopupInfoBlock = function (props, opts) {
         html += window.buildFuelAvailabilityHtml(props);
     }
 
-    if (isRealEstate) {
+    if (isRealEstate || isPropertyService) {
         if (props.price) {
-            const symbols = { USD: 'دولار', ILS: 'شيقل', JOD: 'دينار' };
-            html += row('line', `<b>💰 السعر:</b> ${Number(props.price).toLocaleString()} ${symbols[props.currency] || ''}`);
+            const currency = window.currencyDisplayLabel(window.getCaseInsensitiveProp(props, 'currency'));
+            html += row('line', `<b>💰 السعر:</b> ${Number(props.price).toLocaleString()} ${esc(currency)}`);
         }
         if (props.area) html += row('line', `<b>📐 المساحة:</b> ${esc(props.area)} م²`);
-        if (props.village_a) html += row('line', `<b>🏘️ البلدة:</b> ${esc(props.village_a)}`);
-        if (props.gov_a) html += row('line', `<b>🌍 المحافظة:</b> ${esc(props.gov_a)}`);
+        if (isRealEstate && props.village_a) html += row('line', `<b>🏘️ البلدة:</b> ${esc(props.village_a)}`);
+        if (isRealEstate && props.gov_a) html += row('line', `<b>🌍 المحافظة:</b> ${esc(props.gov_a)}`);
     }
 
     if (props.des) html += row('desc', `<b>📝 ${isRoad ? 'ملاحظات' : 'الوصف'}:</b> ${esc(props.des)}`);
@@ -564,3 +576,108 @@ window.shouldShowRating = function (layer, isRealEstate) {
     if (!key) return false;
     return key !== 'road_barriers' && key !== 'fuel_stations';
 };
+
+// ==========================================================================
+// 13) [مشغّل فيديو اليوتيوب للموبايل والتابلت]
+// على اللمس: نافذة تشغيل فيها زر إغلاق + زر "فتح في يوتيوب".
+// على الكمبيوتر: يبقى السلوك القديم (تشغيل مباشر داخل البطاقة).
+// ==========================================================================
+(function () {
+    'use strict';
+
+    function isTouchLike() {
+        return (window.matchMedia && window.matchMedia('(pointer: coarse)').matches) || window.innerWidth <= 1024;
+    }
+
+    let overlayEl = null;
+    let prevOverflow = '';
+
+    function closeVideoModal() {
+        if (!overlayEl) return;
+        overlayEl.remove(); // حذف الـ iframe يوقف الفيديو فعلياً
+        overlayEl = null;
+        document.body.style.overflow = prevOverflow;
+    }
+
+    function openVideoModal(videoId) {
+        closeVideoModal();
+        const id = encodeURIComponent(videoId);
+
+        overlayEl = document.createElement('div');
+        overlayEl.style.cssText = 'position:fixed; inset:0; background:rgba(0,0,0,.88); display:flex; align-items:center; justify-content:center; padding:12px; box-sizing:border-box; direction:rtl;';
+        overlayEl.style.setProperty('z-index', '2147483647', 'important');
+
+        const box = document.createElement('div');
+        box.style.cssText = 'width:100%; max-width:720px; display:flex; flex-direction:column; gap:10px;';
+
+        const bar = document.createElement('div');
+        bar.style.cssText = 'display:flex; gap:8px; justify-content:space-between; align-items:center;';
+
+        const openLink = document.createElement('a');
+        openLink.href = 'https://www.youtube.com/watch?v=' + id;
+        openLink.target = '_blank';
+        openLink.rel = 'noopener noreferrer';
+        openLink.innerHTML = '<i class="fab fa-youtube"></i> فتح في يوتيوب';
+        openLink.style.cssText = 'background:#ff0000; color:#fff; text-decoration:none; padding:11px 16px; border-radius:8px; font-weight:bold; font-size:14px; display:inline-flex; align-items:center; gap:6px;';
+
+        const closeBtn = document.createElement('button');
+        closeBtn.type = 'button';
+        closeBtn.innerHTML = '✕ إغلاق';
+        closeBtn.style.cssText = 'background:#fff; color:#222; border:none; padding:11px 16px; border-radius:8px; font-weight:bold; font-size:14px; cursor:pointer;';
+        closeBtn.addEventListener('click', closeVideoModal);
+
+        bar.append(openLink, closeBtn);
+
+        const frameWrap = document.createElement('div');
+        frameWrap.style.cssText = 'position:relative; width:100%; aspect-ratio:16/9; background:#000; border-radius:10px; overflow:hidden;';
+        const iframe = document.createElement('iframe');
+        iframe.src = 'https://www.youtube.com/embed/' + id + '?autoplay=1&playsinline=1&rel=0';
+        iframe.allow = 'autoplay; encrypted-media; picture-in-picture; fullscreen';
+        iframe.allowFullscreen = true;
+        iframe.style.cssText = 'position:absolute; inset:0; width:100%; height:100%; border:0;';
+        frameWrap.appendChild(iframe);
+
+        box.append(bar, frameWrap);
+        overlayEl.appendChild(box);
+        overlayEl.addEventListener('click', function (e) { if (e.target === overlayEl) closeVideoModal(); });
+
+        prevOverflow = document.body.style.overflow;
+        document.body.style.overflow = 'hidden';
+        document.body.appendChild(overlayEl);
+    }
+
+    window.openVideoModal = openVideoModal;
+    window.closeVideoModal = closeVideoModal;
+
+    document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape') closeVideoModal();
+    });
+
+    // مرحلة الالتقاط (capture) لتسبق أي مستمع قديم للفيديو بالصفحات
+    document.addEventListener('click', function (e) {
+        const facade = e.target.closest('.popup-video-facade, .featured-video-facade, .nms-yt-facade');
+        if (!facade) return;
+
+        const videoId = facade.dataset.ytId || facade.dataset.videoId;
+        if (!videoId) return;
+
+        if (isTouchLike()) {
+            e.preventDefault();
+            e.stopImmediatePropagation();
+            openVideoModal(videoId);
+            return;
+        }
+
+        // كمبيوتر: بوب أب الخريطة يشغّل الفيديو مباشرة داخل مكانه (باقي الصفحات لها منطقها القديم)
+        if (facade.classList.contains('popup-video-facade')) {
+            e.preventDefault();
+            e.stopImmediatePropagation();
+            const iframe = document.createElement('iframe');
+            iframe.src = 'https://www.youtube.com/embed/' + encodeURIComponent(videoId) + '?autoplay=1';
+            iframe.allow = 'autoplay; encrypted-media; fullscreen';
+            iframe.allowFullscreen = true;
+            iframe.style.cssText = 'width:100%; aspect-ratio:16/9; border:none; border-radius:8px; display:block;';
+            facade.replaceWith(iframe);
+        }
+    }, true);
+})();

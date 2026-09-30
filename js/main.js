@@ -482,29 +482,6 @@ setTimeout(async () => {
         };
     });
 
-    // 🆕 فتح لوحتي "البحث الذكي" و"البحث من خلال الموقع" تلقائياً عند دخول المنصة (كمبيوتر فقط)
-    (function autoOpenSearchPanels() {
-        const isMobileDevice = window.matchMedia('(max-width: 767px) and (orientation: portrait)').matches ||
-                                window.matchMedia('(max-width: 900px) and (orientation: landscape)').matches;
-        if (isMobileDevice) return;
-
-        ['search-panel', 'nearby-apartments-panel'].forEach(function (panelId) {
-            const panel = document.getElementById(panelId);
-            if (!panel || !panel.classList.contains('hidden')) return;
-
-            panel.classList.remove('hidden');
-            const currentRole = window.currentUserRole || (typeof currentUserRole !== 'undefined' ? currentUserRole : null);
-            if (currentRole === 'admin') {
-                panel.style.setProperty("display", "block", "important");
-            }
-            populateEditSelects();
-
-            if (panelId === 'nearby-apartments-panel' && typeof window.populateSearchLayerSelect === 'function') {
-                window.populateSearchLayerSelect();
-            }
-        });
-    })();
-
     // إغلاق اللوحات عند الضغط على زر X (يبقى القديم احتياطاً لأي عنصر قديم يحمل هذا الكلاس)
     document.querySelectorAll('.close-btn').forEach(btn => {
         btn.onclick = () => window.closeAllPanels();
