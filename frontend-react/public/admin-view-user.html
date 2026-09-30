@@ -4,6 +4,21 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>مشاهدة حساب المستخدم</title>
+    <style>html { visibility: hidden; }</style>
+    <script>
+    (function () {
+        try {
+            var user = JSON.parse(localStorage.getItem('map_user')) || JSON.parse(sessionStorage.getItem('map_user')) ||
+                       JSON.parse(localStorage.getItem('user')) || JSON.parse(sessionStorage.getItem('user'));
+            if (!user || user.role !== 'admin' || !(user.admin_token || user.token)) {
+                window.location.replace('/original-index.html');
+                return;
+            }
+            window.__viewAdminUser = user;
+            document.addEventListener('DOMContentLoaded', function () { document.documentElement.style.visibility = 'visible'; });
+        } catch (_) { window.location.replace('/original-index.html'); }
+    })();
+    </script>
     <style>
         :root { font-family: "Segoe UI", Tahoma, sans-serif; color: #243447; background: #f4f6f8; }
         * { box-sizing: border-box; }
@@ -65,8 +80,12 @@
 
 (function () {
     'use strict';
-    const token = new URLSearchParams(window.location.search).get('token');
-    const headers = token ? { Authorization: 'Bearer ' + token } : {};
+    const viewToken = new URLSearchParams(window.location.search).get('token');
+    const adminUser = window.__viewAdminUser;
+    const headers = adminUser ? {
+        Authorization: 'Bearer ' + (adminUser.admin_token || adminUser.token || ''),
+        'X-Read-Only-View': viewToken || ''
+    } : {};
     const profileEl = document.getElementById('profile');
     const requestsEl = document.getElementById('requests');
     const expiryEl = document.getElementById('session-expiry');
@@ -122,7 +141,7 @@
         });
     }
     async function init() {
-        if (!token) { showError(requestsEl, 'رابط المشاهدة غير صالح.'); return; }
+        if (!viewToken) { showError(requestsEl, 'رابط المشاهدة غير صالح أو انتهت صلاحيته.'); return; }
         try {
             const profile = await getJson('/api/admin/view-session/profile'); renderProfile(profile.user);
             const requests = await getJson('/api/admin/view-session/requests'); renderRequests(requests.requests || []);
