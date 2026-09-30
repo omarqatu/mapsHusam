@@ -450,6 +450,10 @@ async function ensureServiceRequestSchema() {
                 created_at TIMESTAMP NOT NULL DEFAULT NOW()
             )
         `);
+        // فهارس للاستعلامات الشائعة (ملفات المستخدم/المزود، وفحص التكرار عند تسجيل النقرات)
+        await servicesPool.query(`CREATE INDEX IF NOT EXISTS service_requests_user_idx ON public.service_requests (user_id, created_at DESC)`);
+        await servicesPool.query(`CREATE INDEX IF NOT EXISTS service_requests_provider_idx ON public.service_requests (provider_user_id, status)`);
+        await servicesPool.query(`CREATE INDEX IF NOT EXISTS service_requests_feature_idx ON public.service_requests (service_layer, feature_id)`);
         console.log('✅ تم التأكد من وجود جداول طلبات الخدمة (service_requests) والدردشة (service_request_messages)');
     } catch (err) {
         console.error('⚠️ خطأ أثناء إنشاء جداول طلبات الخدمة:', err.message);
@@ -3832,10 +3836,11 @@ app.post('/api/service-requests/:id/rating', requireAuth, async (req, res) => {
             return res.status(403).json({ success: false, error: 'يمكن للمستخدم الطالب فقط تقييم الخدمة.' });
         }
 
-        // التحقق من عدم وجود تقييم سابق
+        // التحقق من عدم وجود تقييم سابق (لنفس الطلب، أو لنفس المعلم من نفس المستخدم عبر أي طلب سابق)
         const existingRating = await client.query(
-            'SELECT id FROM public.service_ratings WHERE request_id = $1 AND user_id = $2',
-            [id, user_id]
+            `SELECT id FROM public.service_ratings
+             WHERE user_id = $2 AND (request_id = $1 OR (service_layer = $3 AND feature_id = $4))`,
+            [id, user_id, request.service_layer, request.feature_id]
         );
         if (existingRating.rows.length > 0) {
             await client.query('ROLLBACK');
@@ -4094,11 +4099,21 @@ app.post('/api/log-contact-click', requireAuth, async (req, res) => {
     if (!['call', 'whatsapp'].includes(contact_type)) {
         return res.status(400).json({ success: false, error: 'نوع التواصل غير صالح.' });
     }
-    if (/[<>]/.test(String(service_layer))) {
+    if (!isValidLayer(service_layer) || !Number.isInteger(Number(feature_id))) {
         return res.status(400).json({ success: false, error: 'قيمة غير صالحة.' });
     }
 
     try {
+        // 🔒 نقرات متكررة على نفس الزر خلال 10 دقائق = سجل واحد (وإلا انتفخت الإحصائيات وتضاعفت فرص التقييم)
+        const recent = await servicesPool.query(
+            `SELECT id FROM public.service_requests
+             WHERE user_id = $1 AND service_layer = $2 AND feature_id = $3 AND contact_type = $4
+               AND created_at > NOW() - INTERVAL '10 minutes'
+             ORDER BY id DESC LIMIT 1`,
+            [user_id, service_layer, feature_id, contact_type]
+        );
+        if (recent.rows.length > 0) return res.json({ success: true, id: recent.rows[0].id });
+
         // محاولة العثور على مزود خدمة مرتبط
         const providerResult = await servicesPool.query(
             `SELECT user_id, full_name, phone

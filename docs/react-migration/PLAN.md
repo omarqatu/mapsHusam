@@ -1223,6 +1223,14 @@ Log each change here: **what · why · how to verify · commit**.
   one the row is stored as `guest` (or the client's own `guest-…` id) and no quota applies. Same request/response shape; the React
   client already sends the token and only posts when logged in. Verified on the real server: body `user_id:"1"` without token →
   stored as `guest`. Commit: `fix(server): /save-stat takes the identity from the session, not the body`.
+- **Contact clicks and ratings can no longer be farmed.** `POST /api/log-contact-click` inserted a `completed` request for any
+  `service_layer` string (no `isValidLayer` check) on every click, and each such row was one more chance to rate the same business.
+  Now: the layer must be in `ALLOWED_LAYERS` and `feature_id` an integer; repeats of the same user+layer+feature+type within 10
+  minutes return the existing row; `POST /api/service-requests/:id/rate` refuses a second rating from the same user for the same
+  business (`service_layer` + `feature_id`), not just for the same request. Indexes added on `service_requests` (user, provider+status,
+  layer+feature). Behaviour kept: contacting still lets the user rate afterwards (real-estate has no chat flow). The live request
+  test tolerates the "already rated" refusal on re-runs against the same dev database. Commit:
+  `fix(server): stop contact clicks and ratings from being farmed`.
 
 ## Backend asks (needs the user's decision — behaviour-changing or larger)
 

@@ -23,7 +23,10 @@ describe.skipIf(!BASE)('service requests against the live backend', () => {
 
   beforeAll(async () => {
     globalThis.fetch = ((input: RequestInfo | URL, init?: RequestInit) =>
-      nativeFetch(typeof input === 'string' && input.startsWith('/') ? BASE + input : input, init)) as typeof fetch;
+      nativeFetch(
+        typeof input === 'string' && input.startsWith('/') ? BASE + input : input,
+        init,
+      )) as typeof fetch;
     await signIn('0590000002', 'Provider#12345');
     const account = interpretService(await providerApi.getService());
     if (account.kind !== 'ready') throw new Error('dev provider is not linked — run dev/dev.sh seed');
@@ -60,7 +63,15 @@ describe.skipIf(!BASE)('service requests against the live backend', () => {
     expect(done.status).toBe('completed');
 
     expect((await requestsApi.pendingRatings()).pendingRatings.some((p) => p.id === id)).toBe(true);
-    await requestsApi.rate(id, 4, '');
+    // One rating per user per business: a re-run against the same dev database is refused after the first.
+    const rated = await requestsApi.rate(id, 4, '').then(
+      () => true,
+      () => false,
+    );
+    if (!rated) {
+      await expect(requestsApi.rate(id, 4, '')).rejects.toMatchObject({ status: 400 });
+      return;
+    }
     const pc = await requestsApi.pendingComments();
     const pending = pc.pendingComments.find((c) => c.request_id === id);
     expect(pending).toBeTruthy();
