@@ -4301,6 +4301,13 @@ app.post('/api/listing-submissions', requireAuth, submissionLimiter, async (req,
             [req.auth.uid, layer, name, des || null, phone, whatsapp, workHours || null, price, x, y]
         );
         res.json({ success: true, submission: inserted.rows[0] });
+        // المشرفون يعرفون بالطلب فوراً (إشعار + بث حي لمن هو متصل)
+        try {
+            const admins = await servicesPool.query(`SELECT user_id FROM public.users WHERE role = 'admin' AND is_active = true`);
+            await Promise.all(admins.rows.map(a => notifyUser(a.user_id, '📥 طلب إضافة نشاط جديد', `«${name}» بانتظار المراجعة من صفحة طلبات الإضافة.`)));
+        } catch (notifyErr) {
+            console.error('⚠️ تعذر إشعار المشرفين بالطلب الجديد:', notifyErr.message);
+        }
     } catch (err) {
         if (err.code === '23505') return res.status(409).json({ success: false, error: 'لديك طلب قيد المراجعة بالفعل.' });
         console.error('❌ خطأ أثناء تقديم طلب إضافة نشاط:', err.message);
