@@ -41,6 +41,11 @@ const ADMIN_JWT_SECRET = JWT_SECRET_FROM_ENV ? process.env.JWT_SECRET : crypto.r
 if (!JWT_SECRET_FROM_ENV) {
     console.error('❌ خطأ أمني: JWT_SECRET غير مضبوط - تم توليد مفتاح مؤقت عشوائي.');
     console.error('📝 أضف بملف .env سطراً مثل: JWT_SECRET=' + crypto.randomBytes(32).toString('hex'));
+    // بالإنتاج المفتاح العشوائي يُسقط كل جلسات المستخدمين عند كل إعادة تشغيل (ولا يعمل مع أكثر من نسخة)، فلا نقلع به.
+    if (IS_PROD) {
+        console.error('⛔ NODE_ENV=production بلا JWT_SECRET صالح (32 حرفاً فأكثر): إيقاف التشغيل.');
+        process.exit(1);
+    }
 }
 // =========================================================================
 // 🆕 [ترحيل آمن لكلمات المرور]: الحسابات القديمة محفوظة بكلمة مرور نصية

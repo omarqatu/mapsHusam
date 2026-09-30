@@ -1231,6 +1231,12 @@ Log each change here: **what · why · how to verify · commit**.
   layer+feature). Behaviour kept: contacting still lets the user rate afterwards (real-estate has no chat flow). The live request
   test tolerates the "already rated" refusal on re-runs against the same dev database. Commit:
   `fix(server): stop contact clicks and ratings from being farmed`.
+- **Production refuses to start without a valid `JWT_SECRET`.** Without one the server signed sessions with a random per-process key:
+  every restart (each deploy) logged all users out, and two instances could not accept each other's tokens. With
+  `NODE_ENV=production` it now exits with a clear message (32+ characters, not a placeholder); development still falls back to the
+  random key. The deploy workflow's restart smoke test turns a missing variable into an automatic rollback rather than an outage.
+  Verified: `NODE_ENV=production JWT_SECRET=` and `=changeme` → exit 1; a valid secret starts as before. Commit:
+  `fix(server): production must have a real JWT_SECRET`.
 
 ## Backend asks (needs the user's decision — behaviour-changing or larger)
 
