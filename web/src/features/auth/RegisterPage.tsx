@@ -12,6 +12,7 @@ import SelectInput from '@/components/ui/SelectInput';
 import TextInput from '@/components/ui/TextInput';
 import Checkbox from '@/components/ui/Checkbox';
 import { toast } from '@/components/ui/toastStore';
+import InlineLegal from '@/features/legal/InlineLegal';
 import LegalLinks from '@/features/legal/LegalLinks';
 import {
   MIN_PASSWORD_LENGTH,
@@ -65,11 +66,7 @@ function TermsStep({ onContinue }: { onContinue: () => void }) {
       </div>
       <hr className="my-4 border-line" />
       <h2 className="mb-2 font-bold text-fg">{t('auth.register.termsTitle')}</h2>
-      <ul className="list-disc space-y-1 rounded-xl border border-line bg-white/45 p-3 ps-8 text-sm leading-7 text-fg">
-        {[1, 2, 3, 4].map((n) => (
-          <li key={n}>{t(`auth.register.term${n}`)}</li>
-        ))}
-      </ul>
+      <InlineLegal />
       <Checkbox
         className="mt-4 items-start leading-6"
         checked={agreed}

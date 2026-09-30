@@ -21,6 +21,24 @@ function setup() {
   );
 }
 
+/**
+ * `fetch` for the page: the legal texts ask the server for an admin replacement (answered "none"); everything else is the
+ * one response under test. `registerCalls` are the requests to /api/auth/register only.
+ */
+function stubFetch(registerResponse: Response) {
+  const registerCalls: [string, RequestInit][] = [];
+  vi.stubGlobal(
+    'fetch',
+    vi.fn(async (url: string, init: RequestInit) => {
+      if (String(url).startsWith('/api/platform-content/'))
+        return new Response(JSON.stringify({ success: true, item: null }));
+      registerCalls.push([url, init]);
+      return registerResponse.clone();
+    }),
+  );
+  return registerCalls;
+}
+
 const CONTINUE = /التسجيل عبر رقم واتساب|Register with a WhatsApp number/;
 
 async function passTerms() {
@@ -36,6 +54,25 @@ describe('RegisterPage', () => {
   });
   afterEach(() => vi.unstubAllGlobals());
 
+  it('writes the full privacy policy and terms in a box before the tick boxes; an admin replacement wins', async () => {
+    const custom = JSON.stringify({ title: 'شروطنا المعدّلة', html: '<p>نص من المشرف</p><script>alert(1)</script>' });
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (url: string) =>
+        String(url).endsWith('/api/platform-content/legal.terms')
+          ? new Response(JSON.stringify({ success: true, item: { content_key: 'legal.terms', content_value: custom } }))
+          : new Response(JSON.stringify({ success: true, item: null })),
+      ),
+    );
+    setup();
+    const box = await screen.findByRole('region', { name: /سياسة الخصوصية وشروط الاستخدام كاملة|full privacy policy/ });
+    expect(await screen.findByText('نص من المشرف')).toBeInTheDocument(); // the replaced terms
+    expect(await screen.findByRole('heading', { name: 'شروطنا المعدّلة' })).toBeInTheDocument();
+    expect(box.textContent).toMatch(/الخصوصية/); // the built-in privacy policy is there too
+    expect(document.querySelector('script')).toBeNull();
+    expect(box).toHaveAttribute('tabindex', '0'); // scrollable by keyboard
+  });
+
   it('keeps the form locked until both the terms and the Facebook box are ticked', async () => {
     setup();
     const go = screen.getByRole('button', { name: CONTINUE });
@@ -47,12 +84,9 @@ describe('RegisterPage', () => {
   });
 
   it('sends the WhatsApp number built from prefix + local number and goes to login on success', async () => {
-    const fetchMock = vi
-      .fn()
-      .mockResolvedValue(
-        new Response(JSON.stringify({ status: 'success', message: 'ok', user: {} }), { status: 201 }),
-      );
-    vi.stubGlobal('fetch', fetchMock);
+    const calls = stubFetch(
+      new Response(JSON.stringify({ status: 'success', message: 'ok', user: {} }), { status: 201 }),
+    );
     setup();
     await passTerms();
     await userEvent.type(screen.getByLabelText(/الاسم الكامل|Full name/), 'Sara');
@@ -60,7 +94,7 @@ describe('RegisterPage', () => {
     await userEvent.type(screen.getByLabelText(/كلمة المرور|Password/), 'secret1');
     await userEvent.click(screen.getByRole('button', { name: /إتمام التسجيل|Complete registration/ }));
     await waitFor(() => expect(screen.getByText('login page')).toBeInTheDocument());
-    const [url, init] = fetchMock.mock.calls[0] as [string, RequestInit];
+    const [url, init] = calls[0];
     expect(url).toBe('/api/auth/register');
     expect(JSON.parse(init.body as string)).toEqual({
       name: 'Sara',
@@ -73,19 +107,14 @@ describe('RegisterPage', () => {
   });
 
   it('validates the mobile number and password locally and shows the server error otherwise', async () => {
-    const fetchMock = vi
-      .fn()
-      .mockResolvedValue(
-        new Response(JSON.stringify({ error: 'رقم الجوال هذا مستخدم بالفعل' }), { status: 400 }),
-      );
-    vi.stubGlobal('fetch', fetchMock);
+    const calls = stubFetch(new Response(JSON.stringify({ error: 'رقم الجوال هذا مستخدم بالفعل' }), { status: 400 }));
     setup();
     await passTerms();
     await userEvent.type(screen.getByLabelText(/الاسم الكامل|Full name/), 'Sara');
     await userEvent.type(screen.getByLabelText(/رقم الموبايل المحلي|Local mobile number/), '123');
     await userEvent.type(screen.getByLabelText(/كلمة المرور|Password/), '12');
     await userEvent.click(screen.getByRole('button', { name: /إتمام التسجيل|Complete registration/ }));
-    expect(fetchMock).not.toHaveBeenCalled();
+    expect(calls).toHaveLength(0); // nothing is sent until the local checks pass
     expect(screen.getAllByRole('alert')).toHaveLength(2);
 
     await userEvent.clear(screen.getByLabelText(/رقم الموبايل المحلي|Local mobile number/));
