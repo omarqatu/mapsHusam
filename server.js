@@ -1261,14 +1261,21 @@ app.post('/api/update-service-status', requireAuth, async (req, res) => {
 // 🆕 [تشديد أمني]: استخراج كل typeName/layer مذكور بالطلب (سواء GET query
 // params أو XML الخاص بـ WFS-T POST) والتحقق من أنه ضمن القائمة البيضاء
 // المعتمدة فعلياً بالتطبيق (ALLOWED_LAYERS) قبل السماح له بالوصول لـ GeoServer
+// أسماء الباراميترات التي تحمل اسم طبقة (بحروف صغيرة: GeoServer لا يفرّق بين الحروف الكبيرة والصغيرة بمفاتيح الاستعلام)
+const PROXY_LAYER_PARAMS = new Set(['typename', 'typenames', 'layers', 'layer', 'query_layers', 'featureid']);
+
 function extractRequestedLayerNames(req) {
     const names = new Set();
 
-    ['typeName', 'typename', 'layers', 'LAYERS', 'TYPENAME'].forEach(key => {
-        if (req.query && req.query[key]) {
-            String(req.query[key]).split(',').forEach(tn => names.add(tn.trim()));
-        }
-    });
+    for (const [key, value] of Object.entries(req.query || {})) {
+        if (!PROXY_LAYER_PARAMS.has(key.toLowerCase())) continue;
+        const parts = Array.isArray(value) ? value : [value];
+        parts.forEach(part => String(part).split(',').forEach(tn => {
+            const name = tn.trim();
+            // featureID=<layer>.<id> : اسم الطبقة هو ما قبل النقطة
+            names.add(key.toLowerCase() === 'featureid' ? name.split('.')[0] : name);
+        }));
+    }
 
     if (typeof req.body === 'string' && req.body.length > 0) {
         const attrMatches = req.body.match(/typeName="([^"]+)"/g) || [];
@@ -1308,9 +1315,13 @@ app.use('/geoserver-proxy', async (req, res, next) => {
         console.warn(`🚫 [Proxy Guard] رُفض مسار إداري: ${proxiedPath} من IP: ${req.ip}`);
         return res.status(403).json({ error: 'الوصول لهذا المسار غير مسموح به.' });
     }
+    // SLD خارجي/مضمّن قد يجعل GeoServer يقرأ طبقة غير مسموحة أو يجلب رابطاً خارجياً
+    if (Object.keys(req.query || {}).some(k => /^sld/i.test(k))) {
+        return res.status(403).json({ error: 'هذا الطلب غير مسموح به.' });
+    }
     const requestedLayers = extractRequestedLayerNames(req);
     for (const rawName of requestedLayers) {
-        const layerOnly = rawName.includes(':') ? rawName.split(':')[1] : rawName;
+        const layerOnly = rawName.includes(':') ? rawName.split(':').pop() : rawName;
         if (!isValidLayer(layerOnly) && !PROXY_EXTRA_LAYERS.includes(layerOnly)) {
             console.warn(`🚫 [Proxy Guard] رُفض طلب لطبقة غير مصرح بها: ${rawName} من IP: ${req.ip}`);
             return res.status(403).json({ error: 'الوصول لهذه الطبقة غير مسموح به.' });

@@ -1212,6 +1212,12 @@ Log each change here: **what · why · how to verify · commit**.
   answers in ~17 ms and `/healthz` stays up; `web/src/features/search/search.live.test.ts` (huge count → 200 in < 5 s, health
   check up). Found by the 2026-09-30 review ([`docs/REVIEW-2026-09-30.md`](../REVIEW-2026-09-30.md) B1).
   Commit: `fix(server): cap the search condition count`.
+- **`/geoserver-proxy`: the layer allow-list can no longer be side-stepped.** The check only looked at `typeName`, `typename`, `layers`,
+  `LAYERS`, `TYPENAME`; GeoServer reads query keys case-insensitively and accepts more, so `TypeName=`, `typeNames=` (WFS 2.0),
+  `layer=`, `query_layers=` and `featureID=<layer>.<id>` reached layers outside `ALLOWED_LAYERS`. Now every query key is compared
+  lowercase against that set (array values and `ns:layer` prefixes handled), and any `sld*` parameter is refused. Verified against the
+  real server: each variant above → 403, an allowed layer → passes the guard (404 is GeoServer's own). Commit:
+  `fix(server): close the proxy layer allow-list bypass`.
 
 ## Backend asks (needs the user's decision — behaviour-changing or larger)
 
