@@ -1424,11 +1424,25 @@ app.post('/api/log-map-event', requireAuth, async (req, res) => {
 
 // 4. مسار استقبال الإحصائيات (POST)
 app.post('/save-stat', publicEventsLimiter, async (req, res) => {
-    const { user_id, provider, service, source } = req.body;
+    const { provider, service, source } = req.body;
+    // 🔒 لا نثق برقم المستخدم القادم بالجسم: صاحب توكن صالح يُسجَّل باسمه، والزائر يُسجَّل كضيف
+    // (وإلا استطاع أي شخص حرق حصة طلبات مستخدم آخر أو تزوير إحصائياته).
+    let user_id = null;
+    const sessionToken = bearerToken(req);
+    if (sessionToken) {
+        try {
+            const decoded = jwt.verify(sessionToken, ADMIN_JWT_SECRET, { algorithms: ['HS256'] });
+            if (Number.isInteger(Number(decoded.uid)) && Number(decoded.uid) > 0) user_id = String(Number(decoded.uid));
+        } catch (e) { /* توكن غير صالح: يُعامل كزائر */ }
+    }
+    if (!user_id) {
+        const guest = String(req.body.user_id || '').replace(/[<>]/g, '').trim().slice(0, 60);
+        user_id = /^guest[_-]/i.test(guest) ? guest : 'guest';
+    }
 
     console.log("📥 استلام بيانات جديدة للحفظ:", req.body);
 
-    if (!user_id || !provider || !service) {
+    if (!provider || !service) {
         console.log("⚠️ بيانات ناقصة في الطلب المستلم");
         return res.status(400).json({ error: 'Missing data fields' });
     }

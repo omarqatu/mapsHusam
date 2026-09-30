@@ -1218,6 +1218,11 @@ Log each change here: **what · why · how to verify · commit**.
   lowercase against that set (array values and `ns:layer` prefixes handled), and any `sld*` parameter is refused. Verified against the
   real server: each variant above → 403, an allowed layer → passes the guard (404 is GeoServer's own). Commit:
   `fix(server): close the proxy layer allow-list bypass`.
+- **`POST /save-stat`: the body's `user_id` is no longer trusted.** The endpoint is public and took `user_id` from the body, so anyone
+  could burn another user's request quota or forge their dashboard counters. A valid session token now decides the identity; without
+  one the row is stored as `guest` (or the client's own `guest-…` id) and no quota applies. Same request/response shape; the React
+  client already sends the token and only posts when logged in. Verified on the real server: body `user_id:"1"` without token →
+  stored as `guest`. Commit: `fix(server): /save-stat takes the identity from the session, not the body`.
 
 ## Backend asks (needs the user's decision — behaviour-changing or larger)
 
