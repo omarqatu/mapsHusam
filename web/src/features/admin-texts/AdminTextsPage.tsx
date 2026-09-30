@@ -19,6 +19,10 @@ import { errorText } from '@/lib/errorText';
 import { formatDateTime } from '@/lib/format';
 import { parseRichHtml, richPlainText, richTreeToHtml, type RichNode } from '@/lib/richText';
 import { useTextAction, useTextStates, type TextState } from './hooks';
+import UiTextsEditor from './UiTextsEditor';
+
+/** A tab: one of the legal texts, or the interface texts (`ui`). */
+type TabId = LegalKey | 'ui';
 
 /** The texts in the order an admin looks for them. */
 const KEYS: LegalKey[] = [
@@ -201,16 +205,19 @@ function TextEditor({ docKey, state }: { docKey: LegalKey; state: TextState }) {
  */
 export default function AdminTextsPage() {
   const { t } = useTranslation();
-  const [key, setKey] = useState<LegalKey>(KEYS[0]);
+  const [key, setKey] = useState<TabId>(KEYS[0]);
   const states = useTextStates();
 
-  const tabs: TabDef<LegalKey>[] = KEYS.map((k) => ({
-    id: k,
-    label: t(`texts.keys.${k}`),
-    icon: states.data?.(k).custom ? (
-      <span className="h-2 w-2 rounded-full bg-brand" aria-label={t('texts.edited')} />
-    ) : undefined,
-  }));
+  const tabs: TabDef<TabId>[] = [
+    ...KEYS.map((k) => ({
+      id: k as TabId,
+      label: t(`texts.keys.${k}`),
+      icon: states.data?.(k).custom ? (
+        <span className="h-2 w-2 rounded-full bg-brand" aria-label={t('texts.edited')} />
+      ) : undefined,
+    })),
+    { id: 'ui', label: t('texts.ui.tab') },
+  ];
 
   return (
     <>
@@ -222,7 +229,9 @@ export default function AdminTextsPage() {
       <div className="rounded-2xl border border-line bg-surface p-3 shadow-sm md:p-4">
         <Tabs scrollable className="mb-4" label={t('texts.title')} idPrefix="texts" tabs={tabs} value={key} onChange={setKey} />
         <div role="tabpanel" id={`texts-tabpanel-${key}`} aria-labelledby={`texts-tab-${key}`}>
-          {states.isPending ? (
+          {key === 'ui' ? (
+            <UiTextsEditor />
+          ) : states.isPending ? (
             <CenteredSpinner />
           ) : states.isError ? (
             <AlertMessage type="error" message={errorText(states.error, t('texts.loadFailed'))} />

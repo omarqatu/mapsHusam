@@ -959,9 +959,10 @@ Server parts came in with the merge. The legacy UI changes are not in React yet:
 - ✅ Platform texts admin → `/admin/texts` (details below). Same rows as his page: `legal.<key>` / `legal.backup.<key>` =
   JSON `{title, html}`, so either editor reads what the other saved.
 - ✅ Legal texts read the admin's replacement (`features/legal/overrides.ts`, `useLegalDoc` → `custom`), for the nine texts
-  React has. ⬜ Not ported: his new keys `mapEntryChoice`, `noMapIntro`, `promoFeatures` — they fill legacy screens React
-  does not have (the post-login choice screen, the old search intro, the promo list); the React welcome / search pages
-  word those parts in the locale files. Decide whether they should become admin-editable too.
+  React has. His three extra keys: `noMapIntro` (the search page's intro line) and `promoFeatures` (the welcome page's
+  feature cards) → ✅ editable as **interface texts** (below); `mapEntryChoice` (the post-login "map or search" choice
+  screen: two buttons and a "trial version" note) → **not ported on purpose**: `/home` replaced that screen and it has no
+  marketing copy to edit. His rows `legal.noMapIntro` / `legal.promoFeatures` are not read (different storage, see below).
 
 #### `/admin/texts` — how HTML from data is shown (user decision 2026-09-30: option A, allow-list → React elements)
 
@@ -1004,8 +1005,35 @@ Server parts came in with the merge. The legacy UI changes are not in React yet:
     its writes; it logs in now.
 - ⬜ Featured: before/after via `details_link_1/2 notempty` query; hotel / villa cards with property details and live rating;
   empty sections hidden.
-- ⬜ Smaller: road-barrier icon = the worse of `stop` / `stop2`; edit tool stays active after a failed save; weather widget off
-  when its request fails; register-consent box shows the full privacy / terms text inline.
+- ✅ Road-barrier icon = the worse of `stop` / `stop2` (`worstBarrierStatus`, order open < light < inspection < heavy < closed;
+  the label on the map follows it; the card still shows both directions). Test: `map.test.ts`.
+- ✅ Edit tool after a failed save: nothing to port — React never turned the tool off. A refused save (wrong GeoServer login,
+  GeoServer exception, network) keeps the login dialog open with the reason; "cancel" returns to the form / shape step with the
+  panel open and the mode still pressed. Verified in a browser against the real GeoServer (wrong password → message → cancel →
+  form back, "add" still pressed).
+- ✅ Weather off when its request fails: React shows nothing broken instead of switching a widget off — a city without data
+  gets no ticker item and no chip, the card shows the error with a retry button, the next forecast is tried in 30 minutes.
+  Test: `widgets/model.test.ts`.
+- ✅ Register: the full privacy policy and terms are written in a box that scrolls (`legal/InlineLegal.tsx`, the admin's
+  replacement if there is one) instead of four hand-written bullets (their locale strings are removed); the box takes keyboard
+  focus. Test: `RegisterPage.test.tsx` (which now answers the legal-text requests separately from the register call).
+
+#### Interface texts (`/admin/texts` → "نصوص الواجهة") — `settings.texts`
+
+- The admin rewords a **whitelist** of interface lines (`features/text-overrides/model.ts` → `TEXT_GROUPS`: the search page's
+  badge, headline, intro line and sections heading; the welcome page's title, tagline, intro, buttons, footer and the six
+  feature cards), in Arabic and English. Plain text only, at most 400 characters; a line that has a `{{count}}` code must keep
+  exactly it. Stored as one JSON value under `settings.texts` in `platform_content`: `{ar: {key: text}, en: {…}}`.
+- Applied over the bundled locale files in i18next at runtime (`TextOverridesSync` in `App.tsx`): every `t('…')` shows it, no
+  component changed; the last value is kept in `localStorage` `psm-text-overrides` so a returning visitor sees it at once.
+  An empty box = the built-in text (shown as the placeholder). A key is added to the whitelist in code, never picked from the
+  request. Dropped on read: unknown keys, empty or unchanged text, too long, wrong placeholders.
+- Found by its test: i18next writes overrides into the locale objects it was given, so the imported JSON stopped being "the
+  built-in text"; the built-ins are copied once at load (`structuredClone`).
+- Verified: `textOverrides.test.ts` (rules, applying, restoring, interpolation, markup stays text), `textOverrides.live.test.ts`
+  (real server: admin saves, visitor reads, a user is refused), browser: Arabic override shows on `/search`, English override on
+  the English page, clearing restores the built-in wording.
+- This is the seed of the generic "settings" module the architecture review recommends (see the review notes in this file).
 - Reference: `docs/TEXT_CONTENT_AUDIT.md` (from his branch).
 
 ## Phase 4 — Cut-over & cleanup

@@ -104,6 +104,8 @@
     },
     "legal": {
       "terms": "Terms of use",
+      "inlineLabel": "The full privacy policy and terms of use",
+      "loadFailed": "The text could not be loaded.",
       "privacy": "Privacy policy",
       "guide": "User guide",
       "and": "and",
@@ -120,10 +122,6 @@
       "termsTitle": "Terms and conditions of use",
       "platformName": "Palestine Services Map (trial version)",
       "about": "The first interactive platform connecting users with service providers and property owners in Palestine. Whether you look for a service or have a property to sell or rent, we give you smart geographic marketing that reaches the public directly.",
-      "term1": "The platform is a geo-digital intermediary that connects the user with the provider through WhatsApp only.",
-      "term2": "Prices, appointments and service details are agreed directly between the two parties, without our involvement.",
-      "term3": "The platform accepts no responsibility for any dispute, mistreatment or breach of agreement between the parties.",
-      "term4": "For complaints, message us on the Facebook page so that administrative action (such as a ban) can be taken.",
       "agree": "I agree to the usage policy, the privacy policy and the disclaimer above.",
       "fbAsk": "Your support keeps us going. Please like our Facebook page to continue:",
       "fbLink": "Visit the Facebook page and like it",
@@ -1292,6 +1290,48 @@
     "loadFailed": "Could not load the settings."
   },
   "texts": {
+    "ui": {
+      "tab": "Interface texts",
+      "hint": "Write a replacement for any line; an empty box means the built-in text (shown faintly inside). Plain text only.",
+      "groups": {
+        "search": "Search page",
+        "welcome": "Welcome page",
+        "features": "Welcome page feature cards"
+      },
+      "lang": {
+        "ar": "Arabic",
+        "en": "English"
+      },
+      "invalid": "Invalid text: at most {{max}} characters, and the code written in double braces in the original (shown faintly) must stay as it is.",
+      "names": {
+        "searchPage_kicker": "Small badge above the headline",
+        "searchPage_heroLine1": "Headline: first line",
+        "searchPage_heroLine2": "Headline: the coloured words",
+        "searchPage_heroText": "Paragraph under the headline (how to search)",
+        "searchPage_sectionsTitle": "Sections heading",
+        "searchPage_sectionsHint": "Line under the sections heading",
+        "auth_welcome_title": "Welcome page title",
+        "auth_welcome_tagline": "Tagline under the title",
+        "auth_welcome_subtitle": "Introduction paragraph",
+        "auth_welcome_register": "Create-account button",
+        "auth_welcome_login": "Log-in button",
+        "auth_welcome_footer": "Last line",
+        "auth_welcome_features_realEstate_label": "Property feature: title",
+        "auth_welcome_features_realEstate_desc": "Property feature: description",
+        "auth_welcome_features_realEstate_descCount": "Property feature: description with the number (the number code of the original must stay)",
+        "auth_welcome_features_providers_label": "Providers feature: title",
+        "auth_welcome_features_providers_desc": "Providers feature: description",
+        "auth_welcome_features_providers_descCount": "Providers feature: description with the number (the number code of the original must stay)",
+        "auth_welcome_features_location_label": "Locations feature: title",
+        "auth_welcome_features_location_desc": "Locations feature: description",
+        "auth_welcome_features_contact_label": "Contact feature: title",
+        "auth_welcome_features_contact_desc": "Contact feature: description",
+        "auth_welcome_features_search_label": "Search feature: title",
+        "auth_welcome_features_search_desc": "Search feature: description",
+        "auth_welcome_features_free_label": "Free feature: title",
+        "auth_welcome_features_free_desc": "Free feature: description"
+      }
+    },
     "title": "Platform texts",
     "subtitle": "Terms, privacy, about and the guides: edit their wording as visitors see it.",
     "keys": {

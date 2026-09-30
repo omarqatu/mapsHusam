@@ -6,6 +6,7 @@ import SocketConnector from '@/api/SocketConnector';
 import AppShell from '@/components/AppShell';
 import ErrorBoundary from '@/components/ErrorBoundary';
 import SessionVerifier from '@/components/SessionVerifier';
+import { TextOverridesSync } from '@/features/text-overrides/store';
 import { VisibilitySync } from '@/features/visibility/store';
 import AuthLayout from '@/features/auth/AuthLayout';
 import LoginPage from '@/features/auth/LoginPage';
@@ -100,6 +101,7 @@ export default function App() {
         <SocketConnector />
         <SessionVerifier />
         <VisibilitySync />
+        <TextOverridesSync />
         <RequestsHost />
         <RouterProvider router={router} />
       </QueryClientProvider>
