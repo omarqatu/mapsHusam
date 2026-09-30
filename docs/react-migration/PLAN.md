@@ -1262,8 +1262,9 @@ Log each change here: **what · why · how to verify · commit**.
     instead of the form. The admin page lists pending / approved / rejected requests with editable name, description and hours, an
     "open on the map" link, approve (publishes, links the account) and reject (a reason is required and reaches the sender). Admins
     are notified on every new request. Entrances: a home card "Add your business" (users) and "Add requests" (admins); the admin
-    page is not in the header (it already holds eight admin links and overflowed). Registration still needs an admin to activate the
-    account before the first login (unchanged), so a submitter is always an activated account. `serviceSearchTags` was extracted
+    page is not in the header (it already holds eight admin links and overflowed). The register form has a
+    "I have a business" box that opens the same fields (business phone defaults to the account's), so an owner signs up and submits in
+    one step and waits for one decision: approving also activates the account (registration alone still needs an admin to activate). `serviceSearchTags` was extracted
     from the editor so the admin page writes the same search keywords as the edit tool. Live test: `listingSubmissions.live.test.ts`.
 - **Register + business in one step, one approval.** `POST /api/auth/register` accepts an optional `listing` object (same fields and
   checks as `POST /api/listing-submissions`, now one shared `parseListingInput`). The account (still inactive, as always) and the

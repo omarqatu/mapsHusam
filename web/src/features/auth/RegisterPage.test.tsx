@@ -7,6 +7,15 @@ import '@/i18n';
 import { useAuthStore } from '@/store/authStore';
 import RegisterPage from './RegisterPage';
 
+// OpenLayers needs a canvas; the location picker is replaced by one button that taps a fixed point.
+vi.mock('@/features/listing-submissions/LocationPicker', () => ({
+  default: ({ onChange }: { onChange: (p: [number, number]) => void }) => (
+    <button type="button" onClick={() => onChange([169463.41234, 145767.99876])}>
+      pick-location
+    </button>
+  ),
+}));
+
 function setup() {
   const client = new QueryClient({ defaultOptions: { mutations: { retry: 0 } } });
   render(
@@ -32,6 +41,8 @@ function stubFetch(registerResponse: Response) {
     vi.fn(async (url: string, init: RequestInit) => {
       if (String(url).startsWith('/api/platform-content/'))
         return new Response(JSON.stringify({ success: true, item: null }));
+      if (url === '/api/listing-submissions/layers')
+        return new Response(JSON.stringify({ success: true, layers: ['plumber', 'hotels'] }));
       registerCalls.push([url, init]);
       return registerResponse.clone();
     }),
@@ -55,17 +66,24 @@ describe('RegisterPage', () => {
   afterEach(() => vi.unstubAllGlobals());
 
   it('writes the full privacy policy and terms in a box before the tick boxes; an admin replacement wins', async () => {
-    const custom = JSON.stringify({ title: 'شروطنا المعدّلة', html: '<p>نص من المشرف</p><script>alert(1)</script>' });
+    const custom = JSON.stringify({
+      title: 'شروطنا المعدّلة',
+      html: '<p>نص من المشرف</p><script>alert(1)</script>',
+    });
     vi.stubGlobal(
       'fetch',
       vi.fn(async (url: string) =>
         String(url).endsWith('/api/platform-content/legal.terms')
-          ? new Response(JSON.stringify({ success: true, item: { content_key: 'legal.terms', content_value: custom } }))
+          ? new Response(
+              JSON.stringify({ success: true, item: { content_key: 'legal.terms', content_value: custom } }),
+            )
           : new Response(JSON.stringify({ success: true, item: null })),
       ),
     );
     setup();
-    const box = await screen.findByRole('region', { name: /سياسة الخصوصية وشروط الاستخدام كاملة|full privacy policy/ });
+    const box = await screen.findByRole('region', {
+      name: /سياسة الخصوصية وشروط الاستخدام كاملة|full privacy policy/,
+    });
     expect(await screen.findByText('نص من المشرف')).toBeInTheDocument(); // the replaced terms
     expect(await screen.findByRole('heading', { name: 'شروطنا المعدّلة' })).toBeInTheDocument();
     expect(box.textContent).toMatch(/الخصوصية/); // the built-in privacy policy is there too
@@ -107,7 +125,9 @@ describe('RegisterPage', () => {
   });
 
   it('validates the mobile number and password locally and shows the server error otherwise', async () => {
-    const calls = stubFetch(new Response(JSON.stringify({ error: 'رقم الجوال هذا مستخدم بالفعل' }), { status: 400 }));
+    const calls = stubFetch(
+      new Response(JSON.stringify({ error: 'رقم الجوال هذا مستخدم بالفعل' }), { status: 400 }),
+    );
     setup();
     await passTerms();
     await userEvent.type(screen.getByLabelText(/الاسم الكامل|Full name/), 'Sara');
@@ -122,5 +142,40 @@ describe('RegisterPage', () => {
     await userEvent.type(screen.getByLabelText(/كلمة المرور|Password/), '3456');
     await userEvent.click(screen.getByRole('button', { name: /إتمام التسجيل|Complete registration/ }));
     expect(await screen.findByText('رقم الجوال هذا مستخدم بالفعل')).toBeInTheDocument();
+  });
+
+  it('sends a business with the account when the box is ticked; the business number defaults to the account number', async () => {
+    const calls = stubFetch(
+      new Response(JSON.stringify({ status: 'success', message: 'ok', user: {} }), { status: 201 }),
+    );
+    setup();
+    await passTerms();
+    await userEvent.type(screen.getByLabelText(/الاسم الكامل|Full name/), 'Sara');
+    await userEvent.type(screen.getByLabelText(/رقم الموبايل المحلي|Local mobile number/), '0598512667');
+    await userEvent.type(screen.getByLabelText(/كلمة المرور|Password/), 'secret1');
+    await userEvent.click(screen.getByRole('checkbox', { name: /عندي نشاط تجاري|I have a business/ }));
+
+    // Nothing is sent while the business part is incomplete.
+    await userEvent.click(screen.getByRole('button', { name: /إتمام التسجيل|Complete registration/ }));
+    expect(calls).toHaveLength(0);
+
+    await userEvent.click(await screen.findByRole('combobox', { name: /نوع النشاط|Type of business/ }));
+    await userEvent.click(await screen.findByRole('option', { name: /سباك|Plumber/i }));
+    await userEvent.type(screen.getByLabelText(/اسم النشاط|Business name/), 'سباكة الأمل');
+    await userEvent.click(screen.getByRole('button', { name: 'pick-location' }));
+    await userEvent.click(screen.getByRole('button', { name: /إتمام التسجيل|Complete registration/ }));
+
+    await waitFor(() => expect(screen.getByText('login page')).toBeInTheDocument());
+    expect(JSON.parse(calls[0][1].body as string)).toMatchObject({
+      phone: '0598512667',
+      listing: {
+        layer: 'plumber',
+        name: 'سباكة الأمل',
+        phone: '0598512667',
+        whatsapp: '+970598512667',
+        x_coord: 169463.412,
+        y_coord: 145767.999,
+      },
+    });
   });
 });

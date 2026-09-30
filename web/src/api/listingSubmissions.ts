@@ -76,8 +76,9 @@ export const listingSubmissionsApi = {
     api.post<{ success: true }>(`/api/admin/listing-submissions/${id}/reject`, { reason }),
 };
 
-export const useSubmittableLayers = () =>
+export const useSubmittableLayers = (enabled = true) =>
   useQuery({
+    enabled,
     queryKey: submissionKeys.layers,
     queryFn: () => listingSubmissionsApi.layers().then((r) => r.layers),
     staleTime: Infinity,

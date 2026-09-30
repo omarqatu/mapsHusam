@@ -14,6 +14,9 @@ import Checkbox from '@/components/ui/Checkbox';
 import { toast } from '@/components/ui/toastStore';
 import InlineLegal from '@/features/legal/InlineLegal';
 import LegalLinks from '@/features/legal/LegalLinks';
+import { AboutFields, ContactFields, LocationField } from '@/features/listing-submissions/ListingFields';
+import { toInput } from '@/features/listing-submissions/model';
+import { useListingForm } from '@/features/listing-submissions/useListingForm';
 import {
   MIN_PASSWORD_LENGTH,
   WHATSAPP_PREFIXES,
@@ -116,6 +119,8 @@ function FormStep({ onBack }: { onBack: () => void }) {
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [errors, setErrors] = useState<{ phone?: string; password?: string }>({});
+  const [hasBusiness, setHasBusiness] = useState(false);
+  const business = useListingForm(hasBusiness);
 
   const submit = (e: FormEvent) => {
     e.preventDefault();
@@ -123,7 +128,10 @@ function FormStep({ onBack }: { onBack: () => void }) {
     if (!isLocalMobile(phone)) next.phone = t('auth.phoneInvalid');
     if (password.length < MIN_PASSWORD_LENGTH) next.password = t('auth.register.passwordShort');
     setErrors(next);
-    if (Object.keys(next).length) return;
+    // The business number defaults to the account's own; the form is validated as it will be sent.
+    const effective = { ...business.values, phone: business.values.phone.trim() || phone.trim() };
+    const businessOk = !hasBusiness || business.check(effective);
+    if (Object.keys(next).length || !businessOk) return;
     register.mutate(
       {
         name: name.trim(),
@@ -131,10 +139,11 @@ function FormStep({ onBack }: { onBack: () => void }) {
         whatsapp_number: toWhatsappNumber(prefix, phone),
         password,
         email: '',
+        ...(hasBusiness && business.point ? { listing: toInput(effective, business.point) } : {}),
       },
       {
         onSuccess: () => {
-          toast.success(t('auth.register.success'));
+          toast.success(t(hasBusiness ? 'auth.register.successBusiness' : 'auth.register.success'));
           navigate('/login', { replace: true });
         },
       },
@@ -237,6 +246,28 @@ function FormStep({ onBack }: { onBack: () => void }) {
           />
         </FormField>
         <p className="-mt-3 mb-3 text-xs text-muted">{t('auth.register.passwordHint')}</p>
+        <Checkbox
+          className="mb-3 items-start leading-6"
+          checked={hasBusiness}
+          onChange={setHasBusiness}
+          label={t('auth.register.hasBusiness')}
+        />
+        {hasBusiness && (
+          <fieldset className="mb-4 rounded-2xl border border-line bg-surface/70 p-4">
+            <legend className="px-2 text-sm font-bold text-fg">{t('auth.register.businessTitle')}</legend>
+            <p className="mb-3 text-xs text-muted">{t('auth.register.businessHint')}</p>
+            {business.layers.isError ? (
+              <AlertMessage type="error" message={t('submit.loadFailed')} />
+            ) : (
+              <>
+                <AboutFields form={business} idPrefix="biz-" />
+                <ContactFields form={business} idPrefix="biz-" optional />
+                <p className="mb-2 mt-3 text-sm font-semibold text-fg">{t('submit.sections.location')}</p>
+                <LocationField form={business} />
+              </>
+            )}
+          </fieldset>
+        )}
         <Button
           type="submit"
           size="lg"

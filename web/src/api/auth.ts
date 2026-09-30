@@ -1,5 +1,6 @@
 import { useMutation } from '@tanstack/react-query';
 import { api } from './client';
+import type { SubmissionInput } from './listingSubmissions';
 import { useAuthStore } from '@/store/authStore';
 import type { AuthUser } from '@/types/auth';
 
@@ -35,6 +36,8 @@ export interface RegisterRequest {
   whatsapp_number: string;
   password: string;
   email?: string;
+  /** A business to put on the map, approved together with the account (see api/listingSubmissions.ts). */
+  listing?: SubmissionInput;
 }
 export interface RegisterResponse {
   status: 'success';

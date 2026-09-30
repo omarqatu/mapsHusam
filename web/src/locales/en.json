@@ -142,7 +142,11 @@
       "submit": "Complete registration",
       "submitting": "Registering…",
       "success": "Your account was created. Please message us on Facebook to activate it.",
-      "backToTerms": "Back to the terms"
+      "backToTerms": "Back to the terms",
+      "hasBusiness": "I have a business and want it on the map",
+      "businessTitle": "Your business",
+      "businessHint": "Sent with your sign-up and reviewed once by the admins: on approval your account is activated and your business is published.",
+      "successBusiness": "Your account was created and your business details were sent. When the admins approve, your account is activated and your business is published; then you can sign in."
     },
     "changePassword": {
       "open": "Change password",
@@ -1733,7 +1737,8 @@
       "workHoursHint": "e.g. 8 am – 6 pm",
       "price": "Price in US dollars",
       "phone": "Mobile number",
-      "whatsappSame": "Same number on WhatsApp"
+      "whatsappSame": "Same number on WhatsApp",
+      "phoneSameAsAccount": "Leave empty to use your account number"
     },
     "map": {
       "label": "Location picker map",
