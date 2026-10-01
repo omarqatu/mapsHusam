@@ -1458,6 +1458,16 @@ Log each change here: **what · why · how to verify · commit**.
   of `font-src` and `style-src` went too. Verified with `web/dist` served by the server: the header shows the new
   policy; logged in as the provider, the map, `/search`, `/home` and `/notifications` load with no CSP violation in
   the console. Commit: `fix(server): scripts only from the site itself`.
+- **An ended session answers 401 on admin routes too; `GET /api/auth/session`.** `requireAdmin` answered **403** "you do
+  not have admin permission" when the admin's session had ended (account deleted or deactivated, forced logout,
+  `token_version` changed by a password / role change). The app logs out only on 401, so an admin whose session ended
+  stayed on the page with "no permission" errors (reported by the user). Those cases now answer 401
+  `SESSION_REVOKED` like `requireAuth`; 403 stays for a live session of an account that is not an admin. New
+  `GET /api/auth/session` (`requireAuth`, `{ uid, role }`): the app asks it when its socket is refused or dropped by
+  the server and when a tab comes back, so an idle page notices an ended session. Verified in a browser against this
+  server: an idle admin page whose token is logged out elsewhere → login page with "your session ended" in 0.5 s; after
+  a `token_version` bump, "reload" on the dashboard → the same (before: a 403 toast, still "logged in"). Commit:
+  `fix(server): an ended session is 401 on admin routes too`.
 
 ## Backend asks (needs the user's decision — behaviour-changing or larger)
 

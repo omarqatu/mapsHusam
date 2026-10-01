@@ -221,13 +221,17 @@ export async function requireAdmin(req, res, next) {
             [decoded.uid]
         );
 
-        if (result.rows.length === 0) {
-            return res.status(403).json({ success: false, error: 'حساب المشرف غير موجود.' });
-        }
+        // 🔒 جلسة منتهية (حساب محذوف/معطّل، خروج إجباري، تغيّر الدور أو كلمة المرور) = 401 مثل requireAuth، فتُخرج
+        // الواجهة المستخدم بدل أن تبقى على "لا تملك صلاحية". 403 فقط لجلسة سليمة لحساب ليس مشرفاً.
+        const ended = { success: false, error: 'انتهت جلستك، يرجى تسجيل الدخول من جديد.', code: 'SESSION_REVOKED' };
+        if (result.rows.length === 0) return res.status(401).json(ended);
 
         const { role, is_active, force_logout_flag, token_version } = result.rows[0];
 
-        if (role !== 'admin' || !is_active || force_logout_flag === true || (Number(decoded.tv) || 0) !== (Number(token_version) || 0)) {
+        if (!is_active || force_logout_flag === true || (Number(decoded.tv) || 0) !== (Number(token_version) || 0)) {
+            return res.status(401).json(ended);
+        }
+        if (role !== 'admin') {
             return res.status(403).json({ success: false, error: 'لا تملك صلاحية المشرف اللازمة لهذا الإجراء.' });
         }
 

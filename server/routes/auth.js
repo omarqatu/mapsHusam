@@ -353,6 +353,11 @@ app.post('/api/auth/login', authLimiter, async (req, res) => {
     }
 });
 
+// هل جلسة هذا التوكن ما زالت قائمة؟ تسأله الواجهة حين ينقطع اتصالها المباشر أو تعود لتبويبها (401 = انتهت، فتُخرج المستخدم)
+app.get('/api/auth/session', requireAuth, (req, res) => {
+    res.json({ success: true, uid: req.auth.uid, role: req.auth.role });
+});
+
 // 🔒 تسجيل الخروج: يُنهي توكن هذا الجهاز على السيرفر (لا يكفي حذفه من المتصفح: نسخة منه تبقى صالحة حتى انتهائها).
 // لا يحتاج حساباً فعّالاً، وتوكن غير صالح أصلاً لا شيء فيه لإنهائه.
 app.post('/api/auth/logout', async (req, res) => {
