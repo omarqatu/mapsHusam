@@ -4623,7 +4623,8 @@ app.use((err, req, res, next) => {
 // ==========================================
 
 // تخزين المستخدمين المتصلين مع معرفاتهم
-const connectedUsers = new Map();
+const connectedUsers = new Map(); // userId -> اسم غرفة المستخدم (user:<id>)، يُمرَّر لـ io.to() مباشرة
+const userRoom = (userId) => `user:${Number(userId)}`;
 
 // 🔒 لا يُقبل اتصال Socket بدون توكن صالح
 io.use(async (socket, next) => {
@@ -4663,7 +4664,11 @@ io.on('connection', (socket) => {
     socket.on('user_connected', () => {
         const userId = socket.auth.uid; // 🔒 الهوية من التوكن وليس مما يرسله العميل
         console.log(`👤 المستخدم ${userId} متصل بـ Socket ID: ${socket.id}`);
-        connectedUsers.set(userId, socket.id);
+        // 🆕 غرفة لكل مستخدم تضم كل أجهزته وتبويباته: كل io.to(...) للمستخدم يصلها جميعاً. كانت الخريطة تحفظ آخر
+        // اتصال فقط، فمستخدم على جهازين (أو تبويبين) لا تصله الأحداث الحية (قبول الطلب، الرسائل...) إلا على آخرهما.
+        const room = userRoom(userId);
+        socket.join(room);
+        connectedUsers.set(userId, room);
         socket.userId = userId;
 
         // إرسال تأكيد الاتصال للمستخدم
@@ -4674,8 +4679,9 @@ io.on('connection', (socket) => {
     socket.on('disconnect', () => {
         if (socket.userId) {
             console.log(`🔌 المستخدم ${socket.userId} انقطع اتصاله`);
-            // 🔒 لا نحذف إلا إذا كان الاتصال المسجّل هو هذا الاتصال (وإلا نمسح اتصال التبويب الجديد)
-            if (connectedUsers.get(socket.userId) === socket.id) {
+            // يبقى المستخدم «متصلاً» ما دام له اتصال آخر بغرفته (جهاز أو تبويب آخر)
+            const remaining = io.sockets.adapter.rooms.get(userRoom(socket.userId));
+            if (!remaining || remaining.size === 0) {
                 connectedUsers.delete(socket.userId);
             }
         }

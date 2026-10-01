@@ -1323,6 +1323,14 @@ Log each change here: **what · why · how to verify · commit**.
   (with that rating's comment state). Verified: the dev user (rated the dev provider before) → pending list empty, check
   `hasRated: true`; `requests.live.test.ts` and the role test cover a first and a repeated deal. Commit:
   `fix(server): no rating prompt for a business the user already rated`.
+- **Live events reach every device of a user, not only the newest one.** `connectedUsers` kept one socket id per user
+  (the last to connect), so a user with the site open on a phone and a laptop — or two tabs — got "request accepted", new
+  chat messages, notifications and forced logouts only on the newest one; the other stayed stale until a reload. Each
+  socket now joins the room `user:<id>` and the map holds the room name, so every existing `io.to(…)` reaches all the
+  user's sockets; the user counts as online while any of them is connected. Found by the role test (another spec logged
+  in as the same user took the events). Verified: `flows.spec.ts` scenario A opens a second session of the user, which
+  also gets "the provider accepted"; the full browser suite (64) passes in parallel. Commit:
+  `fix(server): socket events reach all of a user's devices`.
 
 ## Backend asks (needs the user's decision — behaviour-changing or larger)
 
