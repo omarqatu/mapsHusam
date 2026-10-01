@@ -6,21 +6,30 @@ import Button from '@/components/ui/Button';
 import PageHeader from '@/components/ui/PageHeader';
 import Tabs from '@/components/ui/Tabs';
 import NotificationList from './NotificationList';
+import { useAuthStore } from '@/store/authStore';
+import SendNotificationCard from './SendNotificationCard';
 
 type Filter = 'all' | 'unread';
 
-/** `/notifications` — the full list of the bell (legacy notifications-panel.html), with an unread filter. */
+/**
+ * `/notifications` — the full list of the bell, with an unread filter; for admins also the send form of legacy
+ * notifications-panel.html.
+ */
 export default function NotificationsPage() {
   const { t } = useTranslation();
   const [filter, setFilter] = useState<Filter>('all');
-  const { items, unread, isLoading, isError, refresh, isRefreshing, markRead, markAllRead } = useNotifications();
+  const { items, unread, isLoading, isError, refresh, isRefreshing, markRead, markAllRead } =
+    useNotifications();
   const shown = filter === 'unread' ? items.filter(isUnread) : items;
+  const isAdmin = useAuthStore((st) => st.user?.role === 'admin');
 
   return (
     <>
       <PageHeader
         title={t('nav.notifications')}
-        description={unread ? t('notificationsMenu.unread', { count: unread }) : t('notificationsPage.allRead')}
+        description={
+          unread ? t('notificationsMenu.unread', { count: unread }) : t('notificationsPage.allRead')
+        }
         icon={<Bell className="h-6 w-6" aria-hidden />}
         actions={
           <>
@@ -37,6 +46,7 @@ export default function NotificationsPage() {
           </>
         }
       />
+      {isAdmin && <SendNotificationCard />}
       <div className="overflow-hidden rounded-2xl border border-line bg-surface shadow-sm">
         <Tabs
           className="m-3"
@@ -49,7 +59,11 @@ export default function NotificationsPage() {
             { id: 'unread', label: t('notificationsPage.unread', { count: unread }) },
           ]}
         />
-        <div role="tabpanel" id={`notifications-tabpanel-${filter}`} aria-labelledby={`notifications-tab-${filter}`}>
+        <div
+          role="tabpanel"
+          id={`notifications-tabpanel-${filter}`}
+          aria-labelledby={`notifications-tab-${filter}`}
+        >
           <NotificationList
             items={shown}
             isLoading={isLoading}

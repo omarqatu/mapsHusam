@@ -45,7 +45,8 @@ interface ListProps {
 export default function NotificationList({ items, isLoading, isError, onRead, emptyText }: ListProps) {
   const { t, i18n } = useTranslation();
   if (isLoading) return <CenteredSpinner minHeight="6rem" />;
-  if (isError) return <p className="p-4 text-center text-xs text-danger">{t('notificationsMenu.loadFailed')}</p>;
+  if (isError)
+    return <p className="p-4 text-center text-xs text-danger">{t('notificationsMenu.loadFailed')}</p>;
   if (items.length === 0)
     return <p className="p-4 text-center text-xs text-muted">{emptyText ?? t('notificationsMenu.empty')}</p>;
   return (

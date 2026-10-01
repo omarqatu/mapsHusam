@@ -1793,5 +1793,58 @@
       "reason": "Reason",
       "reasonHint": "The sender gets the reason as a notification, so write it clearly."
     }
+  },
+  "notify": {
+    "title": "Send a notification",
+    "target": "To",
+    "type": "Kind",
+    "userId": "User ID",
+    "titleLabel": "Title",
+    "message": "Message",
+    "send": "Send notification",
+    "sent": "Sent: delivered live to {{sent}} of {{total}} (the others see it when they sign in).",
+    "failed": "Could not send the notification.",
+    "offline": "The live connection is not ready yet; try again in a moment.",
+    "pick": "Choose users",
+    "searchUsers": "Search by name, phone or ID",
+    "selectShown": "Select shown",
+    "clear": "Clear selection",
+    "selectedCount": "{{count}} selected",
+    "targets": {
+      "single": "One user",
+      "online": "Only users online now",
+      "all_users": "All users",
+      "regular_users": "Regular users only",
+      "providers": "Service providers only",
+      "admins": "Admins only",
+      "selected": "Pick several"
+    },
+    "types": {
+      "info": "Information",
+      "success": "Success",
+      "warning": "Warning",
+      "error": "Error"
+    },
+    "roles": {
+      "all": "All",
+      "user": "Users",
+      "provider": "Providers",
+      "admin": "Admins"
+    },
+    "errors": {
+      "userId": {
+        "required": "Enter the user ID.",
+        "invalid": "The user ID is digits only."
+      },
+      "selected": {
+        "required": "Choose at least one user."
+      },
+      "title": {
+        "required": "Enter a title."
+      },
+      "message": {
+        "required": "Enter the message."
+      }
+    }
   }
 }

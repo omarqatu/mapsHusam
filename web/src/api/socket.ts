@@ -5,13 +5,23 @@ import type { ChatMessage, ContactNumbers } from './requests';
 
 // Events found in server.js (io handlers + the service-request routes). Payloads are typed from what the server
 // actually sends — see PLAN.md item 7 for where each field comes from.
+/** What the admin's send form emits (legacy notifications-panel.html → `send_notification`). */
+export interface SendNotificationPayload {
+  targetType: 'single' | 'online' | 'all_users' | 'regular_users' | 'providers' | 'admins' | 'selected';
+  targetUserId?: number;
+  targetUserIds?: number[];
+  title: string;
+  message: string;
+  type: 'info' | 'success' | 'warning' | 'error';
+}
+
 export interface ServerToClientEvents {
   connection_confirmed: (p: { userId: number; socketId: string }) => void;
   force_relogin: (p: unknown) => void;
   new_notification: (p: NotificationPush) => void;
   unread_notifications: (p: AppNotification[]) => void;
   notification_marked_read: (p: { success: boolean }) => void;
-  notification_sent: (p: unknown) => void;
+  notification_sent: (p: { success: boolean; sentCount: number; totalTargeted: number }) => void;
   notification_error: (p: { error: string }) => void;
   notifications_error: (p: { error: string }) => void;
   service_request_new: (p: { id: number; requestId: number; serviceType: string; createdAt: string }) => void;
@@ -33,7 +43,8 @@ export interface ServerToClientEvents {
 export interface ClientToServerEvents {
   /** The server ignores any argument: the user comes from the token. */
   user_connected: () => void;
-  send_notification: (p: unknown) => void;
+  /** Admins only (the server re-checks the role); answered by `notification_sent` or `notification_error`. */
+  send_notification: (p: SendNotificationPayload) => void;
   /** The server answers with `unread_notifications` (the last 50 rows, read ones included). */
   get_unread_notifications: () => void;
   mark_notification_read: (id: number) => void;

@@ -497,3 +497,28 @@ test("S: a third account cannot read, answer, cancel or rate somebody else's req
     await clearOpenRequests(request);
   }
 });
+
+test('N: the admin sends a notification to one user; the user, signed in elsewhere, gets it live (TEST_PLAN §10)', async ({
+  browser,
+}) => {
+  const user = await open(browser, 'user', '/home');
+  const admin = await open(browser, 'admin', '/notifications');
+  contexts.push(user.context, admin.context);
+
+  await expect(admin.page.getByRole('heading', { name: t('notify.title') })).toBeVisible();
+  const title = `تنبيه اختبار ${Date.now()}`;
+  // Nothing goes out without a user ID, a title and a message.
+  await admin.page.getByRole('button', { name: t('notify.send') }).click();
+  await expect(admin.page.getByText(t('notify.errors.title.required'))).toBeVisible();
+
+  await admin.page.getByLabel(t('notify.userId')).fill(String(session('user').user_id));
+  await admin.page.getByLabel(t('notify.titleLabel')).fill(title);
+  await admin.page.getByLabel(t('notify.message')).fill('<b>نص</b> الإشعار');
+  await admin.page.getByRole('button', { name: t('notify.send') }).click();
+  await expect(admin.page.getByText(/وصل فوراً إلى [1-9]/).first()).toBeVisible({ timeout: 15_000 });
+
+  // The user sees it at once (toast), as text.
+  await expect(user.page.getByText(title).first()).toBeVisible({ timeout: 15_000 });
+  expect(admin.problems).toEqual([]);
+  expect(user.problems).toEqual([]);
+});

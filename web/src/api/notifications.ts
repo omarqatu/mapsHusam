@@ -2,7 +2,7 @@ import { useCallback, useEffect } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useAuthStore } from '@/store/authStore';
 import { ApiError } from './client';
-import { useSocket, type AppSocket } from './socket';
+import { useSocket, type AppSocket, type SendNotificationPayload } from './socket';
 
 // Notifications (legacy js/notifications.js). There is no HTTP endpoint: the server only speaks socket.io
 // (`get_unread_notifications` → `unread_notifications`, `mark_notification_read`, push `new_notification`).
@@ -52,17 +52,52 @@ export function fetchNotifications(socket: AppSocket): Promise<AppNotification[]
   });
 }
 
+/** Sends one admin notification over the socket; resolves with how many sessions got it live and how many were targeted. */
+export function sendNotification(
+  socket: AppSocket,
+  payload: SendNotificationPayload,
+): Promise<{ sentCount: number; totalTargeted: number }> {
+  return new Promise((resolve, reject) => {
+    const done = () => {
+      clearTimeout(timer);
+      socket.off('notification_sent', onSent);
+      socket.off('notification_error', onError);
+    };
+    const onSent = (p: { sentCount: number; totalTargeted: number }) => {
+      done();
+      resolve({ sentCount: Number(p.sentCount) || 0, totalTargeted: Number(p.totalTargeted) || 0 });
+    };
+    const onError = (p: { error: string }) => {
+      done();
+      reject(new ApiError(p?.error || 'notification', 400));
+    };
+    const timer = setTimeout(() => {
+      done();
+      reject(new ApiError('timeout', 0));
+    }, ANSWER_TIMEOUT_MS * 2);
+    socket.on('notification_sent', onSent);
+    socket.on('notification_error', onError);
+    socket.emit('send_notification', payload);
+  });
+}
+
 /** Unread = anything the server has not marked read (legacy counted the whole list, read rows included). */
 export const isUnread = (n: Pick<AppNotification, 'is_read'>) => n.is_read !== true;
 export const countUnread = (items: readonly AppNotification[]) => items.filter(isUnread).length;
 
 /** New push on top, no duplicates, still the server's limit of 50. */
-export function withPush(items: readonly AppNotification[] | undefined, push: NotificationPush): AppNotification[] {
+export function withPush(
+  items: readonly AppNotification[] | undefined,
+  push: NotificationPush,
+): AppNotification[] {
   const rest = (items ?? []).filter((n) => n.id !== push.id);
   return [{ ...push, is_read: false }, ...rest].slice(0, 50);
 }
 
-export function withRead(items: readonly AppNotification[] | undefined, ids: readonly number[]): AppNotification[] {
+export function withRead(
+  items: readonly AppNotification[] | undefined,
+  ids: readonly number[],
+): AppNotification[] {
   return (items ?? []).map((n) => (ids.includes(n.id) ? { ...n, is_read: true } : n));
 }
 

@@ -5,8 +5,22 @@ import type { AppNotification } from '@/api/notifications';
 import NotificationsPage from './NotificationsPage';
 
 const rows: AppNotification[] = [
-  { id: 1, title: 'New request', message: 'A user asked for you', type: 'info', is_read: false, created_at: '2026-09-29T10:00:00Z' },
-  { id: 2, title: 'Rated', message: 'You got 5 stars', type: 'success', is_read: true, created_at: '2026-09-28T10:00:00Z' },
+  {
+    id: 1,
+    title: 'New request',
+    message: 'A user asked for you',
+    type: 'info',
+    is_read: false,
+    created_at: '2026-09-29T10:00:00Z',
+  },
+  {
+    id: 2,
+    title: 'Rated',
+    message: 'You got 5 stars',
+    type: 'success',
+    is_read: true,
+    created_at: '2026-09-28T10:00:00Z',
+  },
 ];
 const markRead = vi.fn();
 const markAllRead = vi.fn();

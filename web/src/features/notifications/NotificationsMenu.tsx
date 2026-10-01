@@ -11,7 +11,8 @@ export default function NotificationsMenu({ tone = 'default' }: { tone?: 'defaul
   const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   const box = useRef<HTMLDivElement>(null);
-  const { items, unread, isLoading, isError, refresh, isRefreshing, markRead, markAllRead } = useNotifications();
+  const { items, unread, isLoading, isError, refresh, isRefreshing, markRead, markAllRead } =
+    useNotifications();
   const canAsk = typeof Notification !== 'undefined' && Notification.permission === 'default';
 
   useEffect(() => {
@@ -34,7 +35,11 @@ export default function NotificationsMenu({ tone = 'default' }: { tone?: 'defaul
         type="button"
         onClick={() => setOpen((v) => !v)}
         aria-expanded={open}
-        aria-label={unread ? `${t('notificationsMenu.open')} (${t('notificationsMenu.unread', { count: unread })})` : t('notificationsMenu.open')}
+        aria-label={
+          unread
+            ? `${t('notificationsMenu.open')} (${t('notificationsMenu.unread', { count: unread })})`
+            : t('notificationsMenu.open')
+        }
         title={t('notificationsMenu.open')}
         className={clsx(
           'relative inline-flex items-center rounded-lg px-2.5 py-1.5',
@@ -57,10 +62,23 @@ export default function NotificationsMenu({ tone = 'default' }: { tone?: 'defaul
           <div className="flex items-center justify-between gap-2 border-b border-line px-3 py-2">
             <p className="text-sm font-bold">{t('notificationsMenu.title')}</p>
             <div className="flex items-center gap-1">
-              <button type="button" onClick={refresh} className="rounded p-1 hover:bg-subtle" aria-label={t('notificationsMenu.refresh')} title={t('notificationsMenu.refresh')}>
+              <button
+                type="button"
+                onClick={refresh}
+                className="rounded p-1 hover:bg-subtle"
+                aria-label={t('notificationsMenu.refresh')}
+                title={t('notificationsMenu.refresh')}
+              >
                 <RefreshCw className={clsx('h-4 w-4', isRefreshing && 'animate-spin')} aria-hidden />
               </button>
-              <button type="button" onClick={markAllRead} disabled={!unread} className="rounded p-1 hover:bg-subtle disabled:opacity-40" aria-label={t('notificationsMenu.markAll')} title={t('notificationsMenu.markAll')}>
+              <button
+                type="button"
+                onClick={markAllRead}
+                disabled={!unread}
+                className="rounded p-1 hover:bg-subtle disabled:opacity-40"
+                aria-label={t('notificationsMenu.markAll')}
+                title={t('notificationsMenu.markAll')}
+              >
                 <CheckCheck className="h-4 w-4" aria-hidden />
               </button>
             </div>
@@ -78,7 +96,11 @@ export default function NotificationsMenu({ tone = 'default' }: { tone?: 'defaul
           <div className="max-h-[55vh] overflow-y-auto">
             <NotificationList items={items} isLoading={isLoading} isError={isError} onRead={markRead} />
           </div>
-          <Link to="/notifications" onClick={() => setOpen(false)} className="block border-t border-line px-3 py-2 text-center text-xs font-bold text-brand-fg hover:bg-subtle">
+          <Link
+            to="/notifications"
+            onClick={() => setOpen(false)}
+            className="block border-t border-line px-3 py-2 text-center text-xs font-bold text-brand-fg hover:bg-subtle"
+          >
             {t('notificationsMenu.viewAll')}
           </Link>
         </div>

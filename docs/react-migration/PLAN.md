@@ -104,7 +104,7 @@ on each request (`requireAdmin`). Errors come back as `{ success:false, error }`
   Arabic digits accepted), contact type, status, cancel reason (contains + exact). [ ] "Shown N of M". [ ] Reload.
 - [x] Delete a record (confirm, irreversible). [ ] Shortcuts: send notification, live-info centre, users.
 
-- **Changed on purpose (dashboard):** the header filter row is a labelled grid (a table header row cannot work on a phone); "contains" text + "exact" drop-downs for user / provider / reason are kept, the exact ones and phone / reason sit under "More filters". Four summary tiles (records in view, successful, pending, cancelled) are new. Layer names follow the UI language; contact-type emoji → icons; browser `alert` / `confirm` → toast / dialog. The three shortcut buttons are links (no new tab); "send notification" goes to `/notifications`, which is the bell's list — legacy `notifications-panel.html` had no send form either.
+- **Changed on purpose (dashboard):** the header filter row is a labelled grid (a table header row cannot work on a phone); "contains" text + "exact" drop-downs for user / provider / reason are kept, the exact ones and phone / reason sit under "More filters". Four summary tiles (records in view, successful, pending, cancelled) are new. Layer names follow the UI language; contact-type emoji → icons; browser `alert` / `confirm` → toast / dialog. The three shortcut buttons are links (no new tab); "send notification" goes to `/notifications`, which for admins now has the send form (see below).
 
 **`/admin/widgets`** — `widgets-admin.html` + `js/widgets-config.js`
 - API: `GET /api/admin/widgets-data` → `{ groups: { <key>: { data[], updated_at } } }`; `POST /api/admin/widgets-data/:key { items[] }` (keys:
@@ -640,7 +640,7 @@ Split `index.html` into features, in this order:
    - The "My requests" button lives in the top bar next to the bell (legacy: under the notifications button in the profile area); a green dot marks new activity.
    - Rating and comment prompts are plain dialogs with clickable stars (keyboard accessible); the star labels are unchanged.
    - Some Arabic toast texts lost their leading emoji; error texts from the server are still shown as is.
-   **Not ported / open:** `notifications-panel.html` (standalone page, route `/notifications` stays a placeholder: the bell list covers it; decision below); legacy `js/service-chat.js` and `js/notifications.js` are still loaded by the legacy pages and stay until the map page switch; layout-level mobile placement of the bell (item 9). Not verified: real-time socket flows between two browsers (covered by unit/live REST tests only), visual pass at 390 px.
+   **Not ported / open:** `notifications-panel.html` (standalone page, route `/notifications` stays a placeholder: the bell list covers it; decision below); legacy `js/service-chat.js` and `js/notifications.js` are still loaded by the legacy pages and stay until the map page switch; layout-level mobile placement of the bell (item 9). Real-time socket flows between browsers: verified 2026-10-01 by `web/e2e/flows.spec.ts` (user, provider, admin, a second session of the same user).
 8. ✅ Auth UI: `auth-core-functions.js`, `auth-app-events.js`, `auth-fetch.js`, `legal-content.js`
    **Parity checklist (from the legacy code).**
    - ✅ Promo splash → `/welcome` (pitch, 6 feature cards, "create account" / "log in", terms + privacy links).
@@ -991,6 +991,17 @@ Server parts came with the merge; the legacy files they touched (root pages, `js
 - **Not ported:** the colour picker for text boxes in his texts editor (q2) — our editor draws boxes in the theme's
   colours on purpose (option A below; dark mode). `.service-property-currencies.json` (one record, read by no code on
   `main`) — dropped. `TEST_PLAN.md` (his manual QA plan) is kept at the root and used for the role tests below.
+
+### Admin "send a notification" (legacy notifications-panel.html, found missing 2026-10-01)
+
+The legacy panel had a send form (this plan said it did not — wrong; Husam's TEST_PLAN §10 tests it). Ported onto
+`/notifications` for admins (`SendNotificationCard`): target = one user (ID), online now, everyone, regular users,
+providers, admins, or a hand-picked list (role filter, search by name / phone / ID, select shown / clear, count); kind
+info / success / warning / error; title (255) and message required. It emits the existing `send_notification` socket
+event (the server re-checks the admin role, saves rows for everyone and pushes to those online) and reports "delivered
+live to N of M". UX: inline field errors instead of alerts; the picker is a checkbox list instead of coloured buttons.
+Verified: `sendModel.test.ts`; `flows.spec.ts` scenario N (admin sends to the user's ID, the user's other browser shows
+it at once); browser at 1440 / 390, no overflow.
 
 #### `/admin/texts` — how HTML from data is shown (user decision 2026-09-30: option A, allow-list → React elements)
 
