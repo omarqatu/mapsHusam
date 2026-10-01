@@ -515,29 +515,12 @@ app.use((err, req, res, next) => {
 });
 
 // [إجراء أمني 1]: قائمة بيضاء للطبقات المسموح بالوصول إليها والتعديل عليها (تشمل كافة الخدمات والعقارات الفعالة)
-const ALLOWED_LAYERS = [
-    // --- طبقات الخدمات التفاعلية ---
-    'road_barriers', 'fuel_stations',
-    'city_landmarks', 'supermarket', 'commercial_shops', 'restaurants', 'schools_kindergartens', 'job_vacancies', 
-    'electrician', 'ac_technician', 'plumber', 'general_maintenance', 'painter', 'carpenter', 
-    'blacksmith', 'builder', 'house_cleaner', 'aluminum_tech', 'glass_tech', 'car_mechanic', 'car_electrician', 
-    'tire_tech', 'car_wash', 'motorcycle_repair', 'taxi_driver', 'delivery_services', 'tow_truck', 
-    'cctv_installer', 'party_planner', 'zaffa_bands', 'music_bands', 'Finisher', 'party_rental', 
-    'home_nurse', 'masseur', 'cupping_specialist', 'nutritionist', 'truck_driver', 'security_firms', 
-    'furniture_buyer', 'gardener', 'pet_care', 'clown_entertainer', 'online_stores', 'villas_rent', 
-    'martial_arts_gymnastics', 'public_parks_recreation', 'hotels', 'free_distribution', 'barber_shop', 
-    'video_design_ads', 'pharmacies_on_call', 'taxis_on_call', 'emergency_hospitals', 'clinics', 
-    'doctors_on_call', 'ambulances_on_call', 'music_training', 'lawyers', 'land_surveyors', 
-    'real_estate_valuers', 'private_tutors', 'programmers', 'car_delivery_on_call', 
-    'motorcycle_delivery_on_call', 'bicycle_delivery_on_call', 'photographers', 'student_research_assist',
-     
-
-        // --- طبقات العقارات والمواقع الفعالة ---
-    'ApartRent', 'ApartSale', 'LandSale', 'Location', 'RoadsTest',
-
-    // 🆕 قيمة خاصة تُستخدم فقط بالبحث العالمي لجلب كل الخدمات دفعة واحدة بدون discriminator
-    'service_all'
-];
+// أنواع الخدمات من shared/service-types.json: نفس الملف الذي تبني منه الواجهة قائمتها (مصدر واحد)
+const SERVICE_TYPE_KEYS = JSON.parse(fs.readFileSync(path.join(__dirname, 'shared', 'service-types.json'), 'utf8'))
+    .map((type) => type.key);
+// طبقات العقارات والمواقع الفعالة + قيمة service_all الخاصة بالبحث العالمي (كل الخدمات دفعة واحدة بدون discriminator)
+const OTHER_LAYERS = ['ApartRent', 'ApartSale', 'LandSale', 'Location', 'RoadsTest', 'service_all'];
+const ALLOWED_LAYERS = [...SERVICE_TYPE_KEYS, ...OTHER_LAYERS];
 
 const isValidLayer = (layer) => typeof layer === 'string' && ALLOWED_LAYERS.includes(layer.trim());
 

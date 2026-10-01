@@ -1376,6 +1376,15 @@ Log each change here: **what · why · how to verify · commit**.
   in the pre-merge checklist (production must have it in its settings before this deploys — the deploy's smoke test
   rolls back otherwise). Verified: without it → "GEOSERVER_TARGET" in the missing list, exit 1; with `dev/dev.env` →
   `/geoserver-proxy/…/wfs` 200. Commit: `fix(server): GEOSERVER_TARGET comes from the settings only`.
+- **One list of service types for the app and the server.** The server's `ALLOWED_LAYERS` repeated, by hand, the 68
+  service keys of the web registry (`registry.test.ts` compared the two). The list now lives in
+  `shared/service-types.json`: the web registry imports it, and `server.js` reads it at startup and adds the
+  non-service layers (`OTHER_LAYERS`: the three property layers, `Location`, `RoadsTest`, `service_all`). Adding a
+  type = one JSON entry + its two names in the locales; the server needs no edit. Same whitelist: the old literal and
+  the new list hold the same 74 names (checked by script before the commit). Vite serves `../shared` and nothing else
+  outside `web/` (`/@fs/…/server.js` → 403). Verified: `registry.test.ts` (entries have only known fields, valid
+  group / tier / edit profile; the server builds its list from the file; `OTHER_LAYERS` = the app's non-service
+  layers), the full unit and browser suites. Commit: `refactor: one list of service types for the app and the server`.
 
 ## Backend asks (needs the user's decision — behaviour-changing or larger)
 

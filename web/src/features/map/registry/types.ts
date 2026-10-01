@@ -28,7 +28,8 @@ export type ServiceGroupId = Exclude<TypeGroupId, 'realestate'>;
  * its fields). Omitted = `standard`: the common fields only. `propertyService` (hotels, holiday villas) adds a price
  * in dollars and an area: they are services in `service_all` but are priced like property.
  */
-export type EditProfile = 'standard' | 'roadBarrier' | 'fuelStation' | 'propertyService';
+export const EDIT_PROFILES = ['standard', 'roadBarrier', 'fuelStation', 'propertyService'] as const;
+export type EditProfile = (typeof EDIT_PROFILES)[number];
 
 /** What one service type is, everywhere. Adding a type = adding one entry to `SERVICE_REGISTRY`. */
 export interface ServiceEntry {

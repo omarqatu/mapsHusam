@@ -9,6 +9,7 @@
 ```text
 server.js                  Express + PostgreSQL (قاعدتين: services_db و realestate) + socket.io + بروكسي GeoServer
 lib/thefuelprice.js        قراءة أسعار المحروقات (مع اختبار)
+shared/service-types.json  قائمة أنواع الخدمات: الواجهة والسيرفر بيقرأوها
 web/src/
   api/                     كل نداء للسيرفر: دالة typed بملف لكل مجال + client.ts (التوكن، 401 ← خروج)
                            geoserver.ts لقراءات GeoServer (بدون توكن التطبيق)
@@ -37,7 +38,7 @@ web/e2e/                   Playwright: تجارب بمتصفح حقيقي على
 | من سطر تقريبًا | القسم |
 |---|---|
 | 30–250 | الإعدادات، الأمان (CORS، helmet، حدود الطلبات، قفل الدخول) |
-| 250–520 | الاتصال بالقواعد، إنشاء الجداول والأعمدة تلقائيًا (`ensure…`)، `ALLOWED_LAYERS` |
+| 250–520 | الاتصال بالقواعد، إنشاء الجداول والأعمدة تلقائيًا (`ensure…`)، `ALLOWED_LAYERS` (من `shared/service-types.json` + `OTHER_LAYERS`) |
 | 520–700 | الجلسات (JWT، `requireAuth`، `requireAdmin`)، حد الطلبات لكل مستخدم |
 | 700–1130 | إحصائيات عامة، أسعار، محروقات، خدمة المزوّد |
 | 1130–1570 | تحديث حالة وموقع المزوّد، البحث |
@@ -51,10 +52,10 @@ web/e2e/                   Playwright: تجارب بمتصفح حقيقي على
 
 كل الخدمات بجدول واحد `service_all`، والنوع بعمود `discriminator`. ما في جدول ولا SQL جديد.
 
-1. سطر بـ `web/src/features/map/registry/services.ts` (الشرح بأول الملف). كل قوائم الأنواع بالموقع بتنبني منه.
+1. عنصر بـ `shared/service-types.json` (الحقول مشروحة بأول `web/src/features/map/registry/services.ts`). الواجهة
+   والسيرفر (`ALLOWED_LAYERS`) بيقرأوا نفس الملف، وكل قوائم الأنواع بالموقع بتنبني منه.
 2. اسمه بـ `web/src/locales/ar.json` و `en.json` تحت `services.<key>`.
-3. المفتاح بـ `ALLOWED_LAYERS` بـ `server.js` (تغيير سيرفر: commit لحاله + سطر بـ PLAN.md).
-4. `npm test` — `registry.test.ts` بيفشل إذا نسيت خطوة.
+3. `npm test` — `registry.test.ts` بيفشل إذا نسيت خطوة أو كتبت حقل غلط.
 
 ## إضافة طبقة عقارات
 
@@ -65,7 +66,7 @@ web/e2e/                   Playwright: تجارب بمتصفح حقيقي على
    - `features/map/config.ts` (الطبقة).
    - `features/map/edit/schema.ts` (حقول التعديل).
    - `features/map/search/globalSearch.ts` (`REAL_ESTATE_API`).
-3. اسمها بالـ locales، والمفتاح بـ `ALLOWED_LAYERS`.
+3. اسمها بالـ locales، واسم الطبقة بـ `OTHER_LAYERS` بـ `server.js`.
 
 ## الفحوصات
 

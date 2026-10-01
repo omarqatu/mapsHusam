@@ -9,7 +9,8 @@ import { buildSearchTags } from '../edit/attributes';
 import { REAL_ESTATE_LAYERS, SERVICE_ALL_LAYER, SERVICE_TYPES, TIER_RULES } from '../config';
 import { groupOf, groupedTargets } from '../extras/featured';
 import { ALL_TARGETS, targetKey, targetLabelKey } from '../targets';
-import { groupLabelKey, SERVICE_REGISTRY, serviceLabelKey, TYPE_GROUP_IDS } from './index';
+import serviceTypes from '../../../../../shared/service-types.json';
+import { EDIT_PROFILES, groupLabelKey, SERVICE_REGISTRY, serviceLabelKey, TYPE_GROUP_IDS } from './index';
 
 // The service registry is the one list of service types. These tests fail when a type exists in one place but not in
 // another: the registry, the locale label keys, the server whitelist, and every list derived from the registry.
@@ -19,15 +20,10 @@ const serviceLabels = (locale: { services: Record<string, string> }) => Object.k
 const dig = (obj: unknown, path: string): unknown =>
   path.split('.').reduce<unknown>((o, k) => (o as Record<string, unknown> | undefined)?.[k], obj);
 
-/** `ALLOWED_LAYERS` of server.js, parsed read-only (repo root, one level above `web/`, where vitest runs). */
-function serverWhitelist(): string[] | null {
+/** server.js, read-only (repo root, one level above `web/`, where vitest runs); null when web/ is checked out alone. */
+function serverSource(): string | null {
   const path = resolve(process.cwd(), '../server.js');
-  if (!existsSync(path)) return null;
-  const src = readFileSync(path, 'utf8');
-  const body = /const ALLOWED_LAYERS = \[([\s\S]*?)\n\];/.exec(src)?.[1];
-  if (!body) throw new Error('ALLOWED_LAYERS not found in server.js: update the parser in registry.test.ts');
-  const noComments = body.replace(/\/\/[^\n]*/g, '');
-  return [...noComments.matchAll(/'([^']+)'/g)].map((m) => m[1]);
+  return existsSync(path) ? readFileSync(path, 'utf8') : null;
 }
 
 describe('service registry', () => {
@@ -41,8 +37,16 @@ describe('service registry', () => {
       expect(TYPE_GROUP_IDS as readonly string[], `${s.key} group`).toContain(s.group);
       expect(s.group, `${s.key} group`).not.toBe('realestate');
       if (s.tier) expect(Object.keys(TIER_RULES), `${s.key} tier`).toContain(s.tier);
+      if (s.editProfile)
+        expect(EDIT_PROFILES as readonly string[], `${s.key} editProfile`).toContain(s.editProfile);
       expect(s.labelKey).toBe(serviceLabelKey(s.key));
     }
+  });
+
+  it('shared/service-types.json entries have only known fields', () => {
+    const known = new Set(['key', 'icon', 'group', 'tier', 'editProfile', 'tagName', 'tagKeywords']);
+    for (const entry of serviceTypes as Record<string, unknown>[])
+      for (const field of Object.keys(entry)) expect(known, `${String(entry.key)}.${field}`).toContain(field);
   });
 
   it('every type has its display name in ar and en, and the locales have no orphan service names', () => {
@@ -61,18 +65,21 @@ describe('service registry', () => {
     }
   });
 
-  it('matches the server whitelist (ALLOWED_LAYERS in server.js) exactly', () => {
-    const whitelist = serverWhitelist();
-    if (!whitelist) return; // web/ deployed on its own: nothing to compare with
-    const notServices = new Set<string>([
+  it('the server whitelist is built from the same list (shared/service-types.json) plus the non-service layers', () => {
+    const src = serverSource();
+    if (!src) return; // web/ deployed on its own: nothing to compare with
+    expect(src).toMatch(/path\.join\(__dirname, 'shared', 'service-types\.json'\)/);
+    expect(src).toMatch(/const ALLOWED_LAYERS = \[\.\.\.SERVICE_TYPE_KEYS, \.\.\.OTHER_LAYERS\];/);
+    const body = /const OTHER_LAYERS = \[([^\]]*)\];/.exec(src)?.[1];
+    if (!body) throw new Error('OTHER_LAYERS not found in server.js: update the parser in registry.test.ts');
+    const others = [...body.matchAll(/'([^']+)'/g)].map((m) => m[1]);
+    const notServices = [
       ...REAL_ESTATE_LAYERS.map((l) => l.typeName),
       ...Object.values(EDIT_ONLY_LAYERS).map((l) => l.typeName),
       SERVICE_ALL_LAYER.typeName,
-    ]);
-    const serverServices = whitelist.filter((l) => !notServices.has(l));
-    expect(new Set(serverServices).size, 'duplicates in ALLOWED_LAYERS').toBe(serverServices.length);
-    expect([...serverServices].sort()).toEqual([...keys].sort());
-    for (const l of notServices) expect(whitelist, l).toContain(l);
+    ];
+    expect([...others].sort()).toEqual([...new Set(notServices)].sort());
+    for (const k of keys) expect(others, k).not.toContain(k);
   });
 
   it('every type is in exactly one group', () => {

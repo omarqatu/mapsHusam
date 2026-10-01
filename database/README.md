@@ -10,6 +10,6 @@
 | `add_realestate_layer.sql` | قالب لإضافة طبقة **عقارات** جديدة (كل طبقة عقارات جدول لحاله) |
 
 **الخدمات** ما إلها جدول لكل نوع: كلها بجدول واحد `service_all`، والنوع بعمود `discriminator`. نوع خدمة جديد ما بيحتاج
-SQL — الخطوات بـ [`docs/dev/guide.md`](../docs/dev/guide.md).
+SQL — عنصر بـ `shared/service-types.json`، والخطوات بـ [`docs/dev/guide.md`](../docs/dev/guide.md).
 
 قاعدة التطوير المحلية (`dev/`) بتتجهّز لحالها بـ `dev/dev.sh db-up`.

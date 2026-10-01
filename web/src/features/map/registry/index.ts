@@ -1,5 +1,5 @@
 export { SERVICE_BY_KEY, SERVICE_REGISTRY, serviceLabelKey } from './services';
-export { TYPE_GROUP_IDS } from './types';
+export { EDIT_PROFILES, TYPE_GROUP_IDS } from './types';
 export type {
   EditProfile,
   ServiceDef,

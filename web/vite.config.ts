@@ -11,6 +11,8 @@ export default defineConfig({
   resolve: { alias: { '@': fileURLToPath(new URL('./src', import.meta.url)) } },
   server: {
     port: 5173,
+    // `../shared` holds the service-type list the server reads too; nothing else outside web/ is served.
+    fs: { allow: ['.', '../shared'] },
     proxy: {
       '/api': { target: backend, changeOrigin: true },
       '/geoserver-proxy': { target: backend, changeOrigin: true },
