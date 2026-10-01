@@ -18,6 +18,8 @@ export interface AppNotification {
   type: NotificationType | null;
   is_read: boolean | null;
   created_at: string;
+  /** Where a click leads: `request:<id>` or an app path (see features/notifications/target.ts). Null on older rows. */
+  link?: string | null;
 }
 /** Pushed live: no `is_read` (always new). */
 export type NotificationPush = Omit<AppNotification, 'is_read'>;

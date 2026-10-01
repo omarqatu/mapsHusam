@@ -766,7 +766,8 @@
     "loadFailed": "تعذر تحميل الإشعارات",
     "enableSystem": "تفعيل إشعارات المتصفح",
     "justNow": "الآن",
-    "viewAll": "عرض كل الإشعارات"
+    "viewAll": "عرض كل الإشعارات",
+    "myRequests": "طلباتي"
   },
   "notificationsPage": {
     "allRead": "لا توجد إشعارات غير مقروءة",

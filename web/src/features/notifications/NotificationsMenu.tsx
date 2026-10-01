@@ -76,7 +76,7 @@ export default function NotificationsMenu({ tone = 'default' }: { tone?: 'defaul
             </button>
           )}
           <div className="max-h-[55vh] overflow-y-auto">
-            <NotificationList items={items} isLoading={isLoading} isError={isError} onRead={markRead} />
+            <NotificationList items={items} isLoading={isLoading} isError={isError} onRead={markRead} onLeave={() => setOpen(false)} />
           </div>
           <Link to="/notifications" onClick={() => setOpen(false)} className="block border-t border-line px-3 py-2 text-center text-xs font-bold text-brand-fg hover:bg-subtle">
             {t('notificationsMenu.viewAll')}

@@ -766,7 +766,8 @@
     "loadFailed": "Could not load notifications",
     "enableSystem": "Enable browser notifications",
     "justNow": "now",
-    "viewAll": "View all notifications"
+    "viewAll": "View all notifications",
+    "myRequests": "My requests"
   },
   "notificationsPage": {
     "allRead": "You are all caught up",
