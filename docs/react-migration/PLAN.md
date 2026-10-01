@@ -979,11 +979,15 @@ Server parts came with the merge; the legacy files they touched (root pages, `js
   names like his `currencyDisplayLabel`; the map's smart search and /search offer the currency box for them as for
   property. Supersedes "price in dollars only" below. Verified: `edit.live.test.ts` saves a hotel with `currency: ILS`
   through the real GeoServer and reads it back; `propertyServices.test.ts`, `registry.test.ts`.
-- ⬜ **Featured cards** (q1): rating on every service type except roads / fuel (was hotels / villas only), above the
-  title with the open / closed status; a "show comments" toggle with each rating's name, stars and comment.
-- ⬜ **YouTube in the card** (TestFinal): a thumbnail with a play button instead of an embedded player; on touch screens
-  it opens a full-screen player with "close" and "open in YouTube".
-- ⬜ **/search**: the area filter takes a full row for hotels / villas; the currency filter applies to them too.
+- ✅ **Featured cards** (q1): every service card except road barriers and fuel stations shows the customers' real
+  rating (average, count, "show comments" with name / stars / comment, or "no ratings yet") above the name, instead of
+  the hand-set `rating` column; a "top rated" card keeps the average it already carries (no second request); property
+  keeps the hand-set stars. `FeaturedCard` `customerRatings` is now on by default (`false` turns it off). Verified in the
+  browser: featured tab → painter / decorator / supermarket cards show "no ratings yet", the top-rated plumber 4 (3).
+- ✅ **YouTube in the card** (TestFinal): already how React works — `MediaGallery` shows a thumbnail with a play badge and
+  opens the player in a dialog (bottom sheet on phones) with "open on YouTube"; nothing to change.
+- ✅ **/search**: the currency box now shows for hotels / villas (with the currency work above); the area filter's
+  crowding was a legacy layout problem (side ads) — React's filter grid already gives price its own wide cell.
 - **Not ported:** the colour picker for text boxes in his texts editor (q2) — our editor draws boxes in the theme's
   colours on purpose (option A below; dark mode). `.service-property-currencies.json` (one record, read by no code on
   `main`) — dropped. `TEST_PLAN.md` (his manual QA plan) is kept at the root and used for the role tests below.

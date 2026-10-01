@@ -29,7 +29,10 @@ interface CardProps {
   badge?: string;
   /** Extra line under the name, e.g. why a keyword search matched ("closed, inbound"). */
   note?: string;
-  /** Services: show the real customers' average + comments (one request per card) instead of the `rating` column. */
+  /**
+   * Services: the real customers' average + comments (one request per card) instead of the hand-set `rating` column.
+   * On by default for every service except road barriers and fuel stations (Husam, q1); `false` turns it off.
+   */
   customerRatings?: boolean;
   /** A paid placement: the featured frame (see featuredStyle). */
   highlight?: boolean;
@@ -106,7 +109,9 @@ export default function FeaturedCard({ entry, mode, badge, note, customerRatings
   const area = priced && Number(p.area) > 0 ? text(p.area) : '';
   const stars = ratings?.avg ?? manualStars(r.rating);
   const media = mode === 'beforeAfter' ? null : labelMedia(mediaForMode(p, mode), t);
-  const showCustomerRatings = !!customerRatings && r.target.kind === 'service' && !!r.id;
+  // A "top rated" entry already carries the real average; everything else asks for it.
+  const showCustomerRatings =
+    customerRatings !== false && r.target.kind === 'service' && !isBarrier && !isFuel && !!r.id && !ratings;
 
   return (
     <article
@@ -123,6 +128,10 @@ export default function FeaturedCard({ entry, mode, badge, note, customerRatings
         <span>{badge ? `${badge} · ${typeTitle}` : typeTitle}</span>
         {r.id && <span className="font-normal text-muted">#{r.id}</span>}
       </div>
+
+      {showCustomerRatings && r.target.kind === 'service' && (
+        <RatingsBlock layer={r.target.discriminator} featureId={r.id ?? ''} />
+      )}
 
       {!bare && (
         <h5 className="flex items-start gap-2 text-base font-bold text-fg" dir="auto">
@@ -164,10 +173,6 @@ export default function FeaturedCard({ entry, mode, badge, note, customerRatings
 
       {isBarrier && <BarrierBadges props={p} />}
       {isFuel && <FuelBadges props={p} />}
-
-      {showCustomerRatings && r.target.kind === 'service' && (
-        <RatingsBlock layer={r.target.discriminator} featureId={r.id ?? ''} />
-      )}
 
       {text(p.des) && <Description value={text(p.des)} />}
 

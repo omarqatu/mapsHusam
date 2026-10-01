@@ -40,7 +40,7 @@ export default function ListingPreview({ entry, onClose, mode = 'all', badge, no
               </span>
             </div>
           )}
-          <FeaturedCard entry={entry} mode={mode} badge={badge} note={note} customerRatings bare />
+          <FeaturedCard entry={entry} mode={mode} badge={badge} note={note} bare />
         </div>
       )}
     </Modal>
