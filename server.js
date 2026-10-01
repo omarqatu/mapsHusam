@@ -2157,7 +2157,6 @@ app.get('/api/search-features', async (req, res) => {
         debugLog(`Search Params:`, params);
 
         const result = await targetPool.query(query, params);
-
         // تحويل النتائج إلى GeoJSON
         // تحويل النتائج إلى GeoJSON
         const features = result.rows.map(row => {
@@ -2376,8 +2375,7 @@ app.delete('/api/admin/platform-content/:key', requireAdmin, async (req, res) =>
 
 // جلسة مشاهدة مؤقتة للمشرف: قراءة الطلبات والرسائل فقط دون انتحال جلسة المستخدم.
 async function requireReadOnlyView(req, res, next) {
-    const authHeader = req.headers['authorization'] || '';
-    const token = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : null;
+    const token = req.headers['x-read-only-view'] || null;
     if (!token) {
         return res.status(401).json({ success: false, error: 'رمز المشاهدة مفقود.' });
     }
@@ -2391,6 +2389,9 @@ async function requireReadOnlyView(req, res, next) {
 
     if (decoded.type !== 'readonly_view' || !decoded.admin_uid || !decoded.target_uid) {
         return res.status(403).json({ success: false, error: 'رمز مشاهدة غير صالح.' });
+    }
+    if (!req.adminUserId || Number(decoded.admin_uid) !== Number(req.adminUserId)) {
+        return res.status(403).json({ success: false, error: 'رابط المشاهدة مرتبط بحساب المشرف الذي أنشأه.' });
     }
 
     try {
@@ -2443,7 +2444,7 @@ app.post('/api/admin/view-session', requireAdmin, async (req, res) => {
     }
 });
 
-app.get('/api/admin/view-session/profile', requireReadOnlyView, async (req, res) => {
+app.get('/api/admin/view-session/profile', requireAdmin, requireReadOnlyView, async (req, res) => {
     try {
         const result = await servicesPool.query(
             `SELECT user_id, full_name, phone, email, role, is_active, service_layer, feature_id
@@ -2457,7 +2458,7 @@ app.get('/api/admin/view-session/profile', requireReadOnlyView, async (req, res)
     }
 });
 
-app.get('/api/admin/view-session/requests', requireReadOnlyView, async (req, res) => {
+app.get('/api/admin/view-session/requests', requireAdmin, requireReadOnlyView, async (req, res) => {
     try {
         const result = await servicesPool.query(
             `SELECT sr.id, sr.user_id, sr.provider_user_id, sr.service_layer, sr.feature_id,
@@ -2478,7 +2479,7 @@ app.get('/api/admin/view-session/requests', requireReadOnlyView, async (req, res
     }
 });
 
-app.get('/api/admin/view-session/requests/:id/messages', requireReadOnlyView, async (req, res) => {
+app.get('/api/admin/view-session/requests/:id/messages', requireAdmin, requireReadOnlyView, async (req, res) => {
     try {
         const requestResult = await servicesPool.query(
             'SELECT id, user_id, provider_user_id, status, service_type FROM public.service_requests WHERE id = $1',

@@ -100,8 +100,12 @@ export interface ViewMessage {
   created_at: string;
 }
 
-/** The view token replaces the admin token for these three calls (and a 401 on them keeps the admin logged in). */
-const viewAuth = (token: string) => ({ headers: { Authorization: `Bearer ${token}` } });
+/**
+ * The three read-only view calls need both: the admin's own session (Authorization, added by the client) and the
+ * view token that names the user being viewed (`X-Read-Only-View`, bound by the server to the admin who created it).
+ * A 401 on them (an expired view link) keeps the admin logged in.
+ */
+const viewAuth = (token: string) => ({ headers: { 'X-Read-Only-View': token } });
 
 export const adminUsersApi = {
   list: () => api.get<AdminUsersResponse>('/api/admin/users'),

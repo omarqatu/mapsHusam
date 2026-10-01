@@ -964,6 +964,26 @@ Server parts came in with the merge. The legacy UI changes are not in React yet:
   screen: two buttons and a "trial version" note) → **not ported on purpose**: `/home` replaced that screen and it has no
   marketing copy to edit. His rows `legal.noMapIntro` / `legal.promoFeatures` are not read (different storage, see below).
 
+### Husam's changes on `main`, 30 September (q1, q2, "for test", "TestFinal", "Testing", merged 2026-10-01)
+
+Server parts came with the merge; the legacy files they touched (root pages, `js/`, `frontend-react/`) stay deleted here.
+
+- ✅ **Admin read-only view** (q2, server): the three `/api/admin/view-session/*` reads now need the admin's own session
+  (`requireAdmin`) **and** the view token in `X-Read-Only-View`, and the token must belong to the admin who created it.
+  React (`api/adminUsers.ts`) sent the view token *instead of* the admin token; now it sends both. A 401 on these calls
+  (expired view link) still does not log the admin out (`client.ts` treats `X-Read-Only-View` as own credentials).
+  Verified: `admin.live.test.ts` against the merged server.
+- ⬜ **Currency for hotels / villas** (q1): his editor now writes `currency` for the two types (so his database has the
+  column); display labels accept `USD/ILS/JOD`, `$`, `₪`, Arabic names. To port: the column, editor select, display, filters.
+- ⬜ **Featured cards** (q1): rating on every service type except roads / fuel (was hotels / villas only), above the
+  title with the open / closed status; a "show comments" toggle with each rating's name, stars and comment.
+- ⬜ **YouTube in the card** (TestFinal): a thumbnail with a play button instead of an embedded player; on touch screens
+  it opens a full-screen player with "close" and "open in YouTube".
+- ⬜ **/search**: the area filter takes a full row for hotels / villas; the currency filter applies to them too.
+- **Not ported:** the colour picker for text boxes in his texts editor (q2) — our editor draws boxes in the theme's
+  colours on purpose (option A below; dark mode). `.service-property-currencies.json` (one record, read by no code on
+  `main`) — dropped. `TEST_PLAN.md` (his manual QA plan) is kept at the root and used for the role tests below.
+
 #### `/admin/texts` — how HTML from data is shown (user decision 2026-09-30: option A, allow-list → React elements)
 
 - `lib/richText.ts`: stored HTML is parsed by `DOMParser` (inert document) and walked into a small tree; only paragraphs,
