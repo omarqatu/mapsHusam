@@ -94,13 +94,15 @@ if (process.env.ENABLE_HELMET !== 'false') {
                 defaultSrc: ["'self'"],
                 imgSrc: ["'self'", "data:", "blob:", "https:"],
                 mediaSrc: ["'self'", "https:"],
-                fontSrc: ["'self'", "https://cdnjs.cloudflare.com", "data:"],
+                fontSrc: ["'self'", "data:"],
                 // 🆕 [تشديد أمني تدريجي]: أُزيلت 'unsafe-eval' - أخطر توجيه بالـ CSP لأنه
                 // يسمح بتنفيذ أي نص كـ كود JS (eval/new Function). لم يعد ضرورياً لأي من
                 // مكتباتك الحالية. إن ظهر خطأ "unsafe-eval" بالـ Console لأي مكتبة بعد هذا
                 // التعديل، أعد 'unsafe-eval' مؤقتاً وأخبرني بالمكتبة المسبّبة لنعالجها بدقة.
-                scriptSrc: ["'self'", "https://cdnjs.cloudflare.com", "https://cdn.jsdelivr.net", "https://cdn.socket.io"],
-                styleSrc: ["'self'", "'unsafe-inline'", "https://cdnjs.cloudflare.com"],
+                // 🔒 السكربتات من الموقع نفسه فقط: الواجهة (web/dist) لا تحمّل أي سكربت من CDN، والسماح بـ CDN عام
+                // (jsdelivr يقدّم أي حزمة npm) كان يتيح تجاوز هذه السياسة بحقن سكربت من هناك.
+                scriptSrc: ["'self'"],
+                styleSrc: ["'self'", "'unsafe-inline'"],
                 connectSrc: ["'self'", "ws:", "wss:", "https:"],
                 frameSrc: ["'self'", "https://www.youtube.com"]
             }

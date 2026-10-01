@@ -1430,6 +1430,12 @@ Log each change here: **what · why · how to verify · commit**.
   sessions of the user → distinct tokens, both 200; logout A → A 401, B 200; after a restart A still 401; a socket with
   A is refused; a logged-out admin token → 401 on an admin route; no token / junk token → 200. Commit:
   `feat(server): logout revokes the token on the server`.
+- **Scripts only from the site itself (CSP).** `script-src` allowed cdnjs, jsdelivr and cdn.socket.io, leftovers of the
+  legacy pages; the React build loads no script from a CDN. jsdelivr serves any npm package, so an injected
+  `<script src="https://cdn.jsdelivr.net/…">` would have passed the policy. Now `script-src 'self'`; the CDN entries
+  of `font-src` and `style-src` went too. Verified with `web/dist` served by the server: the header shows the new
+  policy; logged in as the provider, the map, `/search`, `/home` and `/notifications` load with no CSP violation in
+  the console. Commit: `fix(server): scripts only from the site itself`.
 
 ## Backend asks (needs the user's decision — behaviour-changing or larger)
 
