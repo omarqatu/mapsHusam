@@ -1349,6 +1349,12 @@ Log each change here: **what · why · how to verify · commit**.
   condition. Found by the role test (scenario Q: the user was signed out by a limit change). Verified: `flows.spec.ts` Q
   (limit set → the user stays signed in and is stopped by the limit; limit lifted → free again), `admin.live.test.ts`.
   Commit: `fix(server): editing a user's limit or service no longer logs them out`.
+- **The missing-settings message names the file the server reads.** When `POSTGRES_*` is missing, the server told you to
+  create `.env.local` (with a production GeoServer address in the sample), but `dotenv.config()` only reads `.env` — a
+  file made from that hint was silently ignored. It now says: copy `.env.example` to `.env`. `.env.example` lists exactly
+  the variables `server.js` reads, with its defaults (9 unread ones dropped, 5 missing added). `.env.local.example`
+  (the same list again) is gone. Verified: start without `POSTGRES_HOST` → the new message and exit 1. Commit:
+  `fix(server): the missing-settings message points to .env`.
 
 ## Backend asks (needs the user's decision — behaviour-changing or larger)
 
