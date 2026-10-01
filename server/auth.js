@@ -1,6 +1,7 @@
 // Sessions (JWT), the requireAuth / requireAdmin guards, and the per-user request quota.
+import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
-import { ADMIN_JWT_SECRET } from './app.js';
+import { ADMIN_JWT_SECRET, BCRYPT_SALT_ROUNDS } from './app.js';
 import { servicesPool } from './database.js';
 
 // =========================================================================
@@ -240,3 +241,31 @@ export async function checkUserRequestQuota(userId) {
         return { allowed: true, unlimited: true, error: true };
     }
 }
+
+// =========================================================================
+// 🔒 كلمات المرور القديمة المحفوظة كنص صريح (قبل bcrypt) كانت تُشفَّر فقط عند أول دخول لصاحبها، فالحساب
+// الخامل يبقى نصاً مقروءاً بالقاعدة. هنا تُشفَّر كلها مرة عند الإقلاع: bcrypt للنص المخزَّن نفسه، فيبقى
+// الدخول بنفس كلمة المرور (verifyPasswordWithMigration يقارن بـ bcrypt). لا يُطبع أي قيمة، العدد فقط.
+// =========================================================================
+async function hashPlaintextPasswords() {
+    try {
+        const { rows } = await servicesPool.query(
+            `SELECT user_id, password_hash FROM public.users
+             WHERE password_hash IS NOT NULL AND password_hash <> '' AND password_hash !~ '^\\$2[aby]\\$[0-9]{2}\\$'`
+        );
+        let done = 0;
+        for (const row of rows) {
+            const hashed = await bcrypt.hash(row.password_hash, BCRYPT_SALT_ROUNDS);
+            // الشرط على القيمة القديمة: لا نكتب فوق كلمة مرور تغيّرت أثناء التشغيل
+            const res = await servicesPool.query(
+                'UPDATE public.users SET password_hash = $1 WHERE user_id = $2 AND password_hash = $3',
+                [hashed, row.user_id, row.password_hash]
+            );
+            done += res.rowCount;
+        }
+        if (rows.length) console.log(`🔒 شُفّرت ${done} كلمة مرور قديمة كانت محفوظة كنص صريح`);
+    } catch (err) {
+        console.error('⚠️ تعذر تشفير كلمات المرور القديمة:', err.message);
+    }
+}
+hashPlaintextPasswords();

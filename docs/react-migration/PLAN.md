@@ -1412,6 +1412,13 @@ Log each change here: **what · why · how to verify · commit**.
   admin's own notifications have none. Additive: no change for a client that ignores it. Verified: after a request
   between the dev accounts, the provider's row has `link = 'request:<id>'`; the role tests pass. Commit:
   `feat(server): notifications carry a link to what they are about`.
+- **No password stays in plain text.** Passwords from before bcrypt were hashed only when their owner next logged in
+  (`verifyPasswordWithMigration`), so an account nobody used since kept a readable password in `users.password_hash`
+  for good — readable by anyone with database access or a backup. At startup the server now bcrypt-hashes every value
+  that is not a bcrypt hash (the stored text itself, so the same password still works; the update is conditional on
+  the old value, so a password changed meanwhile is not overwritten). Logs only the count. Verified on a schema copy
+  with one plain-text account: `🔒 شُفّرت 1 …`, the row is `$2b$…`, login with the old password 200, a wrong one 401.
+  Commit: `fix(server): hash every plain-text password at startup`.
 
 ## Backend asks (needs the user's decision — behaviour-changing or larger)
 
