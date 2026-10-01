@@ -35,9 +35,7 @@ function useFieldLabel(target: EditTarget) {
   return (field: FieldDef) =>
     field.name === 'name' || field.name === 'des'
       ? t(`edit.fields.${field.name}.${variant}`)
-      : field.name === 'price' && variant === 'service'
-        ? t('edit.fields.priceService') // no currency box for services: the label says the price is in dollars
-        : t(`edit.fields.${field.name}`, { max: field.max });
+      : t(`edit.fields.${field.name}`, { max: field.max });
 }
 
 /** The attribute form of every editable layer (legacy attribute modals), fields from `schema.ts`. Text via JSX only. */

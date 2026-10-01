@@ -5,7 +5,7 @@ import Button from '@/components/ui/Button';
 import SelectInput from '@/components/ui/SelectInput';
 import TextInput from '@/components/ui/TextInput';
 import { OPERATOR_SYMBOL, type FieldDef } from '../map/search/model';
-import type { MapTarget } from '../map/targets';
+import { hasPrice, type MapTarget } from '../map/targets';
 import {
   CURRENCIES,
   DEFAULT_RANGE_OPERATOR,
@@ -107,8 +107,8 @@ function RangeFilter({ field, target, state, onChange, fields }: CommonProps & {
   }, [draft, committed?.value, state, fields, field.id, operator, onChange]);
 
   const isPrice = field.id === 'price';
-  // Property prices choose a currency; a service's price (hotels, villas) is always dollars.
-  const chooseCurrency = isPrice && target.kind === 'realEstate';
+  // Every priced type (property, hotels, villas) chooses a currency.
+  const chooseCurrency = isPrice && hasPrice(target);
   return (
     <div className={`min-w-0 ${isPrice ? 'sm:col-span-2' : ''}`}>
       <Field label={t(field.labelKey)} id={id}>

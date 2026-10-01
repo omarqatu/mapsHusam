@@ -271,15 +271,23 @@ const PROFILE_FIELDS: Readonly<Record<EditProfile, readonly FieldDef[]>> = {
     f('banzen95', 'select', { options: FUEL_STATES }),
     f('banzen98', 'select', { options: FUEL_STATES }),
   ],
-  // Hotels and villas: `service_all` has `price` and `area` but no currency column, so the price is in dollars (the
-  // legacy form offered a currency box for these that was never saved).
-  propertyService: [PRICE, AREA],
+  // Hotels and villas: a price with its currency, and an area (`service_all.price` / `.currency` / `.area`).
+  propertyService: [PRICE, CURRENCY, AREA],
+};
+
+/**
+ * Column order of an insert when it differs from the form's field order: GeoServer expects its schema order, and the
+ * server added `price, area` first and `currency` later (Husam's `servicesSchemaOrder` on `main` has the same order).
+ */
+const PROFILE_COLUMNS: Partial<Readonly<Record<EditProfile, readonly string[]>>> = {
+  propertyService: ['price', 'area', 'currency'],
 };
 
 /** The edit target of one service type; a discriminator the registry does not know gets the common fields only. */
 export function serviceTarget(discriminator: string): EditTarget {
-  const extras = PROFILE_FIELDS[SERVICE_BY_KEY.get(discriminator)?.editProfile ?? 'standard'];
-  const extraColumns = extras.map((x) => x.name);
+  const profile = SERVICE_BY_KEY.get(discriminator)?.editProfile ?? 'standard';
+  const extras = PROFILE_FIELDS[profile];
+  const extraColumns = PROFILE_COLUMNS[profile] ?? extras.map((x) => x.name);
   return {
     id: discriminator,
     kind: 'point',

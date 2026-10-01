@@ -283,8 +283,23 @@ export function priceLabel(
 ): string | null {
   const price = Number(props.price);
   if (!Number.isFinite(price) || price <= 0) return null;
-  const currency = CURRENCY_KEYS[text(props.currency) || defaultCurrency || ''];
-  return `${formatNumber(price, language)} ${currency ? t(currency) : ''}`.trim();
+  const raw = text(props.currency);
+  const code = currencyCode(raw) ?? (raw ? null : currencyCode(defaultCurrency));
+  // An unknown value typed by hand is shown as it is (React escapes it); a known one in the reader's language.
+  const currency = code ? t(CURRENCY_KEYS[code]) : raw;
+  return `${formatNumber(price, language)} ${currency}`.trim();
+}
+
+/** `USD` / `ILS` / `JOD` from what rows hold: codes in any case, `$`, `₪`, `د.أ` or the Arabic names (Husam, q1). */
+export function currencyCode(value: unknown): 'USD' | 'ILS' | 'JOD' | null {
+  const v = String(value ?? '')
+    .trim()
+    .toUpperCase();
+  if (!v) return null;
+  if (['USD', '$', 'دولار'].includes(v)) return 'USD';
+  if (['ILS', 'NIS', '₪', 'شيكل', 'شيقل'].includes(v)) return 'ILS';
+  if (['JOD', 'د.أ', 'دينار'].includes(v)) return 'JOD';
+  return null;
 }
 
 export const CURRENCY_KEYS: Record<string, string> = {

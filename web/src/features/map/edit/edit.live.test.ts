@@ -155,17 +155,21 @@ describe.skipIf(!BASE || !PASSWORD)('live GeoServer — editor transport (insert
     expect(await readBack(target, fid, { field: 'name', value: '' })).toBeDefined();
   });
 
-  it('hotel: price and area are saved and read back; no currency column exists', async () => {
+  it('hotel: price, currency and area are saved and read back', async () => {
     const target = serviceTarget('hotels');
     const { row, after } = await roundTrip(
       target,
       { type: 'Point', coordinates: [X + 6, Y - 6] },
-      { name: 'فندق اختبار', phone: '0590000009', price: '120.5', area: '300' },
+      { name: 'فندق اختبار', phone: '0590000009', price: '120.5', currency: 'ILS', area: '300' },
       { type: 'Point', coordinates: [X + 8, Y - 6] },
     );
-    expect(row.properties).toMatchObject({ discriminator: 'hotels', price: 120.5, area: 300 });
-    expect(row.properties).not.toHaveProperty('currency');
-    expect(after.properties).toMatchObject({ price: 120.5, area: 300 }); // the update kept both
+    expect(row.properties).toMatchObject({
+      discriminator: 'hotels',
+      price: 120.5,
+      currency: 'ILS',
+      area: 300,
+    });
+    expect(after.properties).toMatchObject({ price: 120.5, currency: 'ILS', area: 300 }); // the update kept them
   });
 
   it('real-estate point (phone is kept on insert, X / Y in WGS84)', async () => {

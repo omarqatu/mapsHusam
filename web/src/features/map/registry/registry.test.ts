@@ -116,13 +116,12 @@ describe('service registry', () => {
     expect(fields('road_barriers')).toEqual(expect.arrayContaining(['stop', 'stop2']));
     expect(fields('fuel_stations')).toEqual(expect.arrayContaining(['diesel', 'banzen95', 'banzen98']));
     expect(fields('plumber')).not.toContain('stop');
-    // hotels and villas: a price and an area, no currency (service_all has no currency column)
+    // hotels and villas: a price with its currency, and an area
     for (const k of ['hotels', 'villas_rent']) {
-      expect(fields(k)).toEqual(expect.arrayContaining(['price', 'area']));
-      expect(fields(k)).not.toContain('currency');
+      expect(fields(k)).toEqual(expect.arrayContaining(['price', 'currency', 'area']));
       const target = POINT_TARGETS.find((t) => t.discriminator === k)!;
-      expect(target.insertColumns.slice(-2)).toEqual(['price', 'area']); // GeoServer's column order
-      expect(target.updateColumns).toEqual(expect.arrayContaining(['price', 'area']));
+      expect(target.insertColumns.slice(-3)).toEqual(['price', 'area', 'currency']); // GeoServer's column order
+      expect(target.updateColumns).toEqual(expect.arrayContaining(['price', 'area', 'currency']));
     }
     expect(fields('plumber')).not.toContain('price');
   });

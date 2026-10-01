@@ -9,7 +9,7 @@ import SelectInput from '@/components/ui/SelectInput';
 import TextInput from '@/components/ui/TextInput';
 import { toast } from '@/components/ui/toastStore';
 import { cascadeFilters, fieldsFor, OPERATOR_SYMBOL, operatorsFor, withCurrency } from './model';
-import { targetToApi, type MapTarget } from '../targets';
+import { hasPrice, targetToApi, type MapTarget } from '../targets';
 import { useSearchUi } from './store';
 import TargetSelect from './TargetSelect';
 import { useSearchActions } from './useSearchActions';
@@ -190,7 +190,7 @@ export default function SmartTab() {
               />
             )}
           </FormField>
-          {field.id === 'price' && target.kind === 'realEstate' && (
+          {field.id === 'price' && hasPrice(target) && (
             <FormField label={t('search.currency')} name="smart-currency">
               <SelectInput
                 id="smart-currency"

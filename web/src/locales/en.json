@@ -415,7 +415,6 @@
       "barrierName": "Checkpoint name",
       "stationName": "Station name",
       "price": "Price",
-      "priceUsd": "Price ($)",
       "area": "Area",
       "stopIn": "Checkpoint status (inbound)",
       "stopOut": "Checkpoint status (outbound)"
@@ -848,7 +847,6 @@
       },
       "price": "Price",
       "currency": "Currency",
-      "priceService": "Price ($)",
       "pic": "Picture link",
       "video": "Video link",
       "area": "Area (m²)",

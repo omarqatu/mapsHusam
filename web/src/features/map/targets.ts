@@ -42,7 +42,7 @@ export const hasPrice = (t: MaybeTarget) =>
   t?.kind === 'realEstate' ||
   (t?.kind === 'service' && SERVICE_BY_KEY.get(t.discriminator)?.editProfile === 'propertyService');
 
-/** Property prices come with a currency (USD / ILS / JOD); a service's price is always dollars (no currency column). */
+/** A row's own currency wins; a hotel / villa saved before `service_all.currency` existed has none and is in dollars. */
 export const priceCurrencyDefault = (t: MaybeTarget) => (t?.kind === 'service' ? 'USD' : undefined);
 
 type MaybeTarget = MapTarget | { kind: 'location' } | null | undefined;

@@ -63,8 +63,8 @@ export function fieldsFor(t: MapTarget): FieldDef[] {
       ...FUEL_FIELDS.map((f) => fixed(f, `popup.fuel.${f}`, FUEL_OPTIONS)),
     ];
   }
-  // Hotels and holiday villas are priced like property: a price (dollars, no currency choice) and an area.
-  if (hasPrice(t)) return [...base, dd('name'), num('price', 'search.fields.priceUsd'), num('area')];
+  // Hotels and holiday villas are priced like property: a price (with the currency box) and an area.
+  if (hasPrice(t)) return [...base, dd('name'), num('price'), num('area')];
   return [...base, dd('name')];
 }
 

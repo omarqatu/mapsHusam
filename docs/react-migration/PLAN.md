@@ -973,8 +973,12 @@ Server parts came with the merge; the legacy files they touched (root pages, `js
   React (`api/adminUsers.ts`) sent the view token *instead of* the admin token; now it sends both. A 401 on these calls
   (expired view link) still does not log the admin out (`client.ts` treats `X-Read-Only-View` as own credentials).
   Verified: `admin.live.test.ts` against the merged server.
-- ⬜ **Currency for hotels / villas** (q1): his editor now writes `currency` for the two types (so his database has the
-  column); display labels accept `USD/ILS/JOD`, `$`, `₪`, Arabic names. To port: the column, editor select, display, filters.
+- ✅ **Currency for hotels / villas** (q1): `service_all.currency` (Server changes); the editor offers the currency box
+  for the two types (insert order `price, area, currency` = GeoServer's); prices show the row's currency, a row saved
+  before (no currency) still reads as dollars; `currencyCode` reads codes in any case, `$`, `₪`, `د.أ` and the Arabic
+  names like his `currencyDisplayLabel`; the map's smart search and /search offer the currency box for them as for
+  property. Supersedes "price in dollars only" below. Verified: `edit.live.test.ts` saves a hotel with `currency: ILS`
+  through the real GeoServer and reads it back; `propertyServices.test.ts`, `registry.test.ts`.
 - ⬜ **Featured cards** (q1): rating on every service type except roads / fuel (was hotels / villas only), above the
   title with the open / closed status; a "show comments" toggle with each rating's name, stars and comment.
 - ⬜ **YouTube in the card** (TestFinal): a thumbnail with a play button instead of an embedded player; on touch screens
