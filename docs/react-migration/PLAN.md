@@ -1403,6 +1403,15 @@ Log each change here: **what · why · how to verify · commit**.
   suite incl. the role flows 66 passed; no runtime error in the server log; with `web/dist` built: `/`, `/search`,
   `/admin/users` 200, `/index.html?x=1` → 301 `/?x=1`, `/admin-users.html` → 301, `/api/nope` 404, `/server.js` and
   `/shared/…` 404. Commit: `refactor(server): split server.js into modules`.
+- **Notifications say where they lead (`notifications.link`).** A notification was a title and a text: clicking it in
+  the bell or on `/notifications` could only mark it read (legacy did the same), so "new service request" did not take
+  the provider to the request. New nullable column `link` (created at startup): `request:<id>` on the request
+  notifications (new request, accepted / rejected, cancelled, deal done) and an app path on the "add my business" ones
+  (`/admin/submissions` for admins, `/add-listing` after a rejection). `notifyUser()` takes it as a 5th argument; the
+  socket list (`get_unread_notifications`) and the live push (`new_notification`) carry it. Existing rows and the
+  admin's own notifications have none. Additive: no change for a client that ignores it. Verified: after a request
+  between the dev accounts, the provider's row has `link = 'request:<id>'`; the role tests pass. Commit:
+  `feat(server): notifications carry a link to what they are about`.
 
 ## Backend asks (needs the user's decision — behaviour-changing or larger)
 

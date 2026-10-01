@@ -136,9 +136,9 @@ app.post('/api/service-requests', requireAuth, async (req, res) => {
         const newRequest = insertResult.rows[0];
 
         await servicesPool.query(
-            `INSERT INTO "public"."notifications" (user_id, title, message, type, is_read, created_at)
-             VALUES ($1, $2, $3, 'info', false, NOW())`,
-            [provider.user_id, '📩 طلب خدمة جديد', `لديك طلب خدمة جديد (${safeServiceType || service_layer}). يرجى فتح التطبيق للرد عليه.`]
+            `INSERT INTO "public"."notifications" (user_id, title, message, type, is_read, created_at, link)
+             VALUES ($1, $2, $3, 'info', false, NOW(), $4)`,
+            [provider.user_id, '📩 طلب خدمة جديد', `لديك طلب خدمة جديد (${safeServiceType || service_layer}). يرجى فتح التطبيق للرد عليه.`, `request:${newRequest.id}`]
         );
 
         const providerSocketId = getSocketIdForUser(provider.user_id);
@@ -278,9 +278,9 @@ app.post('/api/service-requests/:id/respond', requireAuth, async (req, res) => {
             : `اعتذر مزود الخدمة عن طلبك (${request.service_type}).`;
 
         await servicesPool.query(
-            `INSERT INTO "public"."notifications" (user_id, title, message, type, is_read, created_at)
-             VALUES ($1, $2, $3, $4, false, NOW())`,
-            [request.user_id, title, message, action === 'accept' ? 'success' : 'error']
+            `INSERT INTO "public"."notifications" (user_id, title, message, type, is_read, created_at, link)
+             VALUES ($1, $2, $3, $4, false, NOW(), $5)`,
+            [request.user_id, title, message, action === 'accept' ? 'success' : 'error', `request:${Number(id)}`]
         );
 
         const userSocketId = getSocketIdForUser(request.user_id);
@@ -351,9 +351,9 @@ app.post('/api/service-requests/:id/cancel', requireAuth, async (req, res) => {
 
         const targetUserId = isOwner ? sRequest.provider_user_id : sRequest.user_id;
         await servicesPool.query(
-            `INSERT INTO "public"."notifications" (user_id, title, message, type, is_read, created_at)
-             VALUES ($1, '⚠️ تم إلغاء الطلب', $2, 'error', false, NOW())`,
-            [targetUserId, `تم إلغاء الطلب والسبب: ${reasonText}`]
+            `INSERT INTO "public"."notifications" (user_id, title, message, type, is_read, created_at, link)
+             VALUES ($1, '⚠️ تم إلغاء الطلب', $2, 'error', false, NOW(), $3)`,
+            [targetUserId, `تم إلغاء الطلب والسبب: ${reasonText}`, `request:${Number(requestId)}`]
         );
 
         const targetSocketId = getSocketIdForUser(targetUserId);
@@ -545,10 +545,10 @@ app.post('/api/service-requests/:id/confirm', requireAuth, async (req, res) => {
             if (providerSocketId && global.io) global.io.to(providerSocketId).emit('service_request_completed', payloadForProvider);
 
             await servicesPool.query(
-                `INSERT INTO "public"."notifications" (user_id, title, message, type, is_read, created_at)
-                 VALUES ($1, '🎉 تم الاتفاق بنجاح', 'تم تبادل أرقام التواصل، بالتوفيق!', 'success', false, NOW()),
-                       ($2, '🎉 تم الاتفاق بنجاح', 'تم تبادل أرقام التواصل، بالتوفيق!', 'success', false, NOW())`,
-                [refreshed.user_id, refreshed.provider_user_id]
+                `INSERT INTO "public"."notifications" (user_id, title, message, type, is_read, created_at, link)
+                 VALUES ($1, '🎉 تم الاتفاق بنجاح', 'تم تبادل أرقام التواصل، بالتوفيق!', 'success', false, NOW(), $3),
+                       ($2, '🎉 تم الاتفاق بنجاح', 'تم تبادل أرقام التواصل، بالتوفيق!', 'success', false, NOW(), $3)`,
+                [refreshed.user_id, refreshed.provider_user_id, `request:${Number(refreshed.id)}`]
             );
 
             return res.json({ 

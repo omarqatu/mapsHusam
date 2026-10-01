@@ -96,7 +96,7 @@ app.post('/api/auth/register', authLimiter, async (req, res) => {
         if (listing) {
             try {
                 const admins = await servicesPool.query(`SELECT user_id FROM public.users WHERE role = 'admin' AND is_active = true`);
-                await Promise.all(admins.rows.map(a => notifyUser(a.user_id, '📥 طلب إضافة نشاط جديد', `«${listing.name}» (حساب جديد) بانتظار المراجعة من صفحة طلبات الإضافة.`)));
+                await Promise.all(admins.rows.map(a => notifyUser(a.user_id, '📥 طلب إضافة نشاط جديد', `«${listing.name}» (حساب جديد) بانتظار المراجعة من صفحة طلبات الإضافة.`, 'info', '/admin/submissions')));
             } catch (notifyErr) {
                 console.error('⚠️ تعذر إشعار المشرفين بالطلب الجديد:', notifyErr.message);
             }

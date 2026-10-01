@@ -14,16 +14,16 @@ export function getSocketIdForUser(userId) {
 }
 
 // إشعار محفوظ بالجدول + دفعه فوراً إذا كان المستخدم متصلاً
-export async function notifyUser(userId, title, message, type = 'info') {
+export async function notifyUser(userId, title, message, type = 'info', link = null) {
     try {
         const saved = await servicesPool.query(
-            `INSERT INTO "public"."notifications" (user_id, title, message, type, is_read, created_at)
-             VALUES ($1, $2, $3, $4, false, NOW()) RETURNING id, created_at`,
-            [userId, title, message, type]
+            `INSERT INTO "public"."notifications" (user_id, title, message, type, is_read, created_at, link)
+             VALUES ($1, $2, $3, $4, false, NOW(), $5) RETURNING id, created_at`,
+            [userId, title, message, type, link]
         );
         const socketId = getSocketIdForUser(userId);
         if (socketId && global.io) {
-            global.io.to(socketId).emit('new_notification', { id: saved.rows[0].id, title, message, type, created_at: saved.rows[0].created_at });
+            global.io.to(socketId).emit('new_notification', { id: saved.rows[0].id, title, message, type, link, created_at: saved.rows[0].created_at });
         }
     } catch (err) {
         console.error('⚠️ تعذر إرسال إشعار الطلب:', err.message);

@@ -69,7 +69,7 @@ app.post('/api/listing-submissions', requireAuth, submissionLimiter, async (req,
         // المشرفون يعرفون بالطلب فوراً (إشعار + بث حي لمن هو متصل)
         try {
             const admins = await servicesPool.query(`SELECT user_id FROM public.users WHERE role = 'admin' AND is_active = true`);
-            await Promise.all(admins.rows.map(a => notifyUser(a.user_id, '📥 طلب إضافة نشاط جديد', `«${listing.name}» بانتظار المراجعة من صفحة طلبات الإضافة.`)));
+            await Promise.all(admins.rows.map(a => notifyUser(a.user_id, '📥 طلب إضافة نشاط جديد', `«${listing.name}» بانتظار المراجعة من صفحة طلبات الإضافة.`, 'info', '/admin/submissions')));
         } catch (notifyErr) {
             console.error('⚠️ تعذر إشعار المشرفين بالطلب الجديد:', notifyErr.message);
         }
@@ -199,7 +199,7 @@ app.post('/api/admin/listing-submissions/:id/reject', requireAdmin, async (req, 
             [reason, req.adminUserId, id]
         );
         if (result.rowCount === 0) return res.status(409).json({ success: false, error: 'الطلب غير موجود أو تمت مراجعته.' });
-        await notifyUser(result.rows[0].user_id, '❌ لم تتم الموافقة على طلبك', `«${result.rows[0].name}»: ${reason}`, 'warning');
+        await notifyUser(result.rows[0].user_id, '❌ لم تتم الموافقة على طلبك', `«${result.rows[0].name}»: ${reason}`, 'warning', '/add-listing');
         res.json({ success: true });
     } catch (err) {
         console.error('❌ خطأ أثناء رفض طلب الإضافة:', err.message);

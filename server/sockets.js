@@ -258,7 +258,7 @@ io.on('connection', (socket) => {
         try {
             console.log('🔍 جلب الإشعارات للمستخدم:', userId);
             const query = `
-                SELECT id, title, message, type, is_read, created_at
+                SELECT id, title, message, type, is_read, created_at, link
                 FROM "public"."notifications"
                 WHERE user_id = $1
                 ORDER BY created_at DESC

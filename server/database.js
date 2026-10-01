@@ -101,7 +101,9 @@ async function ensureSchemaColumns() {
         // 🆕 عمود مصدر الحدث (map / quick_search) لتمييز زيارات الخريطة عن زيارات
         // صفحة البحث السريع ضمن إحصائيات المنصة
         await servicesPool.query(`ALTER TABLE public.map_service_stats ADD COLUMN IF NOT EXISTS source_page TEXT`);
-        console.log('✅ تم التأكد من أعمدة force_logout_flag و whatsapp_number و source_page');
+        // وجهة الإشعار عند الضغط عليه: 'request:<id>' (يفتح دردشة الطلب) أو مسار صفحة ('/admin/submissions')؛ فارغ = لا وجهة
+        await servicesPool.query(`ALTER TABLE public.notifications ADD COLUMN IF NOT EXISTS link TEXT`);
+        console.log('✅ تم التأكد من أعمدة force_logout_flag و whatsapp_number و source_page و notifications.link');
     } catch (err) {
         console.error('⚠️ خطأ أثناء التأكد من مخطط قاعدة البيانات:', err.message);
     }
