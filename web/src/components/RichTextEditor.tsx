@@ -51,7 +51,7 @@ const Surface = memo(function Surface({
       suppressContentEditableWarning
       onInput={onInput}
       onPaste={onPaste}
-      className="min-h-80 space-y-3 rounded-b-xl border border-t-0 border-line bg-surface p-4 text-sm text-fg outline-none focus-visible:ring-2 focus-visible:ring-brand"
+      className="min-h-96 space-y-4 rounded-b-xl border border-t-0 border-line bg-surface px-5 py-6 text-[15px] leading-7 text-fg outline-none focus-visible:ring-2 focus-visible:ring-brand md:px-10 md:py-8"
     >
       {nodes}
     </div>
@@ -116,7 +116,7 @@ export default function RichTextEditor({
 }) {
   const { t } = useTranslation();
   const surface = useRef<HTMLDivElement>(null);
-  const nodes = useMemo(() => renderRich(initial), [initial]);
+  const nodes = useMemo(() => renderRich(initial, '', 'edit'), [initial]);
 
   useImperativeHandle(handle, () => ({ read: () => (surface.current ? richFromElement(surface.current) : []) }), []);
 

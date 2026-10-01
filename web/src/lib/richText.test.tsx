@@ -4,7 +4,8 @@ import { MemoryRouter } from 'react-router';
 import RichText from '@/components/RichText';
 import { legalDocToRich } from '@/features/legal/docToRich';
 import { LEGAL_KEYS, loadLegalDoc } from '@/features/legal/content';
-import { parseRichHtml, richTreeToHtml, safeUrl, sanitizeRichHtml } from './richText';
+import { renderRich } from '@/components/richRender';
+import { parseRichHtml, richFromElement, richTreeToHtml, safeUrl, sanitizeRichHtml } from './richText';
 
 describe('safeUrl', () => {
   it('keeps web, mail, phone and in-app addresses', () => {
@@ -79,6 +80,18 @@ describe('built-in texts as the editor starting point', () => {
       const html = richTreeToHtml(legalDocToRich(doc));
       expect(html.length, key).toBeGreaterThan(50);
       expect(sanitizeRichHtml(html), key).toBe(html);
+    }
+  });
+});
+
+describe('the editor round trip', () => {
+  it('a framed section, centred text and a block title survive being drawn and read back', () => {
+    const tree = parseRichHtml(
+      '<div style="background-color:#f8f9fa;padding:16px"><strong style="display:block">T</strong><p style="text-align:center">c</p></div>',
+    );
+    for (const look of ['read', 'edit'] as const) {
+      const { container } = render(<div>{renderRich(tree, '', look)}</div>);
+      expect(richFromElement(container.firstElementChild!)).toEqual(tree);
     }
   });
 });

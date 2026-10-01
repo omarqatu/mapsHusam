@@ -111,9 +111,11 @@ function convert(node: ChildNode): RichNode[] {
   const kept = tag === 'ul' || tag === 'ol' ? children.filter((c) => typeof c !== 'string' || c.trim()) : children;
   const out: RichElement = { tag, children: tag === 'br' ? [] : kept };
   if (dir === 'rtl' || dir === 'ltr') out.dir = dir;
-  if (/text-align\s*:\s*center/.test(style) || el.getAttribute('align')?.toLowerCase() === 'center') out.center = true;
-  if (tag === 'div' && /background(-color)?\s*:/.test(style)) out.box = true;
-  if (tag === 'strong' && /display\s*:\s*block/.test(style)) out.block = true;
+  // Stored HTML says it with styles; the page (and the editor) with the `data-*` marks of `renderRich`.
+  const align = el.getAttribute('align')?.toLowerCase();
+  if (/text-align\s*:\s*center/.test(style) || align === 'center' || el.hasAttribute('data-center')) out.center = true;
+  if (tag === 'div' && (/background(-color)?\s*:/.test(style) || el.hasAttribute('data-box'))) out.box = true;
+  if (tag === 'strong' && (/display\s*:\s*block/.test(style) || el.hasAttribute('data-block'))) out.block = true;
   if (tag === 'a') {
     const href = safeUrl(el.getAttribute('href'));
     if (!href) return children; // a link to nowhere safe is just its text
