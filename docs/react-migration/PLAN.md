@@ -105,7 +105,6 @@ on each request (`requireAdmin`). Errors come back as `{ success:false, error }`
 - [x] Delete a record (confirm, irreversible). [ ] Shortcuts: send notification, live-info centre, users.
 
 - **Changed on purpose (dashboard):** the header filter row is a labelled grid (a table header row cannot work on a phone); "contains" text + "exact" drop-downs for user / provider / reason are kept, the exact ones and phone / reason sit under "More filters". Four summary tiles (records in view, successful, pending, cancelled) are new. Layer names follow the UI language; contact-type emoji → icons; browser `alert` / `confirm` → toast / dialog. The three shortcut buttons are links (no new tab); "send notification" goes to `/notifications`, which for admins now has the send form (see below).
-
 **`/admin/widgets`** — `widgets-admin.html` + `js/widgets-config.js`
 - API: `GET /api/admin/widgets-data` → `{ groups: { <key>: { data[], updated_at } } }`; `POST /api/admin/widgets-data/:key { items[] }` (keys:
   currency, gold, weather, fuel, transport_inter_city, transport_intra_city, events — else 400); `GET /api/widgets-data` (public) for the
@@ -1023,6 +1022,16 @@ it at once); browser at 1440 / 390, no overflow.
   select + bold, a new paragraph, a paste carrying `<img onerror>` / `<script>` / `javascript:` → saved without them,
   nothing ran on the admin or the visitor page, the visitor sees the edit.
 - The admin menu of the new header (other work in progress) will need icons for `/admin/texts` and `/admin/visibility`.
+- **Fixed 2026-10-01: saving dropped the boxes and the centring.** The editor draws a box or centred text with classes,
+  but reading it back only recognised inline styles, so the first save of an edited text turned every box into plain
+  paragraphs and un-centred the headings on the public page. `renderRich` now also writes `data-box` / `data-center` /
+  `data-block`, which the reader accepts; `richText.test.tsx` draws a tree in both looks and reads it back unchanged.
+- **Redesign 2026-10-01** (user: the texts page shows "cards"). The texts are a list on the side, grouped (platform
+  pages, guides, site texts) with an "edited" chip, a drop-down on phones; the open text is one sheet whose top bar
+  (name, saved / unsaved state, discard, save) stays in view while scrolling. In the editor a box is a quiet block with a
+  side rule, not a centred card (visitors still see cards). Backup and "back to the built-in text" sit in one row under
+  the text, with the backup's date. Leaving a text with unsaved changes asks first (before, switching tabs lost them
+  silently); a failed save no longer clears the "unsaved" state.
 - ✅ Price and area for `hotels` and `villas_rent` (`service_all.price` / `.area`, added by `ensureServicePropertyColumns`):
   - **One rule:** registry `editProfile: 'propertyService'` on the two types; `hasPrice(target)` (`map/targets.ts`) is "property or
     priced like property" and every place that showed a price for property asks it (map card, map result list, /search

@@ -1384,6 +1384,17 @@
       "unlink": "Remove link",
       "clear": "Clear formatting",
       "linkPrompt": "Link address (https://… or /a path in the platform)"
+    },
+    "groups": {
+      "pages": "Platform pages",
+      "guides": "Guides",
+      "site": "Site texts"
+    },
+    "pick": "Choose a text",
+    "leave": {
+      "title": "Unsaved changes",
+      "message": "Your changes to this text are not saved. Opening another text discards them.",
+      "confirm": "Leave without saving"
     }
   },
   "adminWidgets": {
