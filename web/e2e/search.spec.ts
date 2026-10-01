@@ -9,7 +9,8 @@ test('a keyword search on the search page returns results', async ({ page, reque
   const service = await pickService(request);
   await page.goto('/search');
 
-  const form = page.getByRole('search');
+  // Two search forms: the sticky bar (tucked under the header until the page scrolls) and the hero; type in the hero.
+  const form = page.getByRole('search').last();
   await form.getByRole('searchbox').fill(service.name);
   await form.locator('button[type="submit"]').click();
 

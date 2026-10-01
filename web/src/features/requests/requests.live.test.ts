@@ -62,16 +62,14 @@ describe.skipIf(!BASE)('service requests against the live backend', () => {
     const done = await requestsApi.confirm(id, 'user');
     expect(done.status).toBe('completed');
 
-    expect((await requestsApi.pendingRatings()).pendingRatings.some((p) => p.id === id)).toBe(true);
-    // One rating per user per business: a re-run against the same dev database is refused after the first.
-    const rated = await requestsApi.rate(id, 4, '').then(
-      () => true,
-      () => false,
-    );
-    if (!rated) {
+    // One rating per user per business: once this dev user has rated the dev provider (any earlier run), a new deal
+    // is not asked to be rated and a rating is refused; on a fresh database it is asked for and accepted.
+    const asked = (await requestsApi.pendingRatings()).pendingRatings.some((p) => p.id === id);
+    if (!asked) {
       await expect(requestsApi.rate(id, 4, '')).rejects.toMatchObject({ status: 400 });
       return;
     }
+    await requestsApi.rate(id, 4, '');
     const pc = await requestsApi.pendingComments();
     const pending = pc.pendingComments.find((c) => c.request_id === id);
     expect(pending).toBeTruthy();

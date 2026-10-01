@@ -48,6 +48,13 @@ cd web && npm run e2e -- --ui                              # Playwright's UI mod
   (`cd web && npx playwright show-trace ../.playwright/5199/results/<test>/trace.zip`). Generated auth state lives under the
   same port-specific folder, outside Vite's watched `web/` tree, so trace writes cannot reload a page and concurrent runs on
   different ports cannot overwrite each other's sessions.
+- **Role flows (opt-in, writes data):** `E2E_FLOWS=1 npm run e2e -- flows --project=desktop` runs `e2e/flows.spec.ts`:
+  user, provider and admin in separate browsers against the real server — request → accept → chat → both confirm →
+  numbers → rating, reject, cancel with a reason, no duplicates, the provider panel (busy / available at a mocked GPS
+  position), a visitor sent to log in, the admin dashboard and read-only view, and refusals for a third account
+  (Husam's `TEST_PLAN.md` §6–§8, §11, §15). It needs the seeded provider (`0590000002`, linked to a plumber) and puts back
+  what it changes: open requests are answered, the provider's status and location restored. Without the variable it is
+  skipped, so the default suite stays read-only.
 - **CI does not run them**: they need this database, GeoServer and the seeded accounts. CI (`.github/workflows/ci.yml`) and the
   deploy job validate the server install/syntax plus web typecheck, lint, unit tests and build. Run `npm run e2e` yourself
   before merging a change to a page.

@@ -17,7 +17,7 @@ export default async function globalSetup(config: FullConfig) {
 
   const api = await request.newContext({ baseURL: backend });
   try {
-    for (const key of ['admin', 'user'] as const) {
+    for (const key of ['admin', 'user', 'provider'] as const) {
       const account: Account = ACCOUNTS[key];
       let res;
       try {
