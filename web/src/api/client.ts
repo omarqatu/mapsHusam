@@ -1,3 +1,4 @@
+import { toast } from '@/components/ui/toastStore';
 import { useAuthStore } from '@/store/authStore';
 
 /** Error thrown for every failed request; `message` is the server's (Arabic) text when it sent one. */
@@ -87,8 +88,12 @@ export async function apiRequest<T>(path: string, opts: RequestOptions = {}): Pr
   if (!res.ok) {
     // A request that brings its own credentials (or the admin's read-only view token) says nothing about the app session.
     const ownCredentials = 'Authorization' in headers || 'X-Read-Only-View' in headers;
-    if (res.status === 401 && token && !ownCredentials && !NO_LOGOUT_PATHS.includes(path))
+    // The session ended (expired, logged out elsewhere, deactivated, password or role changed): out, and say why.
+    if (res.status === 401 && token && !ownCredentials && !NO_LOGOUT_PATHS.includes(path) && useAuthStore.getState().user) {
       useAuthStore.getState().logout();
+      // i18n is loaded lazily: it touches `document`, and this module also runs in the node (live) tests
+      void import('@/i18n').then(({ default: i18n }) => toast.warning(i18n.t('auth.sessionEnded')));
+    }
     const code = data && typeof data === 'object' ? (data as { code?: string }).code : undefined;
     throw new ApiError(pickMessage(data, res.statusText || `HTTP ${res.status}`), res.status, code, data);
   }

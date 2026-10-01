@@ -40,5 +40,18 @@ export default function SessionVerifier() {
     };
   }, [userId, t]);
 
+  // Back to a tab left open: is the session still alive? (at most once a minute; a 401 logs out, see client.ts)
+  useEffect(() => {
+    if (userId === undefined) return;
+    let last = Date.now();
+    const onVisible = () => {
+      if (document.visibilityState !== 'visible' || Date.now() - last < 60_000) return;
+      last = Date.now();
+      void authApi.session().catch(() => undefined);
+    };
+    document.addEventListener('visibilitychange', onVisible);
+    return () => document.removeEventListener('visibilitychange', onVisible);
+  }, [userId]);
+
   return null;
 }

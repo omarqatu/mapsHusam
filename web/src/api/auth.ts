@@ -52,6 +52,8 @@ export const authApi = {
     api.post<VerifySessionResponse>('/api/auth/verify-session', { user_id: userId }),
   changePassword: (body: ChangePasswordRequest) =>
     api.post<ChangePasswordResponse>('/api/auth/change-password', body),
+  /** Is this session still alive? A 401 logs the user out (client.ts); used when the socket is refused or the tab returns. */
+  session: () => api.get<{ success: true; uid: number; role: string }>('/api/auth/session'),
   /** Ends this token on the server too. Takes the token explicitly: the store has already dropped it. */
   logout: (token: string) =>
     api.post<{ success: boolean }>('/api/auth/logout', undefined, { headers: { Authorization: `Bearer ${token}` } }),
