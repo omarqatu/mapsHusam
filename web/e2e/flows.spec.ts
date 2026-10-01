@@ -522,3 +522,49 @@ test('N: the admin sends a notification to one user; the user, signed in elsewhe
   expect(admin.problems).toEqual([]);
   expect(user.problems).toEqual([]);
 });
+
+test('Q: a request limit set by the admin stops contacting and searching; lifting it lets them through (TEST_PLAN §9)', async ({
+  browser,
+  request,
+}) => {
+  const uid = session('user').user_id;
+  const setLimit = (limit: number | null) =>
+    api(request, 'admin', 'POST', '/api/admin/users/update', {
+      user_id: uid,
+      request_limit: limit,
+      request_limit_period: 'daily',
+    });
+  // The card is opened while the user is still free (with the limit reached the search box itself stops).
+  const user = await open(browser, 'user', '/');
+  contexts.push(user.context);
+  const card = await openProviderCard(user.page, service);
+  try {
+    expect((await setLimit(1)).status).toBe(200);
+    await api(request, 'user', 'POST', '/save-stat', { provider: 'e2e', service: 'e2e' }); // at least one event today
+    const quota = await api<{ allowed: boolean; limit: number }>(
+      request,
+      'user',
+      'POST',
+      '/api/check-request-limit',
+      {},
+    );
+    expect(quota.body).toMatchObject({ allowed: false, limit: 1 });
+
+    // The provider has an account, so the card offers "request service"; a counted event is refused by the server,
+    // and the map's search says it stopped.
+    expect(
+      (await api(request, 'user', 'POST', '/api/log-map-event', { event_type: 'map_click' })).status,
+    ).toBe(429);
+    await user.page.getByPlaceholder(t('search.globalPlaceholder')).first().fill('نجار');
+    await expect(user.page.getByText(/تجاوزت الحد المسموح|بلغت الحد المسموح/).first()).toBeVisible({
+      timeout: 15_000,
+    });
+    await expect(card).toBeVisible();
+    // Changing a limit does not end the session: the user is still signed in (no "log in" button).
+    await expect(user.page.getByRole('link', { name: t('auth.login') })).toHaveCount(0);
+  } finally {
+    expect((await setLimit(null)).status).toBe(200);
+  }
+  const free = await api<{ allowed: boolean }>(request, 'user', 'POST', '/api/check-request-limit', {});
+  expect(free.body.allowed).toBe(true);
+});
