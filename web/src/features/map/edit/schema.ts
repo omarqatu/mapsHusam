@@ -1,5 +1,6 @@
 // What the admin editor may write, per layer — data only, ported from the legacy field lists in js/edit-core.js,
 // js/edit-wfs.js, js/editLines.js and js/editPolygons.js. Field labels live in the locale files (edit.fields.<name>).
+import { REAL_ESTATE_TYPE_NAME } from '../config';
 import { SERVICE_REGISTRY, SERVICE_BY_KEY, type EditProfile } from '../registry';
 
 export type EditKind = 'point' | 'line' | 'polygon';
@@ -246,11 +247,11 @@ const LAND_UPDATE = [
   'search_tags',
 ] as const;
 
-const realEstate = (id: 'rent' | 'sale', typeName: string): EditTarget => ({
+const realEstate = (id: 'rent' | 'sale'): EditTarget => ({
   id,
   kind: 'point',
   workspace: 'realestate',
-  typeName,
+  typeName: REAL_ESTATE_TYPE_NAME[id],
   layerKey: id,
   geometry: 'Point',
   fields: REAL_ESTATE_FIELDS,
@@ -307,7 +308,7 @@ const LAND: EditTarget = {
   id: 'land',
   kind: 'polygon',
   workspace: 'realestate',
-  typeName: 'LandSale',
+  typeName: REAL_ESTATE_TYPE_NAME.land,
   layerKey: 'land',
   geometry: 'Polygon',
   fields: LAND_FIELDS,
@@ -343,8 +344,8 @@ const ROADS: EditTarget = {
 };
 
 export const POINT_TARGETS: readonly EditTarget[] = [
-  realEstate('rent', 'ApartRent'),
-  realEstate('sale', 'ApartSale'),
+  realEstate('rent'),
+  realEstate('sale'),
   ...SERVICE_REGISTRY.map((s) => serviceTarget(s.key)),
 ];
 export const LINE_TARGETS: readonly EditTarget[] = [ROADS];

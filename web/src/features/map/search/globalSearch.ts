@@ -1,5 +1,6 @@
 import { searchApi } from '@/api/search';
 import { toResults, byRatingDesc, type SearchResult } from './results';
+import { REAL_ESTATE_TYPE_NAME, type RealEstateLayerKey } from '../config';
 import { ALL_TARGETS, targetFromKey, type MapTarget } from '../targets';
 
 // Keyword search across everything (legacy global-search.js). Server contract: `search_tags contains <text>` matches
@@ -96,7 +97,6 @@ export interface GlobalHit {
 }
 
 const REAL_ESTATE_TARGETS = ALL_TARGETS.filter((t) => t.kind === 'realEstate');
-const REAL_ESTATE_API = { rent: 'ApartRent', sale: 'ApartSale', land: 'LandSale' } as const;
 
 /** Number of the typed words found in the row's searchable text (ties broken later by title match, then rating). */
 export function wordHits(result: SearchResult, term: string): number {
@@ -139,7 +139,7 @@ export async function fetchGlobalHits(term: string, signal?: AbortSignal): Promi
       searchApi
         .search(
           {
-            layer: REAL_ESTATE_API[(t as { layer: keyof typeof REAL_ESTATE_API }).layer],
+            layer: REAL_ESTATE_TYPE_NAME[(t as { layer: RealEstateLayerKey }).layer],
             workspace: 'realestate',
             conditions: [text],
           },

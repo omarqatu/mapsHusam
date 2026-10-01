@@ -62,10 +62,8 @@ web/e2e/                   Playwright: تجارب بمتصفح حقيقي على
 كل طبقة عقارات جدول لحاله بقاعدة `realestate`.
 
 1. `database/add_realestate_layer.sql`، ثم انشرها بـ GeoServer (workspace `realestate`).
-2. سجّلها بالواجهة بثلاث أماكن:
-   - `features/map/config.ts` (الطبقة).
-   - `features/map/edit/schema.ts` (حقول التعديل).
-   - `features/map/search/globalSearch.ts` (`REAL_ESTATE_API`).
+2. سجّلها بالواجهة بـ `REAL_ESTATE_LAYERS` بـ `features/map/config.ts`. المحرر والبحث بياخذوا اسمها من هناك. إذا
+   حقولها مختلفة عن الشقق أو الأراضي، ضيف حقولها بـ `features/map/edit/schema.ts`.
 3. اسمها بالـ locales، واسم الطبقة بـ `OTHER_LAYERS` بـ `server.js`.
 
 ## الفحوصات

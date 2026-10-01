@@ -40,6 +40,11 @@ export const REAL_ESTATE_LAYERS: (WfsLayerDef & { key: RealEstateLayerKey; icon:
   { key: 'land', icon: '🟥', workspace: 'realestate', typeName: 'LandSale', maxResolution: 1, zIndex: 10 },
 ];
 
+/** GeoServer feature type of each property layer: the editor and the search read the names from the list above. */
+export const REAL_ESTATE_TYPE_NAME = Object.fromEntries(
+  REAL_ESTATE_LAYERS.map((l) => [l.key, l.typeName]),
+) as Record<RealEstateLayerKey, string>;
+
 /** One layer holds every service; `discriminator` tells the type (legacy "service_all"). */
 export const SERVICE_ALL_LAYER: WfsLayerDef = {
   key: 'services',
