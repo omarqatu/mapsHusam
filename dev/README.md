@@ -21,6 +21,10 @@ Real-backend tests (skipped unless the variable is set):
 
 Other commands: `db-down` (stop, keep data), `db-reset` (delete everything).
 
+**Before merging to `main`:** `dev/check-all.sh` runs everything — backend module check, `lib/` tests, web typecheck, lint,
+unit + live tests and the whole browser suite including the role flows — against its own backend on `:3100` (`CHECK_PORT`),
+then scans that backend's log for runtime errors. Needs `db-up`, `seed` and the local GeoServer.
+
 ## Browser tests (Playwright)
 
 The checks we used to do by hand in a browser — login, the map with its markers, a provider card from the search box, the
