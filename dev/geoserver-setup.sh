@@ -39,7 +39,7 @@ setup() {
 
 echo "realestate"; setup realestate realestate ApartRent ApartSale LandSale City Governorate Location RoadsTest
 echo "services";   setup services services_db service_all fuel_stations road_barriers
-# GeoServer remembers each table's columns; columns the server added later (service_all.price / area, from
+# GeoServer remembers each table's columns; columns the server added later (service_all.price / area / currency, from
 # `ensureServicePropertyColumns` in server.js) are invisible to the map and to WFS-T until it re-reads them.
 [ "$(rest -X POST "$GS/rest/reset")" = 200 ] && echo "GeoServer schema cache reset"
 echo "done — WFS: $GS/services/wfs?service=WFS&request=GetCapabilities"

@@ -1294,6 +1294,12 @@ Log each change here: **what · why · how to verify · commit**.
   admin decides about it separately from the users page. Without `listing` nothing changes. Verified on the real server: bad
   listing → 400 and no user row; register+listing → login refused; approve → login works as `provider` linked to the new point.
   Commit: `feat(server): register with a business, approved once`.
+- **`service_all.currency` (TEXT) is added at start-up next to `price` / `area`.** Husam's editor on `main` (q1, 30
+  September) writes a currency for hotels and holiday villas, so his database has the column; ours did not, and a WFS-T
+  insert carrying it would fail. `ensureServicePropertyColumns` now adds it (`ADD COLUMN IF NOT EXISTS`, no data change,
+  existing rows stay NULL = shown as dollars) and checks it is there. GeoServer must re-read the table once
+  (`dev/geoserver-setup.sh` does it locally; production: reload the `service_all` feature type). Verified: start-up log
+  lists the three columns; WFS `DescribeFeatureType` shows `currency`. Commit: `feat(server): service_all gets a currency column`.
 
 ## Backend asks (needs the user's decision — behaviour-changing or larger)
 

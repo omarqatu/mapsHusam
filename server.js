@@ -359,20 +359,21 @@ async function ensureServicePropertyColumns() {
         await servicesPool.query(`
             ALTER TABLE public.service_all
                 ADD COLUMN IF NOT EXISTS price NUMERIC,
-                ADD COLUMN IF NOT EXISTS area NUMERIC
+                ADD COLUMN IF NOT EXISTS area NUMERIC,
+                ADD COLUMN IF NOT EXISTS currency TEXT
         `);
         const result = await servicesPool.query(`
             SELECT column_name
             FROM information_schema.columns
             WHERE table_schema = 'public' AND table_name = 'service_all'
               AND column_name = ANY($1::text[])
-        `, [['price', 'area']]);
+        `, [['price', 'area', 'currency']]);
         const present = new Set(result.rows.map(row => row.column_name));
-        const missing = ['price', 'area'].filter(column => !present.has(column));
+        const missing = ['price', 'area', 'currency'].filter(column => !present.has(column));
         if (missing.length) throw new Error(`أعمدة غير موجودة بعد التهيئة: ${missing.join(', ')}`);
-        console.log('✅ service_all يحتوي أعمدة السعر والمساحة المطلوبة: price, area');
+        console.log('✅ service_all يحتوي أعمدة السعر والمساحة والعملة: price, area, currency');
     } catch (err) {
-        console.error('❌ تعذر تهيئة حقلي السعر والمساحة في service_all:', err.message);
+        console.error('❌ تعذر تهيئة أعمدة السعر والمساحة والعملة في service_all:', err.message);
     }
 }
 ensureServicePropertyColumns();
