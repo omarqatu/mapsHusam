@@ -1342,6 +1342,13 @@ Log each change here: **what · why · how to verify · commit**.
   in as the same user took the events). Verified: `flows.spec.ts` scenario A opens a second session of the user, which
   also gets "the provider accepted"; the full browser suite (64) passes in parallel. Commit:
   `fix(server): socket events reach all of a user's devices`.
+- **An admin edit ends the user's session only when it has to.** `POST /api/admin/users/update` saved a "your account
+  was changed — log out and in again" notification and pushed `force_relogin` after **every** change, so lowering a
+  request limit or linking a service logged the user out (now on all devices). The token is still invalidated only for a
+  role, activation or password change (`token_version + 1`, unchanged); the notification and the push now follow the same
+  condition. Found by the role test (scenario Q: the user was signed out by a limit change). Verified: `flows.spec.ts` Q
+  (limit set → the user stays signed in and is stopped by the limit; limit lifted → free again), `admin.live.test.ts`.
+  Commit: `fix(server): editing a user's limit or service no longer logs them out`.
 
 ## Backend asks (needs the user's decision — behaviour-changing or larger)
 

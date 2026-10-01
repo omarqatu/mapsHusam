@@ -3212,7 +3212,9 @@ app.post('/api/admin/users/update', requireAdmin, async (req, res) => {
         const roleChanged = role !== undefined && String(role).toLowerCase().trim() !== currentUser.role;
         const activeChanged = is_active !== undefined && (is_active === true) !== !!currentUser.is_active;
         const passwordChanged = !!(new_password && new_password.trim().length >= 6);
-        if ((roleChanged || activeChanged || passwordChanged) && Number(user_id) !== Number(req.adminUserId)) {
+        // تغيير الدور أو التفعيل أو كلمة المرور فقط يُنهي الجلسة؛ تعديل حد الطلبات أو ربط الخدمة لا يحتاج إعادة دخول
+        const sessionEnded = (roleChanged || activeChanged || passwordChanged) && Number(user_id) !== Number(req.adminUserId);
+        if (sessionEnded) {
             updateFields.push('token_version = token_version + 1');
         }
 
@@ -3230,8 +3232,9 @@ app.post('/api/admin/users/update', requireAdmin, async (req, res) => {
 
         console.log(`✅ تم تحديث المستخدم ${user_id} بنجاح`);
 
-        // 🔔 إرسال إشعار فوري للمستخدم عبر Socket.io أنه تم تغيير بياناته ويجب إعادة تسجيل الدخول
-        try {
+        // 🔔 إشعار + أمر إعادة الدخول فقط عندما انتهت جلسته فعلاً (كان يُرسل مع أي تعديل، فيُخرج المستخدم من كل أجهزته
+        // لمجرد تغيير حد طلباته مثلاً)
+        if (sessionEnded) try {
             // حفظ إشعار في قاعدة البيانات
             const notifQuery = `
                 INSERT INTO "public"."notifications" (user_id, title, message, type, is_read, created_at)
