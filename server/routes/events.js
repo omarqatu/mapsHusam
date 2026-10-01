@@ -2,7 +2,7 @@
 import jwt from 'jsonwebtoken';
 import { ADMIN_JWT_SECRET, IS_PROD, app, publicEventsLimiter } from '../app.js';
 import { servicesPool } from '../database.js';
-import { bearerToken, checkUserRequestQuota, requireAuth } from '../auth.js';
+import { bearerToken, checkUserRequestQuota, isTokenRevoked, requireAuth } from '../auth.js';
 
 // 4-أ. مسار فحص حد الطلبات قبل تنفيذ أي "حدث/نقرة" (اتصال أو واتساب) - يُستدعى
 // من الواجهة الأمامية قبل فتح رابط الاتصال أو الواتساب فعلياً
@@ -61,7 +61,7 @@ app.post('/save-stat', publicEventsLimiter, async (req, res) => {
     // (وإلا استطاع أي شخص حرق حصة طلبات مستخدم آخر أو تزوير إحصائياته).
     let user_id = null;
     const sessionToken = bearerToken(req);
-    if (sessionToken) {
+    if (sessionToken && !isTokenRevoked(sessionToken)) {
         try {
             const decoded = jwt.verify(sessionToken, ADMIN_JWT_SECRET, { algorithms: ['HS256'] });
             if (Number.isInteger(Number(decoded.uid)) && Number(decoded.uid) > 0) user_id = String(Number(decoded.uid));

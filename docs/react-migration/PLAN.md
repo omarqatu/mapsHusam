@@ -1419,6 +1419,17 @@ Log each change here: **what · why · how to verify · commit**.
   the old value, so a password changed meanwhile is not overwritten). Logs only the count. Verified on a schema copy
   with one plain-text account: `🔒 شُفّرت 1 …`, the row is `$2b$…`, login with the old password 200, a wrong one 401.
   Commit: `fix(server): hash every plain-text password at startup`.
+- **Logout ends the session on the server (`POST /api/auth/logout`).** Logging out only deleted the token from the
+  browser; the server kept accepting it until it expired (30 days), so a copied token (a shared computer, a leaked
+  backup of browser data) stayed a working login. New route: the token's SHA-256 is stored until the token's own expiry
+  in `revoked_sessions` (created at startup, pruned hourly) and in memory; `requireAuth`, `requireAdmin`,
+  `activeAdminUidFromToken`, the socket handshake and `/save-stat` refuse it (`401 SESSION_REVOKED`), and open sockets
+  opened with it are disconnected. Only that session ends — the user's other devices stay in. Session tokens now carry
+  a random `jti`: two logins in the same second used to produce the very same token, so one logout would have ended
+  both. No body, no account check (an invalid token has nothing to end → 200). Verified against the dev server: two
+  sessions of the user → distinct tokens, both 200; logout A → A 401, B 200; after a restart A still 401; a socket with
+  A is refused; a logged-out admin token → 401 on an admin route; no token / junk token → 200. Commit:
+  `feat(server): logout revokes the token on the server`.
 
 ## Backend asks (needs the user's decision — behaviour-changing or larger)
 

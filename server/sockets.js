@@ -2,7 +2,7 @@
 import jwt from 'jsonwebtoken';
 import { ADMIN_JWT_SECRET, io } from './app.js';
 import { servicesPool } from './database.js';
-import { getAuthStatus, isActiveAdmin } from './auth.js';
+import { getAuthStatus, isActiveAdmin, isTokenRevoked, tokenKey } from './auth.js';
 import { connectedUsers, userRoom } from './state.js';
 
 // ==========================================
@@ -14,7 +14,7 @@ import { connectedUsers, userRoom } from './state.js';
 io.use(async (socket, next) => {
     try {
         const token = socket.handshake.auth && socket.handshake.auth.token;
-        if (!token) return next(new Error('unauthorized'));
+        if (!token || isTokenRevoked(token)) return next(new Error('unauthorized'));
         // التوكن يحمل exp ويتجدد مع الاستخدام (signSessionToken)، فلا حاجة لـ ignoreExpiration هنا أيضاً
         const decoded = jwt.verify(token, ADMIN_JWT_SECRET, { algorithms: ['HS256'] });
         const uid = Number(decoded.uid);
@@ -25,6 +25,7 @@ io.use(async (socket, next) => {
             return next(new Error('unauthorized'));
         }
         socket.auth = { uid, role: status.role };
+        socket.data.tokenKey = tokenKey(token); // لقطع الاتصال عند تسجيل الخروج (revokeToken)
         next();
     } catch (e) {
         next(new Error('unauthorized'));

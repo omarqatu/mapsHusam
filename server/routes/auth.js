@@ -1,8 +1,9 @@
 // Accounts: register (optionally with a business), change password, verify session, login.
 import bcrypt from 'bcrypt';
-import { BCRYPT_SALT_ROUNDS, IS_PROD, app, authLimiter, clearLoginFailures, isLoginLocked, recordLoginFailure, verifyPasswordWithMigration } from '../app.js';
+import jwt from 'jsonwebtoken';
+import { ADMIN_JWT_SECRET, BCRYPT_SALT_ROUNDS, IS_PROD, app, authLimiter, clearLoginFailures, isLoginLocked, recordLoginFailure, verifyPasswordWithMigration } from '../app.js';
 import { normalizeWhatsappNumber, servicesPool } from '../database.js';
-import { authStatusCache, requireAuth, signSessionToken } from '../auth.js';
+import { authStatusCache, bearerToken, requireAuth, revokeToken, signSessionToken } from '../auth.js';
 import { notifyUser } from '../state.js';
 import { INSERT_SUBMISSION_SQL, parseListingInput, submissionParams } from '../listings.js';
 
@@ -349,5 +350,25 @@ app.post('/api/auth/login', authLimiter, async (req, res) => {
         console.error('Database Login Error:', error);
         console.error('[LOGIN] phone:', normalizedPhone);
         res.status(500).json({ message: 'حدث خطأ في الخادم أثناء عملية تسجيل الدخول الثلاثية المشروطة.' });
+    }
+});
+
+// 🔒 تسجيل الخروج: يُنهي توكن هذا الجهاز على السيرفر (لا يكفي حذفه من المتصفح: نسخة منه تبقى صالحة حتى انتهائها).
+// لا يحتاج حساباً فعّالاً، وتوكن غير صالح أصلاً لا شيء فيه لإنهائه.
+app.post('/api/auth/logout', async (req, res) => {
+    const token = bearerToken(req);
+    if (!token) return res.json({ success: true });
+    let decoded;
+    try {
+        decoded = jwt.verify(token, ADMIN_JWT_SECRET, { algorithms: ['HS256'] });
+    } catch (e) {
+        return res.json({ success: true });
+    }
+    try {
+        await revokeToken(token, decoded.exp);
+        res.json({ success: true });
+    } catch (err) {
+        console.error('❌ تعذر إنهاء الجلسة:', err.message);
+        res.status(500).json({ success: false, error: 'تعذر تسجيل الخروج من السيرفر.' });
     }
 });

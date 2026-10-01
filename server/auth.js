@@ -1,7 +1,8 @@
 // Sessions (JWT), the requireAuth / requireAdmin guards, and the per-user request quota.
+import crypto from 'crypto';
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
-import { ADMIN_JWT_SECRET, BCRYPT_SALT_ROUNDS } from './app.js';
+import { ADMIN_JWT_SECRET, BCRYPT_SALT_ROUNDS, io } from './app.js';
 import { servicesPool } from './database.js';
 
 // =========================================================================
@@ -43,7 +44,8 @@ const SESSION_TTL_DAYS = Number(process.env.SESSION_TTL_DAYS) > 0 ? Number(proce
 const SESSION_RENEW_WITHIN_S = Math.min(7, SESSION_TTL_DAYS / 2) * 86400;
 
 export function signSessionToken(uid, role, tokenVersion) {
-    return jwt.sign({ uid: Number(uid), role, tv: Number(tokenVersion) || 0 }, ADMIN_JWT_SECRET, { expiresIn: `${SESSION_TTL_DAYS}d` });
+    // jti عشوائي: كل جلسة لها توكن مختلف حتى لو دخل المستخدم من جهازين بنفس الثانية (فيُنهي الخروج جلسة واحدة فقط)
+    return jwt.sign({ uid: Number(uid), role, tv: Number(tokenVersion) || 0 }, ADMIN_JWT_SECRET, { expiresIn: `${SESSION_TTL_DAYS}d`, jwtid: crypto.randomUUID() });
 }
 
 // توكنات ما قبل هذا التعديل بلا exp: تبقى صالحة وتُستبدل بتوكن له exp عند أول طلب.
@@ -53,7 +55,7 @@ function sessionTokenNeedsRenewal(decoded) {
 
 // رقم المشرف صاحب التوكن إن كان توكن جلسة صالحاً لمشرف فعّال (وإلا null). لا يرمي أبداً.
 export async function activeAdminUidFromToken(token) {
-    if (!token) return null;
+    if (!token || isTokenRevoked(token)) return null;
     try {
         const decoded = jwt.verify(token, ADMIN_JWT_SECRET, { algorithms: ['HS256'] });
         const uid = Number(decoded.uid);
@@ -71,6 +73,56 @@ export function bearerToken(req) {
     return authHeader.startsWith('Bearer ') ? authHeader.slice(7) : null;
 }
 
+// =========================================================================
+// 🔒 تسجيل الخروج يُنهي التوكن على السيرفر أيضاً (وليس بالمتصفح فقط): بصمة التوكن (sha256) تُحفظ حتى انتهاء
+// صلاحيته بجدول revoked_sessions وبالذاكرة، وكل فحص توكن يرفضها. يخص هذا الجهاز فقط: أجهزة المستخدم الأخرى تبقى.
+// =========================================================================
+const revokedTokens = new Map(); // sha256(token) -> انتهاء الصلاحية (ثوانٍ)
+export const tokenKey = (token) => crypto.createHash('sha256').update(String(token)).digest('hex');
+
+export function isTokenRevoked(token) {
+    const exp = revokedTokens.get(tokenKey(token));
+    return exp !== undefined && exp * 1000 > Date.now();
+}
+
+export async function revokeToken(token, exp) {
+    const key = tokenKey(token);
+    // توكن قديم بلا exp: يُحفظ لأقصى عمر جلسة
+    const expiresAt = Number(exp) > 0 ? Number(exp) : Math.floor(Date.now() / 1000) + SESSION_TTL_DAYS * 86400;
+    revokedTokens.set(key, expiresAt);
+    await servicesPool.query(
+        `INSERT INTO public.revoked_sessions (token_sha256, expires_at) VALUES ($1, to_timestamp($2))
+         ON CONFLICT (token_sha256) DO NOTHING`,
+        [key, expiresAt]
+    );
+    // اتصالات socket المفتوحة بهذا التوكن تُقطع فوراً
+    for (const socket of io.of('/').sockets.values()) {
+        if (socket.data.tokenKey === key) socket.disconnect(true);
+    }
+}
+
+async function ensureRevokedSessions() {
+    try {
+        await servicesPool.query(`
+            CREATE TABLE IF NOT EXISTS public.revoked_sessions (
+                token_sha256 TEXT PRIMARY KEY,
+                expires_at TIMESTAMPTZ NOT NULL
+            )
+        `);
+        await servicesPool.query('DELETE FROM public.revoked_sessions WHERE expires_at < NOW()');
+        const { rows } = await servicesPool.query('SELECT token_sha256, EXTRACT(EPOCH FROM expires_at)::bigint AS exp FROM public.revoked_sessions');
+        for (const row of rows) revokedTokens.set(row.token_sha256, Number(row.exp));
+    } catch (err) {
+        console.error('⚠️ تعذر تحميل الجلسات المنتهية بتسجيل الخروج:', err.message);
+    }
+}
+ensureRevokedSessions();
+setInterval(() => {
+    const now = Date.now() / 1000;
+    for (const [key, exp] of revokedTokens) if (exp < now) revokedTokens.delete(key);
+    servicesPool.query('DELETE FROM public.revoked_sessions WHERE expires_at < NOW()').catch(() => {});
+}, 60 * 60 * 1000).unref();
+
 export async function requireAuth(req, res, next) {
     const authHeader = req.headers['authorization'] || '';
     const token = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : null;
@@ -85,6 +137,9 @@ export async function requireAuth(req, res, next) {
     } catch (e) {
         console.warn('[AUTH] رفض JWT:', e.name, e.message);
         return res.status(401).json({ success: false, error: 'انتهت الجلسة، يرجى تسجيل الدخول من جديد.', code: 'TOKEN_INVALID' });
+    }
+    if (isTokenRevoked(token)) {
+        return res.status(401).json({ success: false, error: 'تم تسجيل الخروج من هذه الجلسة، يرجى تسجيل الدخول من جديد.', code: 'SESSION_REVOKED' });
     }
     const uid = Number(decoded.uid);
     if (!Number.isInteger(uid) || uid <= 0) {
@@ -151,6 +206,9 @@ export async function requireAdmin(req, res, next) {
         decoded = jwt.verify(token, ADMIN_JWT_SECRET, { algorithms: ['HS256'] });
     } catch (e) {
         return res.status(401).json({ success: false, error: 'جلسة المشرف منتهية أو غير صالحة، يرجى تسجيل الدخول من جديد.' });
+    }
+    if (isTokenRevoked(token)) {
+        return res.status(401).json({ success: false, error: 'تم تسجيل الخروج من هذه الجلسة، يرجى تسجيل الدخول من جديد.', code: 'SESSION_REVOKED' });
     }
 
     if (decoded.role !== 'admin' || !decoded.uid) {
