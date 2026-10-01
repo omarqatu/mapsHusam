@@ -52,7 +52,7 @@ cd web && npm run e2e -- --ui                              # Playwright's UI mod
   user, provider and admin in separate browsers against the real server — request → accept → chat → both confirm →
   numbers → rating, reject, cancel with a reason, no duplicates, the provider panel (busy / available at a mocked GPS
   position), a visitor sent to log in, the admin dashboard and read-only view, and refusals for a third account
-  (Husam's `TEST_PLAN.md` §6–§8, §11, §15). It needs the seeded provider (`0590000002`, linked to a plumber) and puts back
+  (Husam's `docs/archive/TEST_PLAN.md` §6–§8, §11, §15). It needs the seeded provider (`0590000002`, linked to a plumber) and puts back
   what it changes: open requests are answered, the provider's status and location restored. Without the variable it is
   skipped, so the default suite stays read-only.
 - **CI does not run them**: they need this database, GeoServer and the seeded accounts. CI (`.github/workflows/ci.yml`) and the

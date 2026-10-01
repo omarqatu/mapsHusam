@@ -23,5 +23,5 @@ CREATE INDEX IF NOT EXISTS layer_name_geom_idx ON public."layer_name" USING GIST
 -- 1. استبدل layer_name بـ 3 أماكن في هذا الملف
 -- 2. نفذ السكربت على قاعدة realestate
 -- 3. انشر الطبقة في GeoServer
--- 4. استخدم أداة add-layer.js لتعديل ملفات JavaScript
+-- 4. سجّلها بالسيرفر والواجهة: الخطوات بـ docs/dev/guide.md (إضافة طبقة عقارات)
 -- ============================================

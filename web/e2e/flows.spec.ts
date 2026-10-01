@@ -11,7 +11,7 @@ import { statePath } from './support/accounts';
 import { t } from './support/i18n';
 
 /**
- * The service request between real accounts, each in its own browser (Husam's TEST_PLAN.md §6–§8, §11): the user asks
+ * The service request between real accounts, each in its own browser (Husam's docs/archive/TEST_PLAN.md §6–§8, §11): the user asks
  * the provider for the service, the provider accepts, they chat, both confirm, the numbers appear, the user rates;
  * reject; cancel with a reason; no duplicate; the provider's own panel (busy / available here with GPS); the admin's
  * dashboard and read-only view of the user. Unlike the other specs this one WRITES to the dev database, so it only runs

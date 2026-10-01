@@ -666,7 +666,7 @@ Split `index.html` into features, in this order:
    Tests: `features/auth/{phone,RegisterPage,LoginPage}.test`, `features/legal/legal.test.tsx`, and the real-backend `features/auth/auth.live.test.ts` (register, duplicate phone, inactive account cannot log in, change password and back).
 9. ✅ Layout: `mobile-tabs.js`, `desktop-panels.js`, `resizable-panels.js`, `panel-controls.js`,
    `ui-collapse.js`, `viewport-guard.js`, `mobile-app-bridge.js` (**the bridge is not ported on purpose** — it was a `postMessage`
-   contract for a native app shell that does not exist and was decided against, 2026-09-30; see PWA below and `docs/MOBILE-APP-READINESS.md`)
+   contract for a native app shell that does not exist and was decided against, 2026-09-30; see PWA below and `docs/dev/mobile-app.md`)
    Covered by: draggable panels (`useDraggablePanel`), and now **minimise** — every `MapSheet` has a chevron that folds it to its
    header (state is per open panel, not saved). Panel *resizing* (`resizable-panels.js`) is deliberately not ported: panels size to
    their content, and a saved width would only fight the phone bottom sheet.
@@ -990,7 +990,7 @@ Server parts came with the merge; the legacy files they touched (root pages, `js
   crowding was a legacy layout problem (side ads) — React's filter grid already gives price its own wide cell.
 - **Not ported:** the colour picker for text boxes in his texts editor (q2) — our editor draws boxes in the theme's
   colours on purpose (option A below; dark mode). `.service-property-currencies.json` (one record, read by no code on
-  `main`) — dropped. `TEST_PLAN.md` (his manual QA plan) is kept at the root and used for the role tests below.
+  `main`) — dropped. `TEST_PLAN.md` (his manual QA plan) was used for the role tests below; it describes the legacy pages, so it now lives in `docs/archive/`.
 
 ### Admin "send a notification" (legacy notifications-panel.html, found missing 2026-10-01)
 
@@ -1072,8 +1072,8 @@ it at once); browser at 1440 / 390, no overflow.
 - Verified: `textOverrides.test.ts` (rules, applying, restoring, interpolation, markup stays text), `textOverrides.live.test.ts`
   (real server: admin saves, visitor reads, a user is refused), browser: Arabic override shows on `/search`, English override on
   the English page, clearing restores the built-in wording.
-- This is the seed of the generic "settings" module the architecture review recommends (see [`docs/REVIEW-2026-09-30.md`](../REVIEW-2026-09-30.md) §2).
-- Reference: `docs/TEXT_CONTENT_AUDIT.md` (from his branch).
+- This is the seed of the generic "settings" module the architecture review recommends (see [`docs/dev/review-2026-09-30.md`](../dev/review-2026-09-30.md) §2).
+- Reference: `docs/dev/text-sources.md` (from his branch).
 
 ## Phase 4 — Cut-over & cleanup
 
@@ -1249,7 +1249,7 @@ Log each change here: **what · why · how to verify · commit**.
   50 s+, sockets and every other request with it). Real use is a handful of conditions (filter fields, currency, smart-search
   chips), so 30 leaves room; response shape and behaviour below the cap are unchanged. Verify: with the fix the same request
   answers in ~17 ms and `/healthz` stays up; `web/src/features/search/search.live.test.ts` (huge count → 200 in < 5 s, health
-  check up). Found by the 2026-09-30 review ([`docs/REVIEW-2026-09-30.md`](../REVIEW-2026-09-30.md) B1).
+  check up). Found by the 2026-09-30 review ([`docs/dev/review-2026-09-30.md`](../dev/review-2026-09-30.md) B1).
   Commit: `fix(server): cap the search condition count`.
 - **`/geoserver-proxy`: the layer allow-list can no longer be side-stepped.** The check only looked at `typeName`, `typename`, `layers`,
   `LAYERS`, `TYPENAME`; GeoServer reads query keys case-insensitively and accepts more, so `TypeName=`, `typeNames=` (WFS 2.0),
@@ -1406,7 +1406,7 @@ Log each change here: **what · why · how to verify · commit**.
   the Home Screen (16.4+).
 - **Dead admin endpoints.** `GET /api/stats-detailed`, `GET /api/stats-summary`, `DELETE /api/delete-stat/:id`,
   `GET /api/admin/all-service-requests-logs` and `GET /api/users` (all `requireAdmin`) are called by nothing — the legacy pages
-  did not call the first four either, and `/api/users` only fed the legacy `notifications-panel.html` (no send form). Delete them (own
+  did not call the first four either, and `/api/users` only fed the legacy `notifications-panel.html` (whose send form is now ported without it). Delete them (own
   commit, "Server changes"), or build admin pages on them (usage log, request log). `all-service-requests-logs` returns every
   requester's and provider's phone / WhatsApp number.
 - **Featured / recommended rule and pictures are constants:** `rating = 10` (featured) and `9.9` (recommended) and the section / slideshow pictures are fixed in the web app. Making them editable by an admin needs a settings table + admin page (and an upload endpoint for the pictures); not done — say if you want it.
