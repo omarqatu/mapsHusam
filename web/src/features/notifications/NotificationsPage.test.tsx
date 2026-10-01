@@ -16,14 +16,7 @@ const rows: AppNotification[] = [
     created_at: '2026-09-29T10:00:00Z',
     link: 'request:5',
   },
-  {
-    id: 2,
-    title: 'Rated',
-    message: 'You got 5 stars',
-    type: 'success',
-    is_read: true,
-    created_at: '2026-09-28T10:00:00Z',
-  },
+  { id: 2, title: 'Rated', message: 'You got 5 stars', type: 'success', is_read: true, created_at: '2026-09-28T10:00:00Z' },
 ];
 const markRead = vi.fn();
 const markAllRead = vi.fn();
