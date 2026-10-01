@@ -7,7 +7,7 @@
 ## البنية
 
 ```text
-server.js                  Express + PostgreSQL (قاعدتين: services_db و realestate) + socket.io + بروكسي GeoServer
+server.js + server/        Express + PostgreSQL (قاعدتين: services_db و realestate) + socket.io + بروكسي GeoServer
 lib/thefuelprice.js        قراءة أسعار المحروقات (مع اختبار)
 shared/service-types.json  قائمة أنواع الخدمات: الواجهة والسيرفر بيقرأوها
 web/src/
@@ -33,20 +33,24 @@ web/e2e/                   Playwright: تجارب بمتصفح حقيقي على
 | تطبيق إعدادات الإدارة على كل الموقع | `text-overrides/` (النصوص)، `visibility/` (إظهار/إخفاء) |
 | المعلومات الحية | `features/widgets/` |
 
-### server.js — وين كل إشي
+### السيرفر — وين كل إشي
 
-| من سطر تقريبًا | القسم |
+`server.js` بس بيشغّل: بيستورد الملفات بالترتيب (كل ملف بيسجّل مساراته لما ينستورد)، وبيبدأ الاستماع.
+
+| الملف | شو فيه |
 |---|---|
-| 30–250 | الإعدادات، الأمان (CORS، helmet، حدود الطلبات، قفل الدخول) |
-| 250–520 | الاتصال بالقواعد، إنشاء الجداول والأعمدة تلقائيًا (`ensure…`)، `ALLOWED_LAYERS` (من `shared/service-types.json` + `OTHER_LAYERS`) |
-| 520–700 | الجلسات (JWT، `requireAuth`، `requireAdmin`)، حد الطلبات لكل مستخدم |
-| 700–1130 | إحصائيات عامة، أسعار، محروقات، خدمة المزوّد |
-| 1130–1570 | تحديث حالة وموقع المزوّد، البحث |
-| 1570–2230 | التسجيل، كلمة السر، التحقق من الجلسة |
-| 2230–3260 | إدارة المستخدمين، المعلومات الحية، النصوص |
-| 3260–4250 | طلبات الخدمة، الدردشة، التقييمات، الإشعارات |
-| 4250–4610 | أضف نشاطك، أرقام التواصل، تقديم الواجهة وتحويل الروابط القديمة |
-| 4610– | socket.io (غرفة لكل مستخدم `user:<id>`) |
+| `server/app.js` | الإعدادات والأمان (CORS، helmet، حدود الطلبات، قفل الدخول)، تطبيق Express، socket.io |
+| `server/database.js` | إعدادات القواعد وGeoServer، الاتصال، إنشاء الجداول والأعمدة تلقائيًا (`ensure…`) |
+| `server/layers.js` | `ALLOWED_LAYERS` (من `shared/service-types.json` + `OTHER_LAYERS`)، أسماء الطبقات بالعربي |
+| `server/auth.js` | الجلسات (JWT)، `requireAuth`، `requireAdmin`، حد الطلبات لكل مستخدم |
+| `server/state.js` | كاشات مشتركة، مين متصل، إرسال إشعار (`notifyUser`) |
+| `server/listings.js` | فحص بيانات «أضف نشاطك» (للتسجيل وللطلبات) |
+| `server/routes/*.js` | المسارات، ملف لكل موضوع: `auth`، `search`، `requests` (الطلبات والدردشة والتقييم)، `admin-users`، `widgets`… |
+| `server/frontend.js` | آخر إشي: `/healthz`، 404 لـ `/api`، تقديم `web/dist` وتحويل الروابط القديمة، معالج الأخطاء |
+| `server/sockets.js` | socket.io (غرفة لكل مستخدم `user:<id>`) |
+
+بدك مسار معيّن؟ `grep -rn "'/api/…'" server/`. مسار جديد = بملف الموضوع تبعه. موضوع جديد = ملف بـ `server/routes/`
+واستيراده بـ `server.js` **قبل** `server/frontend.js`. `npm run check:server` بيتأكد إنه كل الملفات مستوردة وكل import موجود.
 
 ## إضافة نوع خدمة
 
@@ -64,12 +68,13 @@ web/e2e/                   Playwright: تجارب بمتصفح حقيقي على
 1. `database/add_realestate_layer.sql`، ثم انشرها بـ GeoServer (workspace `realestate`).
 2. سجّلها بالواجهة بـ `REAL_ESTATE_LAYERS` بـ `features/map/config.ts`. المحرر والبحث بياخذوا اسمها من هناك. إذا
    حقولها مختلفة عن الشقق أو الأراضي، ضيف حقولها بـ `features/map/edit/schema.ts`.
-3. اسمها بالـ locales، واسم الطبقة بـ `OTHER_LAYERS` بـ `server.js`.
+3. اسمها بالـ locales، واسم الطبقة بـ `OTHER_LAYERS` بـ `server/layers.js`.
 
 ## الفحوصات
 
 ```bash
 cd web && npm run typecheck && npm run lint && npm test           # لازم قبل أي commit
+npm run check:server                                              # السيرفر: كل الملفات والـ imports (بدون تشغيل)
 cd web && VITE_LIVE_API=http://localhost:3000 npm test            # + على السيرفر الحقيقي المحلي
 cd web && npm run e2e                                             # متصفح حقيقي، شاشة كمبيوتر وجوال
 cd web && E2E_FLOWS=1 npm run e2e -- flows --project=desktop      # الأدوار: طلب، دردشة، تقييم، مزوّد، مدير

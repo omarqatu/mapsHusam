@@ -1,6 +1,6 @@
 # Working agreement — PSM map (React migration)
 
-Public real-estate & services map. Backend: `server.js` (Express + PostgreSQL + socket.io, proxies
+Public real-estate & services map. Backend: `server.js` + `server/` (Express + PostgreSQL + socket.io, proxies
 GeoServer at `/geoserver-proxy`). The frontend is React in `web/` (the legacy vanilla-JS + OpenLayers pages — root `*.html`, `js/`, `css/` — were deleted in the Phase 4
 commit; `git show <commit>^:index.html` etc. still reads them). The plan and the page inventory
 live in [`docs/react-migration/PLAN.md`](docs/react-migration/PLAN.md) — read it first on every task.

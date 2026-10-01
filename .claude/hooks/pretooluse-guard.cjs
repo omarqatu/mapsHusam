@@ -4,7 +4,7 @@
 // PreToolUse guard for the React migration (see CLAUDE.md invariants):
 //   Bash        - deny bulk `git add` and staging node_modules / dist / .env.
 //   Edit/Write  - deny innerHTML / dangerouslySetInnerHTML in web/src (XSS),
-//                 ask before touching server.js (backend is frozen during migration).
+//                 ask before touching the backend (server.js, server/) — functionality-preserving changes only.
 
 let raw = '';
 process.stdin.on('data', (d) => (raw += d));
@@ -43,8 +43,8 @@ process.stdin.on('end', () => {
     if (/\/web\/src\//.test(file) && /\b(innerHTML|dangerouslySetInnerHTML)\b/.test(text)) {
       decide('deny', 'No innerHTML / dangerouslySetInnerHTML in the React app — render user content through JSX (CLAUDE.md).');
     }
-    if (/(^|\/)server\.js$/.test(file)) {
-      decide('ask', 'server.js is frozen during the migration. Only security fixes (own commit) or serving web/dist. Log other needs under "Backend asks" in docs/react-migration/PLAN.md.');
+    if (/(^|\/)server\.js$|(^|\/)server\/.+\.js$/.test(file)) {
+      decide('ask', 'The backend (server.js, server/) is frozen during the migration. Only security fixes (own commit) or serving web/dist. Log other needs under "Backend asks" in docs/react-migration/PLAN.md.');
     }
   }
   process.exit(0);

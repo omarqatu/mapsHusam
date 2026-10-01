@@ -32,9 +32,9 @@ jobs:
         shell: cmd
         run: npm ci
 
-      - name: Check - server syntax
+      - name: Check - server modules
         shell: cmd
-        run: node --check server.js
+        run: npm run check:server
 
       - name: Check - install web dependencies
         shell: cmd

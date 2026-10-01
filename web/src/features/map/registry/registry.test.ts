@@ -20,9 +20,9 @@ const serviceLabels = (locale: { services: Record<string, string> }) => Object.k
 const dig = (obj: unknown, path: string): unknown =>
   path.split('.').reduce<unknown>((o, k) => (o as Record<string, unknown> | undefined)?.[k], obj);
 
-/** server.js, read-only (repo root, one level above `web/`, where vitest runs); null when web/ is checked out alone. */
+/** server/layers.js (the server's layer whitelist), read-only; null when web/ is checked out alone. */
 function serverSource(): string | null {
-  const path = resolve(process.cwd(), '../server.js');
+  const path = resolve(process.cwd(), '../server/layers.js');
   return existsSync(path) ? readFileSync(path, 'utf8') : null;
 }
 
@@ -68,10 +68,10 @@ describe('service registry', () => {
   it('the server whitelist is built from the same list (shared/service-types.json) plus the non-service layers', () => {
     const src = serverSource();
     if (!src) return; // web/ deployed on its own: nothing to compare with
-    expect(src).toMatch(/path\.join\(__dirname, 'shared', 'service-types\.json'\)/);
+    expect(src).toMatch(/path\.join\(ROOT_DIR, 'shared', 'service-types\.json'\)/);
     expect(src).toMatch(/const ALLOWED_LAYERS = \[\.\.\.SERVICE_TYPE_KEYS, \.\.\.OTHER_LAYERS\];/);
     const body = /const OTHER_LAYERS = \[([^\]]*)\];/.exec(src)?.[1];
-    if (!body) throw new Error('OTHER_LAYERS not found in server.js: update the parser in registry.test.ts');
+    if (!body) throw new Error('OTHER_LAYERS not found in server/layers.js: update the parser in registry.test.ts');
     const others = [...body.matchAll(/'([^']+)'/g)].map((m) => m[1]);
     const notServices = [
       ...REAL_ESTATE_LAYERS.map((l) => l.typeName),

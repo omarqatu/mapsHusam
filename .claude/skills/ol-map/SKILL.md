@@ -32,7 +32,7 @@ Rules:
   `js/layers.js` + `MAP_CONFIG` (`js/config.js`) into it with types; keep `globalExclusions` and
   `rolePermissions` semantics.
 - All GeoServer URLs are relative: `/geoserver-proxy/<workspace>/wms` / `/wfs`. Never a GeoServer
-  host. The server whitelists layer names — a new layer must exist in `server.js` `isValidLayer`.
+  host. The server whitelists layer names — a new service type goes in `shared/service-types.json`, any other layer in `OTHER_LAYERS` of `server/layers.js`.
 - Feature attributes shown in popups are rendered as JSX text (XSS). Links (e.g. WhatsApp) are built
   with `new URL()` / `encodeURIComponent`, never string-concatenated into HTML.
 - Search results come from `/api/search-features` (PostGIS), not from WFS filters in the browser.

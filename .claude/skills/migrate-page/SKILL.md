@@ -14,7 +14,7 @@ One page (or one feature of the map page) per session. Don't start the next unti
    under the row: API calls (+ response fields actually used), socket events, user actions, role
    differences, storage keys, mobile behaviour. Use grep, e.g.
    `grep -nE "fetch\(|authFetch\(|socket\.(on|emit)|localStorage" js/<file>.js`.
-3. For each API call, open the handler in `server.js` and note the exact response shape — that
+3. For each API call, open the handler in `server/routes/` (`grep -rn "'/api/…'" server/`) and note the exact response shape — that
    becomes the TypeScript type. Don't guess field names.
 
 ## 2. Build

@@ -1385,6 +1385,24 @@ Log each change here: **what · why · how to verify · commit**.
   outside `web/` (`/@fs/…/server.js` → 403). Verified: `registry.test.ts` (entries have only known fields, valid
   group / tier / edit profile; the server builds its list from the file; `OTHER_LAYERS` = the app's non-service
   layers), the full unit and browser suites. Commit: `refactor: one list of service types for the app and the server`.
+- **`server.js` split into modules (no behaviour change).** The 4,800-line file is now `server.js` (start-up: imports the
+  modules in order, listens, shuts down cleanly) + `server/` — `app.js` (settings, security, Express, socket.io server,
+  middleware), `database.js`, `layers.js`, `auth.js` (sessions, guards, quota), `state.js` (shared caches, who is online,
+  `notifyUser`), `listings.js`, `routes/*.js` (one file per subject), `frontend.js` (health, `/api` 404, `web/dist`,
+  legacy redirects, error handler), `sockets.js`. How it was done, so it stays mechanical: (1) inside the single file,
+  declarations used by several subjects were moved up next to the shared code (`requireAdmin`, the quota, the presence
+  map, `notifyUser`, the platform caches, the listing validators) and the body-parsing middleware moved to the end of
+  the app setup — same middleware order; the provider-links cache became an object with `clearProviderLinkedCache()`
+  because a module cannot reassign another module's binding; (2) a script cut the file at top-level statements and wrote
+  each module's imports and exports from a scope analysis (every cross-module name, no module uses a later one, no
+  module writes another's variable), so modules load — and register routes — in the old order; `ROOT_DIR` replaces
+  `__dirname` (the repo root, now one level up). `npm run check:server` (`tools/check-server.mjs`) links every module
+  without running anything (a missing export or an unimported file fails it); CI and the deploy job run it instead of
+  `node --check server.js`, the deploy script also checks `server\` and `shared\` are staged, `web.config` blocks both
+  folders, the edit guard hook covers `server/`. Verified: same start-up log; `VITE_LIVE_API` suite 503 passed; browser
+  suite incl. the role flows 66 passed; no runtime error in the server log; with `web/dist` built: `/`, `/search`,
+  `/admin/users` 200, `/index.html?x=1` → 301 `/?x=1`, `/admin-users.html` → 301, `/api/nope` 404, `/server.js` and
+  `/shared/…` 404. Commit: `refactor(server): split server.js into modules`.
 
 ## Backend asks (needs the user's decision — behaviour-changing or larger)
 

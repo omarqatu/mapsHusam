@@ -75,6 +75,12 @@ try {
     if (-not (Test-Path -LiteralPath (Join-Path $staging 'server.js'))) {
         throw 'Staged release is missing server.js.'
     }
+    if (-not (Test-Path -LiteralPath (Join-Path $staging 'server\app.js'))) {
+        throw 'Staged release is missing the server\ modules.'
+    }
+    if (-not (Test-Path -LiteralPath (Join-Path $staging 'shared\service-types.json'))) {
+        throw 'Staged release is missing shared\service-types.json.'
+    }
     if (-not (Test-Path -LiteralPath (Join-Path $staging 'web\dist\index.html'))) {
         throw 'Staged release is missing web\dist\index.html.'
     }

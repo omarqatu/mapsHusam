@@ -28,7 +28,7 @@ jobs:
           cache-dependency-path: package-lock.json
 
       - run: npm ci
-      - run: node --check server.js
+      - run: npm run check:server
 
   web:
     name: Web (typecheck, lint, unit tests, build)
