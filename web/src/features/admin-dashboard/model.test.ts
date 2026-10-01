@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import type { SuccessStatRow } from '@/api/adminStats';
 import {
   countByStatus,
+  dailyCounts,
   distinct,
   filterRows,
   mapContact,
@@ -9,6 +10,8 @@ import {
   NO_STAT_FILTERS,
   normalizeDigits,
   parseTypedDate,
+  successRate,
+  topBy,
   toRow,
   toTypedDate,
 } from './model';
@@ -97,5 +100,47 @@ describe('filterRows', () => {
     expect(countByStatus(rows)).toEqual({ success: 1, pending: 1, cancelled: 1 });
     expect(distinct(rows, 'username')).toEqual(['Lina', 'Sami']);
     expect(distinct(rows, 'reason')).toEqual(['changed my mind']);
+  });
+});
+
+describe('dashboard insights', () => {
+  const rows = [
+    toRow(row({ id: 1, provider_name: 'A', status: 'completed', created_at: '2026-10-01T10:00:00' })),
+    toRow(row({ id: 2, provider_name: 'A', status: 'cancelled', created_at: '2026-09-30T10:00:00' })),
+    toRow(row({ id: 3, provider_name: 'B', status: 'pending', created_at: '2026-09-01T10:00:00' })),
+    toRow(
+      row({
+        id: 4,
+        provider_name: 'A',
+        status: 'completed',
+        service_layer: 'hotels',
+        cancellation_reason: 'late',
+      }),
+    ),
+  ];
+
+  it('one search box matches user, provider, phone and reason', () => {
+    expect(filterRows(rows, { ...NO_STAT_FILTERS, q: 'LATE' }).map((r) => r.id)).toEqual([4]);
+    expect(filterRows(rows, { ...NO_STAT_FILTERS, q: 'b' }).map((r) => r.id)).toEqual([3]);
+  });
+
+  it('success rate in whole percent', () => {
+    expect(successRate(countByStatus(rows))).toBe(50);
+    expect(successRate({ success: 0, pending: 0, cancelled: 0 })).toBe(0);
+  });
+
+  it('counts the last days per status, oldest first, zeros included', () => {
+    const days = dailyCounts(rows, 3, new Date(2026, 9, 1, 12));
+    expect(days.map((d) => d.day)).toEqual(['2026-09-29', '2026-09-30', '2026-10-01']);
+    expect(days[1]).toEqual({ day: '2026-09-30', success: 0, pending: 0, cancelled: 1 });
+    expect(days[2].success).toBe(1);
+  });
+
+  it('ranks providers and services by rows, with successes', () => {
+    expect(topBy(rows, 'provider', 5)).toEqual([
+      { key: 'A', total: 3, success: 2 },
+      { key: 'B', total: 1, success: 0 },
+    ]);
+    expect(topBy(rows, 'layer', 1)).toEqual([{ key: 'plumber', total: 3, success: 1 }]);
   });
 });

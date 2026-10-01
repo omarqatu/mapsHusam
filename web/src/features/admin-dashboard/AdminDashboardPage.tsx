@@ -1,20 +1,5 @@
 import { useMemo, useState } from 'react';
-import { Link } from 'react-router';
-import {
-  Bell,
-  CheckCircle2,
-  ClipboardList,
-  Clock,
-  Handshake,
-  MessageCircle,
-  Phone,
-  RefreshCw,
-  Trash2,
-  UserCog,
-  XCircle,
-  Zap,
-  ListOrdered,
-} from 'lucide-react';
+import { ClipboardList, Handshake, MessageCircle, Phone, RefreshCw, Trash2 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import AlertMessage from '@/components/ui/AlertMessage';
 import Badge, { type BadgeTone } from '@/components/ui/Badge';
@@ -22,24 +7,27 @@ import Button from '@/components/ui/Button';
 import ConfirmDialog from '@/components/ui/ConfirmDialog';
 import DataTable, { type Column } from '@/components/ui/DataTable';
 import PageHeader from '@/components/ui/PageHeader';
-import StatCard from '@/components/ui/StatCard';
 import { toast } from '@/components/ui/toastStore';
 import { errorText } from '@/lib/errorText';
 import { formatDateTime } from '@/lib/format';
+import { serviceLabelKey } from '@/features/map/registry';
 import StatsFilters from './StatsFilters';
+import { StatusTiles, TopList, TrendChart } from './Insights';
 import { useDeleteStat, useSuccessStats } from './hooks/useSuccessStats';
 import {
   countByStatus,
+  dailyCounts,
   distinct,
   filterRows,
   hasStatFilters,
   NO_STAT_FILTERS,
+  successRate,
+  topBy,
   type ContactKey,
   type StatFilters,
   type StatRow,
   type StatusKey,
 } from './model';
-import { serviceLabelKey } from '@/features/map/registry';
 
 const statusTone: Record<StatusKey, BadgeTone> = { success: 'green', pending: 'amber', cancelled: 'red' };
 const contactIcon: Record<ContactKey, typeof Phone> = {
@@ -47,11 +35,12 @@ const contactIcon: Record<ContactKey, typeof Phone> = {
   whatsapp: MessageCircle,
   service_request: ClipboardList,
 };
+const TREND_DAYS = 14;
 
-const linkBtn =
-  'inline-flex h-11 items-center gap-2 rounded-lg border border-line-strong bg-surface px-4 font-semibold text-fg hover:bg-subtle';
-
-/** `/admin/dashboard` — every service request / call / WhatsApp click with its outcome, filterable, deletable (legacy dashboard.html). */
+/**
+ * `/admin/dashboard` — every service request / call / WhatsApp click with its outcome (legacy dashboard.html): totals that
+ * filter by status, the last two weeks, the busiest providers and services, then the filterable, deletable list.
+ */
 export default function AdminDashboardPage() {
   const { t, i18n } = useTranslation();
   const stats = useSuccessStats();
@@ -60,8 +49,17 @@ export default function AdminDashboardPage() {
   const [toDelete, setToDelete] = useState<StatRow | null>(null);
 
   const all = useMemo(() => stats.data ?? [], [stats.data]);
-  const shown = useMemo(() => filterRows(all, filters), [all, filters]);
-  const counts = useMemo(() => countByStatus(shown), [shown]);
+  // Everything but the status: the tiles count these, and picking a tile narrows the list to its status.
+  const base = useMemo(() => filterRows(all, { ...filters, status: '' }), [all, filters]);
+  const shown = useMemo(
+    () => (filters.status ? base.filter((r) => r.status === filters.status) : base),
+    [base, filters.status],
+  );
+  const counts = useMemo(() => countByStatus(base), [base]);
+  const days = useMemo(() => dailyCounts(base, TREND_DAYS), [base]);
+  const topProviders = useMemo(() => topBy(base, 'provider', 5), [base]);
+  const topLayers = useMemo(() => topBy(base, 'layer', 5), [base]);
+
   const layerLabel = (key: string) =>
     t([serviceLabelKey(key), `adminDashboard.extraLayers.${key}`], key || '—');
   const layerOptions = useMemo(
@@ -72,67 +70,124 @@ export default function AdminDashboardPage() {
 
   const columns = useMemo<Column<StatRow>[]>(() => {
     const dash = <span className="text-muted">—</span>;
+    const when = (r: StatRow) => (r.date ? formatDateTime(r.date, i18n.language) : '');
+    const contact = (r: StatRow) => {
+      const Icon = contactIcon[r.contact];
+      return (
+        <span className="inline-flex items-center gap-1.5 text-muted">
+          <Icon className="h-4 w-4" aria-hidden />
+          {t(`adminDashboard.contact.${r.contact}`)}
+        </span>
+      );
+    };
+    const status = (r: StatRow) => (
+      <Badge tone={statusTone[r.status]}>{t(`adminDashboard.status.${r.status}`)}</Badge>
+    );
     return [
       {
-        key: 'user',
+        // phones: one compact card per row
+        key: 'card',
         header: t('adminDashboard.col.user'),
         card: 'title',
-        cell: (r) => <strong className="text-fg">{r.username || '—'}</strong>,
+        table: false,
+        cell: (r) => (
+          <div className="space-y-1.5">
+            <div className="flex items-start justify-between gap-2">
+              <p className="min-w-0 font-bold text-fg">
+                {r.username || '—'}
+                <span className="font-normal text-muted"> ← </span>
+                {r.provider || '—'}
+              </p>
+              {status(r)}
+            </div>
+            <p className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm font-normal text-muted">
+              <span className="font-semibold text-info">{layerLabel(r.layer)}</span>
+              {contact(r)}
+              <span className="tabular-nums">{when(r)}</span>
+            </p>
+            {r.reason && (
+              <p className="text-sm font-normal text-fg">
+                {t('adminDashboard.reasonLine', { reason: r.reason })}
+              </p>
+            )}
+          </div>
+        ),
       },
       {
-        key: 'provider',
-        header: t('adminDashboard.col.provider'),
-        cell: (r) => <strong>{r.provider || '—'}</strong>,
+        key: 'who',
+        header: t('adminDashboard.col.who'),
+        card: 'hide',
+        sortValue: (r) => r.username,
+        cell: (r) => (
+          <div className="min-w-0">
+            <p className="font-bold text-fg">{r.username || '—'}</p>
+            <p className="text-xs text-muted">
+              {t('adminDashboard.toProvider', { name: r.provider || '—' })}
+            </p>
+            {r.phone && (
+              <p className="text-xs text-muted tabular-nums">
+                <bdi dir="ltr">{r.phone}</bdi>
+              </p>
+            )}
+          </div>
+        ),
       },
       {
-        key: 'layer',
+        key: 'service',
         header: t('adminDashboard.col.layer'),
-        cell: (r) => <span className="font-semibold text-info">{layerLabel(r.layer)}</span>,
-      },
-      {
-        key: 'phone',
-        header: t('adminDashboard.col.phone'),
-        cell: (r) => (r.phone ? <bdi>{r.phone}</bdi> : dash),
+        card: 'hide',
+        sortValue: (r) => layerLabel(r.layer),
+        cell: (r) => (
+          <div className="space-y-0.5">
+            <p className="font-semibold text-fg">{layerLabel(r.layer)}</p>
+            <p className="text-xs">{contact(r)}</p>
+          </div>
+        ),
       },
       {
         key: 'date',
         header: t('adminDashboard.col.date'),
+        card: 'hide',
+        sortValue: (r) => r.date ?? '',
         cell: (r) =>
-          r.date ? <span className="whitespace-nowrap">{formatDateTime(r.date, i18n.language)}</span> : dash,
-      },
-      {
-        key: 'contact',
-        header: t('adminDashboard.col.contact'),
-        cell: (r) => {
-          const Icon = contactIcon[r.contact];
-          return (
-            <span className="inline-flex items-center gap-1.5">
-              <Icon className="h-4 w-4 text-muted" aria-hidden />
-              {t(`adminDashboard.contact.${r.contact}`)}
-            </span>
-          );
-        },
+          r.date ? <span className="whitespace-nowrap tabular-nums text-muted">{when(r)}</span> : dash,
       },
       {
         key: 'status',
         header: t('adminDashboard.col.status'),
-        cell: (r) => <Badge tone={statusTone[r.status]}>{t(`adminDashboard.status.${r.status}`)}</Badge>,
+        card: 'hide',
+        sortValue: (r) => r.status,
+        cell: status,
       },
-      { key: 'reason', header: t('adminDashboard.col.reason'), cell: (r) => r.reason || dash },
+      {
+        key: 'reason',
+        header: t('adminDashboard.col.reason'),
+        card: 'hide',
+        className: 'max-w-56',
+        cell: (r) =>
+          r.reason ? (
+            <span className="line-clamp-2 text-muted" title={r.reason}>
+              {r.reason}
+            </span>
+          ) : (
+            dash
+          ),
+      },
       {
         key: 'actions',
-        header: t('common.actions'),
+        header: '',
         card: 'footer',
+        className: 'w-12',
         cell: (r) => (
-          <Button
-            variant="dangerSoft"
-            size="sm"
-            startIcon={<Trash2 className="h-4 w-4" />}
+          <button
+            type="button"
+            title={t('common.delete')}
             aria-label={t('adminDashboard.delete.aria', { id: r.id })}
             onClick={() => setToDelete(r)}
+            className="inline-flex h-10 w-10 items-center justify-center rounded-lg text-muted hover:bg-danger-soft hover:text-danger focus-visible:outline-2 focus-visible:outline-brand"
           >
-            {t('common.delete')}
-          </Button>
+            <Trash2 className="h-4 w-4" aria-hidden />
+          </button>
         ),
       },
     ];
@@ -155,76 +210,59 @@ export default function AdminDashboardPage() {
         description={t('adminDashboard.subtitle')}
         icon={<Handshake className="h-6 w-6" aria-hidden />}
         actions={
-          <>
-            <Button
-              variant="secondary"
-              startIcon={<RefreshCw className={stats.isFetching ? 'h-4 w-4 animate-spin' : 'h-4 w-4'} />}
-              onClick={() => void stats.refetch()}
-              disabled={stats.isFetching}
-            >
-              {t('adminDashboard.reload')}
-            </Button>
-            <Link to="/notifications" className={linkBtn}>
-              <Bell className="h-4 w-4" aria-hidden />
-              {t('adminDashboard.links.notifications')}
-            </Link>
-            <Link to="/admin/widgets" className={linkBtn}>
-              <Zap className="h-4 w-4" aria-hidden />
-              {t('adminDashboard.links.widgets')}
-            </Link>
-            <Link to="/admin/users" className={linkBtn}>
-              <UserCog className="h-4 w-4" aria-hidden />
-              {t('adminDashboard.links.users')}
-            </Link>
-          </>
-        }
-        filters={
-          <StatsFilters
-            value={filters}
-            onChange={setFilters}
-            users={distinct(all, 'username')}
-            providers={distinct(all, 'provider')}
-            reasons={distinct(all, 'reason')}
-            layers={layerOptions}
-          />
+          <Button
+            variant="secondary"
+            startIcon={<RefreshCw className={stats.isFetching ? 'h-4 w-4 animate-spin' : 'h-4 w-4'} />}
+            onClick={() => void stats.refetch()}
+            disabled={stats.isFetching}
+          >
+            {t('adminDashboard.reload')}
+          </Button>
         }
       />
 
       {stats.isError ? (
         <AlertMessage type="error" message={errorText(stats.error, t('adminDashboard.loadFailed'))} />
       ) : (
-        <>
-          <div className="mb-4 grid grid-cols-2 gap-3 lg:grid-cols-4">
-            <StatCard
-              label={t('adminDashboard.stat.total')}
-              value={shown.length}
-              icon={<ListOrdered className="h-4 w-4" />}
-              chipClassName="bg-subtle-2"
-              tileClassName="bg-subtle text-fg"
+        <div className="space-y-4">
+          <StatusTiles
+            counts={counts}
+            total={base.length}
+            rate={successRate(counts)}
+            status={filters.status}
+            onStatus={(status) => setFilters({ ...filters, status })}
+          />
+
+          <div className="grid gap-4 lg:grid-cols-4 [&>*]:min-w-0">
+            <div className="lg:col-span-2">
+              <TrendChart days={days} />
+            </div>
+            <TopList
+              title={t('adminDashboard.insights.topProviders')}
+              entries={topProviders}
+              label={(k) => k}
+              onPick={(k) => setFilters({ ...filters, providerExact: k })}
             />
-            <StatCard
-              label={t('adminDashboard.status.success')}
-              value={counts.success}
-              icon={<CheckCircle2 className="h-4 w-4" />}
-              chipClassName="bg-ok-solid"
-              tileClassName="bg-ok-soft text-ok"
-            />
-            <StatCard
-              label={t('adminDashboard.status.pending')}
-              value={counts.pending}
-              icon={<Clock className="h-4 w-4" />}
-              chipClassName="bg-warn-solid"
-              tileClassName="bg-warn-soft text-warn"
-            />
-            <StatCard
-              label={t('adminDashboard.status.cancelled')}
-              value={counts.cancelled}
-              icon={<XCircle className="h-4 w-4" />}
-              chipClassName="bg-danger-solid"
-              tileClassName="bg-danger-soft text-danger"
+            <TopList
+              title={t('adminDashboard.insights.topServices')}
+              entries={topLayers}
+              label={layerLabel}
+              onPick={(k) => setFilters({ ...filters, layer: k })}
             />
           </div>
-          <p className="mb-3 text-sm font-semibold text-fg">
+
+          <section className="rounded-2xl border border-line bg-surface p-3 shadow-sm md:p-4">
+            <StatsFilters
+              value={filters}
+              onChange={setFilters}
+              users={distinct(all, 'username')}
+              providers={distinct(all, 'provider')}
+              reasons={distinct(all, 'reason')}
+              layers={layerOptions}
+            />
+          </section>
+
+          <p className="text-sm font-semibold text-fg" aria-live="polite">
             {hasStatFilters(filters)
               ? t('adminDashboard.shownOf', { shown: shown.length, total: all.length })
               : t('adminDashboard.total', { count: all.length })}
@@ -238,7 +276,7 @@ export default function AdminDashboardPage() {
             emptyTitle={hasStatFilters(filters) ? t('adminDashboard.noMatch') : t('adminDashboard.empty')}
             pageSize={25}
           />
-        </>
+        </div>
       )}
 
       <ConfirmDialog

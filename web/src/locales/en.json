@@ -1199,14 +1199,10 @@
     "title": "Provider success dashboard",
     "subtitle": "Every service request, call and WhatsApp click with its outcome",
     "reload": "Reload",
-    "links": {
-      "notifications": "Notifications",
-      "widgets": "Live information centre",
-      "users": "User management"
-    },
     "loadFailed": "Could not load the statistics.",
     "stat": {
-      "total": "Records in view"
+      "total": "All records",
+      "rate": "{{rate}}% successful"
     },
     "status": {
       "success": "Successful",
@@ -1225,7 +1221,8 @@
       "date": "Date and time",
       "contact": "Contact type",
       "status": "Request status",
-      "reason": "Cancellation reason"
+      "reason": "Cancellation reason",
+      "who": "User → provider"
     },
     "contact": {
       "service_request": "Service request",
@@ -1251,13 +1248,26 @@
       "reasonExact": "Reason (exact)",
       "dayPicker": "Day (calendar)",
       "dayTyped": "Day (day/month/year)",
-      "more": "More filters"
+      "more": "More filters",
+      "search": "Search name, phone or reason…",
+      "allContacts": "All contact types",
+      "moreCount": "More filters ({{count}})"
     },
     "extraLayers": {
       "ApartRent": "Apartment for rent",
       "ApartSale": "Apartment for sale",
       "LandSale": "Land for sale"
-    }
+    },
+    "insights": {
+      "trend": "Last {{days}} days",
+      "noRecent": "No records in this period.",
+      "topProviders": "Most requested providers",
+      "topServices": "Most requested services",
+      "successOf": "{{success}} successful of {{total}}",
+      "filterBy": "Show only “{{name}}”"
+    },
+    "toProvider": "to {{name}}",
+    "reasonLine": "Cancellation reason: {{reason}}"
   },
   "visibility": {
     "title": "Show & hide",

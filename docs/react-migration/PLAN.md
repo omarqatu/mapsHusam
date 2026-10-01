@@ -105,6 +105,19 @@ on each request (`requireAdmin`). Errors come back as `{ success:false, error }`
 - [x] Delete a record (confirm, irreversible). [ ] Shortcuts: send notification, live-info centre, users.
 
 - **Changed on purpose (dashboard):** the header filter row is a labelled grid (a table header row cannot work on a phone); "contains" text + "exact" drop-downs for user / provider / reason are kept, the exact ones and phone / reason sit under "More filters". Four summary tiles (records in view, successful, pending, cancelled) are new. Layer names follow the UI language; contact-type emoji → icons; browser `alert` / `confirm` → toast / dialog. The three shortcut buttons are links (no new tab); "send notification" goes to `/notifications`, which for admins now has the send form (see below).
+- **Redesign 2026-10-01** (user: the dashboard must work as a dashboard, not a long list). Order: the four totals, which
+  are now the status filter (a tile shows only its status, "all records" clears it; they count the rows of every other
+  filter, so picking one never zeroes the rest; the successful tile shows the success rate) → the last 14 days as
+  stacked bars per status, and the five most requested providers and services (bar = rows, green = successful; a click
+  filters the list to it) → one toolbar: a search box over user / provider / phone / reason, service, contact type, day,
+  and "more filters" (the legacy contains / exact boxes and the typed day, with a count of the active ones) → the list.
+  Rows: user over "to provider" and phone, service over contact type, date, status, reason (two lines), and a trash icon
+  instead of a red "delete" button on every row. Phones: one compact card per row (user ← provider and status, service ·
+  contact · date, reason). The three shortcut links went: the header's admin menu has them. Insights are computed in the
+  browser from the same list (`model.ts`: `successRate`, `dailyCounts`, `topBy`, tested), no server change. Shared
+  `DataTable` gained `table: false` (a column for the cards only). Verified at 1440 / 390, light and dark, no
+  sideways scroll (the chart shows every other day label on phones).
+
 **`/admin/widgets`** — `widgets-admin.html` + `js/widgets-config.js`
 - API: `GET /api/admin/widgets-data` → `{ groups: { <key>: { data[], updated_at } } }`; `POST /api/admin/widgets-data/:key { items[] }` (keys:
   currency, gold, weather, fuel, transport_inter_city, transport_intra_city, events — else 400); `GET /api/widgets-data` (public) for the

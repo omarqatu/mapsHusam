@@ -19,6 +19,8 @@ export interface Column<T> {
    * `title` = the card's heading, `footer` = the action row (no label), `hide` = table only, `wide` = value spans the full card width, default = label + value.
    */
   card?: 'title' | 'footer' | 'hide' | 'wide';
+  /** `false` = cards only (e.g. a card heading that sums up several table columns). */
+  table?: false;
 }
 
 interface DataTableProps<T> {
@@ -64,6 +66,7 @@ export default function DataTable<T>({
   const dragKey = useRef<string | number | null>(null);
   const [overKey, setOverKey] = useState<string | number | null>(null);
 
+  const tableColumns = columns.filter((c) => c.table !== false);
   const sorted = useMemo(() => {
     const data = rows ?? [];
     const col = sort && columns.find((c) => c.key === sort.key);
@@ -164,7 +167,7 @@ export default function DataTable<T>({
           <thead className="bg-subtle text-muted">
             <tr>
               {onReorder && <th scope="col" className="w-8 px-2 py-3" aria-label={t('common.reorder')} />}
-              {columns.map((c) => {
+              {tableColumns.map((c) => {
                 const active = sort?.key === c.key;
                 return (
                   <th
@@ -251,7 +254,7 @@ export default function DataTable<T>({
                       </span>
                     </td>
                   )}
-                  {columns.map((c) => (
+                  {tableColumns.map((c) => (
                     <td key={c.key} className={clsx('px-4 py-3 align-middle', c.className)}>
                       {c.cell(row)}
                     </td>

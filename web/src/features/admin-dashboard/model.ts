@@ -49,6 +49,8 @@ export function toRow(r: SuccessStatRow): StatRow {
 }
 
 export interface StatFilters {
+  /** One search box over user, provider, phone and cancellation reason (contains, case-insensitive). */
+  q: string;
   /** "contains" text boxes, case-insensitive. */
   username: string;
   provider: string;
@@ -66,6 +68,7 @@ export interface StatFilters {
 }
 
 export const NO_STAT_FILTERS: StatFilters = {
+  q: '',
   username: '',
   provider: '',
   phone: '',
@@ -114,6 +117,7 @@ const has = (value: string, term: string) => value.toLowerCase().includes(term.t
 export function filterRows(rows: readonly StatRow[], f: StatFilters): StatRow[] {
   const day = parseTypedDate(f.date);
   return rows.filter((r) => {
+    if (f.q && !has([r.username, r.provider, r.phone, r.reason].join(' '), f.q)) return false;
     if (f.username && !has(r.username, f.username)) return false;
     if (f.provider && !has(r.provider, f.provider)) return false;
     if (f.phone && !has(r.phone, f.phone)) return false;
@@ -146,4 +150,55 @@ export function countByStatus(rows: readonly StatRow[]): Record<StatusKey, numbe
   const out: Record<StatusKey, number> = { success: 0, pending: 0, cancelled: 0 };
   rows.forEach((r) => (out[r.status] += 1));
   return out;
+}
+
+/** Success share of the rows, in whole percent (0 with no rows). */
+export const successRate = (c: Record<StatusKey, number>): number => {
+  const total = c.success + c.pending + c.cancelled;
+  return total ? Math.round((c.success / total) * 100) : 0;
+};
+
+export interface DayCount extends Record<StatusKey, number> {
+  /** Local calendar day, `yyyy-mm-dd`. */
+  day: string;
+}
+
+const localDay = (d: Date) =>
+  `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+
+/** Rows per status for each of the last `days` local days, oldest first (days without rows are zeros). */
+export function dailyCounts(rows: readonly StatRow[], days: number, today: Date = new Date()): DayCount[] {
+  const out: DayCount[] = [];
+  for (let i = days - 1; i >= 0; i--) {
+    const d = new Date(today.getFullYear(), today.getMonth(), today.getDate() - i);
+    out.push({ day: localDay(d), success: 0, pending: 0, cancelled: 0 });
+  }
+  const index = new Map(out.map((c, i) => [c.day, i]));
+  for (const r of rows) {
+    const d = r.date ? new Date(r.date) : null;
+    if (!d || Number.isNaN(d.getTime())) continue;
+    const i = index.get(localDay(d));
+    if (i !== undefined) out[i][r.status] += 1;
+  }
+  return out;
+}
+
+export interface TopEntry {
+  key: string;
+  total: number;
+  success: number;
+}
+
+/** The `n` providers / service types with the most rows (ties by name), with how many succeeded. */
+export function topBy(rows: readonly StatRow[], key: 'provider' | 'layer', n: number): TopEntry[] {
+  const map = new Map<string, TopEntry>();
+  for (const r of rows) {
+    const k = r[key];
+    if (!k) continue;
+    const e = map.get(k) ?? { key: k, total: 0, success: 0 };
+    e.total += 1;
+    if (r.status === 'success') e.success += 1;
+    map.set(k, e);
+  }
+  return [...map.values()].sort((a, b) => b.total - a.total || a.key.localeCompare(b.key)).slice(0, n);
 }
