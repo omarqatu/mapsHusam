@@ -1355,6 +1355,12 @@ Log each change here: **what · why · how to verify · commit**.
   the variables `server.js` reads, with its defaults (9 unread ones dropped, 5 missing added). `.env.local.example`
   (the same list again) is gone. Verified: start without `POSTGRES_HOST` → the new message and exit 1. Commit:
   `fix(server): the missing-settings message points to .env`.
+- **The ratings table is created at startup like the other tables.** `service_ratings` was the one table the server
+  needed but never created: a new database needed `database/create_service_ratings_table.sql` run by hand, or every
+  rating call failed. `ensureServiceRequestSchema` now creates it (same columns, checks, keys and indexes as the script,
+  `IF NOT EXISTS`, so existing databases are untouched) and the script is removed. Verified: a schema-only copy of the dev
+  database without the table → the server starts, the table appears with its unique key, check, 3 foreign keys and 3
+  indexes. Commit: `fix(server): the ratings table is created at startup`.
 
 ## Backend asks (needs the user's decision — behaviour-changing or larger)
 

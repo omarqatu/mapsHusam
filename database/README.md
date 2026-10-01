@@ -1,12 +1,11 @@
 # database/ — سكربتات SQL
 
 السيرفر بيعمل أغلب الجداول لحاله أول ما يشتغل (`service_requests`، `service_request_messages`، `platform_content`،
-`listing_submissions`، `widgets_manual_groups`، وأعمدة السعر والمساحة والعملة بـ `service_all`). اللي هون للأشياء اللي
+`listing_submissions`، `widgets_manual_groups`، `service_ratings`، وأعمدة السعر والمساحة والعملة بـ `service_all`). اللي هون للأشياء اللي
 ما بيعملها لحاله — بتنشغّل **مرة وحدة** على قاعدة جديدة، أو لما تضيف طبقة عقارات.
 
 | الملف | متى |
 |---|---|
-| `create_service_ratings_table.sql` | قاعدة جديدة: جدول التقييمات (السيرفر ما بيعمله) |
 | `update_service_all_trigger.sql` | قاعدة جديدة أو بعد تعديل منطق «متوفر/مسكّر»: بيحسب `auto_status` من الحالة وساعات العمل وتاريخ الانتهاء |
 | `add_realestate_layer.sql` | قالب لإضافة طبقة **عقارات** جديدة (كل طبقة عقارات جدول لحاله) |
 

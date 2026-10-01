@@ -456,11 +456,32 @@ async function ensureServiceRequestSchema() {
                 created_at TIMESTAMP NOT NULL DEFAULT NOW()
             )
         `);
+        // جدول التقييمات (كان يُنشأ يدوياً من database/create_service_ratings_table.sql): تقييم واحد لكل طلب
+        await servicesPool.query(`
+            CREATE TABLE IF NOT EXISTS public.service_ratings (
+                id SERIAL PRIMARY KEY,
+                request_id INTEGER NOT NULL,
+                user_id INTEGER NOT NULL,
+                provider_user_id INTEGER NOT NULL,
+                service_layer VARCHAR(100) NOT NULL,
+                feature_id INTEGER NOT NULL,
+                rating INTEGER NOT NULL CHECK (rating >= 1 AND rating <= 5),
+                comment TEXT,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                CONSTRAINT unique_rating_per_request UNIQUE (request_id, user_id),
+                CONSTRAINT fk_request FOREIGN KEY (request_id) REFERENCES public.service_requests(id) ON DELETE CASCADE,
+                CONSTRAINT fk_user FOREIGN KEY (user_id) REFERENCES public.users(user_id) ON DELETE CASCADE,
+                CONSTRAINT fk_provider FOREIGN KEY (provider_user_id) REFERENCES public.users(user_id) ON DELETE CASCADE
+            )
+        `);
+        await servicesPool.query(`CREATE INDEX IF NOT EXISTS idx_service_ratings_provider ON public.service_ratings (service_layer, feature_id)`);
+        await servicesPool.query(`CREATE INDEX IF NOT EXISTS idx_service_ratings_request ON public.service_ratings (request_id)`);
+        await servicesPool.query(`CREATE INDEX IF NOT EXISTS idx_service_ratings_user ON public.service_ratings (user_id)`);
         // فهارس للاستعلامات الشائعة (ملفات المستخدم/المزود، وفحص التكرار عند تسجيل النقرات)
         await servicesPool.query(`CREATE INDEX IF NOT EXISTS service_requests_user_idx ON public.service_requests (user_id, created_at DESC)`);
         await servicesPool.query(`CREATE INDEX IF NOT EXISTS service_requests_provider_idx ON public.service_requests (provider_user_id, status)`);
         await servicesPool.query(`CREATE INDEX IF NOT EXISTS service_requests_feature_idx ON public.service_requests (service_layer, feature_id)`);
-        console.log('✅ تم التأكد من وجود جداول طلبات الخدمة (service_requests) والدردشة (service_request_messages)');
+        console.log('✅ تم التأكد من وجود جداول طلبات الخدمة والدردشة والتقييمات (service_requests, service_request_messages, service_ratings)');
     } catch (err) {
         console.error('⚠️ خطأ أثناء إنشاء جداول طلبات الخدمة:', err.message);
     }
