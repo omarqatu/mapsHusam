@@ -40,7 +40,8 @@ export default function IncomingBanner() {
     <div
       role="alertdialog"
       aria-label={t('requests.incoming.title')}
-      className="fixed end-4 top-16 z-[55] w-80 max-w-[calc(100vw-2rem)] rounded-xl border border-line bg-surface p-4 shadow-xl"
+      // Above the map panels (z-30), below the header (z-40) so its menus (account, notifications) stay clickable.
+      className="fixed end-4 top-16 z-[35] w-80 max-w-[calc(100vw-2rem)] rounded-xl border border-line bg-surface p-4 shadow-xl"
     >
       <p className="mb-2 flex items-center gap-2 text-sm font-bold text-brand-fg">
         <Bell className="h-4 w-4" aria-hidden />

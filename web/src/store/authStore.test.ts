@@ -1,6 +1,9 @@
-import { beforeEach, describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { SESSION_KEY, useAuthStore } from './authStore';
 import type { AuthUser } from '@/types/auth';
+
+const serverLogout = vi.fn(() => Promise.resolve({ success: true }));
+vi.mock('@/api/auth', () => ({ authApi: { logout: serverLogout } }));
 
 const user = { user_id: 1, role: 'user', token: 't', admin_token: null, phone: '1' } as AuthUser;
 
@@ -17,11 +20,19 @@ describe('authStore', () => {
 
   it('logout clears the store and both legacy storage keys', () => {
     localStorage.setItem('user', '{}');
+    localStorage.setItem('svc_unseen_1', '[5]');
     useAuthStore.getState().setSession(user);
     useAuthStore.getState().logout();
     expect(useAuthStore.getState().user).toBeNull();
     expect(localStorage.getItem('map_user')).toBeNull();
     expect(localStorage.getItem('user')).toBeNull();
+    expect(localStorage.getItem('svc_unseen_1')).toBeNull();
+  });
+
+  it('logout also ends the token on the server', async () => {
+    useAuthStore.getState().setSession(user);
+    useAuthStore.getState().logout();
+    await vi.waitFor(() => expect(serverLogout).toHaveBeenCalledWith('t'));
   });
 
   it('logout drops the legacy per-user provider_status key', () => {

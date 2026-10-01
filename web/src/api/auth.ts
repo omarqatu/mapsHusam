@@ -52,6 +52,9 @@ export const authApi = {
     api.post<VerifySessionResponse>('/api/auth/verify-session', { user_id: userId }),
   changePassword: (body: ChangePasswordRequest) =>
     api.post<ChangePasswordResponse>('/api/auth/change-password', body),
+  /** Ends this token on the server too. Takes the token explicitly: the store has already dropped it. */
+  logout: (token: string) =>
+    api.post<{ success: boolean }>('/api/auth/logout', undefined, { headers: { Authorization: `Bearer ${token}` } }),
 };
 
 export function useLogin() {

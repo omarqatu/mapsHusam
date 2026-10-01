@@ -53,15 +53,26 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     set({ user: next });
   },
   logout: () => {
-    // Legacy `logoutPlatform` also dropped this per-user key (nothing writes it any more; old browsers may still hold it).
+    // Per-user keys go with the session: the request ids not opened yet (features/requests/unseen.ts), and a key
+    // legacy `logoutPlatform` also dropped (nothing writes it any more; old browsers may still hold it).
     try {
       const id = get().user?.user_id ?? get().user?.id;
-      if (id != null) localStorage.removeItem(`provider_status_${id}`);
+      if (id != null) {
+        localStorage.removeItem(`svc_unseen_${id}`);
+        localStorage.removeItem(`provider_status_${id}`);
+      }
     } catch {
       /* ignore */
     }
+    const token = get().user?.token;
     writeStored(null);
     set({ user: null });
+    // Removing the token from this browser is not enough: a copy of it would stay valid on the server until it
+    // expires. Imported lazily (the API client imports this store); failures are ignored, the user is out locally.
+    if (token)
+      void import('@/api/auth')
+        .then(({ authApi }) => authApi.logout(token))
+        .catch(() => undefined);
   },
 }));
 
