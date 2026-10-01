@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # Everything that must pass before merging to main, against the real local backend (CI cannot run the browser and
-# role tests: they need this database, GeoServer and the seeded accounts).
+# role tests: they need this database, GeoServer and the seeded accounts). The read-only browser specs assume the
+# default "show & hide" setting (no hidden layers or sections) in the dev database.
 #   dev/dev.sh db-up && dev/dev.sh seed     (and the local GeoServer, see dev/README.md)
 #   dev/check-all.sh
 # Starts its own backend on CHECK_PORT (default 3100) with dev/dev.env and stops it at the end. Writes data like the
@@ -30,8 +31,13 @@ curl -sf "http://localhost:$CHECK_PORT/healthz" >/dev/null || { cat "$LOG"; echo
 step "web: unit + live tests"
 (cd web && VITE_LIVE_API="http://localhost:$CHECK_PORT" npx vitest run)
 
-step "web: browser tests incl. role flows"
-(cd web && E2E_FLOWS=1 VITE_BACKEND_URL="http://localhost:$CHECK_PORT" npx playwright test)
+step "web: browser tests"
+(cd web && VITE_BACKEND_URL="http://localhost:$CHECK_PORT" npx playwright test)
+
+# The role flows use the same accounts as the read-only specs, and their live events reach every session of that
+# account (an accepted request opens the chat): run them alone, after the rest.
+step "web: role flows"
+(cd web && E2E_FLOWS=1 VITE_BACKEND_URL="http://localhost:$CHECK_PORT" npx playwright test flows --project=desktop)
 
 step "backend log: runtime errors"
 if grep -E "ReferenceError|is not defined|Unhandled Rejection|Uncaught Exception" "$LOG"; then
