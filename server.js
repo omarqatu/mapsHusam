@@ -244,13 +244,13 @@ const PG_USER = process.env.POSTGRES_USER;
 const PG_PASSWORD = process.env.POSTGRES_PASSWORD;
 const SERVICES_DB_NAME = process.env.SERVICES_DB_NAME || 'services_db';
 const REAL_ESTATE_DB_NAME = process.env.REAL_ESTATE_DB_NAME || 'realestate';
-// GeoServer يعمل على HTTP، البروكسي سيتولى الاتصال
-const GEOSERVER_TARGET = process.env.GEOSERVER_TARGET || 'http://194.163.174.162:8080/geoserver';
+// GeoServer يعمل على HTTP، البروكسي سيتولى الاتصال (العنوان من .env فقط: لا عناوين خوادم في المستودع العام)
+const GEOSERVER_TARGET = process.env.GEOSERVER_TARGET;
 
 // =========================================================================
 // 🔒 [التحقق من متغيرات البيئة]: التأكد من وجود المتغيرات المطلوبة
 // =========================================================================
-const requiredEnvVars = ['POSTGRES_HOST', 'POSTGRES_USER', 'POSTGRES_PASSWORD'];
+const requiredEnvVars = ['POSTGRES_HOST', 'POSTGRES_USER', 'POSTGRES_PASSWORD', 'GEOSERVER_TARGET'];
 const missingEnvVars = requiredEnvVars.filter(varName => !process.env[varName]);
 
 if (missingEnvVars.length > 0) {

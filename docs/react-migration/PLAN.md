@@ -1369,6 +1369,13 @@ Log each change here: **what · why · how to verify · commit**.
   `POST /api/log-contact-click`) and the dashboard stats stay.
   Verified: as admin, all five → 404; `GET /api/admin/users` → 200; `grep` finds no caller in `web/`. Commit:
   `refactor(server): remove five admin endpoints nothing calls`.
+- **`GEOSERVER_TARGET` is required; no production address in the code.** `server.js` fell back to the production
+  GeoServer's public IP when the variable was unset, so a missing setting silently pointed any copy (a laptop, a test
+  box) at production, and the address sat in a public repository. It is now required like `POSTGRES_*`: missing → the
+  startup message lists it and the server exits. `.env.example` lists it under "required"; `docs/ops/deploy.md` puts it
+  in the pre-merge checklist (production must have it in its settings before this deploys — the deploy's smoke test
+  rolls back otherwise). Verified: without it → "GEOSERVER_TARGET" in the missing list, exit 1; with `dev/dev.env` →
+  `/geoserver-proxy/…/wfs` 200. Commit: `fix(server): GEOSERVER_TARGET comes from the settings only`.
 
 ## Backend asks (needs the user's decision — behaviour-changing or larger)
 
