@@ -4054,8 +4054,14 @@ app.get('/api/service-requests/:id/rating-check', requireAuth, async (req, res) 
     }
 
     try {
+        // نفس قاعدة "تقييم واحد لكل نشاط": تقييم سابق لنفس المعلم يُحسب تقييماً لهذا الطلب أيضاً
         const result = await servicesPool.query(
-            'SELECT id, comment FROM public.service_ratings WHERE request_id = $1 AND user_id = $2',
+            `SELECT r.id, r.comment FROM public.service_ratings r
+             LEFT JOIN public.service_requests sr ON sr.id = $1
+             WHERE r.user_id = $2
+               AND (r.request_id = $1 OR (r.service_layer = sr.service_layer AND r.feature_id = sr.feature_id))
+             ORDER BY (r.request_id = $1) DESC, r.id DESC
+             LIMIT 1`,
             [id, user_id]
         );
 
@@ -4114,7 +4120,12 @@ app.get('/api/service-requests/pending-ratings', requireAuth, async (req, res) =
              FROM public.service_requests sr
              LEFT JOIN public.users u ON sr.provider_user_id = u.user_id
              WHERE sr.user_id = $1 AND sr.status = 'completed'
-             AND sr.id NOT IN (SELECT request_id FROM public.service_ratings WHERE user_id = $1)
+             -- تقييم واحد لكل مستخدم لكل نشاط: طلب لنشاط قيّمه المستخدم سابقاً (بأي طلب) لا يُطلب تقييمه مجدداً
+             AND NOT EXISTS (
+                 SELECT 1 FROM public.service_ratings r
+                 WHERE r.user_id = $1
+                   AND (r.request_id = sr.id OR (r.service_layer = sr.service_layer AND r.feature_id = sr.feature_id))
+             )
              ORDER BY sr.updated_at DESC`,
             [user_id]
         );

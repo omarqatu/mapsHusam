@@ -1316,6 +1316,13 @@ Log each change here: **what · why · how to verify · commit**.
   WhatsApp number. Found by the role test (`web/e2e/flows.spec.ts`, scenario A). Verified: the dev provider (no number on
   his feature) → the user's chat shows "agreed — contact now" with 0590000002. Commit:
   `fix(server): the user gets the provider's numbers after a deal`.
+- **"Rate this service" follows the one-rating-per-business rule.** Since the rule (contact clicks and ratings commit), a
+  user who had rated a business was still listed in `GET /api/service-requests/pending-ratings` for every later deal with
+  it, so the rating window kept opening and every attempt was refused ("already rated"). The list now leaves out requests
+  for a business the user already rated (by any request), and `GET …/:id/rating-check` reports such a request as rated
+  (with that rating's comment state). Verified: the dev user (rated the dev provider before) → pending list empty, check
+  `hasRated: true`; `requests.live.test.ts` and the role test cover a first and a repeated deal. Commit:
+  `fix(server): no rating prompt for a business the user already rated`.
 
 ## Backend asks (needs the user's decision — behaviour-changing or larger)
 
