@@ -1308,6 +1308,14 @@ Log each change here: **what · why · how to verify · commit**.
   existing rows stay NULL = shown as dollars) and checks it is there. GeoServer must re-read the table once
   (`dev/geoserver-setup.sh` does it locally; production: reload the `service_all` feature type). Verified: start-up log
   lists the three columns; WFS `DescribeFeatureType` shows `currency`. Commit: `feat(server): service_all gets a currency column`.
+- **After a deal the user gets the provider's numbers, also when the map entry has none.** The provider's call / WhatsApp
+  numbers came only from the feature row (`service_all.phone` / `.whatsapp`); a provider whose entry has no number left the
+  user with "contact numbers: not available" while the provider saw the user's account numbers. `getProviderContactInfo`
+  now falls back, field by field, to the provider's account (`users.phone` / `whatsapp_number`) — the same source the user's
+  numbers come from. Also `POST …/:id/confirm` answered `userWhatsapp: userPhone` (Husam's TEST_PLAN R20); it now sends the
+  WhatsApp number. Found by the role test (`web/e2e/flows.spec.ts`, scenario A). Verified: the dev provider (no number on
+  his feature) → the user's chat shows "agreed — contact now" with 0590000002. Commit:
+  `fix(server): the user gets the provider's numbers after a deal`.
 
 ## Backend asks (needs the user's decision — behaviour-changing or larger)
 

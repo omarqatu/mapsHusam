@@ -3289,7 +3289,28 @@ function deriveLocalPhoneFromWhatsapp(rawWhatsapp) {
 // (مثلاً public."electrician")، وليس من جدول users نهائياً - لأن جدول users
 // لا يملك عمود whatsapp أصلاً، وبيانات التواصل الحقيقية لمزود الخدمة مخزنة
 // بجدول الطبقة الجغرافية المرتبط بها (service_layer + feature_id).
-async function getProviderContactInfo(serviceLayer, featureId) {
+// أرقام المزود بعد الاتفاق: من معلمه على الخريطة أولاً، وإن خلا المعلم من رقم فمن حسابه (هاتف/واتساب الحساب)،
+// كما تصل أرقام حساب المستخدم للمزود. بدون هذا كان المستخدم يرى "أرقام التواصل غير متوفرة" لمعلم بلا رقم.
+async function getProviderContactInfo(serviceLayer, featureId, providerUserId) {
+    const fromFeature = await getFeatureContactInfo(serviceLayer, featureId);
+    if ((fromFeature.phone && fromFeature.whatsapp) || !providerUserId) return fromFeature;
+    try {
+        const account = await servicesPool.query(
+            'SELECT phone, whatsapp_number FROM public.users WHERE user_id = $1',
+            [providerUserId]
+        );
+        const row = account.rows[0] || {};
+        return {
+            phone: fromFeature.phone || (row.phone ? String(row.phone).trim() : null),
+            whatsapp: fromFeature.whatsapp || (row.whatsapp_number ? String(row.whatsapp_number).trim() : null)
+        };
+    } catch (err) {
+        console.error('⚠️ خطأ أثناء جلب أرقام حساب المزود:', err.message);
+        return fromFeature;
+    }
+}
+
+async function getFeatureContactInfo(serviceLayer, featureId) {
     if (!serviceLayer || !featureId || !isValidLayer(serviceLayer)) {
         return { whatsapp: null, phone: null };
     }
@@ -3463,7 +3484,7 @@ app.get('/api/service-requests', requireAuth, async (req, res) => {
         // - رقم هاتف وواتساب مزود الخدمة: من جدول طبقة الخدمة نفسها (عمود whatsapp)
         await Promise.all(requests.map(async (r) => {
             if (r.status === 'completed') {
-                const providerContact = await getProviderContactInfo(r.service_layer, r.feature_id);
+                const providerContact = await getProviderContactInfo(r.service_layer, r.feature_id, r.provider_user_id);
                 r.userPhone = r.requester_phone || null;
                 r.userWhatsapp = r.requester_whatsapp || null;
                 r.providerPhone = providerContact.phone;
@@ -3673,7 +3694,7 @@ app.get('/api/service-requests/:id/messages', requireAuth, async (req, res) => {
             );
             const userPhone = userContactResult.rows[0]?.phone || null;
             const userWhatsapp = userContactResult.rows[0]?.whatsapp_number || null;
-            const providerContact = await getProviderContactInfo(request.service_layer, request.feature_id);
+            const providerContact = await getProviderContactInfo(request.service_layer, request.feature_id, request.provider_user_id);
 
             responsePayload.userPhone = userPhone;
             responsePayload.userWhatsapp = userWhatsapp;
@@ -3788,7 +3809,7 @@ app.post('/api/service-requests/:id/confirm', requireAuth, async (req, res) => {
             const userWhatsapp = userContactResult.rows[0]?.whatsapp_number || null;
 
             // 🆕 هاتف وواتساب مزود الخدمة من جدول طبقة الخدمة نفسها (عمود whatsapp)
-            const providerContact = await getProviderContactInfo(refreshed.service_layer, refreshed.feature_id);
+            const providerContact = await getProviderContactInfo(refreshed.service_layer, refreshed.feature_id, refreshed.provider_user_id);
 
             const payloadForUser = {
                 requestId: Number(id),
@@ -3820,7 +3841,7 @@ app.post('/api/service-requests/:id/confirm', requireAuth, async (req, res) => {
                 success: true, 
                 status: 'completed', 
                 userPhone: userPhone, 
-                userWhatsapp: userPhone,
+                userWhatsapp: userWhatsapp,
                 providerPhone: providerContact.phone,
                 providerWhatsapp: providerContact.whatsapp 
             });
