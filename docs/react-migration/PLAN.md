@@ -1361,6 +1361,14 @@ Log each change here: **what · why · how to verify · commit**.
   `IF NOT EXISTS`, so existing databases are untouched) and the script is removed. Verified: a schema-only copy of the dev
   database without the table → the server starts, the table appears with its unique key, check, 3 foreign keys and 3
   indexes. Commit: `fix(server): the ratings table is created at startup`.
+- **Five unused admin endpoints removed** (was a "Backend ask"; the user decided 2026-10-01 to clean them up).
+  `GET /api/stats-detailed`, `GET /api/stats-summary`, `DELETE /api/delete-stat/:id`, `GET /api/users` and
+  `GET /api/admin/all-service-requests-logs` were called by nothing: the React app has its own dashboard and users
+  endpoints, the legacy pages are deleted, and the last two returned every user's (and every requester's and provider's)
+  phone and WhatsApp numbers. Fewer routes that can leak personal data. The logging routes (`POST /api/log-map-event`,
+  `POST /api/log-contact-click`) and the dashboard stats stay.
+  Verified: as admin, all five → 404; `GET /api/admin/users` → 200; `grep` finds no caller in `web/`. Commit:
+  `refactor(server): remove five admin endpoints nothing calls`.
 
 ## Backend asks (needs the user's decision — behaviour-changing or larger)
 
@@ -1410,9 +1418,4 @@ Log each change here: **what · why · how to verify · commit**.
   dropping subscriptions the push service answers 404 / 410 for; then a `push` handler in `web/public/sw.js` and a subscribe call after
   the user allows notifications. Adds endpoints, a table and a dependency — needs the user's decision. iOS: only for an app added to
   the Home Screen (16.4+).
-- **Dead admin endpoints.** `GET /api/stats-detailed`, `GET /api/stats-summary`, `DELETE /api/delete-stat/:id`,
-  `GET /api/admin/all-service-requests-logs` and `GET /api/users` (all `requireAdmin`) are called by nothing — the legacy pages
-  did not call the first four either, and `/api/users` only fed the legacy `notifications-panel.html` (whose send form is now ported without it). Delete them (own
-  commit, "Server changes"), or build admin pages on them (usage log, request log). `all-service-requests-logs` returns every
-  requester's and provider's phone / WhatsApp number.
 - **Featured / recommended rule and pictures are constants:** `rating = 10` (featured) and `9.9` (recommended) and the section / slideshow pictures are fixed in the web app. Making them editable by an admin needs a settings table + admin page (and an upload endpoint for the pictures); not done — say if you want it.

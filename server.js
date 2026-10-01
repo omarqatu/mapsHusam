@@ -1510,82 +1510,6 @@ app.post('/save-stat', publicEventsLimiter, async (req, res) => {
     }
 });
 
-// 5. مسار جلب السجلات التفصيلية مع التصفح الصفحي (Pagination)
-app.get('/api/stats-detailed', requireAdmin, async (req, res) => {
-    try {
-        const page = parseInt(req.query.page) || 1;
-        const limit = 10; 
-        const offset = (page - 1) * limit;
-
-        console.log(`📋 جلب السجلات - الصفحة: ${page}`);
-
-        const dataQuery = `
-            SELECT 
-                s.id, 
-                s.user_identifier,
-                COALESCE(u.full_name, s.user_identifier) as user_name,
-                COALESCE(u.phone, '---') as user_phone,
-                s.provider_name, 
-                s.service_type, 
-                TO_CHAR(s.request_date, 'YYYY-MM-DD HH24:MI:SS') as formatted_date
-            FROM "public"."map_service_stats" s
-            LEFT JOIN "public"."users" u ON u.user_id::text = s.user_identifier
-            WHERE (s.service_type ILIKE '%اتصال%' OR s.service_type ILIKE '%واتساب%')
-            ORDER BY s.request_date DESC 
-            LIMIT $1 OFFSET $2
-        `;
-
-        const countQuery = `
-            SELECT COUNT(*) FROM "public"."map_service_stats" s
-            WHERE (s.service_type ILIKE '%اتصال%' OR s.service_type ILIKE '%واتساب%')
-        `;
-
-        const [dataRes, countRes] = await Promise.all([
-            servicesPool.query(dataQuery, [limit, offset]),
-            servicesPool.query(countQuery)
-        ]);
-
-        const totalRecords = parseInt(countRes.rows[0].count);
-        const totalPages = Math.ceil(totalRecords / limit);
-
-        res.json({
-            data: dataRes.rows,
-            totalPages: totalPages,
-            currentPage: page,
-            totalRecords: totalRecords
-        });
-    } catch (err) {
-        console.error('❌ خطأ أثناء جلب البيانات التفصيلية:', err.message);
-        res.status(500).json({ error: 'Failed to fetch logs', details: IS_PROD ? undefined : err.message });
-    }
-});
-
-// 6. مسار حذف سجل معين (DELETE)
-app.delete('/api/delete-stat/:id', requireAdmin, async (req, res) => {
-    const { id } = req.params;
-    try {
-        const query = 'DELETE FROM "public"."map_service_stats" WHERE id = $1';
-        await servicesPool.query(query, [id]);
-
-        console.log(`🗑️ تم حذف السجل رقم: ${id} بنجاح`);
-        res.status(200).json({ status: 'success', message: `Record ${id} deleted` });
-    } catch (err) {
-        console.error('❌ خطأ أثناء حذف السجل:', err.message);
-        res.status(500).json({ error: 'Failed to delete record', details: IS_PROD ? undefined : err.message });
-    }
-});
-
-// 7. مسار ملخص الإحصائيات
-app.get('/api/stats-summary', requireAdmin, async (req, res) => {
-    try {
-        const query = `SELECT service_type, COUNT(*) as total_requests FROM "public"."map_service_stats" GROUP BY service_type ORDER BY total_requests DESC`;
-        const result = await servicesPool.query(query);
-        res.json(result.rows);
-    } catch (err) {
-        res.status(500).json({ error: err.message });
-    }
-});
-
 // ==========================================
 // 1️⃣ مسار تسجيل مستخدم جديد
 // ==========================================
@@ -2226,26 +2150,6 @@ app.get('/api/search-features', async (req, res) => {
         console.error('Error details:', error.message);
         console.error('Error stack:', error.stack);
         res.status(500).json({ error: 'Database query failed', details: IS_PROD ? undefined : error.message });
-    }
-});
-
-// API لجلب قائمة المستخدمين
-app.get('/api/users', requireAdmin, async (req, res) => {
-    try {
-        const query = `
-            SELECT user_id as id, full_name as name, email, phone, role
-            FROM public.users
-            ORDER BY user_id ASC
-        `;
-        const result = await servicesPool.query(query);
-
-        res.json({
-            success: true,
-            users: result.rows
-        });
-    } catch (error) {
-        console.error('Error fetching users:', error);
-        res.status(500).json({ error: 'Failed to fetch users', details: IS_PROD ? undefined : error.message });
     }
 });
 
@@ -3651,26 +3555,6 @@ app.post('/api/service-requests/:id/cancel', requireAuth, async (req, res) => {
     } catch (err) {
         console.error('❌ خطأ أثناء إلغاء الطلب:', err.message);
         res.status(500).json({ success: false, error: 'تعذر إلغاء الطلب', details: IS_PROD ? undefined : err.message });
-    }
-});
-
-// مسار جلب كافة السجلات والطلبات بشكل تفصيلي لوحة التحكم
-app.get('/api/admin/all-service-requests-logs', requireAdmin, async (req, res) => {
-    try {
-        const result = await servicesPool.query(`
-            SELECT sr.id, sr.user_id, sr.provider_user_id, sr.service_layer, sr.feature_id,
-                   sr.service_type, sr.status, sr.cancellation_reason, sr.created_at, sr.updated_at,
-                   ru.full_name AS requester_name, ru.phone AS requester_phone, ru.whatsapp_number AS requester_whatsapp,
-                   pu.full_name AS provider_name, pu.phone AS provider_phone, pu.whatsapp_number AS provider_whatsapp
-            FROM public.service_requests sr
-            LEFT JOIN public.users ru ON ru.user_id = sr.user_id
-            LEFT JOIN public.users pu ON pu.user_id = sr.provider_user_id
-            ORDER BY sr.created_at DESC
-        `);
-        res.json({ success: true, logs: result.rows });
-    } catch (err) {
-        console.error('❌ خطأ أثناء جلب سجلات الطلبات التفصيلية:', err.message);
-        res.status(500).json({ success: false, error: 'فشل جلب السجلات', details: IS_PROD ? undefined : err.message });
     }
 });
 
