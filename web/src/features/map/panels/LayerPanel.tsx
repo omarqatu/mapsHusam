@@ -84,7 +84,7 @@ function ServiceGroup({ id, items, forceOpen }: { id: TypeGroupId; items: GroupI
   // Admins only: how many of these the public does not see.
   const publicHidden = items.filter((i) => i.publicHidden).length;
   return (
-    <details open={forceOpen || undefined} className="group rounded-xl border border-line bg-surface">
+    <details open={forceOpen || undefined} className="group rounded-xl border border-line bg-surface/60">
       <summary className="flex cursor-pointer list-none items-center gap-2.5 px-3 py-2.5 [&::-webkit-details-marker]:hidden">
         <ChevronDown className="h-4 w-4 shrink-0 text-muted transition-transform group-open:rotate-180" aria-hidden />
         <Icon className="h-4 w-4 shrink-0 text-muted" aria-hidden />

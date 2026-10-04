@@ -36,7 +36,7 @@ export default function MapSheet({
       style={panelStyle}
       aria-label={label}
       className={clsx(
-        'absolute z-20 flex flex-col bg-surface shadow-xl',
+        'glass-panel absolute z-20 flex flex-col',
         'inset-x-0 bottom-0 max-h-[70%] rounded-t-2xl',
         'sm:inset-x-auto sm:bottom-auto sm:max-h-[calc(100%-4.75rem)] sm:w-[22rem] sm:rounded-2xl sm:[transform:translate(var(--dx),var(--dy))]',
         // end side leaves room for the tool buttons; start side leaves room for the search box on top

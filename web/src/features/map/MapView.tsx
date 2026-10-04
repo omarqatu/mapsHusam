@@ -31,7 +31,13 @@ import { realEstateStyle, serviceStyle, type Translate } from './styles';
  * Owns the one OpenLayers map. Children (controls, panels) get it through `useOlMap()` and render only once
  * the map exists. Layer visibility follows the Zustand map store.
  */
-export default function MapView({ children }: { children?: ReactNode }) {
+export default function MapView({
+  children,
+  bleedTop = false,
+}: {
+  children?: ReactNode;
+  bleedTop?: boolean;
+}) {
   const { i18n } = useTranslation();
   const target = useRef<HTMLDivElement>(null);
   const [map, setMap] = useState<OlMap | null>(null);
@@ -138,7 +144,12 @@ export default function MapView({ children }: { children?: ReactNode }) {
 
   return (
     <MapContext value={map}>
-      <div ref={target} className="absolute inset-0" data-testid="map" />
+      {/* The canvas may reach up under a translucent top bar (`-top-14` = the bar's 3.5 rem); everything laid over the map still measures from below the bar. */}
+      <div
+        ref={target}
+        className={bleedTop ? 'absolute inset-x-0 bottom-0 -top-14' : 'absolute inset-0'}
+        data-testid="map"
+      />
       {map && children}
     </MapContext>
   );

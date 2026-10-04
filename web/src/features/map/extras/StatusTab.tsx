@@ -102,7 +102,7 @@ export default function StatusTab({
                 <button
                   type="button"
                   onClick={() => showOnMap(r)}
-                  className="w-full rounded-xl border border-line bg-surface p-3 text-start hover:border-brand hover:bg-brand-light/30"
+                  className="w-full rounded-xl border border-line bg-surface/60 p-3 text-start hover:border-brand hover:bg-brand-light/30"
                 >
                   <span className="flex items-start gap-2">
                     <span aria-hidden className="text-xl">

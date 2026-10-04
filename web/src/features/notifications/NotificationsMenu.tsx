@@ -5,11 +5,13 @@ import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router';
 import { useNotifications } from '@/api/notifications';
 import NotificationList from './NotificationList';
+import { useHeaderTone } from '@/components/headerStyles';
 
 /** Bell with an unread badge and a list (legacy notification dropdown). Signed-in users only. */
-export default function NotificationsMenu({ tone = 'default' }: { tone?: 'default' | 'onBrand' }) {
+export default function NotificationsMenu() {
   const { t } = useTranslation();
   const [open, setOpen] = useState(false);
+  const tone = useHeaderTone();
   const box = useRef<HTMLDivElement>(null);
   const { items, unread, isLoading, isError, refresh, isRefreshing, markRead, markAllRead } = useNotifications();
   const canAsk = typeof Notification !== 'undefined' && Notification.permission === 'default';
@@ -36,14 +38,11 @@ export default function NotificationsMenu({ tone = 'default' }: { tone?: 'defaul
         aria-expanded={open}
         aria-label={unread ? `${t('notificationsMenu.open')} (${t('notificationsMenu.unread', { count: unread })})` : t('notificationsMenu.open')}
         title={t('notificationsMenu.open')}
-        className={clsx(
-          'relative inline-flex items-center rounded-lg px-2.5 py-1.5',
-          tone === 'onBrand' ? 'text-white hover:bg-surface/15' : 'text-muted hover:bg-subtle',
-        )}
+        className={tone.iconBtn}
       >
-        <Bell className="h-4 w-4" aria-hidden />
+        <Bell className="h-5 w-5" aria-hidden />
         {unread > 0 && (
-          <span className="absolute -end-0.5 -top-0.5 min-w-4 rounded-full bg-danger-solid px-1 text-center text-[10px] font-bold leading-4 text-white">
+          <span className={clsx('absolute end-1 top-1 min-w-4 rounded-full bg-danger-solid px-1 text-center text-[10px] font-bold leading-4 text-white ring-2', tone.badgeRing)}>
             {unread > 99 ? '99+' : unread}
           </span>
         )}
@@ -52,7 +51,7 @@ export default function NotificationsMenu({ tone = 'default' }: { tone?: 'defaul
         <div
           role="dialog"
           aria-label={t('notificationsMenu.title')}
-          className="fixed inset-x-2 top-12 z-50 max-h-[70vh] overflow-hidden rounded-xl border border-line bg-surface text-fg shadow-xl sm:absolute sm:inset-x-auto sm:end-0 sm:top-full sm:mt-1 sm:w-80"
+          className="fixed inset-x-2 top-16 z-50 max-h-[70vh] overflow-hidden rounded-2xl border border-line bg-surface text-fg shadow-float sm:absolute sm:inset-x-auto sm:end-0 sm:top-full sm:mt-2 sm:w-80"
         >
           <div className="flex items-center justify-between gap-2 border-b border-line px-3 py-2">
             <p className="text-sm font-bold">{t('notificationsMenu.title')}</p>

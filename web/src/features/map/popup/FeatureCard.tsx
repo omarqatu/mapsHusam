@@ -15,6 +15,7 @@ function Field(props: Parameters<typeof DataField>[0]) {
 import MediaGallery from '@/components/ui/MediaGallery';
 import StatusDot from '@/components/ui/StatusDot';
 import { toast } from '@/components/ui/toastStore';
+import clsx from 'clsx';
 import MapSheet from '../panels/MapSheet';
 import { FuelBadges } from '../extras/StatusBadges';
 import {
@@ -28,7 +29,14 @@ import {
   text,
   type SelectedFeature,
 } from './featureModel';
-import { hasPrice, isFuelStation, isRoadBarrier, priceCurrencyDefault, targetIcon, targetLabelKey } from '../targets';
+import {
+  hasPrice,
+  isFuelStation,
+  isRoadBarrier,
+  priceCurrencyDefault,
+  targetIcon,
+  targetLabelKey,
+} from '../targets';
 import { copyText, isMobileBrowser, nativeShare } from '@/lib/clipboard';
 import ContactButtons from './ContactButtons';
 import { formatArea, formatLength } from '../tools/measure';
@@ -125,7 +133,7 @@ export default function FeatureCard({ feature, onClose, className }: Props) {
     <MapSheet
       dragId="card"
       side="start"
-      className={className}
+      className={clsx('[--glass-opacity:90%] [--glass-tint-amount:0%]', className)}
       label={typeTitle}
       onClose={onClose}
       title={
@@ -150,9 +158,7 @@ export default function FeatureCard({ feature, onClose, className }: Props) {
       }
     >
       <div className="space-y-3">
-        {kind.kind === 'location' && (
-          <p className="text-sm text-muted">{t('popup.sharedLocationHint')}</p>
-        )}
+        {kind.kind === 'location' && <p className="text-sm text-muted">{t('popup.sharedLocationHint')}</p>}
 
         {dirs && (
           <div className="grid grid-cols-2 gap-2">
@@ -174,7 +180,11 @@ export default function FeatureCard({ feature, onClose, className }: Props) {
         {/* One line: open / closed (+ hours) and the rating summary. */}
         {kind.kind !== 'location' && !isBarrier && (
           <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1.5">
-            <StatusPill tone={open ? 'var(--color-ok)' : 'var(--color-danger)'} label={open ? t('popup.openNow') : t('popup.closedNow')} sub={hoursText} />
+            <StatusPill
+              tone={open ? 'var(--color-ok)' : 'var(--color-danger)'}
+              label={open ? t('popup.openNow') : t('popup.closedNow')}
+              sub={hoursText}
+            />
             {kind.kind === 'service' && id && <RatingsBlock layer={kind.discriminator} featureId={id} />}
           </div>
         )}
@@ -240,7 +250,11 @@ export default function FeatureCard({ feature, onClose, className }: Props) {
             variant="secondary"
             size="sm"
             startIcon={
-              typeof navigator.share === 'function' ? <Link2 className="h-4 w-4" /> : <Copy className="h-4 w-4" />
+              typeof navigator.share === 'function' ? (
+                <Link2 className="h-4 w-4" />
+              ) : (
+                <Copy className="h-4 w-4" />
+              )
             }
             onClick={() => void shareLocation(feature, typeTitle, t)}
           >

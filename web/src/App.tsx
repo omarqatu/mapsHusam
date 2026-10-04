@@ -7,6 +7,7 @@ import AppShell from '@/components/AppShell';
 import ErrorBoundary from '@/components/ErrorBoundary';
 import SessionVerifier from '@/components/SessionVerifier';
 import { TextOverridesSync } from '@/features/text-overrides/store';
+import { BrandThemeSync } from '@/features/brand-theme/store';
 import { VisibilitySync } from '@/features/visibility/store';
 import AuthLayout from '@/features/auth/AuthLayout';
 import LoginPage from '@/features/auth/LoginPage';
@@ -30,6 +31,7 @@ const AdminVisibilityPage = lazy(() => import('@/features/admin-visibility/Admin
 const AdminSubmissionsPage = lazy(() => import('@/features/listing-submissions/AdminSubmissionsPage'));
 const AddListingPage = lazy(() => import('@/features/listing-submissions/AddListingPage'));
 const AdminTextsPage = lazy(() => import('@/features/admin-texts/AdminTextsPage'));
+const AdminAppearancePage = lazy(() => import('@/features/brand-theme/AdminAppearancePage'));
 const NotificationsPage = lazy(() => import('@/features/notifications/NotificationsPage'));
 const SearchPage = lazy(() => import('@/features/search/SearchPage'));
 const WidgetsPortalPage = lazy(() => import('@/features/widgets/WidgetsPortalPage'));
@@ -49,6 +51,7 @@ const ported: Record<string, ReactElement> = {
   '/admin/widgets': <AdminWidgetsPage />,
   '/admin/visibility': <AdminVisibilityPage />,
   '/admin/texts': <AdminTextsPage />,
+  '/admin/appearance': <AdminAppearancePage />,
   '/admin/submissions': <AdminSubmissionsPage />,
   '/add-listing': <AddListingPage />,
 };
@@ -106,6 +109,7 @@ export default function App() {
         <SessionVerifier />
         <VisibilitySync />
         <TextOverridesSync />
+        <BrandThemeSync />
         <RequestsHost />
         <RouterProvider router={router} />
       </QueryClientProvider>

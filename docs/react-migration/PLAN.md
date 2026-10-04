@@ -203,6 +203,8 @@ The bar is the `<footer class="widgets-ticker-footer">` of `index.html` (the map
 **Fuel prices are read, not typed (UX change):** the fuel card of the information centre shows petrol 95 / 98, diesel, kerosene and gas 5 / 12 / 48 kg from `GET /api/fuel-prices`; the admin's rows the source does not have (2.5 kg cylinder, gas delivered to buildings) stay below them. The visitor is told one thing about the live cards (currency, gold, fuel): when they were last updated — the moment the source itself published (rates once a day, gold live, fuel the date the source says it updated its prices), not where they come from or how often we read. `/admin/widgets` says which groups no longer need typing. All live prices are read again every 7 minutes (`LIVE_REFRESH_MS`) and when the tab comes back after that long; the server caches 6.5 min so each read reaches a fresh fetch; the information centre's "refresh all" button asks the server to read the sources at once (`?fresh=1`, honoured only when the cached copy is at least a minute old, so the sources cannot be hammered). Tested: `api/liveRefresh.test.tsx` (fake timers: a second and third fetch after 7 and 14 minutes, none before; "refresh all" sends `fresh`), `widgets/model.test.ts` (`applyFuel`, source timestamps), `lib/thefuelprice.test.js`, and by hand against the dev server: a 9-minute run where the server's `fetchedAt` advanced from 23:59:03 to 00:06:16 and the gold source's own time from 23:59:11 to 00:06:11, and `?fresh=1` returning a new read after 62 s but the cached one inside 60 s. Fares and events remain admin-typed.
 Left as constants on purpose: the `rating` values 10 / 9.9 that mean featured / recommended (a business rule, see Backend asks) and the promo pictures.
 
+**Map interface as frosted glass (UX change):** the top bar on the map, every control over the imagery (tool buttons, search pill and its suggestions, chips, coordinates), all panels and sheets (`MapSheet`: layers, search, extras, provider, results, feature card) and the live-updates strip are translucent glass: the surface token at ~56 % (panels ~70 %) with the map blurred behind (`backdrop-filter`), in both themes; browsers without `backdrop-filter` get a nearly solid surface. The map canvas reaches up under the top bar (`MapView bleedTop`) while everything laid over the map still measures from below the bar. This reverses the earlier "opaque on purpose" decision for controls over the map. The signed-in user's menu shows an avatar (first letter) beside the name and, in its card, role, phone, WhatsApp and email.
+
 ### `/search` — inventory (read from the legacy files + `server.js`; the map page's search code is reused, not copied)
 
 **Legacy behaviour that exists (parity checklist — tick when verified in the browser):**
@@ -1034,7 +1036,7 @@ it at once); browser at 1440 / 390, no overflow.
   `overrides.live.test.ts` (real server: save as admin, read as visitor, restore default, a user is refused); browser:
   select + bold, a new paragraph, a paste carrying `<img onerror>` / `<script>` / `javascript:` → saved without them,
   nothing ran on the admin or the visitor page, the visitor sees the edit.
-- The admin menu of the new header (other work in progress) will need icons for `/admin/texts` and `/admin/visibility`.
+- ✅ The admin menu of the new header has icons for `/admin/texts` and `/admin/visibility` (and `/admin/appearance`).
 - **Fixed 2026-10-01: saving dropped the boxes and the centring.** The editor draws a box or centred text with classes,
   but reading it back only recognised inline styles, so the first save of an edited text turned every box into plain
   paragraphs and un-centred the headings on the public page. `renderRich` now also writes `data-box` / `data-center` /
@@ -1096,6 +1098,31 @@ it at once); browser at 1440 / 390, no overflow.
   the English page, clearing restores the built-in wording.
 - This is the seed of the generic "settings" module the architecture review recommends (see [`docs/dev/review-2026-09-30.md`](../dev/review-2026-09-30.md) §2).
 - Reference: `docs/dev/text-sources.md` (from his branch).
+
+## Top bar + appearance (`/admin/appearance`) — new page, mirrors the water platform's Admin → Appearance
+
+- ✅ **Top bar redesign** (`components/AppHeader`, user 2026-09-30: "nicer, consistent, practical"; then "purple much
+  lighter, dynamic with the theme colour"). *Changed on purpose:* brand mark + name; the pages are icon tabs in one
+  segmented group (icons only between `md` and `lg` so the row never crowds); the admin pages fold into one "الإدارة"
+  dropdown; bell, my requests, help and the account are one 40 px icon-button size (`components/headerStyles.ts`);
+  language + light/dark moved into the help menu (set once, not bar-worthy; `ThemeSwitcher.tsx` removed); a visitor's
+  "log in" is a filled button; phones: brand · bell · requests · account · ☰ (a sheet with page tiles, admin, preferences,
+  information).
+- ✅ **Header styles** (admin's choice, all in the brand colours): *soft* (default — a light brand wash), *gradient*
+  (the old full-colour bar), *white*. On the map each style is a see-through glass variant.
+- ✅ **Brand theme** (`features/brand-theme`): stored in `platform_content` key `brand_theme` as JSON
+  `{primary, secondary, header}` — no server change. Only the brand tokens change (`--color-brand`, `-2`, `-hover`, `-fg`,
+  `-light`, light and dark); shades are derived and pushed until white-on-fill ≥ 4.5:1 and brand text ≥ 4.5:1 on light and
+  dark surfaces (`model.test.ts` checks yellow, lime, black and every preset). CSS is injected as `:root:root{…}` (outranks
+  index.css in any load order), cached in `localStorage` and put on by `public/theme-init.js` before the first paint.
+  The `theme-color` meta follows the brand. Reads a 404 (server older than `5ec3df9`) as "no theme saved".
+- ✅ **Page** (admin only, in the admin dropdown): 8 presets + two colour pickers with hex input, three header-style cards
+  (each a real mini bar), a preview card, derived shades with the contrast ratio. Every change previews live on the whole app
+  for the admin only; "save and publish" reaches everyone (next query, ≤ 5 min for open tabs); leaving without saving drops
+  the preview; "restore default" deletes the row. *Not ported from the water platform:* per-module themes, fonts, field and
+  text colours, radius — this app has one module and a fixed type scale.
+- Verified: real server (admin PUT teal → visitor sees teal header, buttons and search hero in light and dark, map glass;
+  DELETE → default), screenshots desktop / tablet / phone, dark. Not yet: a real phone.
 
 ## Phase 4 — Cut-over & cleanup
 

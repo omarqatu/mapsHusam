@@ -85,11 +85,11 @@ export default function MapPage() {
   };
 
   return (
-    <div className="fixed inset-0 flex flex-col">
+    <div className="fixed inset-0 flex flex-col overflow-hidden">
       <AppHeader />
 
-      <div className="relative flex-1 overflow-hidden">
-        <MapView>
+      <div className="relative flex-1">
+        <MapView bleedTop>
           <SelectionController />
           {isProvider && <ProviderTracker />}
           <ResultsLayer />

@@ -34,7 +34,7 @@ export default function QuickTab() {
             disabled={busy}
             onClick={() => void actions.quick(x)}
             className={clsx(
-              'flex min-h-11 items-center gap-2 rounded-xl border border-line bg-surface px-3 py-2 text-start text-sm font-semibold text-fg',
+              'flex min-h-11 items-center gap-2 rounded-xl border border-line bg-surface/60 px-3 py-2 text-start text-sm font-semibold text-fg',
               'hover:border-brand hover:bg-brand-light disabled:opacity-60',
             )}
           >

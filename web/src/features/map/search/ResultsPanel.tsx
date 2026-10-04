@@ -49,7 +49,7 @@ function ResultRow({
     <li
       className={clsx(
         'rounded-xl border p-3',
-        active ? 'border-brand bg-brand-light/40' : 'border-line bg-surface',
+        active ? 'border-brand bg-brand-light/40' : 'border-line bg-surface/60',
       )}
     >
       <button type="button" onClick={onOpen} className="flex w-full items-start gap-3 text-start">

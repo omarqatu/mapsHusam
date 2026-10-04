@@ -174,6 +174,7 @@
     "adminTexts": "Platform texts",
     "adminDashboard": "Dashboard",
     "admin": "Admin",
+    "adminAppearance": "Appearance",
     "addListing": "Add your business",
     "adminSubmissions": "Add requests"
   },
@@ -1250,14 +1251,15 @@
       "dayTyped": "Day (day/month/year)",
       "more": "More filters",
       "search": "Search name, phone or reason…",
-      "allContacts": "All contact types",
-      "moreCount": "More filters ({{count}})"
+      "moreCount": "More filters ({{count}})",
+      "allContacts": "All contact types"
     },
     "extraLayers": {
       "ApartRent": "Apartment for rent",
       "ApartSale": "Apartment for sale",
       "LandSale": "Land for sale"
     },
+    "reasonLine": "Cancellation reason: {{reason}}",
     "insights": {
       "trend": "Last {{days}} days",
       "noRecent": "No records in this period.",
@@ -1266,8 +1268,7 @@
       "successOf": "{{success}} successful of {{total}}",
       "filterBy": "Show only “{{name}}”"
     },
-    "toProvider": "to {{name}}",
-    "reasonLine": "Cancellation reason: {{reason}}"
+    "toProvider": "to {{name}}"
   },
   "visibility": {
     "title": "Show & hide",
@@ -1729,6 +1730,75 @@
     "platform": {
       "title": "The platform in numbers",
       "failed": "Could not load the platform figures."
+    }
+  },
+  "account": {
+    "phone": "Phone",
+    "whatsapp": "WhatsApp",
+    "email": "Email"
+  },
+  "appearance": {
+    "title": "Appearance",
+    "description": "The platform colour and the top bar style — changes show at once and reach everyone when saved.",
+    "save": "Save and publish",
+    "discard": "Undo",
+    "saved": "Appearance saved and published.",
+    "failed": "Could not save the appearance.",
+    "loadFailed": "Could not load the saved appearance; showing the default.",
+    "previewing": "Preview — only you see these changes until you save.",
+    "live": "This is the published appearance.",
+    "updatedAt": "Last saved: {{date}}",
+    "palette": "Platform colour",
+    "custom": "Or pick your own",
+    "primary": "Primary colour",
+    "secondary": "Second colour (gradient)",
+    "header": "Top bar style",
+    "preview": "Preview",
+    "derived": "Derived shades",
+    "adjusted": "The primary colour was darkened slightly so white text on it stays readable.",
+    "reset": "Restore default appearance",
+    "resetConfirm": "The platform colour and top bar return to the default for every visitor.",
+    "resetDone": "Appearance restored to the default.",
+    "presets": {
+      "indigo": "Indigo",
+      "ocean": "Ocean",
+      "teal": "Teal",
+      "green": "Green",
+      "amber": "Amber",
+      "rose": "Rose",
+      "plum": "Plum",
+      "slate": "Slate"
+    },
+    "headerStyles": {
+      "soft": {
+        "name": "Soft",
+        "hint": "A light wash of the brand colour"
+      },
+      "gradient": {
+        "name": "Gradient",
+        "hint": "A full brand-colour bar"
+      },
+      "surface": {
+        "name": "White",
+        "hint": "Quiet, colour only in the logo"
+      }
+    },
+    "tokens": {
+      "brand": "Buttons and selection",
+      "hover": "On hover",
+      "text": "Coloured text",
+      "light": "Light tint",
+      "textDark": "Coloured text (dark)"
+    },
+    "sample": {
+      "search": "Search a service or property…",
+      "chip": "Flats for rent",
+      "chip2": "Electrician",
+      "card": "Listing card",
+      "cardText": "How cards and text look",
+      "link": "Coloured link",
+      "primary": "Primary button",
+      "gradient": "Gradient"
     }
   },
   "submit": {

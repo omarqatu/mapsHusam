@@ -1,5 +1,15 @@
 import { useCallback, useRef, useState } from 'react';
-import { ClipboardList, KeyRound, LogIn, LogOut } from 'lucide-react';
+import {
+  ChevronDown,
+  ClipboardList,
+  KeyRound,
+  LogIn,
+  LogOut,
+  Mail,
+  MessageCircle,
+  Phone,
+  type LucideIcon,
+} from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router';
 import clsx from 'clsx';
@@ -8,15 +18,63 @@ import { useAuthStore } from '@/store/authStore';
 import ChangePasswordDialog from '@/features/auth/ChangePasswordDialog';
 import NotificationsMenu from '@/features/notifications/NotificationsMenu';
 import { useRequestsUi } from '@/features/requests/store';
+import { useHeaderTone } from './headerStyles';
 import { useUnseen } from '@/features/requests/unseen';
 
-const item = 'flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-start text-sm font-semibold hover:bg-subtle';
+/** The user's round mark: the first letter (accounts carry no photo); `skin` = its colours, the brand gradient by default. */
+function Avatar({
+  name,
+  className,
+  skin = 'bg-gradient-to-br from-brand to-brand-2 text-white shadow-card',
+}: {
+  name: string;
+  className: string;
+  skin?: string;
+}) {
+  return (
+    <span
+      aria-hidden
+      className={clsx(
+        'flex shrink-0 items-center justify-center rounded-full font-black',
+        skin,
+        className,
+      )}
+    >
+      {name.trim().charAt(0).toUpperCase()}
+    </span>
+  );
+}
+
+/** One line of the account card: icon, what it is, the value (numbers stay left-to-right inside Arabic text). */
+function InfoRow({
+  icon: Icon,
+  label,
+  value,
+}: {
+  icon: LucideIcon;
+  label: string;
+  value: string | null | undefined;
+}) {
+  if (!value) return null;
+  return (
+    <div className="flex items-center gap-2.5 px-3 py-1.5 text-sm">
+      <Icon className="h-4 w-4 shrink-0 text-muted" aria-hidden />
+      <span className="shrink-0 text-muted">{label}</span>
+      <bdi dir="ltr" className="ms-auto min-w-0 truncate font-semibold text-fg">
+        {value}
+      </bdi>
+    </div>
+  );
+}
+
+const item =
+  'flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-start text-sm font-semibold hover:bg-subtle';
 
 /**
  * Header actions of the signed-in user: bell, my requests, and one account menu (name, role, change password,
- * log out). Signed out: a login link. `onBrand` = white icons for the gradient bar.
+ * log out). Signed out: a login button.
  */
-export default function UserMenu({ tone = 'default' }: { tone?: 'default' | 'onBrand' }) {
+export default function UserMenu() {
   const { t } = useTranslation();
   const user = useAuthStore((s) => s.user);
   const logout = useAuthStore((s) => s.logout);
@@ -27,14 +85,17 @@ export default function UserMenu({ tone = 'default' }: { tone?: 'default' | 'onB
   useOutsideClick(menu, close, open);
   const openRequests = useRequestsUi((s) => s.openList);
   const hasNew = useUnseen((s) => s.ids.length > 0);
-  const btn = clsx(
-    'relative inline-flex items-center rounded-lg px-2.5 py-1.5',
-    tone === 'onBrand' ? 'text-white hover:bg-surface/15' : 'text-muted hover:bg-subtle',
-  );
+  const tone = useHeaderTone();
 
   if (!user) {
     return (
-      <Link to="/login" className={clsx(btn, 'gap-1.5 whitespace-nowrap text-sm font-semibold')}>
+      <Link
+        to="/login"
+        className={clsx(
+          'ms-1 inline-flex h-10 items-center gap-1.5 whitespace-nowrap rounded-xl px-4 text-sm font-bold shadow-card transition-colors',
+          tone.login,
+        )}
+      >
         <LogIn className="h-4 w-4" aria-hidden />
         {t('auth.login')}
       </Link>
@@ -42,17 +103,19 @@ export default function UserMenu({ tone = 'default' }: { tone?: 'default' | 'onB
   }
   const name = user.full_name ?? user.phone;
   return (
-    <div className="flex items-center gap-0.5">
-      <NotificationsMenu tone={tone} />
+    <div className="flex items-center gap-1">
+      <NotificationsMenu />
       <button
         type="button"
         onClick={openRequests}
-        className={btn}
+        className={tone.iconBtn}
         aria-label={t('requests.myRequests')}
         title={t('requests.myRequests')}
       >
-        <ClipboardList className="h-4 w-4" aria-hidden />
-        {hasNew && <span className="absolute end-1 top-1 h-2 w-2 rounded-full bg-ok-solid ring-2 ring-ok-solid/40" />}
+        <ClipboardList className="h-5 w-5" aria-hidden />
+        {hasNew && (
+          <span className={clsx('absolute end-2 top-2 h-2.5 w-2.5 rounded-full bg-ok-solid ring-2', tone.badgeRing)} />
+        )}
       </button>
 
       <div ref={menu} className="relative ms-1">
@@ -64,20 +127,39 @@ export default function UserMenu({ tone = 'default' }: { tone?: 'default' | 'onB
           aria-label={name}
           title={name}
           className={clsx(
-            'flex h-8 w-8 items-center justify-center rounded-full text-sm font-black',
-            tone === 'onBrand' ? 'bg-surface/25 text-white hover:bg-surface/35' : 'bg-brand-light text-brand-fg',
+            'flex h-10 items-center gap-2 rounded-full ps-1 pe-1 transition-colors xl:pe-2.5',
+            tone.accountBtn,
           )}
         >
-          {name.trim().charAt(0).toUpperCase()}
+          <Avatar name={name} className="h-9 w-9 text-sm" skin={tone.avatar} />
+          <span className={clsx('max-w-32 truncate text-sm font-bold max-xl:hidden', tone.name)}>{name}</span>
+          <ChevronDown
+            className={clsx(
+              'h-3.5 w-3.5 transition-transform max-xl:hidden',
+              tone.chevron,
+              open && 'rotate-180',
+            )}
+            aria-hidden
+          />
         </button>
         {open && (
           <div
             role="menu"
-            className="absolute end-0 top-full z-50 mt-1.5 w-60 rounded-xl border border-line bg-surface p-1 text-fg shadow-xl"
+            className="absolute end-0 top-full z-50 mt-2 w-72 rounded-2xl border border-line bg-surface p-1.5 text-fg shadow-float"
           >
-            <div className="border-b border-line px-3 py-2">
-              <p className="truncate text-sm font-bold text-fg">{name}</p>
-              <p className="text-xs text-muted">{t(`roles.${user.role}`)}</p>
+            <div className="flex items-center gap-3 px-3 pb-2 pt-2.5">
+              <Avatar name={name} className="h-11 w-11 text-lg" />
+              <div className="min-w-0">
+                <p className="truncate text-sm font-bold text-fg">{name}</p>
+                <span className="mt-0.5 inline-block rounded-full bg-brand-light px-2 py-0.5 text-xs font-bold text-brand-fg">
+                  {t(`roles.${user.role}`)}
+                </span>
+              </div>
+            </div>
+            <div className="border-y border-line py-1">
+              <InfoRow icon={Phone} label={t('account.phone')} value={user.phone} />
+              <InfoRow icon={MessageCircle} label={t('account.whatsapp')} value={user.whatsapp_number} />
+              <InfoRow icon={Mail} label={t('account.email')} value={user.email} />
             </div>
             <button
               type="button"

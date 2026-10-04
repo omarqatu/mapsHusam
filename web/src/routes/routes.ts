@@ -76,6 +76,13 @@ export const appRoutes: AppRoute[] = [
     nav: true,
   },
   {
+    path: '/admin/appearance',
+    titleKey: 'nav.adminAppearance',
+    access: ['admin'],
+    legacy: '(new page — mirrors the water platform Admin → Appearance)',
+    nav: true,
+  },
+  {
     path: '/admin/submissions',
     titleKey: 'nav.adminSubmissions',
     access: ['admin'],

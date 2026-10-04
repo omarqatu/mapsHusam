@@ -151,9 +151,14 @@ body {
   }
 }
 
-:focus-visible {
-  outline: 2px solid var(--color-brand);
-  outline-offset: 2px;
+/* Default keyboard-focus ring. In the base layer so a component's own utilities win: a text field
+   matches :focus-visible on a mouse click too, and fields that draw focus on their wrapper
+   (search boxes, the select's filter) opt out with `outline-none`. */
+@layer base {
+  :focus-visible {
+    outline: 2px solid var(--color-brand);
+    outline-offset: 2px;
+  }
 }
 
 /* The original full-screen welcome splash from the legacy site. */
@@ -204,19 +209,56 @@ body {
 }
 
 /*
- * Small controls floating over the map imagery (tool buttons, search pill, coordinates, quick chips, the live-updates strip):
- * a plain opaque surface with a hairline and a soft shadow — readable on any imagery, in both themes. (Class names keep the
- * old "glass" name; the blur/translucency was dropped on purpose.)
+ * Everything laid over the map imagery is frosted glass, like the top bar: the surface colour at about half strength with the
+ * map blurred and slightly boosted behind it (both themes follow the surface token). `.glass` = small controls (tool buttons,
+ * search pill, chips, coordinates), `.glass-bar` = the live-updates strip glued to the bottom edge, `.glass-panel` = panels and
+ * sheets that carry text and forms (a little more opaque so long lists stay readable). Without backdrop-filter support they
+ * fall back to a nearly solid surface.
  */
+/*
+ * Tunable through variables (set on :root, or on one element to change just that one):
+ *   --glass-tint      colour of the tint (the theme's main colour)
+ *   --glass-tint-amount  how strong the tint is at its edge
+ *   --glass-opacity   how much of the surface colour is there (higher = less transparent, easier to read)
+ * The tint fades in from the reading-start side only (the right in Arabic, the left in English) and is gone by 70 %.
+ */
+:root {
+  --glass-tint: var(--color-brand);
+  --glass-tint-amount: 0%; /* off for controls and panels; only the top bar turns it on (.glass-tint) */
+  --glass-dir: right;
+}
+[dir='rtl'] {
+  --glass-dir: left;
+}
 .glass,
-.glass-bar {
-  background: var(--color-surface);
-  border: 1px solid var(--color-line);
-  box-shadow: 0 2px 8px rgb(0 0 0 / 0.15);
+.glass-bar,
+.glass-panel {
+  background:
+    linear-gradient(to var(--glass-dir), color-mix(in srgb, var(--glass-tint) var(--glass-tint-amount), transparent), transparent 70%),
+    color-mix(in srgb, var(--color-surface) var(--glass-opacity, 56%), transparent);
+  border: 1px solid color-mix(in srgb, var(--color-line) 55%, transparent);
+  box-shadow: 0 4px 18px rgb(0 0 0 / 0.16);
+  -webkit-backdrop-filter: blur(16px) saturate(160%);
+  backdrop-filter: blur(16px) saturate(160%);
+}
+.glass-tint {
+  --glass-tint-amount: 28%;
+  background-image: linear-gradient(to var(--glass-dir), color-mix(in srgb, var(--glass-tint) var(--glass-tint-amount), transparent), transparent 70%);
+}
+.glass-panel {
+  background-color: color-mix(in srgb, var(--color-surface) var(--glass-opacity, 70%), transparent);
+  box-shadow: 0 8px 28px rgb(0 0 0 / 0.22);
 }
 .glass-bar {
   border-width: 1px 0 0;
-  box-shadow: 0 -2px 8px rgb(0 0 0 / 0.1);
+  box-shadow: 0 -2px 12px rgb(0 0 0 / 0.12);
+}
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .glass,
+  .glass-bar,
+  .glass-panel {
+    background: color-mix(in srgb, var(--color-surface) 94%, transparent);
+  }
 }
 
 /*

@@ -142,7 +142,7 @@ export default function GlobalSearchBox() {
       </div>
 
       {showPanel && (
-        <div className="absolute inset-x-0 top-full z-30 mt-2 max-h-[60vh] overflow-y-auto rounded-2xl bg-surface shadow-xl">
+        <div className="absolute inset-x-0 top-full z-30 mt-2 max-h-[60vh] overflow-y-auto rounded-2xl glass-panel">
           {query.isFetching && !hits.length ? (
             <CenteredSpinner minHeight="6rem" size="sm" />
           ) : query.isError ? (
