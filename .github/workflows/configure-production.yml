@@ -54,8 +54,10 @@ jobs:
             if ($LASTEXITCODE -ne 0) { throw 'Cannot restrict PostgreSQL client directory permissions.' }
             $archive = Join-Path $directory 'postgresql-client.zip'
             [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
+            # Windows PowerShell's per-chunk progress rendering greatly slows large binary downloads.
+            $ProgressPreference = 'SilentlyContinue'
             Write-Host "Downloading official PostgreSQL $($info.major) Windows client archive."
-            Invoke-WebRequest -Uri $info.url -OutFile $archive -UseBasicParsing
+            Invoke-WebRequest -Uri $info.url -OutFile $archive -UseBasicParsing -TimeoutSec 900
             Expand-Archive -LiteralPath $archive -DestinationPath $clientDirectory -Force
             $dump = Get-ChildItem -LiteralPath $clientDirectory -Filter pg_dump.exe -Recurse | Select-Object -First 1
             if (-not $dump) { throw 'PostgreSQL archive did not contain pg_dump.exe.' }
