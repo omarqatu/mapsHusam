@@ -955,6 +955,19 @@
       "linkedin": "LinkedIn"
     }
   },
+  "contact": {
+    "title": "Platform WhatsApp and phone",
+    "subtitle": "Shown at the bottom of every page and in the information menu so people can reach the platform team.",
+    "whatsapp": "Platform WhatsApp number",
+    "phone": "Platform phone number",
+    "hint": "Leave empty to hide its button. Local (0599123456) or international (+970599123456) numbers.",
+    "invalid": "Not a valid number (8 to 15 digits).",
+    "saved": "Contact details saved.",
+    "saveFailed": "Could not save the contact details.",
+    "menuWhatsapp": "Chat with us on WhatsApp",
+    "menuCall": "Call us",
+    "waMessage": "Hello {{name}}, I need help with the platform."
+  },
   "searchPage": {
     "clearKeyword": "Clear search",
     "roadStatus": "Road status",

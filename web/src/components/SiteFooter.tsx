@@ -1,6 +1,8 @@
 import type { ReactNode } from 'react';
-import { ChevronLeft, MapPinned, MessageCircle } from 'lucide-react';
+import { ChevronLeft, MapPinned, MessageCircle, Phone } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { telUrl, whatsappUrl } from '@/features/contact/model';
+import { usePlatformContact } from '@/features/contact/store';
 import LegalLinks from '@/features/legal/LegalLinks';
 import type { LegalKey } from '@/features/legal/types';
 
@@ -23,7 +25,7 @@ const glyph = (children: ReactNode) => (
  * unclickable icon (the legacy footer had WhatsApp / YouTube / LinkedIn buttons that pointed at "#"); paste the real
  * address here and it becomes a link.
  */
-const SOCIAL: { key: 'facebook' | 'whatsapp' | 'youtube' | 'linkedin'; url: string; icon: ReactNode }[] = [
+const SOCIAL: { key: 'facebook' | 'youtube' | 'linkedin'; url: string; icon: ReactNode }[] = [
   {
     key: 'facebook',
     url: 'https://www.facebook.com/MapServesPalestine',
@@ -31,7 +33,6 @@ const SOCIAL: { key: 'facebook' | 'whatsapp' | 'youtube' | 'linkedin'; url: stri
       <path d="M13.5 22v-8.2h2.8l.5-3.3h-3.3V8.4c0-.9.4-1.7 1.8-1.7h1.6V3.9c-.3 0-1.3-.2-2.4-.2-2.5 0-4.1 1.5-4.1 4.2v2.6H7.6v3.3h2.8V22h3.1z" />,
     ),
   },
-  { key: 'whatsapp', url: '', icon: <MessageCircle className="h-4 w-4" aria-hidden /> },
   {
     key: 'youtube',
     url: '',
@@ -64,6 +65,10 @@ function Column({ title, keys }: { title: string; keys: LegalKey[] }) {
  */
 export default function SiteFooter({ className }: { className?: string }) {
   const { t } = useTranslation();
+  // The platform's own WhatsApp / phone (set by the admin): a button only when the number is set.
+  const contact = usePlatformContact();
+  const wa = whatsappUrl(contact, t('contact.waMessage', { name: t('app.name') }));
+  const tel = telUrl(contact);
   return (
     <footer className={`border-t-4 border-brand bg-footer text-footer-fg ${className ?? ''}`}>
       <div className="mx-auto grid w-full max-w-5xl grid-cols-2 gap-x-6 gap-y-4 px-4 py-4 md:grid-cols-[1.4fr_1fr_1fr] md:gap-x-10">
@@ -74,6 +79,32 @@ export default function SiteFooter({ className }: { className?: string }) {
           </p>
           <p className="text-xs leading-relaxed text-footer-muted">{t('searchPage.about')}</p>
           <ul className="flex gap-2">
+            {wa && (
+              <li>
+                <a
+                  href={wa}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label={t('footer.social.whatsapp')}
+                  title={t('footer.social.whatsapp')}
+                  className={socialClass + ' hover:bg-whatsapp'}
+                >
+                  <MessageCircle className="h-4 w-4" aria-hidden />
+                </a>
+              </li>
+            )}
+            {tel && (
+              <li>
+                <a
+                  href={tel}
+                  aria-label={t('contact.menuCall')}
+                  title={t('contact.menuCall')}
+                  className={socialClass + ' hover:bg-brand'}
+                >
+                  <Phone className="h-4 w-4" aria-hidden />
+                </a>
+              </li>
+            )}
             {SOCIAL.map((l) => (
               <li key={l.key}>
                 {l.url ? (

@@ -12,6 +12,7 @@ import { CenteredSpinner } from '@/components/ui/Spinner';
 import TextInput from '@/components/ui/TextInput';
 import { toast } from '@/components/ui/toastStore';
 import RichTextEditor, { type RichTextEditorHandle } from '@/components/RichTextEditor';
+import ContactSettingsCard from '@/features/contact/ContactSettingsCard';
 import { legalDocToRich } from '@/features/legal/docToRich';
 import type { LegalOverride } from '@/features/legal/overrides';
 import type { LegalKey } from '@/features/legal/types';
@@ -255,6 +256,7 @@ export default function AdminTextsPage() {
         description={t('texts.subtitle')}
         icon={<FileText className="h-6 w-6" aria-hidden />}
       />
+      <ContactSettingsCard />
       <div className="grid gap-4 lg:grid-cols-[16rem_minmax(0,1fr)] lg:items-start">
         <nav
           aria-label={t('texts.title')}

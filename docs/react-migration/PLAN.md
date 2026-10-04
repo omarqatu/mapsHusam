@@ -1124,6 +1124,23 @@ it at once); browser at 1440 / 390, no overflow.
 - Verified: real server (admin PUT teal → visitor sees teal header, buttons and search hero in light and dark, map glass;
   DELETE → default), screenshots desktop / tablet / phone, dark. Not yet: a real phone.
 
+## Owner's nine requests (2026-10-04) — worked one at a time, each its own commit(s)
+
+1. Provider adds several services, edits them, uploads pictures · 2. A properties screen, editable · 3. Ratings for properties and
+services, with the publisher's rating · 4. A hidden layer shows nowhere, UI or API · 5. A proper platform name · 6. WhatsApp + phone
+of the platform · 7. A time-limited service stays in search when unavailable (not when cancelled); an unavailable property does not ·
+8. Visitors get a defined, limited set of features · 9. A run-and-test document.
+
+- ⬜ **5 — platform name**: waiting for the owner to pick ONE of the three candidates (دليلك / وين / أمين). Nothing renamed yet.
+- ✅ **6 — platform WhatsApp + phone** (web only, no server change): the admin types the two numbers on `/admin/texts` (card on top);
+  they are stored in `platform_content` under `settings.contact` (`{"whatsapp","phone"}`, like `settings.visibility` — public read,
+  admin write). Shown as a WhatsApp and a phone button in the footer (the footer's WhatsApp icon was an unclickable placeholder) and
+  in the information menu of every page. An empty number hides only its own button; both empty = nothing shown. Local (`05…`) and
+  international (`+970…`) numbers; `wa.me` gets the country code (970) added for local ones. No floating button: it collides with the
+  map controls. Code: `features/contact/` (`model.ts` pure logic, `store.ts` query + save, `ContactSettingsCard.tsx`).
+  Verified: unit (`contact.test.ts`), components (`ContactLinks.test.tsx`), real backend (`contact.live.test.ts`: admin saves, visitor
+  reads, row removal, a normal user is refused).
+
 ## Phase 4 — Cut-over & cleanup
 
 - 🟨 All routes verified on desktop + mobile width (served by the real server with its CSP: login, welcome, map, search, widgets, admin, notifications, 404; phone width verified per page during each port). Still to do by hand: a pass on a real phone, and on production after the deploy.
