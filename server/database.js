@@ -205,6 +205,8 @@ async function ensureServiceRequestSchema() {
             ALTER TABLE public.service_requests 
             ADD COLUMN IF NOT EXISTS contact_type TEXT NOT NULL DEFAULT 'service_request'
         `);
+        // The agreed time of the visit / viewing (either side sets it; a property is rated after its viewing).
+        await servicesPool.query('ALTER TABLE public.service_requests ADD COLUMN IF NOT EXISTS appointment_at TIMESTAMPTZ');
         // تحديث السجلات القديمة التي لا تحتوي على contact_type
         await servicesPool.query(`
             UPDATE public.service_requests 

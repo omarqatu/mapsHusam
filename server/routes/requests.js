@@ -6,7 +6,8 @@ import { requireAdmin, requireAuth } from '../auth.js';
 import { getSocketIdForUser } from '../state.js';
 import { isLayerHidden } from '../../lib/listing-rules.js';
 import { getHiddenLayers } from '../visibility.js';
-import { listingProvider } from '../listing-owners.js';
+import { listingProvider, ready as ownersReady } from '../listing-owners.js';
+import { appointmentText, parseAppointment } from '../../lib/appointment.js';
 
 // =========================================================================
 // 🆕 نظام طلب الخدمة + الدردشة + تسجيل عمليات النجاح (Backend Server)
@@ -57,7 +58,7 @@ async function getFeatureContactInfo(serviceLayer, featureId) {
 
         // 🆕 الخدمات كلها بجدول service_all موحّد، فلازم فلترة إضافية بعمود discriminator
         const query = isRealEstate
-            ? `SELECT whatsapp, phone FROM public."${serviceLayer}" WHERE id = $1 LIMIT 1`
+            ? `SELECT whatsapp, phone FROM public."${serviceLayer}" WHERE fid = $1 LIMIT 1` // property tables key on fid
             : `SELECT whatsapp, phone FROM public.service_all WHERE id = $1 AND discriminator = $2 LIMIT 1`;
         const queryParams = isRealEstate ? [featureId] : [featureId, serviceLayer.trim()];
 
@@ -246,6 +247,10 @@ app.post('/api/service-requests/:id/respond', requireAuth, async (req, res) => {
     if (!provider_user_id || !['accept', 'reject'].includes(action)) {
         return res.status(400).json({ success: false, error: 'بيانات الرد غير صالحة.' });
     }
+    // Accepting may set the time of the visit / viewing at once (optional; either side can set it later).
+    const appointment = action === 'accept' && req.body.appointment_at !== undefined
+        ? parseAppointment(req.body.appointment_at) : { value: null };
+    if (appointment.error) return res.status(400).json({ success: false, error: appointment.error });
 
     try {
         const reqResult = await servicesPool.query('SELECT * FROM public.service_requests WHERE id = $1', [id]);
@@ -261,8 +266,9 @@ app.post('/api/service-requests/:id/respond', requireAuth, async (req, res) => {
 
         const newStatus = action === 'accept' ? 'accepted' : 'rejected';
         const upd = await servicesPool.query(
-            "UPDATE public.service_requests SET status = $1, updated_at = NOW() WHERE id = $2 AND status = 'pending'",
-            [newStatus, id]
+            `UPDATE public.service_requests SET status = $1, updated_at = NOW(),
+                    appointment_at = COALESCE($3, appointment_at) WHERE id = $2 AND status = 'pending'`,
+            [newStatus, id, appointment.value]
         );
         if (upd.rowCount === 0) {
             return res.status(409).json({ success: false, error: 'تم الرد على هذا الطلب مسبقاً.' });
@@ -271,6 +277,7 @@ app.post('/api/service-requests/:id/respond', requireAuth, async (req, res) => {
         const title = action === 'accept' ? '✅ تم قبول طلبك' : '❌ تم رفض طلبك';
         const message = action === 'accept'
             ? `وافق مزود الخدمة على طلبك (${request.service_type}). يمكنك الآن الدردشة معه.`
+                + (appointment.value ? ` الموعد: ${appointmentText(appointment.value)}.` : '')
             : `اعتذر مزود الخدمة عن طلبك (${request.service_type}).`;
 
         await servicesPool.query(
@@ -293,10 +300,85 @@ app.post('/api/service-requests/:id/respond', requireAuth, async (req, res) => {
             console.log('⚠️ [RESPONSE] User not connected via socket');
         }
 
-        res.json({ success: true, status: newStatus });
+        res.json({ success: true, status: newStatus, appointment_at: appointment.value });
     } catch (err) {
         console.error('❌ خطأ أثناء الرد على طلب الخدمة:', err.message);
         res.status(500).json({ success: false, error: 'فشل تنفيذ الرد', details: IS_PROD ? undefined : err.message });
+    }
+});
+
+// The time of the visit / viewing: either side sets or changes it (or clears it with null) while the request is open;
+// the other side is told. A property is rated after its viewing like a service after its job (both confirm → rate).
+app.post('/api/service-requests/:id/appointment', requireAuth, async (req, res) => {
+    const id = Number(req.params.id);
+    if (!Number.isSafeInteger(id) || id <= 0) return res.status(400).json({ success: false, error: 'رقم الطلب غير صالح.' });
+    const appointment = parseAppointment(req.body?.appointment_at);
+    if (appointment.error) return res.status(400).json({ success: false, error: appointment.error });
+    try {
+        const found = await servicesPool.query(
+            'SELECT user_id, provider_user_id, status, service_type FROM public.service_requests WHERE id = $1', [id]);
+        const request = found.rows[0];
+        const uid = req.auth.uid;
+        if (!request || (Number(request.user_id) !== uid && Number(request.provider_user_id) !== uid)) {
+            return res.status(404).json({ success: false, error: 'الطلب غير موجود.' });
+        }
+        if (!['pending', 'accepted'].includes(request.status)) {
+            return res.status(409).json({ success: false, error: 'لا يمكن تغيير موعد طلب مغلق.' });
+        }
+        // The owner fixes the time; before they accept, the requester may only propose it.
+        if (request.status === 'pending' && Number(request.provider_user_id) === uid) {
+            return res.status(409).json({ success: false, error: 'اقبل الطلب أولاً، ومعه حدّد الموعد.' });
+        }
+        await servicesPool.query(
+            'UPDATE public.service_requests SET appointment_at = $1, updated_at = NOW() WHERE id = $2', [appointment.value, id]);
+
+        const other = Number(request.user_id) === uid ? request.provider_user_id : request.user_id;
+        const message = appointment.value
+            ? `الموعد (${request.service_type}): ${appointmentText(appointment.value)}.`
+            : `أُلغي الموعد المحدد (${request.service_type}).`;
+        await servicesPool.query(
+            `INSERT INTO "public"."notifications" (user_id, title, message, type, is_read, created_at, link)
+             VALUES ($1, '📅 موعد', $2, 'info', false, NOW(), $3)`,
+            [other, message, `request:${id}`]
+        );
+        const socketId = getSocketIdForUser(other);
+        if (socketId && global.io) {
+            global.io.to(socketId).emit('service_request_appointment', { requestId: id, appointment_at: appointment.value });
+        }
+        res.json({ success: true, appointment_at: appointment.value });
+    } catch (err) {
+        console.error('❌ خطأ أثناء تحديد الموعد:', err.message);
+        res.status(500).json({ success: false, error: 'تعذر حفظ الموعد', details: IS_PROD ? undefined : err.message });
+    }
+});
+
+// The publisher's rating: the average over every rating of every listing the owner of this one has (an account may
+// publish several services and properties). Public, like the listing's own ratings; no names.
+app.get('/api/publisher-rating', async (req, res) => {
+    const { service_layer, feature_id } = req.query;
+    if (!service_layer || !/^\d+$/.test(String(feature_id || '')) || !isValidLayer(service_layer)) {
+        return res.status(400).json({ success: false, error: 'يجب تحديد service_layer و feature_id.' });
+    }
+    try {
+        const owner = await listingProvider(service_layer, Number(feature_id));
+        if (!owner) return res.json({ success: true, publisher: false, averageRating: 0, totalRatings: 0, listings: 0 });
+        await ownersReady;
+        const [ratings, listings] = await Promise.all([
+            servicesPool.query(
+                `SELECT ROUND(AVG(rating)::numeric, 1) AS avg, COUNT(*)::int AS n
+                 FROM public.service_ratings WHERE provider_user_id = $1`, [owner.user_id]),
+            servicesPool.query('SELECT COUNT(*)::int AS n FROM public.listing_owners WHERE user_id = $1', [owner.user_id])
+        ]);
+        res.json({
+            success: true,
+            publisher: true,
+            averageRating: ratings.rows[0].avg === null ? 0 : Number(ratings.rows[0].avg),
+            totalRatings: ratings.rows[0].n,
+            listings: listings.rows[0].n
+        });
+    } catch (err) {
+        console.error('❌ خطأ أثناء جلب تقييم الناشر:', err.message);
+        res.status(500).json({ success: false, error: 'فشل جلب التقييم', details: IS_PROD ? undefined : err.message });
     }
 });
 

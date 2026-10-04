@@ -1630,6 +1630,18 @@ and give the Node process write access to it on IIS**), table `listing_photos` k
   needs the owner's Meta Business account). Verify: register → log in works at once; 6th registration from one IP
   within the hour → 429; live `auth.live.test.ts`, `admin.live.test.ts`.
 
+- **Viewings of properties: an appointment time, the publisher's rating; property contacts fixed** (owner's point 3,
+  2026-10-04). A property with a registered owner (listing_owners) already went through the request flow; now:
+  `service_requests.appointment_at TIMESTAMPTZ` (added at start-up); `POST /api/service-requests/:id/respond` takes an
+  optional `appointment_at` with `accept` (response adds `appointment_at`); new `POST /api/service-requests/:id/appointment`
+  `{appointment_at: ISO | null}` — either side of an open request (the requester may propose before the answer, the owner
+  sets it once accepting), from now to 90 days ahead (`lib/appointment.js`), the other side gets a notification + socket
+  `service_request_appointment`; new public `GET /api/publisher-rating?service_layer&feature_id` →
+  `{publisher, averageRating, totalRatings, listings}` over every rating of the owner's listings (no names). Fix:
+  the owner's numbers after a completed deal were read from property tables by `id` (they key on `fid`) — always empty.
+  Rating rules unchanged: only the requester, only after both confirm, once per listing. Verify: `node --test lib/`,
+  live `requests/viewing.live.test.ts`.
+
 ## Backend asks (needs the user's decision — behaviour-changing or larger)
 
 - **Public map:** `/api/log-contact-click` is `requireAuth`, so a visitor's call / WhatsApp tap is not counted in the provider's
