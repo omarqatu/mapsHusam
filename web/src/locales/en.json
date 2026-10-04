@@ -369,6 +369,12 @@
       "closed": "Closed now",
       "unavailable": "Not available right now",
       "withdrawn": "Withdrawn — hidden from visitors"
+    },
+    "requestViewing": "Request a viewing",
+    "publisher": {
+      "title": "Publisher:",
+      "noRatings": "no ratings yet",
+      "listings": "{{count}} listings"
     }
   },
   "media": {
@@ -664,7 +670,9 @@
       "send": "Send request",
       "message": "A service request will be sent to \"{{provider}}\" ({{service}}). You will be notified when they reply. Continue?",
       "sent": "Request sent. Follow it or cancel it from \"My requests\".",
-      "failed": "Could not send the request."
+      "failed": "Could not send the request.",
+      "viewingTitle": "Request a viewing",
+      "viewingMessage": "A viewing request goes to “{{provider}}” ({{service}}). Once they accept, agree on the time in the chat; after the viewing you can rate it. Continue?"
     },
     "incoming": {
       "title": "New service request",
@@ -761,7 +769,30 @@
     "provider": "the provider",
     "requester": "the requester",
     "openArchive": "View archive and contact numbers",
-    "openChat": "Open chat / details"
+    "openChat": "Open chat / details",
+    "appointment": {
+      "viewing": "Viewing",
+      "visit": "Appointment",
+      "none": "No time set yet",
+      "set": "Set a time",
+      "change": "Change",
+      "quick": "Quick times",
+      "pick": "Pick the day and time",
+      "save": "Save",
+      "clear": "Clear the time",
+      "saved": "Time saved; the other side was told.",
+      "cleared": "Time cleared.",
+      "failed": "Could not save the time.",
+      "past": "Pick a time ahead, not in the past.",
+      "far": "The time must be within 90 days.",
+      "was": "The time was: {{at}}",
+      "presets": {
+        "todayEvening": "Today 5 pm",
+        "tomorrowMorning": "Tomorrow 10 am",
+        "tomorrowEvening": "Tomorrow 5 pm",
+        "dayAfterMorning": "Day after, 10 am"
+      }
+    }
   },
   "notificationsMenu": {
     "title": "Notifications",

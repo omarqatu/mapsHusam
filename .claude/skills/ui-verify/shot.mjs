@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // Screenshot a page of the running app (or the legacy site) at desktop / phone width, logged in or not.
 //   node .claude/skills/ui-verify/shot.mjs <url> [--as user|admin|provider] [--sizes desk,phone,tablet]
-//        [--out <dir>] [--lang ar|en] [--scheme dark] [--click "<button name>"] [--scroll <px>] [--full]
+//        [--out <dir>] [--lang ar|en] [--scheme dark] [--click "<button name>"]… [--scroll <px>] [--full]
 // Prints, per size, whether the page overflows horizontally and any page errors. Files: <out>/<name>-<size>.png
 import { createRequire } from 'node:module';
 import { existsSync, readdirSync, mkdirSync } from 'node:fs';
@@ -58,9 +58,10 @@ for (const size of opt('sizes', 'desk,phone').split(',')) {
   // Legacy pages never go network-idle (sockets, tiles); fall back to a fixed wait.
   await page.goto(url, { waitUntil: 'networkidle', timeout: 15000 }).catch(() => page.waitForTimeout(3000));
   await page.waitForTimeout(1200);
-  const click = opt('click');
-  if (click) {
-    await page.getByRole('button', { name: click }).first().click();
+  // --click may repeat: each one in order (open a dialog, then a tab in it, …).
+  for (const [i, a] of args.entries()) {
+    if (a !== '--click' || !args[i + 1]) continue;
+    await page.getByRole('button', { name: args[i + 1] }).first().click();
     await page.waitForTimeout(600);
   }
   const scroll = Number(opt('scroll', 0));

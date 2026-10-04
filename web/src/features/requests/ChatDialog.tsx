@@ -20,8 +20,10 @@ import { CenteredSpinner } from '@/components/ui/Spinner';
 import TextInput from '@/components/ui/TextInput';
 import { toast } from '@/components/ui/toastStore';
 import { useAuthStore } from '@/store/authStore';
+import AppointmentBar from './AppointmentBar';
 import ContactBox from './ContactBox';
 import { errorText } from './errors';
+import { appointmentLabel } from './appointment';
 import { contactFor, hasConfirmed, otherPartyName, roleIn } from './model';
 import ReasonDialog from './ReasonDialog';
 import { useRequestsUi } from './store';
@@ -103,7 +105,9 @@ function Chat({ req, uid }: { req: ServiceRequest; uid: number }) {
       {
         onSuccess: (res) => {
           setAskConfirm(false);
-          toast.success(t(res.status === 'completed' ? 'requests.chat.completedToast' : 'requests.chat.waitingToast'));
+          toast.success(
+            t(res.status === 'completed' ? 'requests.chat.completedToast' : 'requests.chat.waitingToast'),
+          );
         },
         onError: (err) => {
           setAskConfirm(false);
@@ -168,9 +172,21 @@ function Chat({ req, uid }: { req: ServiceRequest; uid: number }) {
             ) : open ? (
               t('requests.chat.hint')
             ) : (
-              <AlertMessage type="warning" message={t(`requests.chat.closed.${status}`, { defaultValue: t('requests.chat.closed.other') })} />
+              <AlertMessage
+                type="warning"
+                message={t(`requests.chat.closed.${status}`, {
+                  defaultValue: t('requests.chat.closed.other'),
+                })}
+              />
             )}
           </div>
+
+          {open && <AppointmentBar req={req} />}
+          {completed && req.appointment_at && (
+            <p className="text-sm text-muted">
+              {t('requests.appointment.was', { at: appointmentLabel(req.appointment_at, i18n.language) })}
+            </p>
+          )}
 
           <div
             ref={bodyRef}
@@ -242,7 +258,12 @@ function Chat({ req, uid }: { req: ServiceRequest; uid: number }) {
         onCancel={() => setAskConfirm(false)}
       />
       {askCancel && (
-        <ReasonDialog open loading={cancel.isPending} onSubmit={doCancel} onClose={() => setAskCancel(false)} />
+        <ReasonDialog
+          open
+          loading={cancel.isPending}
+          onSubmit={doCancel}
+          onClose={() => setAskCancel(false)}
+        />
       )}
     </>
   );

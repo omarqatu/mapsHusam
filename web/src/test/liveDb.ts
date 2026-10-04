@@ -27,3 +27,15 @@ export function deleteThrowawayUsers(namePrefix: string): void {
     console.warn(`could not clean up throwaway users "${namePrefix}*" (is ${CONTAINER} running?)`, e);
   }
 }
+
+/** Runs fixed SQL from a live test against a dev database and returns the rows as `a|b` lines (psql -At). */
+export function devSql(db: 'services_db' | 'realestate', sql: string): string[] {
+  const out = execFileSync(
+    'podman',
+    ['exec', CONTAINER, 'psql', '-U', 'psm', '-d', db, '-At', '-v', 'ON_ERROR_STOP=1', '-c', sql],
+    {
+      encoding: 'utf8',
+    },
+  );
+  return out.split('\n').filter(Boolean);
+}

@@ -1131,9 +1131,16 @@ here so it can be corrected.
 
 1. **A provider manages several services: edit, pictures.** ✅ See "My listings" below.
 2. **A screen for the provider's properties, edited by the provider.** ✅ The same page, a "properties" tab.
-3. **Ratings for properties and services, and the publisher's rating.** ⬜ Decision: a property is rated by whoever dealt
-   with its owner through the platform: a viewing request → the owner accepts / sets the time → done → the requester rates
-   (one rating per request, as services already work). The publisher's rating = the average over all their listings.
+3. **Ratings for properties and services, and the publisher's rating.** ✅ Decision (owner, 2026-10-04: "whoever asks for a
+   viewing and has the appointment rates; the publisher's rating is the average of all their listings"): a property with
+   a registered owner shows **"اطلب معاينة"** instead of call / WhatsApp (popup and search rows), the same request →
+   accept → chat flow as a service. The chat has an **appointment bar** on top (موعد المعاينة / الموعد): either side sets
+   or moves the time with one-tap usual times (today 5 pm, tomorrow 10 am / 5 pm, the day after 10 am) or any date and
+   time; the other side gets a notification; "my requests" shows the time on the row. After the viewing both press "تم
+   الاتفاق" → numbers are exchanged → the requester rates (once per listing, as before). The popup shows the listing's
+   ratings for owned properties too, and a **publisher line** (الناشر: ★ 4.6 (12) · 3 إعلان) for any owned listing once
+   the owner has more than one listing or any rating. Tests: `requests/appointment.test.ts`, live
+   `requests/viewing.live.test.ts`; screenshots chat (phone) and my requests (desktop, dark).
 4. **A hidden layer must not appear anywhere, front end or API.** ✅ See "Listing state and hidden layers" below.
 5. **A name for the platform.** Proposals only (discussion).
 6. **The platform's WhatsApp and phone.** ✅ `/admin/contact` (admin menu): WhatsApp, phone, email and the

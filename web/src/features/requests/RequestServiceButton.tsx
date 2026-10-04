@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import Button, { type ButtonProps } from '@/components/ui/Button';
 import { useLoginPrompt } from '@/features/auth/loginPromptStore';
 import { useAuthStore } from '@/store/authStore';
+import { isViewingLayer } from './appointment';
 import { useRequestsUi, type RequestTarget } from './store';
 
 /**
@@ -25,7 +26,7 @@ export default function RequestServiceButton({
       title={signedIn ? undefined : t('requests.flow.loginFirst')}
       {...rest}
     >
-      {t('popup.requestService')}
+      {t(isViewingLayer(target.serviceLayer) ? 'popup.requestViewing' : 'popup.requestService')}
     </Button>
   );
 }

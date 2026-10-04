@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import clsx from 'clsx';
 import StatusDot from '@/components/ui/StatusDot';
-import { Archive, Ban, Check, MessageCircle, MessageSquarePlus, Star, X } from 'lucide-react';
+import { Archive, Ban, Check, MessageCircle, MessageSquarePlus, Star, X, CalendarClock } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import {
   useCancelRequest,
@@ -22,6 +22,7 @@ import { useAuthStore } from '@/store/authStore';
 import { errorText } from './errors';
 import { isCancellable, otherPartyName, roleIn } from './model';
 import ReasonDialog from './ReasonDialog';
+import { appointmentLabel } from './appointment';
 import { useRespond } from './respond';
 import { useRequestsUi } from './store';
 import { useUnseen } from './unseen';
@@ -34,7 +35,15 @@ const TONE: Record<RequestStatus, string> = {
   completed: 'text-ok',
 };
 
-function RequestCard({ r, uid, onCancel }: { r: ServiceRequest; uid: number; onCancel: (id: number) => void }) {
+function RequestCard({
+  r,
+  uid,
+  onCancel,
+}: {
+  r: ServiceRequest;
+  uid: number;
+  onCancel: (id: number) => void;
+}) {
   const { t, i18n } = useTranslation();
   const openChat = useRequestsUi((s) => s.openChat);
   const openRating = useRequestsUi((s) => s.openRating);
@@ -78,6 +87,12 @@ function RequestCard({ r, uid, onCancel }: { r: ServiceRequest; uid: number; onC
           ? t('requests.status.cancelled', { reason: r.cancellation_reason || t('requests.noReason') })
           : t(`requests.status.${r.status}`)}
       </p>
+      {r.appointment_at && (r.status === 'pending' || r.status === 'accepted') && (
+        <p className="flex items-center gap-1.5 text-sm font-semibold text-fg">
+          <CalendarClock className="h-4 w-4 text-brand-fg" aria-hidden />
+          {appointmentLabel(r.appointment_at, i18n.language)}
+        </p>
+      )}
       <p className="text-xs text-muted">{formatDateTime(r.created_at, i18n.language)}</p>
 
       <div className="mt-1 flex flex-wrap gap-2">
@@ -133,7 +148,9 @@ function RequestCard({ r, uid, onCancel }: { r: ServiceRequest; uid: number; onC
             size="sm"
             variant="secondary"
             startIcon={<MessageSquarePlus className="h-4 w-4" aria-hidden />}
-            onClick={() => openComment({ ratingId: commentable.id, providerName: otherLabel, serviceType: service })}
+            onClick={() =>
+              openComment({ ratingId: commentable.id, providerName: otherLabel, serviceType: service })
+            }
           >
             {t('requests.writeComment')}
           </Button>

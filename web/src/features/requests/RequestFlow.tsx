@@ -8,6 +8,7 @@ import { toast } from '@/components/ui/toastStore';
 import { useAuthStore } from '@/store/authStore';
 import { errorText } from './errors';
 import { useRequestsUi } from './store';
+import { isViewingLayer } from './appointment';
 import { useUnseen } from './unseen';
 import { serviceLabelKey } from '@/features/map/registry';
 
@@ -67,6 +68,7 @@ export default function RequestFlow() {
   }, [run, uid, qc, t]);
 
   if (!run || ready === null) return null;
+  const viewing = isViewingLayer(run.serviceLayer);
 
   const send = () =>
     create.mutate(
@@ -95,8 +97,11 @@ export default function RequestFlow() {
   return (
     <ConfirmDialog
       open
-      title={t('requests.flow.title')}
-      message={t('requests.flow.message', { provider: run.providerName, service: run.serviceType })}
+      title={t(viewing ? 'requests.flow.viewingTitle' : 'requests.flow.title')}
+      message={t(viewing ? 'requests.flow.viewingMessage' : 'requests.flow.message', {
+        provider: run.providerName,
+        service: run.serviceType,
+      })}
       confirmLabel={t('requests.flow.send')}
       loading={create.isPending}
       onConfirm={send}

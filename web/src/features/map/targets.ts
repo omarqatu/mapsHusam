@@ -1,5 +1,11 @@
 import type { Workspace } from '@/api/search';
-import { REAL_ESTATE_LAYERS, SERVICE_TYPE_BY_KEY, SERVICE_TYPES, type RealEstateLayerKey } from './config';
+import {
+  REAL_ESTATE_LAYERS,
+  REAL_ESTATE_TYPE_NAME,
+  SERVICE_TYPE_BY_KEY,
+  SERVICE_TYPES,
+  type RealEstateLayerKey,
+} from './config';
 import { SERVICE_BY_KEY, serviceLabelKey } from './registry';
 
 /**
@@ -10,6 +16,10 @@ export type MapTarget =
   { kind: 'realEstate'; layer: RealEstateLayerKey } | { kind: 'service'; discriminator: string };
 
 export const targetKey = (t: MapTarget) => (t.kind === 'realEstate' ? t.layer : t.discriminator);
+
+/** The listing's layer as the server names it in requests, ratings and owners (a service type, or a property table). */
+export const listingLayerOf = (t: MapTarget) =>
+  t.kind === 'realEstate' ? REAL_ESTATE_TYPE_NAME[t.layer] : t.discriminator;
 
 export const ALL_TARGETS: MapTarget[] = [
   ...REAL_ESTATE_LAYERS.map((l): MapTarget => ({ kind: 'realEstate', layer: l.key })),

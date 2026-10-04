@@ -36,9 +36,11 @@ import {
   isFuelStation,
   isRoadBarrier,
   priceCurrencyDefault,
+  listingLayerOf,
   targetIcon,
   targetLabelKey,
 } from '../targets';
+import PublisherRating from './PublisherRating';
 import { copyText, isMobileBrowser, nativeShare } from '@/lib/clipboard';
 import ContactButtons from './ContactButtons';
 import { formatArea, formatLength } from '../tools/measure';
@@ -114,8 +116,9 @@ export default function FeatureCard({ feature, onClose, className }: Props) {
   const whatsapp = text(props.whatsapp);
   const phone = text(props.phone);
   // With requests switched off (admin) a registered provider is contacted like any other: call / WhatsApp.
-  const isLinkedProvider =
-    requestsOn && kind.kind === 'service' && !!id && !!linked.data?.get(kind.discriminator)?.has(id);
+  // A listing's layer as the server names it (services and properties both have owners, requests and ratings).
+  const listingLayer = kind.kind === 'location' ? null : listingLayerOf(kind);
+  const isLinkedProvider = requestsOn && !!listingLayer && !!id && !!linked.data?.get(listingLayer)?.has(id);
   const dirs = isBarrier ? barrierDirections(props) : null;
 
   // The header already shows the name; the body shows where it is, then only what is filled in.
@@ -188,9 +191,13 @@ export default function FeatureCard({ feature, onClose, className }: Props) {
               label={t(availabilityLabelKey(state))}
               sub={hoursText}
             />
-            {kind.kind === 'service' && id && <RatingsBlock layer={kind.discriminator} featureId={id} />}
+            {listingLayer && id && (kind.kind === 'service' || isLinkedProvider) && (
+              <RatingsBlock layer={listingLayer} featureId={id} />
+            )}
           </div>
         )}
+
+        {isLinkedProvider && listingLayer && id && <PublisherRating layer={listingLayer} featureId={id} />}
 
         {/* Contact first: it is what people open a card for. */}
         {kind.kind !== 'location' &&
@@ -200,7 +207,7 @@ export default function FeatureCard({ feature, onClose, className }: Props) {
             <RequestServiceButton
               className="w-full"
               target={{
-                serviceLayer: kind.kind === 'service' ? kind.discriminator : '',
+                serviceLayer: listingLayer ?? '',
                 featureId: id ?? '',
                 providerName,
                 serviceType: typeTitle,

@@ -30,12 +30,7 @@ export type ContactType = 'call' | 'whatsapp';
 
 /** Counted against the same per-user quota as contact clicks (server checkUserRequestQuota). */
 export type MapEventType =
-  | 'map_click'
-  | 'attribute_search'
-  | 'quick_search'
-  | 'global_search'
-  | 'location_search'
-  | 'no_map_search';
+  'map_click' | 'attribute_search' | 'quick_search' | 'global_search' | 'location_search' | 'no_map_search';
 
 export interface ProviderLinkedResponse {
   success: boolean;
@@ -43,7 +38,23 @@ export interface ProviderLinkedResponse {
   linked: Record<string, (number | string)[]>;
 }
 
+/** The publisher's rating: every rating of every listing the owner of a listing has. */
+export interface PublisherRatingResponse {
+  success: boolean;
+  /** false = the listing has no registered owner (nothing to show). */
+  publisher: boolean;
+  averageRating: number;
+  totalRatings: number;
+  /** How many listings the publisher has. */
+  listings: number;
+}
+
 export const mapEventsApi = {
+  publisherRating: (layer: string, featureId: string) =>
+    api.get<PublisherRatingResponse>('/api/publisher-rating', {
+      service_layer: layer,
+      feature_id: featureId,
+    }),
   ratings: (serviceLayer: string, featureId: string) =>
     api.get<ServiceRatingsResponse>('/api/service-ratings', {
       service_layer: serviceLayer,
@@ -70,6 +81,7 @@ export const mapEventsApi = {
 
 export const mapEventKeys = {
   ratings: (layer: string, id: string) => ['service-ratings', layer, id] as const,
+  publisher: (layer: string, id: string) => ['service-ratings', 'publisher', layer, id] as const,
   providerLinked: ['provider-linked-features'] as const,
 };
 
@@ -77,6 +89,15 @@ export function useServiceRatings(layer: string | null, featureId: string | null
   return useQuery({
     queryKey: mapEventKeys.ratings(layer ?? '', featureId ?? ''),
     queryFn: () => mapEventsApi.ratings(layer!, featureId!),
+    enabled: !!layer && !!featureId,
+    staleTime: 60_000,
+  });
+}
+
+export function usePublisherRating(layer: string | null, featureId: string | null) {
+  return useQuery({
+    queryKey: mapEventKeys.publisher(layer ?? '', featureId ?? ''),
+    queryFn: () => mapEventsApi.publisherRating(layer!, featureId!),
     enabled: !!layer && !!featureId,
     staleTime: 60_000,
   });

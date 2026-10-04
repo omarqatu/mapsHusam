@@ -5,7 +5,7 @@ import { useSectionShown } from '@/features/visibility/store';
 import ContactButtons from '../popup/ContactButtons';
 import { text } from '../popup/featureModel';
 import { useContactActions } from '../popup/useContactActions';
-import { isRoadBarrier, targetLabelKey } from '../targets';
+import { isRoadBarrier, listingLayerOf, targetLabelKey } from '../targets';
 import { toSelected, type SearchResult } from './results';
 
 interface Props {
@@ -28,11 +28,8 @@ export default function ResultContact({ r, className, showRequest }: Props) {
   const p = r.props;
   if (isRoadBarrier(r.target)) return null;
 
-  const isLinked =
-    requestsOn &&
-    r.target.kind === 'service' &&
-    !!r.id &&
-    !!linked.data?.get(r.target.discriminator)?.has(r.id);
+  const layer = listingLayerOf(r.target);
+  const isLinked = requestsOn && !!r.id && !!linked.data?.get(layer)?.has(r.id);
   if (isLinked) {
     if (!showRequest) return null;
     return (
@@ -40,9 +37,10 @@ export default function ResultContact({ r, className, showRequest }: Props) {
         <RequestServiceButton
           size="sm"
           target={{
-            serviceLayer: r.target.kind === 'service' ? r.target.discriminator : '',
+            serviceLayer: layer,
             featureId: r.id ?? '',
-            providerName: text(p.name) || t('popup.provider'),
+            providerName:
+              text(p.name) || t(r.target.kind === 'realEstate' ? 'popup.advertiser' : 'popup.provider'),
             serviceType: t(targetLabelKey(r.target)),
           }}
         />

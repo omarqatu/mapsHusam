@@ -33,6 +33,8 @@ export interface ServiceRequest extends ContactNumbers {
   user_confirmed: boolean;
   provider_confirmed: boolean;
   cancellation_reason: string | null;
+  /** The agreed time of the visit / viewing (ISO), set by either side; null = not set. */
+  appointment_at: string | null;
   created_at: string;
   updated_at: string;
   /** Requester's account name; `user_name` is the same value under the name the legacy UI used. */
@@ -83,7 +85,8 @@ export interface CreateRequestBody {
 }
 
 export const requestsApi = {
-  mine: (uid: number) => api.get<{ success: boolean; requests: ServiceRequest[] }>('/api/service-requests', { user_id: uid }),
+  mine: (uid: number) =>
+    api.get<{ success: boolean; requests: ServiceRequest[] }>('/api/service-requests', { user_id: uid }),
   incoming: (uid: number) =>
     api.get<{ success: boolean; requests: ServiceRequest[] }>('/api/service-requests', {
       provider_user_id: uid,
@@ -91,8 +94,17 @@ export const requestsApi = {
     }),
   create: (body: CreateRequestBody) =>
     api.post<{ success: boolean; requestId: number; status: RequestStatus }>('/api/service-requests', body),
-  respond: (id: number, action: 'accept' | 'reject') =>
-    api.post<{ success: boolean; status: RequestStatus }>(`/api/service-requests/${id}/respond`, { action }),
+  /** Accepting may fix the appointment at once (ISO time). */
+  respond: (id: number, action: 'accept' | 'reject', appointmentAt?: string) =>
+    api.post<{ success: boolean; status: RequestStatus; appointment_at?: string | null }>(
+      `/api/service-requests/${id}/respond`,
+      appointmentAt ? { action, appointment_at: appointmentAt } : { action },
+    ),
+  /** Sets, moves or (null) clears the appointment; the other side is notified. */
+  setAppointment: (id: number, appointmentAt: string | null) =>
+    api.post<{ success: boolean; appointment_at: string | null }>(`/api/service-requests/${id}/appointment`, {
+      appointment_at: appointmentAt,
+    }),
   cancel: (id: number, reason: string) =>
     api.post<{ success: boolean }>(`/api/service-requests/${id}/cancel`, { cancellation_reason: reason }),
   messages: (id: number) => api.get<MessagesResponse>(`/api/service-requests/${id}/messages`),
@@ -102,9 +114,10 @@ export const requestsApi = {
       message,
     }),
   confirm: (id: number, role: RequestRole) =>
-    api.post<
-      { success: boolean; status: RequestStatus; waitingOtherSide?: boolean } & ContactNumbers
-    >(`/api/service-requests/${id}/confirm`, { role }),
+    api.post<{ success: boolean; status: RequestStatus; waitingOtherSide?: boolean } & ContactNumbers>(
+      `/api/service-requests/${id}/confirm`,
+      { role },
+    ),
   rate: (id: number, rating: number, comment: string) =>
     api.post<{ success: boolean }>(`/api/service-requests/${id}/rating`, {
       rating,
@@ -207,8 +220,17 @@ export function useCreateRequest() {
 export function useRespondToRequest() {
   const invalidate = useInvalidateRequests();
   return useMutation({
-    mutationFn: (v: { id: number; action: 'accept' | 'reject' }) => requestsApi.respond(v.id, v.action),
+    mutationFn: (v: { id: number; action: 'accept' | 'reject'; appointmentAt?: string }) =>
+      requestsApi.respond(v.id, v.action, v.appointmentAt),
     // A 409/400 "already answered" means the queue is stale — refresh it either way.
+    onSettled: invalidate,
+  });
+}
+
+export function useSetAppointment() {
+  const invalidate = useInvalidateRequests();
+  return useMutation({
+    mutationFn: (v: { id: number; at: string | null }) => requestsApi.setAppointment(v.id, v.at),
     onSettled: invalidate,
   });
 }
