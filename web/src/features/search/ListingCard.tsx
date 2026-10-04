@@ -5,7 +5,14 @@ import { useTranslation } from 'react-i18next';
 import { playBadge, ytThumb } from '@/components/ui/media';
 import RatingSummary from '@/components/ui/RatingSummary';
 import type { VisualItem } from '@/components/ui/MediaGallery';
-import { groupOf, manualStars, mediaForMode, sideMedia, type FeaturedEntry, type FeaturedMode } from '../map/extras/featured';
+import {
+  groupOf,
+  manualStars,
+  mediaForMode,
+  sideMedia,
+  type FeaturedEntry,
+  type FeaturedMode,
+} from '../map/extras/featured';
 import { FEATURED_FRAME } from '../map/extras/featuredStyle';
 import { BarrierBadges, FuelBadges } from '../map/extras/StatusBadges';
 import { useShowOnMap } from '../map/extras/useShowOnMap';
@@ -13,9 +20,17 @@ import { availability, detailLinks, priceLabel, text, type MediaItem } from '../
 import { AvailabilityText } from '../map/popup/AvailabilityText';
 import { formatDistance } from '../map/search/nearby';
 import ResultContact from '../map/search/ResultContact';
-import { hasPrice, isFuelStation, isRoadBarrier, priceCurrencyDefault, targetIcon, targetLabelKey } from '../map/targets';
+import {
+  hasPrice,
+  isFuelStation,
+  isRoadBarrier,
+  priceCurrencyDefault,
+  targetIcon,
+  targetLabelKey,
+} from '../map/targets';
 import { GROUP_ART } from './art';
 import ListingPreview from './ListingPreview';
+import DirectionsButton from '../map/popup/DirectionsButton';
 
 interface Props {
   entry: FeaturedEntry;
@@ -36,10 +51,35 @@ const visuals = (items: MediaItem[]) => items.filter((m): m is VisualItem => m.t
 
 function Thumb({ m, onBroken }: { m: VisualItem; onBroken?: () => void }) {
   if (m.type === 'image')
-    return <img src={m.url} alt="" loading="lazy" referrerPolicy="no-referrer" onError={onBroken} className="h-full w-full object-cover" />;
+    return (
+      <img
+        src={m.url}
+        alt=""
+        loading="lazy"
+        referrerPolicy="no-referrer"
+        onError={onBroken}
+        className="h-full w-full object-cover"
+      />
+    );
   if (m.type === 'youtube')
-    return <img src={ytThumb(m.id)} alt="" loading="lazy" referrerPolicy="no-referrer" className="h-full w-full object-cover" />;
-  return <video src={`${m.url}#t=0.5`} preload="metadata" muted playsInline className="h-full w-full object-cover" />;
+    return (
+      <img
+        src={ytThumb(m.id)}
+        alt=""
+        loading="lazy"
+        referrerPolicy="no-referrer"
+        className="h-full w-full object-cover"
+      />
+    );
+  return (
+    <video
+      src={`${m.url}#t=0.5`}
+      preload="metadata"
+      muted
+      playsInline
+      className="h-full w-full object-cover"
+    />
+  );
 }
 
 /**
@@ -47,7 +87,15 @@ function Thumb({ m, onBroken }: { m: VisualItem; onBroken?: () => void }) {
  * opening state, and one row of actions (contact, map). The whole card opens the preview with everything else; the
  * action buttons sit above that click area. One card for the landing rows and every result list.
  */
-export default function ListingCard({ entry, mode = 'all', badge, note, highlight, rowOnPhone, className }: Props) {
+export default function ListingCard({
+  entry,
+  mode = 'all',
+  badge,
+  note,
+  highlight,
+  rowOnPhone,
+  className,
+}: Props) {
   const { t, i18n } = useTranslation();
   const showOnMap = useShowOnMap();
   const [open, setOpen] = useState(false);
@@ -57,7 +105,9 @@ export default function ListingCard({ entry, mode = 'all', badge, note, highligh
   const typeTitle = t(targetLabelKey(r.target));
   const name = text(p.name) || text(p.location_name) || typeTitle;
   // The place people recognise (street / area, town); the governorate is only a fallback.
-  const place = [text(p.location_name) || text(p.location), text(p.village_a)].filter(Boolean).join(' · ') || text(p.gov_a);
+  const place =
+    [text(p.location_name) || text(p.location), text(p.village_a)].filter(Boolean).join(' · ') ||
+    text(p.gov_a);
   const priced = hasPrice(r.target);
   const price = priced ? priceLabel(p, t, i18n.language, priceCurrencyDefault(r.target)) : null;
   const area = priced && Number(p.area) > 0 ? text(p.area) : '';
@@ -68,9 +118,13 @@ export default function ListingCard({ entry, mode = 'all', badge, note, highligh
   const [before, after] = detailLinks(p);
   const sides =
     mode === 'beforeAfter'
-      ? [sideMedia(before, 'popup.moreDetails1'), sideMedia(after, 'popup.moreDetails2')].map((s) => visuals(s).filter(notBroken)[0])
+      ? [sideMedia(before, 'popup.moreDetails1'), sideMedia(after, 'popup.moreDetails2')].map(
+          (s) => visuals(s).filter(notBroken)[0],
+        )
       : null;
-  const items = sides ? sides.filter((m): m is VisualItem => !!m) : visuals(mediaForMode(p, mode)).filter(notBroken);
+  const items = sides
+    ? sides.filter((m): m is VisualItem => !!m)
+    : visuals(mediaForMode(p, mode)).filter(notBroken);
   const first = items[0];
   const art = GROUP_ART[groupOf(r.target)];
 
@@ -99,7 +153,9 @@ export default function ListingCard({ entry, mode = 'all', badge, note, highligh
                     {m.type !== 'image' && playBadge}
                   </>
                 ) : (
-                  <div className="flex h-full items-center justify-center text-xs text-muted">{t('extras.featured.none')}</div>
+                  <div className="flex h-full items-center justify-center text-xs text-muted">
+                    {t('extras.featured.none')}
+                  </div>
                 )}
                 <span className="absolute start-1.5 top-1.5 rounded-full bg-black/60 px-2 py-0.5 text-xs font-bold text-white">
                   {t(i === 0 ? 'extras.featured.before' : 'extras.featured.after')}
@@ -114,7 +170,12 @@ export default function ListingCard({ entry, mode = 'all', badge, note, highligh
           </>
         ) : art ? (
           <div className="relative h-full" aria-hidden>
-            <img src={art} alt="" loading="lazy" className="h-full w-full object-cover object-left-bottom opacity-60 saturate-50" />
+            <img
+              src={art}
+              alt=""
+              loading="lazy"
+              className="h-full w-full object-cover object-left-bottom opacity-60 saturate-50"
+            />
             <span className="absolute inset-0 flex items-center justify-center">
               <span className="flex h-14 w-14 items-center justify-center rounded-full bg-surface/95 text-3xl shadow-float max-sm:h-11 max-sm:w-11 max-sm:text-2xl">
                 {targetIcon(r.target)}
@@ -132,7 +193,10 @@ export default function ListingCard({ entry, mode = 'all', badge, note, highligh
           </span>
         )}
         {!sides && items.length > 1 && (
-          <span className="absolute bottom-2 end-2 rounded-full bg-black/55 px-2 py-0.5 text-xs font-semibold text-white" dir="ltr">
+          <span
+            className="absolute bottom-2 end-2 rounded-full bg-black/55 px-2 py-0.5 text-xs font-semibold text-white"
+            dir="ltr"
+          >
             +{items.length - 1}
           </span>
         )}
@@ -172,7 +236,9 @@ export default function ListingCard({ entry, mode = 'all', badge, note, highligh
             <RatingSummary value={ratings ? ratings.avg : manualStars(r.rating)} count={ratings?.total} />
           )}
           {state && <AvailabilityText value={state} className="font-semibold" />}
-          {r.distance !== undefined && <span className="font-semibold text-brand-fg">{formatDistance(r.distance, t)}</span>}
+          {r.distance !== undefined && (
+            <span className="font-semibold text-brand-fg">{formatDistance(r.distance, t)}</span>
+          )}
         </div>
         {isRoadBarrier(r.target) && <BarrierBadges props={p} />}
         {isFuelStation(r.target) && <FuelBadges props={p} />}
@@ -194,9 +260,12 @@ export default function ListingCard({ entry, mode = 'all', badge, note, highligh
         >
           <MapPin className="h-4 w-4" aria-hidden />
         </button>
+        {!isRoadBarrier(r.target) && <DirectionsButton coordinate={r.center} iconOnly />}
       </div>
 
-      {open && <ListingPreview entry={entry} mode={mode} badge={badge} note={note} onClose={() => setOpen(false)} />}
+      {open && (
+        <ListingPreview entry={entry} mode={mode} badge={badge} note={note} onClose={() => setOpen(false)} />
+      )}
     </article>
   );
 }

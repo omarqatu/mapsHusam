@@ -7,6 +7,7 @@ import { authStatusCache, bearerToken, requireAuth, revokeToken, signSessionToke
 import { notifyUser } from '../state.js';
 import { INSERT_SUBMISSION_SQL, parseListingInput, submissionParams } from '../listings.js';
 import rateLimit from 'express-rate-limit';
+import { parseProfileEdit } from '../../lib/profile.js';
 
 // New accounts are active at once (a plain "user": it can rate, request and submit a listing — listings still wait for
 // an admin). Against mass sign-ups: few new accounts per device per hour; an admin can still switch any account off.
@@ -361,6 +362,44 @@ app.post('/api/auth/login', authLimiter, async (req, res) => {
         console.error('Database Login Error:', error);
         console.error('[LOGIN] phone:', normalizedPhone);
         res.status(500).json({ message: 'حدث خطأ في الخادم أثناء عملية تسجيل الدخول الثلاثية المشروطة.' });
+    }
+});
+
+// The signed-in account's own profile: read it, and change its name / WhatsApp / email (the phone is the login and
+// stays; the role and the linked listing are the admin's). The response carries the fields the app keeps in its session.
+const PROFILE_COLUMNS = 'user_id, full_name, phone, whatsapp_number, email, role';
+
+app.get('/api/auth/profile', requireAuth, async (req, res) => {
+    try {
+        const r = await servicesPool.query(`SELECT ${PROFILE_COLUMNS} FROM public.users WHERE user_id = $1`, [req.auth.uid]);
+        if (!r.rows[0]) return res.status(404).json({ success: false, error: 'الحساب غير موجود.' });
+        res.json({ success: true, profile: r.rows[0] });
+    } catch (err) {
+        console.error('profile read:', err.message);
+        res.status(500).json({ success: false, error: 'تعذر تحميل الملف الشخصي.' });
+    }
+});
+
+app.patch('/api/auth/profile', requireAuth, async (req, res) => {
+    const parsed = parseProfileEdit(req.body, normalizeWhatsappNumber);
+    if (parsed.error) return res.status(400).json({ success: false, error: parsed.error });
+    const fields = parsed.value;
+    try {
+        if (fields.email) {
+            const taken = await servicesPool.query('SELECT 1 FROM public.users WHERE email = $1 AND user_id <> $2', [fields.email, req.auth.uid]);
+            if (taken.rows.length) return res.status(409).json({ success: false, error: 'هذا البريد الإلكتروني مسجل لحساب آخر.' });
+        }
+        const keys = Object.keys(fields);
+        const sets = keys.map((k, i) => `${k} = $${i + 2}`).join(', ');
+        const r = await servicesPool.query(
+            `UPDATE public.users SET ${sets} WHERE user_id = $1 RETURNING ${PROFILE_COLUMNS}`,
+            [req.auth.uid, ...keys.map((k) => fields[k])]
+        );
+        if (!r.rows[0]) return res.status(404).json({ success: false, error: 'الحساب غير موجود.' });
+        res.json({ success: true, profile: r.rows[0] });
+    } catch (err) {
+        console.error('profile update:', err.message);
+        res.status(500).json({ success: false, error: 'تعذر حفظ الملف الشخصي.' });
     }
 });
 

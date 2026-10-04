@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react';
-import { CheckCircle2, LocateFixed, MapPin, Radio, XCircle } from 'lucide-react';
+import { CheckCircle2, ImagePlus, LocateFixed, MapPin, Radio, XCircle } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import AlertMessage from '@/components/ui/AlertMessage';
 import Button from '@/components/ui/Button';
+import ButtonLink from '@/components/ui/ButtonLink';
 import { Spinner } from '@/components/ui/Spinner';
 import { toast } from '@/components/ui/toastStore';
 import { useAuthStore } from '@/store/authStore';
@@ -34,7 +35,10 @@ function useCooldown() {
   return Math.max(0, Math.ceil((until - now) / 1000));
 }
 
-/** Status + location of the provider's own listing (legacy "لوحة إدارة الخدمة الحية"). */
+/**
+ * Status + location of the provider's own listing (legacy "لوحة إدارة الخدمة الحية"); the details and pictures are edited
+ * in "my listings", one tap away.
+ */
 export default function ProviderPanel() {
   const isProvider = useIsProvider();
   const open = useProviderUi((s) => s.open);
@@ -66,7 +70,11 @@ function Panel({ onClose }: { onClose: () => void }) {
   return (
     <MapSheet side="start" label={t('provider.title')} title={t('provider.title')} onClose={onClose}>
       <div className="space-y-3">
-        {name && <p className="rounded-lg bg-brand/10 px-3 py-2 text-sm font-bold text-brand-fg">{t('provider.welcome', { name })}</p>}
+        {name && (
+          <p className="rounded-lg bg-brand/10 px-3 py-2 text-sm font-bold text-brand-fg">
+            {t('provider.welcome', { name })}
+          </p>
+        )}
 
         {account === undefined ? (
           isError ? (
@@ -129,6 +137,17 @@ function Panel({ onClose }: { onClose: () => void }) {
               <Button variant="ghost" startIcon={<LocateFixed className="h-4 w-4" />} onClick={flyToMe}>
                 {t('provider.flyToMe')}
               </Button>
+            </div>
+            <div className="border-t border-line pt-3">
+              <ButtonLink
+                to="/my-listings"
+                variant="secondary"
+                className="w-full"
+                startIcon={<ImagePlus className="h-4 w-4" aria-hidden />}
+              >
+                {t('provider.editDetails')}
+              </ButtonLink>
+              <p className="mt-1.5 text-xs text-muted">{t('provider.editDetailsHint')}</p>
             </div>
           </>
         )}

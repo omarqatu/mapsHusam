@@ -135,7 +135,7 @@ describe('HomePage', () => {
 
     for (const name of ['Interactive map', 'Search without a map', 'Live info', 'My requests', 'Notifications'])
       expect(hasCard(name)).toBe(true);
-    for (const name of ['Manage my service', 'Users', 'Dashboard', 'Widgets admin']) expect(hasCard(name)).toBe(false);
+    for (const name of ['My status now', 'Users', 'Dashboard', 'Widgets admin']) expect(hasCard(name)).toBe(false);
     // Live figures from the platform counters.
     // ...on the map / search cards and again in the slim platform row.
     await waitFor(() => expect(screen.getAllByText('388')).toHaveLength(2));
@@ -148,7 +148,7 @@ describe('HomePage', () => {
     const row = (await screen.findByText('New service requests waiting for your answer')).closest('li')!;
     expect(within(row).getByText('2')).toBeInTheDocument();
     expect(await screen.findByText(/Your status is/)).toBeInTheDocument();
-    expect(hasCard('Manage my service')).toBe(true);
+    expect(hasCard('My status now')).toBe(true);
     expect(await screen.findByText('Unavailable', { selector: 'span' })).toBeInTheDocument();
     expect(hasCard('Users')).toBe(false);
   });
@@ -171,7 +171,7 @@ describe('HomePage', () => {
     expect(within(row).getByText('2')).toBeInTheDocument();
     expect(within(row).getByRole('link')).toHaveAttribute('href', '/admin/users');
     for (const name of ['Users', 'Dashboard', 'Widgets admin']) expect(hasCard(name)).toBe(true);
-    expect(hasCard('Manage my service')).toBe(false);
+    expect(hasCard('My status now')).toBe(false);
     expect(cardTitles()).toContain('Needs you');
   });
 

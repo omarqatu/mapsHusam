@@ -32,6 +32,7 @@ const AdminVisibilityPage = lazy(() => import('@/features/admin-visibility/Admin
 const AdminSubmissionsPage = lazy(() => import('@/features/listing-submissions/AdminSubmissionsPage'));
 const AddListingPage = lazy(() => import('@/features/listing-submissions/AddListingPage'));
 const MyListingsPage = lazy(() => import('@/features/my-listings/MyListingsPage'));
+const ProfilePage = lazy(() => import('@/features/profile/ProfilePage'));
 const AdminTextsPage = lazy(() => import('@/features/admin-texts/AdminTextsPage'));
 const AdminAppearancePage = lazy(() => import('@/features/brand-theme/AdminAppearancePage'));
 const AdminContactPage = lazy(() => import('@/features/platform-contact/AdminContactPage'));
@@ -59,6 +60,7 @@ const ported: Record<string, ReactElement> = {
   '/admin/submissions': <AdminSubmissionsPage />,
   '/add-listing': <AddListingPage />,
   '/my-listings': <MyListingsPage />,
+  '/profile': <ProfilePage />,
 };
 
 const page = (r: AppRoute) => ({ path: r.path, element: ported[r.path] ?? <PlaceholderPage route={r} /> });

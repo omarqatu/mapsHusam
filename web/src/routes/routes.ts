@@ -33,6 +33,12 @@ export const appRoutes: AppRoute[] = [
     legacy: '(new page — "add my business")',
   },
   {
+    path: '/profile',
+    titleKey: 'nav.profile',
+    access: 'auth',
+    legacy: '(new page — owner, 2026-10-05)',
+  },
+  {
     path: '/my-listings',
     titleKey: 'nav.myListings',
     access: 'auth',

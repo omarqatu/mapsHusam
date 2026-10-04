@@ -7,8 +7,9 @@ import { useMapUi } from '../store';
 import { mapLinkTo } from '../mapLink';
 
 /**
- * "Show on map": on the map page fly to the feature and open its details card (legacy "go to map" button; logged as a
- * map click). Anywhere else (the search page) open the map at that feature through the `?x=&y=` link.
+ * "Show on map": fly to the feature and open its details card (legacy "go to map" button; logged as a map click).
+ * From another page (the search page) the card is selected first, then the map opens at the feature through the
+ * `?x=&y=` link — the map keeps the selection, so it opens with the card instead of a bare point.
  */
 export function useShowOnMap() {
   const map = useOlMap();
@@ -16,14 +17,14 @@ export function useShowOnMap() {
   const onMapPage = useLocation().pathname === '/';
   return useCallback(
     (r: SearchResult) => {
+      const selected = toSelected(r);
+      useMapUi.getState().setSelected(selected);
+      logMapClick(selected);
       if (!onMapPage) {
         void navigate(mapLinkTo(r.center));
         return;
       }
       map?.getView().animate({ center: r.center, zoom: 19, duration: 800 });
-      const selected = toSelected(r);
-      useMapUi.getState().setSelected(selected);
-      logMapClick(selected);
     },
     [map, navigate, onMapPage],
   );

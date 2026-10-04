@@ -34,6 +34,14 @@ export function googleMapsLink(coord: readonly number[]) {
   return `https://www.google.com/maps?q=${wgsClipboard(coord)}`;
 }
 
+/**
+ * Directions to the point in Google Maps (its documented cross-platform URL): on a phone it opens the Maps app, from
+ * where the person is, by car or on foot, with turn-by-turn guidance.
+ */
+export function directionsLink(coord: readonly number[]) {
+  return `https://www.google.com/maps/dir/?api=1&destination=${wgsClipboard(coord)}`;
+}
+
 /** `?x=&y=&z=` link of the current page: coordinates to 3 decimals, zoom rounded (legacy format). */
 export function shareLink(origin: string, pathname: string, coord: readonly number[], zoom: number) {
   const round3 = (n: number) => Number(n.toFixed(3));

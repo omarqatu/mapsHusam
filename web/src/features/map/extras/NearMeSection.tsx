@@ -15,6 +15,7 @@ import { nearestEntries } from './featured';
 import { useNearbyCandidates } from './queries';
 import TypeFilter from './TypeFilter';
 import { serviceLabelKey } from '../registry';
+import { useLayerFilter } from '@/features/visibility/store';
 
 const PRESETS = ['road_barriers', 'fuel_stations'] as const;
 
@@ -30,6 +31,8 @@ export default function NearMeSection() {
   const [selected, setSelected] = useState<ReadonlySet<string>>(new Set());
   const [filterOpen, setFilterOpen] = useState(false);
   const candidates = useNearbyCandidates(center !== null);
+  // The quick buttons follow the admin's public visibility, like the layers they open.
+  const shown = useLayerFilter();
 
   const locate = (preset?: string) => {
     if (preset) {
@@ -49,8 +52,15 @@ export default function NearMeSection() {
   };
 
   const nearest = useMemo(
-    () => (center && candidates.data ? nearestEntries(candidates.data, center, selected) : []),
-    [center, candidates.data, selected],
+    () =>
+      center && candidates.data
+        ? nearestEntries(
+            candidates.data.filter((r) => shown(r.target)),
+            center,
+            selected,
+          )
+        : [],
+    [center, candidates.data, selected, shown],
   );
 
   const status = locating
@@ -75,7 +85,8 @@ export default function NearMeSection() {
         {PRESETS.map((key) => {
           const target = targetFromKey(key);
           return (
-            target && (
+            target &&
+            shown(target) && (
               <Button key={key} size="sm" variant="secondary" disabled={locating} onClick={() => locate(key)}>
                 <span aria-hidden>{targetIcon(target)}</span> {t(serviceLabelKey(key))}
               </Button>

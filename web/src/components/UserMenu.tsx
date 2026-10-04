@@ -8,11 +8,13 @@ import {
   Mail,
   MessageCircle,
   Phone,
+  UserRound,
   type LucideIcon,
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router';
 import clsx from 'clsx';
+import Avatar from '@/components/ui/Avatar';
 import { useOutsideClick } from '@/hooks/useOutsideClick';
 import { useAuthStore } from '@/store/authStore';
 import ChangePasswordDialog from '@/features/auth/ChangePasswordDialog';
@@ -20,30 +22,6 @@ import NotificationsMenu from '@/features/notifications/NotificationsMenu';
 import { useRequestsUi } from '@/features/requests/store';
 import { useHeaderTone } from './headerStyles';
 import { useUnseen } from '@/features/requests/unseen';
-
-/** The user's round mark: the first letter (accounts carry no photo); `skin` = its colours, the brand gradient by default. */
-function Avatar({
-  name,
-  className,
-  skin = 'bg-gradient-to-br from-brand to-brand-2 text-white shadow-card',
-}: {
-  name: string;
-  className: string;
-  skin?: string;
-}) {
-  return (
-    <span
-      aria-hidden
-      className={clsx(
-        'flex shrink-0 items-center justify-center rounded-full font-black',
-        skin,
-        className,
-      )}
-    >
-      {name.trim().charAt(0).toUpperCase()}
-    </span>
-  );
-}
 
 /** One line of the account card: icon, what it is, the value (numbers stay left-to-right inside Arabic text). */
 function InfoRow({
@@ -71,8 +49,8 @@ const item =
   'flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-start text-sm font-semibold hover:bg-subtle';
 
 /**
- * Header actions of the signed-in user: bell, my requests, and one account menu (name, role, change password,
- * log out). Signed out: a login button.
+ * Header actions of the signed-in user: bell, my requests, and one account menu (name, role, my profile, change
+ * password, log out). Signed out: a login button.
  */
 export default function UserMenu() {
   const { t } = useTranslation();
@@ -114,7 +92,12 @@ export default function UserMenu() {
       >
         <ClipboardList className="h-5 w-5" aria-hidden />
         {hasNew && (
-          <span className={clsx('absolute end-2 top-2 h-2.5 w-2.5 rounded-full bg-ok-solid ring-2', tone.badgeRing)} />
+          <span
+            className={clsx(
+              'absolute end-2 top-2 h-2.5 w-2.5 rounded-full bg-ok-solid ring-2',
+              tone.badgeRing,
+            )}
+          />
         )}
       </button>
 
@@ -147,7 +130,11 @@ export default function UserMenu() {
             role="menu"
             className="absolute end-0 top-full z-50 mt-2 w-72 rounded-2xl border border-line bg-surface p-1.5 text-fg shadow-float"
           >
-            <div className="flex items-center gap-3 px-3 pb-2 pt-2.5">
+            <Link
+              to="/profile"
+              onClick={() => setOpen(false)}
+              className="flex items-center gap-3 rounded-xl px-3 pb-2 pt-2.5 hover:bg-subtle"
+            >
               <Avatar name={name} className="h-11 w-11 text-lg" />
               <div className="min-w-0">
                 <p className="truncate text-sm font-bold text-fg">{name}</p>
@@ -155,12 +142,16 @@ export default function UserMenu() {
                   {t(`roles.${user.role}`)}
                 </span>
               </div>
-            </div>
+            </Link>
             <div className="border-y border-line py-1">
               <InfoRow icon={Phone} label={t('account.phone')} value={user.phone} />
               <InfoRow icon={MessageCircle} label={t('account.whatsapp')} value={user.whatsapp_number} />
               <InfoRow icon={Mail} label={t('account.email')} value={user.email} />
             </div>
+            <Link to="/profile" role="menuitem" className={item} onClick={() => setOpen(false)}>
+              <UserRound className="h-4 w-4 text-muted" aria-hidden />
+              {t('profile.open')}
+            </Link>
             <button
               type="button"
               role="menuitem"

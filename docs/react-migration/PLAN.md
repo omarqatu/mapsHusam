@@ -1299,6 +1299,24 @@ For each page, list from the legacy code — not from memory:
   already was. "Request service" sends a visitor to `/login` and back to the same map URL; chat, requests and the provider
   panel need a session as before. `/home` still sends visitors to `/welcome`. Header login link no longer wraps on phones.
 
+## Owner's notes, 5 October 2026
+
+- ✅ **"إدارة خدمتي" had no edit and no pictures.** That card is the live status panel on the map (available / busy / live
+  location); the details and pictures were already in "my listings" but nothing pointed there. The card and the panel are
+  now «حالتي الآن», the panel ends with «تعديل البيانات والصور» → `/my-listings`, and the home shows «إعلاناتي» first.
+- ✅ **My profile** (`/profile`, signed in): tapping the avatar opens the account menu, whose header and a «الملف الشخصي»
+  item lead to the page: who I am (name, role, phone); my figures (listings, my rating as a publisher, open requests,
+  new notifications — each opens its screen); my details (name, WhatsApp, email — the phone is the login, read-only with a hint); password and log-out.
+  No profile picture (owner: not wanted).
+  Server: see "Server changes" → "The account's own profile". `Avatar` moved to `components/ui/` (used twice);
+  `FormField` gained an optional `hint`. Tests: `features/profile/model.test.ts`, live `profile.live.test.ts`.
+- ✅ **"Go to the map" from a search result** opened a bare point: the listing is now selected first and the map keeps its
+  card when the shared point is that listing (`useShowOnMap`, `MapView`; e2e `search.spec.ts`).
+- ✅ **Directions** («اتجاهات», signed-in users only — owner) on the map card, the featured cards and the search
+  results, except road barriers (`popup/DirectionsButton`): opens Google Maps directions to the point
+  (`share.ts → directionsLink`; on a phone the Maps app, turn by turn, from where the person is). In-app routing on the
+  roads layer (`realestate:RoadsTest` covers Ramallah / Al-Bireh / Beitunia only) is not built — not requested yet.
+
 ## Server changes (allowed: functionality-preserving improvements, one commit each)
 
 Rule: URLs, methods, auth rules and response shapes stay identical; legacy pages keep working.
@@ -1658,6 +1676,12 @@ and give the Node process write access to it on IIS**), table `listing_photos` k
 - **Deploy keeps `uploads/`.** `tools/deploy-windows.ps1` copies with `robocopy /MIR`, which purged every folder of the
   live site not in the release — the pictures folder included. `uploads` is now excluded like `DB_Backups`
   (deploy and rollback). Better still on the server: `UPLOADS_DIR` outside the site folder.
+- **The account's own profile** (owner, 2026-10-05: "tapping my picture should offer my profile"). New
+  `GET /api/auth/profile` and `PATCH /api/auth/profile` `{full_name?, whatsapp_number?, email?}` (signed in; only the
+  caller's own row) → `{success, profile: {user_id, full_name, phone, whatsapp_number, email, role}}`. The phone is the
+  login and is not editable here; role and linked listing stay the admin's. Validation in `lib/profile.js` (name 1–100,
+  WhatsApp normalised like register, email format, unique → 409). Nothing existing changed. Verify: `node --test lib/`,
+  live `features/profile/profile.live.test.ts`.
 
 ## Backend asks (needs the user's decision — behaviour-changing or larger)
 
