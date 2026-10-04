@@ -10,7 +10,9 @@ param(
 
     [string]$HealthUrl = 'http://127.0.0.1:3000/readyz',
 
-    [string]$BackupRoot = (Join-Path $env:ProgramData 'mapsHusam\backups')
+    [string]$BackupRoot = (Join-Path $env:ProgramData 'mapsHusam\backups'),
+
+    [switch]$PreflightOnly
 )
 
 $ErrorActionPreference = 'Stop'
@@ -115,6 +117,10 @@ try {
     & icacls $BackupRoot /inheritance:r /grant:r "${runnerIdentity}:(OI)(CI)F" '*S-1-5-18:(OI)(CI)F' '*S-1-5-32-544:(OI)(CI)F' | Out-Null
     if ($LASTEXITCODE -ne 0) { throw 'Cannot restrict backup directory permissions.' }
     Invoke-ProductionBackup -Mode 'preflight'
+    if ($PreflightOnly) {
+        Write-Host 'Production backup configuration and client tools passed preflight.'
+        return
+    }
 
     if (Test-Path -LiteralPath $staging) {
         Remove-Item -LiteralPath $staging -Recurse -Force

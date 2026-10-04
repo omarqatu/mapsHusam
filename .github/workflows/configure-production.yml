@@ -6,7 +6,7 @@ on:
       mode:
         description: Generate public transport key or apply an encrypted environment
         type: choice
-        options: [key, apply]
+        options: [key, apply, tools]
         default: key
       encrypted_payload:
         description: RSA-OAEP + AES-GCM envelope (ciphertext only)
@@ -44,6 +44,40 @@ jobs:
           $identity = [System.Security.Principal.WindowsIdentity]::GetCurrent().Name
           & icacls $directory /inheritance:r /grant:r "${identity}:(OI)(CI)F" '*S-1-5-18:(OI)(CI)F' '*S-1-5-32-544:(OI)(CI)F' | Out-Null
           if ($LASTEXITCODE -ne 0) { throw 'Cannot restrict configuration directory permissions.' }
+          if ($env:PROVISIONING_MODE -eq 'tools') {
+            $result = & node tools/postgres-client-info.mjs info $deployPath
+            if ($LASTEXITCODE -ne 0) { throw 'Production database connectivity check failed.' }
+            $info = $result | ConvertFrom-Json
+            $clientDirectory = Join-Path $env:ProgramData 'mapsHusam\postgres-client'
+            New-Item -ItemType Directory -Force -Path $clientDirectory | Out-Null
+            & icacls $clientDirectory /inheritance:r /grant:r "${identity}:(OI)(CI)F" '*S-1-5-18:(OI)(CI)F' '*S-1-5-32-544:(OI)(CI)F' | Out-Null
+            if ($LASTEXITCODE -ne 0) { throw 'Cannot restrict PostgreSQL client directory permissions.' }
+            $archive = Join-Path $directory 'postgresql-client.zip'
+            [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
+            Write-Host "Downloading official PostgreSQL $($info.major) Windows client archive."
+            Invoke-WebRequest -Uri $info.url -OutFile $archive -UseBasicParsing
+            Expand-Archive -LiteralPath $archive -DestinationPath $clientDirectory -Force
+            $dump = Get-ChildItem -LiteralPath $clientDirectory -Filter pg_dump.exe -Recurse | Select-Object -First 1
+            if (-not $dump) { throw 'PostgreSQL archive did not contain pg_dump.exe.' }
+            $bin = $dump.DirectoryName
+            & $dump.FullName --version
+            if ($LASTEXITCODE -ne 0) { throw 'pg_dump cannot run on this server.' }
+            & (Join-Path $bin 'pg_restore.exe') --version
+            if ($LASTEXITCODE -ne 0) { throw 'pg_restore cannot run on this server.' }
+            & node tools/postgres-client-info.mjs set $deployPath $bin
+            if ($LASTEXITCODE -ne 0) { throw 'Cannot save PG_BIN.' }
+            $registry = 'HKLM:\SYSTEM\CurrentControlSet\Services\mapsHusam\Parameters'
+            $before = Get-ItemProperty -LiteralPath $registry
+            $entries = @()
+            if ($before.PSObject.Properties['AppEnvironmentExtra']) {
+              $entries += @($before.AppEnvironmentExtra | Where-Object { ($_ -split '=', 2)[0] -ne 'PG_BIN' })
+            }
+            $entries += "PG_BIN=$bin"
+            Set-ItemProperty -LiteralPath $registry -Name AppEnvironmentExtra -Value ([string[]]$entries) -Type MultiString
+            Remove-Item -LiteralPath $archive -Force
+            & (Join-Path $env:GITHUB_WORKSPACE 'tools\deploy-windows.ps1') -DeployPath $deployPath -ServiceName mapsHusam -PreflightOnly
+            return
+          }
           & node tools/provision-production.mjs $env:PROVISIONING_MODE $directory $deployPath
           if ($LASTEXITCODE -ne 0) { throw 'Configuration provisioning failed.' }
           if ($env:PROVISIONING_MODE -eq 'apply') {

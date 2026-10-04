@@ -42,6 +42,14 @@ jobs:
         shell: cmd
         run: npm test
 
+      - name: Check - production backup prerequisites
+        shell: powershell
+        run: >-
+          & "$env:GITHUB_WORKSPACE\tools\deploy-windows.ps1"
+          -DeployPath "C:\inetpub\wwwroot\psm\mapsHusam"
+          -ServiceName "mapsHusam"
+          -PreflightOnly
+
       - name: Check - install web dependencies
         shell: cmd
         working-directory: web
