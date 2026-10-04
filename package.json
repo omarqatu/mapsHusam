@@ -4,7 +4,9 @@
   "type": "module",
   "main": "server.js",
   "scripts": {
-    "start": "node server.js"
+    "start": "node server.js",
+    "test": "node --test lib/*.test.js",
+    "check:server": "node --experimental-vm-modules --no-warnings=ExperimentalWarning tools/check-server.mjs"
   },
   "dependencies": {
     "bcrypt": "^6.0.0",

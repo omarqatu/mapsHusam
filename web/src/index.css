@@ -1,0 +1,330 @@
+@import 'tailwindcss';
+
+/*
+ * Design tokens — the only place colours, type and elevation are decided. Components use these names
+ * (`bg-surface`, `text-muted`, `border-line`, `bg-danger-soft` …), never raw palette classes (`slate-600`, `red-50`),
+ * so both themes and any later re-brand change here alone.
+ *
+ * Values below are the LIGHT theme; the dark theme redefines the same names further down. Every text colour is
+ * chosen for ≥ 4.5:1 on the surface it is used on.
+ */
+@import '@fontsource-variable/cairo';
+
+@theme {
+  --font-sans: 'Cairo Variable', system-ui, -apple-system, 'Segoe UI', Tahoma, sans-serif;
+
+  /* Brand (indigo → violet, the platform's identity; darker than legacy #667eea so white text passes AA) */
+  --color-brand: #4f46e5; /* fills: buttons, active states (white text on it) */
+  --color-brand-2: #7c3aed; /* second stop of the brand gradient */
+  --color-brand-hover: #4338ca;
+  --color-brand-fg: #4338ca; /* brand-coloured TEXT and icons on a surface */
+  --color-brand-light: #e8e9fd; /* tinted background for selected / hover */
+
+  /* Surfaces and lines */
+  --color-canvas: #f4f5fa; /* page background */
+  --color-surface: #ffffff; /* cards, panels, dialogs, inputs */
+  --color-subtle: #eef0f7; /* quiet blocks inside a surface, hover rows */
+  --color-subtle-2: #e2e5f0; /* stronger quiet block, skeletons, pressed */
+  --color-line: #dcdfeb; /* borders and dividers */
+  --color-line-strong: #c3c8d9; /* input borders, emphasised dividers */
+
+  /* Text */
+  --color-fg: #171a2b; /* primary text */
+  --color-muted: #4d5468; /* secondary text (7:1 on surface) */
+
+  /* Status: text/icon colour, soft tint background, soft border, solid fill (white text) */
+  --color-danger: #b42318;
+  --color-danger-soft: #fdecea;
+  --color-danger-line: #f4b9b3;
+  --color-danger-solid: #d32f2f;
+  --color-warn: #8f5400;
+  --color-warn-soft: #fff3dc;
+  --color-warn-line: #f0cd8d;
+  --color-warn-solid: #c77700;
+  --color-ok: #146c37;
+  --color-ok-soft: #e4f5ea;
+  --color-ok-line: #a6d9b8;
+  --color-ok-solid: #1f8f4d;
+  --color-info: #1a56a8;
+  --color-info-soft: #e7f0fc;
+  --color-info-line: #b0cdf3;
+  --color-info-solid: #2a6fd0;
+
+  --color-whatsapp: #25d366;
+  --color-whatsapp-hover: #1fb956;
+  --color-role-admin: #e74c3c;
+  --color-role-provider: #2980b9;
+  --color-role-user: #27ae60;
+
+  /* Site footer: slate blue in both themes (a step lighter than legacy #1a252f); text pairs are ≥ 5.5:1 on it. */
+  --color-footer: #2c3e50;
+  --color-footer-fg: #f1f4f6;
+  --color-footer-muted: #d0d7dc;
+  --color-footer-line: rgb(255 255 255 / 0.16);
+
+  /* Elevation: two levels only. `shadow-card` rests on the page, `shadow-float` floats over it (menus, sheets). */
+  --shadow-card: 0 1px 2px rgb(23 26 43 / 0.05), 0 1px 3px rgb(23 26 43 / 0.06);
+  --shadow-float: 0 8px 28px rgb(23 26 43 / 0.16), 0 2px 6px rgb(23 26 43 / 0.08);
+
+  /* Radius: controls, cards, and pills — nothing in between */
+  --radius-control: 0.625rem;
+  --radius-card: 1rem;
+}
+
+/* Dark theme: same names, deeper cool neutrals; brand text and status text lighten to keep contrast. */
+:root[data-theme='dark'] {
+  color-scheme: dark;
+  --color-brand-fg: #a5b0ff;
+  --color-brand-light: #262b57;
+  --color-canvas: #0d1020;
+  --color-surface: #161a2c;
+  --color-subtle: #1e2339;
+  --color-subtle-2: #2a3050;
+  --color-line: #2a3050;
+  --color-line-strong: #3f4869;
+  --color-fg: #eceef8;
+  --color-muted: #a6aec8;
+  --color-danger: #ff9a92;
+  --color-danger-soft: #3a1c22;
+  --color-danger-line: #6f2f38;
+  --color-warn: #f6bd5c;
+  --color-warn-soft: #3a2b12;
+  --color-warn-line: #6d4f1c;
+  --color-ok: #6fd99a;
+  --color-ok-soft: #12321f;
+  --color-ok-line: #25603d;
+  --color-info: #8dbaff;
+  --color-info-soft: #14294b;
+  --color-info-line: #2c4d85;
+  --shadow-card: 0 1px 2px rgb(0 0 0 / 0.4);
+  --shadow-float: 0 10px 32px rgb(0 0 0 / 0.55), 0 2px 6px rgb(0 0 0 / 0.4);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']):not([data-theme='dark']) {
+    color-scheme: dark;
+    --color-brand-fg: #a5b0ff;
+    --color-brand-light: #262b57;
+    --color-canvas: #0d1020;
+    --color-surface: #161a2c;
+    --color-subtle: #1e2339;
+    --color-subtle-2: #2a3050;
+    --color-line: #2a3050;
+    --color-line-strong: #3f4869;
+    --color-fg: #eceef8;
+    --color-muted: #a6aec8;
+    --color-danger: #ff9a92;
+    --color-danger-soft: #3a1c22;
+    --color-danger-line: #6f2f38;
+    --color-warn: #f6bd5c;
+    --color-warn-soft: #3a2b12;
+    --color-warn-line: #6d4f1c;
+    --color-ok: #6fd99a;
+    --color-ok-soft: #12321f;
+    --color-ok-line: #25603d;
+    --color-info: #8dbaff;
+    --color-info-soft: #14294b;
+    --color-info-line: #2c4d85;
+    --shadow-card: 0 1px 2px rgb(0 0 0 / 0.4);
+    --shadow-float: 0 10px 32px rgb(0 0 0 / 0.55), 0 2px 6px rgb(0 0 0 / 0.4);
+  }
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  background: var(--color-canvas);
+  color: var(--color-fg);
+  font-family: var(--font-sans);
+  font-optical-sizing: auto;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Scrollbars: thin and tinted from the tokens (the browser default is a heavy dark bar, worst in the dark theme). */
+@layer base {
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: var(--color-line-strong) transparent;
+  }
+}
+
+/* Default keyboard-focus ring. In the base layer so a component's own utilities win: a text field
+   matches :focus-visible on a mouse click too, and fields that draw focus on their wrapper
+   (search boxes, the select's filter) opt out with `outline-none`. */
+@layer base {
+  :focus-visible {
+    outline: 2px solid var(--color-brand);
+    outline-offset: 2px;
+  }
+}
+
+/* The original full-screen welcome splash from the legacy site. */
+@keyframes welcome-float-up {
+  0% { transform: translateY(100vh); opacity: 0; }
+  10%, 90% { opacity: 1; }
+  100% { transform: translateY(-100vh); opacity: 0; }
+}
+@keyframes welcome-enter-up {
+  from { opacity: 0; transform: translateY(40px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes welcome-pulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.1); }
+}
+.welcome-float { animation: welcome-float-up 20s linear infinite; }
+.welcome-enter { animation: welcome-enter-up 1.2s ease-out; }
+.welcome-pulse { animation: welcome-pulse 2s ease-in-out infinite; }
+.welcome-highlight {
+  background: linear-gradient(135deg, #4fc3f7, #00e676);
+  background-clip: text;
+  -webkit-background-clip: text;
+  color: transparent;
+  -webkit-text-fill-color: transparent;
+}
+.auth-glass-panel {
+  color-scheme: light;
+  --color-surface: rgb(255 255 255 / 0.94);
+  --color-subtle: rgb(241 245 249 / 0.9);
+  --color-subtle-2: #e2e8f0;
+  --color-line: rgb(203 213 225 / 0.85);
+  --color-line-strong: #aeb9c8;
+  --color-fg: #172033;
+  --color-muted: #536176;
+  --color-brand: #087f8c;
+  --color-brand-fg: #08717d;
+  --color-brand-hover: #066b75;
+  --color-brand-light: #d9f4f1;
+  background: rgb(255 255 255 / 0.86);
+  border: 1px solid rgb(255 255 255 / 0.48);
+  box-shadow: 0 24px 70px rgb(0 0 0 / 0.34), inset 0 1px 0 rgb(255 255 255 / 0.55);
+  -webkit-backdrop-filter: blur(22px) saturate(135%);
+  backdrop-filter: blur(22px) saturate(135%);
+}
+@media (prefers-reduced-motion: reduce) {
+  .welcome-float, .welcome-enter, .welcome-pulse { animation: none; }
+}
+
+/*
+ * Everything laid over the map imagery is frosted glass, like the top bar: the surface colour at about half strength with the
+ * map blurred and slightly boosted behind it (both themes follow the surface token). `.glass` = small controls (tool buttons,
+ * search pill, chips, coordinates), `.glass-bar` = the live-updates strip glued to the bottom edge, `.glass-panel` = panels and
+ * sheets that carry text and forms (a little more opaque so long lists stay readable). Without backdrop-filter support they
+ * fall back to a nearly solid surface.
+ */
+/*
+ * Tunable through variables (set on :root, or on one element to change just that one):
+ *   --glass-tint      colour of the tint (the theme's main colour)
+ *   --glass-tint-amount  how strong the tint is at its edge
+ *   --glass-opacity   how much of the surface colour is there (higher = less transparent, easier to read)
+ * The tint fades in from the reading-start side only (the right in Arabic, the left in English) and is gone by 70 %.
+ */
+:root {
+  --glass-tint: var(--color-brand);
+  --glass-tint-amount: 0%; /* off for controls and panels; only the top bar turns it on (.glass-tint) */
+  --glass-dir: right;
+}
+[dir='rtl'] {
+  --glass-dir: left;
+}
+.glass,
+.glass-bar,
+.glass-panel {
+  background:
+    linear-gradient(to var(--glass-dir), color-mix(in srgb, var(--glass-tint) var(--glass-tint-amount), transparent), transparent 70%),
+    color-mix(in srgb, var(--color-surface) var(--glass-opacity, 56%), transparent);
+  border: 1px solid color-mix(in srgb, var(--color-line) 55%, transparent);
+  box-shadow: 0 4px 18px rgb(0 0 0 / 0.16);
+  -webkit-backdrop-filter: blur(16px) saturate(160%);
+  backdrop-filter: blur(16px) saturate(160%);
+}
+.glass-tint {
+  --glass-tint-amount: 28%;
+  background-image: linear-gradient(to var(--glass-dir), color-mix(in srgb, var(--glass-tint) var(--glass-tint-amount), transparent), transparent 70%);
+}
+.glass-panel {
+  background-color: color-mix(in srgb, var(--color-surface) var(--glass-opacity, 70%), transparent);
+  box-shadow: 0 8px 28px rgb(0 0 0 / 0.22);
+}
+.glass-bar {
+  border-width: 1px 0 0;
+  box-shadow: 0 -2px 12px rgb(0 0 0 / 0.12);
+}
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .glass,
+  .glass-bar,
+  .glass-panel {
+    background: color-mix(in srgb, var(--color-surface) 94%, transparent);
+  }
+}
+
+/*
+ * Live-information ticker: the track holds every item twice and slides by exactly one copy, so the loop is seamless.
+ * In RTL the row starts at the right edge and grows to the left, hence the mirrored keyframes. Paused while the pointer
+ * or keyboard focus is on it, while touched, and with reduced motion (the row is then a plain scrollable list).
+ */
+@keyframes ticker-ltr {
+  to {
+    transform: translateX(-50%);
+  }
+}
+@keyframes ticker-rtl {
+  to {
+    transform: translateX(50%);
+  }
+}
+.ticker-viewport {
+  -webkit-mask-image: linear-gradient(to right, transparent, #000 1.25rem, #000 calc(100% - 1.25rem), transparent);
+  mask-image: linear-gradient(to right, transparent, #000 1.25rem, #000 calc(100% - 1.25rem), transparent);
+}
+.ticker-track {
+  animation: ticker-ltr var(--ticker-dur, 60s) linear infinite;
+}
+[dir='rtl'] .ticker-track {
+  animation-name: ticker-rtl;
+}
+.ticker-track:hover,
+.ticker-track:active,
+.ticker-track:focus-within {
+  animation-play-state: paused;
+}
+@media (prefers-reduced-motion: reduce) {
+  .ticker-track {
+    animation: none;
+  }
+}
+
+/* Search landing: cards rise in one after another on the first paint (only with motion allowed, see Collections). */
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* Search hero backdrop: two soft colour fields drifting and a few map pins bobbing — slow, decoration only. */
+@keyframes drift {
+  0%,
+  100% {
+    transform: translate(0, 0) scale(1);
+  }
+  50% {
+    transform: translate(6%, 8%) scale(1.12);
+  }
+}
+@keyframes bob {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-8px);
+  }
+}

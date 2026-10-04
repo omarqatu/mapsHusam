@@ -1,0 +1,74 @@
+name: CI
+
+# Quality gates for everything that is not `main` (main is checked again in deploy.yml right before it is deployed).
+# The browser tests in web/e2e are NOT run here: they need the dev database and backend (see dev/README.md).
+on:
+  pull_request:
+  push:
+    branches-ignore: [main]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  server:
+    name: Server (install, module check, unit tests)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: package-lock.json
+
+      - run: npm ci
+      - run: npm run check:server
+      - run: npm test
+
+  web:
+    name: Web (typecheck, lint, unit tests, build)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: web
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22 # Vite 8 needs >= 20.19
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm run lint
+      - run: npm test
+      - run: npm run build
+
+  audit:
+    name: Dependency audit (report only)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      # Non-blocking: a new advisory in a transitive dependency must not stop an unrelated fix from merging,
+      # but it shows up in the log (and as a warning annotation) on every run.
+      - name: npm audit (web)
+        working-directory: web
+        continue-on-error: true
+        run: npm audit --omit=dev --audit-level=high
+
+      - name: npm audit (server, repo root)
+        continue-on-error: true
+        run: npm audit --omit=dev --audit-level=high

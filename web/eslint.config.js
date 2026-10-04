@@ -1,0 +1,79 @@
+import js from '@eslint/js';
+import globals from 'globals';
+import reactHooks from 'eslint-plugin-react-hooks';
+import reactRefresh from 'eslint-plugin-react-refresh';
+import jsxA11y from 'eslint-plugin-jsx-a11y';
+import tseslint from 'typescript-eslint';
+import { defineConfig, globalIgnores } from 'eslint/config';
+
+export default defineConfig([
+  globalIgnores(['dist', 'coverage']),
+  {
+    files: ['**/*.{ts,tsx}'],
+    extends: [
+      js.configs.recommended,
+      tseslint.configs.recommended,
+      reactHooks.configs.flat.recommended,
+      reactRefresh.configs.vite,
+      jsxA11y.flatConfigs.recommended,
+    ],
+    languageOptions: { ecmaVersion: 2022, globals: globals.browser },
+    rules: {
+      '@typescript-eslint/no-explicit-any': 'error',
+      '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_', varsIgnorePattern: '^_' }],
+      'no-console': ['error', { allow: ['warn', 'error'] }],
+      // XSS: user content goes through JSX only (CLAUDE.md invariant).
+      'no-restricted-syntax': [
+        'error',
+        {
+          selector: "JSXAttribute[name.name='dangerouslySetInnerHTML']",
+          message: 'No dangerouslySetInnerHTML — render through JSX.',
+        },
+        {
+          selector: 'AssignmentExpression[left.property.name=/^(innerHTML|outerHTML)$/]',
+          message: 'No innerHTML/outerHTML — render through JSX.',
+        },
+        // Design system: colours come from the tokens in index.css (bg-surface, text-muted, border-line, bg-danger-soft …),
+        // so both themes work and a re-brand is one file. Raw palette classes (slate-600, red-50 …) are not allowed.
+        {
+          selector: `Literal[value=/\\b(text|bg|border|ring|divide|outline|fill|stroke|placeholder|from|to|via)-(slate|gray|zinc|neutral|stone|red|rose|pink|orange|amber|yellow|lime|green|emerald|teal|cyan|sky|blue|indigo|violet|purple|fuchsia)-\\d/]`,
+          message: 'Use a colour token (bg-surface, text-muted, border-line, bg-danger-soft …) — see index.css @theme.',
+        },
+        {
+          selector: `TemplateElement[value.raw=/\\b(text|bg|border|ring|divide|outline|fill|stroke|placeholder|from|to|via)-(slate|gray|zinc|neutral|stone|red|rose|pink|orange|amber|yellow|lime|green|emerald|teal|cyan|sky|blue|indigo|violet|purple|fuchsia)-\\d/]`,
+          message: 'Use a colour token (bg-surface, text-muted, border-line, bg-danger-soft …) — see index.css @theme.',
+        },
+      ],
+      'no-restricted-globals': [
+        'error',
+        { name: 'fetch', message: 'Use api/client.ts (CLAUDE.md: all HTTP goes through it).' },
+      ],
+      'react-refresh/only-export-components': 'warn',
+    },
+  },
+  {
+    // Browser tests (Playwright): its fixtures call `use(...)`, which the hooks rule mistakes for React's `use`; they run in
+    // Node, and the design-token rule is about the app's class names, not selectors.
+    files: ['e2e/**/*.ts', 'playwright.config.ts'],
+    languageOptions: { globals: { ...globals.node, ...globals.browser } },
+    rules: { 'react-hooks/rules-of-hooks': 'off', 'no-restricted-syntax': 'off' },
+  },
+  {
+    // The UI kit test renders raw classes on purpose (it checks className passthrough).
+    files: ['**/*.test.{ts,tsx}'],
+    rules: { 'no-restricted-syntax': 'off' },
+  },
+  {
+    // The only places allowed to call fetch: the API client, the GeoServer reader (no app token to GeoServer),
+    // the third-party reader of the widgets (Open-Meteo / Aladhan — no app token to other origins), the map editor's write transport (the single WFS-T function; it sends the typed GeoServer login, never the app
+    // token), and tests that stub it.
+    files: [
+      'src/api/client.ts',
+      'src/api/geoserver.ts',
+      'src/api/external.ts',
+      'src/features/map/edit/transport.ts',
+      '**/*.test.{ts,tsx}',
+    ],
+    rules: { 'no-restricted-globals': 'off' },
+  },
+]);

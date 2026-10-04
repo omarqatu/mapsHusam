@@ -1,0 +1,2154 @@
+{
+  "app": {
+    "shortName": "Services Map",
+    "name": "Palestine Services Map",
+    "loading": "Loading…"
+  },
+  "common": {
+    "minimize": "Minimise panel",
+    "expand": "Expand panel",
+    "save": "Save",
+    "cancel": "Cancel",
+    "confirm": "Confirm",
+    "delete": "Delete",
+    "edit": "Edit",
+    "close": "Close",
+    "search": "Search",
+    "clearFilters": "Clear filters",
+    "required": "Required field",
+    "noData": "No data",
+    "retry": "Retry",
+    "back": "Back",
+    "previous": "Previous",
+    "next": "Next",
+    "page": "Page {{page}} of {{pages}}",
+    "language": "Language",
+    "actions": "Actions",
+    "menu": "Menu",
+    "showMore": "Show more",
+    "showLess": "Show less",
+    "reorder": "Reorder",
+    "showAll": "Show all ({{count}})",
+    "themeDark": "Dark mode",
+    "themeLight": "Light mode"
+  },
+  "errors": {
+    "network": "Could not reach the server. Check your connection and try again.",
+    "generic": "Something went wrong.",
+    "boundaryTitle": "This page failed to render",
+    "notFoundTitle": "Page not found",
+    "notFoundBody": "The link is wrong or the page has moved.",
+    "forbiddenTitle": "You are not allowed to open this page"
+  },
+  "auth": {
+    "login": "Log in",
+    "logout": "Log out",
+    "phone": "Phone number",
+    "password": "Password",
+    "loggingIn": "Logging in…",
+    "sessionEnded": "Your session ended, please log in again.",
+    "loginTitle": "Log in to the map",
+    "loginIntro": "Enter your account details to open the interactive map",
+    "phoneHint": "Use the same mobile number you registered your WhatsApp account with.",
+    "phoneInvalid": "Invalid mobile number: it must be 10 digits and start with 05.",
+    "loginSubmit": "Enter the platform",
+    "welcomeBack": "Welcome back: {{name}}",
+    "noAccount": "No account yet?",
+    "createAccount": "Create an account",
+    "haveAccount": "Already have an account?",
+    "loginHere": "Log in here",
+    "reviewTerms": "Review the agreement and terms",
+    "showPassword": "Show password",
+    "hidePassword": "Hide password",
+    "showSecret": "Show secret",
+    "hideSecret": "Hide secret",
+    "sessionForceLogout": "The administration logged you out. Contact them through the Facebook page before trying to log in again.",
+    "sessionInactive": "Your account is currently disabled. Contact the administration through the Facebook page.",
+    "sessionNotFound": "This account was not found, please log in again.",
+    "welcome": {
+      "title": "Palestine Services Map",
+      "tagline": "Everything you need, in one place",
+      "subtitle": "The first interactive platform in Palestine: find any service or property in one tap, contact providers directly, and be one step from everything you want.",
+      "features": {
+        "realEstate": {
+          "label": "Apartments for sale and rent",
+          "desc": "Properties updated continuously",
+          "descCount": "{{count}} properties listed now"
+        },
+        "providers": {
+          "label": "Service providers",
+          "desc": "Dozens of professional trades",
+          "descCount": "{{count}} professional trades"
+        },
+        "location": {
+          "label": "Precise locations",
+          "desc": "GPS + interactive map"
+        },
+        "contact": {
+          "label": "Direct contact",
+          "desc": "WhatsApp, no middlemen"
+        },
+        "search": {
+          "label": "Smart search",
+          "desc": "Filter by place, price and category"
+        },
+        "free": {
+          "label": "Completely free",
+          "desc": "For everyone who uses the services"
+        }
+      },
+      "register": "Create an account",
+      "login": "Have an account? Log in",
+      "footer": "Visit the map: start by creating an account, or log in if you already have one",
+      "agreeNote": "By continuing you agree to the"
+    },
+    "legal": {
+      "terms": "Terms of use",
+      "inlineLabel": "The full privacy policy and terms of use",
+      "loadFailed": "The text could not be loaded.",
+      "privacy": "Privacy policy",
+      "guide": "User guide",
+      "and": "and",
+      "guideSearch": "Searching for services",
+      "guideProvider": "Service provider account",
+      "guideSubscription": "How to join",
+      "guideMapInteractive": "The interactive map",
+      "about": "About us",
+      "contact": "Contact us"
+    },
+    "register": {
+      "title": "Create an account with a WhatsApp number",
+      "intro": "Sign up with a Palestinian mobile number — your account works right away.",
+      "termsTitle": "Terms and conditions of use",
+      "platformName": "Palestine Services Map (trial version)",
+      "about": "The first interactive platform connecting users with service providers and property owners in Palestine. Whether you look for a service or have a property to sell or rent, we give you smart geographic marketing that reaches the public directly.",
+      "agree": "I agree to the usage policy, the privacy policy and the disclaimer above.",
+      "fbAsk": "Your support keeps us going. Please like our Facebook page to continue:",
+      "fbLink": "Visit the Facebook page and like it",
+      "fbDone": "I visited the page and pressed Like.",
+      "gateHint": "Accept the terms and like the page to enable registration:",
+      "continue": "Register with a WhatsApp number",
+      "alreadyRegistered": "Already registered? Click here to log in",
+      "name": "Full name",
+      "namePlaceholder": "Enter your personal or business name",
+      "prefix": "WhatsApp country code",
+      "prefixHint": "Choose the country code of your WhatsApp number.",
+      "phone": "Local mobile number",
+      "phoneHint": "Enter the full mobile number with the leading zero. It is converted to WhatsApp format +970... or +972... automatically.",
+      "passwordHint": "At least 6 characters.",
+      "passwordShort": "The password must be at least 6 characters.",
+      "accountType": "Account type",
+      "accountUser": "Regular user (search, browse and request services)",
+      "submit": "Complete registration",
+      "submitting": "Registering…",
+      "success": "Welcome! Your account is ready and you are signed in.",
+      "backToTerms": "Back to the terms",
+      "hasBusiness": "I have a business and want it on the map",
+      "businessTitle": "Your business",
+      "businessHint": "Sent with your sign-up and reviewed once by the admins: on approval your account is activated and your business is published.",
+      "successBusiness": "Your account is ready and your business request reached the admins. You will get a notification once it is approved."
+    },
+    "changePassword": {
+      "open": "Change password",
+      "title": "Change your password securely",
+      "current": "Current password",
+      "new": "New password (at least 6 characters)",
+      "currentEmpty": "The current password cannot be empty.",
+      "newShort": "The new password must be 6 characters or more.",
+      "trouble": "Having trouble? Contact us directly on",
+      "facebookPage": "our Facebook page",
+      "submit": "Update",
+      "submitting": "Updating…",
+      "success": "Password changed successfully."
+    }
+  },
+  "nav": {
+    "home": "Home",
+    "map": "Map",
+    "search": "Search",
+    "notifications": "Notifications",
+    "widgets": "Live info",
+    "adminUsers": "Users",
+    "adminWidgets": "Widgets admin",
+    "adminVisibility": "Show & hide",
+    "adminTexts": "Platform texts",
+    "adminDashboard": "Dashboard",
+    "admin": "Admin",
+    "adminAppearance": "Appearance",
+    "addListing": "Add your business",
+    "adminSubmissions": "Add requests",
+    "adminContact": "Contact details",
+    "myListings": "My listings"
+  },
+  "roles": {
+    "admin": "Admin",
+    "provider": "Service provider",
+    "user": "User"
+  },
+  "placeholder": {
+    "title": "Being ported to React",
+    "legacy": "Legacy page: {{source}}"
+  },
+  "map": {
+    "layers": "Layers",
+    "basemap": "Base map",
+    "realEstate": "Real estate",
+    "services": "Services",
+    "showAll": "Show all",
+    "hideAll": "Hide all",
+    "filterServices": "Find a service type…",
+    "zoomIn": "Zoom in",
+    "zoomOut": "Zoom out",
+    "locate": "Show my location",
+    "stopLocate": "Stop tracking my location",
+    "searchWithoutMap": "Search without map",
+    "areaUnit": "m²",
+    "layerLoadFailed": "Some map layers failed to load. We will retry when you move the map.",
+    "gps": {
+      "insecure": "GPS is not available on this link because the site runs over HTTP. Please open it over HTTPS.",
+      "denied": "Location permission was denied. Allow location access in your browser and try again.",
+      "unavailable": "Could not determine your location. Make sure GPS is on and permission is granted.",
+      "timeout": "Finding your location timed out. Please try again.",
+      "failed": "Could not access your location. Make sure GPS is on and permission is granted."
+    },
+    "refresh": "Refresh map",
+    "refreshed": "Map data refreshed."
+  },
+  "basemaps": {
+    "esri": "Satellite (Esri)",
+    "osm": "Street map",
+    "aerial": "Aerial photo 2023",
+    "none": "No background"
+  },
+  "layers": {
+    "rent": "Apartments for rent",
+    "sale": "Apartments for sale",
+    "land": "Land for sale"
+  },
+  "roadStatus": {
+    "open": "Open",
+    "closed": "Closed",
+    "light": "Light traffic jam",
+    "heavy": "Heavy traffic jam",
+    "inspection": "Inspection & heavy jam",
+    "unknown": "Unknown"
+  },
+  "services": {
+    "fuel_stations": "Fuel stations",
+    "road_barriers": "Road checkpoints",
+    "job_vacancies": "Job vacancies",
+    "schools_kindergartens": "Schools & kindergartens",
+    "city_landmarks": "City landmarks",
+    "electrician": "Electrician",
+    "ac_technician": "AC & refrigeration technician",
+    "plumber": "Plumber",
+    "general_maintenance": "General maintenance",
+    "painter": "Painter",
+    "Finisher": "Interior finisher",
+    "carpenter": "Carpenter",
+    "blacksmith": "Blacksmith",
+    "builder": "Builder & masonry",
+    "house_cleaner": "Cleaning services",
+    "aluminum_tech": "Aluminium technician",
+    "glass_tech": "Glass & security-door technician",
+    "car_mechanic": "Car mechanic",
+    "car_electrician": "Car electrician",
+    "tire_tech": "Tyre repair",
+    "car_wash": "Car wash",
+    "motorcycle_repair": "Motorcycle repair",
+    "taxi_driver": "Taxi office",
+    "delivery_services": "Delivery services",
+    "tow_truck": "Tow truck",
+    "cctv_installer": "CCTV installer",
+    "party_planner": "Party planner",
+    "zaffa_bands": "Zaffa band",
+    "music_bands": "Music bands",
+    "party_rental": "Party equipment rental",
+    "home_nurse": "Home nursing",
+    "masseur": "Massage therapist",
+    "cupping_specialist": "Cupping specialist",
+    "nutritionist": "Nutritionist",
+    "truck_driver": "Truck driver",
+    "security_firms": "Security companies",
+    "furniture_buyer": "Used furniture buyer",
+    "gardener": "Gardener",
+    "pet_care": "Pet care",
+    "clown_entertainer": "Clown & kids shows",
+    "online_stores": "Online stores",
+    "villas_rent": "Villas for rent",
+    "martial_arts_gymnastics": "Martial arts & gymnastics",
+    "public_parks_recreation": "Parks & recreation",
+    "hotels": "Hotels",
+    "free_distribution": "Free giveaways",
+    "barber_shop": "Barber shop",
+    "photographers": "Photographers",
+    "video_design_ads": "Video ad design",
+    "pharmacies_on_call": "Pharmacies on call",
+    "taxis_on_call": "Taxis on call",
+    "emergency_hospitals": "Emergency & hospitals",
+    "clinics": "Clinics",
+    "doctors_on_call": "Doctors on call",
+    "ambulances_on_call": "Ambulances on call",
+    "music_training": "Music lessons & institutes",
+    "lawyers": "Lawyers",
+    "land_surveyors": "Land surveyors",
+    "real_estate_valuers": "Real-estate valuers",
+    "private_tutors": "Private tutors",
+    "programmers": "Programmers",
+    "car_delivery_on_call": "Car delivery (on call)",
+    "motorcycle_delivery_on_call": "Motorcycle delivery (on call)",
+    "bicycle_delivery_on_call": "Bicycle delivery (on call)",
+    "student_research_assist": "Student research help",
+    "supermarket": "Supermarket",
+    "commercial_shops": "Shops",
+    "restaurants": "Restaurants & cafés"
+  },
+  "popup": {
+    "details": "Details",
+    "name": "Name",
+    "place": "Location",
+    "price": "Price",
+    "area": "Area",
+    "village": "Town",
+    "governorate": "Governorate",
+    "description": "Description",
+    "notes": "Notes",
+    "allDay": "Open 24 hours",
+    "availableFromTo": "Open from {{from}} to {{to}}",
+    "inbound": "Inbound",
+    "outbound": "Outbound",
+    "notSet": "Not set",
+    "advertiser": "Advertiser",
+    "provider": "Service provider",
+    "sharedLocation": "Shared location",
+    "sharedLocationHint": "You were taken to this shared location.",
+    "fuel": {
+      "title": "Fuel availability",
+      "diesel": "Diesel",
+      "banzen95": "Petrol 95",
+      "banzen98": "Petrol 98",
+      "available": "Available",
+      "unavailable": "Not available"
+    },
+    "rating": {
+      "loading": "Loading rating...",
+      "none": "No ratings yet",
+      "count": "({{count}} ratings)",
+      "showComments": "Show comments ({{count}})",
+      "hideComments": "Hide comments",
+      "user": "User"
+    },
+    "call": "Call",
+    "whatsapp": "WhatsApp",
+    "requestService": "Request service",
+    "requestSoon": "Service requests are being moved to the new version",
+    "copyLink": "Copy location link",
+    "linkCopied": "Location link copied! You can share it now.",
+    "copyFailed": "Could not copy the link. Please try again manually.",
+    "cooldown": "Please wait {{seconds}} seconds before trying again",
+    "quotaExceeded": "⛔ You have exceeded your request limit ({{limit}}) {{period}}. Please try later or contact the administration.",
+    "period": {
+      "daily": "today",
+      "weekly": "this week",
+      "monthly": "this month"
+    },
+    "whatsappGreeting": "Hello {{name}}, I would like to ask about ({{service}}) via the map.",
+    "watchVideo": "Watch video",
+    "moreDetails1": "More details 1",
+    "moreDetails2": "More details 2",
+    "currency": {
+      "USD": "USD",
+      "ILS": "ILS",
+      "JOD": "JOD"
+    },
+    "mapArea": "Area on the map",
+    "mapLength": "Length on the map",
+    "noContact": "No contact details are listed for this one.",
+    "availability": {
+      "open": "Open now",
+      "closed": "Closed now",
+      "unavailable": "Not available right now",
+      "withdrawn": "Withdrawn — hidden from visitors"
+    },
+    "requestViewing": "Request a viewing",
+    "publisher": {
+      "title": "Publisher:",
+      "noRatings": "no ratings yet",
+      "listings": "{{count}} listings"
+    }
+  },
+  "media": {
+    "openImages": "Click to view the images",
+    "preview": "Preview",
+    "prev": "Previous",
+    "next": "Next",
+    "openOnYoutube": "Open on YouTube",
+    "play": "Play",
+    "playVideo": "Play video"
+  },
+  "search": {
+    "title": "Search",
+    "type": "Type",
+    "chooseType": "-- Choose a service or property --",
+    "field": "Field",
+    "operator": "Condition",
+    "value": "Value",
+    "conditions": "Search conditions",
+    "chooseValue": "-- Choose a value --",
+    "customValue": "✏️ Custom value (type)",
+    "typeValue": "Type the value here...",
+    "backToList": "Back to the list",
+    "currency": "Currency",
+    "allCurrencies": "All currencies",
+    "addCondition": "Add condition",
+    "run": "Search",
+    "clear": "Clear",
+    "globalPlaceholder": "Search any service, property or technician...",
+    "globalNone": "No matching results",
+    "unnamed": "Unnamed place",
+    "quickHint": "Pick a type to show everything of it in the area you are looking at.",
+    "filterTypes": "Find a type…",
+    "chooseTypeFirst": "Choose what to search first.",
+    "addCriteria": "Set the search criteria.",
+    "noResults": "No results.",
+    "noneInArea": "Sorry, no results for \"{{type}}\" in the current area.",
+    "failed": "Something went wrong while searching. Please try again.",
+    "invalidRadius": "The radius must be a number between 0 and 50000 metres.",
+    "tabs": {
+      "quick": "Quick",
+      "smart": "Smart",
+      "nearby": "Nearby"
+    },
+    "fields": {
+      "gov_a": "Governorate",
+      "village_a": "Town / village",
+      "location": "Location",
+      "location_name": "Location",
+      "name": "Name",
+      "barrierName": "Checkpoint name",
+      "stationName": "Station name",
+      "price": "Price",
+      "area": "Area",
+      "stopIn": "Checkpoint status (inbound)",
+      "stopOut": "Checkpoint status (outbound)"
+    },
+    "operators": {
+      "=": "equals",
+      "contains": "contains",
+      ">": "at least",
+      "<": "at most"
+    },
+    "currencies": {
+      "USD": "US dollar $",
+      "ILS": "Shekel ₪",
+      "JOD": "Dinar JD"
+    },
+    "nearby": {
+      "myLocation": "My location",
+      "pickOnMap": "Pick on the map",
+      "pickHint": "Tap the map to choose the point...",
+      "notSet": "No location chosen yet",
+      "locating": "Finding your location...",
+      "centerSet": "Search location set",
+      "radius": "Radius (metres)",
+      "radiusHint": "Leave empty for the single closest result, 0 for what contains the point itself.",
+      "barrierStatus": "Checkpoint status (optional)",
+      "anyStatus": "-- Any status --",
+      "noCondition": "-- No condition --",
+      "optional": "optional",
+      "pickCenterFirst": "Please choose the search location first.",
+      "pickTypeFirst": "Please choose a property or service type."
+    },
+    "reason": {
+      "stop": {
+        "in": "{{status}} (inbound)",
+        "out": "{{status}} (outbound)"
+      },
+      "fuel": "{{fuel}} available"
+    },
+    "results": {
+      "title": "Results",
+      "count": "{{count}} results",
+      "copyLink": "Copy results link",
+      "print": "Print",
+      "linkCopied": "✅ Results link copied. You can share it now.",
+      "linkFailed": "Could not copy the link, please copy it manually.",
+      "noLink": "There is no current search to share.",
+      "badLink": "Could not open the shared results link.",
+      "back": "Back to results ({{count}})",
+      "km": "km",
+      "m": "m",
+      "reportTitle": "Search results report",
+      "printedOn": "Printed on:",
+      "popupBlocked": "Allow pop-ups to print the report.",
+      "openAsList": "Open as a list on the search page"
+    }
+  },
+  "tools": {
+    "buttonMeasure": "Measure & draw",
+    "buttonShare": "Share a location",
+    "measure": {
+      "title": "Measure & draw",
+      "length": "Measure distance (m)",
+      "area": "Measure area (m²)",
+      "point": "Draw a point",
+      "clear": "Clear measurements",
+      "empty": "Results appear here",
+      "cleared": "Results cleared",
+      "hintLine": "Click to add points. Double-click, or press Finish, to end.",
+      "hintPoint": "Click on the map to place the point.",
+      "finish": "Finish",
+      "undo": "Undo last point",
+      "distance": "Distance: {{value}} m",
+      "areaResult": "Area: {{value}} m²",
+      "pointTitle": "Precise coordinates (EPSG:28191)",
+      "easting": "E: {{value}}",
+      "northing": "N: {{value}}"
+    },
+    "share": {
+      "title": "Share location",
+      "hint": "Click on the map to choose a location and share it.",
+      "selected": "Location selected:",
+      "fromLink": "Location received from the link:",
+      "linkPlaceholder": "The link appears here…",
+      "copyLink": "Copy link",
+      "shareLink": "Share link",
+      "copy": "Copy",
+      "copied": "Copied!",
+      "gridTitle": "Palestine Grid coordinates (ArcGIS Pro):",
+      "wgsTitle": "World coordinates (Google Maps):",
+      "openGoogle": "Google Maps",
+      "clear": "Clear selection",
+      "shareTitle": "Shared location on the map",
+      "copyLinkFailed": "Could not copy the link. Please copy it manually.",
+      "copyCoordsFailed": "Could not copy the coordinates."
+    }
+  },
+  "measure": {
+    "lengthM": "{{value}} m",
+    "lengthKm": "{{value}} km",
+    "areaM2": "{{m2}} m² ({{dunams}} dunam)",
+    "areaKm2": "{{km2}} km² ({{dunams}} dunam)"
+  },
+  "extras": {
+    "title": "Featured services & live info",
+    "tabs": {
+      "featured": "Featured",
+      "roads": "Roads",
+      "fuel": "Fuel",
+      "stats": "Stats"
+    },
+    "status": {
+      "updated": "Last update:",
+      "never": "no update yet",
+      "unknown": "unknown",
+      "justNow": "just now",
+      "refresh": "Refresh list",
+      "refreshHint": "The list refreshes automatically every minute",
+      "searchRoads": "Search by checkpoint name or area...",
+      "searchFuel": "Search by station name or area...",
+      "failed": "Could not load the data. Try again.",
+      "empty": "No data right now",
+      "noMatch": "No matching results"
+    },
+    "stats": {
+      "users": "Users",
+      "providers": "Service providers",
+      "services": "Services",
+      "viewsTotal": "Total platform visits",
+      "viewsMap": "Map visits",
+      "viewsQuick": "Quick-search visits",
+      "usersByRole": "Users by role",
+      "failed": "Could not load the statistics right now"
+    },
+    "featured": {
+      "intro": "Featured and top-rated services, plus those with photos, videos and before/after links.",
+      "nearMe": "Services near me",
+      "myLocation": "Locate me",
+      "nearHint": "Turn on location to see the nearest services and properties.",
+      "nearLoading": "Loading the nearest services and properties...",
+      "nearReady": "Nearest {{count}} results, sorted by distance from you.",
+      "nearNone": "No nearby results for the selected types",
+      "filterByType": "Filter by service or property type",
+      "showAllTypes": "Show all types",
+      "filterTypes": "Search for a service or property",
+      "selectGroup": "Select every type in this group",
+      "failed": "Could not load the featured services right now",
+      "empty": "No services available right now",
+      "none": "None",
+      "before": "Before",
+      "after": "After",
+      "showOnMap": "Show on map",
+      "sections": {
+        "featured": "Featured",
+        "topRated": "Top rated",
+        "recommended": "Recommended",
+        "photos": "Photos",
+        "videos": "Videos",
+        "beforeAfter": "Before & after"
+      },
+      "badge": {
+        "featured": "Featured",
+        "topRated": "Top rated",
+        "recommended": "Recommended",
+        "photos": "Photos",
+        "videos": "Video",
+        "beforeAfter": "Before & after",
+        "near": "Near you"
+      },
+      "groups": {
+        "roads": "Road checkpoints",
+        "fuel": "Fuel stations",
+        "realestate": "Real estate",
+        "technicians": "Technicians & maintenance",
+        "health": "Health & care",
+        "vehicles": "Vehicles & delivery",
+        "professional": "Freelancers & tutoring",
+        "events": "Events, hospitality & fun",
+        "misc": "Miscellaneous",
+        "landmarks": "City landmarks",
+        "commercial": "Shops & restaurants",
+        "education": "Schools & kindergartens",
+        "jobs": "Job vacancies"
+      }
+    },
+    "chips": {
+      "fuel": "Fuel stations",
+      "roads": "Road status",
+      "featured": "Featured",
+      "search": "Search without map"
+    }
+  },
+  "provider": {
+    "title": "Manage my service",
+    "welcome": "Welcome, {{name}}",
+    "checking": "Checking your service…",
+    "loadFailed": "Could not load your service. Try again.",
+    "noAccess": "You do not have permission to change the status of any listing right now.",
+    "statusAvailable": "Your status: available (shown on the map and in search)",
+    "statusBusy": "Your status: not available (visitors see “not available right now”)",
+    "availableHere": "Available (my location)",
+    "availablePrevious": "Available (previous location)",
+    "busy": "Not available",
+    "trackStart": "Live tracking (every 10 s)",
+    "trackStop": "Stop live tracking",
+    "flyToMe": "Go to my location on the map",
+    "cooldown": "Please wait {{seconds}} s…",
+    "gpsFallback": "Could not get your location — the previous location will be used.",
+    "updatedAvailable": "You are now available.",
+    "updatedBusy": "You are now not available.",
+    "updateFailed": "Could not update your status.",
+    "noLocation": "No saved location yet. Use \"Available (my location)\" first.",
+    "trackingOn": "Live tracking is on"
+  },
+  "requests": {
+    "accept": "Accept",
+    "reject": "Decline",
+    "cancel": "Cancel request",
+    "new": "New!",
+    "rate": "Rate the service",
+    "writeComment": "Write a comment",
+    "listTitle": "My requests",
+    "empty": "No active or past service requests.",
+    "loadFailed": "Could not load the list.",
+    "statusLabel": "Status",
+    "noReason": "no reason",
+    "defaultService": "service",
+    "myRequests": "My requests",
+    "status": {
+      "pending": "Waiting for a reply",
+      "accepted": "Accepted (open the chat)",
+      "rejected": "Declined",
+      "completed": "Agreed",
+      "cancelled": "Cancelled ({{reason}})"
+    },
+    "flow": {
+      "loginFirst": "Sign in first to request a service.",
+      "missingData": "Could not identify this provider.",
+      "alreadyPending": "You already have a pending request to this provider, waiting for a reply.",
+      "title": "Service request",
+      "send": "Send request",
+      "message": "A service request will be sent to \"{{provider}}\" ({{service}}). You will be notified when they reply. Continue?",
+      "sent": "Request sent. Follow it or cancel it from \"My requests\".",
+      "failed": "Could not send the request.",
+      "viewingTitle": "Request a viewing",
+      "viewingMessage": "A viewing request goes to “{{provider}}” ({{service}}). Once they accept, agree on the time in the chat; after the viewing you can rate it. Continue?"
+    },
+    "incoming": {
+      "title": "New service request",
+      "text": "Request ({{type}}). Do you want to accept it?",
+      "others": "{{count}} more request(s) are waiting after this one",
+      "rejected": "Request declined.",
+      "respondFailed": "Could not send the reply."
+    },
+    "live": {
+      "accepted": "The provider accepted your request! Opening the chat.",
+      "rejected": "The provider declined your request.",
+      "completed": "The agreement is complete.",
+      "cancelled": "Request cancelled: {{reason}}"
+    },
+    "cancelDialog": {
+      "title": "Cancel request",
+      "label": "Please write the reason for cancelling:",
+      "placeholder": "Write the reason here (required)...",
+      "required": "Please write a reason.",
+      "submit": "Cancel request",
+      "done": "Request cancelled.",
+      "failed": "Could not cancel the request."
+    },
+    "chat": {
+      "title": "Chat with {{name}}",
+      "titleShort": "Chat",
+      "log": "Messages",
+      "placeholder": "Write your message...",
+      "send": "Send",
+      "empty": "No messages yet. Start the conversation!",
+      "loadFailed": "Could not load the messages.",
+      "sendFailed": "Could not send the message.",
+      "notFound": "Request not found.",
+      "hint": "Talk it over with the other side; when you agree, each side presses \"Agreed\".",
+      "archived": "Agreed (archive)",
+      "confirmTitle": "Agreed",
+      "confirmMessage": "Are you sure the deal is done? The contact options (call + WhatsApp) appear once the other side confirms too.",
+      "confirmYes": "Yes, agreed",
+      "confirmFailed": "Could not confirm the agreement.",
+      "closed": {
+        "rejected": "This request was declined; messages cannot be sent.",
+        "cancelled": "This request was cancelled; messages cannot be sent.",
+        "pending": "Waiting for the provider to accept.",
+        "other": "This conversation is closed."
+      },
+      "completedToast": "Agreement complete; the contact numbers are now shown!",
+      "waitingToast": "Your confirmation was recorded; waiting for the other side to confirm.",
+      "confirm": "Agreed",
+      "confirmWaiting": "Waiting for the other side"
+    },
+    "contact": {
+      "agreed": "Agreed!",
+      "none": "Contact numbers are not available.",
+      "title": "Agreed! Get in touch now",
+      "call": "Call {{phone}}",
+      "whatsapp": "WhatsApp {{number}}",
+      "otherFallback": "there",
+      "serviceFallback": "the service",
+      "waMessage": "Hello {{name}}, I am contacting you about the service ({{service}}) through the Palestine services map platform."
+    },
+    "rating": {
+      "title": "Rate the service",
+      "question": "How was your experience with {{provider}} ({{service}})?",
+      "info": "Your rating helps others choose a provider.",
+      "stars": "Star rating",
+      "pick": "Pick the number of stars",
+      "pickStars": "Please pick a star rating",
+      "labels": {
+        "1": "Very bad",
+        "2": "Bad",
+        "3": "Average",
+        "4": "Good",
+        "5": "Excellent"
+      },
+      "commentLabel": "Your comment (optional)",
+      "commentHint": "Write the comment now or later from \"My requests\".",
+      "commentPlaceholder": "Tell us about your experience with the provider... (optional)",
+      "skip": "Later",
+      "submit": "Send rating",
+      "failed": "Could not send the rating.",
+      "done": "Rating sent. You can write the comment later from \"My requests\".",
+      "doneWithComment": "Rating and comment sent. Thank you!"
+    },
+    "comment": {
+      "title": "Write a comment",
+      "intro": "Share your experience; your comment shows on the service card.",
+      "label": "Your comment",
+      "placeholder": "Tell us about your experience with the provider...",
+      "required": "Please write a comment",
+      "submit": "Send comment",
+      "done": "Comment added. Thank you!",
+      "failed": "Could not add the comment."
+    },
+    "provider": "the provider",
+    "requester": "the requester",
+    "openArchive": "View archive and contact numbers",
+    "openChat": "Open chat / details",
+    "appointment": {
+      "viewing": "Viewing",
+      "visit": "Appointment",
+      "none": "No time set yet",
+      "set": "Set a time",
+      "change": "Change",
+      "quick": "Quick times",
+      "pick": "Pick the day and time",
+      "save": "Save",
+      "clear": "Clear the time",
+      "saved": "Time saved; the other side was told.",
+      "cleared": "Time cleared.",
+      "failed": "Could not save the time.",
+      "past": "Pick a time ahead, not in the past.",
+      "far": "The time must be within 90 days.",
+      "was": "The time was: {{at}}",
+      "presets": {
+        "todayEvening": "Today 5 pm",
+        "tomorrowMorning": "Tomorrow 10 am",
+        "tomorrowEvening": "Tomorrow 5 pm",
+        "dayAfterMorning": "Day after, 10 am"
+      }
+    }
+  },
+  "notificationsMenu": {
+    "title": "Notifications",
+    "open": "Notifications",
+    "unread": "{{count}} unread",
+    "empty": "No notifications",
+    "markAll": "Mark all as read",
+    "refresh": "Refresh",
+    "loadFailed": "Could not load notifications",
+    "enableSystem": "Enable browser notifications",
+    "justNow": "now",
+    "viewAll": "View all notifications",
+    "myRequests": "My requests"
+  },
+  "notificationsPage": {
+    "allRead": "You are all caught up",
+    "all": "All ({{count}})",
+    "unread": "Unread ({{count}})",
+    "noUnread": "No unread notifications"
+  },
+  "edit": {
+    "button": "Edit map data",
+    "title": "Edit the map",
+    "tabsLabel": "Type of feature",
+    "tabs": {
+      "point": "Points",
+      "line": "Lines",
+      "polygon": "Polygons"
+    },
+    "layer": "Layer to edit",
+    "groups": {
+      "realEstate": "Real estate",
+      "services": "Services"
+    },
+    "targets": {
+      "roads": "Roads and streets",
+      "locations": "Regions (governorate / village)"
+    },
+    "actions": {
+      "add": "Add",
+      "modify": "Edit",
+      "delete": "Delete"
+    },
+    "hint": {
+      "idle": "Choose a layer, then Add, Edit or Delete. You will be asked for the GeoServer login when you save.",
+      "draw": {
+        "point": "Tap the map where the new point goes.",
+        "line": "Tap to add points. Finish with the button below or a double tap.",
+        "polygon": "Tap to add corners. Finish with the button below or a double tap."
+      },
+      "pick": {
+        "modify": "Tap the feature you want to edit.",
+        "delete": "Tap the feature you want to delete."
+      },
+      "shape": {
+        "point": "Drag the point, or tap its new place, then press Save.",
+        "line": "Drag the points of the line (drag a segment to add one), then press Save.",
+        "polygon": "Drag the corners (drag an edge to add one), then press Save."
+      },
+      "redraw": "Draw the new outline of the polygon."
+    },
+    "undoPoint": "Undo last point",
+    "finishShape": "Finish shape",
+    "shape": {
+      "points": "Move points",
+      "redraw": "Draw again"
+    },
+    "layerHidden": "This layer is switched off, so its features cannot be tapped.",
+    "showLayer": "Show the layer",
+    "zoomIn": "Zoom in to see this layer's features on the map.",
+    "dialog": {
+      "addTitle": "New: {{name}}",
+      "editTitle": "Edit: {{name}}",
+      "save": "Save",
+      "movePoint": "Move on the map",
+      "editShape": "Edit the shape",
+      "position": "Position (Palestine Grid):",
+      "hours24": "24 hours",
+      "hoursExample": "e.g. 08:00-16:00"
+    },
+    "fields": {
+      "name": {
+        "realEstate": "Owner name",
+        "service": "Service provider name",
+        "road": "Road name"
+      },
+      "des": {
+        "realEstate": "Property description",
+        "service": "Service and experience description",
+        "road": "Description"
+      },
+      "price": "Price",
+      "currency": "Currency",
+      "pic": "Picture link",
+      "video": "Video link",
+      "area": "Area (m²)",
+      "whatsapp": "WhatsApp number with country code (e.g. 00970...)",
+      "phone": "Phone number (starts with 0, e.g. 0598...)",
+      "end_date": "Subscription end date",
+      "work_hours": "Working hours",
+      "rating": "Rating (0-{{max}})",
+      "details_link_1": "Details link 1",
+      "details_link_2": "Details link 2",
+      "stop": "Barrier status (inbound)",
+      "stop2": "Barrier status (outbound)",
+      "diesel": "Diesel",
+      "banzen95": "Petrol 95",
+      "banzen98": "Petrol 98",
+      "gov_a": "Governorate",
+      "village_a": "City / village",
+      "location": "Area name",
+      "road_type": "Road type (number)",
+      "one_way": "Direction (0 = both ways, 1 = one way)"
+    },
+    "options": {
+      "currency": {
+        "USD": "US dollar $",
+        "ILS": "Shekel ₪",
+        "JOD": "Dinar JD"
+      },
+      "stop": {
+        "0": "Open",
+        "1": "Closed",
+        "2": "Light jam",
+        "3": "Heavy jam",
+        "4": "Inspection and heavy jam"
+      },
+      "stop2": {
+        "0": "Open",
+        "1": "Closed",
+        "2": "Light jam",
+        "3": "Heavy jam",
+        "4": "Inspection and heavy jam"
+      },
+      "diesel": {
+        "0": "Available",
+        "1": "Not available"
+      },
+      "banzen95": {
+        "0": "Available",
+        "1": "Not available"
+      },
+      "banzen98": {
+        "0": "Available",
+        "1": "Not available"
+      }
+    },
+    "errors": {
+      "number": "Enter a valid number",
+      "rating": "Enter a number between 0 and {{max}}",
+      "integer": "Whole numbers only",
+      "noFid": "This feature has no id. Reload the map and try again.",
+      "noGeometry": "Nothing is drawn yet.",
+      "invalidCoordinates": "The shape has invalid coordinates.",
+      "outOfBounds": "The shape is outside the map area.",
+      "lineTooShort": "A line needs two different points.",
+      "ringTooShort": "A polygon needs at least three corners.",
+      "ringNoArea": "The polygon has no area.",
+      "selfIntersecting": "The polygon crosses itself. Move the corners so the edges do not cross.",
+      "badShape": "This shape cannot be saved on this layer."
+    },
+    "delete": {
+      "title": "Delete this feature?",
+      "message": "It is deleted from the database for good.",
+      "messageNamed": "“{{name}}” is deleted from the database for good.",
+      "confirm": "Delete"
+    },
+    "credentials": {
+      "title": "GeoServer login",
+      "intro": "Saving to the map database needs the GeoServer account. It is used for this one save only and is never stored.",
+      "username": "User name",
+      "password": "Password",
+      "confirm": {
+        "insert": "Add to the map",
+        "update": "Save changes",
+        "delete": "Delete"
+      },
+      "failed": {
+        "auth": "Wrong user name or password.",
+        "rejected": "GeoServer refused the change.",
+        "network": "Could not reach the map server. Check the connection and try again."
+      }
+    },
+    "saved": {
+      "insert": "Added to the map.",
+      "update": "Changes saved.",
+      "delete": "Deleted."
+    }
+  },
+  "footer": {
+    "guides": "Guides",
+    "company": "The platform",
+    "social": {
+      "facebook": "Facebook",
+      "whatsapp": "WhatsApp",
+      "youtube": "YouTube",
+      "linkedin": "LinkedIn",
+      "instagram": "Instagram"
+    }
+  },
+  "searchPage": {
+    "clearKeyword": "Clear search",
+    "roadStatus": "Road status",
+    "fuelStatus": "Fuel station status",
+    "minChars": "Please type at least {{count}} letters to search.",
+    "keywordTitle": "Results for \"{{term}}\"",
+    "quotaBlocked": "Search was stopped because you reached your request limit.",
+    "noKeywordResults": "Nothing matches \"{{term}}\"",
+    "noKeywordHint": "Try another word or pick a service type from the categories.",
+    "showMore": "Show {{count}} more",
+    "shownOf": "Showing {{shown}} of {{total}}",
+    "chooseCategory": "Choose a service or property type",
+    "groups": "Service groups",
+    "allGroups": "All",
+    "showAllTypes": "Show all types ({{count}} more)",
+    "noCategories": "No matching categories.",
+    "all": "All",
+    "valuesFailed": "Could not load the values.",
+    "filters": "Filter results",
+    "reset": "Reset",
+    "amount": "Amount",
+    "areaValue": "Area (m²)",
+    "backToCategories": "Back to all categories",
+    "searching": "Searching...",
+    "resultCount": "Results: {{count}}",
+    "sortBy": "Sort by",
+    "sort": {
+      "rating": "Top rated",
+      "name": "Name",
+      "nearest": "Nearest to me",
+      "priceAsc": "Price: low to high",
+      "priceDesc": "Price: high to low"
+    },
+    "openOnMap": "Show on the map",
+    "sortedFromYou": "Sorted by distance from your current location.",
+    "noResults": "No matching results right now",
+    "noResultsHint": "Try loosening or resetting the filters.",
+    "capped": "The server returns only the first {{count}} results. Use the filters to narrow the search.",
+    "statProviders": "listings",
+    "statServices": "service types",
+    "goToMap": "Go to the interactive map",
+    "contactUs": "Contact us on Facebook",
+    "about": "A digital geographic platform connecting people with the nearest and best services, properties and technicians in Palestine, easily and without middlemen.",
+    "kicker": "Your world, on one map",
+    "heroLine1": "Every service and property around you,",
+    "heroLine2": "one tap away",
+    "heroText": "Technicians, health, vehicles, events, and flats and land from their owners — search, compare and contact directly, no middlemen.",
+    "popular": "Most listed:",
+    "statVisits": "platform visits",
+    "sectionsTitle": "Browse the sections",
+    "sectionsHint": "Pick a section to see its types, or go straight to property.",
+    "propertyKicker": "Sale · Rent · Land",
+    "onMap": "Map",
+    "today": {
+      "title": "Today",
+      "usd": "USD",
+      "jod": "JOD",
+      "gold21": "Gold 21k (gram)",
+      "ils": "₪",
+      "worldPrice": "World market price — may differ from exchange shops and jewellers",
+      "highLow": "Today's high / low"
+    }
+  },
+  "adminUsers": {
+    "title": "User management",
+    "subtitle": "Activate accounts, link service providers, change roles and passwords",
+    "refresh": "Refresh list",
+    "loadFailed": "Could not load the users.",
+    "noName": "No name",
+    "count": "Users: {{count}}",
+    "countFiltered": "Showing {{shown}} of {{total}} users",
+    "selectAllShown": "Select all shown ({{count}})",
+    "selectUser": "Select {{name}}",
+    "empty": "There are no users yet.",
+    "noMatch": "No users match the filters.",
+    "active": "Active",
+    "inactive": "Not active",
+    "online": "Online now",
+    "offline": "Offline",
+    "unlimited": "Unlimited",
+    "featureShort": "Feature",
+    "selfLocked": "This is your own account — it can't be deactivated or logged out from here.",
+    "period": {
+      "daily": "daily",
+      "weekly": "weekly",
+      "monthly": "monthly"
+    },
+    "col": {
+      "select": "Select",
+      "user": "User",
+      "role": "Role",
+      "status": "Status",
+      "service": "Service link",
+      "quota": "Request limit",
+      "created": "Created"
+    },
+    "filters": {
+      "all": "All",
+      "search": "Search",
+      "searchPlaceholder": "Name, email, phone number...",
+      "role": "Role",
+      "active": "Account",
+      "online": "Connection",
+      "linked": "Linked to a service",
+      "created": "Created",
+      "customDate": "Day",
+      "activeOptions": {
+        "active": "Active",
+        "inactive": "Not active"
+      },
+      "onlineOptions": {
+        "online": "Online now",
+        "offline": "Offline"
+      },
+      "linkedOptions": {
+        "linked": "Linked",
+        "unlinked": "Not linked"
+      },
+      "createdOptions": {
+        "2days": "Last 2 days",
+        "week": "Last week",
+        "month": "Last month",
+        "custom": "A specific day"
+      }
+    },
+    "actions": {
+      "view": "View",
+      "viewHint": "View the account read-only",
+      "edit": "Edit",
+      "activate": "Activate",
+      "deactivate": "Deactivate",
+      "forceLogout": "Log out",
+      "forceLogoutHint": "Log the user out now and notify them"
+    },
+    "bulk": {
+      "title": "Log users out",
+      "all": "Log everyone out",
+      "online": "Log out online users",
+      "offline": "Log out offline users",
+      "selected": "Log out selected ({{count}})",
+      "selectFirst": "Select at least one user first."
+    },
+    "confirm": {
+      "activateTitle": "Activate account",
+      "deactivateTitle": "Deactivate account",
+      "activate": "Activate the account of \"{{name}}\"? They will be able to log in.",
+      "deactivate": "Deactivate the account of \"{{name}}\"? They will be blocked from logging in.",
+      "logoutTitle": "Log user out",
+      "logoutOnline": "\"{{name}}\" is online right now. Log them out immediately and notify them to contact the administration?",
+      "logoutOffline": "\"{{name}}\" is offline. Their session will be revoked and the notification waits for them. Continue?",
+      "bulkTitle": "Log users out",
+      "includesYou": "This includes your own account, so you will be logged out too.",
+      "bulk": {
+        "all": "Log out ALL users? They will be notified and must log in again.",
+        "online": "Log out the users who are online now? They will be notified and must log in again.",
+        "offline": "Log out the users who are offline? They will be notified and must log in again.",
+        "selected": "Log out the selected users ({{count}})? They will be notified and must log in again."
+      }
+    },
+    "toast": {
+      "updated": "The user was updated.",
+      "activated": "The account was activated.",
+      "deactivated": "The account was deactivated.",
+      "loggedOutOnline": "The user was logged out and notified.",
+      "loggedOutOffline": "The user is offline: the session was revoked and the notice will reach them on their next visit.",
+      "bulkLoggedOut": "Users logged out: {{total}} ({{online}} online, {{offline}} offline)."
+    },
+    "edit": {
+      "title": "Edit user",
+      "user": "User",
+      "save": "Save changes",
+      "noChanges": "Nothing was changed.",
+      "selfWarning": "You are editing your own account. Deactivating it or taking away the admin role locks you out of this page.",
+      "active": "Account active",
+      "activeHint": "An active user can log in; a deactivated one is blocked.",
+      "role": "Account type",
+      "providerHint": "A service provider also needs a service layer and a feature id below.",
+      "serviceLink": "Service provider link",
+      "layer": "Service layer",
+      "notLinked": "-- not linked --",
+      "featureId": "Feature id in the layer",
+      "featureIdPlaceholder": "e.g. 14",
+      "quota": "Request limit (events)",
+      "limit": "Maximum requests (calls / WhatsApp)",
+      "limitPlaceholder": "Empty = unlimited (default)",
+      "limitHint": "One request = one call or WhatsApp click on a map feature. Leave empty for no limit.",
+      "period": "Limit renewal period",
+      "password": "Change password",
+      "newPassword": "New password",
+      "newPasswordPlaceholder": "Enter a new password",
+      "passwordHint": "Leave empty to keep the current password. At least {{min}} characters.",
+      "errors": {
+        "integer": "Enter a whole number (1 or more).",
+        "limit": "Enter a whole number of 1 or more, or leave empty.",
+        "password": "The password must be at least {{min}} characters."
+      }
+    }
+  },
+  "adminView": {
+    "title": "View user account",
+    "temporary": "Temporary read-only session",
+    "expires": "Temporary read-only session, valid until about {{time}} (30 minutes).",
+    "readOnly": "Read only: no editing, no sending",
+    "back": "Back to users",
+    "invalid": "This link is not valid.",
+    "sessionFailed": "Could not open a view session for this user.",
+    "profile": "Account details",
+    "profileFailed": "Could not load the account details.",
+    "name": "Name",
+    "id": "User id",
+    "phone": "Phone",
+    "email": "Email",
+    "role": "Role",
+    "account": "Account",
+    "serviceLayer": "Service layer",
+    "featureId": "Feature id",
+    "requestsTitle": "Requests and chats",
+    "requestsFailed": "Could not load the requests.",
+    "noRequests": "There are no requests.",
+    "requester": "Requester",
+    "provider": "Provider",
+    "date": "Date",
+    "cancelReason": "Cancellation reason",
+    "showMessages": "Show messages",
+    "hideMessages": "Hide messages",
+    "messages": "Messages",
+    "messagesFailed": "Could not load the messages.",
+    "noMessages": "There are no messages.",
+    "defaultService": "Service request",
+    "status": {
+      "pending": "Waiting for reply",
+      "accepted": "Accepted",
+      "completed": "Agreed",
+      "rejected": "Rejected",
+      "cancelled": "Cancelled"
+    },
+    "sender": {
+      "user": "Requester",
+      "provider": "Provider"
+    }
+  },
+  "adminDashboard": {
+    "title": "Provider success dashboard",
+    "subtitle": "Every service request, call and WhatsApp click with its outcome",
+    "reload": "Reload",
+    "loadFailed": "Could not load the statistics.",
+    "stat": {
+      "total": "All records",
+      "rate": "{{rate}}% successful"
+    },
+    "status": {
+      "success": "Successful",
+      "pending": "Pending",
+      "cancelled": "Cancelled"
+    },
+    "shownOf": "Showing {{shown}} of {{total}} records",
+    "total": "Total records: {{count}}",
+    "noMatch": "No records match the chosen filters.",
+    "empty": "No data recorded yet.",
+    "col": {
+      "user": "User",
+      "provider": "Service provider",
+      "layer": "Layer",
+      "phone": "Phone",
+      "date": "Date and time",
+      "contact": "Contact type",
+      "status": "Request status",
+      "reason": "Cancellation reason",
+      "who": "User → provider"
+    },
+    "contact": {
+      "service_request": "Service request",
+      "call": "Call",
+      "whatsapp": "WhatsApp"
+    },
+    "delete": {
+      "aria": "Delete record {{id}}",
+      "title": "Delete record",
+      "message": "Delete this record? This cannot be undone.",
+      "done": "The record was deleted.",
+      "failed": "Could not delete the record."
+    },
+    "filters": {
+      "all": "All",
+      "allLayers": "All layers",
+      "userPlaceholder": "Search by user name...",
+      "providerPlaceholder": "Search by provider...",
+      "phonePlaceholder": "Search by number...",
+      "reasonPlaceholder": "Search by reason...",
+      "userExact": "User (exact)",
+      "providerExact": "Provider (exact)",
+      "reasonExact": "Reason (exact)",
+      "dayPicker": "Day (calendar)",
+      "dayTyped": "Day (day/month/year)",
+      "more": "More filters",
+      "search": "Search name, phone or reason…",
+      "moreCount": "More filters ({{count}})",
+      "allContacts": "All contact types"
+    },
+    "extraLayers": {
+      "ApartRent": "Apartment for rent",
+      "ApartSale": "Apartment for sale",
+      "LandSale": "Land for sale"
+    },
+    "reasonLine": "Cancellation reason: {{reason}}",
+    "insights": {
+      "trend": "Last {{days}} days",
+      "noRecent": "No records in this period.",
+      "topProviders": "Most requested providers",
+      "topServices": "Most requested services",
+      "successOf": "{{success}} successful of {{total}}",
+      "filterBy": "Show only “{{name}}”"
+    },
+    "toProvider": "to {{name}}"
+  },
+  "visibility": {
+    "title": "Show & hide",
+    "subtitle": "Choose what visitors see: sections of the site and map layers.",
+    "adminNote": "As an admin you always see everything; what you hid from the public is marked “hidden”. To see the site as a visitor does, open it in a private window.",
+    "sectionsTitle": "Site sections",
+    "sectionsHint": "Road status and fuel stations follow their layers in the list below.",
+    "sections": {
+      "ticker": {
+        "name": "Live strip",
+        "hint": "The prices, weather and prayer-times strip under the map and on the search page."
+      },
+      "featured": {
+        "name": "Featured services",
+        "hint": "The “featured” tab of the extras panel and its shortcut on the map."
+      },
+      "stats": {
+        "name": "Platform statistics",
+        "hint": "User and visit figures in the extras panel and on the home page."
+      },
+      "requests": {
+        "name": "Service requests",
+        "hint": "The “request service” button and the chat with the provider. When off, call and WhatsApp show instead; earlier requests stay available."
+      }
+    },
+    "layersTitle": "Map layers",
+    "layersHint": "A hidden layer leaves the map, search, lists and statistics; a group left empty goes with it.",
+    "realEstateOnly": "Real estate only",
+    "showAll": "Show all",
+    "hiddenBadge": "Hidden",
+    "save": "Save",
+    "discard": "Discard",
+    "saved": "Saved. Visitors see it within minutes.",
+    "saveFailed": "Could not save.",
+    "loadFailed": "Could not load the settings.",
+    "visitorContact": {
+      "title": "Visitor contact",
+      "name": "Show contact numbers to visitors without an account",
+      "hint": "When off (the default) the server sends no phone or WhatsApp to anyone not signed in; they get a “Log in to contact” button."
+    }
+  },
+  "texts": {
+    "ui": {
+      "tab": "Interface texts",
+      "hint": "Write a replacement for any line; an empty box means the built-in text (shown faintly inside). Plain text only.",
+      "groups": {
+        "search": "Search page",
+        "welcome": "Welcome page",
+        "features": "Welcome page feature cards"
+      },
+      "lang": {
+        "ar": "Arabic",
+        "en": "English"
+      },
+      "invalid": "Invalid text: at most {{max}} characters, and the code written in double braces in the original (shown faintly) must stay as it is.",
+      "names": {
+        "searchPage_kicker": "Small badge above the headline",
+        "searchPage_heroLine1": "Headline: first line",
+        "searchPage_heroLine2": "Headline: the coloured words",
+        "searchPage_heroText": "Paragraph under the headline (how to search)",
+        "searchPage_sectionsTitle": "Sections heading",
+        "searchPage_sectionsHint": "Line under the sections heading",
+        "auth_welcome_title": "Welcome page title",
+        "auth_welcome_tagline": "Tagline under the title",
+        "auth_welcome_subtitle": "Introduction paragraph",
+        "auth_welcome_register": "Create-account button",
+        "auth_welcome_login": "Log-in button",
+        "auth_welcome_footer": "Last line",
+        "auth_welcome_features_realEstate_label": "Property feature: title",
+        "auth_welcome_features_realEstate_desc": "Property feature: description",
+        "auth_welcome_features_realEstate_descCount": "Property feature: description with the number (the number code of the original must stay)",
+        "auth_welcome_features_providers_label": "Providers feature: title",
+        "auth_welcome_features_providers_desc": "Providers feature: description",
+        "auth_welcome_features_providers_descCount": "Providers feature: description with the number (the number code of the original must stay)",
+        "auth_welcome_features_location_label": "Locations feature: title",
+        "auth_welcome_features_location_desc": "Locations feature: description",
+        "auth_welcome_features_contact_label": "Contact feature: title",
+        "auth_welcome_features_contact_desc": "Contact feature: description",
+        "auth_welcome_features_search_label": "Search feature: title",
+        "auth_welcome_features_search_desc": "Search feature: description",
+        "auth_welcome_features_free_label": "Free feature: title",
+        "auth_welcome_features_free_desc": "Free feature: description"
+      }
+    },
+    "title": "Platform texts",
+    "subtitle": "Terms, privacy, about and the guides: edit their wording as visitors see it.",
+    "keys": {
+      "terms": "Terms",
+      "privacy": "Privacy",
+      "about": "About",
+      "contact": "Contact",
+      "guide": "User guide",
+      "guideSearch": "Search guide",
+      "guideProvider": "Provider guide",
+      "guideSubscription": "Subscription guide",
+      "guideMapInteractive": "Map guide"
+    },
+    "edited": "Edited",
+    "statusDefault": "The platform's built-in text — not edited yet.",
+    "statusCustom": "Edited text visitors see · last saved {{when}}",
+    "unsaved": "Unsaved changes",
+    "titleLabel": "Title",
+    "bodyLabel": "Page text",
+    "save": "Save",
+    "discard": "Discard",
+    "saved": "Saved. Visitors see it now.",
+    "failed": "Could not save.",
+    "empty": "A title and a text are required.",
+    "saveBackup": "Save a backup",
+    "backupSaved": "Backup saved.",
+    "loadBackup": "Load the backup",
+    "backupFrom": "The copy saved on {{when}}",
+    "noBackup": "No backup yet",
+    "restoreDefault": "Back to the built-in text",
+    "restoreDefaultConfirm": "The edited text is removed and visitors see the platform's built-in text again. A backup, if any, is kept.",
+    "defaultRestored": "The built-in text is back.",
+    "loadFailed": "Could not load the texts.",
+    "editor": {
+      "toolbar": "Formatting",
+      "bold": "Bold",
+      "italic": "Italic",
+      "underline": "Underline",
+      "heading": "Heading",
+      "paragraph": "Normal paragraph",
+      "bullets": "Bulleted list",
+      "numbers": "Numbered list",
+      "center": "Centre",
+      "link": "Link",
+      "unlink": "Remove link",
+      "clear": "Clear formatting",
+      "linkPrompt": "Link address (https://… or /a path in the platform)"
+    },
+    "groups": {
+      "pages": "Platform pages",
+      "guides": "Guides",
+      "site": "Site texts"
+    },
+    "pick": "Choose a text",
+    "leave": {
+      "title": "Unsaved changes",
+      "message": "Your changes to this text are not saved. Opening another text discards them.",
+      "confirm": "Leave without saving"
+    }
+  },
+  "adminWidgets": {
+    "title": "Live information centre",
+    "subtitle": "Edit every live-updates group directly, with a real last-update time for each",
+    "loadFailed": "Could not load the live information data.",
+    "refresh": "Refresh",
+    "unsaved": "Unsaved changes",
+    "lastUpdate": "Last update",
+    "noUpdateYet": "no update yet",
+    "unknownDate": "unknown",
+    "moveUp": "Move up",
+    "moveDown": "Move down",
+    "tab": {
+      "currency": "Currency rates",
+      "gold": "Gold and precious metals",
+      "weather": "Weather",
+      "fuel": "Fuel and gas prices",
+      "transport_inter_city": "Fares between cities",
+      "transport_intra_city": "Fares inside the city",
+      "events": "Upcoming events",
+      "road": "Road status",
+      "fuelStations": "Fuel station status"
+    },
+    "field": {
+      "id": "ID",
+      "label": "Displayed name",
+      "code": "Symbol",
+      "value": "Value (shown as is)",
+      "unit": "Unit",
+      "cityId": "City id",
+      "cityName": "City name",
+      "temp": "Temperature °C",
+      "humidity": "Humidity %",
+      "wind": "Wind km/h",
+      "condition": "Condition",
+      "date": "Date",
+      "eventName": "Event name",
+      "notes": "Notes"
+    },
+    "group": {
+      "hint": "Edit the values, add or delete rows, and use the arrows to reorder. Nothing is saved until you press \"Save this group\".",
+      "empty": "There are no items in this group yet.",
+      "add": "Add item",
+      "save": "Save this group",
+      "saved": "\"{{name}}\" was saved and its last-update time refreshed.",
+      "saveFailed": "Could not save the group.",
+      "needsId": "An ID is required or the row is not saved."
+    },
+    "discard": {
+      "title": "Unsaved changes",
+      "message": "You have unsaved changes that will be lost when the list is refreshed. Continue?"
+    },
+    "road": {
+      "stop": "Inbound status",
+      "stop2": "Outbound status"
+    },
+    "status": {
+      "select": "Select",
+      "selectRow": "Select {{name}}",
+      "roadName": "Checkpoint name",
+      "fuelName": "Station name",
+      "notSet": "— not set —",
+      "unsavedRows": "Unsaved rows: {{count}}",
+      "unsavedOrder": "Unsaved order",
+      "saveAll": "Save all",
+      "saveOrder": "Save order",
+      "roadHint": "Inbound = the traffic status going in, outbound = going out. To add a checkpoint use the point-editing tool on the map. Reorder with the handle or the arrows, then press \"Save order\".",
+      "fuelHint": "To add a station use the point-editing tool on the map. Reorder with the handle or the arrows, then press \"Save order\".",
+      "bulkTitle": "Bulk edit",
+      "selectedOf": "Selected: {{count}} of {{total}}",
+      "selectAll": "Select all",
+      "noChange": "— no change —",
+      "applyToSelected": "Apply to selected",
+      "bulkHint": "Tick the rows (or \"Select all\"), choose a status and press apply. \"No change\" leaves that column as it is.",
+      "noRoad": "No checkpoints registered yet.",
+      "noFuel": "No fuel stations registered yet.",
+      "chooseFirst": "Choose an inbound and/or outbound status before saving.",
+      "roadSaved": "The checkpoint status was updated.",
+      "fuelSaved": "The station's fuel availability was updated.",
+      "saveFailed": "Could not save.",
+      "nothingToSave": "There are no unsaved changes.",
+      "allSavedRoad": "Saved in one go — checkpoints: {{count}}.",
+      "allSavedFuel": "Saved in one go — stations: {{count}}.",
+      "nothingSaved": "nothing was saved",
+      "selectFirst": "Tick at least one row (or use \"Select all\").",
+      "chooseDirection": "Choose an inbound and/or outbound status to apply.",
+      "chooseFuel": "Choose the availability of at least one fuel type to apply.",
+      "bulkConfirmTitle": "Apply to selected",
+      "bulkConfirmRoad": "Change the selected checkpoints ({{count}}): {{changes}}. Continue?",
+      "bulkConfirmFuel": "Change the selected stations ({{count}}): {{changes}}. Continue?",
+      "bulkDoneRoad": "Checkpoints updated: {{count}}.",
+      "bulkDoneFuel": "Stations updated: {{count}}.",
+      "bulkFailed": "The bulk update failed.",
+      "orderSavedRoad": "The checkpoint order was saved.",
+      "orderSavedFuel": "The station order was saved.",
+      "orderFailed": "Could not save the order."
+    },
+    "liveNote": "Currency and gold prices are shown to visitors automatically from the world market, refreshed every 7 minutes. What you enter here is used only when the source is unreachable.",
+    "liveNoteFuel": "Fuel prices (gasoline, diesel, kerosene and 5 / 12 / 48 kg gas) are read automatically from TheFuelPrice.com every 7 minutes; no need to type them. Add here only what the source does not cover (a 2.5 kg cylinder, gas delivered to buildings); the other rows are used only when the source is unreachable."
+  },
+  "info": {
+    "title": "Information and help"
+  },
+  "widgets": {
+    "title": "Live information centre",
+    "description": "Exchange rates, gold, fuel and fares, weather and prayer times, and road and fuel-station status in one place.",
+    "refreshAll": "Refresh all",
+    "failed": "Could not load the data. Check your connection and try again.",
+    "empty": "Nothing here yet",
+    "noMatch": "No matching results",
+    "tabs": {
+      "prices": "Prices",
+      "today": "Today",
+      "status": "Roads & fuel"
+    },
+    "cards": {
+      "currency": "Exchange rates",
+      "gold": "Gold and precious metals",
+      "fuel": "Fuel and gas",
+      "transport-inter": "Fares between cities",
+      "transport-intra": "Fares inside the city (Al-Bireh)",
+      "weather": "Weather",
+      "prayer": "Prayer times",
+      "calendar": "Calendar and events",
+      "road-status": "Road status (checkpoints)",
+      "fuel-status": "Fuel station status"
+    },
+    "search": {
+      "name": "Search by name...",
+      "route": "Search by city or route...",
+      "city": "Search for a city..."
+    },
+    "cities": {
+      "ramallah": "Ramallah",
+      "jerusalem": "Jerusalem",
+      "hebron": "Hebron",
+      "bethlehem": "Bethlehem",
+      "jericho": "Jericho",
+      "nablus": "Nablus",
+      "jenin": "Jenin",
+      "tulkarm": "Tulkarm",
+      "tubas": "Tubas",
+      "salfit": "Salfit",
+      "qalqilya": "Qalqilya"
+    },
+    "weather": {
+      "today": "Today",
+      "tomorrow": "Tomorrow",
+      "high": "Day",
+      "low": "Night",
+      "humidity": "Humidity",
+      "wind": "Wind",
+      "windUnit": "km/h",
+      "kind": {
+        "clear": "Sunny",
+        "partly": "Partly cloudy",
+        "cloudy": "Cloudy",
+        "fog": "Fog",
+        "rain": "Light rain",
+        "showers": "Rain showers",
+        "snow": "Snow",
+        "storm": "Thunderstorms"
+      },
+      "failed": "Could not load the weather.",
+      "forecastFailed": "Could not load the forecast for the coming days. Only the saved data is shown.",
+      "source": "Forecast: Open-Meteo. The first figure is the daytime high, the second the night low."
+    },
+    "prayer": {
+      "fajr": "Fajr",
+      "sunrise": "Sunrise",
+      "dhuhr": "Dhuhr",
+      "asr": "Asr",
+      "maghrib": "Maghrib",
+      "isha": "Isha",
+      "next": "Next prayer",
+      "tomorrow": "tomorrow",
+      "failed": "Could not load the prayer times.",
+      "source": "Jerusalem times (Aladhan)."
+    },
+    "calendar": {
+      "hijri": "Hijri date",
+      "gregorian": "Gregorian date",
+      "events": "Upcoming events",
+      "noEvents": "No events listed yet",
+      "noUpcoming": "No upcoming events.",
+      "today": "Today",
+      "tomorrow": "Tomorrow",
+      "inDays": "In {{count}} days",
+      "daysAgo": "{{count}} days ago",
+      "past": "Past events ({{count}})"
+    },
+    "ticker": {
+      "title": "Live updates",
+      "open": "Open the live information centre",
+      "hide": "Hide live updates",
+      "show": "Show live updates",
+      "pause": "Pause scrolling",
+      "play": "Resume scrolling",
+      "loading": "Loading...",
+      "nextPrayer": "Next prayer: {{name}}",
+      "pageTitle": "Live updates ticker",
+      "pageDescription": "Prices, weather and prayer times in a large scrolling bar, made for a screen.",
+      "hint": "Tap any item to open its card in the live information centre. The bar stops while the pointer is over it."
+    },
+    "live": {
+      "usd": "US dollar",
+      "eur": "Euro",
+      "jod": "Jordanian dinar",
+      "gold24": "Gold 24k",
+      "gold21": "Gold 21k",
+      "gold18": "Gold 18k",
+      "goldOunce": "Gold ounce (world)",
+      "silver": "Silver ounce (world)",
+      "perGram": "ILS/gram",
+      "perOunce": "USD/ounce",
+      "perLiter": "ILS/litre",
+      "perCylinder": "ILS/cylinder",
+      "fuel95": "Gasoline 95",
+      "fuel98": "Gasoline 98",
+      "fuelDiesel": "Diesel",
+      "kas": "Kerosene",
+      "gas5": "Gas 5 kg",
+      "gas12": "Gas 12 kg",
+      "gas48": "Gas 48 kg"
+    }
+  },
+  "home": {
+    "greeting": {
+      "morning": "Good morning",
+      "afternoon": "Good afternoon",
+      "evening": "Good evening"
+    },
+    "hello": "{{greeting}}, {{name}}",
+    "subtitle": {
+      "user": "Find a service, follow your requests, or open the map.",
+      "provider": "Follow incoming requests and update your status so customers can find you.",
+      "admin": "Keep an eye on accounts and activity, and manage the platform's content."
+    },
+    "search": {
+      "placeholder": "Search services or providers…",
+      "label": "Search the platform"
+    },
+    "needs": {
+      "title": "Needs you",
+      "loadFailed": "Some of the data could not be loaded.",
+      "empty": {
+        "title": "Nothing is waiting for you",
+        "text": "All clear. You can search for a service or open the map."
+      },
+      "items": {
+        "incoming": "New service requests waiting for your answer",
+        "unseen": "Requests with new updates",
+        "rate": "Completed services waiting for your rating",
+        "waiting": "Requests you sent, waiting for the provider",
+        "active": "Chats in progress",
+        "unread": "Unread notifications",
+        "inactive": "Inactive accounts waiting for your review",
+        "busy": "Your status is “Unavailable”: you are hidden from the map and search",
+        "frozen": "Your provider account is frozen. Contact the administration"
+      },
+      "open": "Open"
+    },
+    "cardsTitle": "Where to?",
+    "cards": {
+      "map": {
+        "title": "Interactive map",
+        "desc": "Find services and properties around you on the map."
+      },
+      "search": {
+        "title": "Search without a map",
+        "desc": "Browse services with lists and filters, quicker on a phone."
+      },
+      "live": {
+        "title": "Live info",
+        "desc": "Prices, weather, road status and fuel stations in one place."
+      },
+      "requests": {
+        "title": "My requests",
+        "desc": "Follow your service requests and chats with providers."
+      },
+      "notifications": {
+        "title": "Notifications",
+        "desc": "Every reply and alert that reached you."
+      },
+      "service": {
+        "title": "Manage my service",
+        "desc": "Change your status and your location on the map."
+      },
+      "users": {
+        "title": "Users",
+        "desc": "Activate and manage accounts, and review each user's activity."
+      },
+      "dashboard": {
+        "title": "Dashboard",
+        "desc": "Usage statistics and successful requests."
+      },
+      "widgets": {
+        "title": "Widgets admin",
+        "desc": "Edit the prices and information everyone sees."
+      },
+      "addListing": {
+        "title": "Add your business",
+        "desc": "Send your shop or service to appear on the map after the admins review it."
+      },
+      "submissions": {
+        "title": "Add requests",
+        "desc": "Review the businesses people sent, approve or reject them."
+      },
+      "myListings": {
+        "title": "My listings",
+        "desc": "Your services and properties: edit them, add pictures, add a new one."
+      }
+    },
+    "figures": {
+      "features": "places",
+      "services": "service types",
+      "open": "open requests",
+      "unread": "unread",
+      "users": "users",
+      "visits": "visits",
+      "inactive": "awaiting activation",
+      "available": "Available",
+      "busy": "Unavailable"
+    },
+    "platform": {
+      "title": "The platform in numbers",
+      "failed": "Could not load the platform figures."
+    }
+  },
+  "account": {
+    "phone": "Phone",
+    "whatsapp": "WhatsApp",
+    "email": "Email"
+  },
+  "appearance": {
+    "title": "Appearance",
+    "description": "The platform colour and the top bar style — changes show at once and reach everyone when saved.",
+    "save": "Save and publish",
+    "discard": "Undo",
+    "saved": "Appearance saved and published.",
+    "failed": "Could not save the appearance.",
+    "loadFailed": "Could not load the saved appearance; showing the default.",
+    "previewing": "Preview — only you see these changes until you save.",
+    "live": "This is the published appearance.",
+    "updatedAt": "Last saved: {{date}}",
+    "palette": "Platform colour",
+    "custom": "Or pick your own",
+    "primary": "Primary colour",
+    "secondary": "Second colour (gradient)",
+    "header": "Top bar style",
+    "preview": "Preview",
+    "derived": "Derived shades",
+    "adjusted": "The primary colour was darkened slightly so white text on it stays readable.",
+    "reset": "Restore default appearance",
+    "resetConfirm": "The platform colour and top bar return to the default for every visitor.",
+    "resetDone": "Appearance restored to the default.",
+    "presets": {
+      "indigo": "Indigo",
+      "ocean": "Ocean",
+      "teal": "Teal",
+      "green": "Green",
+      "amber": "Amber",
+      "rose": "Rose",
+      "plum": "Plum",
+      "slate": "Slate"
+    },
+    "headerStyles": {
+      "soft": {
+        "name": "Soft",
+        "hint": "A light wash of the brand colour"
+      },
+      "gradient": {
+        "name": "Gradient",
+        "hint": "A full brand-colour bar"
+      },
+      "surface": {
+        "name": "White",
+        "hint": "Quiet, colour only in the logo"
+      }
+    },
+    "tokens": {
+      "brand": "Buttons and selection",
+      "hover": "On hover",
+      "text": "Coloured text",
+      "light": "Light tint",
+      "textDark": "Coloured text (dark)"
+    },
+    "sample": {
+      "search": "Search a service or property…",
+      "chip": "Flats for rent",
+      "chip2": "Electrician",
+      "card": "Listing card",
+      "cardText": "How cards and text look",
+      "link": "Coloured link",
+      "primary": "Primary button",
+      "gradient": "Gradient"
+    }
+  },
+  "submit": {
+    "title": "Add your business to the map",
+    "subtitle": "Have a shop, a service, or a flat to rent or sell? Three steps: type, place, details. Once the admins approve it, it shows on the map and you manage it from “My listings”.",
+    "adminNote": "You are an admin: add businesses directly with the map's edit tool, and review people's requests on the add-requests page.",
+    "providerNote": "Your account is already linked to a business. Edit it from “Manage my service” on the map.",
+    "loadFailed": "Could not load the data. Try again.",
+    "sent": "Your request was received. We will review it and notify you.",
+    "sendFailed": "Could not send the request.",
+    "send": "Send for review",
+    "reviewNote": "The admins review every request before it is published. After approval, sign out and in again to get the provider tools.",
+    "approved": "“{{name}}” was approved and is now on the map. Sign out and in again to activate your provider account.",
+    "rejected": "“{{name}}” was not approved: {{reason}}. You can fix it and send a new request.",
+    "sections": {
+      "about": "About the business",
+      "contact": "Contact",
+      "location": "Location on the map"
+    },
+    "fields": {
+      "layer": "Type of business",
+      "layerPlaceholder": "Choose a type…",
+      "name": "Business name",
+      "des": "Short description",
+      "workHours": "Working hours",
+      "workHoursHint": "e.g. 8 am – 6 pm",
+      "price": "Price in US dollars",
+      "phone": "Mobile number",
+      "whatsappSame": "Same number on WhatsApp",
+      "phoneSameAsAccount": "Leave empty to use your account number"
+    },
+    "map": {
+      "label": "Location picker map",
+      "hint": "Move the map until the pin sits right on your place, or tap the place.",
+      "picked": "Location set. Move the map to adjust it.",
+      "myLocation": "My location"
+    },
+    "errors": {
+      "layer": {
+        "required": "Choose the type of business."
+      },
+      "name": {
+        "required": "Enter the business name."
+      },
+      "phone": {
+        "required": "Enter the mobile number.",
+        "invalid": "Invalid mobile number: it starts with 05 and has 10 digits."
+      },
+      "price": {
+        "invalid": "Enter a valid number."
+      },
+      "point": {
+        "required": "Mark the business on the map.",
+        "invalid": "That location is outside the allowed area."
+      },
+      "area": {
+        "invalid": "Enter the area in square metres, as a whole number."
+      }
+    },
+    "pending": {
+      "title": "Your request is being reviewed",
+      "body": "You will get a notification as soon as the admins review it. You can cancel it and send a new one.",
+      "cancel": "Cancel request",
+      "cancelled": "Request cancelled.",
+      "cancelFailed": "Could not cancel the request."
+    },
+    "admin": {
+      "title": "Add-business requests",
+      "subtitle": "Review what people sent. Approving publishes the business on the map and makes its owner a service provider.",
+      "empty": "No requests here.",
+      "status": {
+        "label": "Request status",
+        "pending": "Waiting for review",
+        "approved": "Approved",
+        "rejected": "Rejected"
+      },
+      "by": "From {{name}}",
+      "location": "Location",
+      "openOnMap": "Open on the map",
+      "approve": "Approve and publish",
+      "reject": "Reject",
+      "approved": "Published and the account is linked.",
+      "approveFailed": "Could not approve.",
+      "rejected": "Rejected and the sender was told.",
+      "rejectFailed": "Could not reject.",
+      "rejectTitle": "Reject the request",
+      "reason": "Reason",
+      "reasonHint": "The sender gets the reason as a notification, so write it clearly.",
+      "checkPoint": "Check the place: move the map if the pin is not exactly on the shop or the house.",
+      "pointMoved": "You moved the point; it is saved with the approval.",
+      "pointReset": "Back to the original point"
+    },
+    "propertyGroup": "Properties",
+    "steps": {
+      "label": "Steps",
+      "type": "Type",
+      "place": "Place",
+      "details": "Details",
+      "typeTitle": "What are you adding?",
+      "typeSearch": "Search a type: plumber, pharmacy, flat…",
+      "placeTitle": "Where is it?",
+      "next": "Next",
+      "back": "Back",
+      "chosenType": "Type: {{type}}",
+      "photosLater": "Add pictures from “My listings” once it is approved."
+    }
+  },
+  "notify": {
+    "title": "Send a notification",
+    "target": "To",
+    "type": "Kind",
+    "userId": "User ID",
+    "titleLabel": "Title",
+    "message": "Message",
+    "send": "Send notification",
+    "sent": "Sent: delivered live to {{sent}} of {{total}} (the others see it when they sign in).",
+    "failed": "Could not send the notification.",
+    "offline": "The live connection is not ready yet; try again in a moment.",
+    "pick": "Choose users",
+    "searchUsers": "Search by name, phone or ID",
+    "selectShown": "Select shown",
+    "clear": "Clear selection",
+    "selectedCount": "{{count}} selected",
+    "targets": {
+      "single": "One user",
+      "online": "Only users online now",
+      "all_users": "All users",
+      "regular_users": "Regular users only",
+      "providers": "Service providers only",
+      "admins": "Admins only",
+      "selected": "Pick several"
+    },
+    "types": {
+      "info": "Information",
+      "success": "Success",
+      "warning": "Warning",
+      "error": "Error"
+    },
+    "roles": {
+      "all": "All",
+      "user": "Users",
+      "provider": "Providers",
+      "admin": "Admins"
+    },
+    "errors": {
+      "userId": {
+        "required": "Enter the user ID.",
+        "invalid": "The user ID is digits only."
+      },
+      "selected": {
+        "required": "Choose at least one user."
+      },
+      "title": {
+        "required": "Enter a title."
+      },
+      "message": {
+        "required": "Enter the message."
+      }
+    }
+  },
+  "platformContact": {
+    "title": "Contact the platform",
+    "greeting": "Hello, I am contacting you from the services map",
+    "whatsapp": "WhatsApp",
+    "phone": "Phone",
+    "email": "Email",
+    "admin": {
+      "title": "Contact details",
+      "description": "The platform's WhatsApp, phone, email and social pages. Shown at the bottom of every page and in “Contact us”.",
+      "direct": "Direct contact",
+      "directHint": "Each number becomes a button that opens WhatsApp or a call. A local mobile (05…) is sent to WhatsApp as a Palestinian number (+970).",
+      "social": "Social pages",
+      "socialHint": "The full address of the page, starting with https://",
+      "emptyHidden": "An empty field is not shown.",
+      "badPhone": "Not a valid number.",
+      "badEmail": "Not a valid email.",
+      "badUrl": "Not a valid address (must start with https://).",
+      "saved": "Contact details saved.",
+      "failed": "Could not save the contact details.",
+      "loadFailed": "Could not load the contact details.",
+      "discard": "Discard",
+      "updatedAt": "Last changed: {{date}}"
+    }
+  },
+  "loginPrompt": {
+    "contactButton": "Log in to contact",
+    "title": {
+      "contact": "Log in to see the contact number",
+      "request": "Log in to request the service"
+    },
+    "lead": {
+      "contact": "Phone and WhatsApp numbers are shown to account holders only, to spare providers and advertisers from spam. The account is free.",
+      "request": "A service request opens a direct chat with the provider, so the provider needs to know who is asking. The account is free."
+    },
+    "perks": {
+      "contact": "Call or message providers and advertisers directly",
+      "request": "Request a service and follow it in the chat",
+      "rate": "Rate the people you dealt with",
+      "list": "Put your service or property on the map"
+    },
+    "activation": "Your account is active immediately. Listings are published after admin review.",
+    "login": "Log in",
+    "register": "Create account"
+  },
+  "myListings": {
+    "title": "My listings",
+    "subtitle": "Your services and properties on the map: edit them, add pictures, set their state. Changes show at once.",
+    "add": "Add a listing",
+    "tabs": {
+      "services": "My services",
+      "properties": "My properties"
+    },
+    "empty": {
+      "services": "No services are linked to your account yet.",
+      "properties": "No properties are linked to your account yet.",
+      "hint": "Add your listing; once the admins approve it, it shows here and on the map."
+    },
+    "loadFailed": "Could not load your listings.",
+    "pending": "“{{name}}” is waiting for the admins’ approval.",
+    "rejected": "“{{name}}” was not approved: {{reason}}",
+    "edit": "Edit",
+    "showOnMap": "On the map",
+    "noPhoto": "No pictures",
+    "photosCount": "{{count}} pictures",
+    "noRatings": "No ratings yet",
+    "state": {
+      "0": "Available",
+      "1": "Not available now",
+      "2": "Withdrawn",
+      "label": "State",
+      "hint": {
+        "service": {
+          "0": "Shown to everyone, can be contacted.",
+          "1": "Shown in search and on the map, marked “not available now”.",
+          "2": "Shown to no one. You can bring it back any time."
+        },
+        "property": {
+          "0": "Shown to everyone.",
+          "1": "Hidden for now (e.g. currently rented).",
+          "2": "Withdrawn (sold or cancelled). Shown to no one."
+        }
+      },
+      "saved": "State changed.",
+      "failed": "Could not change the state."
+    },
+    "editor": {
+      "title": "Edit “{{name}}”",
+      "photos": "Pictures",
+      "details": "Details",
+      "location": "Location",
+      "name": "Name",
+      "des": "Description",
+      "phone": "Mobile number",
+      "whatsapp": "WhatsApp number",
+      "whatsappHint": "Leave empty if there is no WhatsApp.",
+      "workHours": "Work hours",
+      "workHoursHint": "e.g. 08:00-17:00",
+      "price": "Price",
+      "currency": "Currency",
+      "area": "Area (m²)",
+      "presets": {
+        "00:00-23:59": "24 hours",
+        "08:00-17:00": "8 – 5",
+        "09:00-21:00": "9 – 9",
+        "07:00-15:00": "7 – 3"
+      },
+      "propertyLocation": "A property’s location is set by the admins. Contact us if it is off.",
+      "save": "Save",
+      "saved": "Saved — the change is live.",
+      "failed": "Could not save.",
+      "nothing": "Nothing to save.",
+      "errors": {
+        "name": {
+          "required": "Enter the name."
+        },
+        "phone": {
+          "required": "Enter the mobile number.",
+          "invalid": "Invalid number (05XXXXXXXX)."
+        },
+        "whatsapp": {
+          "invalid": "Invalid WhatsApp number."
+        },
+        "price": {
+          "invalid": "Invalid price."
+        },
+        "area": {
+          "invalid": "Invalid area."
+        }
+      }
+    },
+    "photos": {
+      "add": "Add pictures",
+      "count": "{{count}} of {{max}}",
+      "cover": "Cover",
+      "makeCover": "Make it the cover",
+      "remove": "Remove picture",
+      "uploading": "Uploading…",
+      "full": "Limit reached ({{max}} pictures).",
+      "notImage": "This file is not a picture.",
+      "failed": "Could not upload a picture.",
+      "removeFailed": "Could not remove the picture.",
+      "hint": "The first picture is the cover. Pictures are shrunk before upload.",
+      "broken": "Not a picture link"
+    }
+  }
+}

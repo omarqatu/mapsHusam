@@ -3,9 +3,28 @@
 .env.local
 .env.production
 .env.development
+.env.*
+!.env.example
+!**/.env.example
+# Husam's downloaded production configuration also comes without a leading dot.
+/env
 
 # Temporary files
 *.tmp
 *.temp
 temp.txt
 node_modules
+.claude/hooks/.stop-verify-state.json
+dist
+.playwright/
+
+# Local private notes (security findings etc.) — never commit, repo is public
+notes/
+dev/db/dumps/
+
+# Agent worktrees (parallel sessions)
+.claude/worktrees/
+
+# Uploaded listing pictures (server data, not code)
+uploads/
+/pic/

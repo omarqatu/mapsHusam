@@ -1,0 +1,6 @@
+.eslintcache
+*.tsbuildinfo
+coverage
+e2e/.auth/
+e2e/.results/
+playwright-report/
