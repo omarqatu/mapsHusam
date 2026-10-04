@@ -1,0 +1,74 @@
+name: Configure production securely
+
+on:
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: Generate public transport key or apply an encrypted environment
+        type: choice
+        options: [key, apply]
+        default: key
+      encrypted_payload:
+        description: RSA-OAEP + AES-GCM envelope (ciphertext only)
+        type: string
+        required: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: production-deploy
+  cancel-in-progress: false
+
+jobs:
+  configure:
+    if: github.ref == 'refs/heads/main'
+    runs-on: [self-hosted, Windows]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm ci
+        shell: cmd
+      - name: Provision private configuration
+        shell: powershell
+        env:
+          PROVISIONING_MODE: ${{ inputs.mode }}
+          PROVISIONING_PAYLOAD: ${{ inputs.encrypted_payload }}
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $directory = Join-Path $env:ProgramData 'mapsHusam\configuration'
+          $deployPath = 'C:\inetpub\wwwroot\psm\mapsHusam'
+          New-Item -ItemType Directory -Force -Path $directory | Out-Null
+          $identity = [System.Security.Principal.WindowsIdentity]::GetCurrent().Name
+          & icacls $directory /inheritance:r /grant:r "${identity}:(OI)(CI)F" '*S-1-5-18:(OI)(CI)F' '*S-1-5-32-544:(OI)(CI)F' | Out-Null
+          if ($LASTEXITCODE -ne 0) { throw 'Cannot restrict configuration directory permissions.' }
+          & node tools/provision-production.mjs $env:PROVISIONING_MODE $directory $deployPath
+          if ($LASTEXITCODE -ne 0) { throw 'Configuration provisioning failed.' }
+          if ($env:PROVISIONING_MODE -eq 'apply') {
+            # NSSM values override .env. Align them with the operator configuration, entirely within the host.
+            $registry = 'HKLM:\SYSTEM\CurrentControlSet\Services\mapsHusam\Parameters'
+            if (-not (Test-Path $registry)) { throw 'Expected the existing NSSM service parameters.' }
+            $before = Get-ItemProperty -LiteralPath $registry
+            $before | ConvertTo-Json -Depth 4 | Set-Content -LiteralPath (Join-Path $directory 'service-before-provisioning.json') -Encoding UTF8
+            $values = Get-Content -Raw -LiteralPath (Join-Path $directory 'service-values.json') | ConvertFrom-Json
+            $names = @($values.PSObject.Properties.Name)
+            $entries = @()
+            if ($before.PSObject.Properties['AppEnvironmentExtra']) {
+              $entries += @($before.AppEnvironmentExtra | Where-Object { ($_ -split '=', 2)[0] -notin $names })
+            }
+            foreach ($property in $values.PSObject.Properties) { $entries += "$($property.Name)=$($property.Value)" }
+            Set-ItemProperty -LiteralPath $registry -Name AppEnvironmentExtra -Value ([string[]]$entries) -Type MultiString
+            Set-ItemProperty -LiteralPath $registry -Name AppDirectory -Value $deployPath
+            & icacls (Join-Path $deployPath '.env') /inheritance:r /grant:r "${identity}:F" '*S-1-5-18:F' '*S-1-5-32-544:F' | Out-Null
+            if ($LASTEXITCODE -ne 0) { throw 'Cannot restrict environment file permissions.' }
+            $account = (Get-CimInstance Win32_Service -Filter "Name='mapsHusam'").StartName
+            if ($account -and $account -ne 'LocalSystem') {
+              if ($account.StartsWith('.\')) { $account = $env:COMPUTERNAME + $account.Substring(1) }
+              & icacls (Join-Path $deployPath '.env') /grant "${account}:R" | Out-Null
+              if ($LASTEXITCODE -ne 0) { throw 'Cannot grant the service read access to its configuration.' }
+            }
+            Remove-Item -LiteralPath (Join-Path $directory 'service-values.json') -Force
+            Write-Host 'Configuration and NSSM environment installed; service restart is left to the backed-up deployment.'
+          }
