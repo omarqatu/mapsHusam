@@ -18,13 +18,25 @@ export interface AppRoute {
 
 // Every route from docs/react-migration/PLAN.md. Replace `element` in App.tsx as pages are ported.
 export const appRoutes: AppRoute[] = [
-  { path: '/home', titleKey: 'nav.home', access: 'auth', legacy: '(new page — no legacy counterpart)', nav: true },
+  {
+    path: '/home',
+    titleKey: 'nav.home',
+    access: 'auth',
+    legacy: '(new page — no legacy counterpart)',
+    nav: true,
+  },
   { path: '/', titleKey: 'nav.map', access: 'public', legacy: 'index.html', nav: true, own: true },
   {
     path: '/add-listing',
     titleKey: 'nav.addListing',
     access: 'auth',
     legacy: '(new page — "add my business")',
+  },
+  {
+    path: '/my-listings',
+    titleKey: 'nav.myListings',
+    access: 'auth',
+    legacy: '(new page — owner, 2026-10-04)',
   },
   { path: '/search', titleKey: 'nav.search', access: 'public', legacy: 'no-map-search.html', nav: true },
   {
@@ -86,7 +98,8 @@ export const appRoutes: AppRoute[] = [
     path: '/admin/contact',
     titleKey: 'nav.adminContact',
     access: ['admin'],
-    legacy: "(new page — the platform's WhatsApp, phone, email and social pages; owner's point 6, 2026-10-04)",
+    legacy:
+      "(new page — the platform's WhatsApp, phone, email and social pages; owner's point 6, 2026-10-04)",
     nav: true,
   },
   {

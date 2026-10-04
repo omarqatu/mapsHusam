@@ -76,7 +76,8 @@ const MEDIA = {
 
 /**
  * A URL from feature data that is safe to put in href/src: legacy clean-up (embedded src="…", missing
- * protocol, http → https because the CSP only allows https media), then only https:// survives.
+ * protocol, http → https because the CSP only allows https media), then only https:// survives — or a picture
+ * uploaded to this server (`/api/listing-photos/…`).
  */
 export function safeMediaUrl(raw: unknown): string | null {
   let v = text(raw);
@@ -84,6 +85,8 @@ export function safeMediaUrl(raw: unknown): string | null {
   const embedded = v.match(/(?:src|href)=["']([^"']+)["']/i);
   if (embedded) v = embedded[1];
   v = v.replace(/^['"]|['"]$/g, '').trim();
+  // A picture a provider uploaded: served by this server (same origin).
+  if (/^\/api\/listing-photos\/[a-f0-9-]{36}\.(jpg|png|webp)$/.test(v)) return v;
   if (v.startsWith('//')) v = `https:${v}`;
   else if (v.startsWith('http://')) v = `https://${v.slice(7)}`;
   else if (!/^https:\/\//i.test(v)) v = `https://${v}`;

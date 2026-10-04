@@ -1,5 +1,14 @@
 import { describe, expect, it } from 'vitest';
-import { EMPTY_FORM, hasPriceField, pointInBounds, toInput, validate, type FormValues } from './model';
+import {
+  EMPTY_FORM,
+  hasHoursField,
+  hasPriceField,
+  isPropertyLayer,
+  pointInBounds,
+  toInput,
+  validate,
+  type FormValues,
+} from './model';
 
 const ok: FormValues = { ...EMPTY_FORM, layer: 'plumber', name: ' سباكة الأمل ', phone: '0591234567' };
 const point: [number, number] = [169463.41234, 145767.99876];
@@ -49,5 +58,24 @@ describe('listing submission form', () => {
     expect(body).toMatchObject({ price: 80, des: 'غرف', work_hours: '24' });
     expect(body.whatsapp).toBeUndefined();
     expect(toInput({ ...ok, price: '80' }, point).price).toBeUndefined();
+  });
+
+  it('a flat takes a price, a currency and an area, and no hours', () => {
+    expect(isPropertyLayer('ApartRent')).toBe(true);
+    expect(isPropertyLayer('LandSale')).toBe(false);
+    expect(hasHoursField('ApartSale')).toBe(false);
+    const flat = {
+      ...ok,
+      layer: 'ApartRent',
+      price: '400',
+      currency: 'ILS' as const,
+      area: '120',
+      workHours: '24',
+    };
+    expect(validate({ ...flat, area: '0' }, point).area).toBe('invalid');
+    expect(validate({ ...ok, area: '0' }, point).area).toBeUndefined();
+    const body = toInput(flat, point);
+    expect(body).toMatchObject({ layer: 'ApartRent', price: 400, currency: 'ILS', area: 120 });
+    expect(body.work_hours).toBeUndefined();
   });
 });

@@ -1129,8 +1129,8 @@ it at once); browser at 1440 / 390, no overflow.
 The owner's nine points (in Arabic, 2026-10-04). Decisions were left to us ("اشتغل واعمل الصح والمناسب"); each is written
 here so it can be corrected.
 
-1. **A provider manages several services: edit, pictures.** ⬜
-2. **A screen for the provider's properties, edited by the provider.** ⬜ (one "my listings" page with 1)
+1. **A provider manages several services: edit, pictures.** ✅ See "My listings" below.
+2. **A screen for the provider's properties, edited by the provider.** ✅ The same page, a "properties" tab.
 3. **Ratings for properties and services, and the publisher's rating.** ⬜ Decision: a property is rated by whoever dealt
    with its owner through the platform: a viewing request → the owner accepts / sets the time → done → the requester rates
    (one rating per request, as services already work). The publisher's rating = the average over all their listings.
@@ -1147,6 +1147,31 @@ here so it can be corrected.
    plot"): three states — see below.
 8. **Visitors without an account get a limited set of features, presented well.** ✅ See "Visitors" below.
 9. **Operating guide + test scenarios document.** ⬜ (last, so it covers the rest)
+
+### My listings and adding a listing (points 1 and 2) ✅
+
+- **`/my-listings`** (role provider; home card "إعلاناتي"; route `nav.myListings`): two tabs, services / properties, with
+  counts, opening on the tab that has something. One card per listing: cover picture (or the type's icon), type, `#id`,
+  place, rating, the three states as one segmented control (saved on tap, with a one-line hint of what each means), "edit",
+  "on the map". Pending / rejected submission shown on top.
+- **Edit sheet** (bottom sheet on a phone): pictures first (up to 8; shrunk in the browser to ≤1600 px JPEG before upload,
+  first = cover, reorder by "make cover", remove; saved as they change), then name, description, phone, WhatsApp, hours
+  (preset chips + free text), price / currency / area where the type has a price, and — services only — the point on the
+  map. Only changed fields are sent. A property's point/shape is not moved by its owner (plots are polygons; an admin moves
+  them on the map). Pictures are files on the server's disk (`UPLOADS_DIR`, see Server changes).
+- **`/add-listing`** is now a three-step flow for a user **or** a provider (was: users only, one big form): 1. type — every
+  type as a tile, grouped, with a search; flats (rent / sale) included; 2. place — a satellite map where the pin is fixed
+  in the middle and the map moves under it (drag, or tap a spot), starting at the GPS position, "my location" button,
+  60 % of the screen; 3. details — name, description, hours (presets) or price / currency / area, phone (filled from the
+  account), WhatsApp. Pictures are added from "my listings" after approval (an unapproved listing has no row to attach
+  them to). Each step scrolls to the stepper. One pending request at a time (server rule, unchanged).
+- UX changes vs the old form: steps instead of one long page; the pin-under-crosshair instead of tap-to-place; flats can
+  be submitted; providers can add more listings.
+- Tests: `my-listings/model.test.ts`, `listing-submissions/model.test.ts` (flats), live `myListings.live.test.ts` (list,
+  edit + bad values, upload → served → removed → 404, path traversal 404, a foreign account gets 404, a visitor 401) and
+  `listingSubmissions.live.test.ts` (flats offered, plots not). Screenshots desktop + phone, light + dark.
+- Not done (later, if wanted): an admin mini-map on the submissions page with a draggable point; "trusted providers
+  publish directly" switch.
 
 ### Listing state and hidden layers (points 4 and 7) ✅
 
@@ -1579,6 +1604,21 @@ Log each change here: **what · why · how to verify · commit**.
   proxy (`propertyName`), admin switch `visitorContact` in `settings.visibility`. Same URLs and shapes; a visitor's rows
   lack two properties. Verify: `npm test`, `VITE_LIVE_API=http://localhost:3000 npm test -- visibility.live`. Commit:
   `feat(server): visitors without an account get listings without phone / WhatsApp`.
+
+- **Several listings per account, provider edits, pictures (owner's points 1 + 2, 2026-10-04).** Asked by the owner.
+  What: table `listing_owners (layer, feature_id, user_id)` (`server/listing-owners.js`), filled at start-up from
+  `users.service_layer/feature_id` and mirrored when the admin re-links a user; service requests, `/api/provider-linked-features`
+  and `/api/update-service-status` find the owner there (same shapes). New: `GET /api/my-listings`,
+  `PATCH /api/my-listings/:layer/:id` (name, description, phone, WhatsApp, hours, price, currency, area, state 0/1/2, a
+  service's point — rules in `lib/listing-edit.js`, published at once), `POST|PUT /api/my-listings/:layer/:id/photos` (raw
+  JPG/PNG/WebP ≤ 1.5 MB, type read from the bytes, ≤ 8 per listing; owner's choice: the files are stored on the server's
+disk under `UPLOADS_DIR` (default `<project>/uploads/listing-photos`, git-ignored — **back this folder up with the database,
+and give the Node process write access to it on IIS**), table `listing_photos` keeps one row per file), public
+  `GET /api/listing-photos/<uuid>.<ext>` (immutable, `sandbox` CSP, nosniff). The picture URLs go into the listing's `pic`
+  list, which the map already shows. Listing submissions: a provider may submit too, and flats (`ApartRent` / `ApartSale`,
+  with area + currency); approving one links it to the account (a user still becomes a provider). New land plots stay with
+  the admin (a plot is a drawn polygon). Verify: `npm test` (`lib/listing-edit.test.js`), live `myListings.live.test.ts`.
+  Commit: `feat(server): an account owns several listings, edits them and uploads pictures`.
 
 ## Backend asks (needs the user's decision — behaviour-changing or larger)
 

@@ -33,12 +33,13 @@ describe.skipIf(!BASE)('add my business against the live backend', () => {
     useAuthStore.setState({ user: null });
   });
 
-  it('offers service types but not roads, fuel or landmarks', async () => {
+  it('offers service types and flats, but not roads, fuel, landmarks or plots', async () => {
     await signIn('0590000003', 'User#12345');
     const { layers } = await listingSubmissionsApi.layers();
     expect(layers).toContain('plumber');
     expect(layers).not.toContain('road_barriers');
-    expect(layers).not.toContain('ApartRent');
+    expect(layers).toEqual(expect.arrayContaining(['ApartRent', 'ApartSale']));
+    expect(layers).not.toContain('LandSale');
   });
 
   it('refuses a bad type, a point outside the country and a second pending request', async () => {

@@ -4,6 +4,9 @@ import { useSubmittableLayers } from '@/api/listingSubmissions';
 import type { SelectOption } from '@/components/ui/SelectInput';
 import type { Coordinate } from '@/features/map/config';
 import { SERVICE_BY_KEY, groupLabelKey, serviceLabelKey } from '@/features/map/registry';
+import { listingTarget } from '@/features/my-listings/model';
+import { targetIcon, targetLabelKey } from '@/features/map/targets';
+import { isPropertyLayer } from './model';
 import { EMPTY_FORM, validate, type FormErrors, type FormValues } from './model';
 
 /** The state of the business form, shared by the "add my business" page and the register form. */
@@ -17,14 +20,19 @@ export function useListingForm(enabled = true) {
 
   const options = useMemo<SelectOption[]>(
     () =>
-      (layers.data ?? [])
-        .map((key) => SERVICE_BY_KEY.get(key))
-        .filter((s) => s !== undefined)
-        .map((s) => ({
-          value: s.key,
-          label: `${s.icon} ${t(serviceLabelKey(s.key))}`,
-          group: t(groupLabelKey(s.group)),
-        })),
+      (layers.data ?? []).flatMap((key): SelectOption[] => {
+        if (isPropertyLayer(key)) {
+          const target = listingTarget(key);
+          if (!target) return [];
+          return [
+            { value: key, label: `${targetIcon(target)} ${t(targetLabelKey(target))}`, group: t('submit.propertyGroup') },
+          ];
+        }
+        const s = SERVICE_BY_KEY.get(key);
+        return s
+          ? [{ value: s.key, label: `${s.icon} ${t(serviceLabelKey(s.key))}`, group: t(groupLabelKey(s.group)) }]
+          : [];
+      }),
     [layers.data, t],
   );
 

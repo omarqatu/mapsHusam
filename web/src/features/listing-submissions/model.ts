@@ -1,5 +1,6 @@
 import { toWhatsappNumber, isLocalMobile } from '@/features/auth/phone';
 import { SERVICE_BY_KEY } from '@/features/map/registry';
+import type { Currency } from '@/api/myListings';
 import type { Coordinate } from '@/features/map/config';
 import type { SubmissionInput } from '@/api/listingSubmissions';
 
@@ -8,6 +9,9 @@ import type { SubmissionInput } from '@/api/listingSubmissions';
 /** Loose Palestine Grid bounds (metres), the same the server enforces: catches a point outside the country. */
 export const GRID_X_RANGE: readonly [number, number] = [100_000, 300_000];
 export const GRID_Y_RANGE: readonly [number, number] = [30_000, 300_000];
+
+/** Ready work-hours choices (HourPresets); the free text stays for anything else. */
+export const HOUR_PRESETS = ['00:00-23:59', '08:00-17:00', '09:00-21:00', '07:00-15:00'] as const;
 
 export const NAME_MAX = 100;
 export const DES_MAX = 1000;
@@ -22,6 +26,9 @@ export interface FormValues {
   whatsappSame: boolean;
   workHours: string;
   price: string;
+  /** Flats (and hotels / villas): area in m² and the price's currency. */
+  area: string;
+  currency: Currency;
 }
 
 export const EMPTY_FORM: FormValues = {
@@ -32,14 +39,23 @@ export const EMPTY_FORM: FormValues = {
   whatsappSame: true,
   workHours: '',
   price: '',
+  area: '',
+  currency: 'USD',
 };
 
 export type FormErrors = Partial<
-  Record<'layer' | 'name' | 'phone' | 'price' | 'point', 'required' | 'invalid'>
+  Record<'layer' | 'name' | 'phone' | 'price' | 'area' | 'point', 'required' | 'invalid'>
 >;
 
-/** Hotels and holiday villas are priced like property; every other type has no price field. */
-export const hasPriceField = (layer: string) => SERVICE_BY_KEY.get(layer)?.editProfile === 'propertyService';
+/** The property layers a provider may submit (a flat is a point; a plot is drawn by the admins). */
+export const SUBMITTABLE_PROPERTY_LAYERS = ['ApartRent', 'ApartSale'] as const;
+export const isPropertyLayer = (layer: string) => (SUBMITTABLE_PROPERTY_LAYERS as readonly string[]).includes(layer);
+
+/** Flats, hotels and holiday villas are priced (with an area); every other type has no price field. */
+export const hasPriceField = (layer: string) =>
+  isPropertyLayer(layer) || SERVICE_BY_KEY.get(layer)?.editProfile === 'propertyService';
+/** Only a service has work hours. */
+export const hasHoursField = (layer: string) => !isPropertyLayer(layer);
 
 export const pointInBounds = (p: Coordinate) =>
   Number.isFinite(p[0]) &&
@@ -59,6 +75,10 @@ export function validate(v: FormValues, point: Coordinate | null): FormErrors {
     const n = Number(v.price);
     if (!Number.isFinite(n) || n < 0) errors.price = 'invalid';
   }
+  if (isPropertyLayer(v.layer) && v.area.trim() !== '') {
+    const n = Number(v.area);
+    if (!Number.isInteger(n) || n <= 0) errors.area = 'invalid';
+  }
   if (!point) errors.point = 'required';
   else if (!pointInBounds(point)) errors.point = 'invalid';
   return errors;
@@ -75,8 +95,12 @@ export function toInput(v: FormValues, point: Coordinate): SubmissionInput {
     y_coord: Number(point[1].toFixed(3)),
   };
   if (v.des.trim()) input.des = v.des.trim();
-  if (v.workHours.trim()) input.work_hours = v.workHours.trim();
+  if (hasHoursField(v.layer) && v.workHours.trim()) input.work_hours = v.workHours.trim();
   if (v.whatsappSame) input.whatsapp = toWhatsappNumber('970', phone);
   if (hasPriceField(v.layer) && v.price.trim() !== '') input.price = Number(v.price);
+  if (isPropertyLayer(v.layer)) {
+    input.currency = v.currency;
+    if (v.area.trim() !== '') input.area = Number(v.area);
+  }
   return input;
 }

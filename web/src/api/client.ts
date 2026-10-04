@@ -50,17 +50,22 @@ export async function apiRequest<T>(path: string, opts: RequestOptions = {}): Pr
   const { method = 'GET', body, query, signal, headers = {} } = opts;
   const token = useAuthStore.getState().user?.token;
   const isForm = typeof FormData !== 'undefined' && body instanceof FormData;
+  // A file (a listing picture) goes as the raw body, with its own type.
+  const isBlob = typeof Blob !== 'undefined' && body instanceof Blob;
 
   const init: RequestInit = {
     method,
     signal,
     headers: {
       Accept: 'application/json',
-      ...(body !== undefined && !isForm ? { 'Content-Type': 'application/json' } : {}),
+      ...(body !== undefined && !isForm
+        ? { 'Content-Type': isBlob ? (body as Blob).type || 'application/octet-stream' : 'application/json' }
+        : {}),
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
       ...headers,
     },
-    body: body === undefined ? undefined : isForm ? (body as FormData) : JSON.stringify(body),
+    body:
+      body === undefined ? undefined : isForm || isBlob ? (body as FormData | Blob) : JSON.stringify(body),
   };
 
   let res: Response;
@@ -89,7 +94,13 @@ export async function apiRequest<T>(path: string, opts: RequestOptions = {}): Pr
     // A request that brings its own credentials (or the admin's read-only view token) says nothing about the app session.
     const ownCredentials = 'Authorization' in headers || 'X-Read-Only-View' in headers;
     // The session ended (expired, logged out elsewhere, deactivated, password or role changed): out, and say why.
-    if (res.status === 401 && token && !ownCredentials && !NO_LOGOUT_PATHS.includes(path) && useAuthStore.getState().user) {
+    if (
+      res.status === 401 &&
+      token &&
+      !ownCredentials &&
+      !NO_LOGOUT_PATHS.includes(path) &&
+      useAuthStore.getState().user
+    ) {
       useAuthStore.getState().logout();
       // i18n is loaded lazily: it touches `document`, and this module also runs in the node (live) tests
       void import('@/i18n').then(({ default: i18n }) => toast.warning(i18n.t('auth.sessionEnded')));

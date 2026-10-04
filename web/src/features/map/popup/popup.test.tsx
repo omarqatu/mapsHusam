@@ -34,6 +34,12 @@ describe('safeMediaUrl (URLs come from user data)', () => {
     expect(safeMediaUrl('<img src="http://a.com/p.png">')).toBe('https://a.com/p.png');
     expect(safeMediaUrl('//a.com/p.png')).toBe('https://a.com/p.png');
   });
+  it('keeps a picture uploaded to this server, and only that path', () => {
+    const own = '/api/listing-photos/209534ee-46fd-42a0-83ee-e159c457a6dd.jpg';
+    expect(safeMediaUrl(own)).toBe(own);
+    expect(safeMediaUrl('/api/listing-photos/../../admin.jpg')).toBe(null);
+    expect(safeMediaUrl('/etc/passwd')).toBe(null);
+  });
   it('rejects empties and non-web schemes', () => {
     for (const bad of [
       undefined,

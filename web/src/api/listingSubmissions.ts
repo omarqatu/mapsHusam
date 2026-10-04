@@ -14,6 +14,9 @@ export interface SubmissionInput {
   whatsapp?: string;
   work_hours?: string;
   price?: number | null;
+  /** Flats only. */
+  area?: number;
+  currency?: 'ILS' | 'USD' | 'JOD';
   /** Palestine Grid metres (EPSG:28191). */
   x_coord: number;
   y_coord: number;

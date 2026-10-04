@@ -1,11 +1,14 @@
 import { useTranslation } from 'react-i18next';
+import type { Currency } from '@/api/myListings';
+import { CURRENCIES } from '@/features/my-listings/model';
 import Checkbox from '@/components/ui/Checkbox';
 import FormField from '@/components/ui/FormField';
 import SelectInput from '@/components/ui/SelectInput';
 import TextInput from '@/components/ui/TextInput';
 import TextareaInput from '@/components/ui/TextareaInput';
+import HourPresets from './HourPresets';
 import LocationPicker from './LocationPicker';
-import { DES_MAX, HOURS_MAX, NAME_MAX, hasPriceField } from './model';
+import { DES_MAX, HOURS_MAX, NAME_MAX, hasHoursField, hasPriceField, isPropertyLayer } from './model';
 import type { ListingForm } from './useListingForm';
 
 /** Type, name, description, hours, price (hotels and villas). `idPrefix` keeps ids unique when two forms share a page. */
@@ -55,7 +58,19 @@ export function AboutFields({ form, idPrefix = '' }: { form: ListingForm; idPref
           onChange={(e) => set('des', e.target.value)}
         />
       </FormField>
-      <FormField label={t('submit.fields.workHours')} name={`${idPrefix}workHours`}>
+      {hasHoursField(values.layer) && <HoursField form={form} idPrefix={idPrefix} />}
+      {hasPriceField(values.layer) && <PriceFields form={form} idPrefix={idPrefix} />}
+    </div>
+  );
+}
+
+export function HoursField({ form, idPrefix = '' }: { form: ListingForm; idPrefix?: string }) {
+  const { t } = useTranslation();
+  const { values, set } = form;
+  return (
+    <FormField label={t('submit.fields.workHours')} name={`${idPrefix}workHours`} className="sm:col-span-2">
+      <HourPresets value={values.workHours} onChange={(h) => set('workHours', h)} />
+      <div dir="ltr">
         <TextInput
           id={`${idPrefix}workHours`}
           value={values.workHours}
@@ -63,16 +78,51 @@ export function AboutFields({ form, idPrefix = '' }: { form: ListingForm; idPref
           placeholder={t('submit.fields.workHoursHint')}
           onChange={(e) => set('workHours', e.target.value)}
         />
+      </div>
+    </FormField>
+  );
+}
+
+/** Price (+ currency and area for a flat). */
+export function PriceFields({ form, idPrefix = '' }: { form: ListingForm; idPrefix?: string }) {
+  const { t } = useTranslation();
+  const { values, errors, set, message } = form;
+  const flat = isPropertyLayer(values.layer);
+  return (
+    <div className="grid grid-cols-2 gap-x-4 sm:col-span-2 sm:grid-cols-3">
+      <FormField
+        label={t(flat ? 'myListings.editor.price' : 'submit.fields.price')}
+        name={`${idPrefix}price`}
+        error={message('price')}
+      >
+        <TextInput
+          id={`${idPrefix}price`}
+          inputMode="decimal"
+          dir="ltr"
+          value={values.price}
+          hasError={!!errors.price}
+          onChange={(e) => set('price', e.target.value)}
+        />
       </FormField>
-      {hasPriceField(values.layer) && (
-        <FormField label={t('submit.fields.price')} name={`${idPrefix}price`} error={message('price')}>
+      {flat && (
+        <FormField label={t('myListings.editor.currency')} name={`${idPrefix}currency`}>
+          <SelectInput
+            id={`${idPrefix}currency`}
+            options={CURRENCIES.map((c) => ({ value: c, label: t(`edit.options.currency.${c}`) }))}
+            value={values.currency}
+            onChange={(e) => set('currency', e.target.value as Currency)}
+          />
+        </FormField>
+      )}
+      {flat && (
+        <FormField label={t('myListings.editor.area')} name={`${idPrefix}area`} error={message('area')}>
           <TextInput
-            id={`${idPrefix}price`}
-            inputMode="decimal"
+            id={`${idPrefix}area`}
+            inputMode="numeric"
             dir="ltr"
-            value={values.price}
-            hasError={!!errors.price}
-            onChange={(e) => set('price', e.target.value)}
+            value={values.area}
+            hasError={!!errors.area}
+            onChange={(e) => set('area', e.target.value)}
           />
         </FormField>
       )}

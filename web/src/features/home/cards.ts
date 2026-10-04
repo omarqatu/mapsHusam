@@ -5,6 +5,7 @@ import {
   LayoutDashboard,
   Map as MapIcon,
   PlusCircle,
+  Store,
   Radio,
   Search,
   SlidersHorizontal,
@@ -26,6 +27,7 @@ export type CardId =
   | 'dashboard'
   | 'widgets'
   | 'addListing'
+  | 'myListings'
   | 'submissions';
 
 export interface CardDef {
@@ -45,6 +47,7 @@ export const CARDS: CardDef[] = [
   { id: 'live', icon: Radio, tone: 'warn', to: '/widgets/portal' },
   { id: 'requests', icon: ClipboardList, tone: 'ok' },
   { id: 'service', icon: Wrench, tone: 'brand', roles: ['provider'] },
+  { id: 'myListings', icon: Store, tone: 'ok', to: '/my-listings', roles: ['provider'] },
   { id: 'addListing', icon: PlusCircle, tone: 'ok', to: '/add-listing', roles: ['user'] },
   { id: 'notifications', icon: Bell, tone: 'info', to: '/notifications' },
   { id: 'users', icon: Users, tone: 'brand', to: '/admin/users', roles: ['admin'] },

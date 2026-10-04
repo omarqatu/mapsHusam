@@ -177,7 +177,8 @@
     "adminAppearance": "Appearance",
     "addListing": "Add your business",
     "adminSubmissions": "Add requests",
-    "adminContact": "Contact details"
+    "adminContact": "Contact details",
+    "myListings": "My listings"
   },
   "roles": {
     "admin": "Admin",
@@ -1725,6 +1726,10 @@
       "submissions": {
         "title": "Add requests",
         "desc": "Review the businesses people sent, approve or reject them."
+      },
+      "myListings": {
+        "title": "My listings",
+        "desc": "Your services and properties: edit them, add pictures, add a new one."
       }
     },
     "figures": {
@@ -1814,7 +1819,7 @@
   },
   "submit": {
     "title": "Add your business to the map",
-    "subtitle": "Own a shop or offer a service? Send your details. After the admins review it, it appears on the map and your account becomes a service provider account.",
+    "subtitle": "Have a shop, a service, or a flat to rent or sell? Three steps: type, place, details. Once the admins approve it, it shows on the map and you manage it from “My listings”.",
     "adminNote": "You are an admin: add businesses directly with the map's edit tool, and review people's requests on the add-requests page.",
     "providerNote": "Your account is already linked to a business. Edit it from “Manage my service” on the map.",
     "loadFailed": "Could not load the data. Try again.",
@@ -1843,8 +1848,8 @@
     },
     "map": {
       "label": "Location picker map",
-      "hint": "Tap the map to mark where the business is.",
-      "picked": "Location set. Tap somewhere else to change it.",
+      "hint": "Move the map until the pin sits right on your place, or tap the place.",
+      "picked": "Location set. Move the map to adjust it.",
       "myLocation": "My location"
     },
     "errors": {
@@ -1864,6 +1869,9 @@
       "point": {
         "required": "Mark the business on the map.",
         "invalid": "That location is outside the allowed area."
+      },
+      "area": {
+        "invalid": "Enter the area in square metres, as a whole number."
       }
     },
     "pending": {
@@ -1895,6 +1903,20 @@
       "rejectTitle": "Reject the request",
       "reason": "Reason",
       "reasonHint": "The sender gets the reason as a notification, so write it clearly."
+    },
+    "propertyGroup": "Properties",
+    "steps": {
+      "label": "Steps",
+      "type": "Type",
+      "place": "Place",
+      "details": "Details",
+      "typeTitle": "What are you adding?",
+      "typeSearch": "Search a type: plumber, pharmacy, flat…",
+      "placeTitle": "Where is it?",
+      "next": "Next",
+      "back": "Back",
+      "chosenType": "Type: {{type}}",
+      "photosLater": "Add pictures from “My listings” once it is approved."
     }
   },
   "notify": {
@@ -1993,5 +2015,106 @@
     "activation": "New accounts are activated after the admins review them.",
     "login": "Log in",
     "register": "Create account"
+  },
+  "myListings": {
+    "title": "My listings",
+    "subtitle": "Your services and properties on the map: edit them, add pictures, set their state. Changes show at once.",
+    "add": "Add a listing",
+    "tabs": {
+      "services": "My services",
+      "properties": "My properties"
+    },
+    "empty": {
+      "services": "No services are linked to your account yet.",
+      "properties": "No properties are linked to your account yet.",
+      "hint": "Add your listing; once the admins approve it, it shows here and on the map."
+    },
+    "loadFailed": "Could not load your listings.",
+    "pending": "“{{name}}” is waiting for the admins’ approval.",
+    "rejected": "“{{name}}” was not approved: {{reason}}",
+    "edit": "Edit",
+    "showOnMap": "On the map",
+    "noPhoto": "No pictures",
+    "photosCount": "{{count}} pictures",
+    "noRatings": "No ratings yet",
+    "state": {
+      "0": "Available",
+      "1": "Not available now",
+      "2": "Withdrawn",
+      "label": "State",
+      "hint": {
+        "service": {
+          "0": "Shown to everyone, can be contacted.",
+          "1": "Shown in search and on the map, marked “not available now”.",
+          "2": "Shown to no one. You can bring it back any time."
+        },
+        "property": {
+          "0": "Shown to everyone.",
+          "1": "Hidden for now (e.g. currently rented).",
+          "2": "Withdrawn (sold or cancelled). Shown to no one."
+        }
+      },
+      "saved": "State changed.",
+      "failed": "Could not change the state."
+    },
+    "editor": {
+      "title": "Edit “{{name}}”",
+      "photos": "Pictures",
+      "details": "Details",
+      "location": "Location",
+      "name": "Name",
+      "des": "Description",
+      "phone": "Mobile number",
+      "whatsapp": "WhatsApp number",
+      "whatsappHint": "Leave empty if there is no WhatsApp.",
+      "workHours": "Work hours",
+      "workHoursHint": "e.g. 08:00-17:00",
+      "price": "Price",
+      "currency": "Currency",
+      "area": "Area (m²)",
+      "presets": {
+        "00:00-23:59": "24 hours",
+        "08:00-17:00": "8 – 5",
+        "09:00-21:00": "9 – 9",
+        "07:00-15:00": "7 – 3"
+      },
+      "propertyLocation": "A property’s location is set by the admins. Contact us if it is off.",
+      "save": "Save",
+      "saved": "Saved — the change is live.",
+      "failed": "Could not save.",
+      "nothing": "Nothing to save.",
+      "errors": {
+        "name": {
+          "required": "Enter the name."
+        },
+        "phone": {
+          "required": "Enter the mobile number.",
+          "invalid": "Invalid number (05XXXXXXXX)."
+        },
+        "whatsapp": {
+          "invalid": "Invalid WhatsApp number."
+        },
+        "price": {
+          "invalid": "Invalid price."
+        },
+        "area": {
+          "invalid": "Invalid area."
+        }
+      }
+    },
+    "photos": {
+      "add": "Add pictures",
+      "count": "{{count}} of {{max}}",
+      "cover": "Cover",
+      "makeCover": "Make it the cover",
+      "remove": "Remove picture",
+      "uploading": "Uploading…",
+      "full": "Limit reached ({{max}} pictures).",
+      "notImage": "This file is not a picture.",
+      "failed": "Could not upload a picture.",
+      "removeFailed": "Could not remove the picture.",
+      "hint": "The first picture is the cover. Pictures are shrunk before upload.",
+      "broken": "Not a picture link"
+    }
   }
 }

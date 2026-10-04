@@ -1,4 +1,5 @@
 export { default as Button } from './Button';
+export { default as ButtonLink } from './ButtonLink';
 export type { ButtonProps } from './Button';
 export { Spinner, CenteredSpinner } from './Spinner';
 export { default as FormField } from './FormField';
