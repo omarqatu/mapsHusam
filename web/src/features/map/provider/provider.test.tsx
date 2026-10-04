@@ -2,6 +2,7 @@ import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } 
 import { act, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { MemoryRouter } from 'react-router';
 import i18n from '@/i18n';
 import { useAuthStore } from '@/store/authStore';
 import type { AuthUser } from '@/types/auth';
@@ -73,8 +74,10 @@ afterEach(() => {
 const renderPanel = (extra = <></>) =>
   render(
     <QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>
-      <ProviderPanel />
-      {extra}
+      <MemoryRouter>
+        <ProviderPanel />
+        {extra}
+      </MemoryRouter>
     </QueryClientProvider>,
   );
 
@@ -82,7 +85,7 @@ describe('ProviderPanel', () => {
   it('renders nothing for a non-provider', () => {
     useAuthStore.setState({ user: { user_id: 5, role: 'user', token: 't' } as AuthUser });
     renderPanel();
-    expect(screen.queryByText('Manage my service')).toBeNull();
+    expect(screen.queryByText('My status now')).toBeNull();
   });
 
   it('greets by name and shows the status and the feature name as text', async () => {

@@ -36,6 +36,8 @@ interface AuthState {
   setSession: (user: AuthUser) => void;
   /** The server rotates the token (X-New-Token) after a password change. */
   replaceToken: (token: string) => void;
+  /** The account edited its own profile (name, WhatsApp, email). */
+  updateUser: (fields: Partial<Pick<AuthUser, 'full_name' | 'whatsapp_number' | 'email'>>) => void;
   logout: () => void;
 }
 
@@ -49,6 +51,13 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     const user = get().user;
     if (!user) return;
     const next = { ...user, token, admin_token: user.admin_token ? token : null };
+    writeStored(next);
+    set({ user: next });
+  },
+  updateUser: (fields) => {
+    const user = get().user;
+    if (!user) return;
+    const next = { ...user, ...fields };
     writeStored(next);
     set({ user: next });
   },
@@ -69,10 +78,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     set({ user: null });
     // Removing the token from this browser is not enough: a copy of it would stay valid on the server until it
     // expires. Imported lazily (the API client imports this store); failures are ignored, the user is out locally.
-    if (token)
-      void import('@/api/auth')
-        .then(({ authApi }) => authApi.logout(token))
-        .catch(() => undefined);
+    if (token) void import('@/api/auth').then(({ authApi }) => authApi.logout(token)).catch(() => undefined);
   },
 }));
 

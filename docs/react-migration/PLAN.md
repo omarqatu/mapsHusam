@@ -1299,6 +1299,19 @@ For each page, list from the legacy code — not from memory:
   already was. "Request service" sends a visitor to `/login` and back to the same map URL; chat, requests and the provider
   panel need a session as before. `/home` still sends visitors to `/welcome`. Header login link no longer wraps on phones.
 
+## Owner's notes, 5 October 2026
+
+- ✅ **"إدارة خدمتي" had no edit and no pictures.** That card is the live status panel on the map (available / busy / live
+  location); the details and pictures were already in "my listings" but nothing pointed there. The card and the panel are
+  now «حالتي الآن», the panel ends with «تعديل البيانات والصور» → `/my-listings`, and the home shows «إعلاناتي» first.
+- ✅ **My profile** (`/profile`, signed in): tapping the avatar opens the account menu, whose header and a «الملف الشخصي»
+  item lead to the page: who I am (name, role, phone), my details (name, WhatsApp, email — the phone is the login,
+  read-only with a hint), password and log-out, shortcuts (my listings, my requests, add a listing, notifications).
+  Server: see "Server changes" → "The account's own profile". `Avatar` moved to `components/ui/` (used twice);
+  `FormField` gained an optional `hint`. Tests: `features/profile/model.test.ts`, live `profile.live.test.ts`.
+- Not done: a real profile picture (accounts have no photo column; the avatar is the first letter) — later, with the same
+  on-disk storage as listing pictures, if wanted.
+
 ## Server changes (allowed: functionality-preserving improvements, one commit each)
 
 Rule: URLs, methods, auth rules and response shapes stay identical; legacy pages keep working.

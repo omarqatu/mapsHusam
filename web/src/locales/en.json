@@ -178,7 +178,8 @@
     "addListing": "Add your business",
     "adminSubmissions": "Add requests",
     "adminContact": "Contact details",
-    "myListings": "My listings"
+    "myListings": "My listings",
+    "profile": "My profile"
   },
   "roles": {
     "admin": "Admin",
@@ -620,7 +621,7 @@
     }
   },
   "provider": {
-    "title": "Manage my service",
+    "title": "My status now",
     "welcome": "Welcome, {{name}}",
     "checking": "Checking your service…",
     "loadFailed": "Could not load your service. Try again.",
@@ -639,7 +640,9 @@
     "updatedBusy": "You are now not available.",
     "updateFailed": "Could not update your status.",
     "noLocation": "No saved location yet. Use \"Available (my location)\" first.",
-    "trackingOn": "Live tracking is on"
+    "trackingOn": "Live tracking is on",
+    "editDetails": "Edit details and pictures",
+    "editDetailsHint": "Name, description, numbers, hours and pictures are in “My listings”."
   },
   "requests": {
     "accept": "Accept",
@@ -1735,8 +1738,8 @@
         "desc": "Every reply and alert that reached you."
       },
       "service": {
-        "title": "Manage my service",
-        "desc": "Change your status and your location on the map."
+        "title": "My status now",
+        "desc": "Available or busy, and your live location on the map."
       },
       "users": {
         "title": "Users",
@@ -1760,7 +1763,7 @@
       },
       "myListings": {
         "title": "My listings",
-        "desc": "Your services and properties: edit them, add pictures, add a new one."
+        "desc": "Edit your services and properties, add pictures, change their state."
       }
     },
     "figures": {
@@ -1852,7 +1855,7 @@
     "title": "Add your business to the map",
     "subtitle": "Have a shop, a service, or a flat to rent or sell? Three steps: type, place, details. Once the admins approve it, it shows on the map and you manage it from “My listings”.",
     "adminNote": "You are an admin: add businesses directly with the map's edit tool, and review people's requests on the add-requests page.",
-    "providerNote": "Your account is already linked to a business. Edit it from “Manage my service” on the map.",
+    "providerNote": "Your account is already linked to a business. Edit it and its pictures from “My listings”.",
     "loadFailed": "Could not load the data. Try again.",
     "sent": "Your request was received. We will review it and notify you.",
     "sendFailed": "Could not send the request.",
@@ -2149,6 +2152,30 @@
       "removeFailed": "Could not remove the picture.",
       "hint": "The first picture is the cover. Pictures are shrunk before upload.",
       "broken": "Not a picture link"
+    }
+  },
+  "profile": {
+    "open": "My profile",
+    "title": "My profile",
+    "subtitle": "Your details as the people you deal with see them.",
+    "loadFailed": "Could not load your profile.",
+    "details": "My details",
+    "name": "Name",
+    "phone": "Mobile number",
+    "phoneHint": "Your mobile number is your login. To change it, contact the admins.",
+    "whatsapp": "WhatsApp",
+    "whatsappHint": "Leave it empty if it is your mobile number.",
+    "email": "Email (optional)",
+    "save": "Save changes",
+    "saved": "Your details are saved.",
+    "saveFailed": "Could not save your details.",
+    "security": "Security",
+    "shortcuts": "Shortcuts",
+    "myListingsHint": "Your services, properties and their pictures",
+    "errors": {
+      "nameEmpty": "Write your name.",
+      "whatsapp": "Invalid WhatsApp number.",
+      "email": "Invalid email."
     }
   }
 }

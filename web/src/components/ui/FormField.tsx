@@ -8,12 +8,22 @@ interface FormFieldProps {
   /** Must equal the `id` of the input inside `children`. */
   name: string;
   error?: string;
+  /** Muted help under the input, in the error's place while there is no error. */
+  hint?: string;
   required?: boolean;
   className?: string;
   children: ReactNode;
 }
 
-export default function FormField({ label, name, error, required, className, children }: FormFieldProps) {
+export default function FormField({
+  label,
+  name,
+  error,
+  hint,
+  required,
+  className,
+  children,
+}: FormFieldProps) {
   const { t } = useTranslation();
   return (
     <div className={clsx('flex flex-col gap-1.5', className)}>
@@ -28,11 +38,13 @@ export default function FormField({ label, name, error, required, className, chi
       {children}
       {/* Reserved slot so an error appearing doesn't shift the form. */}
       <div className="min-h-5" id={`${name}-error`}>
-        {error && (
+        {error ? (
           <p role="alert" className="flex items-start gap-1.5 text-xs font-medium text-danger">
             <AlertCircle className="mt-0.5 h-3.5 w-3.5 shrink-0" aria-hidden />
             {error}
           </p>
+        ) : (
+          hint && <p className="mb-2 text-xs text-muted">{hint}</p>
         )}
       </div>
     </div>
