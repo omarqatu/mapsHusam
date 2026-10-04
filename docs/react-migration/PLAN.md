@@ -1658,6 +1658,12 @@ and give the Node process write access to it on IIS**), table `listing_photos` k
 - **Deploy keeps `uploads/`.** `tools/deploy-windows.ps1` copies with `robocopy /MIR`, which purged every folder of the
   live site not in the release — the pictures folder included. `uploads` is now excluded like `DB_Backups`
   (deploy and rollback). Better still on the server: `UPLOADS_DIR` outside the site folder.
+- **The account's own profile** (owner, 2026-10-05: "tapping my picture should offer my profile"). New
+  `GET /api/auth/profile` and `PATCH /api/auth/profile` `{full_name?, whatsapp_number?, email?}` (signed in; only the
+  caller's own row) → `{success, profile: {user_id, full_name, phone, whatsapp_number, email, role}}`. The phone is the
+  login and is not editable here; role and linked listing stay the admin's. Validation in `lib/profile.js` (name 1–100,
+  WhatsApp normalised like register, email format, unique → 409). Nothing existing changed. Verify: `node --test lib/`,
+  live `features/profile/profile.live.test.ts`.
 
 ## Backend asks (needs the user's decision — behaviour-changing or larger)
 
