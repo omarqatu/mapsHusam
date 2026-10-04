@@ -26,7 +26,7 @@ export default function LegalModal({ docKey, onClose }: { docKey: LegalKey | nul
       <div className="mb-3 flex items-center gap-2 text-brand-fg">
         <Icon className="h-5 w-5" aria-hidden />
       </div>
-      <LegalBody doc={doc} custom={custom} />
+      <LegalBody doc={doc} custom={custom} docKey={docKey ?? undefined} />
     </Modal>
   );
 }

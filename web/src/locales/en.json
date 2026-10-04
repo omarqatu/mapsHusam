@@ -176,7 +176,8 @@
     "admin": "Admin",
     "adminAppearance": "Appearance",
     "addListing": "Add your business",
-    "adminSubmissions": "Add requests"
+    "adminSubmissions": "Add requests",
+    "adminContact": "Contact details"
   },
   "roles": {
     "admin": "Admin",
@@ -956,7 +957,8 @@
       "facebook": "Facebook",
       "whatsapp": "WhatsApp",
       "youtube": "YouTube",
-      "linkedin": "LinkedIn"
+      "linkedin": "LinkedIn",
+      "instagram": "Instagram"
     }
   },
   "searchPage": {
@@ -1941,6 +1943,30 @@
       "message": {
         "required": "Enter the message."
       }
+    }
+  },
+  "platformContact": {
+    "title": "Contact the platform",
+    "greeting": "Hello, I am contacting you from the services map",
+    "whatsapp": "WhatsApp",
+    "phone": "Phone",
+    "email": "Email",
+    "admin": {
+      "title": "Contact details",
+      "description": "The platform's WhatsApp, phone, email and social pages. Shown at the bottom of every page and in “Contact us”.",
+      "direct": "Direct contact",
+      "directHint": "Each number becomes a button that opens WhatsApp or a call. A local mobile (05…) is sent to WhatsApp as a Palestinian number (+970).",
+      "social": "Social pages",
+      "socialHint": "The full address of the page, starting with https://",
+      "emptyHidden": "An empty field is not shown.",
+      "badPhone": "Not a valid number.",
+      "badEmail": "Not a valid email.",
+      "badUrl": "Not a valid address (must start with https://).",
+      "saved": "Contact details saved.",
+      "failed": "Could not save the contact details.",
+      "loadFailed": "Could not load the contact details.",
+      "discard": "Discard",
+      "updatedAt": "Last changed: {{date}}"
     }
   }
 }

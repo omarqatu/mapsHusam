@@ -1136,7 +1136,12 @@ here so it can be corrected.
    (one rating per request, as services already work). The publisher's rating = the average over all their listings.
 4. **A hidden layer must not appear anywhere, front end or API.** ✅ See "Listing state and hidden layers" below.
 5. **A name for the platform.** Proposals only (discussion).
-6. **The platform's WhatsApp and phone.** ⬜
+6. **The platform's WhatsApp and phone.** ✅ `/admin/contact` (admin menu): WhatsApp, phone, email and the
+   Facebook / Instagram / YouTube / LinkedIn addresses, stored as JSON under `settings.contact` (platform_content — no
+   server change). Shown as buttons that carry the number itself in the footer of every page and at the top of "contact
+   us" (dialog and `/legal/contact`). A local mobile (05…) opens WhatsApp as +970; only http(s) links are kept; an empty
+   field is not shown (the legacy footer drew WhatsApp / YouTube / LinkedIn buttons pointing at "#"). Tests:
+   `platform-contact/contact.test.ts`, live `contact.live.test.ts`; screenshots desktop + phone.
 7. **A service limited by hours shows in search even when closed; a withdrawn one does not; unavailable properties do
    not.** ✅ Decision (owner, 2026-10-04: "something shows it closed / unavailable, and something removes it entirely, like a
    plot"): three states — see below.

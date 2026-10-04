@@ -83,6 +83,13 @@ export const appRoutes: AppRoute[] = [
     nav: true,
   },
   {
+    path: '/admin/contact',
+    titleKey: 'nav.adminContact',
+    access: ['admin'],
+    legacy: "(new page — the platform's WhatsApp, phone, email and social pages; owner's point 6, 2026-10-04)",
+    nav: true,
+  },
+  {
     path: '/admin/submissions',
     titleKey: 'nav.adminSubmissions',
     access: ['admin'],

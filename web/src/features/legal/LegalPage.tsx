@@ -21,7 +21,7 @@ export default function LegalPage() {
         <Icon className="h-6 w-6 shrink-0" aria-hidden />
         {custom?.title || doc.title}
       </h1>
-      <LegalBody doc={doc} custom={custom} />
+      <LegalBody doc={doc} custom={custom} docKey={legalKey} />
     </article>
   );
 }

@@ -32,6 +32,7 @@ const AdminSubmissionsPage = lazy(() => import('@/features/listing-submissions/A
 const AddListingPage = lazy(() => import('@/features/listing-submissions/AddListingPage'));
 const AdminTextsPage = lazy(() => import('@/features/admin-texts/AdminTextsPage'));
 const AdminAppearancePage = lazy(() => import('@/features/brand-theme/AdminAppearancePage'));
+const AdminContactPage = lazy(() => import('@/features/platform-contact/AdminContactPage'));
 const NotificationsPage = lazy(() => import('@/features/notifications/NotificationsPage'));
 const SearchPage = lazy(() => import('@/features/search/SearchPage'));
 const WidgetsPortalPage = lazy(() => import('@/features/widgets/WidgetsPortalPage'));
@@ -52,6 +53,7 @@ const ported: Record<string, ReactElement> = {
   '/admin/visibility': <AdminVisibilityPage />,
   '/admin/texts': <AdminTextsPage />,
   '/admin/appearance': <AdminAppearancePage />,
+  '/admin/contact': <AdminContactPage />,
   '/admin/submissions': <AdminSubmissionsPage />,
   '/add-listing': <AddListingPage />,
 };

@@ -14,7 +14,7 @@ function InlineText({ docKey }: { docKey: LegalKey }) {
         {custom?.title || doc?.title || t(`auth.legal.${docKey}`)}
       </h3>
       {doc ? (
-        <LegalBody doc={doc} custom={custom} />
+        <LegalBody doc={doc} custom={custom} docKey={docKey} />
       ) : isLoading ? (
         <Spinner />
       ) : (

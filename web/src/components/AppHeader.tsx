@@ -10,6 +10,7 @@ import {
   MapPin,
   Menu,
   Moon,
+  Headset,
   Palette,
   Radio,
   Search,
@@ -45,6 +46,7 @@ const ICONS: Record<string, LucideIcon> = {
   '/admin/texts': Type,
   '/admin/visibility': EyeOff,
   '/admin/appearance': Palette,
+  '/admin/contact': Headset,
   '/admin/dashboard': ChartColumn,
 };
 

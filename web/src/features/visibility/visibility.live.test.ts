@@ -5,7 +5,9 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { authApi } from '@/api/auth';
 import { api, ApiError } from '@/api/client';
+import { fetchWfs } from '@/api/geoserver';
 import { platformContentApi } from '@/api/platformContent';
+import { searchApi } from '@/api/search';
 import { useAuthStore } from '@/store/authStore';
 import { ALL_VISIBLE, VISIBILITY_KEY, parseVisibility, serializeVisibility, withLayers, withSection } from './model';
 
@@ -40,6 +42,44 @@ describe.skipIf(!BASE)('visibility setting against the live backend', () => {
     const stored = parseVisibility(await readStored());
     expect([...stored.hiddenLayers].sort()).toEqual(['plumber', 'rent']);
     expect([...stored.hiddenSections]).toEqual(['ticker']);
+  });
+
+  it('the server itself leaves a hidden layer out: search, counts and GeoServer (the admin still gets it)', async () => {
+    const { user } = await authApi.login({ phone: '0590000001', password: 'Admin#12345' });
+    useAuthStore.getState().setSession(user);
+    await platformContentApi.save(VISIBILITY_KEY, 'test', serializeVisibility(withLayers(ALL_VISIBLE, ['plumber', 'land'], false)));
+    const admin = useAuthStore.getState().user;
+    const wfs = (typeName: string, workspace: string) =>
+      fetchWfs({ workspace, typeName, srsName: 'EPSG:28191' }, { timeoutMs: 15000 }) as Promise<{
+        features: { properties: Record<string, unknown> }[];
+      }>;
+    const plumbersInWfs = async () =>
+      (await wfs('service_all', 'services')).features.filter((f) => f.properties.discriminator === 'plumber').length;
+
+    useAuthStore.setState({ user: null }); // a visitor
+    expect((await searchApi.search({ layer: 'plumber', workspace: 'services' })).features).toHaveLength(0);
+    expect((await searchApi.search({ layer: 'LandSale', workspace: 'realestate' })).features).toHaveLength(0);
+    const counts = (await api.get<{ data: { counts: Record<string, number> } }>('/api/category-counts')).data.counts;
+    expect(counts.plumber).toBeUndefined();
+    expect(counts.LandSale).toBeUndefined();
+    let gsUp = true;
+    try {
+      expect(await plumbersInWfs()).toBe(0);
+      expect((await wfs('LandSale', 'realestate')).features).toHaveLength(0);
+    } catch (e) {
+      if (!(e instanceof Error) || !/HTTP 50|fetch failed/.test(e.message)) throw e;
+      gsUp = false; // no local GeoServer: the proxy part is covered by lib/listing-rules.test.js
+    }
+
+    useAuthStore.setState({ user: admin });
+    expect((await searchApi.search({ layer: 'plumber', workspace: 'services' })).features.length).toBeGreaterThan(0);
+    if (gsUp) expect(await plumbersInWfs()).toBeGreaterThan(0);
+  });
+
+  it('a client filter on a listing layer is refused for the public', async () => {
+    useAuthStore.setState({ user: null });
+    const res = await fetch(`/geoserver-proxy/services/ows?service=WFS&version=1.0.0&request=GetFeature&typeName=services:service_all&CQL_FILTER=1%3D1`);
+    expect(res.status).toBe(403);
   });
 
   it('a key nobody saved answers item: null (not an error: every visitor asks for it)', async () => {
