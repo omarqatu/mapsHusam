@@ -6,11 +6,22 @@ import { normalizeWhatsappNumber, servicesPool } from '../database.js';
 import { authStatusCache, bearerToken, requireAuth, revokeToken, signSessionToken } from '../auth.js';
 import { notifyUser } from '../state.js';
 import { INSERT_SUBMISSION_SQL, parseListingInput, submissionParams } from '../listings.js';
+import rateLimit from 'express-rate-limit';
+
+// New accounts are active at once (a plain "user": it can rate, request and submit a listing — listings still wait for
+// an admin). Against mass sign-ups: few new accounts per device per hour; an admin can still switch any account off.
+const registerLimiter = rateLimit({
+    windowMs: 60 * 60 * 1000,
+    max: parseInt(process.env.REGISTER_RATE_LIMIT) || 5,
+    standardHeaders: true,
+    legacyHeaders: false,
+    message: { success: false, error: 'أنشأت حسابات كثيرة من هذا الجهاز، حاول بعد ساعة.' }
+});
 
 // ==========================================
 // 1️⃣ مسار تسجيل مستخدم جديد
 // ==========================================
-app.post('/api/auth/register', authLimiter, async (req, res) => {
+app.post('/api/auth/register', authLimiter, registerLimiter, async (req, res) => {
     const { name, email = '', phone, password, whatsapp_number = '' } = req.body || {};
     const role = 'user'; // 🔒 الدور دائماً "مستخدم" ولا يُقبل من العميل (المشرف يرقّيه من لوحة الإدارة)
     const normalizedEmail = String(email || '').toLowerCase().trim();
@@ -37,7 +48,7 @@ app.post('/api/auth/register', authLimiter, async (req, res) => {
         return res.status(400).json({ error: 'صيغة رقم الجوال غير صحيحة، يجب أن يبدأ بـ 05 ويتكون من 10 أرقام.' });
     }
 
-    // 🆕 صاحب نشاط يسجّل حسابه ونشاطه معاً: طلب واحد ينتظر موافقة واحدة (الموافقة تفعّل الحساب وتنشر النشاط)
+    // 🆕 صاحب نشاط يسجّل حسابه ونشاطه معاً: الحساب يعمل فوراً، والنشاط ينتظر موافقة المشرف
     let listing = null;
     if (req.body.listing) {
         const parsedListing = parseListingInput(req.body.listing);
@@ -69,7 +80,7 @@ app.post('/api/auth/register', authLimiter, async (req, res) => {
 
         const insertUserQuery = `
             INSERT INTO public.users (full_name, email, phone, password_hash, role, status, is_active, whatsapp_number)
-            VALUES ($1, $2, $3, $4, $5, 0, false, $6)
+            VALUES ($1, $2, $3, $4, $5, 0, true, $6)
             RETURNING user_id, full_name, email, phone, role, whatsapp_number
         `;
 

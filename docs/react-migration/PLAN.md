@@ -1620,6 +1620,16 @@ and give the Node process write access to it on IIS**), table `listing_photos` k
   the admin (a plot is a drawn polygon). Verify: `npm test` (`lib/listing-edit.test.js`), live `myListings.live.test.ts`.
   Commit: `feat(server): an account owns several listings, edits them and uploads pictures`.
 
+- **New accounts are active at once** (owner, 2026-10-04: "free activation"). `POST /api/auth/register` inserts
+  `is_active = true` (was `false`: the person had to message the Facebook page and wait for an admin). Same URL, body and
+  response. A plain account can only rate, request and submit a listing — listings still wait for an admin's approval,
+  and an admin can still switch any account off. Against mass sign-ups: a second limiter on that route, 5 new accounts
+  per device per hour (`REGISTER_RATE_LIMIT`; `dev/dev.sh server` sets 1000 for the live tests). The web logs the new
+  account in right away (a business goes to "add a listing", where its request waits). Later, if spam shows up: phone
+  ownership check by a WhatsApp message the person sends to the platform's number (free with the WhatsApp Cloud API,
+  needs the owner's Meta Business account). Verify: register → log in works at once; 6th registration from one IP
+  within the hour → 429; live `auth.live.test.ts`, `admin.live.test.ts`.
+
 ## Backend asks (needs the user's decision — behaviour-changing or larger)
 
 - **Public map:** `/api/log-contact-click` is `requireAuth`, so a visitor's call / WhatsApp tap is not counted in the provider's

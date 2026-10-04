@@ -14,7 +14,8 @@ VOLUME=psm-dev-pgdata
 IMAGE=${PSM_DEV_PG_IMAGE:-docker.io/postgis/postgis:18-3.6}
 PORT=55432
 
-load_env() { set -a; . dev/dev.env; set +a; }
+# The live tests register throwaway accounts on every run: lift the per-device sign-up limit locally.
+load_env() { set -a; . dev/dev.env; : "${REGISTER_RATE_LIMIT:=1000}"; set +a; }
 
 wait_ready() {
   for _ in $(seq 1 60); do
