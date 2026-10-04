@@ -37,7 +37,8 @@ try {
         if (fs.existsSync(filename)) fs.copyFileSync(filename, previous);
         else fs.rmSync(previous, { force: true });
         // Write atomically and keep a private local copy for updating the service environment without logging it.
-        const staged = path.join(deployPath, '.env.provisioning');
+        // Stage outside IIS, under the private directory ACL, then retain that ACL when moving into the site.
+        const staged = path.join(directory, 'env-installing');
         fs.writeFileSync(staged, plaintext, { mode: 0o600 });
         fs.renameSync(staged, filename);
         fs.writeFileSync(path.join(directory, 'service-values.json'), JSON.stringify(values), { mode: 0o600 });

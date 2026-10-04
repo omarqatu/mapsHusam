@@ -82,6 +82,11 @@
 
 بعد إصلاح مشكلة تشغيل يمكنك إعادة النشر من Actions → Deploy to IIS Server → Run workflow على `main`.
 
+إذا إعدادات الإنتاج غير موجودة بعد النشر القديم: workflow **Configure production securely** يجهّز مفتاح نقل عام
+(`mode=key`)؛ المفتاح الخاص يظل في `C:\ProgramData\mapsHusam\configuration` بصلاحيات خاصة. تُشفّر إعدادات صاحب
+المشروع محلياً بـ RSA-OAEP + AES-256-GCM وتُرسل كـ `encrypted_payload` في `mode=apply`. يُثبّت `.env` ويضبط
+متغيرات NSSM محلياً، دون رفع القيم للمستودع أو طبعها في Actions. تبقى الخدمة الحالية شغالة إلى أن يبدأ النشر مع الباكب.
+
 ## بعد الدمج مباشرة
 
 1. تابع تشغيلة النشر على GitHub (Actions) لحد ما تخلص بنجاح.
