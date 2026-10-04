@@ -4,9 +4,8 @@ import path from 'path';
 import { app, debugLog } from '../app.js';
 import { GEOSERVER_TARGET } from '../database.js';
 import { isValidLayer } from '../layers.js';
-import { activeAdminUidFromToken } from '../auth.js';
 import { PROPERTY_TABLES, localIsoDate, publicProxyQuery } from '../../lib/listing-rules.js';
-import { getHiddenLayers } from '../visibility.js';
+import { viewerRules } from '../visibility.js';
 import { SERVICE_TYPE_KEYS } from '../layers.js';
 
 // 3. إعداد البروكسي لـ GeoServer
@@ -63,6 +62,29 @@ const LISTING_LAYERS = new Set(['service_all', ...PROPERTY_TABLES, ...SERVICE_TY
 const PUBLIC_PROXY_PATH = /^\/(?:[A-Za-z0-9_]+\/)?(?:ows|wfs|wms)$/i;
 const PUBLIC_WFS_REQUESTS = new Set(['getcapabilities', 'describefeaturetype']);
 
+// أعمدة كل طبقة كما يعرفها GeoServer نفسه (DescribeFeatureType)، لنطلب كل شيء ما عدا الهاتف/الواتساب لزائر بلا حساب.
+// كاش 10 دقائق؛ فشل القراءة = رفض الطلب (لا نرسل الأرقام احتياطاً).
+const columnsCache = new Map(); // "ws:layer" -> { columns, expiresAt }
+async function layerColumns(workspace, layer) {
+    const key = `${workspace}:${layer}`;
+    const hit = columnsCache.get(key);
+    if (hit && Date.now() < hit.expiresAt) return hit.columns;
+    const url = `${GEOSERVER_TARGET}/${encodeURIComponent(workspace)}/ows?service=WFS&version=1.0.0&request=DescribeFeatureType` +
+        `&typeName=${encodeURIComponent(key)}&outputFormat=application/json`;
+    try {
+        const r = await fetch(url, { signal: AbortSignal.timeout(10000) });
+        if (!r.ok) throw new Error(`HTTP ${r.status}`);
+        const data = await r.json();
+        const columns = (data.featureTypes?.[0]?.properties || []).map(p => p.name).filter(n => typeof n === 'string');
+        if (!columns.length) throw new Error('no columns');
+        columnsCache.set(key, { columns, expiresAt: Date.now() + 10 * 60 * 1000 });
+        return columns;
+    } catch (err) {
+        console.warn(`⚠️ [Proxy] تعذر قراءة أعمدة ${key}:`, err.message);
+        return null;
+    }
+}
+
 function rewriteQueryString(req, query) {
     const params = new URLSearchParams();
     for (const [k, v] of Object.entries(query)) params.append(k, String(v));
@@ -73,7 +95,9 @@ function rewriteQueryString(req, query) {
 }
 
 app.use('/geoserver-proxy', async (req, res, next) => {
-    const isAdmin = !!(await activeAdminUidFromToken(req.headers['x-app-token']));
+    // X-App-Token = توكن جلسة التطبيق (يُرسله المتصفح لأي مستخدم مسجّل، ويُحذف قبل GeoServer)
+    const viewer = await viewerRules(req.headers['x-app-token']);
+    const isAdmin = viewer.isAdmin;
     if (!PROXY_READ_METHODS.includes(req.method) && !isAdmin) {
         console.warn(`🚫 [Proxy Guard] رُفض طلب ${req.method} بلا توكن مشرف من IP: ${req.ip}`);
         return res.status(403).json({ error: 'التعديل على الخريطة للمشرف فقط.' });
@@ -112,7 +136,14 @@ app.use('/geoserver-proxy', async (req, res, next) => {
             if (request !== 'getfeature') {
                 if (!PUBLIC_WFS_REQUESTS.has(request)) return res.status(403).json({ error: 'هذا الطلب غير مسموح به.' });
             } else {
-                const r = publicProxyQuery(query, listingLayers[0], { hidden: await getHiddenLayers(), today: localIsoDate() });
+                let columns = null;
+                if (viewer.hideContact) {
+                    const typeName = requestedLayers[0];
+                    const workspace = typeName.includes(':') ? typeName.split(':')[0] : proxiedPath.split('/')[1];
+                    columns = await layerColumns(workspace, listingLayers[0]);
+                    if (!columns) return res.status(503).json({ error: 'تعذر تجهيز الطلب، حاول بعد قليل.' });
+                }
+                const r = publicProxyQuery(query, listingLayers[0], { hidden: viewer.hidden, today: localIsoDate(), columns });
                 if (r.error) {
                     // طبقة مخفية = لا معالم (وليس خطأ يعيد المتصفح المحاولة عليه)
                     if (r.status === 404) return res.json({ type: 'FeatureCollection', features: [], totalFeatures: 0 });

@@ -54,18 +54,24 @@ function sessionTokenNeedsRenewal(decoded) {
 }
 
 // رقم المشرف صاحب التوكن إن كان توكن جلسة صالحاً لمشرف فعّال (وإلا null). لا يرمي أبداً.
-export async function activeAdminUidFromToken(token) {
+/** The session behind a token ({ uid, role }) or null: same checks as requireAuth (signature, revoked, active, version). */
+export async function sessionFromToken(token) {
     if (!token || isTokenRevoked(token)) return null;
     try {
         const decoded = jwt.verify(token, ADMIN_JWT_SECRET, { algorithms: ['HS256'] });
         const uid = Number(decoded.uid);
         if (!Number.isInteger(uid) || uid <= 0) return null;
         const status = await getAuthStatus(uid);
-        const ok = status.exists && status.active && status.role === 'admin' && (Number(decoded.tv) || 0) === status.tokenVersion;
-        return ok ? uid : null;
+        const ok = status.exists && status.active && (Number(decoded.tv) || 0) === status.tokenVersion;
+        return ok ? { uid, role: status.role } : null;
     } catch (e) {
         return null;
     }
+}
+
+export async function activeAdminUidFromToken(token) {
+    const session = await sessionFromToken(token);
+    return session && session.role === 'admin' ? session.uid : null;
 }
 
 export function bearerToken(req) {

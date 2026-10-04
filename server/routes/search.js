@@ -3,8 +3,8 @@ import { IS_PROD, app, debugLog } from '../app.js';
 import { realestatePool, servicesPool } from '../database.js';
 import { REAL_ESTATE_LAYERS, isValidLayer, isValidSqlIdentifier } from '../layers.js';
 import { activeAdminUidFromToken, bearerToken } from '../auth.js';
-import { AVAILABLE_FIRST_SQL, hiddenDiscriminators, isLayerHidden, publicListingSql } from '../../lib/listing-rules.js';
-import { hiddenLayersFor } from '../visibility.js';
+import { AVAILABLE_FIRST_SQL, CONTACT_FIELDS, hiddenDiscriminators, isLayerHidden, publicListingSql, withoutContact } from '../../lib/listing-rules.js';
+import { viewerRulesFor } from '../visibility.js';
 
 const EMPTY_COLLECTION = { type: 'FeatureCollection', features: [] };
 
@@ -21,7 +21,9 @@ app.get('/api/get-unique-values', async (req, res) => {
         const isRealEstate = REAL_ESTATE_LAYERS.includes(layer.trim());
         const tableName = isRealEstate ? `"${layer}"` : `service_all`;
         // طبقة أخفاها المشرف لا تظهر قيمها لغيره
-        if (isLayerHidden(layer, await hiddenLayersFor(req))) return res.json({ success: true, values: [] });
+        const viewer = await viewerRulesFor(req);
+        if (isLayerHidden(layer, viewer.hidden)) return res.json({ success: true, values: [] });
+        if (viewer.hideContact && CONTACT_FIELDS.includes(field)) return res.json({ success: true, values: [] });
 
         // 🆕 فلترة تسلسلية اختيارية: filter_gov_a=... / filter_village_a=...
         let extraWhere = '';
@@ -71,7 +73,8 @@ app.post('/api/search-features-batch', async (req, res) => {
         // سقف لعدد المعرفات: الأقسام تطلب بضع عشرات فقط
         const cleanIds = ids.slice(0, 100).map(id => parseInt(id, 10)).filter(id => !isNaN(id));
         if (cleanIds.length === 0) return res.json(EMPTY_COLLECTION);
-        if (isLayerHidden(layer, await hiddenLayersFor(req))) return res.json(EMPTY_COLLECTION);
+        const viewer = await viewerRulesFor(req);
+        if (isLayerHidden(layer, viewer.hidden)) return res.json(EMPTY_COLLECTION);
 
         // نفس قاعدة الظهور العامة: لا يظهر المسحوب أو المنتهي في "الأعلى تقييماً" و"موصى بهم"
         let query = `SELECT *, ST_AsGeoJSON(geom) as geom_json FROM public.${tableName} WHERE ${idField} = ANY($1) AND ${publicListingSql(isRealEstate)}`;
@@ -92,7 +95,8 @@ app.post('/api/search-features-batch', async (req, res) => {
             if (!geometry) {
                 geometry = { type: 'Point', coordinates: [Number(x_coord), Number(y_coord)] };
             }
-            return { type: 'Feature', geometry, properties };
+            // زائر بلا حساب: بلا هاتف/واتساب (إلا إذا سمح المشرف)
+            return { type: 'Feature', geometry, properties: viewer.hideContact ? withoutContact(properties) : properties };
         });
 
         res.json({ type: 'FeatureCollection', features });
@@ -140,7 +144,8 @@ app.get('/api/search-features', async (req, res) => {
         }
 
         // 🔒 طبقة أخفاها المشرف (إعداد الإظهار والإخفاء) لا تُرجَع لغيره، ولا أنواعها ضمن service_all
-        const hidden = await hiddenLayersFor(req);
+        const viewer = await viewerRulesFor(req);
+        const hidden = viewer.hidden;
         if (isLayerHidden(layer, hidden)) return res.json(EMPTY_COLLECTION);
         if (layer.trim() === 'service_all') {
             const hiddenTypes = hiddenDiscriminators(hidden);
@@ -185,17 +190,19 @@ app.get('/api/search-features', async (req, res) => {
         const MAX_SEARCH_CONDITIONS = 30;
         const count = Math.min(parseInt(conditions_count) || 0, MAX_SEARCH_CONDITIONS);
         const rawConditions = [];
+        // زائر لا يرى الأرقام لا يبحث بها أيضاً (وإلا خمّنها حرفاً حرفاً)
+        const fieldAllowed = (f) => !(viewer.hideContact && CONTACT_FIELDS.includes(f));
         if (count > 0) {
             for (let i = 0; i < count; i++) {
                 const condField = req.query[`field_${i}`];
                 const condOperator = req.query[`operator_${i}`];
                 const condValue = req.query[`value_${i}`];
-                if (!isValidSqlIdentifier(condField)) continue;
+                if (!isValidSqlIdentifier(condField) || !fieldAllowed(condField)) continue;
                 if (condField && condValue !== undefined && condValue !== '') {
                     rawConditions.push({ field: condField, operator: condOperator, value: String(condValue).trim() });
                 }
             }
-        } else if (field && value && isValidSqlIdentifier(field)) {
+        } else if (field && value && isValidSqlIdentifier(field) && fieldAllowed(field)) {
             rawConditions.push({ field, operator, value: String(value).trim() });
         }
 
@@ -306,7 +313,8 @@ app.get('/api/search-features', async (req, res) => {
             return {
                 type: 'Feature',
                 geometry: geometry,
-                properties: properties
+                // زائر بلا حساب: بلا هاتف/واتساب (إلا إذا سمح المشرف)
+                properties: viewer.hideContact ? withoutContact(properties) : properties
             };
         });
 
