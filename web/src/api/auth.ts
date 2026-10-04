@@ -66,9 +66,22 @@ export function useLogin() {
   });
 }
 
-/** New accounts are created inactive (status 0): no session is started, the user waits for activation. */
+/**
+ * Creates the account and logs it in (new accounts are active at once); the caller starts the session with the returned
+ * user. `user: null` = the account exists but the login did not go through (an admin switched it off, the login
+ * limiter) — the person goes to the login page.
+ */
 export function useRegister() {
-  return useMutation({ mutationFn: authApi.register });
+  return useMutation({
+    mutationFn: async (body: RegisterRequest) => {
+      await authApi.register(body);
+      try {
+        return { user: (await authApi.login({ phone: body.phone, password: body.password })).user };
+      } catch {
+        return { user: null };
+      }
+    },
+  });
 }
 
 export function useChangePassword() {

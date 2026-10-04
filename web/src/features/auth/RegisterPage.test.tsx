@@ -24,6 +24,8 @@ function setup() {
         <Routes>
           <Route path="/register" element={<RegisterPage />} />
           <Route path="/login" element={<div>login page</div>} />
+          <Route path="/home" element={<div>home page</div>} />
+          <Route path="/add-listing" element={<div>add listing page</div>} />
         </Routes>
       </MemoryRouter>
     </QueryClientProvider>,
@@ -32,9 +34,14 @@ function setup() {
 
 /**
  * `fetch` for the page: the legal texts ask the server for an admin replacement (answered "none"); everything else is the
- * one response under test. `registerCalls` are the requests to /api/auth/register only.
+ * one response under test; the login that follows a registration gets `loginResponse` (default: signed in).
+ * `registerCalls` are the requests to /api/auth/register only.
  */
-function stubFetch(registerResponse: Response) {
+const SIGNED_IN = { user: { user_id: 7, full_name: 'Sara', phone: '0598512667', role: 'user', token: 't' } };
+function stubFetch(
+  registerResponse: Response,
+  loginResponse = new Response(JSON.stringify(SIGNED_IN)),
+) {
   const registerCalls: [string, RequestInit][] = [];
   vi.stubGlobal(
     'fetch',
@@ -43,6 +50,7 @@ function stubFetch(registerResponse: Response) {
         return new Response(JSON.stringify({ success: true, item: null }));
       if (url === '/api/listing-submissions/layers')
         return new Response(JSON.stringify({ success: true, layers: ['plumber', 'hotels'] }));
+      if (url === '/api/auth/login') return loginResponse.clone();
       registerCalls.push([url, init]);
       return registerResponse.clone();
     }),
@@ -101,7 +109,7 @@ describe('RegisterPage', () => {
     expect(go).toBeEnabled();
   });
 
-  it('sends the WhatsApp number built from prefix + local number and goes to login on success', async () => {
+  it('sends the WhatsApp number built from prefix + local number, then is signed in at once', async () => {
     const calls = stubFetch(
       new Response(JSON.stringify({ status: 'success', message: 'ok', user: {} }), { status: 201 }),
     );
@@ -111,7 +119,7 @@ describe('RegisterPage', () => {
     await userEvent.type(screen.getByLabelText(/رقم الموبايل المحلي|Local mobile number/), '0598512667');
     await userEvent.type(screen.getByLabelText(/كلمة المرور|Password/), 'secret1');
     await userEvent.click(screen.getByRole('button', { name: /إتمام التسجيل|Complete registration/ }));
-    await waitFor(() => expect(screen.getByText('login page')).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByText('home page')).toBeInTheDocument());
     const [url, init] = calls[0];
     expect(url).toBe('/api/auth/register');
     expect(JSON.parse(init.body as string)).toEqual({
@@ -121,7 +129,22 @@ describe('RegisterPage', () => {
       password: 'secret1',
       email: '',
     });
-    expect(useAuthStore.getState().user).toBeNull(); // registering does not log in
+    expect(useAuthStore.getState().user).toMatchObject({ user_id: 7, role: 'user' });
+  });
+
+  it('goes to the login page when the account cannot log in right away', async () => {
+    stubFetch(
+      new Response(JSON.stringify({ status: 'success', message: 'ok', user: {} }), { status: 201 }),
+      new Response(JSON.stringify({ message: 'معطل' }), { status: 403 }),
+    );
+    setup();
+    await passTerms();
+    await userEvent.type(screen.getByLabelText(/الاسم الكامل|Full name/), 'Sara');
+    await userEvent.type(screen.getByLabelText(/رقم الموبايل المحلي|Local mobile number/), '0598512667');
+    await userEvent.type(screen.getByLabelText(/كلمة المرور|Password/), 'secret1');
+    await userEvent.click(screen.getByRole('button', { name: /إتمام التسجيل|Complete registration/ }));
+    await waitFor(() => expect(screen.getByText('login page')).toBeInTheDocument());
+    expect(useAuthStore.getState().user).toBeNull();
   });
 
   it('validates the mobile number and password locally and shows the server error otherwise', async () => {
@@ -165,7 +188,7 @@ describe('RegisterPage', () => {
     await userEvent.click(screen.getByRole('button', { name: 'pick-location' }));
     await userEvent.click(screen.getByRole('button', { name: /إتمام التسجيل|Complete registration/ }));
 
-    await waitFor(() => expect(screen.getByText('login page')).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByText('add listing page')).toBeInTheDocument());
     expect(JSON.parse(calls[0][1].body as string)).toMatchObject({
       phone: '0598512667',
       listing: {

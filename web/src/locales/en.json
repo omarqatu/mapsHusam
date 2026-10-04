@@ -118,7 +118,7 @@
     },
     "register": {
       "title": "Create an account with a WhatsApp number",
-      "intro": "Register with a Palestinian mobile number for fast, safe activation",
+      "intro": "Sign up with a Palestinian mobile number — your account works right away.",
       "termsTitle": "Terms and conditions of use",
       "platformName": "Palestine Services Map (trial version)",
       "about": "The first interactive platform connecting users with service providers and property owners in Palestine. Whether you look for a service or have a property to sell or rent, we give you smart geographic marketing that reaches the public directly.",
@@ -141,12 +141,12 @@
       "accountUser": "Regular user (search, browse and request services)",
       "submit": "Complete registration",
       "submitting": "Registering…",
-      "success": "Your account was created. Please message us on Facebook to activate it.",
+      "success": "Welcome! Your account is ready and you are signed in.",
       "backToTerms": "Back to the terms",
       "hasBusiness": "I have a business and want it on the map",
       "businessTitle": "Your business",
       "businessHint": "Sent with your sign-up and reviewed once by the admins: on approval your account is activated and your business is published.",
-      "successBusiness": "Your account was created and your business details were sent. When the admins approve, your account is activated and your business is published; then you can sign in."
+      "successBusiness": "Your account is ready and your business request reached the admins. You will get a notification once it is approved."
     },
     "changePassword": {
       "open": "Change password",

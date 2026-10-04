@@ -1,10 +1,9 @@
 // @vitest-environment node
 // Real-backend test (no mocks) for the register and change-password flows.
 //   cd web && VITE_LIVE_API=http://localhost:3000 npm test
-// Registers one throwaway inactive account per run in the dev database.
+// Registers one throwaway account per run in the dev database (active at once).
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { authApi } from '@/api/auth';
-import { ApiError } from '@/api/client';
 import { useAuthStore } from '@/store/authStore';
 import { toWhatsappNumber } from './phone';
 
@@ -26,7 +25,7 @@ describe.skipIf(!BASE)('auth flows against the live backend', () => {
 
   const phone = '05' + String(Date.now()).slice(-8);
 
-  it('registers a new account (inactive, no session) and rejects a duplicate phone', async () => {
+  it('registers a new account (no session yet) and rejects a duplicate phone', async () => {
     const body = {
       name: 'Live Test',
       phone,
@@ -40,9 +39,11 @@ describe.skipIf(!BASE)('auth flows against the live backend', () => {
     await expect(authApi.register(body)).rejects.toMatchObject({ status: 400 });
   });
 
-  it('the new account cannot log in until an admin activates it', async () => {
-    await expect(authApi.login({ phone, password: 'secret1' })).rejects.toBeInstanceOf(ApiError);
+  it('the new account is active at once: it logs in as a plain user', async () => {
     expect(useAuthStore.getState().user).toBeNull();
+    const { user } = await authApi.login({ phone, password: 'secret1' });
+    expect(user).toMatchObject({ phone, role: 'user' });
+    expect(user.token).toBeTruthy();
   });
 
   it('rejects a too-short password and a malformed phone with the server message', async () => {

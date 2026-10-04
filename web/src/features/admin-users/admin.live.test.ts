@@ -58,7 +58,7 @@ describe.skipIf(!BASE)('admin endpoints against the live backend', () => {
     expect(res.success).toBe(true);
     expect(Array.isArray(res.onlineUserIds)).toBe(true);
     const a = res.users.find((u) => u.user_id === idA)!;
-    expect(a).toMatchObject({ role: 'user', is_active: false, service_layer: null, request_limit: null });
+    expect(a).toMatchObject({ role: 'user', is_active: true, service_layer: null, request_limit: null });
     for (const k of [
       'user_id',
       'full_name',
@@ -78,8 +78,7 @@ describe.skipIf(!BASE)('admin endpoints against the live backend', () => {
   });
 
   it('activate / deactivate decides whether the account can log in', async () => {
-    await expect(authApi.login({ phone: phoneA, password: 'secret1' })).rejects.toBeTruthy();
-    await adminUsersApi.update({ user_id: idA, is_active: true });
+    // a new account is active at once
     const { user } = await authApi.login({ phone: phoneA, password: 'secret1' });
     expect(user.user_id).toBe(idA);
     await adminUsersApi.update({ user_id: idA, is_active: false });
