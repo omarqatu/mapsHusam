@@ -99,9 +99,16 @@
         }
     }
 
+    // 🆕 طلبات بيانات الخريطة عبر البروكسي تحمل التوكن أيضاً: السيرفر يحجب أرقام
+    // التواصل عن الزائر غير المسجّل، فيلزمه معرفة أن الطالب مستخدم مسجّل.
+    function isGeoProxyRequest(input) {
+        const url = typeof input === 'string' ? input : ((input && input.url) || '');
+        return url.startsWith('/geoserver-proxy/') || url.startsWith(ORIGIN + '/geoserver-proxy/');
+    }
+
     window.fetch = function (input, init) {
         const apiPath = toApiPath(input);
-        if (apiPath) {
+        if (apiPath || isGeoProxyRequest(input)) {
             const token = getToken();
             if (token) {
                 init = Object.assign({}, init || {});

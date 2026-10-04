@@ -370,14 +370,59 @@ window.isLayerGloballyExcluded = function (layerIdentifier) {
     });
 };
 
+// 🆕 مجموعات الفئات (نفس فروع صفحة البحث بدون خريطة) لإخفاء أي رابط/زر يشير
+// لمجموعة كل طبقاتها مخفية (مثل روابط الفوتر "فنيون وصيانة منزلية").
+window.LAYER_GROUPS = {
+    roads: ['road_barriers'],
+    fuel: ['fuel_stations'],
+    realestate: ['ApartRent', 'ApartSale', 'LandSale'],
+    technicians: ['electrician', 'ac_technician', 'plumber', 'general_maintenance', 'painter', 'Finisher', 'carpenter', 'blacksmith', 'builder', 'house_cleaner', 'aluminum_tech', 'glass_tech', 'cctv_installer', 'gardener', 'security_firms', 'furniture_buyer'],
+    health: ['home_nurse', 'masseur', 'cupping_specialist', 'nutritionist', 'pharmacies_on_call', 'emergency_hospitals', 'clinics', 'doctors_on_call', 'ambulances_on_call', 'pet_care'],
+    vehicles: ['car_mechanic', 'car_electrician', 'tire_tech', 'car_wash', 'motorcycle_repair', 'taxi_driver', 'delivery_services', 'tow_truck', 'truck_driver', 'taxis_on_call', 'car_delivery_on_call', 'motorcycle_delivery_on_call', 'bicycle_delivery_on_call'],
+    professional: ['lawyers', 'land_surveyors', 'real_estate_valuers', 'private_tutors', 'programmers', 'music_training', 'student_research_assist'],
+    events: ['party_planner', 'zaffa_bands', 'music_bands', 'party_rental', 'clown_entertainer', 'martial_arts_gymnastics', 'public_parks_recreation', 'hotels', 'villas_rent', 'barber_shop', 'video_design_ads', 'photographers'],
+    misc: ['online_stores', 'free_distribution'],
+    landmarks: ['city_landmarks'],
+    commercial: ['supermarket', 'commercial_shops', 'restaurants'],
+    education: ['schools_kindergartens'],
+    jobs: ['job_vacancies']
+};
+
+// هل كل طبقات القائمة مخفية؟ (القائمة: أسماء مفصولة بفواصل أو اسم مجموعة)
+window.areAllLayersExcluded = function (layers) {
+    const list = (Array.isArray(layers) ? layers : String(layers || '').split(',')).map(v => String(v).trim()).filter(Boolean);
+    return list.length > 0 && list.every(name => window.isLayerGloballyExcluded(name));
+};
+
+// 🆕 زر بديل لأزرار الاتصال عندما تكون أرقام التواصل محجوبة عن الزائر (contact_hidden)
+window.loginToContactHtml = function (compact) {
+    const pad = compact ? '6px 4px' : '10px';
+    const size = compact ? '10px' : '13px';
+    return `<div style="margin-top:6px;"><button type="button" data-requires-login="عرض بيانات التواصل" style="width:100%; background:#475569; color:#fff; border:none; padding:${pad}; border-radius:8px; font-size:${size}; font-weight:bold; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:6px;"><i class="fas fa-lock"></i> سجّل الدخول لعرض أرقام التواصل</button></div>`;
+};
+
 // تطبيق استثناءات config.js على عناصر الواجهة الثابتة والمحمّلة ديناميكياً.
+// data-global-layer-exclusion="a,b" → يُخفى العنصر إذا كانت كل الطبقات المذكورة مخفية
+// data-global-layer-group="technicians" → يُخفى إذا كانت كل طبقات المجموعة مخفية
 window.applyGlobalExclusionsToDom = function (root) {
     const scope = root || document;
     if (!scope?.querySelectorAll) return;
-    scope.querySelectorAll('[data-global-layer-exclusion]').forEach(function (element) {
-        if (!window.isLayerGloballyExcluded(element.dataset.globalLayerExclusion)) return;
+    const hide = function (element) {
         element.hidden = true;
         element.style.setProperty('display', 'none', 'important');
+    };
+    scope.querySelectorAll('[data-global-layer-exclusion]').forEach(function (element) {
+        if (window.areAllLayersExcluded(element.dataset.globalLayerExclusion)) hide(element);
+    });
+    scope.querySelectorAll('[data-global-layer-group]').forEach(function (element) {
+        const groupLayers = window.LAYER_GROUPS[element.dataset.globalLayerGroup];
+        if (groupLayers && window.areAllLayersExcluded(groupLayers)) hide(element.closest('li') || element);
+    });
+    // روابط ?group= تُخفى تلقائياً إن كانت مجموعتها مخفية بالكامل
+    scope.querySelectorAll('a[href*="no-map-search.html?group="]').forEach(function (link) {
+        const match = /[?&]group=([a-z_]+)/i.exec(link.getAttribute('href') || '');
+        const groupLayers = match && window.LAYER_GROUPS[match[1]];
+        if (groupLayers && window.areAllLayersExcluded(groupLayers)) hide(link.closest('li') || link);
     });
 };
 if (document.readyState === 'loading') {
@@ -385,6 +430,7 @@ if (document.readyState === 'loading') {
 } else {
     window.applyGlobalExclusionsToDom();
 }
+window.addEventListener('load', () => window.applyGlobalExclusionsToDom());
 
 // ==========================================================================
 // 8-ب) [دمج طبقات الخدمات]: دوال مساعدة موحّدة تحل مشكلة أن كل الخدمات أصبحت
@@ -479,10 +525,10 @@ window.nmsFormatWorkHours = function (workHours) {
     } catch (e) { return workHours; }
 };
 
-window.nmsStatusBadgeHtml = function (autoStatus, workHours, compact) {
+window.nmsStatusBadgeHtml = function (autoStatus, workHours, compact, manualStatus) {
     const isAvailable = parseInt(autoStatus, 10) === 0;
     const color = isAvailable ? '#28a745' : '#dc3545';
-    const text = isAvailable ? 'متاح الآن' : 'مغلق حالياً';
+    const text = isAvailable ? 'متاح الآن' : (parseInt(manualStatus, 10) === 1 ? 'غير متاح حالياً' : 'مغلق حالياً');
     const icon = isAvailable ? '🟢' : '🔴';
     const hours = window.nmsFormatWorkHours(workHours);
     if (compact) {
@@ -539,7 +585,7 @@ window.buildPopupInfoBlock = function (props, opts) {
     let html = opts.ratingHtml || '';
 
     if (isRoad) html += window.buildRoadBarrierDirectionsHtml(props);
-    else if (!isRealEstate) html += window.nmsStatusBadgeHtml(props.auto_status, props.work_hours, compact);
+    else if (!isRealEstate) html += window.nmsStatusBadgeHtml(props.auto_status, props.work_hours, compact, props.status);
 
     if (props.name) html += row('name', `<i class="fas ${isRoad ? 'fa-road' : 'fa-user'}" style="color:#1a73e8;"></i> ${esc(props.name)}`);
     const loc = props.location_name || props.location;

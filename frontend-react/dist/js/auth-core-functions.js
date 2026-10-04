@@ -204,20 +204,22 @@ window.openDashboard = function() {
 // دالة فتح رقم الموبايل
 // ==========================================
 window.openMobileContact = function() {
-    // رقم الموبايل للتواصل
-    const mobileNumber = '+970599000000'; // استبدل برقم الموبايل الفعلي
+    // 🆕 رقم هاتف المنصة من الإعدادات (platform-brand.js ← /api/platform-contact)
+    const telUrl = typeof window.platformPhoneUrl === 'function' ? window.platformPhoneUrl() : null;
+    if (!telUrl) { alert('رقم هاتف المنصة غير مضبوط بعد.'); return; }
     window.sendTrackingRequest('الدومين', 'اتصال الهاتف الخارجي');
-    window.open(`tel:${mobileNumber}`, '_blank');
+    window.open(telUrl, '_blank');
 };
 
 // ==========================================
 // دالة فتح واتساب
 // ==========================================
 window.openWhatsApp = function() {
-    // رقم الواتساب للتواصل
-    const whatsappNumber = '970599000000'; // استبدل برقم الواتساب الفعلي
+    // 🆕 رقم واتساب المنصة من الإعدادات (platform-brand.js ← /api/platform-contact)
+    const waUrl = typeof window.platformWhatsappUrl === 'function' ? window.platformWhatsappUrl() : null;
+    if (!waUrl) { alert('رقم واتساب المنصة غير مضبوط بعد.'); return; }
     window.sendTrackingRequest('الدومين', 'واتساب خارجي');
-    window.open(`https://wa.me/${whatsappNumber}`, '_blank');
+    window.open(waUrl, '_blank');
 };
 
 // ==========================================

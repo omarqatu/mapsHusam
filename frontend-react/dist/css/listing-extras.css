@@ -1,0 +1,35 @@
+/* listing-extras.css — التقييمات والصور الموحّدة للعقارات والخدمات */
+.lx { margin: 8px 0; padding: 8px 10px; background: #fff9e6; border: 1px solid #ffe082; border-radius: 8px; font-size: 12px; line-height: 1.6; direction: rtl; text-align: right; }
+.lx-muted { color: #6b7280; font-size: 11.5px; }
+.lx-stars { color: #f59e0b; letter-spacing: 1px; font-size: 14px; }
+.lx-empty-stars { color: #d1d5db; }
+.lx-summary { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.lx-owner { margin-top: 4px; padding-top: 4px; border-top: 1px dashed #fcd34d; color: #374151; font-size: 11.5px; }
+.lx-owner i { color: #16a34a; }
+.lx-actions { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 6px; align-items: center; }
+.lx-btn { background: #1a73e8; color: #fff; border: none; border-radius: 6px; padding: 5px 10px; font-size: 11.5px; cursor: pointer; font-weight: bold; font-family: inherit; }
+.lx-btn-light { background: #e8f0fe; color: #1a73e8; }
+.lx-btn:disabled { opacity: .6; }
+.lx-own { font-weight: bold; }
+.lx-comments { margin-top: 8px; max-height: 200px; overflow-y: auto; border-top: 1px solid #f3e8c0; padding-top: 6px; }
+.lx-comments[hidden] { display: none; }
+.lx-comment { padding: 5px 0; border-bottom: 1px solid #f5f0dc; }
+.lx-comment-text { color: #374151; margin-top: 2px; white-space: pre-wrap; word-break: break-word; }
+.lx-verified { color: #16a34a; font-size: 10.5px; font-weight: bold; }
+.lx-rate-form { margin-top: 8px; background: #fff; border-radius: 8px; padding: 8px; border: 1px solid #fde68a; }
+.lx-star-row { display: flex; gap: 2px; direction: ltr; justify-content: flex-end; flex-direction: row-reverse; }
+.lx-star { background: none; border: none; font-size: 26px; color: #d1d5db; cursor: pointer; padding: 0 2px; line-height: 1; }
+.lx-star.on { color: #f59e0b; }
+.lx-comment-input { width: 100%; box-sizing: border-box; min-height: 54px; margin-top: 6px; border: 1px solid #e5e7eb; border-radius: 6px; padding: 6px; font-family: inherit; font-size: 12px; resize: vertical; }
+.lx-gallery { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 6px; margin-bottom: 6px; }
+.lx-thumb { flex: 0 0 74px; height: 74px; border-radius: 8px; border: 2px solid #fff; box-shadow: 0 1px 4px rgba(0,0,0,.15); background: #eee center/cover no-repeat; cursor: zoom-in; padding: 0; }
+#lx-lightbox { position: fixed; inset: 0; background: rgba(0,0,0,.88); z-index: 100000; display: none; align-items: center; justify-content: center; }
+#lx-lightbox.open { display: flex; }
+#lx-lightbox img { max-width: 92vw; max-height: 86vh; border-radius: 8px; box-shadow: 0 10px 40px rgba(0,0,0,.5); }
+#lx-lightbox button { position: absolute; background: rgba(255,255,255,.15); color: #fff; border: none; font-size: 30px; width: 48px; height: 48px; border-radius: 50%; cursor: pointer; }
+.lx-lb-close { top: 16px; right: 16px; }
+.lx-lb-prev { right: 16px; top: 50%; transform: translateY(-50%); }
+.lx-lb-next { left: 16px; top: 50%; transform: translateY(-50%); }
+.lx-lb-count { position: absolute; bottom: 16px; color: #fff; font-size: 14px; }
+/* زر الدخول كزائر في الشاشة الترحيبية */
+.promo-btn-guest { background: rgba(255,255,255,.12) !important; color: #fff !important; border: 1px dashed rgba(255,255,255,.7) !important; }

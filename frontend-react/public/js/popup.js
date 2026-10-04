@@ -661,11 +661,12 @@ function initializePopup(map) {
         } catch (e) { return workHours; }
     }
 
-    function getStatusHtml(autoStatus, workHours) {
+    function getStatusHtml(autoStatus, workHours, manualStatus) {
         const status = parseInt(autoStatus);
         const isAvailable = status === 0;
         const color = isAvailable ? "#28a745" : "#dc3545";
-        const text = isAvailable ? "متاح الآن" : "مغلق حالياً";
+        // status=1: أوقفها المزود يدوياً، وإلا فهي خارج ساعات العمل
+        const text = isAvailable ? "متاح الآن" : (parseInt(manualStatus) === 1 ? "غير متاح حالياً" : "مغلق حالياً");
         const icon = isAvailable ? "🟢" : "🔴";
         const timeText = formatWorkHours(workHours);
         return `<div style="margin: 10px 0; padding: 10px; border-radius: 8px; background: ${color}10; border: 1px dashed ${color}; text-align: center;">
@@ -736,23 +737,21 @@ function initializePopup(map) {
         
         // إضافة عرض النجوم للخدمات فقط (باستثناء حواجز الطرق - لا تقييمات لها)
         const isFuelStations = discriminator === 'fuel_stations';
-        if (isService && displayFeatureId && !isRoadBarriers && !isFuelStations) {
-            // استخدام الاسم الإنجليزي من layer مباشرة لقاعدة البيانات
-            const layerDbName = layerEnglishName;
-            if (layerDbName) {
-                bodyHtml += `<div id="rating-display-${layerDbName}-${displayFeatureId}" style="margin-bottom: 8px; padding: 8px; background: #fff9e6; border-radius: 6px; border: 1px solid #ffe082;">
-                    <div style="display: flex; align-items: center; gap: 8px;">
-                        <span style="font-size: 14px; color: #f57c00;">⭐</span>
-                        <span id="rating-text-${layerDbName}-${displayFeatureId}" style="font-size: 12px; color: #666;">جاري تحميل التقييم...</span>
-                    </div>
+        // 🆕 تقييمات + صور موحّدة للخدمات والعقارات معاً، مع تقييم الناشر (listing-extras.js)
+        const realEstateDbNames = { 'شقق الإيجار': 'ApartRent', 'شقق للبيع': 'ApartSale', 'الأراضي للبيع': 'LandSale' };
+        const ratingLayerName = isRealEstate ? realEstateDbNames[layerTitle] : layerEnglishName;
+        if ((isService || isRealEstate) && displayFeatureId && ratingLayerName && !isRoadBarriers && !isFuelStations) {
+            if (typeof window.listingExtrasPlaceholder === 'function') {
+                bodyHtml += window.listingExtrasPlaceholder(ratingLayerName, displayFeatureId);
+            } else if (isService) {
+                bodyHtml += `<div id="rating-display-${ratingLayerName}-${displayFeatureId}" style="margin-bottom: 8px; padding: 8px; background: #fff9e6; border-radius: 6px; border: 1px solid #ffe082;">
+                    <span id="rating-text-${ratingLayerName}-${displayFeatureId}" style="font-size: 12px; color: #666;">جاري تحميل التقييم...</span>
                 </div>`;
-                
-                // جلب التقييم بشكل غير متزامن
-                fetchRatingsForFeature(layerDbName, displayFeatureId);
+                fetchRatingsForFeature(ratingLayerName, displayFeatureId);
             }
         }
         
-                if (!isAreaLayer && !isRoadBarriers) bodyHtml += getStatusHtml(props.auto_status, props.work_hours);
+                if (!isAreaLayer && !isRoadBarriers) bodyHtml += getStatusHtml(props.auto_status, props.work_hours, props.status);
 
                                 if (isRoadBarriers) {
             // 🆕 [stop2]: عرض حالتين منفصلتين - للداخل (stop) وللخارج (stop2) - كل
@@ -815,6 +814,10 @@ function initializePopup(map) {
 
             if (props.des && !isRealEstate) bodyHtml += `<div style="margin-top:5px; background:#f9f9f9; padding:5px; border-radius:4px; word-wrap:break-word; overflow-wrap:break-word; white-space:normal;"><b>📝 الوصف:</b> ${window.sanitizeHTML(props.des)}</div>`;
             
+            // 🆕 الزائر غير المسجّل: أرقام التواصل محجوبة من السيرفر
+            if (!props.whatsapp && props.contact_hidden && window.loginToContactHtml) {
+                bodyHtml += `<div style="margin-top: 15px; border-top: 2px solid #eee; padding-top: 12px;">${window.loginToContactHtml(false)}</div>`;
+            }
             if (props.whatsapp) {
                 const whatsappNumber = props.whatsapp.toString();
                 const providerName = props.name || (isRealEstate ? "المعلن" : "مزود الخدمة");
@@ -911,9 +914,11 @@ function initializePopup(map) {
         const popupDetails1 = resolvePopupMediaValue(props, ['details_link_1', 'detailsLink1', 'detailsLink_1', 'link_1', 'details_url_1', 'details1', 'details_1']);
         const popupDetails2 = resolvePopupMediaValue(props, ['details_link_2', 'detailsLink2', 'detailsLink_2', 'link_2', 'details_url_2', 'details2', 'details_2']);
 
-        if (popupDetails1 || popupDetails2 || popupPic || popupVideo) {
+        // صور المزود المرفوعة تُعرض بمعرض التقييمات/الصور أعلاه، فلا نكررها هنا
+        const picIsUploaded = typeof popupPic === 'string' && popupPic.startsWith('/api/listing-images/') && typeof window.listingExtrasPlaceholder === 'function';
+        if (popupDetails1 || popupDetails2 || (popupPic && !picIsUploaded) || popupVideo) {
             bodyHtml += `<div style="margin-top: 12px; padding-top: 10px; border-top: 2px solid #eee;">`;
-            if (popupPic) bodyHtml += `<hr>${createImageElement(popupPic)}`;
+            if (popupPic && !picIsUploaded) bodyHtml += `<hr>${createImageElement(popupPic)}`;
             if (popupVideo) bodyHtml += createVideoEmbedElement(popupVideo);
             if (popupDetails1) bodyHtml += createDetailsMediaElement(popupDetails1, "تفاصيل إضافية 1");
             if (popupDetails2) bodyHtml += createDetailsMediaElement(popupDetails2, "تفاصيل إضافية 2");

@@ -501,7 +501,8 @@ window.__nmsPageHandlesOwnAds = true;
                 mediaHtml += buildMediaBlockHtml(getMediaValue(props, 'details2'), 'تفاصيل إضافية 2');
             }
 
-            let actionHtml = '';
+            // 🆕 الزائر: أرقام التواصل محجوبة من السيرفر - نعرض دعوة لتسجيل الدخول بدلها
+            let actionHtml = (!props.whatsapp && props.contact_hidden && window.loginToContactHtml) ? window.loginToContactHtml(true) : '';
             if (props.whatsapp) {
                 const providerName = name || (isRealEstate ? 'المعلن' : 'مزود الخدمة');
                 const whatsappNumber = props.whatsapp.toString();
@@ -999,7 +1000,7 @@ if (ytMatch) {
         // للاتصال، أخضر للواتساب، تدرّج بنفسجي/أزرق لطلب الخدمة) + عرض رقم
         // الهاتف مباشرة على زر الاتصال نفسه.
         function buildGalleryContactActionsHtml(props, item) {
-            if (!props.whatsapp) return '';
+            if (!props.whatsapp) return (props.contact_hidden && window.loginToContactHtml) ? window.loginToContactHtml(false) : '';
             const isRealEstate = item.isRealEstate;
             const whatsappNumber = props.whatsapp.toString();
             const providerName = props.name || (isRealEstate ? 'المعلن' : 'مزود الخدمة');
@@ -2093,7 +2094,10 @@ if (ytMatch) {
                                 // التقييم بالاسم الإنجليزي للطبقة (بدل الاسم العربي الذي كان يفشل بطبقات كثيرة)
                 const catLayerKey = (currentCategory.key || '').replace(/Layer$/i, '');
                 let ratingHtml = '';
-                    if (window.shouldShowRating(catLayerKey, isRealEstate)) {
+                if (typeof window.listingExtrasPlaceholder === 'function') {
+                    // 🆕 تقييمات + صور + تقييم الناشر للخدمات والعقارات معاً
+                    ratingHtml = window.listingExtrasPlaceholder(catLayerKey, displayFeatureIdForResult);
+                } else if (window.shouldShowRating(catLayerKey, isRealEstate)) {
                     const featureId = (p.id !== undefined && p.id !== null) ? p.id : '';
                     if (featureId !== '') {
                         ratingHtml = `<div id="rating-display-${catLayerKey}-${featureId}" class="nms-rating-display">
@@ -2110,6 +2114,9 @@ if (ytMatch) {
 
                 card.innerHTML = html;
 
+                if (!p.whatsapp && p.contact_hidden && window.loginToContactHtml) {
+                    card.insertAdjacentHTML('beforeend', window.loginToContactHtml(false));
+                }
                 if (p.whatsapp) {
                     const whatsappNumber = p.whatsapp.toString();
                     // 🆕 استخدام قيمة phone مباشرة إذا كانت موجودة، وإلا التحويل من whatsapp

@@ -625,7 +625,7 @@
 
         const greetName = (otherPartyName && otherPartyName.trim()) ? otherPartyName.trim() : 'الطرف الآخر';
         const greetService = (serviceType && serviceType.trim()) ? serviceType.trim() : 'الخدمة';
-        const waMessage = `مرحباً ${greetName}، تواصلت معاك بخصوص خدمة (${greetService}) من خلال منصة خريطة الخدمات الفلسطينية.`;
+        const waMessage = `مرحباً ${greetName}، تواصلت معاك بخصوص خدمة (${greetService}) من خلال منصة دليلك وين.`;
         const waMessageEncoded = encodeURIComponent(waMessage);
 
         return `

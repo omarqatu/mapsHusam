@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>خدماتي - دليلك وين</title>
+    <link rel="stylesheet" href="/ol/ol.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="stylesheet" href="/css/my-listings.css">
+    <link rel="stylesheet" href="/css/platform-brand.css">
+</head>
+<body class="ml-body" data-kind="service">
+    <nav class="ml-topbar">
+        <span class="ml-brand"><i class="fas fa-map-location-dot"></i> <span data-platform-name>دليلك وين</span> <small id="ml-user"></small></span>
+        <span class="ml-spacer"></span>
+        <a href="/my-services.html" class="active"><i class="fas fa-toolbox"></i> خدماتي</a>
+        <a href="/my-properties.html" class=""><i class="fas fa-building"></i> عقاراتي</a>
+        <a href="/"><i class="fas fa-map"></i> الخريطة</a>
+    </nav>
+
+    <main class="ml-container" id="ml-content">
+        <div class="ml-header">
+            <div>
+                <h1><i class="fas fa-toolbox"></i> خدماتي <small style="font-size:14px;color:#6b7280">(<span id="ml-count">0</span>)</small></h1>
+                <p>أضف خدماتك المتعددة، عدّل بياناتها وساعات عملها، وارفع صوراً لأعمالك.</p>
+            </div>
+            <button class="ml-btn ml-btn-primary" data-act="add"><i class="fas fa-plus"></i> إضافة خدمة</button>
+        </div>
+        <div class="ml-notice" id="ml-notice" hidden></div>
+        <div class="ml-filters">
+            <button class="ml-chip active" data-filter="all">الكل</button>
+            <button class="ml-chip" data-filter="0">متاح</button>
+            <button class="ml-chip" data-filter="1">غير متاح</button>
+            <button class="ml-chip" data-filter="2">ملغي</button>
+        </div>
+        <section class="ml-grid" id="ml-list"></section>
+    </main>
+
+    <div class="ml-modal-backdrop" id="ml-modal" role="dialog" aria-modal="true" aria-labelledby="ml-modal-title">
+        <div class="ml-modal">
+            <header><h2 id="ml-modal-title"></h2><button class="ml-close" data-close aria-label="إغلاق">&times;</button></header>
+            <div class="ml-modal-body" id="ml-modal-body"></div>
+            <footer id="ml-modal-footer"></footer>
+        </div>
+    </div>
+    <div class="ml-toast" id="ml-toast" role="status" aria-live="polite"></div>
+
+    <script src="/ol/ol.js"></script>
+    <script src="/proj4/proj4.js"></script>
+    <script src="/js/auth-fetch.js"></script>
+    <script src="/js/platform-brand.js"></script>
+    <script src="/js/my-listings.js"></script>
+</body>
+</html>

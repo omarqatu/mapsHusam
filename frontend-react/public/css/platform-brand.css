@@ -1,0 +1,23 @@
+/* platform-brand.css — زر التواصل العائم مع إدارة المنصة */
+.pcw { position: fixed; left: 16px; bottom: 90px; z-index: 9000; direction: rtl; font-family: inherit; }
+.pcw-toggle {
+    width: 54px; height: 54px; border-radius: 50%; border: none; cursor: pointer;
+    background: #25d366; color: #fff; font-size: 28px; display: flex; align-items: center; justify-content: center;
+    box-shadow: 0 6px 18px rgba(37, 211, 102, .45);
+}
+.pcw-toggle:hover { transform: scale(1.05); }
+.pcw-menu {
+    position: absolute; bottom: 64px; left: 0; min-width: 230px; background: #fff; border-radius: 14px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, .2); padding: 10px; display: flex; flex-direction: column; gap: 6px;
+}
+.pcw-menu[hidden] { display: none; }
+.pcw-title { font-size: 13px; font-weight: 700; color: #374151; padding: 4px 6px 6px; border-bottom: 1px solid #eee; }
+.pcw-item {
+    display: flex; align-items: center; gap: 8px; padding: 10px 12px; border-radius: 10px; text-decoration: none;
+    font-weight: 700; font-size: 14px; color: #fff;
+}
+.pcw-item[hidden] { display: none; }
+.pcw-item span { margin-inline-start: auto; font-weight: 500; font-size: 13px; }
+.pcw-wa { background: #25d366; }
+.pcw-tel { background: #1a73e8; }
+@media (max-width: 768px) { .pcw { bottom: 140px; left: 12px; } .pcw-toggle { width: 48px; height: 48px; font-size: 24px; } }

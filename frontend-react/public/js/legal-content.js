@@ -10,11 +10,11 @@
     window.APP_LEGAL_CONTENT = {
 
         guide: {
-            title: 'دليل استخدام منصة خريطة الخدمات الفلسطينية',
+            title: 'دليل استخدام منصة دليلك وين',
             icon: 'fa-book-open',
             html: `
                 <p style="font-size:14px; color:#555; line-height:1.8; margin-bottom:18px;">
-                    مرحباً بك في <strong>خريطة الخدمات الفلسطينية</strong>. هذا الدليل الموحّد يشرح كل أدوات المنصة سواء كنت تتصفح عبر الخريطة التفاعلية أو عبر صفحة البحث بدون خريطة.
+                    مرحباً بك في <strong>دليلك وين</strong>. هذا الدليل الموحّد يشرح كل أدوات المنصة سواء كنت تتصفح عبر الخريطة التفاعلية أو عبر صفحة البحث بدون خريطة.
                 </p>
 
                 <div style="background:#f0f7ff; border-radius:10px; padding:15px; margin-bottom:20px; border:1px solid #b3d7ff;">
@@ -100,7 +100,7 @@
             icon: 'fa-map-marked-alt',
             html: `
                 <div style="font-family:sans-serif; color:#2c3e50;">
-                    <h3 style="margin-top:0; margin-bottom:15px; font-size:20px; font-weight:700; text-align:center;">منصة خريطة الخدمات الفلسطينية</h3>
+                    <h3 style="margin-top:0; margin-bottom:15px; font-size:20px; font-weight:700; text-align:center;">منصة دليلك وين</h3>
                     <p style="margin-bottom:20px; color:#1a5276; font-size:13px; text-align:center; font-weight:600; background:#f0f7ff; padding:12px; border-radius:8px; border:1px solid #d1e7ff;">✨ النسخة التجريبية - لإعادة ترتيب الواجهات واللوحات حدّث المتصفح، ويمكن تصغير أي لوحة أو تكبيرها أو تحريكها.</p>
                     <p style="font-size:14px; text-align:center; font-weight:600; margin-bottom:15px; line-height:1.6;">للبحث بدون خريطة، استخدم الفلاتر أو اكتب كلمة في مربع البحث مثل شقة للبيع أو للإيجار.</p>
                     <div style="text-align:center; margin-bottom:20px;"><a href="/no-map-search.html" id="no-map-link" style="display:inline-block; padding:12px 25px; background:#27ae60; color:#fff; border-radius:6px; font-weight:700; text-decoration:none; font-size:14px;">⇽ الانتقال إلى صفحة البحث بدون خريطة</a></div>
@@ -313,14 +313,14 @@
             icon: 'fa-circle-info',
             html: `
                 <div style="text-align:center; margin-bottom:25px;">
-                    <h2 style="color:#1a73e8; font-size:24px; margin:0 0 10px 0;">🗺️ خريطة الخدمات الفلسطينية</h2>
+                    <h2 style="color:#1a73e8; font-size:24px; margin:0 0 10px 0;">🗺️ دليلك وين</h2>
                     <p style="color:#666; font-size:15px; margin:0;">منصة شاملة للخدمات والعقارات في فلسطين</p>
                 </div>
 
                 <div style="background:#f8f9fa; border-radius:12px; padding:20px; margin-bottom:20px; border:1px solid #e9ecef;">
                     <h3 style="color:#2c3e50; font-size:18px; margin:0 0 15px 0; border-bottom:2px solid #3498db; padding-bottom:10px;">📋 نبذة عن المنصة</h3>
                     <p style="font-size:14px; color:#555; line-height:1.8; margin:0;">
-                        خريطة الخدمات الفلسطينية منصة رقمية مجانية هدفها الأول ربط أي شخص في فلسطين بأقرب وأنسب خدمة أو عقار يحتاجه، بأقل وقت ممكن ودون وسطاء — سواء كنت تبحث عن فني، طبيب، محامٍ، شقة للإيجار، أو أرض للبيع. كل هذا عبر خريطة تفاعلية ذكية أو عبر بحث نصّي بسيط بدون الحاجة لفتح الخريطة إطلاقاً.
+                        دليلك وين منصة رقمية مجانية هدفها الأول ربط أي شخص في فلسطين بأقرب وأنسب خدمة أو عقار يحتاجه، بأقل وقت ممكن ودون وسطاء — سواء كنت تبحث عن فني، طبيب، محامٍ، شقة للإيجار، أو أرض للبيع. كل هذا عبر خريطة تفاعلية ذكية أو عبر بحث نصّي بسيط بدون الحاجة لفتح الخريطة إطلاقاً.
                     </p>
                 </div>
 
@@ -379,7 +379,7 @@
                 <div style="background:#f8f9fa; border-radius:12px; padding:20px; border:1px solid #e9ecef;">
                     <h3 style="color:#6c757d; font-size:18px; margin:0 0 15px 0; border-bottom:2px solid #6c757d; padding-bottom:10px;">🙏 شكراً لاستخدامك منصتنا</h3>
                     <p style="font-size:14px; color:#555; line-height:1.8; margin:0;">
-                        نقدر ثقتك بمنصة خريطة الخدمات الفلسطينية ونسعى دائماً لتحسين خدماتنا وتقديم أفضل تجربة مستخدم ممكنة. شكراً لكونك جزءاً من مجتمعنا.
+                        نقدر ثقتك بمنصة دليلك وين ونسعى دائماً لتحسين خدماتنا وتقديم أفضل تجربة مستخدم ممكنة. شكراً لكونك جزءاً من مجتمعنا.
                     </p>
                 </div>
             `
@@ -393,7 +393,7 @@
                 <div style="background:#fff3cd; border-radius:12px; padding:20px; margin-bottom:20px; border:1px solid #ffc107;">
                     <h3 style="color:#856404; font-size:18px; margin:0 0 15px 0; border-bottom:2px solid #ffc107; padding-bottom:10px;">⚠️ إخلاء المسؤولية المهم</h3>
                     <p style="font-size:14px; color:#856404; line-height:1.8; margin:0;">
-                        باستخدامك لمنصة خريطة الخدمات الفلسطينية، أنت توافق على الشروط التالية وتقر بأنك قرأت وفهمت إخلاء المسؤولية هذا.
+                        باستخدامك لمنصة دليلك وين، أنت توافق على الشروط التالية وتقر بأنك قرأت وفهمت إخلاء المسؤولية هذا.
                     </p>
                 </div>
 
@@ -450,7 +450,7 @@
                 <div style="background:#d1ecf1; border-radius:12px; padding:20px; margin-bottom:20px; border:1px solid #17a2b8;">
                     <h3 style="color:#0c5460; font-size:18px; margin:0 0 15px 0; border-bottom:2px solid #17a2b8; padding-bottom:10px;">🔒 التزامنا بخصوصيتك</h3>
                     <p style="font-size:14px; color:#0c5460; line-height:1.8; margin:0;">
-                        نحن في منصة خريطة الخدمات الفلسطينية نولي اهتماماً بالغاً لخصوصية زوارنا ومستخدمينا، ونلتزم بأعلى معايير حماية البيانات.
+                        نحن في منصة دليلك وين نولي اهتماماً بالغاً لخصوصية زوارنا ومستخدمينا، ونلتزم بأعلى معايير حماية البيانات.
                     </p>
                 </div>
 
@@ -539,7 +539,15 @@
 
                     <div style="background:#fff; border-right:5px solid #25d366; padding:15px; border-radius:10px; box-shadow:0 2px 6px rgba(0,0,0,0.08);">
                         <strong style="color:#25d366; font-size:15px; display:block; margin-bottom:5px;">💬 واتساب</strong>
-                        <p style="margin:0; font-size:13.5px; color:#555; line-height:1.7;">يمكنك التواصل معنا عبر واتساب للاستفسارات السريعة والدعم الفني.</p>
+                        <p style="margin:0; font-size:13.5px; color:#555; line-height:1.7;">يمكنك التواصل معنا عبر واتساب أو الهاتف للاستفسارات السريعة والدعم الفني.</p>
+                        <div style="margin-top:10px; display:flex; gap:8px; flex-wrap:wrap;">
+                            <a data-platform-whatsapp hidden href="#" target="_blank" rel="noopener" style="display:inline-block; background:#25d366; color:#fff; padding:8px 16px; border-radius:6px; text-decoration:none; font-size:13px;">
+                                <i class="fab fa-whatsapp"></i> واتساب <span data-number dir="ltr"></span>
+                            </a>
+                            <a data-platform-phone hidden href="#" style="display:inline-block; background:#1a73e8; color:#fff; padding:8px 16px; border-radius:6px; text-decoration:none; font-size:13px;">
+                                <i class="fas fa-phone"></i> اتصال <span data-number dir="ltr"></span>
+                            </a>
+                        </div>
                     </div>
 
                     <div style="background:#fff; border-right:5px solid #ea4335; padding:15px; border-radius:10px; box-shadow:0 2px 6px rgba(0,0,0,0.08);">

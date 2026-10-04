@@ -3,10 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>خريطة الخدمات الفلسطينية</title>
+    <title>دليلك وين</title>
 
     <!-- Open Graph Tags لتحسين ظهور الرابط في مواقع التواصل الاجتماعي -->
-    <meta property="og:title" content="خريطة الخدمات والعقارات الفلسطينية">
+    <meta property="og:title" content="دليلك وين — دليلك الأمين للخدمات والعقارات">
     <meta property="og:description" content="منصة شاملة للبحث عن الخدمات والعقارات في فلسطين - شقق للإيجار والبيع، أراضي، ومختلف الخدمات المهنية">
     <meta property="og:image" content="https://cdn-icons-png.flaticon.com/512/684/684908.png">
     <meta property="og:url" content="https://palestine-services-map.com">
@@ -15,7 +15,7 @@
 
     <!-- Twitter Card Tags -->
     <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:title" content="خريطة الخدمات والعقارات الفلسطينية">
+    <meta name="twitter:title" content="دليلك وين — دليلك الأمين للخدمات والعقارات">
     <meta name="twitter:description" content="منصة شاملة للبحث عن الخدمات والعقارات في فلسطين">
     <meta name="twitter:image" content="https://cdn-icons-png.flaticon.com/512/684/684908.png">
 
@@ -51,6 +51,8 @@
     <link rel="stylesheet" href="/css/featured-services-portal.css">
     <link rel="stylesheet" href="/css/widgets-ticker.css">
     <link rel="stylesheet" href="/css/widgets-portal.css">
+    <link rel="stylesheet" href="/css/platform-brand.css">
+    <link rel="stylesheet" href="/css/listing-extras.css">
 
 </head>
 <body>
@@ -61,23 +63,23 @@
     <div class="promo-overlay-dark" style="background: linear-gradient(180deg, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.6) 50%, rgba(0,0,0,0.85) 100%);"></div>
 
     <!-- كلمات متطايرة -->
-    <div class="promo-floating-text" style="left:5%; animation-delay:0s;">🧭 خريطة الخدمات</div>
-    <div class="promo-floating-text" style="left:15%; animation-delay:3s;">🏠 عقارات</div>
-    <div class="promo-floating-text" style="left:30%; animation-delay:6s;">🔧 فنيين</div>
+    <div class="promo-floating-text" style="left:5%; animation-delay:0s;">🧭 دليلك وين</div>
+    <div class="promo-floating-text" data-global-layer-group="realestate" style="left:15%; animation-delay:3s;">🏠 عقارات</div>
+    <div class="promo-floating-text" data-global-layer-group="technicians" style="left:30%; animation-delay:6s;">🔧 فنيين</div>
     <div class="promo-floating-text" style="left:50%; animation-delay:2s;">📍 GPS</div>
-    <div class="promo-floating-text" style="left:65%; animation-delay:5s;">📸 مصورين</div>
-    <div class="promo-floating-text" style="left:78%; animation-delay:1s;">🚑 إسعاف</div>
-    <div class="promo-floating-text" style="left:90%; animation-delay:4s;">⚡ كهربائي</div>
-    <div class="promo-floating-text" style="left:10%; animation-delay:7s;">🩺 تمريض</div>
-    <div class="promo-floating-text" style="left:40%; animation-delay:8s;">🚕 تاكسي</div>
-    <div class="promo-floating-text" style="left:75%; animation-delay:9s;">🛠️ بناء</div>
+    <div class="promo-floating-text" data-global-layer-exclusion="photographers" style="left:65%; animation-delay:5s;">📸 مصورين</div>
+    <div class="promo-floating-text" data-global-layer-exclusion="ambulances_on_call,emergency_hospitals" style="left:78%; animation-delay:1s;">🚑 إسعاف</div>
+    <div class="promo-floating-text" data-global-layer-exclusion="electrician,car_electrician" style="left:90%; animation-delay:4s;">⚡ كهربائي</div>
+    <div class="promo-floating-text" data-global-layer-exclusion="home_nurse" style="left:10%; animation-delay:7s;">🩺 تمريض</div>
+    <div class="promo-floating-text" data-global-layer-exclusion="taxi_driver,taxis_on_call" style="left:40%; animation-delay:8s;">🚕 تاكسي</div>
+    <div class="promo-floating-text" data-global-layer-exclusion="builder" style="left:75%; animation-delay:9s;">🛠️ بناء</div>
 
     <div class="promo-content">
         <span class="promo-logo-icon">🗺️</span>
         
         <h1 class="promo-title">
-            <span class="highlight">خريطة الخدمات الفلسطينية</span>
-            <br>كل ما تحتاج، في مكان واحد
+            <span class="highlight" data-platform-name>دليلك وين</span>
+            <br>دليلك الأمين لكل خدمة وعقار
         </h1>
 
         <p class="promo-subtitle">
@@ -126,6 +128,9 @@
             <button class="promo-action-btn promo-btn-secondary" id="promo-btn-login">
                 <i class="fas fa-sign-in-alt"></i> لديك حساب؟ سجل الدخول
             </button>
+            <button class="promo-action-btn promo-btn-guest" id="promo-btn-guest" type="button">
+                <i class="fas fa-eye"></i> تصفح كزائر بدون تسجيل
+            </button>
         </div>
 
         <p class="promo-footer-text">
@@ -140,7 +145,7 @@
             و<a href="#" id="footer-privacy-btn" style="color:#fff; text-decoration:underline; font-weight:bold;">سياسة الخصوصية</a> الخاصتين بالمنصة.
             <a href="#" id="promo-contact-link" style="color:#fff; text-decoration:underline; font-weight:bold;">تواصل معنا</a>،
             تعرّف على المنصة عبر <a href="#" id="promo-about-link" style="color:#fff; text-decoration:underline; font-weight:bold;">من نحن</a>، ويمكنك أيضاً
-            <a href="#" id="footer-guide-map" style="color:#fff; text-decoration:underline; font-weight:bold;">الاطلاع على دليل استخدام منصة خريطة الخدمات الفلسطينية</a>
+            <a href="#" id="footer-guide-map" style="color:#fff; text-decoration:underline; font-weight:bold;">الاطلاع على دليل استخدام منصة دليلك وين</a>
             قبل التسجيل.
         </p>
     </div>
@@ -172,6 +177,19 @@
         <button class="notification-btn" id="notification-toggle-btn" style="display: none;">
             <i class="fas fa-bell"></i>
             <span id="notification-badge">0</span>
+        </button>
+
+        <!-- 🆕 إعلانات المزود: إدارة الخدمات والعقارات المتعددة -->
+        <a href="/my-services.html" class="btn-guide-top provider-only-link" id="btn-my-services" style="display:none;">
+            <i class="fas fa-toolbox"></i> خدماتي
+        </a>
+        <a href="/my-properties.html" class="btn-guide-top provider-only-link" id="btn-my-properties" style="display:none;">
+            <i class="fas fa-building"></i> عقاراتي
+        </a>
+
+        <!-- 🆕 للزائر: دعوة لتسجيل الدخول -->
+        <button type="button" class="btn-change-pwd-top guest-only" id="btn-guest-login" style="display:none;">
+            <i class="fas fa-sign-in-alt"></i> تسجيل الدخول / حساب جديد
         </button>
 
         <!-- 3. تغيير كلمة المرور -->
@@ -290,7 +308,7 @@
         <button type="button" class="scroll-btn right" id="scrollRight" hidden aria-label="التمرير للخدمات التالية"><i class="fas fa-chevron-left"></i></button>
     </div>
 
-    <h2>خريطة الخدمات الفلسطينية</h2>
+    <h2 data-platform-name>دليلك وين</h2>
 
     <div id="basemap-switcher">
         <select id="basemap-select">
@@ -618,7 +636,7 @@
 
 <div id="auth-splash-overlay" class="auth-overlay">
     <div id="auth-welcome-section" class="auth-dialog-box">
-        <h2 class="auth-title">منصة خريطة الخدمات الفلسطينية</h2>
+        <h2 class="auth-title">منصة دليلك وين</h2>
         <h2 class="auth-title">نسخة تجريبية</h2>
         <p class="auth-welcome-text">
             المنصة التفاعلية الأولى لربط المستخدمين بمزودي الخدمات وأصحاب العقارات في فلسطين. 
@@ -696,6 +714,7 @@
             <hr class="auth-divider">
             <p style="text-align:center; margin-bottom:5px; font-size:16px; color:#777;">أو يمكنك مراجعة الاتفاقية والشروط ثم إنشاء حساب جديد:</p>
             <button type="button" class="btn-auth-back" id="btn-login-back-to-welcome" style="background-color: #3c384d; margin-top:0;">📋 من هنا للموافقة على الاتفاقية والشروط</button>
+            <button type="button" class="btn-auth-back" data-enter-guest style="background-color: #64748b; margin-top:10px;">👀 تصفح كزائر بدون تسجيل (مزايا محدودة)</button>
         </form>
     </div>
 
@@ -833,6 +852,8 @@
 
 <script src="/js/auth-fetch.js"></script>
 <script src="/js/auth-core-functions.js"></script>
+<script src="/js/guest-mode.js"></script>
+<script src="/js/platform-brand.js"></script>
 <script src="/js/legal-content.js"></script>
 
 <!-- ====== شاشة التسويق الترحيبية - JavaScript ====== -->
@@ -956,6 +977,7 @@
 <script src="/js/config.js"></script>
 <script src="/js/layers.js"></script>
 <script src="/js/layer-manager.js"></script>
+<script src="/js/listing-extras.js"></script>
 <script src="/js/popup.js"></script>
 <script src="/js/search.js"></script>
 <script src="/js/location-search.js"></script>
@@ -1119,20 +1141,21 @@ document.addEventListener('DOMContentLoaded', checkBannerStatus);
     <div class="nms-footer-container">
         <div class="nms-footer-col nms-footer-brand-col">
             <div class="nms-footer-logo">
-                <i class="fas fa-map-marked-alt"></i> <span>خريطة الخدمات الفلسطينية</span>
+                <i class="fas fa-map-marked-alt"></i> <span data-platform-name>دليلك وين</span>
             </div>
             <p class="nms-footer-about">
                 منصة رقمية جغرافية تهدف لربط المستخدمين بأقرب وأنسب الخدمات، العقارات، والفنيين في فلسطين بكل سهولة وبدون وسطاء.
             </p>
             <div class="nms-footer-social">
                 <a href="https://www.facebook.com/MapServesPalestine" target="_blank" rel="noopener" aria-label="Facebook"><i class="fab fa-facebook-f"></i></a>
-                <a href="#" target="_blank" rel="noopener" aria-label="WhatsApp"><i class="fab fa-whatsapp"></i></a>
+                <a href="#" data-platform-whatsapp target="_blank" rel="noopener" aria-label="WhatsApp"><i class="fab fa-whatsapp"></i></a>
+                <a href="#" data-platform-phone aria-label="Phone"><i class="fas fa-phone"></i></a>
                 <a href="#" target="_blank" rel="noopener" aria-label="LinkedIn"><i class="fab fa-linkedin-in"></i></a>
                 <a href="#" target="_blank" rel="noopener" aria-label="YouTube"><i class="fab fa-youtube"></i></a>
             </div>
             <p class="nms-copyright">
                 جميع الحقوق محفوظة &copy; 2026<br>
-                <span>خريطة الخدمات الفلسطينية (Map Serves Palestine)</span>
+                <span>دليلك وين (Dalilak Wein)</span>
             </p>
         </div>
 
@@ -1154,7 +1177,7 @@ document.addEventListener('DOMContentLoaded', checkBannerStatus);
                 <li><a href="#" id="footer-guide-search"><i class="fas fa-angle-left"></i> البحث عن الخدمات</a></li>
                 <li><a href="#" id="footer-guide-provider"><i class="fas fa-angle-left"></i> حساب مزود الخدمة</a></li>
                 <li><a href="#" id="footer-guide-subscription"><i class="fas fa-angle-left"></i> كيف تشترك معنا</a></li>
-                <li><a href="#" id="footer-guide-map" data-legal="guide"><i class="fas fa-angle-left"></i> دليل استخدام منصة خريطة الخدمات الفلسطينية</a></li>
+                <li><a href="#" id="footer-guide-map" data-legal="guide"><i class="fas fa-angle-left"></i> دليل استخدام منصة دليلك وين</a></li>
             </ul>
         </div>
 
@@ -1188,8 +1211,8 @@ document.addEventListener('DOMContentLoaded', checkBannerStatus);
                 <li><a href="#" class="footer-widgets-link" data-widgets-card="portal-transport-intra-card"><i class="fas fa-angle-left"></i> النقل الداخلي</a></li>
                 <li><a href="#" class="footer-widgets-link" data-widgets-card="portal-prayer-card"><i class="fas fa-angle-left"></i> مواقيت الصلاة</a></li>
                 <li><a href="#" class="footer-widgets-link" data-widgets-card="portal-calendar-card"><i class="fas fa-angle-left"></i> التقويم الهجري والميلادي</a></li>
-                <li><a href="#" class="footer-widgets-link" data-widgets-card="portal-road-status-card"><i class="fas fa-angle-left"></i> حالة الطرق</a></li>
-                <li><a href="#" class="footer-widgets-link" data-widgets-card="portal-fuel-status-card"><i class="fas fa-angle-left"></i> حالة محطات الوقود</a></li>
+                <li data-global-layer-exclusion="road_barriers"><a href="#" class="footer-widgets-link" data-widgets-card="portal-road-status-card"><i class="fas fa-angle-left"></i> حالة الطرق</a></li>
+                <li data-global-layer-exclusion="fuel_stations"><a href="#" class="footer-widgets-link" data-widgets-card="portal-fuel-status-card"><i class="fas fa-angle-left"></i> حالة محطات الوقود</a></li>
             </ul>
         </div>
     </div>

@@ -41,9 +41,21 @@
       </form>
       <div id="status" class="status" role="status"></div>
     </div>
+    <section class="card" id="platform-contact-card">
+      <h2><i class="fab fa-whatsapp" style="color:#25d366"></i> اسم المنصة وأرقام التواصل</h2>
+      <p class="muted">تظهر بزر التواصل العائم بكل الصفحات، بالفوتر، وبنافذة «تواصل معنا». اترك الرقم فارغاً لإخفاء الزر الخاص به.</p>
+      <form id="platform-contact-form">
+        <label for="pc-name">اسم المنصة</label><input id="pc-name" maxlength="60" placeholder="دليلك وين">
+        <label for="pc-whatsapp">رقم واتساب المنصة</label><input id="pc-whatsapp" maxlength="20" inputmode="tel" placeholder="0599123456 أو 970599123456" dir="ltr">
+        <label for="pc-phone">رقم هاتف المنصة</label><input id="pc-phone" maxlength="20" inputmode="tel" placeholder="022345678 أو 0599123456" dir="ltr">
+        <div class="actions"><button type="submit">حفظ بيانات التواصل</button></div>
+      </form>
+      <div id="pc-status" class="status" role="status"></div>
+    </section>
     <section class="card"><h2>النصوص المسجلة</h2><div id="content-list">جارٍ التحميل...</div></section>
   </main>
   <script src="/js/legal-content.js"></script>
   <script src="/texts-admin.js" defer></script>
+  <script src="/js/platform-contact-admin.js" defer></script>
 </body>
 </html>

@@ -20,12 +20,18 @@ import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
 import compression from 'compression';
 import crypto from 'crypto';
+import { responseInterceptor } from 'http-proxy-middleware';
+import { createLayerVisibility } from './layer-visibility.js';
+import { registerListingsApi, applySearchVisibility, stripContactFields, computeAvailability } from './listings-api.js';
 
 // تعريف __dirname لـ ES modules
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const BCRYPT_SALT_ROUNDS = 10;
+// 🙈 مصدر الحقيقة لإخفاء الطبقات: globalExclusions بملف الواجهة config.js (يُقرأ ويُراقب من السيرفر)
+const layerVisibility = createLayerVisibility(path.join(__dirname, 'frontend-react', 'public', 'js', 'config.js'));
+let listingsApi = null; // يُهيّأ لاحقاً بعد تعريف requireAuth (registerListingsApi)
 const IS_PROD = process.env.NODE_ENV === 'production';
 // طباعة تفصيلية عند الحاجة فقط: DEBUG_LOGS=1 بملف .env (بدونها لا تُطبع سطور لكل طلب)
 const debugLog = (...args) => { if (process.env.DEBUG_LOGS === '1') console.log(...args); };
@@ -468,7 +474,10 @@ app.use(cors({
     origin: corsOriginCheck,
     credentials: true
 }));
-app.use(express.json());
+// 📷 رفع صور الإعلانات يحتاج حداً أكبر (صورة بعد الضغط ≤ 2MB بصيغة base64)؛ باقي المسارات تبقى 100KB
+const defaultJsonParser = express.json();
+const imageJsonParser = express.json({ limit: '4mb' });
+app.use((req, res, next) => (/^\/api\/my-listings\/[^/]+\/\d+\/images$/.test(req.path) ? imageJsonParser : defaultJsonParser)(req, res, next));
 app.use(express.urlencoded({ extended: true }));
 app.use(express.text({ type: ['application/xml', 'text/xml', 'application/vnd.ogc.wfs-transaction+xml'], limit: '2mb' }));
 
@@ -673,7 +682,8 @@ function statsLayerIsExcluded(layerName, exclusions) {
 app.get('/api/platform-stats', async (req, res) => {
     try {
         // يرسل المتصفح استثناءات config.js كي تتطابق الإحصائيات مع الطبقات الظاهرة.
-        const exclusions = parseStatsExclusions(req.query.excludedLayers);
+        // 🙈 دمج استثناءات السيرفر (config.js) مع ما يرسله المتصفح - لا يمكن للعميل إظهار طبقة مخفية
+        const exclusions = Array.from(new Set(parseStatsExclusions(req.query.excludedLayers).concat(layerVisibility.list())));
         const visiblePropertyLayers = PLATFORM_PROPERTY_LAYERS.filter(layer => !statsLayerIsExcluded(layer, exclusions));
         const visibleServiceLayers = PLATFORM_SERVICE_LAYERS.filter(layer => !statsLayerIsExcluded(layer, exclusions));
         const cacheKey = [...visiblePropertyLayers, '|', ...visibleServiceLayers].join(',');
@@ -1100,13 +1110,77 @@ app.use('/geoserver-proxy', (req, res, next) => {
             console.warn(`🚫 [Proxy Guard] رُفض طلب لطبقة غير مصرح بها: ${rawName} من IP: ${req.ip}`);
             return res.status(403).json({ error: 'الوصول لهذه الطبقة غير مسموح به.' });
         }
+        // 🙈 طبقة مخفية بـ config.js: لا تُخدم إطلاقاً عبر البروكسي (لا خريطة ولا WFS مباشر)
+        if (layerVisibility.isHidden(layerOnly)) {
+            if (isWfsGetFeature(req)) {
+                return res.json({ type: 'FeatureCollection', features: [], totalFeatures: 0 });
+            }
+            return res.status(403).json({ error: 'هذه الطبقة مخفية حالياً.' });
+        }
     }
     next();
-}, (req, res, next) => {
+}, async (req, res, next) => {
     debugLog(`[Proxy] Request to: ${req.url} from IP: ${req.ip}`);
     debugLog(`[Proxy] GeoServer Target: ${GEOSERVER_TARGET}`);
+    // 🔒 منع تجاوز الفلترة: قراءة المعالم مسموحة فقط كـ GET GetFeature بصيغة JSON (التي تُفلتر أدناه).
+    // GetFeatureInfo وGetFeature عبر POST أو بصيغ أخرى (GML...) للمشرف فقط.
+    const q = req.query || {};
+    const reqName = String(q.request || q.REQUEST || '').toLowerCase();
+    const isPostRead = req.method === 'POST' && typeof req.body === 'string' && /GetFeature|GetPropertyValue/i.test(req.body) && !/<(?:\w+:)?Transaction[\s>]/i.test(req.body);
+    const isNonJsonRead = isWfsGetFeature(req) && !/json/i.test(String(q.outputFormat || q.outputformat || q.OUTPUTFORMAT || ''));
+    if (reqName === 'getfeatureinfo' || reqName === 'getpropertyvalue' || isPostRead || isNonJsonRead) {
+        const viewer = listingsApi ? await listingsApi.resolveOptionalAuth(req) : null;
+        if (!viewer || viewer.role !== 'admin') {
+            return res.status(403).json({ error: 'صيغة الطلب غير مسموحة؛ استخدم outputFormat=application/json.' });
+        }
+        return next();
+    }
+    // طلبات GetFeature (بيانات المعالم) تمر عبر فلتر يحذف المعالم المخفية وبيانات التواصل للزائر
+    if (isWfsGetFeature(req)) {
+        req.proxyViewer = listingsApi ? await listingsApi.resolveOptionalAuth(req) : null;
+        return filteringGeoProxy(req, res, next);
+    }
     next();
-}, createProxyMiddleware({
+}, createProxyMiddleware(geoProxyOptions()));
+
+function isWfsGetFeature(req) {
+    const q = req.query || {};
+    const reqName = String(q.request || q.REQUEST || '').toLowerCase();
+    return req.method === 'GET' && reqName === 'getfeature';
+}
+
+/**
+ * 🙈 فلترة استجابة WFS GetFeature (JSON) قبل وصولها للمتصفح:
+ *   - حذف معالم الخدمات المخفية (discriminator ضمن globalExclusions)
+ *   - تحديث auto_status لحظياً حسب ساعات العمل والإلغاء
+ *   - حذف أرقام التواصل للزائر غير المسجّل
+ */
+function filterGeoJsonForViewer(body, viewer) {
+    if (!body || !Array.isArray(body.features)) return body;
+    body.features = body.features.filter((f) => {
+        const p = f.properties || {};
+        if (p.discriminator && layerVisibility.isHidden(p.discriminator)) return false;
+        const typeName = typeof f.id === 'string' ? f.id.split('.')[0] : null;
+        if (typeName && layerVisibility.isHidden(typeName)) return false;
+        const isAdminViewer = viewer && viewer.role === 'admin'; // المشرف يرى الكل ليتمكن من التحرير
+        if (p.discriminator) {
+            const a = computeAvailability(p);
+            if (a.cancelled && !isAdminViewer) return false; // الخدمة الملغاة/المنتهية لا تظهر
+            p.auto_status = a.availableNow ? 0 : 1;
+        } else if (typeName && ['ApartRent', 'ApartSale', 'LandSale'].includes(typeName) && !isAdminViewer) {
+            // العقار غير المتوفر لا يظهر
+            if (!applySearchVisibility(p, true)) return false;
+        }
+        if (!viewer) stripContactFields(p);
+        return true;
+    });
+    if (typeof body.totalFeatures === 'number') body.totalFeatures = body.features.length;
+    if (typeof body.numberReturned === 'number') body.numberReturned = body.features.length;
+    return body;
+}
+
+function geoProxyOptions(extra = {}) {
+    return {
     target: GEOSERVER_TARGET,
     changeOrigin: true,
     pathRewrite: { '^/geoserver-proxy': '' },
@@ -1142,7 +1216,23 @@ app.use('/geoserver-proxy', (req, res, next) => {
             // 🔒 لا نكشف عنوان GeoServer الداخلي للعميل
             res.status(502).json({ error: 'GeoServer connection failed' });
         }
-    }
+    },
+    ...extra
+    };
+}
+
+const filteringGeoProxy = createProxyMiddleware(geoProxyOptions({
+    selfHandleResponse: true,
+    onProxyRes: responseInterceptor(async (buffer, proxyRes, req, res) => {
+        const contentType = String(proxyRes.headers['content-type'] || '');
+        if (proxyRes.statusCode !== 200 || !contentType.includes('json')) return buffer;
+        try {
+            const body = JSON.parse(buffer.toString('utf8'));
+            return JSON.stringify(filterGeoJsonForViewer(body, req.proxyViewer));
+        } catch (e) {
+            return buffer;
+        }
+    })
 }));
 
 // 4-أ. مسار فحص حد الطلبات قبل تنفيذ أي "حدث/نقرة" (اتصال أو واتساب) - يُستدعى
@@ -1639,6 +1729,9 @@ app.get('/api/get-unique-values', async (req, res) => {
         if (!layer || !workspace || !field) return res.status(400).json({ error: 'layer, workspace, and field are required' });
         if (!isValidLayer(layer)) return res.status(403).json({ error: 'اسم طبقة غير مسموح به.' });
         if (!isValidSqlIdentifier(field)) return res.status(400).json({ error: 'اسم حقل غير صالح.' });
+        if (layerVisibility.isHidden(layer)) return res.json({ success: true, values: [] });
+        // 🔒 لا نكشف قيم حقول التواصل عبر قوائم الفلترة
+        if (['phone', 'whatsapp', 'whatsapp_number', 'email'].includes(field.toLowerCase())) return res.status(400).json({ error: 'حقل غير مسموح.' });
 
         const targetPool = workspace === 'realestate' ? realestatePool : servicesPool;
         // 🆕 تحديد الجدول الفعلي: العقارات بجدولها الخاص، وكل الخدمات أصبحت service_all
@@ -1666,7 +1759,10 @@ app.get('/api/get-unique-values', async (req, res) => {
             }
         });
 
-        const query = `SELECT DISTINCT "${field}" FROM public.${tableName} WHERE status = 0 AND auto_status = 0 AND "${field}" IS NOT NULL AND "${field}"::text != ''${extraWhere} ORDER BY "${field}" ASC LIMIT 10000`;
+        const visibilityWhere = isRealEstate
+            ? 'status = 0 AND auto_status = 0'
+            : 'COALESCE(status, 0) IN (0, 1) AND (end_date IS NULL OR end_date >= CURRENT_DATE)';
+        const query = `SELECT DISTINCT "${field}" FROM public.${tableName} WHERE ${visibilityWhere} AND "${field}" IS NOT NULL AND "${field}"::text != ''${extraWhere} ORDER BY "${field}" ASC LIMIT 10000`;
         const result = await targetPool.query(query, extraParams);
         const values = result.rows.map(row => row[field]).filter(v => v != null && v !== '');
         res.json({ success: true, values });
@@ -1684,6 +1780,8 @@ app.post('/api/search-features-batch', async (req, res) => {
             return res.status(400).json({ error: 'layer, workspace, ids مطلوبة' });
         }
         if (!isValidLayer(layer)) return res.status(403).json({ error: 'اسم طبقة غير مسموح به.' });
+        if (layerVisibility.isHidden(layer)) return res.json({ type: 'FeatureCollection', features: [] });
+        const viewer = listingsApi ? await listingsApi.resolveOptionalAuth(req) : null;
 
         const targetPool = workspace === 'realestate' ? realestatePool : servicesPool;
         const isRealEstate = REAL_ESTATE_LAYERS.includes(layer);
@@ -1711,8 +1809,10 @@ app.post('/api/search-features-batch', async (req, res) => {
             if (!geometry) {
                 geometry = { type: 'Point', coordinates: [Number(x_coord), Number(y_coord)] };
             }
+            if (!applySearchVisibility(properties, isRealEstate)) return null;
+            if (!viewer) stripContactFields(properties);
             return { type: 'Feature', geometry, properties };
-        });
+        }).filter(Boolean);
 
         res.json({ type: 'FeatureCollection', features });
     } catch (error) {
@@ -1738,6 +1838,11 @@ app.get('/api/search-features', async (req, res) => {
         if (!isValidLayer(layer)) {
             return res.status(403).json({ error: 'اسم طبقة غير مسموح به.' });
         }
+        // 🙈 طبقة مخفية بـ config.js: لا نرجع أي بيانات منها إطلاقاً
+        if (layer.trim() !== 'service_all' && layerVisibility.isHidden(layer)) {
+            return res.json({ type: 'FeatureCollection', features: [] });
+        }
+        const viewer = listingsApi ? await listingsApi.resolveOptionalAuth(req) : null;
 
         const targetPool = workspace === 'realestate' ? realestatePool : servicesPool;
         const isRealEstate = REAL_ESTATE_LAYERS.includes(layer);
@@ -1757,8 +1862,23 @@ app.get('/api/search-features', async (req, res) => {
             query += ` AND discriminator = $${params.length}`;
         }
 
+        // 🙈 البحث الموحّد لكل الخدمات: استبعاد الأنواع المخفية
+        if (layer.trim() === 'service_all') {
+            const hiddenDiscriminators = layerVisibility.hiddenFrom(Object.keys(LAYER_AR_NAMES));
+            if (hiddenDiscriminators.length) {
+                params.push(hiddenDiscriminators);
+                query += ` AND NOT (discriminator = ANY($${params.length}::text[]))`;
+            }
+        }
+
         if (!ignoreStatusFilter) {
-            query += ` AND status = 0 AND auto_status = 0`;
+            if (isRealEstate) {
+                // العقار غير المتوفر لا يظهر بالبحث
+                query += ` AND status = 0 AND auto_status = 0`;
+            } else {
+                // الخدمة تظهر حتى لو غير متاحة الآن (خارج الدوام / status=1) لكن ليس إن كانت ملغاة (2) أو منتهية
+                query += ` AND COALESCE(status, 0) IN (0, 1) AND (end_date IS NULL OR end_date >= CURRENT_DATE)`;
+            }
         }
 
         // إضافة فلترة مكانية BBOX إذا تم توفيرها
@@ -1861,7 +1981,8 @@ app.get('/api/search-features', async (req, res) => {
         if (layer === 'road_barriers' || layer === 'fuel_stations') {
             query += ` ORDER BY display_order NULLS LAST, id ASC LIMIT 2000`;
         } else {
-            query += ` ORDER BY rating DESC LIMIT 2000`;
+            // المتاح أولاً ثم الأعلى تقييماً
+            query += ` ORDER BY (CASE WHEN COALESCE(status, 0) = 0 THEN 0 ELSE 1 END), rating DESC NULLS LAST LIMIT 2000`;
         }
 
         debugLog(`Search Query for ${layer}:`, query);
@@ -1905,12 +2026,20 @@ app.get('/api/search-features', async (req, res) => {
             // إزالة الحقول الهندسية من الخصائص
             const { x_coord, y_coord, geom, geom_json, ...properties } = row;
 
+            if (!ignoreStatusFilter && !applySearchVisibility(properties, isRealEstate)) return null;
+            if (!viewer) stripContactFields(properties);
+
             return {
                 type: 'Feature',
                 geometry: geometry,
                 properties: properties
             };
-        });
+        }).filter(Boolean);
+
+        // المتاح الآن قبل غير المتاح (الترتيب مستقر فيبقى ترتيب التقييم داخل كل مجموعة)
+        if (!isRealEstate && layer !== 'road_barriers' && layer !== 'fuel_stations') {
+            features.sort((a, b) => (a.properties.auto_status || 0) - (b.properties.auto_status || 0));
+        }
 
         res.json({
             type: 'FeatureCollection',
@@ -2905,6 +3034,10 @@ app.post('/api/admin/users/update', requireAdmin, async (req, res) => {
         await servicesPool.query(finalQuery, updateValues);
         authStatusCache.delete(Number(user_id)); // 🔒 يسري تغيير الدور/التفعيل فوراً
         providerLinkedCache = { data: null, expiresAt: 0 }; // ربط مزود الخدمة قد تغيّر
+        // 🆕 مزامنة الربط الأساسي مع جدول الإعلانات المتعددة (provider_listings)
+        if (service_layer !== undefined || feature_id !== undefined) {
+            await listingsApi.syncLegacyLink(Number(user_id)).catch(e => console.warn('⚠️ تعذر مزامنة ربط المزود:', e.message));
+        }
 
         console.log(`✅ تم تحديث المستخدم ${user_id} بنجاح`);
 
@@ -3001,17 +3134,14 @@ app.post('/api/service-requests', requireAuth, async (req, res) => {
     if (!user_id || !service_layer || !feature_id) {
         return res.status(400).json({ success: false, error: 'بيانات الطلب غير مكتملة.' });
     }
-    if (!isValidLayer(service_layer)) {
+    if (!isValidLayer(service_layer) || layerVisibility.isHidden(service_layer)) {
         return res.status(403).json({ success: false, error: 'طبقة خدمة غير صالحة.' });
     }
 
     try {
-        const providerResult = await servicesPool.query(
-            `SELECT user_id, full_name, phone
-             FROM public.users
-             WHERE role = 'provider' AND service_layer = $1 AND feature_id = $2 LIMIT 1`,
-            [service_layer, feature_id]
-        );
+        // 🆕 يدعم المزود صاحب عدة إعلانات (provider_listings) إضافة للربط القديم بجدول users
+        const linkedProvider = await listingsApi.findProviderForFeature(service_layer, feature_id);
+        const providerResult = { rows: linkedProvider ? [linkedProvider] : [] };
 
         if (providerResult.rows.length === 0) {
             return res.status(404).json({ success: false, error: 'تعذر العثور على حساب مزود الخدمة المرتبط بهذا المعلم.' });
@@ -3591,6 +3721,9 @@ app.get('/api/service-ratings', async (req, res) => {
     if (!service_layer || !feature_id) {
         return res.status(400).json({ success: false, error: 'يجب تحديد service_layer و feature_id.' });
     }
+    if (layerVisibility.isHidden(service_layer)) {
+        return res.json({ success: true, ratings: [], averageRating: 0, totalRatings: 0 });
+    }
 
     try {
         const result = await servicesPool.query(
@@ -3636,9 +3769,11 @@ app.get('/api/service-ratings', async (req, res) => {
                     GROUP BY service_layer, feature_id
                     ORDER BY avg_rating DESC, total_ratings DESC
                     LIMIT $1
-                `, [limit]);
+                `, [limit * 3]);
 
-                res.json({ success: true, items: result.rows });
+                // 🙈 حذف الطبقات المخفية قبل الإرجاع
+                const items = result.rows.filter(row => !layerVisibility.isHidden(row.service_layer)).slice(0, limit);
+                res.json({ success: true, items });
             } catch (err) {
                 console.error('❌ خطأ أثناء جلب أفضل مزودي الخدمة تقييماً:', err.message);
                 res.status(500).json({ success: false, error: 'فشل جلب البيانات', details: IS_PROD ? undefined : err.message });
@@ -3824,12 +3959,9 @@ app.post('/api/log-contact-click', requireAuth, async (req, res) => {
 
     try {
         // محاولة العثور على مزود خدمة مرتبط
-        const providerResult = await servicesPool.query(
-            `SELECT user_id, full_name, phone
-             FROM public.users
-             WHERE role = 'provider' AND service_layer = $1 AND feature_id = $2 LIMIT 1`,
-            [service_layer, feature_id]
-        );
+        // 🆕 يدعم المزود صاحب عدة إعلانات (provider_listings) إضافة للربط القديم بجدول users
+        const linkedProvider = await listingsApi.findProviderForFeature(service_layer, feature_id);
+        const providerResult = { rows: linkedProvider ? [linkedProvider] : [] };
 
         let provider_user_id = null;
         // 🆕 [إصلاح]: نُعطي الأولوية دائماً للاسم الفعلي المُرسل من الواجهة
@@ -3910,11 +4042,13 @@ app.get('/api/provider-linked-features', async (req, res) => {
                AND service_layer IS NOT NULL AND feature_id IS NOT NULL`
         );
 
-        const linked = {};
+        // 🆕 الإعلانات المتعددة لكل مزود (provider_listings) + الربط القديم
+        const linked = await listingsApi.linkedFeaturesMap();
         result.rows.forEach(row => {
             const layer = row.service_layer.trim();
+            if (layerVisibility.isHidden(layer)) return; // 🙈
             if (!linked[layer]) linked[layer] = [];
-            linked[layer].push(row.feature_id);
+            if (!linked[layer].includes(row.feature_id)) linked[layer].push(row.feature_id);
         });
 
         providerLinkedCache = { data: linked, expiresAt: Date.now() + 30000 };
@@ -3923,6 +4057,42 @@ app.get('/api/provider-linked-features', async (req, res) => {
         console.error('❌ خطأ أثناء جلب قائمة مزودي الخدمة المرتبطين:', err.message);
         res.status(500).json({ success: false, error: 'فشل جلب البيانات', details: IS_PROD ? undefined : err.message });
     }
+});
+
+// =========================================================================
+// 🆕 إعلاناتي (خدمات وعقارات متعددة لكل مزود) + الصور + التقييمات المباشرة
+// =========================================================================
+listingsApi = registerListingsApi(app, {
+    servicesPool, realestatePool, requireAuth, ADMIN_JWT_SECRET, getAuthStatus,
+    isValidLayer, REAL_ESTATE_LAYERS, LAYER_AR_NAMES, IS_PROD, layerVisibility,
+    onListingsChanged: () => { providerLinkedCache = { data: null, expiresAt: 0 }; platformStatsCache.clear(); }
+});
+
+// 🙈 قائمة الطبقات المخفية (للصفحات التي لا تحمّل config.js مثل صفحات الإدارة)
+app.get('/api/layer-visibility', (req, res) => {
+    res.json({ success: true, hidden: layerVisibility.list() });
+});
+
+// 📞 بيانات تواصل المنصة (واتساب + هاتف) - قابلة للتعديل من صفحة إدارة النصوص
+const PLATFORM_CONTACT_DEFAULTS = {
+    platform_name: process.env.PLATFORM_NAME || 'دليلك وين',
+    platform_whatsapp: process.env.PLATFORM_WHATSAPP || '',
+    platform_phone: process.env.PLATFORM_PHONE || ''
+};
+app.get('/api/platform-contact', async (req, res) => {
+    const data = { ...PLATFORM_CONTACT_DEFAULTS };
+    try {
+        const r = await servicesPool.query(
+            `SELECT content_key, content_value FROM public.platform_content WHERE content_key = ANY($1::text[])`,
+            [Object.keys(PLATFORM_CONTACT_DEFAULTS)]
+        );
+        r.rows.forEach(row => {
+            const value = String(row.content_value || '').replace(/<[^>]*>/g, '').trim();
+            if (value) data[row.content_key] = value;
+        });
+    } catch (e) { /* جدول المحتوى غير متوفر: نستخدم القيم الافتراضية */ }
+    res.setHeader('Cache-Control', 'public, max-age=60');
+    res.json({ success: true, ...data });
 });
 
 // ❤️ فحص الصحة (لأنظمة المراقبة): يتأكد من الاتصال بقاعدة البيانات
