@@ -10,7 +10,15 @@ import { DEFAULT_CENTER } from '../config';
 import { fromLonLat, toLonLat } from '../projection';
 import { copyText } from '@/lib/clipboard';
 import { formatMeasureNumber, measureGeometry, setDoubleClickZoom } from './measure';
-import { googleMapsLink, gridClipboard, gridDisplay, shareLink, wgsClipboard, wgsDisplay } from './share';
+import {
+  directionsLink,
+  googleMapsLink,
+  gridClipboard,
+  gridDisplay,
+  shareLink,
+  wgsClipboard,
+  wgsDisplay,
+} from './share';
 
 describe('measureGeometry (planar metres, like legacy)', () => {
   it('area of a 10 x 20 m rectangle', () => {
@@ -116,6 +124,12 @@ describe('share formats', () => {
   it('opens Google Maps at lat,lon', () => {
     expect(googleMapsLink(DEFAULT_CENTER)).toBe(
       `https://www.google.com/maps?q=${wgsClipboard(DEFAULT_CENTER)}`,
+    );
+  });
+
+  it('opens Google Maps directions to lat,lon', () => {
+    expect(directionsLink(DEFAULT_CENTER)).toBe(
+      `https://www.google.com/maps/dir/?api=1&destination=${wgsClipboard(DEFAULT_CENTER)}`,
     );
   });
 

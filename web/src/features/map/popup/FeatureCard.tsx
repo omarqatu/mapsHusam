@@ -1,4 +1,4 @@
-import { Copy, Link2, MapPin } from 'lucide-react';
+import { Copy, Link2, MapPin, Navigation } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useProviderLinked } from '@/api/mapEvents';
 import RequestServiceButton from '@/features/requests/RequestServiceButton';
@@ -44,6 +44,7 @@ import PublisherRating from './PublisherRating';
 import { copyText, isMobileBrowser, nativeShare } from '@/lib/clipboard';
 import ContactButtons from './ContactButtons';
 import { formatArea, formatLength } from '../tools/measure';
+import { directionsLink } from '../tools/share';
 import RatingsBlock from './RatingsBlock';
 import { useContactActions } from './useContactActions';
 
@@ -258,21 +259,36 @@ export default function FeatureCard({ feature, onClose, className }: Props) {
 
         {media.length > 0 && <MediaGallery items={media} />}
 
-        <div className="flex items-center justify-between gap-2 border-t border-line pt-3">
-          <Button
-            variant="secondary"
-            size="sm"
-            startIcon={
-              typeof navigator.share === 'function' ? (
-                <Link2 className="h-4 w-4" />
-              ) : (
-                <Copy className="h-4 w-4" />
-              )
-            }
-            onClick={() => void shareLocation(feature, typeTitle, t)}
-          >
-            {t('popup.copyLink')}
-          </Button>
+        <div className="flex flex-wrap items-center justify-between gap-2 border-t border-line pt-3">
+          <div className="flex flex-wrap gap-2">
+            {!isBarrier && (
+              // Google Maps from where the person is (on a phone: the Maps app, turn by turn).
+              <Button
+                variant="secondary"
+                size="sm"
+                startIcon={<Navigation className="h-4 w-4" />}
+                onClick={() =>
+                  window.open(directionsLink(feature.coordinate), '_blank', 'noopener,noreferrer')
+                }
+              >
+                {t('popup.directions')}
+              </Button>
+            )}
+            <Button
+              variant="secondary"
+              size="sm"
+              startIcon={
+                typeof navigator.share === 'function' ? (
+                  <Link2 className="h-4 w-4" />
+                ) : (
+                  <Copy className="h-4 w-4" />
+                )
+              }
+              onClick={() => void shareLocation(feature, typeTitle, t)}
+            >
+              {t('popup.copyLink')}
+            </Button>
+          </div>
           <span className="text-xs text-muted" dir="ltr">
             {feature.coordinate.map((n) => n.toFixed(1)).join(', ')}
           </span>

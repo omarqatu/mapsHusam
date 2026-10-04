@@ -376,7 +376,8 @@
       "title": "الناشر:",
       "noRatings": "بدون تقييمات بعد",
       "listings": "{{count}} إعلان"
-    }
+    },
+    "directions": "اتجاهات"
   },
   "media": {
     "openImages": "انقر هنا لعرض الصور",

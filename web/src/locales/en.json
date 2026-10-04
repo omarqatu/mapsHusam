@@ -376,7 +376,8 @@
       "title": "Publisher:",
       "noRatings": "no ratings yet",
       "listings": "{{count}} listings"
-    }
+    },
+    "directions": "Directions"
   },
   "media": {
     "openImages": "Click to view the images",
