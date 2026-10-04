@@ -961,8 +961,8 @@ under the key `settings.visibility` = `{"hiddenLayers": [...], "hiddenSections":
 - ✅ The /search landing: section tiles and their counts leave hidden types out (a section with none left goes; property
   alone is centred), "most listed" chips and the road / fuel links follow the layers, the hero figures follow `stats`, the
   featured rows follow `featured`, and the today strip (same live data as the ticker) follows `ticker`.
-- Not done on purpose: the server does not filter hidden layers out of `/api/search-features` (the setting is presentation;
-  the data is public on GeoServer anyway). See Backend asks if that should change.
+- ~~Not done on purpose: the server does not filter hidden layers out of `/api/search-features`.~~ Done 2026-10-04 (owner's
+  point 4): the server and the GeoServer proxy leave hidden layers out — see "Owner's list, 4 October 2026".
 
 ### Husam's legacy changes on `main` (q1–q7, merged into this branch 2026-09-30) — to port
 
@@ -1123,6 +1123,50 @@ it at once); browser at 1440 / 390, no overflow.
   text colours, radius — this app has one module and a fixed type scale.
 - Verified: real server (admin PUT teal → visitor sees teal header, buttons and search hero in light and dark, map glass;
   DELETE → default), screenshots desktop / tablet / phone, dark. Not yet: a real phone.
+
+## Owner's list, 4 October 2026 — providers, properties, ratings, visibility
+
+The owner's nine points (in Arabic, 2026-10-04). Decisions were left to us ("اشتغل واعمل الصح والمناسب"); each is written
+here so it can be corrected.
+
+1. **A provider manages several services: edit, pictures.** ⬜
+2. **A screen for the provider's properties, edited by the provider.** ⬜ (one "my listings" page with 1)
+3. **Ratings for properties and services, and the publisher's rating.** ⬜ Decision: a property is rated by whoever dealt
+   with its owner through the platform: a viewing request → the owner accepts / sets the time → done → the requester rates
+   (one rating per request, as services already work). The publisher's rating = the average over all their listings.
+4. **A hidden layer must not appear anywhere, front end or API.** ✅ See "Listing state and hidden layers" below.
+5. **A name for the platform.** Proposals only (discussion).
+6. **The platform's WhatsApp and phone.** ⬜
+7. **A service limited by hours shows in search even when closed; a withdrawn one does not; unavailable properties do
+   not.** ✅ Decision (owner, 2026-10-04: "something shows it closed / unavailable, and something removes it entirely, like a
+   plot"): three states — see below.
+8. **Visitors without an account get a limited set of features, presented well.** ⬜
+9. **Operating guide + test scenarios document.** ⬜ (last, so it covers the rest)
+
+### Listing state and hidden layers (points 4 and 7) ✅
+
+- **One rule** (`lib/listing-rules.js`, unit tests `lib/listing-rules.test.js`): `status` 0 available · 1 unavailable for
+  now · 2 withdrawn. The public sees services with status 0 or 1, properties with status 0, and nothing whose `end_date` has
+  passed. Work hours no longer hide anything: a service outside its hours is listed as "closed now". Results put what is
+  usable now first (available and open), then the rest, each by rating.
+- **Where it applies (server):** `/api/search-features` (+ hidden service types left out of `service_all`),
+  `/api/search-features-batch` (now also capped at 100 ids), `/api/get-unique-values`, `/api/category-counts`,
+  `/api/platform-stats` (counts only what the public sees; the server adds its own hidden layers to `excludedLayers`),
+  `/api/top-rated-providers` (hidden types dropped). The admin's `ignore_status=1` still returns everything.
+- **GeoServer proxy:** a non-admin read of a listing layer (`service_all`, the three property tables, the old per-type
+  tables) is allowed only as WFS `GetFeature` / `DescribeFeatureType` / `GetCapabilities` on one layer, on the `/ows`,
+  `/wfs`, `/wms` paths the app uses; the proxy adds the rule as `CQL_FILTER` (bbox folded into it — GeoServer refuses both
+  together), refuses client `CQL_FILTER` / `FILTER` / `featureID` / `viewparams`, answers an empty collection for a hidden
+  layer, refuses WMS on listing layers (the app draws them from WFS), and marks the answer `no-store`. An admin's reads
+  carry `X-App-Token` (`api/geoserver.ts`) and are not filtered, so the admin map still shows withdrawn / hidden rows.
+- **Hidden layers** are read from `settings.visibility` (30 s cache, cleared when an admin saves it — `server/visibility.js`).
+- **Web:** every card / result row says *open now*, *closed now*, *not available right now* (amber) or, for an admin,
+  *withdrawn* (`availability()` in `popup/featureModel.ts`, `AvailabilityText`). The provider panel's "not available" now
+  says visitors see it as not available (it used to hide the listing).
+- Verified against the real backend + local GeoServer: a plumber with status 1 is listed (amber, after the open ones), one
+  with status 2 and one with a past `end_date` are not, in search and in WFS (with and without bbox); the admin gets all
+  three; a hidden type is missing from search, WFS and counts; `CQL_FILTER=1=1` → 403; WMS on `service_all` → 403.
+  Screenshots desktop + phone (`/search?q=سباك`).
 
 ## Phase 4 — Cut-over & cleanup
 
@@ -1496,6 +1540,13 @@ Log each change here: **what · why · how to verify · commit**.
   a `token_version` bump, "reload" on the dashboard → the same (before: a 403 toast, still "logged in"). Commit:
   `fix(server): an ended session is 401 on admin routes too`.
 
+- **Listing state + hidden layers enforced by the server (owner's points 4 and 7, 2026-10-04).** Behaviour change asked
+  by the owner, see "Owner's list, 4 October 2026". What: `lib/listing-rules.js` + `server/visibility.js`, applied in
+  `search.js`, `public-info.js`, `requests.js` (top rated) and the GeoServer proxy. Same URLs and response shapes; public
+  answers contain fewer rows (withdrawn, ended, hidden) and more (services outside their hours, services marked unavailable).
+  Verify: `npm test` (rule + proxy rewriting), then the checks listed in that section. Commit:
+  `feat(server): one listing-visibility rule for search, counts and the GeoServer proxy`.
+
 ## Backend asks (needs the user's decision — behaviour-changing or larger)
 
 - **Public map:** `/api/log-contact-click` is `requireAuth`, so a visitor's call / WhatsApp tap is not counted in the provider's
@@ -1522,8 +1573,8 @@ Log each change here: **what · why · how to verify · commit**.
   searches, contact clicks; `source_page` only distinguishes `quick_search`), so "visits" over-counts a busy user; and
   `featuresCount` is labelled "service providers" but counts every real-estate + service row (also inactive ones). Decide the
   intended definitions (a real visit counter, active rows only) — the UI only shows what the server returns.
-- **Extras:** `/api/search-features-batch` has no cap on `ids` (unbounded `ANY($1)`) and ignores `status` / `auto_status`, so
-  "top rated" can show inactive or closed features. Cap the list (e.g. 50) and apply the same active filter as search.
+- ~~**Extras:** `/api/search-features-batch` has no cap on `ids` and ignores `status`.~~ Done 2026-10-04: capped at 100, same
+  listing rule as search.
 - **Extras:** "services near me" downloads four whole layers (`service_all` + 3 real-estate, ≤ 2000 rows each) to find the 10
   closest; a `GET /api/nearest?x=&y=&types=&limit=` would make that one small request (same ask as the nearby search above).
 - **Extras:** `/api/widgets-data` `road_status_updated_at` / `fuel_status_updated_at` are `MAX(updated_at)` over all rows of the

@@ -5,6 +5,9 @@ import { app, debugLog } from '../app.js';
 import { GEOSERVER_TARGET } from '../database.js';
 import { isValidLayer } from '../layers.js';
 import { activeAdminUidFromToken } from '../auth.js';
+import { PROPERTY_TABLES, localIsoDate, publicProxyQuery } from '../../lib/listing-rules.js';
+import { getHiddenLayers } from '../visibility.js';
+import { SERVICE_TYPE_KEYS } from '../layers.js';
 
 // 3. إعداد البروكسي لـ GeoServer
 // [إجراء أمني 2]: تشفير وحماية البروكسي لمنع الحذف العشوائي (WFS-T protection)
@@ -53,8 +56,25 @@ const GEOSERVER_BLOCKED_PATHS = /(^|\/)(rest|web|wps|monitor|j_spring_security_c
 // هيدر Authorization يحمل دخول GeoServer (Basic)، لذلك يصل توكن التطبيق بهيدر X-App-Token ويُحذف قبل التمرير.
 const PROXY_READ_METHODS = ['GET', 'HEAD', 'OPTIONS'];
 
+// طبقات الإعلانات (خدمات وعقارات): الزائر لا يقرؤها إلا عبر WFS GetFeature بفلتر يفرضه السيرفر (lib/listing-rules.js)،
+// فلا يصل المسحوب أو المنتهي أو طبقة أخفاها المشرف حتى لمن يطلب GeoServer مباشرة. المشرف يرى كل شيء (X-App-Token).
+const LISTING_LAYERS = new Set(['service_all', ...PROPERTY_TABLES, ...SERVICE_TYPE_KEYS]);
+// أشكال المسارات التي تطلبها الواجهة: /ows و /wfs و /wms، أو مسبوقة بمساحة العمل
+const PUBLIC_PROXY_PATH = /^\/(?:[A-Za-z0-9_]+\/)?(?:ows|wfs|wms)$/i;
+const PUBLIC_WFS_REQUESTS = new Set(['getcapabilities', 'describefeaturetype']);
+
+function rewriteQueryString(req, query) {
+    const params = new URLSearchParams();
+    for (const [k, v] of Object.entries(query)) params.append(k, String(v));
+    const qs = params.toString();
+    const base = req.url.split('?')[0];
+    req.url = qs ? `${base}?${qs}` : base;
+    req.originalUrl = qs ? `${req.originalUrl.split('?')[0]}?${qs}` : req.originalUrl.split('?')[0];
+}
+
 app.use('/geoserver-proxy', async (req, res, next) => {
-    if (!PROXY_READ_METHODS.includes(req.method) && !(await activeAdminUidFromToken(req.headers['x-app-token']))) {
+    const isAdmin = !!(await activeAdminUidFromToken(req.headers['x-app-token']));
+    if (!PROXY_READ_METHODS.includes(req.method) && !isAdmin) {
         console.warn(`🚫 [Proxy Guard] رُفض طلب ${req.method} بلا توكن مشرف من IP: ${req.ip}`);
         return res.status(403).json({ error: 'التعديل على الخريطة للمشرف فقط.' });
     }
@@ -77,6 +97,33 @@ app.use('/geoserver-proxy', async (req, res, next) => {
             return res.status(403).json({ error: 'الوصول لهذه الطبقة غير مسموح به.' });
         }
     }
+    if (!isAdmin) {
+        const listingLayers = requestedLayers.map(n => (n.includes(':') ? n.split(':').pop() : n)).filter(n => LISTING_LAYERS.has(n));
+        if (listingLayers.length) {
+            const query = req.query || {};
+            const get = (name) => Object.entries(query).find(([k]) => k.toLowerCase() === name)?.[1];
+            const service = String(get('service') || '').toLowerCase();
+            const request = String(get('request') || '').toLowerCase();
+            const isWfs = service === 'wfs' || /\/wfs$/i.test(proxiedPath);
+            if (requestedLayers.length !== 1 || !PUBLIC_PROXY_PATH.test(proxiedPath) || !isWfs ||
+                Object.values(query).some(v => typeof v !== 'string')) {
+                return res.status(403).json({ error: 'هذا الطلب غير مسموح به.' });
+            }
+            if (request !== 'getfeature') {
+                if (!PUBLIC_WFS_REQUESTS.has(request)) return res.status(403).json({ error: 'هذا الطلب غير مسموح به.' });
+            } else {
+                const r = publicProxyQuery(query, listingLayers[0], { hidden: await getHiddenLayers(), today: localIsoDate() });
+                if (r.error) {
+                    // طبقة مخفية = لا معالم (وليس خطأ يعيد المتصفح المحاولة عليه)
+                    if (r.status === 404) return res.json({ type: 'FeatureCollection', features: [], totalFeatures: 0 });
+                    return res.status(r.status).json({ error: 'هذا الطلب غير مسموح به.' });
+                }
+                rewriteQueryString(req, r.query);
+            }
+        }
+    }
+    // جواب طبقة إعلانات يختلف حسب من يطلبه (المشرف يرى المسحوب): لا يُخزَّن في المتصفح أو أي وسيط
+    if (requestedLayers.some(n => LISTING_LAYERS.has(n.includes(':') ? n.split(':').pop() : n))) req.listingRead = true;
     next();
 }, (req, res, next) => {
     debugLog(`[Proxy] Request to: ${req.url} from IP: ${req.ip}`);
@@ -112,6 +159,9 @@ app.use('/geoserver-proxy', async (req, res, next) => {
                 proxyReq.write(req.body);
             }
         }
+    },
+    onProxyRes: (proxyRes, req) => {
+        if (req.listingRead) proxyRes.headers['cache-control'] = 'private, no-store';
     },
     onError: (err, req, res) => {
         console.error('[Proxy] Error:', err.message, '| url:', req.url);

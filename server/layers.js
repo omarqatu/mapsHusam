@@ -6,7 +6,7 @@ import { realestatePool, servicesPool } from './database.js';
 
 // [إجراء أمني 1]: قائمة بيضاء للطبقات المسموح بالوصول إليها والتعديل عليها (تشمل كافة الخدمات والعقارات الفعالة)
 // أنواع الخدمات من shared/service-types.json: نفس الملف الذي تبني منه الواجهة قائمتها (مصدر واحد)
-const SERVICE_TYPE_KEYS = JSON.parse(fs.readFileSync(path.join(ROOT_DIR, 'shared', 'service-types.json'), 'utf8'))
+export const SERVICE_TYPE_KEYS = JSON.parse(fs.readFileSync(path.join(ROOT_DIR, 'shared', 'service-types.json'), 'utf8'))
     .map((type) => type.key);
 // طبقات العقارات والمواقع الفعالة + قيمة service_all الخاصة بالبحث العالمي (كل الخدمات دفعة واحدة بدون discriminator)
 const OTHER_LAYERS = ['ApartRent', 'ApartSale', 'LandSale', 'Location', 'RoadsTest', 'service_all'];

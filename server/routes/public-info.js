@@ -4,6 +4,8 @@ import { IS_PROD, app } from '../app.js';
 import { realestatePool, servicesPool } from '../database.js';
 import { PLATFORM_PROPERTY_LAYERS, PLATFORM_SERVICE_LAYERS } from '../layers.js';
 import { platformStatsCache } from '../state.js';
+import { isLayerHidden, publicListingSql } from '../../lib/listing-rules.js';
+import { getHiddenLayers } from '../visibility.js';
 
 function parseStatsExclusions(rawValue) {
     if (!rawValue) return [];
@@ -33,7 +35,8 @@ function statsLayerIsExcluded(layerName, exclusions) {
 app.get('/api/platform-stats', async (req, res) => {
     try {
         // يرسل المتصفح استثناءات config.js كي تتطابق الإحصائيات مع الطبقات الظاهرة.
-        const exclusions = parseStatsExclusions(req.query.excludedLayers);
+        // + ما أخفاه المشرف على السيرفر نفسه (لا يُعتمد على ما يرسله المتصفح وحده)
+        const exclusions = [...parseStatsExclusions(req.query.excludedLayers), ...(await getHiddenLayers())];
         const visiblePropertyLayers = PLATFORM_PROPERTY_LAYERS.filter(layer => !statsLayerIsExcluded(layer, exclusions));
         const visibleServiceLayers = PLATFORM_SERVICE_LAYERS.filter(layer => !statsLayerIsExcluded(layer, exclusions));
         const cacheKey = [...visiblePropertyLayers, '|', ...visibleServiceLayers].join(',');
@@ -74,11 +77,11 @@ app.get('/api/platform-stats', async (req, res) => {
         // عدد الفئات المتاحة = العقارات والخدمات التي لم يستثنها config.js.
         const servicesCount = visiblePropertyLayers.length + visibleServiceLayers.length;
 
-        // عدد المعالم يضم فقط الطبقات المتاحة حالياً في config.js.
+        // عدد المعالم = ما يراه الزائر فعلاً من الطبقات الظاهرة (بلا المسحوب والمنتهي، lib/listing-rules.js).
         let featuresCount = 0;
         for (const layerName of visiblePropertyLayers) {
             try {
-                const countRes = await realestatePool.query(`SELECT COUNT(*) FROM public."${layerName}"`);
+                const countRes = await realestatePool.query(`SELECT COUNT(*) FROM public."${layerName}" WHERE ${publicListingSql(true)}`);
                 featuresCount += parseInt(countRes.rows[0].count, 10) || 0;
             } catch (layerErr) {
                 console.warn(`⚠️ تعذر عد معالم طبقة العقار [${layerName}]:`, layerErr.message);
@@ -88,7 +91,7 @@ app.get('/api/platform-stats', async (req, res) => {
         if (visibleServiceLayers.length) {
             try {
                 const servicesCountRes = await servicesPool.query(
-                    'SELECT COUNT(*) FROM public.service_all WHERE discriminator = ANY($1::text[])',
+                    `SELECT COUNT(*) FROM public.service_all WHERE discriminator = ANY($1::text[]) AND ${publicListingSql(false)}`,
                     [visibleServiceLayers]
                 );
                 featuresCount += parseInt(servicesCountRes.rows[0].count, 10) || 0;
@@ -115,21 +118,25 @@ app.get('/api/platform-stats', async (req, res) => {
 
 // =========================================================================
 // 📊 عدد الإعلانات المعروضة لكل نوع (أرقام كروت الأقسام في صفحة البحث)
-// عام ومكاشّ 60 ثانية مثل platform-stats. يعدّ نفس ما يعرضه البحث للزائر (status = 0 AND auto_status = 0).
+// عام ومكاشّ 60 ثانية مثل platform-stats. يعدّ نفس ما يعرضه البحث للزائر (lib/listing-rules.js)، بلا الطبقات المخفية.
 // الاستجابة: { success, data: { counts: { ApartRent: n, ..., <discriminator>: n } } }
 // =========================================================================
 let categoryCountsCache = { data: null, expiresAt: 0 };
 
 app.get('/api/category-counts', async (req, res) => {
     try {
+        const hidden = await getHiddenLayers();
+        const withoutHidden = (data) => ({
+            counts: Object.fromEntries(Object.entries(data.counts).filter(([layer]) => !isLayerHidden(layer, hidden))),
+        });
         if (categoryCountsCache.data && Date.now() < categoryCountsCache.expiresAt) {
-            return res.json({ success: true, data: categoryCountsCache.data });
+            return res.json({ success: true, data: withoutHidden(categoryCountsCache.data) });
         }
         const counts = {};
         for (const layerName of ['ApartRent', 'ApartSale', 'LandSale']) {
             try {
                 const r = await realestatePool.query(
-                    `SELECT COUNT(*) FROM public."${layerName}" WHERE status = 0 AND auto_status = 0`
+                    `SELECT COUNT(*) FROM public."${layerName}" WHERE ${publicListingSql(true)}`
                 );
                 counts[layerName] = parseInt(r.rows[0].count, 10) || 0;
             } catch (layerErr) {
@@ -139,14 +146,14 @@ app.get('/api/category-counts', async (req, res) => {
         const services = await servicesPool.query(`
             SELECT discriminator, COUNT(*) AS count
             FROM public.service_all
-            WHERE status = 0 AND auto_status = 0
+            WHERE ${publicListingSql(false)}
             GROUP BY discriminator
         `);
         services.rows.forEach(row => { counts[row.discriminator] = parseInt(row.count, 10) || 0; });
 
         const data = { counts };
         categoryCountsCache = { data, expiresAt: Date.now() + 60000 };
-        res.json({ success: true, data });
+        res.json({ success: true, data: withoutHidden(data) });
     } catch (err) {
         console.error('❌ خطأ أثناء عدّ إعلانات الأقسام:', err.message);
         res.status(500).json({ success: false, error: 'فشل جلب البيانات', details: IS_PROD ? undefined : err.message });

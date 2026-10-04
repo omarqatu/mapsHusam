@@ -2,6 +2,7 @@
 import { app } from '../app.js';
 import { servicesPool } from '../database.js';
 import { requireAdmin } from '../auth.js';
+import { VISIBILITY_KEY, clearVisibilityCache } from '../visibility.js';
 
 // ==========================================
 // API - إدارة المستخدمين (للمشرف فقط)
@@ -69,6 +70,7 @@ app.put('/api/admin/platform-content/:key', requireAdmin, async (req, res) => {
              RETURNING content_key, label, content_value, updated_at`,
             [key, label, value, req.adminUserId]
         );
+        if (key === VISIBILITY_KEY) clearVisibilityCache();
         res.json({ success: true, item: result.rows[0] });
     } catch (err) {
         console.error('تعذر حفظ محتوى المنصة:', err.message);
@@ -79,6 +81,7 @@ app.put('/api/admin/platform-content/:key', requireAdmin, async (req, res) => {
 app.delete('/api/admin/platform-content/:key', requireAdmin, async (req, res) => {
     try {
         await servicesPool.query('DELETE FROM public.platform_content WHERE content_key = $1', [req.params.key]);
+        if (req.params.key === VISIBILITY_KEY) clearVisibilityCache();
         res.json({ success: true });
     } catch (err) {
         console.error('تعذر حذف محتوى المنصة:', err.message);

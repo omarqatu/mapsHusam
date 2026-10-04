@@ -4,6 +4,8 @@ import { servicesPool } from '../database.js';
 import { LAYER_AR_NAMES, REAL_ESTATE_LAYERS, getPoolForLayer, isValidLayer } from '../layers.js';
 import { requireAdmin, requireAuth } from '../auth.js';
 import { getSocketIdForUser } from '../state.js';
+import { isLayerHidden } from '../../lib/listing-rules.js';
+import { getHiddenLayers } from '../visibility.js';
 
 // =========================================================================
 // 🆕 نظام طلب الخدمة + الدردشة + تسجيل عمليات النجاح (Backend Server)
@@ -696,7 +698,9 @@ app.get('/api/service-ratings', async (req, res) => {
                     LIMIT $1
                 `, [limit]);
 
-                res.json({ success: true, items: result.rows });
+                // طبقة أخفاها المشرف لا تظهر في القائمة العامة (والمسحوب يُسقطه search-features-batch عند جلب المعالم)
+                const hidden = await getHiddenLayers();
+                res.json({ success: true, items: result.rows.filter(row => !isLayerHidden(row.service_layer, hidden)) });
             } catch (err) {
                 console.error('❌ خطأ أثناء جلب أفضل مزودي الخدمة تقييماً:', err.message);
                 res.status(500).json({ success: false, error: 'فشل جلب البيانات', details: IS_PROD ? undefined : err.message });

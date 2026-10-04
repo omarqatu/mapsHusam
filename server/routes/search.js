@@ -3,6 +3,10 @@ import { IS_PROD, app, debugLog } from '../app.js';
 import { realestatePool, servicesPool } from '../database.js';
 import { REAL_ESTATE_LAYERS, isValidLayer, isValidSqlIdentifier } from '../layers.js';
 import { activeAdminUidFromToken, bearerToken } from '../auth.js';
+import { AVAILABLE_FIRST_SQL, hiddenDiscriminators, isLayerHidden, publicListingSql } from '../../lib/listing-rules.js';
+import { hiddenLayersFor } from '../visibility.js';
+
+const EMPTY_COLLECTION = { type: 'FeatureCollection', features: [] };
 
 // 8. API لجلب القيم الفريدة من PostgreSQL مباشرة (أسرع من GeoServer)
 app.get('/api/get-unique-values', async (req, res) => {
@@ -16,6 +20,8 @@ app.get('/api/get-unique-values', async (req, res) => {
         // 🆕 تحديد الجدول الفعلي: العقارات بجدولها الخاص، وكل الخدمات أصبحت service_all
         const isRealEstate = REAL_ESTATE_LAYERS.includes(layer.trim());
         const tableName = isRealEstate ? `"${layer}"` : `service_all`;
+        // طبقة أخفاها المشرف لا تظهر قيمها لغيره
+        if (isLayerHidden(layer, await hiddenLayersFor(req))) return res.json({ success: true, values: [] });
 
         // 🆕 فلترة تسلسلية اختيارية: filter_gov_a=... / filter_village_a=...
         let extraWhere = '';
@@ -38,7 +44,7 @@ app.get('/api/get-unique-values', async (req, res) => {
             }
         });
 
-        const query = `SELECT DISTINCT "${field}" FROM public.${tableName} WHERE status = 0 AND auto_status = 0 AND "${field}" IS NOT NULL AND "${field}"::text != ''${extraWhere} ORDER BY "${field}" ASC LIMIT 10000`;
+        const query = `SELECT DISTINCT "${field}" FROM public.${tableName} WHERE ${publicListingSql(isRealEstate)} AND "${field}" IS NOT NULL AND "${field}"::text != ''${extraWhere} ORDER BY "${field}" ASC LIMIT 10000`;
         const result = await targetPool.query(query, extraParams);
         const values = result.rows.map(row => row[field]).filter(v => v != null && v !== '');
         res.json({ success: true, values });
@@ -62,10 +68,13 @@ app.post('/api/search-features-batch', async (req, res) => {
         const tableName = isRealEstate ? `"${layer}"` : `service_all`;
         const idField = isRealEstate ? 'fid' : 'id';
 
-        const cleanIds = ids.map(id => parseInt(id, 10)).filter(id => !isNaN(id));
-        if (cleanIds.length === 0) return res.json({ type: 'FeatureCollection', features: [] });
+        // سقف لعدد المعرفات: الأقسام تطلب بضع عشرات فقط
+        const cleanIds = ids.slice(0, 100).map(id => parseInt(id, 10)).filter(id => !isNaN(id));
+        if (cleanIds.length === 0) return res.json(EMPTY_COLLECTION);
+        if (isLayerHidden(layer, await hiddenLayersFor(req))) return res.json(EMPTY_COLLECTION);
 
-        let query = `SELECT *, ST_AsGeoJSON(geom) as geom_json FROM public.${tableName} WHERE ${idField} = ANY($1)`;
+        // نفس قاعدة الظهور العامة: لا يظهر المسحوب أو المنتهي في "الأعلى تقييماً" و"موصى بهم"
+        let query = `SELECT *, ST_AsGeoJSON(geom) as geom_json FROM public.${tableName} WHERE ${idField} = ANY($1) AND ${publicListingSql(isRealEstate)}`;
         const params = [cleanIds];
 
         if (!isRealEstate) {
@@ -130,8 +139,20 @@ app.get('/api/search-features', async (req, res) => {
             query += ` AND discriminator = $${params.length}`;
         }
 
+        // 🔒 طبقة أخفاها المشرف (إعداد الإظهار والإخفاء) لا تُرجَع لغيره، ولا أنواعها ضمن service_all
+        const hidden = await hiddenLayersFor(req);
+        if (isLayerHidden(layer, hidden)) return res.json(EMPTY_COLLECTION);
+        if (layer.trim() === 'service_all') {
+            const hiddenTypes = hiddenDiscriminators(hidden);
+            if (hiddenTypes.length) {
+                params.push(hiddenTypes);
+                query += ` AND NOT (discriminator = ANY($${params.length}::text[]))`;
+            }
+        }
+
+        // متوفر + غير متوفر مؤقتاً (للخدمات) يظهران، المسحوب والمنتهي لا (lib/listing-rules.js)
         if (!ignoreStatusFilter) {
-            query += ` AND status = 0 AND auto_status = 0`;
+            query += ` AND ${publicListingSql(isRealEstate)}`;
         }
 
         // إضافة فلترة مكانية BBOX إذا تم توفيرها
@@ -237,7 +258,8 @@ app.get('/api/search-features', async (req, res) => {
         if (layer === 'road_barriers' || layer === 'fuel_stations') {
             query += ` ORDER BY display_order NULLS LAST, id ASC LIMIT 2000`;
         } else {
-            query += ` ORDER BY rating DESC LIMIT 2000`;
+            // المتاح الآن أولاً، ثم المغلق / غير المتوفر، وداخل كل منهما الأعلى تقييماً
+            query += ` ORDER BY ${AVAILABLE_FIRST_SQL}, rating DESC NULLS LAST LIMIT 2000`;
         }
 
         debugLog(`Search Query for ${layer}:`, query);
