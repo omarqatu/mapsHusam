@@ -19,3 +19,6 @@ dev/db/dumps/
 
 # Agent worktrees (parallel sessions)
 .claude/worktrees/
+
+# Uploaded listing pictures (server data, not code)
+uploads/

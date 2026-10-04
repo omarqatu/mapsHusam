@@ -2,9 +2,11 @@
 // state (available / unavailable for now / withdrawn) and manage their pictures. New listings still go through
 // listing submissions (the admin approves them).
 import crypto from 'node:crypto';
+import fs from 'node:fs/promises';
+import path from 'node:path';
 import express from 'express';
 import rateLimit from 'express-rate-limit';
-import { IS_PROD, app } from '../app.js';
+import { IS_PROD, ROOT_DIR, app } from '../app.js';
 import { realestatePool, servicesPool } from '../database.js';
 import { requireAuth } from '../auth.js';
 import { platformStatsCache } from '../state.js';
@@ -13,8 +15,14 @@ import {
     MAX_PHOTOS, MAX_PHOTO_BYTES, PHOTO_MIME, joinPic, parseListingEdit, photoIdFromUrl, photoType, photoUrl, picList,
 } from '../../lib/listing-edit.js';
 
+// The picture files live on disk (UPLOADS_DIR, default `<project>/uploads`, outside git); the database keeps one row
+// per picture: which listing and which account it belongs to.
+const PHOTO_DIR = path.join(process.env.UPLOADS_DIR || path.join(ROOT_DIR, 'uploads'), 'listing-photos');
+const photoFile = (id, type) => path.join(PHOTO_DIR, `${id}.${type}`);
+
 async function ensurePhotosSchema() {
     try {
+        await fs.mkdir(PHOTO_DIR, { recursive: true });
         await servicesPool.query(`
             CREATE TABLE IF NOT EXISTS public.listing_photos (
                 id UUID PRIMARY KEY,
@@ -22,13 +30,12 @@ async function ensurePhotosSchema() {
                 feature_id BIGINT NOT NULL,
                 user_id INTEGER NOT NULL,
                 type TEXT NOT NULL,
-                bytes BYTEA NOT NULL,
                 created_at TIMESTAMP NOT NULL DEFAULT NOW()
             )
         `);
         await servicesPool.query('CREATE INDEX IF NOT EXISTS listing_photos_listing_idx ON public.listing_photos (layer, feature_id)');
     } catch (err) {
-        console.error('⚠️ خطأ أثناء إنشاء جدول صور الإعلانات:', err.message);
+        console.error('⚠️ خطأ أثناء تجهيز تخزين صور الإعلانات:', err.message);
     }
 }
 ensurePhotosSchema();
@@ -204,9 +211,10 @@ app.post(
                 return res.status(409).json({ success: false, error: `الحد ${MAX_PHOTOS} صور لكل إعلان.` });
             }
             const id = crypto.randomUUID();
+            await fs.writeFile(photoFile(id, type), req.body, { flag: 'wx' });
             await servicesPool.query(
-                'INSERT INTO public.listing_photos (id, layer, feature_id, user_id, type, bytes) VALUES ($1, $2, $3, $4, $5, $6)',
-                [id, target.layer, target.id, req.auth.uid, type, req.body],
+                'INSERT INTO public.listing_photos (id, layer, feature_id, user_id, type) VALUES ($1, $2, $3, $4, $5)',
+                [id, target.layer, target.id, req.auth.uid, type],
             );
             const url = photoUrl(id, type);
             await writePic(target.layer, target.id, [...list, url]);
@@ -232,10 +240,11 @@ app.put('/api/my-listings/:layer/:id/photos', requireAuth, editLimiter, async (r
         const removed = list.filter((p) => !next.includes(p)).map(photoIdFromUrl).filter(Boolean);
         await writePic(target.layer, target.id, next);
         if (removed.length) {
-            await servicesPool.query(
-                'DELETE FROM public.listing_photos WHERE id = ANY($1::uuid[]) AND layer = $2 AND feature_id = $3',
+            const gone = await servicesPool.query(
+                'DELETE FROM public.listing_photos WHERE id = ANY($1::uuid[]) AND layer = $2 AND feature_id = $3 RETURNING id, type',
                 [removed, target.layer, target.id],
             );
+            await Promise.all(gone.rows.map((r) => fs.rm(photoFile(r.id, r.type), { force: true })));
         }
         res.json({ success: true, photos: next });
     } catch (err) {
@@ -244,22 +253,22 @@ app.put('/api/my-listings/:layer/:id/photos', requireAuth, editLimiter, async (r
     }
 });
 
-// Public: the picture itself. The id is random, the bytes never change (a new picture gets a new id).
+// Public: the picture itself. The id is random, the bytes never change (a new picture gets a new id). The file name
+// is rebuilt from the checked id and type, so a request can never reach another path.
 app.get('/api/listing-photos/:file', async (req, res) => {
-    const id = photoIdFromUrl(`/api/listing-photos/${req.params.file}`);
-    if (!id) return res.status(404).end();
-    try {
-        const r = await servicesPool.query('SELECT type, bytes FROM public.listing_photos WHERE id = $1', [id]);
-        if (!r.rows[0]) return res.status(404).end();
-        res.set({
-            'Content-Type': PHOTO_MIME[r.rows[0].type],
+    const m = /^([a-f0-9-]{36})\.(jpg|png|webp)$/.exec(req.params.file);
+    if (!m || !photoIdFromUrl(`/api/listing-photos/${req.params.file}`)) return res.status(404).end();
+    const [, id, type] = m;
+    res.sendFile(photoFile(id, type), {
+        headers: {
+            'Content-Type': PHOTO_MIME[type],
             'Cache-Control': 'public, max-age=31536000, immutable',
             'Content-Security-Policy': "default-src 'none'; sandbox",
             'X-Content-Type-Options': 'nosniff',
-        });
-        res.send(r.rows[0].bytes);
-    } catch (err) {
-        console.error('❌ خطأ أثناء قراءة صورة:', err.message);
-        res.status(500).end();
-    }
+        },
+        cacheControl: false,
+        lastModified: false,
+    }, (err) => {
+        if (err && !res.headersSent) res.status(err.statusCode === 404 || err.code === 'ENOENT' ? 404 : 500).end();
+    });
 });
