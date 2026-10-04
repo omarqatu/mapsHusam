@@ -17,11 +17,19 @@ import {
 import RatingsBlock from '../popup/RatingsBlock';
 import { formatDistance } from '../search/nearby';
 import ResultContact from '../search/ResultContact';
-import { hasPrice, isFuelStation, isRoadBarrier, priceCurrencyDefault, targetIcon, targetLabelKey } from '../targets';
+import {
+  hasPrice,
+  isFuelStation,
+  isRoadBarrier,
+  priceCurrencyDefault,
+  targetIcon,
+  targetLabelKey,
+} from '../targets';
 import { BarrierBadges, FuelBadges } from './StatusBadges';
 import { manualStars, mediaForMode, sideMedia, type FeaturedEntry, type FeaturedMode } from './featured';
 import { FEATURED_FRAME } from './featuredStyle';
 import { useShowOnMap } from './useShowOnMap';
+import DirectionsButton from '../popup/DirectionsButton';
 
 interface CardProps {
   entry: FeaturedEntry;
@@ -91,7 +99,15 @@ function BeforeAfter({ props }: { props: Props }) {
 }
 
 /** One provider / property in the featured portal: media, key facts, status, contact and "show on map". */
-export default function FeaturedCard({ entry, mode, badge, note, customerRatings, highlight, bare }: CardProps) {
+export default function FeaturedCard({
+  entry,
+  mode,
+  badge,
+  note,
+  customerRatings,
+  highlight,
+  bare,
+}: CardProps) {
   const { t, i18n } = useTranslation();
   const showOnMap = useShowOnMap();
   const { r, ratings } = entry;
@@ -151,9 +167,7 @@ export default function FeaturedCard({ entry, mode, badge, note, customerRatings
       )}
 
       <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm">
-        {!showCustomerRatings && stars > 0 && (
-          <RatingSummary value={stars} count={ratings?.total} />
-        )}
+        {!showCustomerRatings && stars > 0 && <RatingSummary value={stars} count={ratings?.total} />}
         {state && <AvailabilityText value={state} suffix={hoursLabel(p.work_hours, t, i18n.language)} />}
         {price && <span className="text-base font-black text-brand-fg">{price}</span>}
         {area && (
@@ -180,6 +194,7 @@ export default function FeaturedCard({ entry, mode, badge, note, customerRatings
         >
           <MapPin className="h-4 w-4" aria-hidden /> {t('extras.featured.showOnMap')}
         </button>
+        {!isBarrier && <DirectionsButton coordinate={r.center} />}
       </div>
     </article>
   );

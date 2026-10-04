@@ -1,4 +1,4 @@
-import { Copy, Link2, MapPin, Navigation } from 'lucide-react';
+import { Copy, Link2, MapPin } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useProviderLinked } from '@/api/mapEvents';
 import RequestServiceButton from '@/features/requests/RequestServiceButton';
@@ -44,7 +44,7 @@ import PublisherRating from './PublisherRating';
 import { copyText, isMobileBrowser, nativeShare } from '@/lib/clipboard';
 import ContactButtons from './ContactButtons';
 import { formatArea, formatLength } from '../tools/measure';
-import { directionsLink } from '../tools/share';
+import DirectionsButton from './DirectionsButton';
 import RatingsBlock from './RatingsBlock';
 import { useContactActions } from './useContactActions';
 
@@ -261,19 +261,7 @@ export default function FeatureCard({ feature, onClose, className }: Props) {
 
         <div className="flex flex-wrap items-center justify-between gap-2 border-t border-line pt-3">
           <div className="flex flex-wrap gap-2">
-            {!isBarrier && (
-              // Google Maps from where the person is (on a phone: the Maps app, turn by turn).
-              <Button
-                variant="secondary"
-                size="sm"
-                startIcon={<Navigation className="h-4 w-4" />}
-                onClick={() =>
-                  window.open(directionsLink(feature.coordinate), '_blank', 'noopener,noreferrer')
-                }
-              >
-                {t('popup.directions')}
-              </Button>
-            )}
+            {!isBarrier && <DirectionsButton coordinate={feature.coordinate} />}
             <Button
               variant="secondary"
               size="sm"

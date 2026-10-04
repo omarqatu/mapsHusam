@@ -1312,7 +1312,8 @@ For each page, list from the legacy code — not from memory:
   `FormField` gained an optional `hint`. Tests: `features/profile/model.test.ts`, live `profile.live.test.ts`.
 - ✅ **"Go to the map" from a search result** opened a bare point: the listing is now selected first and the map keeps its
   card when the shared point is that listing (`useShowOnMap`, `MapView`; e2e `search.spec.ts`).
-- ✅ **Directions** («اتجاهات») on every card except road barriers: opens Google Maps directions to the point
+- ✅ **Directions** («اتجاهات», signed-in users only — owner) on the map card, the featured cards and the search
+  results, except road barriers (`popup/DirectionsButton`): opens Google Maps directions to the point
   (`share.ts → directionsLink`; on a phone the Maps app, turn by turn, from where the person is). In-app routing on the
   roads layer (`realestate:RoadsTest` covers Ramallah / Al-Bireh / Beitunia only) is not built — not requested yet.
 
