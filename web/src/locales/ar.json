@@ -2170,12 +2170,17 @@
     "saved": "تم حفظ بياناتك.",
     "saveFailed": "تعذر حفظ بياناتك.",
     "security": "الأمان",
-    "shortcuts": "اختصارات",
-    "myListingsHint": "خدماتك وعقاراتك وصورها",
     "errors": {
       "nameEmpty": "اكتب اسمك.",
       "whatsapp": "رقم واتساب غير صالح.",
       "email": "البريد الإلكتروني غير صالح."
-    }
+    },
+    "figures": "أرقامي",
+    "noRatings": "لا تقييمات بعد",
+    "openRequests": "طلبات مفتوحة",
+    "unread": "إشعارات جديدة",
+    "screens": "شاشاتي",
+    "listings": "إعلاناتي",
+    "ratingCount": "من {{count}} تقييم"
   }
 }

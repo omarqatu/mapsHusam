@@ -1,3 +1,4 @@
+import type { MyListing } from '@/api/myListings';
 import type { Profile, ProfileEdit } from '@/api/profile';
 
 /** The profile form as typed (the phone is not part of it: it is the login). */
@@ -37,4 +38,16 @@ export function profileProblem(v: ProfileForm): ProfileProblem {
   const email = v.email.trim();
   if (email && !/^[^\s@<>]+@[^\s@<>]+\.[^\s@<>]+$/.test(email)) return { field: 'email', code: 'email' };
   return null;
+}
+
+/** My standing as a publisher: every rating of all my listings, averaged (as `GET /api/publisher-rating`); null = none. */
+export function publisherRating(listings: Pick<MyListing, 'rating_avg' | 'rating_count'>[]) {
+  let sum = 0;
+  let count = 0;
+  for (const l of listings)
+    if (l.rating_avg !== null && l.rating_count > 0) {
+      sum += l.rating_avg * l.rating_count;
+      count += l.rating_count;
+    }
+  return count ? { average: sum / count, count } : null;
 }

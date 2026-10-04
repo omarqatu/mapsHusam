@@ -2170,12 +2170,17 @@
     "saved": "Your details are saved.",
     "saveFailed": "Could not save your details.",
     "security": "Security",
-    "shortcuts": "Shortcuts",
-    "myListingsHint": "Your services, properties and their pictures",
     "errors": {
       "nameEmpty": "Write your name.",
       "whatsapp": "Invalid WhatsApp number.",
       "email": "Invalid email."
-    }
+    },
+    "figures": "My figures",
+    "noRatings": "no ratings yet",
+    "openRequests": "open requests",
+    "unread": "new notifications",
+    "screens": "My screens",
+    "listings": "my listings",
+    "ratingCount": "from {{count}} ratings"
   }
 }

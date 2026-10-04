@@ -7,14 +7,15 @@ import {
   Mail,
   MessageCircle,
   Phone,
-  PlusCircle,
   Save,
   ShieldCheck,
+  Star,
   Store,
   UserRound,
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router';
+import { useMyListings } from '@/api/myListings';
 import { useProfile, useUpdateProfile, type Profile, type ProfileEdit } from '@/api/profile';
 import AlertMessage from '@/components/ui/AlertMessage';
 import Avatar from '@/components/ui/Avatar';
@@ -26,12 +27,18 @@ import { CenteredSpinner } from '@/components/ui/Spinner';
 import TextInput from '@/components/ui/TextInput';
 import { toast } from '@/components/ui/toastStore';
 import ChangePasswordDialog from '@/features/auth/ChangePasswordDialog';
+import HomeCards from '@/features/home/HomeCards';
+import { useHomeData } from '@/features/home/useHomeData';
 import { useRequestsUi } from '@/features/requests/store';
 import { errorText } from '@/lib/errorText';
+import { formatNumber } from '@/lib/format';
 import { useAuthStore } from '@/store/authStore';
-import { profileEdit, profileProblem, toProfileForm, type ProfileForm } from './model';
+import { profileEdit, profileProblem, publisherRating, toProfileForm, type ProfileForm } from './model';
 
-/** `/profile` — the account's own page: who I am, my details (the phone is the login and stays), password, shortcuts. */
+/**
+ * `/profile` — the account's own page: who I am, my figures (listings, rating, open requests, unread), my screens (the
+ * home's role cards), my details (the phone is the login and stays), password.
+ */
 export default function ProfilePage() {
   const { t } = useTranslation();
   const profile = useProfile();
@@ -55,9 +62,10 @@ export default function ProfilePage() {
       {header}
       <div className="mx-auto grid max-w-3xl gap-4">
         <Identity profile={profile.data} />
+        <Figures />
+        <Screens />
         <DetailsForm key={profile.dataUpdatedAt} profile={profile.data} />
         <Security />
-        <Shortcuts role={profile.data.role} />
       </div>
     </>
   );
@@ -220,38 +228,49 @@ function Security() {
   );
 }
 
-const tile =
-  'flex items-center gap-3 rounded-xl border border-line bg-surface p-3 text-start text-sm font-bold text-fg transition-colors hover:border-brand hover:bg-brand-light';
-
-function Shortcuts({ role }: { role: Profile['role'] }) {
-  const { t } = useTranslation();
-  const openRequests = useRequestsUi((s) => s.openList);
-  const icon = 'h-5 w-5 shrink-0 text-brand-fg';
+function Figures() {
+  const { t, i18n } = useTranslation();
+  const listings = useMyListings();
+  const home = useHomeData();
+  const num = (n: number) => formatNumber(n, i18n.language);
+  const all = listings.data ?? [];
+  const rating = publisherRating(all);
+  const openRequests = home.requests.waitingReply + home.requests.active + home.requests.incoming;
+  const tile =
+    'flex min-w-0 flex-col items-center gap-0.5 rounded-xl border border-line bg-surface px-2 py-3 text-center transition-colors hover:border-brand hover:bg-brand-light';
+  const value = 'text-xl font-black text-fg';
+  const label = 'text-xs font-semibold text-muted';
   return (
-    <SectionCard title={t('profile.shortcuts')}>
-      <div className="grid gap-2 sm:grid-cols-2">
-        <Link to="/my-listings" className={tile}>
-          <Store className={icon} aria-hidden />
-          <span>
-            {t('nav.myListings')}
-            <span className="block text-xs font-normal text-muted">{t('profile.myListingsHint')}</span>
-          </span>
-        </Link>
-        <button type="button" onClick={openRequests} className={tile}>
-          <ClipboardList className={icon} aria-hidden />
-          {t('requests.myRequests')}
-        </button>
-        {role !== 'admin' && (
-          <Link to="/add-listing" className={tile}>
-            <PlusCircle className={icon} aria-hidden />
-            {t('nav.addListing')}
-          </Link>
-        )}
-        <Link to="/notifications" className={tile}>
-          <Bell className={icon} aria-hidden />
-          {t('nav.notifications')}
-        </Link>
-      </div>
-    </SectionCard>
+    <section aria-label={t('profile.figures')} className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+      <Link to="/my-listings" className={tile}>
+        <Store className="h-5 w-5 text-brand-fg" aria-hidden />
+        <span className={value}>{listings.isPending ? '…' : num(all.length)}</span>
+        <span className={label}>{t('profile.listings')}</span>
+      </Link>
+      <Link to="/my-listings" className={tile}>
+        <Star className="h-5 w-5 text-warn" aria-hidden />
+        <span className={value}>{rating ? rating.average.toFixed(1) : '—'}</span>
+        <span className={label}>
+          {rating ? t('profile.ratingCount', { count: rating.count }) : t('profile.noRatings')}
+        </span>
+      </Link>
+      <button type="button" onClick={() => useRequestsUi.getState().openList()} className={tile}>
+        <ClipboardList className="h-5 w-5 text-ok" aria-hidden />
+        <span className={value}>{num(openRequests)}</span>
+        <span className={label}>{t('profile.openRequests')}</span>
+      </button>
+      <Link to="/notifications" className={tile}>
+        <Bell className="h-5 w-5 text-info" aria-hidden />
+        <span className={value}>{num(home.unread)}</span>
+        <span className={label}>{t('profile.unread')}</span>
+      </Link>
+    </section>
   );
+}
+
+/** My screens: the home's role-aware cards, with their live figures. */
+function Screens() {
+  const { t } = useTranslation();
+  const home = useHomeData();
+  return <HomeCards data={home} title={t('profile.screens')} />;
 }
