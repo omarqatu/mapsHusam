@@ -101,11 +101,11 @@ function Start-And-SmokeTest {
 # `uploads` holds the pictures people upload (server/routes/my-listings.js): data, not code. /MIR must never purge it,
 # and the rollback copy must not drag an old set of pictures back over the live one.
 $copyExclusions = @(
-    '/XD', '.git', '.github', '.playwright', '.claude', 'notes', 'dev', 'DB_Backups', 'GeoServerData', 'uploads',
+    '/XD', '.git', '.github', '.playwright', '.claude', 'notes', 'dev', 'DB_Backups', 'GeoServerData', 'uploads', 'pic',
     '/XF', '.gitignore', '.env', '.env.*', 'env'
 )
 # A rollback restores code only: retain the current credentials and user files.
-$persistentExclusions = @('/XD', 'DB_Backups', 'GeoServerData', 'uploads', '/XF', '.env', '.env.*', 'env')
+$persistentExclusions = @('/XD', 'DB_Backups', 'GeoServerData', 'uploads', 'pic', '/XF', '.env', '.env.*', 'env')
 $deploymentStarted = $false
 
 try {

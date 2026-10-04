@@ -423,11 +423,16 @@ test('P: the provider goes busy, then available at his GPS position (the locatio
   expect(provider.problems).toEqual([]);
 });
 
-test('V: a visitor pressing "request service" is sent to the login form', async ({ browser }) => {
+test('V: a visitor pressing "request service" gets the login sheet and can continue to login', async ({
+  browser,
+}) => {
   const visitor = await open(browser, null, '/');
   contexts.push(visitor.context);
   const card = await openProviderCard(visitor.page, service);
   await card.getByRole('button', { name: t('popup.requestService') }).click();
+  const prompt = visitor.page.getByRole('dialog', { name: t('loginPrompt.title.request') });
+  await expect(prompt).toBeVisible();
+  await prompt.getByRole('button', { name: t('loginPrompt.login'), exact: true }).click();
   await expect(visitor.page).toHaveURL(/\/login$/);
 });
 

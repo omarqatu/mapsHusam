@@ -46,6 +46,13 @@ app.use('/api', (req, res) => {
     res.status(404).json({ error: 'API endpoint not found', path: req.path });
 });
 
+// Existing database photo URLs may still point at /pic. Keep those images available across the first migration.
+// Serve image extensions only; never expose source, env, HTML or other files in this old directory.
+app.use('/pic', (req, res, next) => {
+    if (!/\.(?:jpe?g|png|gif|webp|avif|ico)$/i.test(req.path)) return res.sendStatus(404);
+    next();
+}, express.static(path.join(ROOT_DIR, 'pic'), { dotfiles: 'ignore', index: false, redirect: false, fallthrough: false }));
+
 // 9أ. تطبيق React (web/dist)
 // يُقدَّم التطبيق من web/dist (ملفات مبنية + مسارات SPA + تحويل روابط الصفحات القديمة). SERVE_REACT_APP=off يوقف تقديمه.
 const REACT_DIST = path.join(ROOT_DIR, 'web', 'dist');
