@@ -27,7 +27,6 @@ import { CenteredSpinner } from '@/components/ui/Spinner';
 import TextInput from '@/components/ui/TextInput';
 import { toast } from '@/components/ui/toastStore';
 import ChangePasswordDialog from '@/features/auth/ChangePasswordDialog';
-import HomeCards from '@/features/home/HomeCards';
 import { useHomeData } from '@/features/home/useHomeData';
 import { useRequestsUi } from '@/features/requests/store';
 import { errorText } from '@/lib/errorText';
@@ -36,8 +35,8 @@ import { useAuthStore } from '@/store/authStore';
 import { profileEdit, profileProblem, publisherRating, toProfileForm, type ProfileForm } from './model';
 
 /**
- * `/profile` — the account's own page: who I am, my figures (listings, rating, open requests, unread), my screens (the
- * home's role cards), my details (the phone is the login and stays), password.
+ * `/profile` — the account's own page: who I am, my figures (listings, rating, open requests, unread — each opens its
+ * screen), my details (the phone is the login and stays), password.
  */
 export default function ProfilePage() {
   const { t } = useTranslation();
@@ -63,7 +62,6 @@ export default function ProfilePage() {
       <div className="mx-auto grid max-w-3xl gap-4">
         <Identity profile={profile.data} />
         <Figures />
-        <Screens />
         <DetailsForm key={profile.dataUpdatedAt} profile={profile.data} />
         <Security />
       </div>
@@ -266,11 +264,4 @@ function Figures() {
       </Link>
     </section>
   );
-}
-
-/** My screens: the home's role-aware cards, with their live figures. */
-function Screens() {
-  const { t } = useTranslation();
-  const home = useHomeData();
-  return <HomeCards data={home} title={t('profile.screens')} />;
 }

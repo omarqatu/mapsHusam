@@ -1306,8 +1306,7 @@ For each page, list from the legacy code — not from memory:
   now «حالتي الآن», the panel ends with «تعديل البيانات والصور» → `/my-listings`, and the home shows «إعلاناتي» first.
 - ✅ **My profile** (`/profile`, signed in): tapping the avatar opens the account menu, whose header and a «الملف الشخصي»
   item lead to the page: who I am (name, role, phone); my figures (listings, my rating as a publisher, open requests,
-  new notifications — each opens its screen); my screens (the home's role cards with their live figures, `HomeCards`
-  reused); my details (name, WhatsApp, email — the phone is the login, read-only with a hint); password and log-out.
+  new notifications — each opens its screen); my details (name, WhatsApp, email — the phone is the login, read-only with a hint); password and log-out.
   No profile picture (owner: not wanted).
   Server: see "Server changes" → "The account's own profile". `Avatar` moved to `components/ui/` (used twice);
   `FormField` gained an optional `hint`. Tests: `features/profile/model.test.ts`, live `profile.live.test.ts`.

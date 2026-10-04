@@ -8,8 +8,8 @@ import { cardsFor, type CardId } from './cards';
 import HomeCard, { type CardFigure } from './HomeCard';
 import type { HomeData } from './useHomeData';
 
-/** Role-aware grid of entrances, each with the live figure where one exists (the home page and the profile). */
-export default function HomeCards({ data, title }: { data: HomeData; title?: string }) {
+/** Role-aware grid of entrances, each with the live figure where one exists. */
+export default function HomeCards({ data }: { data: HomeData }) {
   const { t, i18n } = useTranslation();
   const navigate = useNavigate();
   const role = useAuthStore((s) => s.user?.role);
@@ -17,10 +17,7 @@ export default function HomeCards({ data, title }: { data: HomeData; title?: str
 
   const stats = data.platform;
   const num = (n: number) => formatNumber(n, i18n.language);
-  const statFigure = (
-    pick: (s: NonNullable<typeof stats.data>) => number,
-    label: string,
-  ): CardFigure | undefined =>
+  const statFigure = (pick: (s: NonNullable<typeof stats.data>) => number, label: string): CardFigure | undefined =>
     stats.isLoading ? 'loading' : stats.data ? { value: num(pick(stats.data)), label } : undefined;
   const count = (n: number, label: string, tone?: 'warn'): CardFigure | undefined =>
     n > 0 ? { value: num(n), label, tone } : undefined;
@@ -58,7 +55,7 @@ export default function HomeCards({ data, title }: { data: HomeData; title?: str
   return (
     <section aria-labelledby="home-cards-title">
       <h2 id="home-cards-title" className="mb-3 text-lg font-black text-fg">
-        {title ?? t('home.cardsTitle')}
+        {t('home.cardsTitle')}
       </h2>
       <ul className="grid gap-3 sm:grid-cols-2">
         {cardsFor(role).map((c) => (
