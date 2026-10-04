@@ -6,6 +6,7 @@ import { requireAdmin, requireAuth } from '../auth.js';
 import { getSocketIdForUser } from '../state.js';
 import { isLayerHidden } from '../../lib/listing-rules.js';
 import { getHiddenLayers } from '../visibility.js';
+import { listingProvider } from '../listing-owners.js';
 
 // =========================================================================
 // 🆕 نظام طلب الخدمة + الدردشة + تسجيل عمليات النجاح (Backend Server)
@@ -85,18 +86,11 @@ app.post('/api/service-requests', requireAuth, async (req, res) => {
     }
 
     try {
-        const providerResult = await servicesPool.query(
-            `SELECT user_id, full_name, phone
-             FROM public.users
-             WHERE role = 'provider' AND service_layer = $1 AND feature_id = $2 LIMIT 1`,
-            [service_layer, feature_id]
-        );
-
-        if (providerResult.rows.length === 0) {
+        // The owner of this listing (an account may own several: listing_owners).
+        const provider = await listingProvider(service_layer, feature_id);
+        if (!provider) {
             return res.status(404).json({ success: false, error: 'تعذر العثور على حساب مزود الخدمة المرتبط بهذا المعلم.' });
         }
-
-        const provider = providerResult.rows[0];
 
         if (Number(provider.user_id) === Number(user_id)) {
             return res.status(400).json({ success: false, error: 'لا يمكنك إرسال طلب خدمة لنفسك.' });

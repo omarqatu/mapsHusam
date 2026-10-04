@@ -1,11 +1,12 @@
 // "Add my business": submit, list, cancel; the admin approves or rejects.
 import rateLimit from 'express-rate-limit';
 import { IS_PROD, app } from '../app.js';
-import { servicesPool } from '../database.js';
+import { realestatePool, servicesPool } from '../database.js';
 import { LAYER_AR_NAMES, isValidLayer } from '../layers.js';
 import { authStatusCache, requireAdmin, requireAuth } from '../auth.js';
 import { clearProviderLinkedCache, notifyUser, platformStatsCache } from '../state.js';
-import { INSERT_SUBMISSION_SQL, SUBMISSION_MAX_LEN, SUBMITTABLE_LAYERS, cleanText, parseListingInput, submissionParams } from '../listings.js';
+import { INSERT_SUBMISSION_SQL, SUBMISSION_MAX_LEN, SUBMITTABLE_LAYERS, SUBMITTABLE_PROPERTY_LAYERS, cleanText, parseListingInput, submissionParams } from '../listings.js';
+import { linkOwner } from '../listing-owners.js';
 
 async function ensureListingSubmissionsSchema() {
     try {
@@ -30,6 +31,9 @@ async function ensureListingSubmissionsSchema() {
                 reviewed_at TIMESTAMP
             )
         `);
+        // شقق: المساحة والعملة
+        await servicesPool.query('ALTER TABLE public.listing_submissions ADD COLUMN IF NOT EXISTS area INTEGER');
+        await servicesPool.query('ALTER TABLE public.listing_submissions ADD COLUMN IF NOT EXISTS currency TEXT');
         // طلب معلّق واحد فقط لكل مستخدم (يمنع الإغراق ويحسم التسابق بين نقرتين)
         await servicesPool.query(`CREATE UNIQUE INDEX IF NOT EXISTS listing_submissions_one_pending ON public.listing_submissions (user_id) WHERE status = 'pending'`);
         await servicesPool.query(`CREATE INDEX IF NOT EXISTS listing_submissions_status_idx ON public.listing_submissions (status, created_at DESC)`);
@@ -38,6 +42,8 @@ async function ensureListingSubmissionsSchema() {
     }
 }
 ensureListingSubmissionsSchema();
+
+const SUBMITTER_ROLES = ['user', 'provider'];
 
 const submissionLimiter = rateLimit({
     windowMs: 24 * 60 * 60 * 1000,
@@ -59,10 +65,11 @@ app.post('/api/listing-submissions', requireAuth, submissionLimiter, async (req,
     const listing = parsed.value;
 
     try {
-        const owner = await servicesPool.query('SELECT role, service_layer, feature_id FROM public.users WHERE user_id = $1', [req.auth.uid]);
+        // A user (becomes a provider on approval) or a provider adding one more listing.
+        const owner = await servicesPool.query('SELECT role FROM public.users WHERE user_id = $1', [req.auth.uid]);
         const row = owner.rows[0];
-        if (!row || row.role !== 'user' || row.feature_id) {
-            return res.status(403).json({ success: false, error: 'حسابك مرتبط بنشاط بالفعل أو لا يملك صلاحية التقديم.' });
+        if (!row || !SUBMITTER_ROLES.includes(row.role)) {
+            return res.status(403).json({ success: false, error: 'حسابك لا يملك صلاحية التقديم.' });
         }
         const inserted = await servicesPool.query(INSERT_SUBMISSION_SQL, submissionParams(req.auth.uid, listing));
         res.json({ success: true, submission: inserted.rows[0] });
@@ -131,6 +138,7 @@ app.post('/api/admin/listing-submissions/:id/approve', requireAdmin, async (req,
     if (!Number.isInteger(id) || id <= 0) return res.status(400).json({ success: false, error: 'رقم غير صالح.' });
     const body = req.body || {};
     const client = await servicesPool.connect();
+    let createdProperty = null; // a flat inserted before a failure is removed again
     try {
         await client.query('BEGIN');
         const found = await client.query('SELECT * FROM public.listing_submissions WHERE id = $1 FOR UPDATE', [id]);
@@ -141,9 +149,9 @@ app.post('/api/admin/listing-submissions/:id/approve', requireAdmin, async (req,
 
         const ownerRes = await client.query('SELECT role, feature_id, is_active FROM public.users WHERE user_id = $1 FOR UPDATE', [sub.user_id]);
         const owner = ownerRes.rows[0];
-        if (!owner || owner.role !== 'user' || owner.feature_id) {
+        if (!owner || !SUBMITTER_ROLES.includes(owner.role)) {
             await client.query('ROLLBACK');
-            return res.status(409).json({ success: false, error: 'حساب صاحب الطلب لم يعد مؤهلاً (مرتبط بنشاط أو غير موجود).' });
+            return res.status(409).json({ success: false, error: 'حساب صاحب الطلب لم يعد مؤهلاً (غير موجود أو تغيّر دوره).' });
         }
 
         // المشرف يستطيع تصحيح النص قبل النشر
@@ -153,33 +161,65 @@ app.post('/api/admin/listing-submissions/:id/approve', requireAdmin, async (req,
         const searchTags = cleanText(body.search_tags, SUBMISSION_MAX_LEN.search_tags)
             || [LAYER_AR_NAMES[sub.layer] || sub.layer, name].join('، ');
 
-        const created = await client.query(
-            `INSERT INTO public.service_all (discriminator, name, des, phone, whatsapp, work_hours, price, search_tags, status, geom)
-             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, 0, ST_SetSRID(ST_MakePoint($9, $10), 28191))
-             RETURNING id, x_coord, y_coord`,
-            [sub.layer, name, des || null, sub.phone, sub.whatsapp, workHours || null, sub.price, searchTags, sub.x_coord, sub.y_coord]
-        );
-        const feature = created.rows[0];
+        const isProperty = SUBMITTABLE_PROPERTY_LAYERS.includes(sub.layer);
+        let feature;
+        if (isProperty) {
+            // A flat is a point in its own table (the real-estate database: outside this transaction, undone below).
+            const created = await realestatePool.query(
+                `INSERT INTO public."${sub.layer}" (name, des, phone, whatsapp, price, currency, area, search_tags, status, geom)
+                 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, 0, ST_SetSRID(ST_MakePoint($9, $10), 28191))
+                 RETURNING fid AS id`,
+                [name, des || null, sub.phone, sub.whatsapp, sub.price === null ? null : Math.round(Number(sub.price)),
+                    sub.currency || 'USD', sub.area, searchTags, sub.x_coord, sub.y_coord]
+            );
+            feature = { id: Number(created.rows[0].id), x_coord: sub.x_coord, y_coord: sub.y_coord };
+            createdProperty = { layer: sub.layer, id: feature.id };
+        } else {
+            const created = await client.query(
+                `INSERT INTO public.service_all (discriminator, name, des, phone, whatsapp, work_hours, price, search_tags, status, geom)
+                 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, 0, ST_SetSRID(ST_MakePoint($9, $10), 28191))
+                 RETURNING id, x_coord, y_coord`,
+                [sub.layer, name, des || null, sub.phone, sub.whatsapp, workHours || null, sub.price, searchTags, sub.x_coord, sub.y_coord]
+            );
+            feature = created.rows[0];
+        }
 
-        await client.query(
-            `UPDATE public.users SET role = 'provider', is_active = true, service_layer = $1, feature_id = $2, x_coord = $3, y_coord = $4,
-                    token_version = token_version + 1 WHERE user_id = $5`,
-            [sub.layer, feature.id, feature.x_coord, feature.y_coord, sub.user_id]
-        );
+        const becomesProvider = owner.role === 'user';
+        if (becomesProvider) {
+            await client.query(
+                `UPDATE public.users SET role = 'provider', is_active = true, service_layer = $1, feature_id = $2, x_coord = $3, y_coord = $4,
+                        token_version = token_version + 1 WHERE user_id = $5`,
+                [sub.layer, feature.id, feature.x_coord, feature.y_coord, sub.user_id]
+            );
+        } else if (!owner.feature_id) {
+            // a provider without a first listing: this one becomes it (the provider panel reads it)
+            await client.query(
+                'UPDATE public.users SET service_layer = $1, feature_id = $2, x_coord = $3, y_coord = $4 WHERE user_id = $5',
+                [sub.layer, feature.id, feature.x_coord, feature.y_coord, sub.user_id]
+            );
+        }
+        await linkOwner(client, sub.layer, feature.id, sub.user_id);
         await client.query(
             `UPDATE public.listing_submissions SET status = 'approved', feature_id = $1, reviewed_by = $2, reviewed_at = NOW() WHERE id = $3`,
             [feature.id, req.adminUserId, id]
         );
         await client.query('COMMIT');
+        createdProperty = null;
 
         authStatusCache.delete(Number(sub.user_id)); // الدور الجديد يسري فوراً وتُبطل الجلسة القديمة
         clearProviderLinkedCache();
         platformStatsCache.clear();
-        await notifyUser(sub.user_id, '✅ تمت الموافقة على نشاطك',
-            `تمت إضافة «${name}» إلى الخريطة وأصبح حسابك حساب مزوّد خدمة. ${owner.is_active ? 'يرجى تسجيل الخروج ثم الدخول من جديد لتفعيل الصلاحيات.' : 'حسابك مفعّل الآن، يمكنك تسجيل الدخول.'}`, 'success');
+        await notifyUser(sub.user_id, '✅ تمت الموافقة على إعلانك',
+            becomesProvider
+                ? `تمت إضافة «${name}» إلى الخريطة وأصبح حسابك حساب مزوّد خدمة. ${owner.is_active ? 'يرجى تسجيل الخروج ثم الدخول من جديد لتفعيل الصلاحيات.' : 'حسابك مفعّل الآن، يمكنك تسجيل الدخول.'}`
+                : `تمت إضافة «${name}» إلى الخريطة، وتجده في صفحة إعلاناتي.`,
+            'success', becomesProvider ? null : '/my-listings');
         res.json({ success: true, feature_id: feature.id });
     } catch (err) {
         await client.query('ROLLBACK').catch(() => {});
+        if (createdProperty) {
+            await realestatePool.query(`DELETE FROM public."${createdProperty.layer}" WHERE fid = $1`, [createdProperty.id]).catch(() => {});
+        }
         console.error('❌ خطأ أثناء الموافقة على طلب الإضافة:', err.message);
         res.status(500).json({ success: false, error: 'فشلت الموافقة.', details: IS_PROD ? undefined : err.message });
     } finally {

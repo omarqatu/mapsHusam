@@ -4,6 +4,7 @@ import { BCRYPT_SALT_ROUNDS, IS_PROD, app } from '../app.js';
 import { servicesPool } from '../database.js';
 import { authStatusCache, requireAdmin } from '../auth.js';
 import { clearProviderLinkedCache, connectedUsers } from '../state.js';
+import { linkOwner, normalizeListingLayer, unlinkOwner } from '../listing-owners.js';
 
 // 1. جلب جميع المستخدمين مع خيارات البحث والتصفية
 app.get('/api/admin/users', requireAdmin, async (req, res) => {
@@ -278,7 +279,7 @@ app.post('/api/admin/users/update', requireAdmin, async (req, res) => {
 
     try {
         // التحقق من وجود المستخدم
-        const checkUser = await servicesPool.query('SELECT user_id, role, is_active FROM public.users WHERE user_id = $1', [user_id]);
+        const checkUser = await servicesPool.query('SELECT user_id, role, is_active, service_layer, feature_id FROM public.users WHERE user_id = $1', [user_id]);
         if (checkUser.rows.length === 0) {
             return res.status(404).json({ success: false, error: 'المستخدم غير موجود' });
         }
@@ -356,7 +357,14 @@ app.post('/api/admin/users/update', requireAdmin, async (req, res) => {
         const finalQuery = `UPDATE public.users SET ${updateFields.join(', ')} WHERE user_id = $${idx}`;
         updateValues.push(user_id);
 
-        await servicesPool.query(finalQuery, updateValues);
+        const updated = await servicesPool.query(`${finalQuery} RETURNING service_layer, feature_id`, updateValues);
+        // The account's first listing, as linked here, is mirrored into listing_owners (its other listings stay).
+        const before = { layer: normalizeListingLayer(currentUser.service_layer), id: currentUser.feature_id };
+        const after = { layer: normalizeListingLayer(updated.rows[0]?.service_layer), id: updated.rows[0]?.feature_id };
+        if (before.layer !== after.layer || String(before.id) !== String(after.id)) {
+            if (before.layer && before.id) await unlinkOwner(servicesPool, before.layer, before.id, user_id);
+            if (after.layer && after.id) await linkOwner(servicesPool, after.layer, after.id, user_id);
+        }
         authStatusCache.delete(Number(user_id)); // 🔒 يسري تغيير الدور/التفعيل فوراً
         clearProviderLinkedCache(); // ربط مزود الخدمة قد تغيّر
 

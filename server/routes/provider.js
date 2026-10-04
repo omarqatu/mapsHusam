@@ -3,6 +3,7 @@ import { IS_PROD, app } from '../app.js';
 import { servicesPool } from '../database.js';
 import { REAL_ESTATE_LAYERS, getPoolForLayer, isValidLayer } from '../layers.js';
 import { requireAuth } from '../auth.js';
+import { normalizeListingLayer, ownsListing } from '../listing-owners.js';
 
 // =========================================================================
 // مسار جلب الخدمة المربوطة بمزود الخدمة والتحقق من اكتمال الحقول مع الإحداثيات
@@ -152,14 +153,15 @@ app.post('/api/update-service-status', requireAuth, async (req, res) => {
             return res.status(403).json({ success: false, error: 'غير مصرح.' });
         }
         const ownerResult = await servicesPool.query(
-            'SELECT role, is_active, service_layer, feature_id FROM public.users WHERE user_id = $1',
+            'SELECT role, is_active FROM public.users WHERE user_id = $1',
             [req.auth.uid]
         );
         const owner = ownerResult.rows[0];
-        const normLayer = (v) => String(v || '').replace(/^.*:/, '').replace(/Layer$/i, '').toLowerCase();
-        if (!owner || owner.role !== 'provider' || !owner.is_active ||
-            normLayer(owner.service_layer) !== normLayer(layerName) ||
-            String(owner.feature_id) !== String(targetIdValue)) {
+        // any listing of this account (listing_owners), not only the first one
+        const ownedLayer = normalizeListingLayer(layerName);
+        if (!owner || owner.role !== 'provider' || !owner.is_active || !ownedLayer ||
+            !/^\d+$/.test(String(targetIdValue)) ||
+            !(await ownsListing(req.auth.uid, ownedLayer, targetIdValue))) {
             return res.status(403).json({ success: false, error: 'هذا المعلم غير مرتبط بحسابك.' });
         }
 

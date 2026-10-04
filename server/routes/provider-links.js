@@ -2,6 +2,7 @@
 import { IS_PROD, app } from '../app.js';
 import { servicesPool } from '../database.js';
 import { providerLinkedCache } from '../state.js';
+import { ready as ownersReady } from '../listing-owners.js';
 
 // =========================================================================
 // 🆕 [عرض ذكي لأزرار التواصل]: مسار عام يرجع، لكل طبقة خدمة، قائمة أرقام
@@ -16,18 +17,18 @@ app.get('/api/provider-linked-features', async (req, res) => {
         if (providerLinkedCache.data && Date.now() < providerLinkedCache.expiresAt) {
             return res.json({ success: true, linked: providerLinkedCache.data });
         }
+        // Every listing of an active provider (an account may own several: listing_owners).
+        await ownersReady;
         const result = await servicesPool.query(
-            `SELECT service_layer, feature_id
-             FROM public.users
-             WHERE role = 'provider' AND is_active = true
-               AND service_layer IS NOT NULL AND feature_id IS NOT NULL`
+            `SELECT o.layer, o.feature_id
+             FROM public.listing_owners o JOIN public.users u ON u.user_id = o.user_id
+             WHERE u.role = 'provider' AND u.is_active = true`
         );
 
         const linked = {};
         result.rows.forEach(row => {
-            const layer = row.service_layer.trim();
-            if (!linked[layer]) linked[layer] = [];
-            linked[layer].push(row.feature_id);
+            if (!linked[row.layer]) linked[row.layer] = [];
+            linked[row.layer].push(Number(row.feature_id));
         });
 
         providerLinkedCache.data = linked;

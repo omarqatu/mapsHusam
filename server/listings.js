@@ -5,12 +5,17 @@ import { PLATFORM_SERVICE_LAYERS } from './layers.js';
 // =========================================================================
 // 🆕 [أضف نشاطي]: صاحب النشاط يقدّم طلب إضافة نشاط للخريطة، والمشرف يراجعه.
 // عند الموافقة: يُنشأ المعلم بجدول service_all ويُربط حساب صاحبه كمزوّد خدمة (كما يفعل المشرف يدوياً).
-// الطلب للخدمات فقط (طبقات service_all)، أما العقارات فتبقى بيد المشرف.
+// الخدمات (طبقات service_all) والشقق (إيجار / بيع: نقطة على الخريطة). الأراضي يرسمها المشرف (قطعة = مضلّع).
 // =========================================================================
 export const SUBMISSION_MAX_LEN = { name: 100, des: 1000, work_hours: 200, reject_reason: 300, search_tags: 1000 };
 // طبقات لا يقدّمها أصحاب الأنشطة: مواقع عامة (حواجز/وقود/معالم) وعقارات
 const SUBMISSION_BLOCKED_LAYERS = new Set(['road_barriers', 'fuel_stations', 'city_landmarks', 'job_vacancies', 'free_distribution']);
-export const SUBMITTABLE_LAYERS = PLATFORM_SERVICE_LAYERS.filter(layer => !SUBMISSION_BLOCKED_LAYERS.has(layer));
+export const SUBMITTABLE_PROPERTY_LAYERS = ['ApartRent', 'ApartSale'];
+export const SUBMITTABLE_LAYERS = [
+    ...PLATFORM_SERVICE_LAYERS.filter(layer => !SUBMISSION_BLOCKED_LAYERS.has(layer)),
+    ...SUBMITTABLE_PROPERTY_LAYERS,
+];
+const CURRENCIES = ['ILS', 'USD', 'JOD'];
 // حدود شبكة فلسطين (EPSG:28191) الواسعة: تمنع نقطة خارج البلد أو إحداثيات بنظام آخر
 const GRID_X_RANGE = [100000, 300000];
 const GRID_Y_RANGE = [30000, 300000];
@@ -27,6 +32,9 @@ export function parseListingInput(body) {
     const x = Number(body.x_coord);
     const y = Number(body.y_coord);
     const price = body.price === undefined || body.price === null || body.price === '' ? null : Number(body.price);
+    const isProperty = SUBMITTABLE_PROPERTY_LAYERS.includes(layer);
+    const area = !isProperty || body.area === undefined || body.area === null || body.area === '' ? null : Number(body.area);
+    const currency = isProperty ? (CURRENCIES.includes(body.currency) ? body.currency : 'USD') : null;
 
     if (!SUBMITTABLE_LAYERS.includes(layer)) return { error: 'نوع النشاط غير مسموح به.' };
     if (!name) return { error: 'اسم النشاط مطلوب.' };
@@ -37,8 +45,14 @@ export function parseListingInput(body) {
         return { error: 'الموقع على الخريطة غير صالح.' };
     }
     if (price !== null && (!Number.isFinite(price) || price < 0 || price > 1e9)) return { error: 'السعر غير صالح.' };
-    return { value: { layer, name, des: des || null, phone, whatsapp, workHours: workHours || null, price, x, y } };
+    if (area !== null && (!Number.isInteger(area) || area <= 0 || area > 1e7)) return { error: 'المساحة غير صالحة.' };
+    return {
+        value: {
+            layer, name, des: des || null, phone, whatsapp, workHours: isProperty ? null : workHours || null,
+            price: isProperty && price !== null ? Math.round(price) : price, area, currency, x, y,
+        },
+    };
 }
-export const INSERT_SUBMISSION_SQL = `INSERT INTO public.listing_submissions (user_id, layer, name, des, phone, whatsapp, work_hours, price, x_coord, y_coord)
-             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) RETURNING id, status, created_at`;
-export const submissionParams = (userId, v) => [userId, v.layer, v.name, v.des, v.phone, v.whatsapp, v.workHours, v.price, v.x, v.y];
+export const INSERT_SUBMISSION_SQL = `INSERT INTO public.listing_submissions (user_id, layer, name, des, phone, whatsapp, work_hours, price, x_coord, y_coord, area, currency)
+             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12) RETURNING id, status, created_at`;
+export const submissionParams = (userId, v) => [userId, v.layer, v.name, v.des, v.phone, v.whatsapp, v.workHours, v.price, v.x, v.y, v.area, v.currency];
