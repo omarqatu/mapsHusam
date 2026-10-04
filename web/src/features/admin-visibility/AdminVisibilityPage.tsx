@@ -111,6 +111,17 @@ export default function AdminVisibilityPage() {
           </ul>
         </SectionCard>
 
+        <SectionCard title={t('visibility.visitorContact.title')}>
+          <div className="rounded-lg border border-line p-3">
+            <Checkbox
+              checked={draft.visitorContact}
+              onChange={(on) => setDraft({ ...draft, visitorContact: on })}
+              label={<span className="font-bold">{t('visibility.visitorContact.name')}</span>}
+            />
+            <p className="ms-7 mt-1 text-sm text-muted">{t('visibility.visitorContact.hint')}</p>
+          </div>
+        </SectionCard>
+
         <SectionCard
           title={t('visibility.layersTitle')}
           subtitle={t('visibility.layersHint')}

@@ -117,3 +117,13 @@ export function useSaveVisibility() {
 
 /** Whether the map leaves out this layer for the current viewer. */
 export const hiddenOnMap = (key: string) => !layerShownToViewer(key);
+
+/**
+ * Whether this viewer gets a listing's phone / WhatsApp: anyone signed in, a visitor only when the admin allows it.
+ * The server enforces the same rule (the numbers are not in a visitor's answers); this only picks what to show instead.
+ */
+export function useCanSeeContact(): boolean {
+  const signedIn = useAuthStore((s) => !!s.user?.token);
+  const open = useVisibilityStore((s) => s.value.visitorContact);
+  return signedIn || open;
+}

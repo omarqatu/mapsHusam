@@ -1145,7 +1145,7 @@ here so it can be corrected.
 7. **A service limited by hours shows in search even when closed; a withdrawn one does not; unavailable properties do
    not.** ✅ Decision (owner, 2026-10-04: "something shows it closed / unavailable, and something removes it entirely, like a
    plot"): three states — see below.
-8. **Visitors without an account get a limited set of features, presented well.** ⬜
+8. **Visitors without an account get a limited set of features, presented well.** ✅ See "Visitors" below.
 9. **Operating guide + test scenarios document.** ⬜ (last, so it covers the rest)
 
 ### Listing state and hidden layers (points 4 and 7) ✅
@@ -1172,6 +1172,28 @@ here so it can be corrected.
   with status 2 and one with a past `end_date` are not, in search and in WFS (with and without bbox); the admin gets all
   three; a hidden type is missing from search, WFS and counts; `CQL_FILTER=1=1` → 403; WMS on `service_all` → 403.
   Screenshots desktop + phone (`/search?q=سباك`).
+
+### Visitors without an account (point 8) ✅
+
+- **Decision:** a visitor keeps the map, search, every listing's details, reading ratings, the information centre and
+  the platform's own contact. An account is needed for a listing's phone / WhatsApp, a service request (chat), rating,
+  and adding a listing. Reason: the numbers are what spammers scrape, and what makes an account worth having.
+- **Enforced by the server** (`server/visibility.js` `viewerRules`): with no valid session the answers of
+  `/api/search-features`, `/api/search-features-batch` and `/api/get-unique-values` carry no `phone` / `whatsapp`, and a
+  condition on those fields is ignored (it would reveal them one guess at a time). The GeoServer proxy asks GeoServer for
+  every column but those two (`propertyName` from `DescribeFeatureType`, cached 10 min; 503 if it cannot be read).
+  `api/geoserver.ts` now sends `X-App-Token` for any signed-in user (it was admins only), so they get the numbers.
+- **Admin switch:** `/admin/visibility` → "Visitor contact" (`visitorContact` in `settings.visibility`, default off)
+  gives visitors the numbers again.
+- **UX:** where the call / WhatsApp buttons were, a visitor sees one "log in to contact" button; it and "request service"
+  open one sheet (`auth/LoginPrompt.tsx`, bottom sheet on phones) that says what an account adds, then log in / register;
+  both come back to the page the visitor was on (register → login keeps it). Before: "request service" showed a toast and
+  jumped to the login form; the numbers were open to anyone.
+- **Known friction:** new accounts are created inactive and wait for an admin, so a visitor who registers to call someone
+  cannot do it at once. The sheet says so. See the notes in the final report (phone OTP activation).
+- Tests: `lib/listing-rules.test.js` (contact columns), `visibility.test.ts`, `popup.test.tsx` (visitor card),
+  `RequestServiceButton.test.tsx` (sheet → login → back); live `visibility.live.test.ts` (visitor: no numbers in search or
+  WFS, also with a phone filter; user: numbers; switch on: visitor gets them). Screenshots desktop + phone, light + dark.
 
 ## Phase 4 — Cut-over & cleanup
 
@@ -1551,6 +1573,12 @@ Log each change here: **what · why · how to verify · commit**.
   answers contain fewer rows (withdrawn, ended, hidden) and more (services outside their hours, services marked unavailable).
   Verify: `npm test` (rule + proxy rewriting), then the checks listed in that section. Commit:
   `feat(server): one listing-visibility rule for search, counts and the GeoServer proxy`.
+
+- **Visitors get listings without phone / WhatsApp (owner's point 8, 2026-10-04).** Behaviour change asked by the owner.
+  What: `auth.js` `sessionFromToken`, `visibility.js` `viewerRules`, contact stripping in `search.js` and in the GeoServer
+  proxy (`propertyName`), admin switch `visitorContact` in `settings.visibility`. Same URLs and shapes; a visitor's rows
+  lack two properties. Verify: `npm test`, `VITE_LIVE_API=http://localhost:3000 npm test -- visibility.live`. Commit:
+  `feat(server): visitors without an account get listings without phone / WhatsApp`.
 
 ## Backend asks (needs the user's decision — behaviour-changing or larger)
 

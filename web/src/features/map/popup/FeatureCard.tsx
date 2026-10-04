@@ -2,7 +2,7 @@ import { Copy, Link2, MapPin } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useProviderLinked } from '@/api/mapEvents';
 import RequestServiceButton from '@/features/requests/RequestServiceButton';
-import { useSectionShown } from '@/features/visibility/store';
+import { useCanSeeContact, useSectionShown } from '@/features/visibility/store';
 import Button from '@/components/ui/Button';
 import DataField from '@/components/ui/DataField';
 
@@ -98,6 +98,7 @@ export default function FeatureCard({ feature, onClose, className }: Props) {
   const { t, i18n } = useTranslation();
   const linked = useProviderLinked();
   const contact = useContactActions();
+  const canSeeContact = useCanSeeContact();
   const requestsOn = useSectionShown('requests');
   const { props, kind, id } = feature;
 
@@ -215,9 +216,12 @@ export default function FeatureCard({ feature, onClose, className }: Props) {
             />
           ))}
 
-        {kind.kind !== 'location' && !isBarrier && !isLinkedProvider && !phone && !whatsapp && (
-          <p className="text-sm text-muted">{t('popup.noContact')}</p>
-        )}
+        {kind.kind !== 'location' &&
+          !isBarrier &&
+          !isLinkedProvider &&
+          canSeeContact &&
+          !phone &&
+          !whatsapp && <p className="text-sm text-muted">{t('popup.noContact')}</p>}
 
         {kind.kind !== 'location' && (hasDetails || isFuelStation(kind)) && (
           <div className="space-y-3 rounded-lg border border-line p-3">

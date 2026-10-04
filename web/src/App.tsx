@@ -1,5 +1,5 @@
 import { lazy, Suspense, type ReactElement } from 'react';
-import { createBrowserRouter, RouterProvider } from 'react-router';
+import { createBrowserRouter, Outlet, RouterProvider } from 'react-router';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { queryClient } from '@/api/queryClient';
 import SocketConnector from '@/api/SocketConnector';
@@ -13,6 +13,7 @@ import AuthLayout from '@/features/auth/AuthLayout';
 import LoginPage from '@/features/auth/LoginPage';
 import RegisterPage from '@/features/auth/RegisterPage';
 import WelcomePage from '@/features/auth/WelcomePage';
+import LoginPrompt from '@/features/auth/LoginPrompt';
 import RequestsHost from '@/features/requests/RequestsHost';
 import { ProtectedRoute, RoleRoute } from '@/routes/guards';
 import NotFoundPage from '@/routes/NotFoundPage';
@@ -63,45 +64,65 @@ const page = (r: AppRoute) => ({ path: r.path, element: ported[r.path] ?? <Place
 const shelled = appRoutes.filter((r) => !r.own);
 
 const router = createBrowserRouter([
-  // The map: full screen, its own layout, open to visitors (legacy needed a login; the data is public on GeoServer
-  // anyway). Requests, chat and the provider panel still need a session.
+  // Everything under one root so app-wide sheets that navigate (LoginPrompt) live inside the router.
   {
-    path: '/',
-    element: (
-      <Suspense fallback={<CenteredSpinner minHeight="100vh" />}>
-        <MapPage />
-      </Suspense>
-    ),
-  },
-  // The public welcome route is the full-screen legacy promo splash.
-  { path: '/welcome', element: <WelcomePage /> },
-  // Pre-login forms and the legal texts.
-  {
-    element: <AuthLayout />,
+    element: <RootLayout />,
     children: [
-      { path: '/login', element: <LoginPage /> },
-      { path: '/register', element: <RegisterPage /> },
-      { path: '/legal/:key', element: <LegalPage /> },
-    ],
-  },
-  {
-    element: <AppShell />,
-    children: [
-      ...shelled.filter((r) => r.access === 'public').map(page),
-      // The landing page sends a visitor to /welcome (log in / register) rather than to a bare form.
-      { element: <ProtectedRoute to="/welcome" />, children: shelled.filter((r) => r.path === '/home').map(page) },
+      // The map: full screen, its own layout, open to visitors (legacy needed a login; the data is public on GeoServer
+      // anyway). Requests, chat and the provider panel still need a session.
       {
-        element: <ProtectedRoute />,
-        children: shelled.filter((r) => r.access === 'auth' && r.path !== '/home').map(page),
+        path: '/',
+        element: (
+          <Suspense fallback={<CenteredSpinner minHeight="100vh" />}>
+            <MapPage />
+          </Suspense>
+        ),
+      },
+      // The public welcome route is the full-screen legacy promo splash.
+      { path: '/welcome', element: <WelcomePage /> },
+      // Pre-login forms and the legal texts.
+      {
+        element: <AuthLayout />,
+        children: [
+          { path: '/login', element: <LoginPage /> },
+          { path: '/register', element: <RegisterPage /> },
+          { path: '/legal/:key', element: <LegalPage /> },
+        ],
       },
       {
-        element: <RoleRoute roles={['admin']} />,
-        children: appRoutes.filter((r) => Array.isArray(r.access) && r.access.join() === 'admin').map(page),
+        element: <AppShell />,
+        children: [
+          ...shelled.filter((r) => r.access === 'public').map(page),
+          // The landing page sends a visitor to /welcome (log in / register) rather than to a bare form.
+          {
+            element: <ProtectedRoute to="/welcome" />,
+            children: shelled.filter((r) => r.path === '/home').map(page),
+          },
+          {
+            element: <ProtectedRoute />,
+            children: shelled.filter((r) => r.access === 'auth' && r.path !== '/home').map(page),
+          },
+          {
+            element: <RoleRoute roles={['admin']} />,
+            children: appRoutes
+              .filter((r) => Array.isArray(r.access) && r.access.join() === 'admin')
+              .map(page),
+          },
+          { path: '*', element: <NotFoundPage /> },
+        ],
       },
-      { path: '*', element: <NotFoundPage /> },
     ],
   },
 ]);
+
+function RootLayout() {
+  return (
+    <>
+      <Outlet />
+      <LoginPrompt />
+    </>
+  );
+}
 
 export default function App() {
   return (

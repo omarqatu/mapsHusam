@@ -14,9 +14,15 @@ export interface Visibility {
   /** `targetKey` of every hidden layer: `rent` / `sale` / `land` or a service discriminator. */
   hiddenLayers: ReadonlySet<string>;
   hiddenSections: ReadonlySet<SectionId>;
+  /** A visitor without an account sees a listing's phone / WhatsApp (default: no — the server leaves them out). */
+  visitorContact: boolean;
 }
 
-export const ALL_VISIBLE: Visibility = { hiddenLayers: new Set(), hiddenSections: new Set() };
+export const ALL_VISIBLE: Visibility = {
+  hiddenLayers: new Set(),
+  hiddenSections: new Set(),
+  visitorContact: false,
+};
 
 const isSection = (v: unknown): v is SectionId => (SECTION_IDS as readonly unknown[]).includes(v);
 
@@ -30,10 +36,18 @@ export function parseVisibility(raw: string | null | undefined): Visibility {
     return ALL_VISIBLE;
   }
   if (!data || typeof data !== 'object') return ALL_VISIBLE;
-  const { hiddenLayers, hiddenSections } = data as { hiddenLayers?: unknown; hiddenSections?: unknown };
+  const { hiddenLayers, hiddenSections, visitorContact } = data as {
+    hiddenLayers?: unknown;
+    hiddenSections?: unknown;
+    visitorContact?: unknown;
+  };
   const layers = Array.isArray(hiddenLayers) ? hiddenLayers.filter((k) => targetFromKey(k) !== null) : [];
   const sections = Array.isArray(hiddenSections) ? hiddenSections.filter(isSection) : [];
-  return { hiddenLayers: new Set(layers as string[]), hiddenSections: new Set(sections) };
+  return {
+    hiddenLayers: new Set(layers as string[]),
+    hiddenSections: new Set(sections),
+    visitorContact: visitorContact === true,
+  };
 }
 
 /** Settings → stored text (sorted, so saving the same choice twice stores the same value). */
@@ -41,6 +55,7 @@ export function serializeVisibility(v: Visibility): string {
   return JSON.stringify({
     hiddenLayers: [...v.hiddenLayers].sort(),
     hiddenSections: [...v.hiddenSections].sort(),
+    visitorContact: v.visitorContact,
   });
 }
 

@@ -16,7 +16,8 @@ export default function LoginPage() {
   const { t } = useTranslation();
   const user = useAuthStore((s) => s.user);
   const navigate = useNavigate();
-  const from = (useLocation().state as { from?: string } | null)?.from ?? '/home';
+  const back = useLocation().state as { from?: string } | null;
+  const from = back?.from ?? '/home';
   const login = useLogin();
   const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
@@ -118,7 +119,7 @@ export default function LoginPage() {
         </Button>
         <p className="mt-4 text-center text-sm text-muted">
           {t('auth.noAccount')}{' '}
-          <Link to="/register" className="font-semibold text-brand-fg hover:underline">
+          <Link to="/register" state={back} className="font-semibold text-brand-fg hover:underline">
             {t('auth.createAccount')}
           </Link>
         </p>

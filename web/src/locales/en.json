@@ -1309,7 +1309,12 @@
     "discard": "Discard",
     "saved": "Saved. Visitors see it within minutes.",
     "saveFailed": "Could not save.",
-    "loadFailed": "Could not load the settings."
+    "loadFailed": "Could not load the settings.",
+    "visitorContact": {
+      "title": "Visitor contact",
+      "name": "Show contact numbers to visitors without an account",
+      "hint": "When off (the default) the server sends no phone or WhatsApp to anyone not signed in; they get a “Log in to contact” button."
+    }
   },
   "texts": {
     "ui": {
@@ -1968,5 +1973,25 @@
       "discard": "Discard",
       "updatedAt": "Last changed: {{date}}"
     }
+  },
+  "loginPrompt": {
+    "contactButton": "Log in to contact",
+    "title": {
+      "contact": "Log in to see the contact number",
+      "request": "Log in to request the service"
+    },
+    "lead": {
+      "contact": "Phone and WhatsApp numbers are shown to account holders only, to spare providers and advertisers from spam. The account is free.",
+      "request": "A service request opens a direct chat with the provider, so the provider needs to know who is asking. The account is free."
+    },
+    "perks": {
+      "contact": "Call or message providers and advertisers directly",
+      "request": "Request a service and follow it in the chat",
+      "rate": "Rate the people you dealt with",
+      "list": "Put your service or property on the map"
+    },
+    "activation": "New accounts are activated after the admins review them.",
+    "login": "Log in",
+    "register": "Create account"
   }
 }

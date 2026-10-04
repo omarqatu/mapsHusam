@@ -19,7 +19,10 @@ import { hiddenOnMap, layerShownToViewer, setVisibility } from './store';
 describe('visibility model', () => {
   it('reads the stored JSON and drops what it does not know', () => {
     const v = parseVisibility(
-      JSON.stringify({ hiddenLayers: ['plumber', 'rent', 'no_such_layer', 3], hiddenSections: ['ticker', 'nope'] }),
+      JSON.stringify({
+        hiddenLayers: ['plumber', 'rent', 'no_such_layer', 3],
+        hiddenSections: ['ticker', 'nope'],
+      }),
     );
     expect([...v.hiddenLayers].sort()).toEqual(['plumber', 'rent']);
     expect([...v.hiddenSections]).toEqual(['ticker']);
@@ -32,8 +35,16 @@ describe('visibility model', () => {
 
   it('round-trips, sorted, so the same choice is stored the same way', () => {
     const v = withSection(withLayers(ALL_VISIBLE, ['plumber', 'carpenter'], false), 'stats', false);
-    expect(serializeVisibility(v)).toBe('{"hiddenLayers":["carpenter","plumber"],"hiddenSections":["stats"]}');
+    expect(serializeVisibility(v)).toBe(
+      '{"hiddenLayers":["carpenter","plumber"],"hiddenSections":["stats"],"visitorContact":false}',
+    );
     expect(sameVisibility(parseVisibility(serializeVisibility(v)), v)).toBe(true);
+  });
+
+  it('visitors see contact numbers only when the admin switched it on', () => {
+    expect(parseVisibility('{"hiddenLayers":[]}').visitorContact).toBe(false);
+    expect(parseVisibility('{"visitorContact":"yes"}').visitorContact).toBe(false);
+    expect(parseVisibility('{"visitorContact":true}').visitorContact).toBe(true);
   });
 
   it('"real estate only" hides every service type and keeps the three property layers', () => {
@@ -46,12 +57,16 @@ describe('visibility model', () => {
     const hidden = withLayers(ALL_VISIBLE, ['plumber', 'carpenter'], false);
     expect(isLayerShown(hidden, 'plumber')).toBe(false);
     expect(isLayerShown(withLayers(hidden, ['plumber'], true), 'plumber')).toBe(true);
-    expect(withSection(withSection(ALL_VISIBLE, 'ticker', false), 'ticker', true).hiddenSections.size).toBe(0);
+    expect(withSection(withSection(ALL_VISIBLE, 'ticker', false), 'ticker', true).hiddenSections.size).toBe(
+      0,
+    );
   });
 
   it('sends the hidden layers to the platform statistics, nothing when none are hidden', () => {
     expect(excludedLayersParam(ALL_VISIBLE)).toBeUndefined();
-    expect(excludedLayersParam(withLayers(ALL_VISIBLE, ['sale', 'plumber'], false))).toBe('["plumber","sale"]');
+    expect(excludedLayersParam(withLayers(ALL_VISIBLE, ['sale', 'plumber'], false))).toBe(
+      '["plumber","sale"]',
+    );
   });
 });
 
@@ -66,7 +81,10 @@ describe('who sees what', () => {
     geometry: { type: 'Point', coordinates: [169000, 145000] },
     properties: { id, discriminator, name: `n${id}` },
   });
-  const fc = { type: 'FeatureCollection', features: [feature('plumber', 1), feature('carpenter', 2)] } as never;
+  const fc = {
+    type: 'FeatureCollection',
+    features: [feature('plumber', 1), feature('carpenter', 2)],
+  } as never;
 
   it('a visitor loses hidden types everywhere results are built; the map leaves them out', () => {
     setVisibility(withLayers(ALL_VISIBLE, ['plumber'], false));

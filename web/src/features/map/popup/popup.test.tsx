@@ -3,7 +3,9 @@ import Feature from 'ol/Feature';
 import Point from 'ol/geom/Point';
 import { render, screen } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import '@/i18n';
+import i18n from '@/i18n';
+import { useAuthStore } from '@/store/authStore';
+import type { AuthUser } from '@/types/auth';
 import {
   barrierDirections,
   collectMedia,
@@ -213,6 +215,7 @@ describe('FeatureCard', () => {
   });
 
   it('renders user text as text (no HTML injection) and shows call + WhatsApp', () => {
+    useAuthStore.setState({ user: { user_id: 3, token: 't' } as AuthUser });
     wrap({
       kind: { kind: 'service', discriminator: 'plumber' },
       id: '5',
@@ -231,6 +234,19 @@ describe('FeatureCard', () => {
     expect(document.querySelector('script')).toBeNull();
     expect(screen.getByRole('button', { name: /اتصال|Call/ })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /واتساب|WhatsApp/ })).toBeInTheDocument();
+  });
+
+  it('a visitor gets one "log in to contact" button instead of numbers', () => {
+    useAuthStore.setState({ user: null });
+    wrap({
+      kind: { kind: 'service', discriminator: 'plumber' },
+      id: '5',
+      coordinate: [1, 2],
+      props: { name: 'سباك', auto_status: 0, work_hours: '' },
+    });
+    expect(screen.getByRole('button', { name: i18n.t('loginPrompt.contactButton') })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /اتصال|Call/ })).toBeNull();
+    expect(screen.queryByText(i18n.t('popup.noContact'))).toBeNull();
   });
 
   it('hotel: price in dollars (no currency column) and area; a plumber shows neither', async () => {

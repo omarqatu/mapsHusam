@@ -1,6 +1,7 @@
 // GeoServer reads (WFS GeoJSON) through the backend proxy. Kept apart from client.ts on purpose: the app JWT
-// must NOT be sent to GeoServer (legacy auth-fetch.js only attached it to /api/*). An admin's token goes in
-// X-App-Token, which the proxy reads (an admin also sees withdrawn and hidden listings) and strips before GeoServer.
+// must NOT be sent to GeoServer (legacy auth-fetch.js only attached it to /api/*). A signed-in user's token goes in
+// X-App-Token, which the proxy reads and strips before GeoServer: a visitor gets listings without phone / WhatsApp,
+// a signed-in user with them, an admin also sees withdrawn listings and hidden layers.
 import { useAuthStore } from '@/store/authStore';
 
 const PROXY = '/geoserver-proxy';
@@ -39,16 +40,16 @@ export class GeoServerError extends Error {
   }
 }
 
-function adminHeader(): Record<string, string> {
-  const user = useAuthStore.getState().user;
-  return user?.role === 'admin' && user.token ? { 'X-App-Token': user.token } : {};
+function sessionHeader(): Record<string, string> {
+  const token = useAuthStore.getState().user?.token;
+  return token ? { 'X-App-Token': token } : {};
 }
 
 async function getJson(url: string, signal: AbortSignal): Promise<unknown> {
   const res = await fetch(url, {
     signal,
     credentials: 'same-origin',
-    headers: { Accept: 'application/json', ...adminHeader() },
+    headers: { Accept: 'application/json', ...sessionHeader() },
   });
   const text = await res.text();
   if (!res.ok) throw new GeoServerError(`HTTP ${res.status}`, res.status);

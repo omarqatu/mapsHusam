@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from 'react';
-import { Link, Navigate, useNavigate } from 'react-router';
+import { Link, Navigate, useLocation, useNavigate } from 'react-router';
 import { useTranslation } from 'react-i18next';
 import { Eye, EyeOff, Lock, ShieldCheck, Phone, UserRound } from 'lucide-react';
 import { useRegister } from '@/api/auth';
@@ -32,7 +32,9 @@ export default function RegisterPage() {
   const { t } = useTranslation();
   const user = useAuthStore((s) => s.user);
   const [step, setStep] = useState<'terms' | 'form'>('terms');
-  if (user) return <Navigate to="/home" replace />;
+  // Where the visitor was (the login sheet passes it): login, after registering, goes back there.
+  const back = useLocation().state as { from?: string } | null;
+  if (user) return <Navigate to={back?.from ?? '/home'} replace />;
   return (
     <div className="auth-glass-panel mx-auto w-full max-w-xl rounded-[1.75rem] p-5 sm:p-8">
       {step === 'terms' ? (
@@ -42,7 +44,7 @@ export default function RegisterPage() {
       )}
       <p className="mt-5 text-center text-sm text-muted">
         {t('auth.haveAccount')}{' '}
-        <Link to="/login" className="font-semibold text-brand-fg hover:underline">
+        <Link to="/login" state={back} className="font-semibold text-brand-fg hover:underline">
           {t('auth.loginHere')}
         </Link>
       </p>
@@ -112,6 +114,7 @@ function TermsStep({ onContinue }: { onContinue: () => void }) {
 function FormStep({ onBack }: { onBack: () => void }) {
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const back = useLocation().state as { from?: string } | null;
   const register = useRegister();
   const [name, setName] = useState('');
   const [prefix, setPrefix] = useState<WhatsappPrefix>('970');
@@ -144,7 +147,7 @@ function FormStep({ onBack }: { onBack: () => void }) {
       {
         onSuccess: () => {
           toast.success(t(hasBusiness ? 'auth.register.successBusiness' : 'auth.register.success'));
-          navigate('/login', { replace: true });
+          navigate('/login', { replace: true, state: back });
         },
       },
     );

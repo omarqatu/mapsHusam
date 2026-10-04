@@ -5,6 +5,8 @@ import { MemoryRouter, Route, Routes, useLocation } from 'react-router';
 import i18n from '@/i18n';
 import { useAuthStore } from '@/store/authStore';
 import type { AuthUser } from '@/types/auth';
+import LoginPrompt from '@/features/auth/LoginPrompt';
+import { useLoginPrompt } from '@/features/auth/loginPromptStore';
 import RequestServiceButton from './RequestServiceButton';
 import { useRequestsUi } from './store';
 
@@ -19,7 +21,15 @@ function setup() {
   render(
     <MemoryRouter initialEntries={['/?x=1']}>
       <Routes>
-        <Route path="/" element={<RequestServiceButton target={target} />} />
+        <Route
+          path="/"
+          element={
+            <>
+              <RequestServiceButton target={target} />
+              <LoginPrompt />
+            </>
+          }
+        />
         <Route path="/login" element={<LoginProbe />} />
       </Routes>
     </MemoryRouter>,
@@ -30,11 +40,14 @@ describe('RequestServiceButton', () => {
   beforeEach(() => {
     useAuthStore.setState({ user: null });
     useRequestsUi.setState({ requestFor: null });
+    useLoginPrompt.setState({ reason: null });
   });
 
-  it('sends a visitor to the login form and back to the map afterwards', async () => {
+  it('offers a visitor the login sheet, whose login comes back to the map afterwards', async () => {
     setup();
     await userEvent.click(screen.getByRole('button', { name: i18n.t('popup.requestService') }));
+    expect(screen.getByRole('dialog', { name: i18n.t('loginPrompt.title.request') })).toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', { name: i18n.t('loginPrompt.login') }));
     expect(screen.getByText('login page, back to /?x=1')).toBeInTheDocument();
     expect(useRequestsUi.getState().requestFor).toBeNull();
   });

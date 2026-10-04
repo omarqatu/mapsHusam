@@ -1,7 +1,9 @@
 import clsx from 'clsx';
-import { MessageCircle, Phone } from 'lucide-react';
+import { Lock, MessageCircle, Phone } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import Button from '@/components/ui/Button';
+import { useLoginPrompt } from '@/features/auth/loginPromptStore';
+import { useCanSeeContact } from '@/features/visibility/store';
 
 interface Props {
   phone: string;
@@ -13,13 +15,33 @@ interface Props {
   className?: string;
 }
 
-/** Call + WhatsApp buttons — one look everywhere a provider can be contacted. Renders nothing without a number. */
+/**
+ * Call + WhatsApp buttons — one look everywhere a provider can be contacted. Renders nothing without a number.
+ * A visitor without an account gets no numbers from the server (unless the admin allows it): one "log in to contact"
+ * button instead, which opens the login sheet.
+ */
 export default function ContactButtons({ phone, whatsapp, onCall, onWhatsapp, layout, className }: Props) {
   const { t } = useTranslation();
-  if (!phone && !whatsapp) return null;
+  const canSee = useCanSeeContact();
+  const openLogin = useLoginPrompt((s) => s.open);
   const card = layout === 'card';
   const size = card ? 'md' : 'sm';
   const icon = card ? 'h-4 w-4' : 'h-3.5 w-3.5';
+  if (!canSee)
+    return (
+      <div className={clsx('flex', className)}>
+        <Button
+          size={size}
+          variant="secondary"
+          className={card ? 'w-full' : undefined}
+          startIcon={<Lock className={icon} aria-hidden />}
+          onClick={() => openLogin('contact')}
+        >
+          {t('loginPrompt.contactButton')}
+        </Button>
+      </div>
+    );
+  if (!phone && !whatsapp) return null;
   return (
     <div className={clsx('flex gap-2', card && 'flex-col', className)}>
       {phone && (
