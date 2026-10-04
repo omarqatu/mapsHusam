@@ -57,11 +57,13 @@ function Start-And-SmokeTest {
     throw "Smoke test failed after 20 attempts: $lastError"
 }
 
+# `uploads` holds the pictures people upload (server/routes/my-listings.js): data, not code. /MIR must never purge it,
+# and the rollback copy must not drag an old set of pictures back over the live one.
 $copyExclusions = @(
-    '/XD', '.git', '.github', '.playwright', 'DB_Backups', 'GeoServerData',
+    '/XD', '.git', '.github', '.playwright', 'DB_Backups', 'GeoServerData', 'uploads',
     '/XF', '.gitignore', '.env', '.env.*'
 )
-$persistentExclusions = @('/XD', 'DB_Backups', 'GeoServerData')
+$persistentExclusions = @('/XD', 'DB_Backups', 'GeoServerData', 'uploads')
 $deploymentStarted = $false
 
 try {
