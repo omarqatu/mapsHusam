@@ -16,7 +16,7 @@ permissions:
 
 jobs:
   server:
-    name: Server (install and syntax check)
+    name: Server (install, module check, unit tests)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -29,6 +29,7 @@ jobs:
 
       - run: npm ci
       - run: npm run check:server
+      - run: npm test
 
   web:
     name: Web (typecheck, lint, unit tests, build)

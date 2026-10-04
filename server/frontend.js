@@ -2,15 +2,41 @@
 import express from 'express';
 import fs from 'fs';
 import path from 'path';
+import crypto from 'node:crypto';
 import { IS_PROD, ROOT_DIR, app } from './app.js';
-import { servicesPool } from './database.js';
+import { servicesPool, realestatePool } from './database.js';
 
 // ❤️ فحص الصحة (لأنظمة المراقبة): يتأكد من الاتصال بقاعدة البيانات
 app.get('/healthz', async (req, res) => {
     try {
-        await servicesPool.query('SELECT 1');
+        await Promise.all([servicesPool.query('SELECT 1'), realestatePool.query('SELECT 1')]);
         res.json({ ok: true, uptime: Math.round(process.uptime()) });
     } catch (e) {
+        res.status(503).json({ ok: false });
+    }
+});
+
+// Deployment readiness: connectivity alone cannot reveal a failed CREATE/ALTER or an unwritable upload folder.
+app.get('/readyz', async (req, res) => {
+    const photoDir = path.join(process.env.UPLOADS_DIR || path.join(ROOT_DIR, 'uploads'), 'listing-photos');
+    const probe = path.join(photoDir, `.readiness-${crypto.randomUUID()}`);
+    try {
+        await Promise.all([
+            servicesPool.query(`SELECT force_logout_flag, token_version, whatsapp_number FROM public.users LIMIT 0;
+                SELECT price, area, currency FROM public.service_all LIMIT 0;
+                SELECT appointment_at FROM public.service_requests LIMIT 0;
+                SELECT id FROM public.service_ratings LIMIT 0;
+                SELECT layer, feature_id, user_id FROM public.listing_owners LIMIT 0;
+                SELECT id, type FROM public.listing_photos LIMIT 0;
+                SELECT area, currency FROM public.listing_submissions LIMIT 0;
+                SELECT content_key FROM public.platform_content LIMIT 0;`),
+            realestatePool.query('SELECT 1'),
+        ]);
+        await fs.promises.writeFile(probe, '', { flag: 'wx' });
+        await fs.promises.unlink(probe);
+        res.json({ ok: true });
+    } catch (error) {
+        await fs.promises.unlink(probe).catch(() => {});
         res.status(503).json({ ok: false });
     }
 });

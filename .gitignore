@@ -3,6 +3,11 @@
 .env.local
 .env.production
 .env.development
+.env.*
+!.env.example
+!**/.env.example
+# Husam's downloaded production configuration also comes without a leading dot.
+/env
 
 # Temporary files
 *.tmp

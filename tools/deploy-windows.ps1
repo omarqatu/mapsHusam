@@ -6,7 +6,11 @@ param(
     [Parameter(Mandatory = $true)]
     [string]$ServiceName,
 
-    [string]$SmokeUrl = 'http://127.0.0.1:3000/'
+    [string]$SmokeUrl = 'http://127.0.0.1:3000/',
+
+    [string]$HealthUrl = 'http://127.0.0.1:3000/readyz',
+
+    [string]$BackupRoot = (Join-Path $env:ProgramData 'mapsHusam\backups')
 )
 
 $ErrorActionPreference = 'Stop'
@@ -22,6 +26,41 @@ $leaf = Split-Path -Leaf $DeployPath
 $runId = if ($env:GITHUB_RUN_ID) { $env:GITHUB_RUN_ID } else { [DateTimeOffset]::UtcNow.ToUnixTimeSeconds() }
 $staging = Join-Path $parent "$leaf.__next_$runId"
 $backup = Join-Path $parent "$leaf.__previous"
+$serviceStopped = $false
+
+# Read the machine/NSSM environment without logging its values. Runner variables are not necessarily service variables.
+$serviceEnvironment = @{}
+foreach ($entry in [Environment]::GetEnvironmentVariables('Machine').GetEnumerator()) {
+    $serviceEnvironment[$entry.Key] = $entry.Value
+}
+$parametersPath = "HKLM:\SYSTEM\CurrentControlSet\Services\$ServiceName\Parameters"
+if (Test-Path $parametersPath) {
+    $parameters = Get-ItemProperty -LiteralPath $parametersPath
+    if ($parameters.PSObject.Properties['AppDirectory'] -and $parameters.AppDirectory -and
+        [IO.Path]::GetFullPath($parameters.AppDirectory).TrimEnd('\') -ne [IO.Path]::GetFullPath($DeployPath).TrimEnd('\')) {
+        throw 'NSSM AppDirectory must match DeployPath so backup and application read the same .env.'
+    }
+    foreach ($property in @('AppEnvironment', 'AppEnvironmentExtra')) {
+        if ($parameters.PSObject.Properties[$property]) {
+            foreach ($entry in $parameters.$property) {
+                $parts = $entry -split '=', 2
+                if ($parts.Count -eq 2) { $serviceEnvironment[$parts[0]] = $parts[1] }
+            }
+        }
+    }
+}
+$serviceEnvironmentJson = ConvertTo-Json -InputObject $serviceEnvironment -Compress
+
+function Invoke-ProductionBackup {
+    param([string]$Mode)
+    $previousEncoding = $OutputEncoding
+    try {
+        $OutputEncoding = New-Object System.Text.UTF8Encoding($false)
+        $serviceEnvironmentJson | & node (Join-Path $workspace 'tools\backup-production.mjs') $Mode $DeployPath $BackupRoot $env:GITHUB_SHA
+    }
+    finally { $OutputEncoding = $previousEncoding }
+    if ($LASTEXITCODE -ne 0) { throw "Production backup $Mode failed; deployment is blocked." }
+}
 
 function Invoke-Robocopy {
     param(
@@ -43,8 +82,10 @@ function Start-And-SmokeTest {
     for ($attempt = 1; $attempt -le 20; $attempt++) {
         try {
             $response = Invoke-WebRequest -Uri $SmokeUrl -UseBasicParsing -TimeoutSec 5
-            if ($response.StatusCode -ge 200 -and $response.StatusCode -lt 400) {
-                Write-Host "Smoke test passed with HTTP $($response.StatusCode)."
+            $health = Invoke-WebRequest -Uri $HealthUrl -UseBasicParsing -TimeoutSec 5
+            $healthBody = $health.Content | ConvertFrom-Json
+            if ($response.StatusCode -eq 200 -and $health.StatusCode -eq 200 -and $healthBody.ok -eq $true) {
+                Write-Host 'Smoke test passed: app and both databases are available.'
                 return
             }
             $lastError = "HTTP $($response.StatusCode)"
@@ -60,13 +101,21 @@ function Start-And-SmokeTest {
 # `uploads` holds the pictures people upload (server/routes/my-listings.js): data, not code. /MIR must never purge it,
 # and the rollback copy must not drag an old set of pictures back over the live one.
 $copyExclusions = @(
-    '/XD', '.git', '.github', '.playwright', 'DB_Backups', 'GeoServerData', 'uploads',
-    '/XF', '.gitignore', '.env', '.env.*'
+    '/XD', '.git', '.github', '.playwright', '.claude', 'notes', 'dev', 'DB_Backups', 'GeoServerData', 'uploads',
+    '/XF', '.gitignore', '.env', '.env.*', 'env'
 )
-$persistentExclusions = @('/XD', 'DB_Backups', 'GeoServerData', 'uploads')
+# A rollback restores code only: retain the current credentials and user files.
+$persistentExclusions = @('/XD', 'DB_Backups', 'GeoServerData', 'uploads', '/XF', '.env', '.env.*', 'env')
 $deploymentStarted = $false
 
 try {
+    # Private snapshots live outside IIS and the release folders. No snapshot is automatically deleted.
+    New-Item -ItemType Directory -Force -Path $BackupRoot | Out-Null
+    $runnerIdentity = [System.Security.Principal.WindowsIdentity]::GetCurrent().Name
+    & icacls $BackupRoot /inheritance:r /grant:r "${runnerIdentity}:(OI)(CI)F" '*S-1-5-18:(OI)(CI)F' '*S-1-5-32-544:(OI)(CI)F' | Out-Null
+    if ($LASTEXITCODE -ne 0) { throw 'Cannot restrict backup directory permissions.' }
+    Invoke-ProductionBackup -Mode 'preflight'
+
     if (Test-Path -LiteralPath $staging) {
         Remove-Item -LiteralPath $staging -Recurse -Force
     }
@@ -90,6 +139,11 @@ try {
         throw 'Staged release is missing server node_modules.'
     }
 
+    Stop-Service -Name $ServiceName -Force
+    $serviceStopped = $true
+    # Stop application writes before taking a consistent pair of database + picture snapshots.
+    Invoke-ProductionBackup -Mode 'backup'
+
     if (Test-Path -LiteralPath $backup) {
         Remove-Item -LiteralPath $backup -Recurse -Force
     }
@@ -98,14 +152,14 @@ try {
         Invoke-Robocopy -Source $DeployPath -Destination $backup -ExtraArgs $persistentExclusions
     }
 
-    Stop-Service -Name $ServiceName -Force
     $deploymentStarted = $true
 
     Write-Host "Deploying the staged release to $DeployPath"
     Invoke-Robocopy -Source $staging -Destination $DeployPath -ExtraArgs $copyExclusions
     Start-And-SmokeTest
+    $serviceStopped = $false
 
-    Remove-Item -LiteralPath $staging -Recurse -Force
+    Remove-Item -LiteralPath $staging -Recurse -Force -ErrorAction SilentlyContinue
     Write-Host "Deployment complete. Rollback copy retained at $backup"
 }
 catch {
@@ -114,12 +168,14 @@ catch {
 
     if ($deploymentStarted) {
         Stop-Service -Name $ServiceName -Force -ErrorAction SilentlyContinue
+        $serviceStopped = $true
         if (Test-Path -LiteralPath $backup) {
             Write-Host 'Restoring the previous release...'
             Invoke-Robocopy -Source $backup -Destination $DeployPath -ExtraArgs $persistentExclusions
         }
-        Start-Service -Name $ServiceName -ErrorAction SilentlyContinue
     }
+
+    if ($serviceStopped) { Start-Service -Name $ServiceName }
 
     throw $failure
 }

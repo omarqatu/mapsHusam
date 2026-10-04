@@ -3,6 +3,7 @@ name: Deploy to IIS Server
 on:
   push:
     branches: [main]
+  workflow_dispatch:
 
 concurrency:
   group: production-deploy
@@ -13,6 +14,7 @@ permissions:
 
 jobs:
   deploy:
+    if: github.ref == 'refs/heads/main'
     runs-on: [self-hosted, Windows]
     steps:
       - name: Checkout code
@@ -35,6 +37,10 @@ jobs:
       - name: Check - server modules
         shell: cmd
         run: npm run check:server
+
+      - name: Check - server unit tests
+        shell: cmd
+        run: npm test
 
       - name: Check - install web dependencies
         shell: cmd
@@ -68,3 +74,4 @@ jobs:
           -DeployPath "C:\inetpub\wwwroot\psm\mapsHusam"
           -ServiceName "mapsHusam"
           -SmokeUrl "http://127.0.0.1:3000/"
+          -HealthUrl "http://127.0.0.1:3000/readyz"

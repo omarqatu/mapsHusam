@@ -22,7 +22,7 @@ step "web: typecheck, lint"
 (cd web && npm run -s typecheck && npm run -s lint)
 
 step "backend on :$CHECK_PORT"
-(set -a; . dev/dev.env; set +a; PORT="$CHECK_PORT" SERVE_REACT_APP=off exec node server.js) >"$LOG" 2>&1 &
+(set -a; . dev/dev.env; : "${REGISTER_RATE_LIMIT:=1000}"; set +a; PORT="$CHECK_PORT" SERVE_REACT_APP=off exec node server.js) >"$LOG" 2>&1 &
 SERVER=$!
 trap 'kill "$SERVER" 2>/dev/null || true' EXIT
 for _ in $(seq 1 60); do curl -sf "http://localhost:$CHECK_PORT/healthz" >/dev/null && break; sleep 0.5; done
