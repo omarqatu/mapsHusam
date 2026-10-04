@@ -1933,7 +1933,10 @@
       "rejectFailed": "Could not reject.",
       "rejectTitle": "Reject the request",
       "reason": "Reason",
-      "reasonHint": "The sender gets the reason as a notification, so write it clearly."
+      "reasonHint": "The sender gets the reason as a notification, so write it clearly.",
+      "checkPoint": "Check the place: move the map if the pin is not exactly on the shop or the house.",
+      "pointMoved": "You moved the point; it is saved with the approval.",
+      "pointReset": "Back to the original point"
     },
     "propertyGroup": "Properties",
     "steps": {

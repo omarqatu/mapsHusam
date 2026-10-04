@@ -21,7 +21,11 @@ import TextareaInput from '@/components/ui/TextareaInput';
 import { toast } from '@/components/ui/toastStore';
 import { serviceSearchTags } from '@/features/map/edit/attributes';
 import { mapLinkTo } from '@/features/map/mapLink';
-import { SERVICE_BY_KEY, serviceLabelKey } from '@/features/map/registry';
+import type { Coordinate } from '@/features/map/config';
+import { targetIcon } from '@/features/map/targets';
+import { listingTarget } from '@/features/my-listings/model';
+import LocationPicker from './LocationPicker';
+import { hasHoursField, isPropertyLayer, submissionTypeKey } from './model';
 import { errorText } from '@/lib/errorText';
 import { formatDateTime } from '@/lib/format';
 
@@ -80,14 +84,24 @@ function SubmissionCard({ submission: s }: { submission: AdminSubmission }) {
   const [hours, setHours] = useState(s.work_hours ?? '');
   const [rejecting, setRejecting] = useState(false);
   const [reason, setReason] = useState('');
-  const service = SERVICE_BY_KEY.get(s.layer);
+  const target = listingTarget(s.layer);
   const pending = s.status === 'pending';
+  const flat = isPropertyLayer(s.layer);
+  const picked: Coordinate = [Number(s.x_coord), Number(s.y_coord)];
+  const [point, setPoint] = useState<Coordinate>(picked);
+  const moved = Math.hypot(point[0] - picked[0], point[1] - picked[1]) > 0.5;
 
   function approve() {
     review.approve.mutate(
       {
         id: s.id,
-        body: { name, des, work_hours: hours, search_tags: serviceSearchTags(s.layer, name, des) },
+        body: {
+          name,
+          des,
+          ...(flat ? {} : { work_hours: hours }),
+          search_tags: serviceSearchTags(s.layer, name, des),
+          ...(moved ? { x_coord: Number(point[0].toFixed(3)), y_coord: Number(point[1].toFixed(3)) } : {}),
+        },
       },
       {
         onSuccess: () => toast.success(t('submit.admin.approved')),
@@ -114,9 +128,9 @@ function SubmissionCard({ submission: s }: { submission: AdminSubmission }) {
       <header className="flex flex-wrap items-center justify-between gap-2">
         <div className="flex items-center gap-2">
           <span className="text-2xl" aria-hidden>
-            {service?.icon ?? '📍'}
+            {target ? targetIcon(target) : '📍'}
           </span>
-          <h2 className="text-lg font-black text-fg">{t(serviceLabelKey(s.layer))}</h2>
+          <h2 className="text-lg font-black text-fg">{t(submissionTypeKey(s.layer))}</h2>
         </div>
         <Badge tone={pending ? 'amber' : s.status === 'approved' ? 'green' : 'red'}>
           {t(`submit.admin.status.${s.status}`)}
@@ -138,14 +152,16 @@ function SubmissionCard({ submission: s }: { submission: AdminSubmission }) {
             onChange={(e) => setName(e.target.value)}
           />
         </FormField>
-        <FormField label={t('submit.fields.workHours')} name={`hours-${s.id}`}>
-          <TextInput
-            id={`hours-${s.id}`}
-            value={hours}
-            disabled={!pending}
-            onChange={(e) => setHours(e.target.value)}
-          />
-        </FormField>
+        {hasHoursField(s.layer) && (
+          <FormField label={t('submit.fields.workHours')} name={`hours-${s.id}`}>
+            <TextInput
+              id={`hours-${s.id}`}
+              value={hours}
+              disabled={!pending}
+              onChange={(e) => setHours(e.target.value)}
+            />
+          </FormField>
+        )}
         <FormField label={t('submit.fields.des')} name={`des-${s.id}`} className="sm:col-span-2">
           <TextareaInput
             id={`des-${s.id}`}
@@ -166,9 +182,17 @@ function SubmissionCard({ submission: s }: { submission: AdminSubmission }) {
         </div>
         {s.price !== null && (
           <div>
-            <dt className="text-muted">{t('submit.fields.price')}</dt>
+            <dt className="text-muted">{t(flat ? 'myListings.editor.price' : 'submit.fields.price')}</dt>
             <dd dir="ltr" className="text-start font-semibold text-fg">
-              {s.price} $
+              {s.price} {flat ? t(`edit.options.currency.${s.currency ?? 'USD'}`) : '$'}
+            </dd>
+          </div>
+        )}
+        {s.area !== null && (
+          <div>
+            <dt className="text-muted">{t('myListings.editor.area')}</dt>
+            <dd dir="ltr" className="text-start font-semibold text-fg">
+              {s.area} m²
             </dd>
           </div>
         )}
@@ -187,6 +211,21 @@ function SubmissionCard({ submission: s }: { submission: AdminSubmission }) {
           </dd>
         </div>
       </dl>
+
+      {pending && (
+        <div className="mt-4 space-y-1">
+          <p className="text-sm font-semibold text-fg">{t('submit.admin.checkPoint')}</p>
+          <LocationPicker value={point} onChange={setPoint} />
+          {moved && (
+            <div className="flex flex-wrap items-center gap-2 text-sm">
+              <span className="font-semibold text-warn">{t('submit.admin.pointMoved')}</span>
+              <Button size="sm" variant="ghost" onClick={() => setPoint(picked)}>
+                {t('submit.admin.pointReset')}
+              </Button>
+            </div>
+          )}
+        </div>
+      )}
 
       {pending && (
         <div className="mt-5 flex flex-wrap gap-2">

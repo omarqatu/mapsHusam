@@ -31,7 +31,6 @@ import TextInput from '@/components/ui/TextInput';
 import TextareaInput from '@/components/ui/TextareaInput';
 import { toast } from '@/components/ui/toastStore';
 import { matchesQuery } from '@/features/map/extras/status';
-import { serviceLabelKey } from '@/features/map/registry';
 import { listingTarget } from '@/features/my-listings/model';
 import { targetLabelKey } from '@/features/map/targets';
 import { errorText } from '@/lib/errorText';
@@ -39,17 +38,11 @@ import { formatDate } from '@/lib/format';
 import { useAuthStore } from '@/store/authStore';
 import { ContactFields, HoursField, PriceFields } from './ListingFields';
 import LocationPicker from './LocationPicker';
-import { DES_MAX, NAME_MAX, hasHoursField, hasPriceField, toInput } from './model';
+import { DES_MAX, NAME_MAX, hasHoursField, hasPriceField, submissionTypeKey, toInput } from './model';
 import { useListingForm, type ListingForm } from './useListingForm';
 
 type Step = 'type' | 'place' | 'details';
 const STEPS: Step[] = ['type', 'place', 'details'];
-
-/** The type's name for a submission row (a service or a flat). */
-function submissionTypeKey(layer: string) {
-  const target = listingTarget(layer);
-  return target ? targetLabelKey(target) : serviceLabelKey(layer);
-}
 
 /**
  * `/add-listing` — put a service or a flat on the map, in three steps: what it is, where it is (the map moves under a

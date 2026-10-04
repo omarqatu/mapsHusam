@@ -46,6 +46,9 @@ export interface AdminSubmission {
   whatsapp: string | null;
   work_hours: string | null;
   price: string | null;
+  /** Flats only. */
+  area: number | null;
+  currency: 'ILS' | 'USD' | 'JOD' | null;
   x_coord: string;
   y_coord: string;
   status: SubmissionStatus;
@@ -58,6 +61,9 @@ export interface ApproveInput {
   des?: string;
   work_hours?: string;
   search_tags?: string;
+  /** A corrected point (Palestine Grid metres); omitted = the one the person picked. */
+  x_coord?: number;
+  y_coord?: number;
 }
 
 export const submissionKeys = {

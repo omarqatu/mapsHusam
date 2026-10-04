@@ -1,3 +1,6 @@
+import { serviceLabelKey } from '@/features/map/registry';
+import { targetLabelKey } from '@/features/map/targets';
+import { listingTarget } from '@/features/my-listings/model';
 import { toWhatsappNumber, isLocalMobile } from '@/features/auth/phone';
 import { SERVICE_BY_KEY } from '@/features/map/registry';
 import type { Currency } from '@/api/myListings';
@@ -49,7 +52,8 @@ export type FormErrors = Partial<
 
 /** The property layers a provider may submit (a flat is a point; a plot is drawn by the admins). */
 export const SUBMITTABLE_PROPERTY_LAYERS = ['ApartRent', 'ApartSale'] as const;
-export const isPropertyLayer = (layer: string) => (SUBMITTABLE_PROPERTY_LAYERS as readonly string[]).includes(layer);
+export const isPropertyLayer = (layer: string) =>
+  (SUBMITTABLE_PROPERTY_LAYERS as readonly string[]).includes(layer);
 
 /** Flats, hotels and holiday villas are priced (with an area); every other type has no price field. */
 export const hasPriceField = (layer: string) =>
@@ -103,4 +107,10 @@ export function toInput(v: FormValues, point: Coordinate): SubmissionInput {
     if (v.area.trim() !== '') input.area = Number(v.area);
   }
   return input;
+}
+
+/** The type's name for a submission (a service or a flat). */
+export function submissionTypeKey(layer: string) {
+  const target = listingTarget(layer);
+  return target ? targetLabelKey(target) : serviceLabelKey(layer);
 }

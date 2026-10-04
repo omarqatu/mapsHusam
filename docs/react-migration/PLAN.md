@@ -1177,8 +1177,9 @@ here so it can be corrected.
 - Tests: `my-listings/model.test.ts`, `listing-submissions/model.test.ts` (flats), live `myListings.live.test.ts` (list,
   edit + bad values, upload → served → removed → 404, path traversal 404, a foreign account gets 404, a visitor 401) and
   `listingSubmissions.live.test.ts` (flats offered, plots not). Screenshots desktop + phone, light + dark.
-- Not done (later, if wanted): an admin mini-map on the submissions page with a draggable point; "trusted providers
-  publish directly" switch.
+- `/admin/submissions`: each pending card has the pin map (same picker) to check and correct the point before
+  approving ("رجّع النقطة الأصلية" undoes it); flats show their type, price with currency and area, and no hours field.
+- Not done (later, if wanted): a "trusted providers publish directly" switch.
 
 ### Listing state and hidden layers (points 4 and 7) ✅
 
@@ -1648,6 +1649,15 @@ and give the Node process write access to it on IIS**), table `listing_photos` k
   the owner's numbers after a completed deal were read from property tables by `id` (they key on `fid`) — always empty.
   Rating rules unchanged: only the requester, only after both confirm, once per listing. Verify: `node --test lib/`,
   live `requests/viewing.live.test.ts`.
+
+- **The admin may move a submission's point before approving.** `POST /api/admin/listing-submissions/:id/approve`
+  takes optional `x_coord` / `y_coord` (Palestine Grid metres, same bounds as a submission — `gridPoint` in
+  `server/listings.js`; outside → 400); without them the submitted point is used as before. Why: a phone's GPS / the
+  person's pin is often a few houses off. Verify: live `listingSubmissions.live.test.ts` (throwaway account, approve with
+  a bad point → 400, with a moved point → the published row has it).
+- **Deploy keeps `uploads/`.** `tools/deploy-windows.ps1` copies with `robocopy /MIR`, which purged every folder of the
+  live site not in the release — the pictures folder included. `uploads` is now excluded like `DB_Backups`
+  (deploy and rollback). Better still on the server: `UPLOADS_DIR` outside the site folder.
 
 ## Backend asks (needs the user's decision — behaviour-changing or larger)
 

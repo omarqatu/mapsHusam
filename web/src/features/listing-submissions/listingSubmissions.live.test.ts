@@ -6,6 +6,7 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { authApi } from '@/api/auth';
 import { listingSubmissionsApi, type SubmissionInput } from '@/api/listingSubmissions';
 import { useAuthStore } from '@/store/authStore';
+import { devSql } from '@/test/liveDb';
 
 const BASE = import.meta.env.VITE_LIVE_API;
 const nativeFetch = globalThis.fetch;
@@ -78,5 +79,44 @@ describe.skipIf(!BASE)('add my business against the live backend', () => {
     expect(submissions[0].status).toBe('pending');
     await listingSubmissionsApi.cancel(submissions[0].id);
     expect((await listingSubmissionsApi.mine()).submissions.some((s) => s.status === 'pending')).toBe(false);
+  });
+
+  it('the admin may move the point before approving (a throwaway account, removed afterwards)', async () => {
+    const phone = '05' + String(Date.now()).slice(-8);
+    const reg = await authApi.register({
+      name: 'LIVE-MOVE test',
+      phone,
+      whatsapp_number: '',
+      password: 'secret1',
+    });
+    const uid = reg.user.user_id;
+    let featureId: number | null = null;
+    try {
+      await signIn(phone, 'secret1'); // active at once
+      await listingSubmissionsApi.submit({ ...input, name: 'LIVE-MOVE سباكة' });
+      await signIn('0590000001', 'Admin#12345');
+      const sub = (await listingSubmissionsApi.adminList('pending')).submissions.find(
+        (s) => s.user_id === uid,
+      )!;
+      await expect(listingSubmissionsApi.approve(sub.id, { x_coord: 1, y_coord: 2 })).rejects.toMatchObject({
+        status: 400,
+      });
+      const res = await listingSubmissionsApi.approve(sub.id, { x_coord: 170100.5, y_coord: 145800.25 });
+      featureId = res.feature_id;
+      const [row] = devSql(
+        'services_db',
+        `SELECT ST_X(geom) || ',' || ST_Y(geom) FROM public.service_all WHERE id = ${featureId}`,
+      );
+      expect(row.split(',').map(Number)).toEqual([170100.5, 145800.25]);
+    } finally {
+      devSql(
+        'services_db',
+        `DELETE FROM public.service_all WHERE id = ${featureId ?? 0} AND name = 'LIVE-MOVE سباكة';
+         DELETE FROM public.listing_owners WHERE user_id = ${uid};
+         DELETE FROM public.listing_submissions WHERE user_id = ${uid};
+         DELETE FROM public.notifications WHERE user_id = ${uid};
+         DELETE FROM public.users WHERE user_id = ${uid} AND full_name = 'LIVE-MOVE test';`,
+      );
+    }
   });
 });
