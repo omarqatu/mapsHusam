@@ -127,6 +127,8 @@ async function open(
 /** The linked feature as the map knows it (name and place), read through the app's own GeoServer proxy. */
 async function featureProps(page: Page, s: ServiceRow) {
   const res = await page.request.get('/geoserver-proxy/services/ows', {
+    // Fixture lookup uses the admin session: public WFS reads intentionally refuse featureID filters.
+    headers: { 'X-App-Token': session('admin').token },
     params: {
       service: 'WFS',
       version: '1.0.0',
@@ -136,6 +138,7 @@ async function featureProps(page: Page, s: ServiceRow) {
       featureID: `service_all.${s.feature_id}`,
     },
   });
+  if (!res.ok()) throw new Error(`Fixture feature lookup failed with HTTP ${res.status()}`);
   const { features } = (await res.json()) as {
     features: { properties: { name: string; location_name: string } }[];
   };
