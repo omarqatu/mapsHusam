@@ -76,6 +76,8 @@ function Invoke-Robocopy {
     if ($LASTEXITCODE -gt 7) {
         throw "robocopy failed with exit code $LASTEXITCODE ($Source -> $Destination)"
     }
+    # Robocopy uses 1-7 for successful copies. GitHub's PowerShell wrapper otherwise treats them as job failures.
+    $global:LASTEXITCODE = 0
 }
 
 function Start-And-SmokeTest {
