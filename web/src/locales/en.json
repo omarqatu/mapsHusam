@@ -311,8 +311,6 @@
     "governorate": "Governorate",
     "description": "Description",
     "notes": "Notes",
-    "openNow": "Open now",
-    "closedNow": "Closed now",
     "allDay": "Open 24 hours",
     "availableFromTo": "Open from {{from}} to {{to}}",
     "inbound": "Inbound",
@@ -363,7 +361,13 @@
     },
     "mapArea": "Area on the map",
     "mapLength": "Length on the map",
-    "noContact": "No contact details are listed for this one."
+    "noContact": "No contact details are listed for this one.",
+    "availability": {
+      "open": "Open now",
+      "closed": "Closed now",
+      "unavailable": "Not available right now",
+      "withdrawn": "Withdrawn — hidden from visitors"
+    }
   },
   "media": {
     "openImages": "Click to view the images",
@@ -614,7 +618,7 @@
     "loadFailed": "Could not load your service. Try again.",
     "noAccess": "You do not have permission to change the status of any listing right now.",
     "statusAvailable": "Your status: available (shown on the map and in search)",
-    "statusBusy": "Your status: not available (hidden)",
+    "statusBusy": "Your status: not available (visitors see “not available right now”)",
     "availableHere": "Available (my location)",
     "availablePrevious": "Available (previous location)",
     "busy": "Not available",

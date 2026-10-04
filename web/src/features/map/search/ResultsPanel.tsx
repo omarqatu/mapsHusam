@@ -8,7 +8,8 @@ import { useOlMap } from '../MapContext';
 import { useMapUi } from '../store';
 import { copyText } from '@/lib/clipboard';
 import { formatDateTime } from '@/lib/format';
-import { isOpenNow, priceLabel, text, type SelectedFeature } from '../popup/featureModel';
+import { availability, priceLabel, text, type SelectedFeature } from '../popup/featureModel';
+import { AvailabilityText } from '../popup/AvailabilityText';
 import { hasPrice, isRoadBarrier, priceCurrencyDefault, targetIcon } from '../targets';
 import MapSheet from '../panels/MapSheet';
 import { targetLabelKey } from '../targets';
@@ -42,7 +43,7 @@ function ResultRow({
   const name = text(p.name) || typeTitle;
   const priced = hasPrice(r.target);
   const price = priced ? priceLabel(p, t, i18n.language, priceCurrencyDefault(r.target)) : null;
-  const open = isOpenNow(p.auto_status);
+  const state = availability(p);
   const barrier = isRoadBarrier(r.target);
 
   return (
@@ -67,11 +68,7 @@ function ResultRow({
           </span>
           <span className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-xs text-muted">
             {r.rating > 0 && <RatingSummary value={manualStars(r.rating)} />}
-            {!barrier && (
-              <span className={open ? 'text-ok' : 'text-danger'}>
-                {open ? t('popup.openNow') : t('popup.closedNow')}
-              </span>
-            )}
+            {!barrier && state && <AvailabilityText value={state} />}
             {price && <span>{price}</span>}
             {priced && text(p.area) && (
               <span>

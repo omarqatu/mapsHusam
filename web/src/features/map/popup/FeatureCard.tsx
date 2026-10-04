@@ -22,7 +22,9 @@ import {
   barrierDirections,
   collectMedia,
   hoursLabel,
-  isOpenNow,
+  AVAILABILITY_TONE,
+  availability,
+  availabilityLabelKey,
   labelMedia,
   locationShareLink,
   priceLabel,
@@ -106,7 +108,7 @@ export default function FeatureCard({ feature, onClose, className }: Props) {
   const place = text(props.location_name) || text(props.location);
   const media = labelMedia(collectMedia(props), t);
   const hoursText = hoursLabel(props.work_hours, t, i18n.language);
-  const open = isOpenNow(props.auto_status);
+  const state = availability(props) ?? 'open';
 
   const whatsapp = text(props.whatsapp);
   const phone = text(props.phone);
@@ -181,8 +183,8 @@ export default function FeatureCard({ feature, onClose, className }: Props) {
         {kind.kind !== 'location' && !isBarrier && (
           <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1.5">
             <StatusPill
-              tone={open ? 'var(--color-ok)' : 'var(--color-danger)'}
-              label={open ? t('popup.openNow') : t('popup.closedNow')}
+              tone={AVAILABILITY_TONE[state]}
+              label={t(availabilityLabelKey(state))}
               sub={hoursText}
             />
             {kind.kind === 'service' && id && <RatingsBlock layer={kind.discriminator} featureId={id} />}

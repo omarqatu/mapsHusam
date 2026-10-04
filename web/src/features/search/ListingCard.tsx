@@ -9,7 +9,8 @@ import { groupOf, manualStars, mediaForMode, sideMedia, type FeaturedEntry, type
 import { FEATURED_FRAME } from '../map/extras/featuredStyle';
 import { BarrierBadges, FuelBadges } from '../map/extras/StatusBadges';
 import { useShowOnMap } from '../map/extras/useShowOnMap';
-import { detailLinks, isOpenNow, priceLabel, text, type MediaItem } from '../map/popup/featureModel';
+import { availability, detailLinks, priceLabel, text, type MediaItem } from '../map/popup/featureModel';
+import { AvailabilityText } from '../map/popup/AvailabilityText';
 import { formatDistance } from '../map/search/nearby';
 import ResultContact from '../map/search/ResultContact';
 import { hasPrice, isFuelStation, isRoadBarrier, priceCurrencyDefault, targetIcon, targetLabelKey } from '../map/targets';
@@ -60,8 +61,7 @@ export default function ListingCard({ entry, mode = 'all', badge, note, highligh
   const priced = hasPrice(r.target);
   const price = priced ? priceLabel(p, t, i18n.language, priceCurrencyDefault(r.target)) : null;
   const area = priced && Number(p.area) > 0 ? text(p.area) : '';
-  const hasStatus = !isRoadBarrier(r.target) && text(p.auto_status) !== '';
-  const openNow = isOpenNow(p.auto_status);
+  const state = isRoadBarrier(r.target) ? null : availability(p);
   const notBroken = (m: VisualItem) => !(m.type === 'image' && broken.has(m.url));
   const markBroken = (m: VisualItem) => () => m.type === 'image' && setBroken((b) => new Set(b).add(m.url));
 
@@ -171,11 +171,7 @@ export default function ListingCard({ entry, mode = 'all', badge, note, highligh
           {(ratings || r.rating > 0) && (
             <RatingSummary value={ratings ? ratings.avg : manualStars(r.rating)} count={ratings?.total} />
           )}
-          {hasStatus && (
-            <span className={openNow ? 'font-semibold text-ok' : 'font-semibold text-danger'}>
-              {openNow ? t('popup.openNow') : t('popup.closedNow')}
-            </span>
-          )}
+          {state && <AvailabilityText value={state} className="font-semibold" />}
           {r.distance !== undefined && <span className="font-semibold text-brand-fg">{formatDistance(r.distance, t)}</span>}
         </div>
         {isRoadBarrier(r.target) && <BarrierBadges props={p} />}

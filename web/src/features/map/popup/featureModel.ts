@@ -226,6 +226,32 @@ export function formatClock(hhmm: string, locale: string) {
 /** auto_status 0 = open now (computed by the DB trigger from work hours). */
 export const isOpenNow = (autoStatus: unknown) => Number.parseInt(String(autoStatus), 10) === 0;
 
+/** `status` of a listing (server lib/listing-rules.js): 0 available, 1 unavailable for now, 2 withdrawn. */
+export const LISTING_STATUS = { available: 0, unavailable: 1, withdrawn: 2 } as const;
+
+/**
+ * What a card says about a listing right now. `unavailable` = the provider marked it so (still listed);
+ * `withdrawn` only reaches an admin (the server never sends it to the public). `null` = nothing known (no auto_status).
+ */
+export type Availability = 'open' | 'closed' | 'unavailable' | 'withdrawn';
+export function availability(props: Props): Availability | null {
+  const status = Number.parseInt(text(props.status), 10);
+  if (status === LISTING_STATUS.withdrawn) return 'withdrawn';
+  if (status === LISTING_STATUS.unavailable) return 'unavailable';
+  if (text(props.auto_status) === '') return null;
+  return isOpenNow(props.auto_status) ? 'open' : 'closed';
+}
+
+/** Colour token of each state (text colour, or a pill's dot). */
+export const AVAILABILITY_TONE: Record<Availability, string> = {
+  open: 'var(--color-ok)',
+  closed: 'var(--color-danger)',
+  unavailable: 'var(--color-warn)',
+  withdrawn: 'var(--color-muted)',
+};
+
+export const availabilityLabelKey = (a: Availability) => `popup.availability.${a}` as const;
+
 /** diesel / banzen95 / banzen98: 0 = available, anything else = not available. */
 export { FUEL_FIELDS };
 export const fuelAvailable = (props: Props, key: FuelField) =>

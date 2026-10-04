@@ -2,12 +2,13 @@ import { useState } from 'react';
 import clsx from 'clsx';
 import { MapPin, Star } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { AvailabilityText } from '../popup/AvailabilityText';
 import MediaGallery from '@/components/ui/MediaGallery';
 import RatingSummary from '@/components/ui/RatingSummary';
 import {
   detailLinks,
   hoursLabel,
-  isOpenNow,
+  availability,
   labelMedia,
   priceLabel,
   text,
@@ -102,8 +103,7 @@ export default function FeaturedCard({ entry, mode, badge, note, customerRatings
   const place = [text(p.location_name) || text(p.location), text(p.village_a), text(p.gov_a)]
     .filter(Boolean)
     .join(' · ');
-  const hasStatus = !isBarrier && text(p.auto_status) !== '';
-  const open = isOpenNow(p.auto_status);
+  const state = isBarrier ? null : availability(p);
   const priced = hasPrice(r.target);
   const price = priced ? priceLabel(p, t, i18n.language, priceCurrencyDefault(r.target)) : null;
   const area = priced && Number(p.area) > 0 ? text(p.area) : '';
@@ -154,12 +154,7 @@ export default function FeaturedCard({ entry, mode, badge, note, customerRatings
         {!showCustomerRatings && stars > 0 && (
           <RatingSummary value={stars} count={ratings?.total} />
         )}
-        {hasStatus && (
-          <span className={open ? 'text-ok' : 'text-danger'}>
-            {open ? t('popup.openNow') : t('popup.closedNow')}
-            {hoursLabel(p.work_hours, t, i18n.language) && ` · ${hoursLabel(p.work_hours, t, i18n.language)}`}
-          </span>
-        )}
+        {state && <AvailabilityText value={state} suffix={hoursLabel(p.work_hours, t, i18n.language)} />}
         {price && <span className="text-base font-black text-brand-fg">{price}</span>}
         {area && (
           <span className="text-muted">
