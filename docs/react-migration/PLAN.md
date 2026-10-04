@@ -1142,7 +1142,7 @@ here so it can be corrected.
    the owner has more than one listing or any rating. Tests: `requests/appointment.test.ts`, live
    `requests/viewing.live.test.ts`; screenshots chat (phone) and my requests (desktop, dark).
 4. **A hidden layer must not appear anywhere, front end or API.** ✅ See "Listing state and hidden layers" below.
-5. **A name for the platform.** Proposals only (discussion).
+5. **A name for the platform.** Proposals only (discussion): قريب، حارتنا، عالخريطة، دليل البلد، وين؟ — check the domain and the social handle before choosing.
 6. **The platform's WhatsApp and phone.** ✅ `/admin/contact` (admin menu): WhatsApp, phone, email and the
    Facebook / Instagram / YouTube / LinkedIn addresses, stored as JSON under `settings.contact` (platform_content — no
    server change). Shown as buttons that carry the number itself in the footer of every page and at the top of "contact
@@ -1153,7 +1153,7 @@ here so it can be corrected.
    not.** ✅ Decision (owner, 2026-10-04: "something shows it closed / unavailable, and something removes it entirely, like a
    plot"): three states — see below.
 8. **Visitors without an account get a limited set of features, presented well.** ✅ See "Visitors" below.
-9. **Operating guide + test scenarios document.** ⬜ (last, so it covers the rest)
+9. **Operating guide + test scenarios document.** ✅ Arabic, for admins and testers: [`docs/guide/دليل-التشغيل.md`](../guide/دليل-التشغيل.md) (roles, account and listing lifecycle, requests and viewings, visibility, admin pages, photos / backups / env) and [`docs/guide/سيناريوهات-الاختبار.md`](../guide/سيناريوهات-الاختبار.md) (16 scenarios ح-01…ح-16, each naming the automated test that covers it). Facts checked against the code, not only this plan.
 
 ### My listings and adding a listing (points 1 and 2) ✅
 
