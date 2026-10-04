@@ -19,6 +19,15 @@ const CURRENCIES = ['ILS', 'USD', 'JOD'];
 // حدود شبكة فلسطين (EPSG:28191) الواسعة: تمنع نقطة خارج البلد أو إحداثيات بنظام آخر
 const GRID_X_RANGE = [100000, 300000];
 const GRID_Y_RANGE = [30000, 300000];
+/** A point inside the Palestine Grid area (metres), or null. */
+export function gridPoint(xRaw, yRaw) {
+    const x = Number(xRaw);
+    const y = Number(yRaw);
+    if (xRaw === undefined || yRaw === undefined || xRaw === null || yRaw === null || xRaw === '' || yRaw === '') return null;
+    if (!Number.isFinite(x) || !Number.isFinite(y)) return null;
+    if (x < GRID_X_RANGE[0] || x > GRID_X_RANGE[1] || y < GRID_Y_RANGE[0] || y > GRID_Y_RANGE[1]) return null;
+    return { x: Math.round(x * 1000) / 1000, y: Math.round(y * 1000) / 1000 };
+}
 export const cleanText = (value, max) => (typeof value === 'string' ? value.replace(/[<>]/g, '').trim().slice(0, max) : '');
 // يفحص بيانات نشاط مُرسلة (من نموذج "أضف نشاطي" أو من التسجيل) ويُرجع { value } أو { error }
 export function parseListingInput(body) {

@@ -5,7 +5,7 @@ import { realestatePool, servicesPool } from '../database.js';
 import { LAYER_AR_NAMES, isValidLayer } from '../layers.js';
 import { authStatusCache, requireAdmin, requireAuth } from '../auth.js';
 import { clearProviderLinkedCache, notifyUser, platformStatsCache } from '../state.js';
-import { INSERT_SUBMISSION_SQL, SUBMISSION_MAX_LEN, SUBMITTABLE_LAYERS, SUBMITTABLE_PROPERTY_LAYERS, cleanText, parseListingInput, submissionParams } from '../listings.js';
+import { INSERT_SUBMISSION_SQL, SUBMISSION_MAX_LEN, SUBMITTABLE_LAYERS, SUBMITTABLE_PROPERTY_LAYERS, cleanText, parseListingInput, submissionParams, gridPoint } from '../listings.js';
 import { linkOwner } from '../listing-owners.js';
 
 async function ensureListingSubmissionsSchema() {
@@ -153,6 +153,14 @@ app.post('/api/admin/listing-submissions/:id/approve', requireAdmin, async (req,
             await client.query('ROLLBACK');
             return res.status(409).json({ success: false, error: 'حساب صاحب الطلب لم يعد مؤهلاً (غير موجود أو تغيّر دوره).' });
         }
+
+        // The admin may move the point before publishing (the person's GPS / pin is often a few houses off).
+        const moved = body.x_coord !== undefined || body.y_coord !== undefined ? gridPoint(body.x_coord, body.y_coord) : undefined;
+        if (moved === null) {
+            await client.query('ROLLBACK');
+            return res.status(400).json({ success: false, error: 'الموقع خارج المنطقة المسموحة.' });
+        }
+        if (moved) Object.assign(sub, { x_coord: moved.x, y_coord: moved.y });
 
         // المشرف يستطيع تصحيح النص قبل النشر
         const name = cleanText(body.name, SUBMISSION_MAX_LEN.name) || sub.name;
