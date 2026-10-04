@@ -117,7 +117,15 @@ export default function MapView({
     const resize = new ResizeObserver(() => olMap.updateSize());
     resize.observe(target.current!);
 
-    if (shared)
+    // A shared point opens its "location" card — unless a listing at that very point is already selected ("go to the
+    // map" from the search page selects it, then opens this link): its own card stays.
+    const current = useMapUi.getState().selected;
+    const listingHere =
+      current &&
+      current.kind.kind !== 'location' &&
+      shared &&
+      Math.hypot(current.coordinate[0] - shared[0], current.coordinate[1] - shared[1]) < 1;
+    if (shared && !listingHere)
       useMapUi
         .getState()
         .setSelected({ kind: { kind: 'location' }, id: null, props: {}, coordinate: shared });
