@@ -9,6 +9,7 @@ import {
   Briefcase,
   BriefcaseMedical,
   Brush,
+  Building2,
   Calculator,
   Camera,
   Car,
@@ -32,7 +33,6 @@ import {
   Hospital,
   Hotel,
   House,
-  KeyRound,
   LandPlot,
   Landmark,
   Medal,
@@ -149,7 +149,7 @@ export const TYPE_ICON: Record<string, LucideIcon> = {
 
 /** The three property layers. */
 export const PROPERTY_ICON: Record<RealEstateLayerKey, LucideIcon> = {
-  rent: KeyRound,
+  rent: Building2,
   sale: House,
   land: LandPlot,
 };
