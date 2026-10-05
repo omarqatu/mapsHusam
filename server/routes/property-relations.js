@@ -267,7 +267,7 @@ app.post('/api/property-relations/:id/revoke', requireAuth, writeLimiter, async 
 // --- mine -------------------------------------------------------------------------------------------------------------
 
 // The relations this account is a side of (its properties, its provider listings, what it asked), with what it may do
-// with each; an admin also gets every pending one, to answer for properties nobody owns. Newest first, at most 200.
+// with each; an admin gets all of them (to answer for properties nobody owns, and to end any). Newest first, at most 200.
 app.get('/api/my-property-relations', requireAuth, async (req, res) => {
     try {
         const uid = req.auth.uid;
@@ -279,7 +279,7 @@ app.get('/api/my-property-relations', requireAuth, async (req, res) => {
              WHERE r.requested_by = $1
                 OR (r.property_layer, r.property_id) IN (SELECT * FROM UNNEST($2::text[], $3::bigint[]))
                 OR (r.provider_layer, r.provider_id) IN (SELECT * FROM UNNEST($2::text[], $3::bigint[]))
-                OR ($4 AND r.status = 'pending')
+                OR $4
              ORDER BY r.updated_at DESC LIMIT 200`,
             [uid, layers, ids, isAdmin(req)],
         )).rows;
