@@ -1,33 +1,41 @@
-import { useId, useMemo, useState } from 'react';
+import { useEffect, useId, useMemo, useState } from 'react';
 import clsx from 'clsx';
 import { ChevronDown, Handshake, MapPin } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import RatingSummary from '@/components/ui/RatingSummary';
 import Tabs from '@/components/ui/Tabs';
-import i18n from '@/i18n';
 import { useLayerFilter } from '../visibility/store';
 import type { Coordinate } from '../map/config';
 import { useShowOnMap } from '../map/extras/useShowOnMap';
 import { AvailabilityText } from '../map/popup/AvailabilityText';
-import { availability, text, type Props } from '../map/popup/featureModel';
+import { availabilityLabelKey, text, type Props } from '../map/popup/featureModel';
 import { formatDistance } from '../map/search/nearby';
 import ResultContact from '../map/search/ResultContact';
-import { targetFromKey, targetIcon, targetLabelKey, type MapTarget } from '../map/targets';
+import { listingLayerOf, targetFromKey, targetIcon, targetLabelKey, type MapTarget } from '../map/targets';
 import { servicesFor } from './model';
-import { logPropertyServices, usePropertyServicesConfig, useTypeProviders, useTypeRatings } from './queries';
+import {
+  RADII_KM,
+  trackPropertyServices,
+  trackPropertyServicesOnce,
+  usePropertyServicesConfig,
+  useTypeProviders,
+  useTypeRatings,
+} from './queries';
 import { rankProviders, type RankedProvider } from './rank';
 
 /** Providers shown at first, and after "show more". A card is not a directory: three answers, then a way to see more. */
 const TOP = 3;
 const MORE = 10;
 
-const arLabel = (target: MapTarget) => i18n.getFixedT('ar')(targetLabelKey(target));
+interface Tracker {
+  contact: (channel: 'call' | 'whatsapp') => void;
+  request: () => void;
+}
 
-function ProviderRow({ p, serviceTitle }: { p: RankedProvider; serviceTitle: string }) {
+function ProviderRow({ p, track }: { p: RankedProvider; track: Tracker }) {
   const { t } = useTranslation();
   const showOnMap = useShowOnMap();
   const props = p.r.props;
-  const state = availability(props);
   const place = text(props.village_a) || text(props.gov_a);
   return (
     <li className="space-y-1.5 rounded-lg border border-line bg-surface p-3">
@@ -35,7 +43,12 @@ function ProviderRow({ p, serviceTitle }: { p: RankedProvider; serviceTitle: str
         <h4 className="min-w-0 break-words text-base font-bold text-fg" dir="auto">
           {text(props.name) || t('popup.provider')}
         </h4>
-        {state && <AvailabilityText value={state} className="shrink-0 text-sm font-semibold" />}
+        {/* Closed right now is information, not a warning: a surveyor is not a restaurant (it ranks one step lower, no more). */}
+        {p.state === 'closed' ? (
+          <span className="shrink-0 text-sm text-muted">{t(availabilityLabelKey('closed'))}</span>
+        ) : (
+          p.state && <AvailabilityText value={p.state} className="shrink-0 text-sm font-semibold" />
+        )}
       </div>
       <div className="text-sm">
         {p.rating ? (
@@ -48,12 +61,7 @@ function ProviderRow({ p, serviceTitle }: { p: RankedProvider; serviceTitle: str
         {[place, t('propertyServices.fromLand', { distance: formatDistance(p.distance, t) })].filter(Boolean).join(' · ')}
       </p>
       <div className="flex flex-wrap items-center gap-2 pt-0.5">
-        <ResultContact
-          r={p.r}
-          showRequest
-          className="contents"
-          onContact={() => logPropertyServices('property_services_contact', serviceTitle)}
-        />
+        <ResultContact r={p.r} showRequest className="contents" onContact={track.contact} onRequest={track.request} />
         <button
           type="button"
           onClick={() => showOnMap(p.r)}
@@ -71,19 +79,22 @@ function ProviderRow({ p, serviceTitle }: { p: RankedProvider; serviceTitle: str
 interface Props_ {
   /** The property this card is about (its kind decides which services are offered). */
   target: MapTarget;
-  /** A point on the property: distances are measured from here, not from the visitor. */
+  /** The property's id (feature id), for measurement; without it nothing is measured. */
+  propertyId: string | null;
+  /** A point on the property: the search starts around it and distances are measured from it, not from the visitor. */
   origin: Coordinate;
-  /** The property's data (its governorate decides "in the area"). */
+  /** The property's data (its governorate is the fallback when the radius finds too few). */
   props: Props;
   className?: string;
 }
 
 /**
- * "Services for this land": the kinds of provider a property buyer reaches for next (a surveyor, a valuer, a lawyer),
- * each with who is best placed to help with THIS property — in its governorate, available now, well rated, then nearest.
- * Collapsed to one line until asked; a type nobody offers yet is left out, and nothing shows when no type has anyone.
+ * "Services for this land": the kinds of provider a property buyer reaches for next (a surveyor, a valuer…), each with
+ * who is best placed to help with THIS property — found around its point, the radius widening only while there are few,
+ * then active first, best trusted rating, nearest. Collapsed to one line until asked; a type nobody offers is left
+ * out, and nothing shows when no type has anyone. What people do here is measured (see queries.ts).
  */
-export default function PropertyServices({ target, origin, props, className }: Props_) {
+export default function PropertyServices({ target, propertyId, origin, props, className }: Props_) {
   const { t } = useTranslation();
   const id = useId();
   const config = usePropertyServicesConfig();
@@ -92,39 +103,86 @@ export default function PropertyServices({ target, origin, props, className }: P
     () => (config ? servicesFor(config, target).filter((type) => shownToViewer(type)) : []),
     [config, target, shownToViewer],
   );
-  const lists = useTypeProviders(types);
+  const gov = text(props.gov_a);
+  const lists = useTypeProviders(types, origin, gov);
 
   const [open, setOpen] = useState(false);
   const [picked, setPicked] = useState<string | null>(null);
   const [all, setAll] = useState(false);
 
   // Types with someone to offer, in the configured order.
-  const offered = lists.filter((l) => l.providers && l.providers.length > 0);
+  const offered = lists.filter((l) => l.nearby && l.nearby.providers.length > 0);
   const active = offered.find((l) => l.type === picked) ?? offered[0] ?? null;
   const ratings = useTypeRatings(open && active ? active.type : null);
-  const gov = text(props.gov_a);
-  // A type is a list of tens, so ranking it on every render is cheap (the compiler memoizes it anyway).
-  const ranked = active?.providers ? rankProviders(active.providers, origin, { gov }, ratings) : [];
+  const ranked = active?.nearby ? rankProviders(active.nearby.providers, origin, ratings) : [];
 
-  if (offered.length === 0 || !active) return null;
+  const propertyLayer = listingLayerOf(target);
+  const settled = types.length > 0 && lists.every((l) => l.nearby !== null);
+  const offeredCount = offered.length;
+  // The denominator of the funnel: a property card that could have offered services, with how many types had somebody.
+  useEffect(() => {
+    if (!propertyId || !settled) return;
+    trackPropertyServicesOnce({
+      action: 'view',
+      property_layer: propertyLayer,
+      property_id: propertyId,
+      types_offered: offeredCount,
+    });
+  }, [propertyId, propertyLayer, settled, offeredCount]);
+
+  // Looking at a type's list (opening the section shows the first one; switching tabs shows another).
+  const activeType = active?.type;
+  useEffect(() => {
+    if (!open || !propertyId || !activeType) return;
+    trackPropertyServicesOnce({
+      action: 'open',
+      property_layer: propertyLayer,
+      property_id: propertyId,
+      service_type: activeType,
+    });
+  }, [open, propertyId, propertyLayer, activeType]);
+
+  if (offered.length === 0 || !active?.nearby) return null;
 
   const names = offered.map((l) => t(targetLabelKey(targetFromKey(l.type)!)));
   const shown = all ? ranked.slice(0, MORE) : ranked.slice(0, TOP);
   const rest = Math.min(ranked.length, MORE) - TOP;
-  const nobodyInArea = !!gov && ranked.length > 0 && !ranked[0].inArea;
-  const activeTarget = targetFromKey(active.type)!;
-
-  const toggle = () => {
-    // Opening is recorded against the property kind it was opened on; a contact against the type that was contacted.
-    if (!open) logPropertyServices('property_services_open', arLabel(target));
-    setOpen((v) => !v);
-  };
+  const { radiusKm, viaGovernorate } = active.nearby;
+  const track = (provider: RankedProvider): Tracker => ({
+    contact: (channel) => {
+      if (propertyId && provider.r.id)
+        trackPropertyServices({
+          action: 'contact',
+          property_layer: propertyLayer,
+          property_id: propertyId,
+          service_type: active.type,
+          provider_id: provider.r.id,
+          channel,
+        });
+    },
+    request: () => {
+      if (propertyId && provider.r.id)
+        trackPropertyServices({
+          action: 'request',
+          property_layer: propertyLayer,
+          property_id: propertyId,
+          service_type: active.type,
+          provider_id: provider.r.id,
+        });
+    },
+  });
+  // Where the list came from: close by, or — when few were close — wider, or finally the property's governorate.
+  const reach = viaGovernorate
+    ? t('propertyServices.viaGovernorate', { km: radiusKm })
+    : radiusKm > RADII_KM[0]
+      ? t('propertyServices.widened', { first: RADII_KM[0], km: radiusKm })
+      : t('propertyServices.within', { km: radiusKm });
 
   return (
     <section aria-labelledby={`${id}-title`} className={clsx('rounded-xl border border-line bg-subtle', className)}>
       <button
         type="button"
-        onClick={toggle}
+        onClick={() => setOpen((v) => !v)}
         aria-expanded={open}
         aria-controls={`${id}-body`}
         className="flex w-full items-center gap-3 rounded-xl p-3 text-start focus-visible:outline-2 focus-visible:outline-brand"
@@ -148,7 +206,7 @@ export default function PropertyServices({ target, origin, props, className }: P
               const type = targetFromKey(l.type)!;
               return {
                 id: l.type,
-                label: `${t(targetLabelKey(type))} (${l.providers!.length})`,
+                label: `${t(targetLabelKey(type))} (${l.nearby!.providers.length})`,
                 icon: <span aria-hidden>{targetIcon(type)}</span>,
               };
             })}
@@ -162,12 +220,13 @@ export default function PropertyServices({ target, origin, props, className }: P
             scrollable
           />
           <div role="tabpanel" id={`${id}-tabpanel-${active.type}`} aria-labelledby={`${id}-tab-${active.type}`} className="space-y-2">
-            <p className="text-sm text-muted">
-              {nobodyInArea ? t('propertyServices.noneInArea') : t('propertyServices.ranking')}
-            </p>
+            <div className="space-y-0.5 text-sm">
+              <p className="font-semibold text-fg">{reach}</p>
+              <p className="text-muted">{t('propertyServices.ranking')}</p>
+            </div>
             <ul className="space-y-2">
               {shown.map((p) => (
-                <ProviderRow key={p.r.key} p={p} serviceTitle={arLabel(activeTarget)} />
+                <ProviderRow key={p.r.key} p={p} track={track(p)} />
               ))}
             </ul>
             {rest > 0 && (

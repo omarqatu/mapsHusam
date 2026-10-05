@@ -30,15 +30,7 @@ export type ContactType = 'call' | 'whatsapp';
 
 /** Counted against the same per-user quota as contact clicks (server checkUserRequestQuota). */
 export type MapEventType =
-  | 'map_click'
-  | 'attribute_search'
-  | 'quick_search'
-  | 'global_search'
-  | 'location_search'
-  | 'no_map_search'
-  // "services for this property": measurement only, filed under their own source (not counted as visits or quota)
-  | 'property_services_open'
-  | 'property_services_contact';
+  'map_click' | 'attribute_search' | 'quick_search' | 'global_search' | 'location_search' | 'no_map_search';
 
 export interface ProviderLinkedResponse {
   success: boolean;

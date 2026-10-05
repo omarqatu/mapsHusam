@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter, Route, Routes, useLocation } from 'react-router';
@@ -17,7 +17,7 @@ function LoginProbe() {
   return <div>login page, back to {from}</div>;
 }
 
-function setup() {
+function setup(onRequest?: () => void) {
   render(
     <MemoryRouter initialEntries={['/?x=1']}>
       <Routes>
@@ -25,7 +25,7 @@ function setup() {
           path="/"
           element={
             <>
-              <RequestServiceButton target={target} />
+              <RequestServiceButton target={target} onRequest={onRequest} />
               <LoginPrompt />
             </>
           }
@@ -56,6 +56,19 @@ describe('RequestServiceButton', () => {
     useAuthStore.setState({ user: { user_id: 3, token: 't' } as AuthUser });
     setup();
     await userEvent.click(screen.getByRole('button', { name: i18n.t('popup.requestService') }));
+    expect(useRequestsUi.getState().requestFor).toEqual(target);
+  });
+
+  it('tells its caller about the tap (a measurement hook) — for a visitor too, who is then sent to log in', async () => {
+    const onRequest = vi.fn();
+    setup(onRequest);
+    await userEvent.click(screen.getByRole('button', { name: i18n.t('popup.requestService') }));
+    expect(onRequest).toHaveBeenCalledTimes(1);
+    expect(screen.getByRole('dialog', { name: i18n.t('loginPrompt.title.request') })).toBeInTheDocument();
+    useAuthStore.setState({ user: { user_id: 3, token: 't' } as AuthUser });
+    await userEvent.keyboard('{Escape}');
+    await userEvent.click(screen.getByRole('button', { name: i18n.t('popup.requestService') }));
+    expect(onRequest).toHaveBeenCalledTimes(2);
     expect(useRequestsUi.getState().requestFor).toEqual(target);
   });
 });

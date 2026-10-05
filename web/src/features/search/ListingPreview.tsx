@@ -42,7 +42,7 @@ export default function ListingPreview({ entry, onClose, mode = 'all', badge, no
             </div>
           )}
           <FeaturedCard entry={entry} mode={mode} badge={badge} note={note} bare />
-          <PropertyServices target={entry.r.target} origin={entry.r.center} props={entry.r.props} />
+          <PropertyServices target={entry.r.target} propertyId={entry.r.id} origin={entry.r.center} props={entry.r.props} />
         </div>
       )}
     </Modal>

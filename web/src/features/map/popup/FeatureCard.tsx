@@ -258,7 +258,7 @@ export default function FeatureCard({ feature, onClose, className }: Props) {
         <MediaShowcase props={props} />
 
         {kind.kind === 'realEstate' && (
-          <PropertyServices target={kind} origin={feature.coordinate} props={props} />
+          <PropertyServices target={kind} propertyId={id} origin={feature.coordinate} props={props} />
         )}
 
         <div className="flex flex-wrap items-center justify-between gap-2 border-t border-line pt-3">

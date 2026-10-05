@@ -1374,35 +1374,56 @@ For each page, list from the legacy code — not from memory:
   surveyor, valuer, lawyer — ranked for THIS property; land first, flats only once it proves useful; no new trades).
   - **What the visitor sees** (`features/property-services/`, one component on the map's details card and on the /search
     preview): one quiet line «خدمات لهذه الأرض — مساحين أراضي · مخمنين عقاريين», closed until asked. Open: tabs with counts
-    (📐 مساحين (5) · 📊 مخمنين (2)), one line saying how it is ordered, then three providers (name, available now, real
+    (📐 مساحين (6) · 📊 مخمنين (3)), a line saying where the list came from and how it is ordered, then three providers (name, available now, real
     rating or "no ratings yet", place · distance from the property, call / WhatsApp / request, and show-on-map); «عرض N
     آخرين» up to ten. A type nobody offers is not shown; with nobody at all, nothing shows (no dead ends).
-  - **Ranking** (`rank.ts`, tested): in the property's governorate → available now → trusted rating → distance last. The
-    nearest is not the best. Trusted rating pulls few ratings toward a neutral 3.5 (weight 3), so 5.0 from one customer
-    does not beat 4.7 from forty; ratings are real ones (completed requests) from the new
-    `GET /api/service-ratings-summary` (Server changes). Distance is measured from the property's own point, not the
-    visitor. If nobody is in the property's governorate the card says so and shows the nearest.
+  - **Finding them** (`queries.ts → findProviders`, owner's correction 2026-10-05: the governorate is an administrative
+    line, not a quality signal — a surveyor 3 km away across it can beat one 35 km away inside it): the search starts
+    around the property's own point, a box the server filters (`bbox` on the type's layer, so a type with hundreds of rows
+    never travels whole), cut to a real circle here, and widens 10 → 25 → 50 km only while it finds fewer than three. The
+    governorate is the LAST resort: when even 50 km finds too few, its providers are added (any distance) and the card
+    says so. The card always says where the list came from («ضمن 10 كم من العقار» / «لا يوجد ضمن 10 كم — وسّعنا البحث حتى
+    25 كم» / «لا يوجد ضمن 50 كم — هؤلاء من محافظة العقار»).
+  - **Ranking** (`rank.ts`, tested): inside those results — active first (not "unavailable for now"), then the trusted
+    rating, then distance. Trusted rating pulls few ratings toward a neutral 3.5 (weight 3), so 5.0 from one customer does
+    not beat 4.7 from forty, and ratings closer than a quarter star count as equal (4.5 vs 4.6 is noise) so the nearer wins.
+    "Closed right now" is a light nudge: one quarter-star band, shown as plain muted words, never red — a surveyor is not a
+    restaurant, closed at 8 pm says little about the work. Real ratings come from the new
+    `GET /api/service-ratings-summary` (Server changes). Distance is from the property's point, not the visitor.
   - **Configurable, not hardcoded:** the types per property kind are the platform setting `settings.propertyServices`
-    (`{"land":["land_surveyors",…]}`, parsed in `model.ts`, unknown kinds / types dropped, at most 5 types); the built-in
-    default (surveyors, valuers, lawyers for land) applies until someone saves one. The server already accepted any
-    `settings.*` key, so no server change. **No admin screen for it yet** — it is saved through the existing
-    `PUT /api/admin/platform-content/:key`; say if you want the screen (a card in the admin settings).
-  - **Measured** (so success can be judged): `property_services_open` (opened, against the property kind) and
-    `property_services_contact` (call / WhatsApp, against the service type), source `property_services` — not visits, not
-    quota (Server changes). Signed-in people only (the endpoint needs a session); visitors browse without being counted.
-  - **Left out on purpose:** "verified" (nothing in the data says who checked a licence; a made-up badge is worse than none —
-    needs a decision: who verifies, with what paper); the broker (a different actor: portfolio, represents the owner —
-    planned as its own step, not a service type); a provider ↔ property relationship (SurveyedBy / ValuedBy with
-    pending → accepted → revoked and the provider's consent) — the next step, it is what makes this trustworthy rather than
-    merely helpful; flats; any new trade (contractor, cleaning, moving).
-  - **Verified:** unit (`propertyServices.test.ts`: config parsing, ranking rules incl. closer-but-closed / other
-    governorate, the few-ratings pull), component (`PropertyServices.test.tsx`: collapsed line, hidden empty types, counts,
-    order, "show more", switching type, the no-one-in-the-governorate note, measurement once per opening and not for
-    visitors, the admin's saved list, a failing type left out), server against a real Postgres (Server changes), browser at
-    1440 and 390 on the /search preview of a land with the real server for ratings / settings and the search results faked
-    (no PostGIS here): order, tabs, "show more", no sideways scroll. **Not seen in a browser:** the same component on the
-    map's details card (it needs the map and GeoServer, not available here) — it is the same component with the click
-    point as origin; check it by hand on a land on the map.
+    (`{"land":["land_surveyors",…]}`) and it stores **stable type keys** (the registry's `land_surveyors`, never the
+    Arabic name), so renaming or translating a type cannot break the link; parsed in `model.ts` (unknown kinds / keys
+    dropped, at most 5 types), built-in default (surveyors, valuers, lawyers for land) until someone saves one. The
+    server already accepted any `settings.*` key, so no server change. **No admin screen for it yet** — it is saved through
+    the existing `PUT /api/admin/platform-content/:key`; say if you want the screen.
+  - **Measured from day one** (`api/propertyServices.ts`, server table `property_services_events`, see Server changes):
+    every event carries the property (layer + id), the service type, the provider and the channel — not a label. `view`
+    (the card showed the section, with how many types had somebody — so an empty city shows up as numbers, not silence),
+    `open` (looked at a type's list; once per tab and property), `contact` (call / WhatsApp, with provider and channel),
+    `request` (tapped "request the service", with provider). Visitors count too (a per-tab id); an account's id wins. The
+    funnel "100 opened a land → 28 looked at surveyors → 9 contacted → 3 requested" is the query in Server changes.
+    `request` is the tap, not a created request (that one is in `service_requests`).
+  - **Left out on purpose (owner's decisions, 2026-10-05):** **"verified" is out of V1 completely** — no badge, no grey
+    badge, no `listing_owners` as a stand-in; later a real verification with a definition, evidence and a reviewer.
+    **Brokers:** anyone may register as a broker for now, without the word "licensed"; blocking the unlicensed today would
+    strangle supply with no verification workflow behind it; later `verification_status` and a licence number / document if
+    that path is taken. Not touched until the relationship model works: the broker profile, saved searches. Also out:
+    flats, any new trade (contractor, cleaning, moving). **Next, right after this works:** the provider ↔ property
+    relationship model (SurveyedBy / ValuedBy …, pending → accepted → revoked, with the provider's consent).
+  - **Verified:** unit (`propertyServices.test.ts`: config parsing with stable keys, the ranking incl. 3 km across a
+    governorate line beating 35 km inside it, the few-ratings pull, the quarter-star bands, closed as a light nudge),
+    component (`PropertyServices.test.tsx`: the bbox sent around the point and no widening when enough, the corner of the
+    box cut to a circle, widening step by step, the governorate only as the last resort and not at all without one, order,
+    "show more", switching type, the admin's saved list, a failing type left out, and every event with its fields: view
+    once per tab and property with `types_offered`, open per type, contact with provider + channel, request, visitors
+    counted, nothing without a property id; `RequestServiceButton.test.tsx`: the tap is reported, for a visitor too),
+    server against a real Postgres (Server changes: the events, nine refusals; and the real `bbox` / governorate search
+    behind this card), browser at 1440 and 390 with the REAL server for the proximity search, ratings, settings and
+    events (only the land listing itself faked — no PostGIS here): surveyors ordered as designed (a 3 km neighbour in
+    another governorate is not held back, closed one step lower, unavailable last, the 35 km one absent), lawyers
+    widened to 25 km, valuers falling back to the governorate, the events landing in the table for two visitors, no
+    sideways scroll. **Not seen in a browser:** the same component on the map's details card (needs the map and
+    GeoServer, not available here) — same component, the click point as origin; check it by hand on a land on the map.
 - ✅ **Directions** («اتجاهات», signed-in users only — owner) on the map card, the featured cards and the search
   results, except road barriers (`popup/DirectionsButton`): opens Google Maps directions to the point
   (`share.ts → directionsLink`; on a phone the Maps app, turn by turn, from where the person is). In-app routing on the

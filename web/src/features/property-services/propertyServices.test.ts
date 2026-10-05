@@ -8,7 +8,7 @@ import {
   parsePropertyServices,
   servicesFor,
 } from './model';
-import { PRIOR_MEAN, rankProviders, trustedRating, type RatingSummary } from './rank';
+import { BAND, PRIOR_MEAN, rankProviders, ratingBand, trustedRating, type RatingSummary } from './rank';
 
 const target = (key: string) => ALL_TARGETS.find((t) => targetKey(t) === key) as MapTarget;
 
@@ -51,14 +51,17 @@ describe('trusted rating', () => {
     expect(trustedRating(r(2, 10))).toBeLessThan(trustedRating(null));
     expect(trustedRating(r(4.5, 10))).toBeGreaterThan(trustedRating(null));
   });
+  it('ratings within one band count as equal; closed right now costs exactly one band', () => {
+    expect(ratingBand(r(4.5, 30), null)).toBe(ratingBand(r(4.6, 30), null)); // noise, not a difference
+    expect(ratingBand(r(4.8, 30), 'closed')).toBe(ratingBand(r(4.8, 30), 'open') - 1);
+    expect(BAND).toBe(0.25);
+  });
 });
 
 describe('ranking', () => {
   const ORIGIN: [number, number] = [170000, 145000];
-  let n = 0;
   /** A provider `km` kilometres east of the property. */
   function provider(id: string, km: number, props: Record<string, unknown> = {}): SearchResult {
-    n += 1;
     const x = ORIGIN[0] + km * 1000;
     const geometry = new Point([x, ORIGIN[1]]);
     return {
@@ -69,42 +72,50 @@ describe('ranking', () => {
       geometry,
       center: [x, ORIGIN[1]],
       extent: geometry.getExtent(),
-      rating: n * 0,
+      rating: 0,
     };
   }
-  const place = { gov: 'رام الله والبيرة' };
-  const order = (rs: SearchResult[], ratings = new Map<string, RatingSummary>(), p = place) =>
-    rankProviders(rs, ORIGIN, p, ratings).map((x) => x.r.id);
+  const order = (rs: SearchResult[], ratings: Record<string, RatingSummary> = {}) =>
+    rankProviders(rs, ORIGIN, new Map(Object.entries(ratings))).map((x) => x.r.id);
 
-  it('the nearest is not automatically first: the area, then availability, then rating, then distance', () => {
-    const nearButOtherGov = provider('near-other-gov', 1, { gov_a: 'نابلس' });
-    const nearButClosed = provider('near-closed', 2, { auto_status: 1 });
-    const farButGood = provider('far-good', 20);
-    const nearUnrated = provider('near-unrated', 3);
-    const ratings = new Map([['far-good', { avg: 4.8, count: 30 }]]);
-    expect(order([nearButOtherGov, nearButClosed, nearUnrated, farButGood], ratings)).toEqual([
-      'far-good', // in the area, available, proven rating
-      'near-unrated', // in the area, available
-      'near-closed', // in the area but closed now
-      'near-other-gov', // outside the area, however close
-    ]);
+  it('the governorate is context, not a winner: 3 km across the line beats 35 km inside it', () => {
+    const near = provider('near-other-gov', 3, { gov_a: 'نابلس' });
+    const far = provider('far-same-gov', 35);
+    expect(order([far, near])).toEqual(['near-other-gov', 'far-same-gov']);
   });
-  it('equal on everything: the closer one wins', () => {
+  it('active first: a listing marked unavailable for now goes after the active ones, however good', () => {
+    const away = provider('away', 1, { status: 1 });
+    expect(order([away, provider('ok', 8)], { away: { avg: 5, count: 50 } })).toEqual(['ok', 'away']);
+  });
+  it('a proven rating comes before distance; equal ratings are decided by distance', () => {
+    const proven = provider('far-proven', 9);
+    const nearUnrated = provider('near-unrated', 1);
+    expect(order([nearUnrated, proven], { 'far-proven': { avg: 4.8, count: 30 } })).toEqual(['far-proven', 'near-unrated']);
     expect(order([provider('b', 9), provider('a', 4)])).toEqual(['a', 'b']);
   });
-  it('a withdrawn or unavailable listing counts as not available', () => {
-    expect(order([provider('w', 1, { status: 2 }), provider('ok', 8)])).toEqual(['ok', 'w']);
-    expect(order([provider('u', 1, { status: 1 }), provider('ok', 8)])).toEqual(['ok', 'u']);
+  it('4.5 vs 4.6 from thirty customers is noise: the nearer one wins', () => {
+    const ratings = { far: { avg: 4.6, count: 30 }, near: { avg: 4.5, count: 30 } };
+    expect(order([provider('far', 9), provider('near', 2)], ratings)).toEqual(['near', 'far']);
   });
-  it('a property with no governorate has no "area" step; the rest still ranks', () => {
-    const other = provider('other', 1, { gov_a: 'نابلس' });
-    const same = provider('same', 5);
-    expect(order([same, other], new Map(), { gov: '' })).toEqual(['other', 'same']);
+  it('closed right now is a light nudge: it loses to an equal open one, not to a clearly worse one', () => {
+    const closed = provider('closed', 2, { auto_status: 1 });
+    const open = provider('open', 5);
+    expect(order([closed, open])).toEqual(['open', 'closed']); // same rating: one band lower
+    const excellentButClosed = provider('excellent-closed', 6, { auto_status: 1 });
+    expect(order([open, excellentButClosed], { 'excellent-closed': { avg: 4.9, count: 40 } })).toEqual([
+      'excellent-closed',
+      'open',
+    ]);
+    // a closed surveyor with a good rating is still level with an open one of nearly the same rating: the nearer one wins
+    const a = provider('a-closed', 2, { auto_status: 1 });
+    const b = provider('b-open', 7);
+    expect(order([b, a], { 'a-closed': { avg: 4.8, count: 30 }, 'b-open': { avg: 4.6, count: 30 } })).toEqual(['a-closed', 'b-open']);
   });
-  it('reports distance in metres and carries the rating', () => {
-    const [first] = rankProviders([provider('a', 4)], ORIGIN, place, new Map([['a', { avg: 4, count: 2 }]]));
+  it('reports distance in metres, the rating and the state', () => {
+    const [first] = rankProviders([provider('a', 4)], ORIGIN, new Map([['a', { avg: 4, count: 2 }]]));
     expect(Math.round(first.distance)).toBe(4000);
     expect(first.rating).toEqual({ avg: 4, count: 2 });
-    expect(first.inArea && first.available).toBe(true);
+    expect(first.active).toBe(true);
+    expect(first.state).toBe('open');
   });
 });

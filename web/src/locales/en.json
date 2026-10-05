@@ -2199,9 +2199,11 @@
       "rent": "Services for this property"
     },
     "tabs": "Kinds of service",
-    "ranking": "Best first: in the property's governorate, then available now, then best rated.",
-    "noneInArea": "Nobody in the property's governorate yet — these are the nearest.",
+    "ranking": "Best first: active, then best rated, then nearest.",
     "fromLand": "{{distance}} from the property",
-    "more": "Show {{count}} more"
+    "more": "Show {{count}} more",
+    "within": "Within {{km}} km of the property",
+    "widened": "Nobody within {{first}} km — we widened the search to {{km}} km.",
+    "viaGovernorate": "Nobody within {{km}} km — these are from the property's governorate."
   }
 }
