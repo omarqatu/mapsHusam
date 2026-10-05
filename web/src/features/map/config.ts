@@ -37,7 +37,7 @@ export interface WfsLayerDef {
 export const REAL_ESTATE_LAYERS: (WfsLayerDef & { key: RealEstateLayerKey; icon: string })[] = [
   { key: 'rent', icon: '🏠', workspace: 'realestate', typeName: 'ApartRent', maxResolution: 1, zIndex: 20 },
   { key: 'sale', icon: '🏡', workspace: 'realestate', typeName: 'ApartSale', maxResolution: 1, zIndex: 20 },
-  { key: 'land', icon: '🟥', workspace: 'realestate', typeName: 'LandSale', maxResolution: 1, zIndex: 10 },
+  { key: 'land', icon: '🏞️', workspace: 'realestate', typeName: 'LandSale', maxResolution: 1, zIndex: 10 },
 ];
 
 /** GeoServer feature type of each property layer: the editor and the search read the names from the list above. */
