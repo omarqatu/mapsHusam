@@ -136,6 +136,23 @@ async function ensureServicePropertyColumns() {
 }
 ensureServicePropertyColumns();
 
+// A provider's "before / after" pictures (details_link_1 / details_link_2, entered by the admin in legacy) and which
+// media their card opens on: 'photos' (default, also NULL) or 'before_after'. The two links already exist on every
+// installation that ran the legacy editor; IF NOT EXISTS makes a fresh database match.
+async function ensureServiceMediaColumns() {
+    try {
+        await servicesPool.query(`
+            ALTER TABLE public.service_all
+                ADD COLUMN IF NOT EXISTS details_link_1 TEXT,
+                ADD COLUMN IF NOT EXISTS details_link_2 TEXT,
+                ADD COLUMN IF NOT EXISTS media_default TEXT
+        `);
+    } catch (err) {
+        console.error('❌ تعذر تهيئة أعمدة صور قبل وبعد في service_all:', err.message);
+    }
+}
+ensureServiceMediaColumns();
+
 
 async function ensureWidgetsSchema() {
     try {

@@ -1714,6 +1714,24 @@ and give the Node process write access to it on IIS**), table `listing_photos` k
   WhatsApp normalised like register, email format, unique → 409). Nothing existing changed. Verify: `node --test lib/`,
   live `features/profile/profile.live.test.ts`.
 
+- **Before / after pictures by the provider, and what the card opens on** (owner, 2026-10-05: "in the service's details,
+  show before / after if he wants; he chooses whether that or the normal pictures is the default; drop before / after as a
+  section of its own"). Asked by the owner. What: `service_all.media_default TEXT` (`'photos'` default / NULL, or
+  `'before_after'`), and `details_link_1` / `details_link_2` made sure to exist (they do on every installation that ran the
+  legacy editor), all `ADD COLUMN IF NOT EXISTS` at start-up (`ensureServiceMediaColumns`, `server/database.js`).
+  `GET /api/my-listings` items gain `before`, `after` (the two links, or null) and `media_default` — added fields, nothing
+  removed. `PATCH /api/my-listings/:layer/:id` accepts `media_default` (services only; rules in `lib/listing-edit.js`). New:
+  `POST /api/my-listings/:layer/:id/before-after/before|after` (raw JPG/PNG/WebP like the listing's pictures, same files,
+  `listing_photos` rows and limiter; replaces the side's picture and deletes the previous one if it was uploaded) and
+  `DELETE …/before-after/before|after` (empties the side; an uploaded file is deleted, a link the admin typed is only
+  cleared). Both answer `{ success, listing }`, owner only (404 for another account's listing), services only (400 for a
+  property). **Deploy step:** like `price` / `area`, GeoServer must re-read `service_all` (Layers → `service_all` → Reload
+  feature type) for the map's details card to receive `media_default`; until then the map opens on the photos.
+  Verified against a real Postgres (2026-10-05): upload before / after, replace (old file gone, its URL 404), the choice
+  saved, remove (an admin link cleared, no file touched), another account 404, no login 401, a non-image 415, a wrong side
+  404, a bad choice 400; `node --test lib/*.test.js` (24 pass). Commit: `feat(server): a provider's before / after pictures
+  and the media their card opens on`.
+
 ## Backend asks (needs the user's decision — behaviour-changing or larger)
 
 - **Public map:** `/api/log-contact-click` is `requireAuth`, so a visitor's call / WhatsApp tap is not counted in the provider's
