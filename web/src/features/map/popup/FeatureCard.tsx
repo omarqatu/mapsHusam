@@ -28,6 +28,7 @@ import {
   text,
   type SelectedFeature,
 } from './featureModel';
+import PropertyServices from '@/features/property-services/PropertyServices';
 import MediaShowcase from './MediaShowcase';
 import {
   hasPrice,
@@ -255,6 +256,10 @@ export default function FeatureCard({ feature, onClose, className }: Props) {
         )}
 
         <MediaShowcase props={props} />
+
+        {kind.kind === 'realEstate' && (
+          <PropertyServices target={kind} origin={feature.coordinate} props={props} />
+        )}
 
         <div className="flex flex-wrap items-center justify-between gap-2 border-t border-line pt-3">
           <div className="flex flex-wrap gap-2">

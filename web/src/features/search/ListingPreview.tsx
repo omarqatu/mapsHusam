@@ -1,6 +1,7 @@
 import { useTranslation } from 'react-i18next';
 import Modal from '@/components/ui/Modal';
 import FeaturedCard from '../map/extras/FeaturedCard';
+import PropertyServices from '../property-services/PropertyServices';
 import type { FeaturedEntry, FeaturedMode } from '../map/extras/featured';
 import { groupOf } from '../map/extras/featured';
 import { beforeAfterPair, collectMedia, text } from '../map/popup/featureModel';
@@ -41,6 +42,7 @@ export default function ListingPreview({ entry, onClose, mode = 'all', badge, no
             </div>
           )}
           <FeaturedCard entry={entry} mode={mode} badge={badge} note={note} bare />
+          <PropertyServices target={entry.r.target} origin={entry.r.center} props={entry.r.props} />
         </div>
       )}
     </Modal>

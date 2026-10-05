@@ -1370,6 +1370,39 @@ For each page, list from the legacy code — not from memory:
     saved on the server) and search results faked (no PostGIS here): painter opens on before / after, carpenter on photos,
     an electrician with two page links gets no switch, no «قبل وبعد» row, no sideways scroll. **Deploy step:** GeoServer
     reload of `service_all` (see Server changes) so the map card receives the choice.
+- ✅ **"Services for this land"** (owner's plan, 2026-10-05: a land card offers the professionals a buyer needs next —
+  surveyor, valuer, lawyer — ranked for THIS property; land first, flats only once it proves useful; no new trades).
+  - **What the visitor sees** (`features/property-services/`, one component on the map's details card and on the /search
+    preview): one quiet line «خدمات لهذه الأرض — مساحين أراضي · مخمنين عقاريين», closed until asked. Open: tabs with counts
+    (📐 مساحين (5) · 📊 مخمنين (2)), one line saying how it is ordered, then three providers (name, available now, real
+    rating or "no ratings yet", place · distance from the property, call / WhatsApp / request, and show-on-map); «عرض N
+    آخرين» up to ten. A type nobody offers is not shown; with nobody at all, nothing shows (no dead ends).
+  - **Ranking** (`rank.ts`, tested): in the property's governorate → available now → trusted rating → distance last. The
+    nearest is not the best. Trusted rating pulls few ratings toward a neutral 3.5 (weight 3), so 5.0 from one customer
+    does not beat 4.7 from forty; ratings are real ones (completed requests) from the new
+    `GET /api/service-ratings-summary` (Server changes). Distance is measured from the property's own point, not the
+    visitor. If nobody is in the property's governorate the card says so and shows the nearest.
+  - **Configurable, not hardcoded:** the types per property kind are the platform setting `settings.propertyServices`
+    (`{"land":["land_surveyors",…]}`, parsed in `model.ts`, unknown kinds / types dropped, at most 5 types); the built-in
+    default (surveyors, valuers, lawyers for land) applies until someone saves one. The server already accepted any
+    `settings.*` key, so no server change. **No admin screen for it yet** — it is saved through the existing
+    `PUT /api/admin/platform-content/:key`; say if you want the screen (a card in the admin settings).
+  - **Measured** (so success can be judged): `property_services_open` (opened, against the property kind) and
+    `property_services_contact` (call / WhatsApp, against the service type), source `property_services` — not visits, not
+    quota (Server changes). Signed-in people only (the endpoint needs a session); visitors browse without being counted.
+  - **Left out on purpose:** "verified" (nothing in the data says who checked a licence; a made-up badge is worse than none —
+    needs a decision: who verifies, with what paper); the broker (a different actor: portfolio, represents the owner —
+    planned as its own step, not a service type); a provider ↔ property relationship (SurveyedBy / ValuedBy with
+    pending → accepted → revoked and the provider's consent) — the next step, it is what makes this trustworthy rather than
+    merely helpful; flats; any new trade (contractor, cleaning, moving).
+  - **Verified:** unit (`propertyServices.test.ts`: config parsing, ranking rules incl. closer-but-closed / other
+    governorate, the few-ratings pull), component (`PropertyServices.test.tsx`: collapsed line, hidden empty types, counts,
+    order, "show more", switching type, the no-one-in-the-governorate note, measurement once per opening and not for
+    visitors, the admin's saved list, a failing type left out), server against a real Postgres (Server changes), browser at
+    1440 and 390 on the /search preview of a land with the real server for ratings / settings and the search results faked
+    (no PostGIS here): order, tabs, "show more", no sideways scroll. **Not seen in a browser:** the same component on the
+    map's details card (it needs the map and GeoServer, not available here) — it is the same component with the click
+    point as origin; check it by hand on a land on the map.
 - ✅ **Directions** («اتجاهات», signed-in users only — owner) on the map card, the featured cards and the search
   results, except road barriers (`popup/DirectionsButton`): opens Google Maps directions to the point
   (`share.ts → directionsLink`; on a phone the Maps app, turn by turn, from where the person is). In-app routing on the

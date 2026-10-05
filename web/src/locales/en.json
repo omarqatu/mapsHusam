@@ -2191,5 +2191,17 @@
     "unread": "new notifications",
     "listings": "my listings",
     "ratingCount": "from {{count}} ratings"
+  },
+  "propertyServices": {
+    "title": {
+      "land": "Services for this land",
+      "sale": "Services for this property",
+      "rent": "Services for this property"
+    },
+    "tabs": "Kinds of service",
+    "ranking": "Best first: in the property's governorate, then available now, then best rated.",
+    "noneInArea": "Nobody in the property's governorate yet — these are the nearest.",
+    "fromLand": "{{distance}} from the property",
+    "more": "Show {{count}} more"
   }
 }
