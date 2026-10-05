@@ -19,13 +19,24 @@ export interface SearchQuery {
   conditions?: SearchCondition[];
   /** [minX, minY, maxX, maxY] in EPSG:28191 — points by x/y columns, polygons by ST_Intersects. */
   bbox?: readonly number[];
+  /** Columns that must hold a value (not NULL, not ''): the server's `notempty` operator. */
+  notEmpty?: readonly string[];
 }
+
+/**
+ * The server skips a condition whose `value_N` is missing or empty, so `notempty` sends a placeholder it never reads
+ * (legacy sent none, and its "not empty" filter silently matched every row).
+ */
+const NOT_EMPTY_PLACEHOLDER = '1';
 
 /** Query-string fields. Same-field conditions are OR-ed by the server, different fields AND-ed; max 2000 rows. */
 export function buildSearchParams(q: SearchQuery): Record<string, string> {
   const params: Record<string, string> = { layer: q.layer, workspace: q.workspace };
   if (q.bbox) params.bbox = q.bbox.join(',');
-  const conditions = (q.conditions ?? []).filter((c) => c.field && c.value !== '');
+  const conditions: { field: string; operator: string; value: string }[] = [
+    ...(q.conditions ?? []).filter((c) => c.field && c.value !== ''),
+    ...(q.notEmpty ?? []).map((field) => ({ field, operator: 'notempty', value: NOT_EMPTY_PLACEHOLDER })),
+  ];
   conditions.forEach((c, i) => {
     params[`field_${i}`] = c.field;
     params[`operator_${i}`] = c.operator;

@@ -6,6 +6,8 @@ import type { SearchResult } from '../search/results';
 import { ALL_TARGETS, targetKey, type MapTarget } from '../targets';
 import { SERVICE_TYPES } from '../config';
 import {
+  beforeAfterEntries,
+  customerRatingsKey,
   groupedTargets,
   groupOf,
   hasBeforeAfter,
@@ -92,10 +94,57 @@ describe('pickForSection', () => {
     expect(picked).not.toContain(rent2);
     expect(picked.slice(2).map((e) => e.r.id)).toEqual(['0', '1', '2', '3', '4', '5', '6', '7']);
   });
+  it('keeps the first holiday villa and the first hotel too (Husam, 30 September), after the property kinds', () => {
+    const services = Array.from({ length: 12 }, (_, i): FeaturedEntry => ({ r: at('plumber', String(i), i) }));
+    const hotel = { r: at('hotels', 'h1', 200) };
+    const hotel2 = { r: at('hotels', 'h2', 201) };
+    const villa = { r: at('villas_rent', 'v1', 202) };
+    const sale = { r: at('sale', 's1', 203) };
+    const picked = pickForSection([...services, villa, hotel, hotel2, sale]);
+    expect(picked).toHaveLength(10);
+    expect(picked.slice(0, 3)).toEqual([sale, villa, hotel]); // registry order
+    expect(picked).not.toContain(hotel2);
+    expect(picked.slice(3).map((e) => e.r.id)).toEqual(['0', '1', '2', '3', '4', '5', '6']);
+  });
   it('a short list is returned whole', () => {
     const one = { r: at('plumber', '1', 0) };
     expect(pickForSection([one])).toEqual([one]);
     expect(pickForSection([])).toEqual([]);
+  });
+});
+
+describe('beforeAfterEntries (own query + the rated listings)', () => {
+  const links = { details_link_1: 'a.com/before.jpg', details_link_2: 'a.com/after.jpg' };
+  const withLinks = (key: string, id: string, props: Record<string, unknown> = links) => result(key, id, new Point([0, 0]), props);
+
+  it('waits for both sources, so the row does not appear and then grow', () => {
+    expect(beforeAfterEntries(null, [withLinks('plumber', '1')])).toBeNull();
+    expect(beforeAfterEntries([], null)).toBeNull();
+    expect(beforeAfterEntries([], [])).toEqual([]);
+  });
+  it('rated listings with both links first, then the rest, each once; rows without both links left out', () => {
+    const featuredPainter = { r: withLinks('painter', '7') };
+    const featuredNoLinks = { r: withLinks('painter', '8', {}) };
+    const rent = { r: withLinks('rent', '3') };
+    const fromQuery = [
+      withLinks('plumber', '1'),
+      withLinks('painter', '7'), // the same listing as the featured one
+      withLinks('plumber', '2', { ...links, details_link_2: 'javascript:alert(1)' }),
+    ];
+    const out = beforeAfterEntries([featuredPainter, featuredNoLinks, rent], fromQuery);
+    expect(out?.map((e) => e.r.key)).toEqual(['painter:7', 'rent:3', 'plumber:1']);
+    expect(out?.[0]).toBe(featuredPainter);
+  });
+});
+
+describe('customerRatingsKey (whose cards show real ratings)', () => {
+  it('services with an id, except road barriers and fuel stations', () => {
+    expect(customerRatingsKey(at('hotels', '5', 0))).toEqual({ layer: 'hotels', featureId: '5' });
+    expect(customerRatingsKey(at('plumber', '9', 0))).toEqual({ layer: 'plumber', featureId: '9' });
+    expect(customerRatingsKey(at('road_barriers', '1', 0))).toBeNull();
+    expect(customerRatingsKey(at('fuel_stations', '1', 0))).toBeNull();
+    expect(customerRatingsKey(at('rent', '1', 0))).toBeNull();
+    expect(customerRatingsKey({ ...at('plumber', '1', 0), id: null })).toBeNull();
   });
 });
 

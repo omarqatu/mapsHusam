@@ -576,7 +576,6 @@
       "filterTypes": "Search for a service or property",
       "selectGroup": "Select every type in this group",
       "failed": "Could not load the featured services right now",
-      "empty": "No services available right now",
       "none": "None",
       "before": "Before",
       "after": "After",

@@ -36,6 +36,7 @@ function fetchAcross(conditions: SearchCondition[], signal?: AbortSignal): Promi
 export const extrasKeys = {
   rating: (value: string) => ['featured', 'rating', value] as const,
   topRated: ['featured', 'top-rated'] as const,
+  beforeAfter: ['featured', 'before-after'] as const,
   candidates: ['featured', 'nearby-candidates'] as const,
 };
 
@@ -88,6 +89,26 @@ export function useTopRatedFeatures() {
         return r ? [{ r, ratings: { avg: Number(item.avg_rating), total: Number(item.total_ratings) } }] : [];
       });
     },
+    ...geoQueryOptions,
+    refetchOnWindowFocus: true,
+  });
+}
+
+/**
+ * Every open service with both "details" links (before / after), whatever its rating (legacy fetchBeforeAfterServices).
+ * Services only, like legacy: the property tables are not asked for these columns.
+ */
+export function useBeforeAfterFeatures() {
+  return useQuery({
+    queryKey: extrasKeys.beforeAfter,
+    queryFn: async ({ signal }) =>
+      toResults(
+        await searchApi.search(
+          { layer: 'service_all', workspace: 'services', notEmpty: ['details_link_1', 'details_link_2'] },
+          signal,
+        ),
+        null,
+      ),
     ...geoQueryOptions,
     refetchOnWindowFocus: true,
   });

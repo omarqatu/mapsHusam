@@ -86,6 +86,30 @@ describe('query building (matches server.js param names)', () => {
     });
     expect(p).not.toHaveProperty('field_2');
   });
+
+  it('sends "not empty" columns after the filters, with a value so the server does not skip them', () => {
+    expect(
+      buildSearchParams({
+        layer: 'service_all',
+        workspace: 'services',
+        conditions: [{ field: 'gov_a', operator: '=', value: 'رام الله' }],
+        notEmpty: ['details_link_1', 'details_link_2'],
+      }),
+    ).toEqual({
+      layer: 'service_all',
+      workspace: 'services',
+      field_0: 'gov_a',
+      operator_0: '=',
+      value_0: 'رام الله',
+      field_1: 'details_link_1',
+      operator_1: 'notempty',
+      value_1: '1',
+      field_2: 'details_link_2',
+      operator_2: 'notempty',
+      value_2: '1',
+      conditions_count: '3',
+    });
+  });
 });
 
 describe('targets', () => {

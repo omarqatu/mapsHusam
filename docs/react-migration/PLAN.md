@@ -1066,8 +1066,39 @@ it at once); browser at 1440 / 390, no overflow.
     Dev: `dev/geoserver-setup.sh` now does the reset. Check: WFS `DescribeFeatureType` for `services:service_all` lists `price` and `area`.
   - **Also fixed:** `edit.live.test.ts` did not log in as an admin, so the proxy lock (`X-App-Token`, "Server changes") would refuse
     its writes; it logs in now.
-- ⬜ Featured: before/after via `details_link_1/2 notempty` query; hotel / villa cards with property details and live rating;
-  empty sections hidden.
+- ✅ Featured (Husam's `featured-services-portal.js`, 14739ac / 0a00037): before / after from its own query; hotels and villas
+  kept in every section with price, area and their customers' rating; empty sections hidden. Done 2026-10-05.
+  - **Before / after:** `useBeforeAfterFeatures` asks `service_all` for rows with `details_link_1` **and** `details_link_2`
+    not empty (services only, like his), instead of only filtering the featured + recommended rows. The section shows the
+    featured / recommended listings with both links first (paid placements lead), then every other service the query finds,
+    each listing once (`beforeAfterEntries`); the row waits for both sources so it does not appear and then grow.
+  - **Found while porting — his "not empty" filter never filtered.** The server skips a condition whose `value_N` is missing
+    or empty, and his request sent none, so it returned all of `service_all` (≤ 2000 rows) and the browser threw away the rows
+    without links. `SearchQuery.notEmpty` (`api/search.ts`) sends a placeholder value the `notempty` branch never reads, so
+    the database does the filtering. See Backend asks for the server-side alternative.
+  - **Hotels / villas:** `pickForSection` keeps the first card of each kind priced like property (`hasPrice`: rent, sale, land,
+    then holiday villas, hotels in registry order) before the rest, as his "do not drop hotels and villas". Their cards already
+    showed price, currency and area (item "Price and area" above) and, on the map, the customers' rating (q1).
+  - **Live rating on /search (UX change):** the landing rows' cards now show a service's real customer average and count, or
+    "no ratings yet", instead of the hand-set `rating` column turned into stars (a featured plumber used to show five stars
+    nobody gave). One `GET /api/service-ratings` per card, asked only when the card comes into view (`hooks/useInView.ts`);
+    property keeps the hand-set stars; road barriers and fuel stations show none. The rule "whose card shows real ratings" is
+    one function used by both cards (`customerRatingsKey`). Result lists (categories, keyword search) keep the hand-set stars:
+    they can hold hundreds of cards.
+  - **Empty sections hidden:** the map panel's sections disappear when they have nothing (the "no services right now" line
+    and its locale strings are gone); /search already did. **Also fixed:** a /search row whose request failed stayed a loading
+    skeleton for good — it is left out now. The section data of both places is one hook (`extras/useFeaturedRows.ts`); the
+    unused `grid` variant of the map sections was removed.
+  - **Also fixed (seen in the browser):** on a before / after card the section badge covered the "before" label; the
+    before / after labels sit at the bottom of each picture now.
+  - **Verified:** unit (`search.test.ts` query string, `extras.logic.test.ts` picking / merging / rating rule), components
+    (`extras.test.tsx`: the before/after section lists a service only the new query finds and sends `notempty` with a value,
+    an empty section is left out, a hotel card shows price, area and its customers' 3.5; `LandingSections.test.tsx`: real
+    rating vs "no ratings yet" vs property stars, a failed row is left out). Browser (Chromium, Vite with `/api` answered by
+    test data — this container has no Postgres data or GeoServer): /search at 1440 and 390 and the map's featured tab — order
+    apartment · villa · hotel · plumber, hotel "4.5 (12)", before / after shows the recommended painter then the carpenter,
+    "top rated" and "videos" hidden, no sideways scroll. **Not run here:** `extras.live.test.ts` has a new real-server check
+    (every row has both links and none is missed) — run it with `VITE_LIVE_API` where the dev database is up.
 - ✅ Road-barrier icon = the worse of `stop` / `stop2` (`worstBarrierStatus`, order open < light < inspection < heavy < closed;
   the label on the map follows it; the card still shows both directions). Test: `map.test.ts`.
 - ✅ Edit tool after a failed save: nothing to port — React never turned the tool off. A refused save (wrong GeoServer login,
@@ -1731,4 +1762,8 @@ and give the Node process write access to it on IIS**), table `listing_photos` k
   dropping subscriptions the push service answers 404 / 410 for; then a `push` handler in `web/public/sw.js` and a subscribe call after
   the user allows notifications. Adds endpoints, a table and a dependency — needs the user's decision. iOS: only for an app added to
   the Home Screen (16.4+).
+- **`notempty` without a value:** `/api/search-features` drops any condition whose `value_N` is empty before it looks at the
+  operator, so `operator_N=notempty` with no value (what legacy sent) matches every row. React sends a placeholder value. The
+  server could accept `notempty` without a value (one line in the loop that reads the conditions); that changes what such a
+  request returns, so it is left for you to decide.
 - **Featured / recommended rule and pictures are constants:** `rating = 10` (featured) and `9.9` (recommended) and the section / slideshow pictures are fixed in the web app. Making them editable by an admin needs a settings table + admin page (and an upload endpoint for the pictures); not done — say if you want it.

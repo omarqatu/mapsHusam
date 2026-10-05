@@ -1,19 +1,10 @@
-import { useId, useMemo, useState } from 'react';
+import { useCallback, useId, useMemo, useState } from 'react';
 import { ArrowLeftRight, Image, Star, ThumbsUp, Trophy, Video, type LucideIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import AlertMessage from '@/components/ui/AlertMessage';
-import {
-  FEATURED_RATING,
-  RECOMMENDED_RATING,
-  hasBeforeAfter,
-  hasPhotos,
-  hasVideos,
-  pickForSection,
-  type FeaturedEntry,
-  type FeaturedMode,
-} from '../map/extras/featured';
-import { useRatedFeatures, useTopRatedFeatures } from '../map/extras/queries';
-import type { Props as FeatureProps } from '../map/popup/featureModel';
+import { pickForSection, type FeaturedEntry, type FeaturedMode } from '../map/extras/featured';
+import { useFeaturedRows, type FeaturedRow } from '../map/extras/useFeaturedRows';
+import type { SearchResult } from '../map/search/results';
 import { featuredOrder, seededRandom } from './featuredOrder';
 import ListingCard from './ListingCard';
 import ScrollRow from './ScrollRow';
@@ -48,6 +39,7 @@ function Row({ title, icon: Icon, badge, mode, entries, highlight }: RowProps) {
                 mode={mode}
                 badge={badge}
                 highlight={highlight}
+                customerRatings
                 className="w-64 shrink-0 snap-start"
               />
             ))
@@ -65,33 +57,23 @@ export default function LandingSections() {
   const { t } = useTranslation();
   // One order per visit: equal advertisers take turns at the front of the featured row.
   const [seed] = useState(() => Math.floor(Math.random() * 2 ** 32));
-  const featured = useRatedFeatures(FEATURED_RATING);
-  const recommended = useRatedFeatures(RECOMMENDED_RATING);
-  const topRated = useTopRatedFeatures();
-
-  const featuredEntries = useMemo(
-    () => (featured.data ? featuredOrder([featured.data], seededRandom(seed), featured.data.length).map((r) => ({ r })) : null),
-    [featured.data, seed],
+  const orderFeatured = useCallback(
+    (rows: SearchResult[]) => featuredOrder([rows], seededRandom(seed), rows.length),
+    [seed],
   );
-  const recommendedEntries = useMemo(() => recommended.data?.map((r) => ({ r })) ?? null, [recommended.data]);
-  // The media rows draw from both rating tiers (legacy).
-  const pool = useMemo(
-    () => (featuredEntries || recommendedEntries ? [...(featuredEntries ?? []), ...(recommendedEntries ?? [])] : null),
-    [featuredEntries, recommendedEntries],
-  );
-  const withMedia = (has: (p: FeatureProps) => boolean) =>
-    featured.isPending && recommended.isPending ? null : (pool ?? []).filter((e) => has(e.r.props));
+  const data = useFeaturedRows(orderFeatured);
 
-  if (featured.isError && recommended.isError && topRated.isError)
-    return <AlertMessage type="error" message={t('extras.featured.failed')} />;
+  if (data.allFailed) return <AlertMessage type="error" message={t('extras.featured.failed')} />;
+  // A row whose source failed is left out like an empty one (it used to stay a loading skeleton for good).
+  const entries = ({ entries: e, failed }: FeaturedRow) => (failed ? [] : e);
 
   const rows: RowProps[] = [
-    { title: t('extras.featured.sections.featured'), icon: Star, badge: t('extras.featured.badge.featured'), mode: 'all', entries: featuredEntries, highlight: true },
-    { title: t('extras.featured.sections.topRated'), icon: Trophy, badge: t('extras.featured.badge.topRated'), mode: 'all', entries: topRated.data ?? null },
-    { title: t('extras.featured.sections.recommended'), icon: ThumbsUp, badge: t('extras.featured.badge.recommended'), mode: 'all', entries: recommendedEntries },
-    { title: t('extras.featured.sections.photos'), icon: Image, badge: t('extras.featured.badge.photos'), mode: 'photo', entries: withMedia(hasPhotos) },
-    { title: t('extras.featured.sections.videos'), icon: Video, badge: t('extras.featured.badge.videos'), mode: 'video', entries: withMedia(hasVideos) },
-    { title: t('extras.featured.sections.beforeAfter'), icon: ArrowLeftRight, badge: t('extras.featured.badge.beforeAfter'), mode: 'beforeAfter', entries: withMedia(hasBeforeAfter) },
+    { title: t('extras.featured.sections.featured'), icon: Star, badge: t('extras.featured.badge.featured'), mode: 'all', entries: entries(data.featured), highlight: true },
+    { title: t('extras.featured.sections.topRated'), icon: Trophy, badge: t('extras.featured.badge.topRated'), mode: 'all', entries: entries(data.topRated) },
+    { title: t('extras.featured.sections.recommended'), icon: ThumbsUp, badge: t('extras.featured.badge.recommended'), mode: 'all', entries: entries(data.recommended) },
+    { title: t('extras.featured.sections.photos'), icon: Image, badge: t('extras.featured.badge.photos'), mode: 'photo', entries: entries(data.photos) },
+    { title: t('extras.featured.sections.videos'), icon: Video, badge: t('extras.featured.badge.videos'), mode: 'video', entries: entries(data.videos) },
+    { title: t('extras.featured.sections.beforeAfter'), icon: ArrowLeftRight, badge: t('extras.featured.badge.beforeAfter'), mode: 'beforeAfter', entries: entries(data.beforeAfter) },
   ];
   return (
     <>

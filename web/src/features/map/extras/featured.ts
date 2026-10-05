@@ -3,7 +3,7 @@ import { collectMedia, detailLinks, type MediaItem, type Props } from '../popup/
 import { distanceToResult } from '../search/nearby';
 import type { SearchResult } from '../search/results';
 import { SERVICE_BY_KEY, TYPE_GROUP_IDS, type TypeGroupId } from '../registry';
-import { ALL_TARGETS, targetKey, type MapTarget } from '../targets';
+import { ALL_TARGETS, hasPrice, isFuelStation, isRoadBarrier, targetKey, type MapTarget } from '../targets';
 
 // Pure logic of the featured-services portal (legacy featured-services-portal.js), testable without React or a map.
 
@@ -25,17 +25,30 @@ export const NEARBY_LIMIT = 10;
 export const FEATURED_RATING = '10';
 export const RECOMMENDED_RATING = '9.9';
 
+/**
+ * The service layer and id whose real customer ratings a card shows instead of the hand-set `rating` column: every
+ * service except road barriers and fuel stations (Husam, q1); `null` for property, those two, and rows without an id.
+ */
+export function customerRatingsKey(r: SearchResult): { layer: string; featureId: string } | null {
+  if (r.target.kind !== 'service' || isRoadBarrier(r.target) || isFuelStation(r.target) || !r.id) return null;
+  return { layer: r.target.discriminator, featureId: r.id };
+}
+
 /** The `rating` column is a hand-set score out of 10 (10 = featured); shown to visitors as stars out of 5. Customer ratings are already out of 5. */
 export const manualStars = (rating: number) => Math.min(5, Math.max(0, rating / 2));
 
 /**
- * Up to `limit` cards, but the first of each real-estate kind (rent, sale, land) is always in — legacy wanted the
- * property types visible even when services with the same rating fill the list.
+ * The kinds that always get a card in a section when one is there: the three property kinds (rent, sale, land), then
+ * the services priced like property (hotels, holiday villas). Legacy wanted them visible even when services with the
+ * same rating fill the list (Husam, 30 September: "do not drop hotels and villas").
  */
+const GUARANTEED_KINDS: readonly string[] = ALL_TARGETS.filter(hasPrice).map(targetKey);
+
+/** Up to `limit` cards; the first card of each guaranteed kind comes first, then the rest in their order. */
 export function pickForSection(items: FeaturedEntry[], limit = SECTION_LIMIT): FeaturedEntry[] {
-  const guaranteed = (['rent', 'sale', 'land'] as const)
-    .map((layer) => items.find((i) => i.r.target.kind === 'realEstate' && i.r.target.layer === layer))
-    .filter((i): i is FeaturedEntry => !!i);
+  const guaranteed = GUARANTEED_KINDS.map((kind) => items.find((i) => targetKey(i.r.target) === kind)).filter(
+    (i): i is FeaturedEntry => !!i,
+  );
   const rest = items.filter((i) => !guaranteed.includes(i)).slice(0, Math.max(0, limit - guaranteed.length));
   return [...guaranteed, ...rest].slice(0, limit);
 }
@@ -46,6 +59,22 @@ export const hasPhotos = (props: Props) => collectMedia(props).some((m) => m.typ
 export const hasVideos = (props: Props) => collectMedia(props).some(isVideoItem);
 /** Both "details" links present (legacy: before / after). */
 export const hasBeforeAfter = (props: Props) => detailLinks(props).every((u) => u !== null);
+
+/**
+ * The before / after section: the featured and recommended listings that have both links first (paid placements lead),
+ * then every other service that has them (its own query, legacy fetchBeforeAfterServices); each listing once.
+ * `null` while either source is still loading (a failed source is passed as `[]`), so the row does not appear and then
+ * grow.
+ */
+export function beforeAfterEntries(
+  rated: FeaturedEntry[] | null,
+  withLinks: SearchResult[] | null,
+): FeaturedEntry[] | null {
+  if (rated === null || withLinks === null) return null;
+  const seen = new Set<string>();
+  const once = (e: FeaturedEntry) => !seen.has(e.r.key) && !!seen.add(e.r.key);
+  return [...rated, ...withLinks.map((r) => ({ r }))].filter((e) => hasBeforeAfter(e.r.props) && once(e));
+}
 
 /** The media a card of this section displays (`beforeAfter` cards use `detailLinks` instead). */
 export function mediaForMode(props: Props, mode: FeaturedMode): MediaItem[] {

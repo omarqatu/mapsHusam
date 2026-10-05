@@ -26,7 +26,7 @@ import {
   targetLabelKey,
 } from '../targets';
 import { BarrierBadges, FuelBadges } from './StatusBadges';
-import { manualStars, mediaForMode, sideMedia, type FeaturedEntry, type FeaturedMode } from './featured';
+import { customerRatingsKey, manualStars, mediaForMode, sideMedia, type FeaturedEntry, type FeaturedMode } from './featured';
 import { FEATURED_FRAME } from './featuredStyle';
 import { useShowOnMap } from './useShowOnMap';
 import DirectionsButton from '../popup/DirectionsButton';
@@ -126,8 +126,7 @@ export default function FeaturedCard({
   const stars = ratings?.avg ?? manualStars(r.rating);
   const media = mode === 'beforeAfter' ? null : labelMedia(mediaForMode(p, mode), t);
   // A "top rated" entry already carries the real average; everything else asks for it.
-  const showCustomerRatings =
-    customerRatings !== false && r.target.kind === 'service' && !isBarrier && !isFuel && !!r.id && !ratings;
+  const ratingsKey = customerRatings !== false && !ratings ? customerRatingsKey(r) : null;
 
   return (
     <article
@@ -145,9 +144,7 @@ export default function FeaturedCard({
         {r.id && <span className="font-normal text-muted">#{r.id}</span>}
       </div>
 
-      {showCustomerRatings && r.target.kind === 'service' && (
-        <RatingsBlock layer={r.target.discriminator} featureId={r.id ?? ''} />
-      )}
+      {ratingsKey && <RatingsBlock layer={ratingsKey.layer} featureId={ratingsKey.featureId} />}
 
       {!bare && (
         <h5 className="flex items-start gap-2 text-base font-bold text-fg" dir="auto">
@@ -167,7 +164,7 @@ export default function FeaturedCard({
       )}
 
       <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm">
-        {!showCustomerRatings && stars > 0 && <RatingSummary value={stars} count={ratings?.total} />}
+        {!ratingsKey && stars > 0 && <RatingSummary value={stars} count={ratings?.total} />}
         {state && <AvailabilityText value={state} suffix={hoursLabel(p.work_hours, t, i18n.language)} />}
         {price && <span className="text-base font-black text-brand-fg">{price}</span>}
         {area && (

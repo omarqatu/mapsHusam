@@ -5,7 +5,10 @@ import { useTranslation } from 'react-i18next';
 import { playBadge, ytThumb } from '@/components/ui/media';
 import RatingSummary from '@/components/ui/RatingSummary';
 import type { VisualItem } from '@/components/ui/MediaGallery';
+import { useServiceRatings } from '@/api/mapEvents';
+import { useInView } from '@/hooks/useInView';
 import {
+  customerRatingsKey,
   groupOf,
   manualStars,
   mediaForMode,
@@ -42,9 +45,29 @@ interface Props {
   note?: string;
   /** A paid placement: the featured frame (see featuredStyle). */
   highlight?: boolean;
+  /**
+   * Services show their customers' real average instead of the hand-set `rating` column (as the map's featured cards
+   * do), fetched once the card comes into view. Off by default: result lists can hold hundreds of cards.
+   */
+  customerRatings?: boolean;
   /** Result lists: a row (thumbnail beside the text) on phones, so a screen holds several results. */
   rowOnPhone?: boolean;
   className?: string;
+}
+
+/**
+ * The customers' average, asked for once `seen` (the card came into view); "no ratings yet" when there are none.
+ * Loading and failures show nothing: ratings are a bonus and must not clutter the card.
+ */
+function LiveRating({ layer, featureId, seen }: { layer: string; featureId: string; seen: boolean }) {
+  const { t } = useTranslation();
+  const { data } = useServiceRatings(seen ? layer : null, seen ? featureId : null);
+  if (!data) return null;
+  return data.totalRatings > 0 ? (
+    <RatingSummary value={data.averageRating} count={data.totalRatings} />
+  ) : (
+    <span className="text-muted">{t('popup.rating.none')}</span>
+  );
 }
 
 const visuals = (items: MediaItem[]) => items.filter((m): m is VisualItem => m.type !== 'link');
@@ -93,6 +116,7 @@ export default function ListingCard({
   badge,
   note,
   highlight,
+  customerRatings,
   rowOnPhone,
   className,
 }: Props) {
@@ -112,6 +136,9 @@ export default function ListingCard({
   const price = priced ? priceLabel(p, t, i18n.language, priceCurrencyDefault(r.target)) : null;
   const area = priced && Number(p.area) > 0 ? text(p.area) : '';
   const state = isRoadBarrier(r.target) ? null : availability(p);
+  const ratingsKey = customerRatings && !ratings ? customerRatingsKey(r) : null;
+  // The card itself is watched: an empty rating slot has no box, and a box-less element is never "in view".
+  const [cardRef, seen] = useInView<HTMLElement>();
   const notBroken = (m: VisualItem) => !(m.type === 'image' && broken.has(m.url));
   const markBroken = (m: VisualItem) => () => m.type === 'image' && setBroken((b) => new Set(b).add(m.url));
 
@@ -130,6 +157,7 @@ export default function ListingCard({
 
   return (
     <article
+      ref={ratingsKey ? cardRef : undefined}
       className={clsx(
         'group/card relative flex flex-col overflow-hidden rounded-xl border shadow-sm transition hover:-translate-y-0.5 hover:shadow-float',
         highlight ? FEATURED_FRAME : 'border-line bg-surface hover:border-brand',
@@ -157,7 +185,7 @@ export default function ListingCard({
                     {t('extras.featured.none')}
                   </div>
                 )}
-                <span className="absolute start-1.5 top-1.5 rounded-full bg-black/60 px-2 py-0.5 text-xs font-bold text-white">
+                <span className="absolute bottom-1.5 start-1.5 rounded-full bg-black/60 px-2 py-0.5 text-xs font-bold text-white">
                   {t(i === 0 ? 'extras.featured.before' : 'extras.featured.after')}
                 </span>
               </div>
@@ -232,8 +260,12 @@ export default function ListingCard({
               {area} {t('map.areaUnit')}
             </span>
           )}
-          {(ratings || r.rating > 0) && (
-            <RatingSummary value={ratings ? ratings.avg : manualStars(r.rating)} count={ratings?.total} />
+          {ratingsKey ? (
+            <LiveRating layer={ratingsKey.layer} featureId={ratingsKey.featureId} seen={seen} />
+          ) : (
+            (ratings || r.rating > 0) && (
+              <RatingSummary value={ratings ? ratings.avg : manualStars(r.rating)} count={ratings?.total} />
+            )
           )}
           {state && <AvailabilityText value={state} className="font-semibold" />}
           {r.distance !== undefined && (
