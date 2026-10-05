@@ -3,13 +3,14 @@ import {
   Apple,
   AppWindow,
   Axe,
+  BedDouble,
   Bike,
   BookOpen,
   BrickWall,
   Briefcase,
   BriefcaseMedical,
   Brush,
-  Building2,
+  Building,
   Calculator,
   Camera,
   Car,
@@ -149,8 +150,8 @@ export const TYPE_ICON: Record<string, LucideIcon> = {
 
 /** The three property layers. */
 export const PROPERTY_ICON: Record<RealEstateLayerKey, LucideIcon> = {
-  rent: Building2,
-  sale: House,
+  rent: BedDouble,
+  sale: Building,
   land: LandPlot,
 };
 
