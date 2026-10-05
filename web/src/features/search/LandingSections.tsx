@@ -1,5 +1,5 @@
 import { useCallback, useId, useMemo, useState } from 'react';
-import { ArrowLeftRight, Image, Star, ThumbsUp, Trophy, Video, type LucideIcon } from 'lucide-react';
+import { Image, Star, ThumbsUp, Trophy, Video, type LucideIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import AlertMessage from '@/components/ui/AlertMessage';
 import { pickForSection, type FeaturedEntry, type FeaturedMode } from '../map/extras/featured';
@@ -51,7 +51,7 @@ function Row({ title, icon: Icon, badge, mode, entries, highlight }: RowProps) {
 
 /**
  * The rows under the categories (legacy featured-services portal): featured, top rated, recommended, then the listings
- * with photos, with videos and with before / after pictures. Same data as the map's Extras panel, shown as rows of cards.
+ * with photos and with videos. Same data as the map's Extras panel, shown as rows of cards.
  */
 export default function LandingSections() {
   const { t } = useTranslation();
@@ -73,7 +73,6 @@ export default function LandingSections() {
     { title: t('extras.featured.sections.recommended'), icon: ThumbsUp, badge: t('extras.featured.badge.recommended'), mode: 'all', entries: entries(data.recommended) },
     { title: t('extras.featured.sections.photos'), icon: Image, badge: t('extras.featured.badge.photos'), mode: 'photo', entries: entries(data.photos) },
     { title: t('extras.featured.sections.videos'), icon: Video, badge: t('extras.featured.badge.videos'), mode: 'video', entries: entries(data.videos) },
-    { title: t('extras.featured.sections.beforeAfter'), icon: ArrowLeftRight, badge: t('extras.featured.badge.beforeAfter'), mode: 'beforeAfter', entries: entries(data.beforeAfter) },
   ];
   return (
     <>

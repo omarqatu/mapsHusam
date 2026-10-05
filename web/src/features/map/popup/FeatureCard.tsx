@@ -12,7 +12,6 @@ function Field(props: Parameters<typeof DataField>[0]) {
     <DataField {...props} />
   );
 }
-import MediaGallery from '@/components/ui/MediaGallery';
 import StatusDot from '@/components/ui/StatusDot';
 import { toast } from '@/components/ui/toastStore';
 import clsx from 'clsx';
@@ -20,17 +19,16 @@ import MapSheet from '../panels/MapSheet';
 import { FuelBadges } from '../extras/StatusBadges';
 import {
   barrierDirections,
-  collectMedia,
   hoursLabel,
   AVAILABILITY_TONE,
   availability,
   availabilityLabelKey,
-  labelMedia,
   locationShareLink,
   priceLabel,
   text,
   type SelectedFeature,
 } from './featureModel';
+import MediaShowcase from './MediaShowcase';
 import {
   hasPrice,
   isFuelStation,
@@ -110,7 +108,6 @@ export default function FeatureCard({ feature, onClose, className }: Props) {
   const name = text(props.name);
   const providerName = name || (kind.kind === 'realEstate' ? t('popup.advertiser') : t('popup.provider'));
   const place = text(props.location_name) || text(props.location);
-  const media = labelMedia(collectMedia(props), t);
   const hoursText = hoursLabel(props.work_hours, t, i18n.language);
   const state = availability(props) ?? 'open';
 
@@ -257,7 +254,7 @@ export default function FeatureCard({ feature, onClose, className }: Props) {
           </div>
         )}
 
-        {media.length > 0 && <MediaGallery items={media} />}
+        <MediaShowcase props={props} />
 
         <div className="flex flex-wrap items-center justify-between gap-2 border-t border-line pt-3">
           <div className="flex flex-wrap gap-2">

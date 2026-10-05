@@ -4,12 +4,11 @@ import type { Props } from '../popup/featureModel';
 import {
   FEATURED_RATING,
   RECOMMENDED_RATING,
-  beforeAfterEntries,
   hasPhotos,
   hasVideos,
   type FeaturedEntry,
 } from './featured';
-import { useBeforeAfterFeatures, useRatedFeatures, useTopRatedFeatures } from './queries';
+import { useRatedFeatures, useTopRatedFeatures } from './queries';
 
 export interface FeaturedRow {
   /** null while loading. */
@@ -23,7 +22,6 @@ export interface FeaturedRows {
   recommended: FeaturedRow;
   photos: FeaturedRow;
   videos: FeaturedRow;
-  beforeAfter: FeaturedRow;
   /** Every source failed: one error instead of six. */
   allFailed: boolean;
 }
@@ -36,7 +34,6 @@ export function useFeaturedRows(orderFeatured?: (rows: SearchResult[]) => Search
   const featured = useRatedFeatures(FEATURED_RATING);
   const recommended = useRatedFeatures(RECOMMENDED_RATING);
   const topRated = useTopRatedFeatures();
-  const withLinks = useBeforeAfterFeatures();
 
   const featuredEntries = useMemo(
     () =>
@@ -56,18 +53,12 @@ export function useFeaturedRows(orderFeatured?: (rows: SearchResult[]) => Search
   const poolFailed = featured.isError && recommended.isError;
   const fromPool = (has: (p: Props) => boolean) => pool && pool.filter((e) => has(e.r.props));
 
-  const beforeAfter = useMemo(
-    () => beforeAfterEntries(pool, withLinks.isError ? [] : (withLinks.data ?? null)),
-    [pool, withLinks.isError, withLinks.data],
-  );
-
   return {
     featured: { entries: featuredEntries, failed: featured.isError },
     topRated: { entries: topRated.data ?? null, failed: topRated.isError },
     recommended: { entries: recommendedEntries, failed: recommended.isError },
     photos: { entries: fromPool(hasPhotos), failed: poolFailed },
     videos: { entries: fromPool(hasVideos), failed: poolFailed },
-    beforeAfter: { entries: beforeAfter, failed: poolFailed && withLinks.isError },
-    allFailed: poolFailed && topRated.isError && withLinks.isError,
+    allFailed: poolFailed && topRated.isError,
   };
 }

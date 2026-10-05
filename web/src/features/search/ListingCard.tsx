@@ -12,14 +12,21 @@ import {
   groupOf,
   manualStars,
   mediaForMode,
-  sideMedia,
   type FeaturedEntry,
   type FeaturedMode,
 } from '../map/extras/featured';
 import { FEATURED_FRAME } from '../map/extras/featuredStyle';
 import { BarrierBadges, FuelBadges } from '../map/extras/StatusBadges';
 import { useShowOnMap } from '../map/extras/useShowOnMap';
-import { availability, detailLinks, priceLabel, text, type MediaItem } from '../map/popup/featureModel';
+import {
+  availability,
+  beforeAfterPair,
+  mediaDefault,
+  priceLabel,
+  sideMedia,
+  text,
+  type MediaItem,
+} from '../map/popup/featureModel';
 import { AvailabilityText } from '../map/popup/AvailabilityText';
 import { formatDistance } from '../map/search/nearby';
 import ResultContact from '../map/search/ResultContact';
@@ -37,7 +44,7 @@ import DirectionsButton from '../map/popup/DirectionsButton';
 
 interface Props {
   entry: FeaturedEntry;
-  /** Which media the picture area shows (`beforeAfter` = the two "details" links side by side). */
+  /** Which media the picture area shows: `all` = what the provider chose (first picture, or before / after side by side). */
   mode?: FeaturedMode;
   /** Small caption over the picture: "Featured", "Top rated"… */
   badge?: string;
@@ -142,13 +149,13 @@ export default function ListingCard({
   const notBroken = (m: VisualItem) => !(m.type === 'image' && broken.has(m.url));
   const markBroken = (m: VisualItem) => () => m.type === 'image' && setBroken((b) => new Set(b).add(m.url));
 
-  const [before, after] = detailLinks(p);
-  const sides =
-    mode === 'beforeAfter'
-      ? [sideMedia(before, 'popup.moreDetails1'), sideMedia(after, 'popup.moreDetails2')].map(
-          (s) => visuals(s).filter(notBroken)[0],
-        )
-      : null;
+  // The provider's choice: their before / after pair side by side, or their first picture.
+  const pair = mode === 'all' && mediaDefault(p) === 'beforeAfter' ? beforeAfterPair(p) : null;
+  const sides = pair
+    ? [sideMedia(pair.before, 'popup.moreDetails1'), sideMedia(pair.after, 'popup.moreDetails2')].map(
+        (s) => visuals(s).filter(notBroken)[0],
+      )
+    : null;
   const items = sides
     ? sides.filter((m): m is VisualItem => !!m)
     : visuals(mediaForMode(p, mode)).filter(notBroken);
@@ -186,7 +193,7 @@ export default function ListingCard({
                   </div>
                 )}
                 <span className="absolute bottom-1.5 start-1.5 rounded-full bg-black/60 px-2 py-0.5 text-xs font-bold text-white">
-                  {t(i === 0 ? 'extras.featured.before' : 'extras.featured.after')}
+                  {t(i === 0 ? 'media.before' : 'media.after')}
                 </span>
               </div>
             ))}

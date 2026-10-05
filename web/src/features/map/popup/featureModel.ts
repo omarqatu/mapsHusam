@@ -148,7 +148,10 @@ export type MediaItem =
   | { type: 'video'; url: string }
   | { type: 'link'; url: string; labelKey: string };
 
-/** Everything to show under the details, in legacy order: pictures, video, details link 1, details link 2. */
+/**
+ * Everything to show under the details, in legacy order: pictures, video, details link 1, details link 2. A complete
+ * before / after pair is not in the list: it is shown as a pair of its own (`beforeAfterPair`).
+ */
 export function collectMedia(props: Props): MediaItem[] {
   const out: MediaItem[] = [];
   const asVideo = (url: string, labelKey: string): MediaItem => {
@@ -163,10 +166,12 @@ export function collectMedia(props: Props): MediaItem[] {
   }
   const video = safeMediaUrl(firstProp(props, MEDIA.video));
   if (video) out.push(asVideo(video, 'popup.watchVideo'));
+  const pairShown = beforeAfterPair(props) !== null;
   for (const [keys, labelKey] of [
     [MEDIA.details1, 'popup.moreDetails1'],
     [MEDIA.details2, 'popup.moreDetails2'],
   ] as const) {
+    if (pairShown) break;
     const url = safeMediaUrl(firstProp(props, keys));
     if (!url) continue;
     out.push(isImageUrl(url) ? { type: 'image', url } : asVideo(url, labelKey));
@@ -189,6 +194,35 @@ export function labelMedia(items: MediaItem[], t: (key: string) => string): Gall
 /** The two "more details" links (legacy before / after), each a safe https URL or null. */
 export function detailLinks(props: Props): [string | null, string | null] {
   return [safeMediaUrl(firstProp(props, MEDIA.details1)), safeMediaUrl(firstProp(props, MEDIA.details2))];
+}
+
+/**
+ * A provider's before / after: both "details" fields hold a picture or a video (safe URLs), else null. Legacy data also
+ * keeps plain links there (a Facebook page, a website): those stay "more details" links, never labelled before / after.
+ */
+export function beforeAfterPair(props: Props): { before: string; after: string } | null {
+  const [before, after] = detailLinks(props);
+  const visual = (url: string | null) => sideMedia(url, '').some((m) => m.type !== 'link');
+  return before && after && visual(before) && visual(after) ? { before, after } : null;
+}
+
+/** One before/after side as media: an image, a YouTube/video file, or a link. */
+export function sideMedia(url: string | null, linkLabelKey: string): MediaItem[] {
+  if (!url) return [];
+  const [m] = collectMedia({ details_link_1: url });
+  return m ? [m.type === 'link' ? { ...m, labelKey: linkLabelKey } : m] : [];
+}
+
+export type MediaView = 'photos' | 'beforeAfter';
+
+/**
+ * What the listing's media opens on: the provider's choice (`media_default`), when it can be honoured — before / after
+ * needs the pair, and with no other media the pair is all there is.
+ */
+export function mediaDefault(props: Props): MediaView {
+  if (!beforeAfterPair(props)) return 'photos';
+  if (text(props.media_default) === 'before_after') return 'beforeAfter';
+  return collectMedia(props).length === 0 ? 'beforeAfter' : 'photos';
 }
 
 // --- availability ----------------------------------------------------------------------------

@@ -101,16 +101,6 @@ const RENT = feature(1700, 1700, {
   auto_status: 0,
   rating: '10',
 });
-// Not featured or recommended, but it has before / after pictures: only the before/after query finds it.
-const CARPENTER = feature(1800, 1800, {
-  id: 51,
-  discriminator: 'carpenter',
-  name: 'Carpenter Sami',
-  auto_status: 0,
-  details_link_1: 'https://a.com/tiles-before.jpg',
-  details_link_2: 'https://a.com/tiles-after.jpg',
-});
-
 let calls: string[] = [];
 /** Per-test changes to the backend: return a value to answer the request differently. */
 let override: ((u: URL) => unknown) | null = null;
@@ -160,7 +150,6 @@ function backend(url: string, init?: RequestInit): unknown {
     if (layer === 'road_barriers') return BARRIERS;
     if (layer === 'fuel_stations') return STATIONS;
     if (layer === 'service_all') {
-      if (p.get('operator_0') === 'notempty') return fc([PAINTER, CARPENTER]);
       if (rating === '10') return fc([PAINTER]);
       if (rating === '9.9') return fc([ANOTHER]);
       return fc([PAINTER, ANOTHER]); // every service (near me)
@@ -332,9 +321,8 @@ describe('FeaturedTab', () => {
     expect(within(topRated).getByText('4.5')).toBeInTheDocument();
     expect(within(topRated).getByText('(7)')).toBeInTheDocument();
 
-    const ba = await sections('Before & after');
-    expect((await within(ba).findAllByText('Before')).length).toBeGreaterThan(0);
-    expect(within(ba).getAllByText('After').length).toBeGreaterThan(0);
+    // before / after is no longer a section of its own: it lives in the listing's card
+    expect(screen.queryByRole('heading', { name: 'Before & after' })).toBeNull();
     expect(within(await sections('Photos')).getByText('Painter Ali')).toBeInTheDocument();
     expect(within(await sections('Videos')).getByText('Painter Ali')).toBeInTheDocument();
   });
@@ -359,25 +347,31 @@ describe('FeaturedTab', () => {
     expect(calls.filter((c) => c.startsWith('/api/search-features-batch'))).toHaveLength(1);
   });
 
-  it('before / after: the rated listings with both links, then every service the "not empty" query finds', async () => {
+  it("a card with before / after pictures switches between them and the photos, opening on the provider's choice", async () => {
+    const user = userEvent.setup();
     renderWith(<FeaturedTab />);
-    const ba = (await screen.findByRole('heading', { name: 'Before & after' })).closest('section')!;
-    await within(ba).findByText('Carpenter Sami');
-    const names = within(ba).getAllByRole('heading', { level: 5 }).map((h) => h.textContent);
-    expect(names).toEqual([expect.stringContaining('Painter Ali'), expect.stringContaining('Carpenter Sami')]);
-    const query = calls.find((c) => c.includes('operator_0=notempty'))!;
-    const p = new URL(query, 'http://x').searchParams;
-    expect(Object.fromEntries(p)).toEqual({
-      layer: 'service_all',
-      workspace: 'services',
-      field_0: 'details_link_1',
-      operator_0: 'notempty',
-      value_0: '1', // the server skips a condition without a value
-      field_1: 'details_link_2',
-      operator_1: 'notempty',
-      value_1: '1',
-      conditions_count: '2',
-    });
+    const featured = (await screen.findByRole('heading', { name: 'Featured' })).closest('section')!;
+    const card = (await within(featured).findByText('Painter Ali')).closest('article')!;
+    const photos = within(card).getByRole('tab', { name: 'Photos' });
+    expect(photos).toHaveAttribute('aria-selected', 'true');
+    expect(within(card).queryByText('Before')).toBeNull();
+    await user.click(within(card).getByRole('tab', { name: 'Before & after' }));
+    expect(within(card).getByText('Before')).toBeInTheDocument();
+    expect(within(card).getByText('After')).toBeInTheDocument();
+  });
+
+  it('opens on before / after when the provider chose it', async () => {
+    override = (u) =>
+      u.pathname === '/api/search-features' &&
+      u.searchParams.get('layer') === 'service_all' &&
+      u.searchParams.get('value_0') === '10'
+        ? fc([{ ...PAINTER, properties: { ...PAINTER.properties, media_default: 'before_after' } }])
+        : undefined;
+    renderWith(<FeaturedTab />);
+    const featured = (await screen.findByRole('heading', { name: 'Featured' })).closest('section')!;
+    const card = (await within(featured).findByText('Painter Ali')).closest('article')!;
+    expect(within(card).getByRole('tab', { name: 'Before & after' })).toHaveAttribute('aria-selected', 'true');
+    expect(within(card).getByText('Before')).toBeInTheDocument();
   });
 
   it('a section with nothing to show is left out', async () => {
@@ -385,7 +379,7 @@ describe('FeaturedTab', () => {
       u.pathname === '/api/search-features' && u.searchParams.get('value_0') === '9.9' ? fc([]) : undefined;
     renderWith(<FeaturedTab />);
     await screen.findByRole('heading', { name: 'Featured' });
-    await screen.findByRole('heading', { name: 'Before & after' });
+    await screen.findByRole('heading', { name: 'Photos' });
     expect(screen.queryByRole('heading', { name: 'Recommended' })).toBeNull();
   });
 

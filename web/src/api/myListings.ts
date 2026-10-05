@@ -8,6 +8,9 @@ export type ListingKind = 'service' | 'property';
 /** 0 available · 1 unavailable for now · 2 withdrawn (lib/listing-rules.js). */
 export type ListingState = 0 | 1 | 2;
 export type Currency = 'ILS' | 'USD' | 'JOD';
+/** What a service's card opens on: its pictures, or its before / after pair. */
+export type MediaDefault = 'photos' | 'before_after';
+export type BeforeAfterSide = 'before' | 'after';
 
 export interface MyListing {
   /** Service discriminator, or `ApartRent` / `ApartSale` / `LandSale`. */
@@ -29,6 +32,10 @@ export interface MyListing {
   end_date: string | null;
   /** Picture URLs, in order (uploaded ones and links the admin entered). */
   photos: string[];
+  /** Services: the before / after pictures (an uploaded one or a link the admin entered), or null. */
+  before: string | null;
+  after: string | null;
+  media_default: MediaDefault;
   /** Palestine Grid metres; for a plot, a point inside it. */
   x: number | null;
   y: number | null;
@@ -46,6 +53,7 @@ export interface ListingEdit {
   currency?: Currency;
   area?: number | null;
   status?: ListingState;
+  media_default?: MediaDefault;
   x_coord?: number;
   y_coord?: number;
 }
@@ -65,6 +73,11 @@ export const myListingsApi = {
     api.post<{ success: true; url: string; photos: string[] }>(`${path(l)}/photos`, file),
   setPhotos: (l: Pick<MyListing, 'layer' | 'id'>, photos: string[]) =>
     api.put<{ success: true; photos: string[] }>(`${path(l)}/photos`, { photos }),
+  /** Uploads one side's picture (replacing the previous one). Services only. */
+  uploadSide: (l: Pick<MyListing, 'layer' | 'id'>, side: BeforeAfterSide, file: Blob) =>
+    api.post<{ success: true; listing: MyListing }>(`${path(l)}/before-after/${side}`, file),
+  removeSide: (l: Pick<MyListing, 'layer' | 'id'>, side: BeforeAfterSide) =>
+    api.delete<{ success: true; listing: MyListing }>(`${path(l)}/before-after/${side}`),
 };
 
 export const useMyListings = (enabled = true) =>
@@ -108,5 +121,15 @@ export function useSetPhotos() {
   return useMutation({
     mutationFn: (v: { listing: MyListing; photos: string[] }) => myListingsApi.setPhotos(v.listing, v.photos),
     onSuccess: (r, v) => apply(v.listing.layer, v.listing.id, { photos: r.photos }),
+  });
+}
+
+/** Uploads or removes a before / after picture; the answer is the whole listing. */
+export function useBeforeAfterSide() {
+  const apply = useApplyListing();
+  return useMutation({
+    mutationFn: (v: { listing: MyListing; side: BeforeAfterSide; file: Blob | null }) =>
+      v.file ? myListingsApi.uploadSide(v.listing, v.side, v.file) : myListingsApi.removeSide(v.listing, v.side),
+    onSuccess: (r) => apply(r.listing.layer, r.listing.id, r.listing),
   });
 }

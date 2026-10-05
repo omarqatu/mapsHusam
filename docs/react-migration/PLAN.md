@@ -1068,14 +1068,18 @@ it at once); browser at 1440 / 390, no overflow.
     its writes; it logs in now.
 - ✅ Featured (Husam's `featured-services-portal.js`, 14739ac / 0a00037): before / after from its own query; hotels and villas
   kept in every section with price, area and their customers' rating; empty sections hidden. Done 2026-10-05.
-  - **Before / after:** `useBeforeAfterFeatures` asks `service_all` for rows with `details_link_1` **and** `details_link_2`
+  **Superseded the same day (owner):** before / after is no longer a section — it lives in the listing's own details, where
+  the provider adds it and chooses whether the card opens on it; see "Owner's notes, 5 October 2026" → "Before / after in
+  the service's details". The section, its query and `SearchQuery.notEmpty` were removed; the rest below stands.
+  - ~~**Before / after:**~~ (removed, see above) `useBeforeAfterFeatures` asks `service_all` for rows with `details_link_1` **and** `details_link_2`
     not empty (services only, like his), instead of only filtering the featured + recommended rows. The section shows the
     featured / recommended listings with both links first (paid placements lead), then every other service the query finds,
     each listing once (`beforeAfterEntries`); the row waits for both sources so it does not appear and then grow.
   - **Found while porting — his "not empty" filter never filtered.** The server skips a condition whose `value_N` is missing
     or empty, and his request sent none, so it returned all of `service_all` (≤ 2000 rows) and the browser threw away the rows
     without links. `SearchQuery.notEmpty` (`api/search.ts`) sends a placeholder value the `notempty` branch never reads, so
-    the database does the filtering. See Backend asks for the server-side alternative.
+    the database does the filtering. See Backend asks for the server-side alternative. (Removed with the section: nothing
+    in the app filters on "not empty" any more.)
   - **Hotels / villas:** `pickForSection` keeps the first card of each kind priced like property (`hasPrice`: rent, sale, land,
     then holiday villas, hotels in registry order) before the rest, as his "do not drop hotels and villas". Their cards already
     showed price, currency and area (item "Price and area" above) and, on the map, the customers' rating (q1).
@@ -1343,6 +1347,29 @@ For each page, list from the legacy code — not from memory:
   `FormField` gained an optional `hint`. Tests: `features/profile/model.test.ts`, live `profile.live.test.ts`.
 - ✅ **"Go to the map" from a search result** opened a bare point: the listing is now selected first and the map keeps its
   card when the shared point is that listing (`useShowOnMap`, `MapView`; e2e `search.spec.ts`).
+- ✅ **Before / after in the service's details** (owner: "in the service's details, show before / after if he wants; he
+  chooses whether that or the normal pictures is the default; drop before / after as a section of its own").
+  - **Where it shows:** the map's details card, the featured cards and the /search preview share `popup/MediaShowcase`:
+    with photos and a pair, a "الصور / قبل وبعد" switch that opens on the provider's choice (`media_default`); with only
+    one of them, just that. The pair is two pictures side by side, each filling its half, labelled «قبل» / «بعد», opening
+    the viewer. On /search a card's picture follows the choice too (the pair side by side, or the first picture).
+  - **What counts as a pair** (`featureModel.beforeAfterPair`): both `details_link_1` and `details_link_2` hold a picture or
+    a video. Legacy data also keeps plain links there (a Facebook page, a website): those stay "more details" links and are
+    never labelled before / after. A pair is not repeated in the photo strip; the photos section ignores it.
+  - **The provider sets it up** in "My listings" → edit → «صور قبل وبعد (اختياري)» (services only): two slots, add /
+    replace / remove, saved at once like the pictures (shrunk in the browser first); then «ماذا يظهر أولاً في بطاقتك؟» —
+    photos or before / after, enabled once both pictures are there, shown at once and saved in the background. Server:
+    see "Server changes" → "Before / after pictures by the provider".
+  - **Removed:** the «قبل وبعد» section (map panel and /search), its query, `beforeAfterEntries`, `SearchQuery.notEmpty`
+    and their strings. **Not done:** the admin's map editor still edits the two links as text (as before) but not the
+    choice — it is the provider's; say if the admin should set it too.
+  - **Verified:** unit (`extras.logic.test.ts` choice / pair / plain links, `popup.test.tsx`), components (`extras.test.tsx`:
+    the switch opens on photos, or on before / after when chosen), live against a real server + Postgres
+    (`myListings.live.test.ts`: upload both sides, replace — old file 404 —, choose, remove, another account 404, a non-image
+    415), browser at 1440 and 390 with the real server for login and "My listings" (upload through the file picker, choice
+    saved on the server) and search results faked (no PostGIS here): painter opens on before / after, carpenter on photos,
+    an electrician with two page links gets no switch, no «قبل وبعد» row, no sideways scroll. **Deploy step:** GeoServer
+    reload of `service_all` (see Server changes) so the map card receives the choice.
 - ✅ **Directions** («اتجاهات», signed-in users only — owner) on the map card, the featured cards and the search
   results, except road barriers (`popup/DirectionsButton`): opens Google Maps directions to the point
   (`share.ts → directionsLink`; on a phone the Maps app, turn by turn, from where the person is). In-app routing on the
@@ -1781,7 +1808,7 @@ and give the Node process write access to it on IIS**), table `listing_photos` k
   the user allows notifications. Adds endpoints, a table and a dependency — needs the user's decision. iOS: only for an app added to
   the Home Screen (16.4+).
 - **`notempty` without a value:** `/api/search-features` drops any condition whose `value_N` is empty before it looks at the
-  operator, so `operator_N=notempty` with no value (what legacy sent) matches every row. React sends a placeholder value. The
-  server could accept `notempty` without a value (one line in the loop that reads the conditions); that changes what such a
+  operator, so `operator_N=notempty` with no value (what legacy sent) matches every row. The React app does not use
+  `notempty` (the before / after section that did was removed, 2026-10-05). The server could accept `notempty` without a value (one line in the loop that reads the conditions); that changes what such a
   request returns, so it is left for you to decide.
 - **Featured / recommended rule and pictures are constants:** `rating = 10` (featured) and `9.9` (recommended) and the section / slideshow pictures are fixed in the web app. Making them editable by an admin needs a settings table + admin page (and an upload endpoint for the pictures); not done — say if you want it.

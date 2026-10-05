@@ -1,5 +1,5 @@
 import { useMemo, type ReactNode } from 'react';
-import { Image, LocateFixed, Star, ThumbsUp, Trophy, Video, ArrowLeftRight } from 'lucide-react';
+import { Image, LocateFixed, Star, ThumbsUp, Trophy, Video } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import AlertMessage from '@/components/ui/AlertMessage';
 import SectionCard from '@/components/ui/SectionCard';
@@ -43,7 +43,7 @@ function Section({ title, icon: sectionIcon, badge, mode, entries, failed }: Sec
   );
 }
 
-/** Featured, top rated, recommended, photos, videos and before/after sections (legacy featured-services portal). */
+/** Featured, top rated, recommended, photos and videos sections (legacy featured-services portal). */
 export function FeaturedSections() {
   const { t } = useTranslation();
   const rows = useFeaturedRows();
@@ -55,7 +55,6 @@ export function FeaturedSections() {
     { key: 'recommended', title: t('extras.featured.sections.recommended'), icon: <ThumbsUp className={icon} aria-hidden />, badge: t('extras.featured.badge.recommended'), mode: 'all' },
     { key: 'photos', title: t('extras.featured.sections.photos'), icon: <Image className={icon} aria-hidden />, badge: t('extras.featured.badge.photos'), mode: 'photo' },
     { key: 'videos', title: t('extras.featured.sections.videos'), icon: <Video className={icon} aria-hidden />, badge: t('extras.featured.badge.videos'), mode: 'video' },
-    { key: 'beforeAfter', title: t('extras.featured.sections.beforeAfter'), icon: <ArrowLeftRight className={icon} aria-hidden />, badge: t('extras.featured.badge.beforeAfter'), mode: 'beforeAfter' },
   ];
   return (
     <>

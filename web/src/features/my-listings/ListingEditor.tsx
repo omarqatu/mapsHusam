@@ -23,6 +23,7 @@ import {
   type ListingFormErrors,
   type ListingFormValues,
 } from './model';
+import BeforeAfterManager from './BeforeAfterManager';
 import PhotoManager from './PhotoManager';
 
 /**
@@ -102,6 +103,13 @@ export default function ListingEditor({ listing, onClose }: { listing: MyListing
           <h3 className={heading}>{t('myListings.editor.photos')}</h3>
           <PhotoManager listing={listing} />
         </section>
+
+        {listing.kind === 'service' && (
+          <section className={section}>
+            <h3 className={heading}>{t('myListings.beforeAfter.title')}</h3>
+            <BeforeAfterManager listing={listing} />
+          </section>
+        )}
 
         <section className={section}>
           <h3 className={heading}>{t('myListings.editor.details')}</h3>

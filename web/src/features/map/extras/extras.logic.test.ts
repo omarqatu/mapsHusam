@@ -6,20 +6,18 @@ import type { SearchResult } from '../search/results';
 import { ALL_TARGETS, targetKey, type MapTarget } from '../targets';
 import { SERVICE_TYPES } from '../config';
 import {
-  beforeAfterEntries,
   customerRatingsKey,
   groupedTargets,
   groupOf,
-  hasBeforeAfter,
   hasPhotos,
   hasVideos,
   mediaForMode,
   nearestEntries,
   pickForSection,
-  sideMedia,
   type FeaturedEntry,
 } from './featured';
 import { formatAgo, matchesQuery, relativeUpdate } from './status';
+import { beforeAfterPair, collectMedia, mediaDefault, sideMedia } from '../popup/featureModel';
 
 const NOW = Date.parse('2026-09-29T12:00:00Z');
 const ago = (min: number) => new Date(NOW - min * 60_000).toISOString();
@@ -113,30 +111,6 @@ describe('pickForSection', () => {
   });
 });
 
-describe('beforeAfterEntries (own query + the rated listings)', () => {
-  const links = { details_link_1: 'a.com/before.jpg', details_link_2: 'a.com/after.jpg' };
-  const withLinks = (key: string, id: string, props: Record<string, unknown> = links) => result(key, id, new Point([0, 0]), props);
-
-  it('waits for both sources, so the row does not appear and then grow', () => {
-    expect(beforeAfterEntries(null, [withLinks('plumber', '1')])).toBeNull();
-    expect(beforeAfterEntries([], null)).toBeNull();
-    expect(beforeAfterEntries([], [])).toEqual([]);
-  });
-  it('rated listings with both links first, then the rest, each once; rows without both links left out', () => {
-    const featuredPainter = { r: withLinks('painter', '7') };
-    const featuredNoLinks = { r: withLinks('painter', '8', {}) };
-    const rent = { r: withLinks('rent', '3') };
-    const fromQuery = [
-      withLinks('plumber', '1'),
-      withLinks('painter', '7'), // the same listing as the featured one
-      withLinks('plumber', '2', { ...links, details_link_2: 'javascript:alert(1)' }),
-    ];
-    const out = beforeAfterEntries([featuredPainter, featuredNoLinks, rent], fromQuery);
-    expect(out?.map((e) => e.r.key)).toEqual(['painter:7', 'rent:3', 'plumber:1']);
-    expect(out?.[0]).toBe(featuredPainter);
-  });
-});
-
 describe('customerRatingsKey (whose cards show real ratings)', () => {
   it('services with an id, except road barriers and fuel stations', () => {
     expect(customerRatingsKey(at('hotels', '5', 0))).toEqual({ layer: 'hotels', featureId: '5' });
@@ -158,22 +132,21 @@ describe('media sections', () => {
   it('detects pictures, videos and before/after pairs', () => {
     expect(hasPhotos(both)).toBe(true);
     expect(hasVideos(both)).toBe(true);
-    expect(hasBeforeAfter(both)).toBe(true);
+    expect(beforeAfterPair(both)).toEqual({ before: 'https://a.com/b.jpg', after: 'https://a.com/c.jpg' });
     expect(hasPhotos({ video: 'https://youtu.be/dQw4w9WgXcQ' })).toBe(false);
     expect(hasVideos({ pic: 'a.com/1.jpg' })).toBe(false);
-    expect(hasBeforeAfter({ details_link_1: 'a.com/b.jpg' })).toBe(false);
+    expect(beforeAfterPair({ details_link_1: 'a.com/b.jpg' })).toBeNull();
     expect(hasPhotos({})).toBe(false);
   });
   it('an unsafe link never counts as media', () => {
-    expect(hasBeforeAfter({ details_link_1: 'javascript:alert(1)', details_link_2: 'a.com/c.jpg' })).toBe(
-      false,
-    );
+    expect(beforeAfterPair({ details_link_1: 'javascript:alert(1)', details_link_2: 'a.com/c.jpg' })).toBeNull();
     expect(hasPhotos({ pic: 'javascript:alert(1)' })).toBe(false);
   });
   it('each mode keeps only its kind', () => {
     expect(mediaForMode(both, 'photo').every((m) => m.type === 'image')).toBe(true);
     expect(mediaForMode(both, 'video').map((m) => m.type)).toEqual(['youtube']);
-    expect(mediaForMode(both, 'all').length).toBeGreaterThan(2);
+    // the before / after pair is shown as a pair of its own, not in the list
+    expect(mediaForMode(both, 'all').map((m) => m.type)).toEqual(['image', 'youtube']);
   });
   it('a before/after side is an image, a video, or a labelled link', () => {
     expect(sideMedia('https://a.com/b.jpg', 'k')).toEqual([{ type: 'image', url: 'https://a.com/b.jpg' }]);
@@ -182,6 +155,26 @@ describe('media sections', () => {
       { type: 'link', url: 'https://facebook.com/x', labelKey: 'popup.moreDetails2' },
     ]);
     expect(sideMedia(null, 'k')).toEqual([]);
+  });
+});
+
+describe('before / after in the details (provider\'s choice)', () => {
+  const pair = { details_link_1: 'a.com/b.jpg', details_link_2: 'a.com/c.jpg' };
+  it('opens on the photos unless the provider chose before / after', () => {
+    expect(mediaDefault({ ...pair, pic: 'a.com/1.jpg' })).toBe('photos');
+    expect(mediaDefault({ ...pair, pic: 'a.com/1.jpg', media_default: 'photos' })).toBe('photos');
+    expect(mediaDefault({ ...pair, pic: 'a.com/1.jpg', media_default: 'before_after' })).toBe('beforeAfter');
+  });
+  it('before / after needs both pictures; with nothing else, the pair is all there is', () => {
+    expect(mediaDefault({ details_link_1: 'a.com/b.jpg', pic: 'a.com/1.jpg', media_default: 'before_after' })).toBe('photos');
+    expect(mediaDefault({ media_default: 'before_after' })).toBe('photos');
+    expect(mediaDefault(pair)).toBe('beforeAfter');
+  });
+  it('a lone link stays a "more details" link in the list; a pair leaves the list', () => {
+    expect(collectMedia({ details_link_1: 'https://facebook.com/x' })).toEqual([
+      { type: 'link', url: 'https://facebook.com/x', labelKey: 'popup.moreDetails1' },
+    ]);
+    expect(collectMedia(pair)).toEqual([]);
   });
 });
 

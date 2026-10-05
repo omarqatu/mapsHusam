@@ -1,5 +1,5 @@
 import type { Coordinate } from '../config';
-import { collectMedia, detailLinks, type MediaItem, type Props } from '../popup/featureModel';
+import { collectMedia, type MediaItem, type Props } from '../popup/featureModel';
 import { distanceToResult } from '../search/nearby';
 import type { SearchResult } from '../search/results';
 import { SERVICE_BY_KEY, TYPE_GROUP_IDS, type TypeGroupId } from '../registry';
@@ -13,8 +13,8 @@ export interface FeaturedEntry {
   ratings?: { avg: number; total: number };
 }
 
-/** Which media a section's cards show. `all` = every picture/video/link (legacy "featured" cards). */
-export type FeaturedMode = 'all' | 'photo' | 'video' | 'beforeAfter';
+/** Which media a section's cards show. `all` = the listing's media as its provider set it up (pictures, before / after). */
+export type FeaturedMode = 'all' | 'photo' | 'video';
 
 /** A section shows at most this many cards (legacy). */
 export const SECTION_LIMIT = 10;
@@ -57,38 +57,12 @@ const isVideoItem = (m: MediaItem) => m.type === 'youtube' || m.type === 'video'
 
 export const hasPhotos = (props: Props) => collectMedia(props).some((m) => m.type === 'image');
 export const hasVideos = (props: Props) => collectMedia(props).some(isVideoItem);
-/** Both "details" links present (legacy: before / after). */
-export const hasBeforeAfter = (props: Props) => detailLinks(props).every((u) => u !== null);
-
-/**
- * The before / after section: the featured and recommended listings that have both links first (paid placements lead),
- * then every other service that has them (its own query, legacy fetchBeforeAfterServices); each listing once.
- * `null` while either source is still loading (a failed source is passed as `[]`), so the row does not appear and then
- * grow.
- */
-export function beforeAfterEntries(
-  rated: FeaturedEntry[] | null,
-  withLinks: SearchResult[] | null,
-): FeaturedEntry[] | null {
-  if (rated === null || withLinks === null) return null;
-  const seen = new Set<string>();
-  const once = (e: FeaturedEntry) => !seen.has(e.r.key) && !!seen.add(e.r.key);
-  return [...rated, ...withLinks.map((r) => ({ r }))].filter((e) => hasBeforeAfter(e.r.props) && once(e));
-}
-
-/** The media a card of this section displays (`beforeAfter` cards use `detailLinks` instead). */
+/** The media a card of the photos / videos section displays. */
 export function mediaForMode(props: Props, mode: FeaturedMode): MediaItem[] {
   const all = collectMedia(props);
   if (mode === 'photo') return all.filter((m) => m.type === 'image');
   if (mode === 'video') return all.filter(isVideoItem);
   return all;
-}
-
-/** One before/after side as media: an image, a YouTube/video file, or a link. */
-export function sideMedia(url: string | null, linkLabelKey: string): MediaItem[] {
-  if (!url) return [];
-  const [m] = collectMedia({ details_link_1: url });
-  return m ? [m.type === 'link' ? { ...m, labelKey: linkLabelKey } : m] : [];
 }
 
 // --- "near me" type filter (the type → group table is the `group` of each registry entry) ---------------

@@ -102,19 +102,4 @@ describe.skipIf(!BASE)('live backend — extras endpoints', () => {
     expect(fc.features.map((f) => f.properties.id).sort()).toEqual([...ids].sort());
     expect(fc.features[0].geometry).not.toBeNull();
   });
-
-  it('"not empty" really filters: every row has both links, and no row with both links is missed', async () => {
-    const filled = (v: unknown) => v !== null && v !== undefined && String(v) !== '';
-    const [withLinks, all] = await Promise.all([
-      searchApi.search({ layer: 'service_all', workspace: 'services', notEmpty: ['details_link_1', 'details_link_2'] }),
-      searchApi.search({ layer: 'service_all', workspace: 'services' }),
-    ]);
-    expect(withLinks.type).toBe('FeatureCollection');
-    for (const f of withLinks.features) {
-      expect(filled(f.properties.details_link_1)).toBe(true);
-      expect(filled(f.properties.details_link_2)).toBe(true);
-    }
-    const expected = all.features.filter((f) => filled(f.properties.details_link_1) && filled(f.properties.details_link_2));
-    expect(withLinks.features.length).toBe(expected.length);
-  });
 });

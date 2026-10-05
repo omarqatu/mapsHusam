@@ -8,6 +8,7 @@ import { useAuthStore } from '@/store/authStore';
 import type { AuthUser } from '@/types/auth';
 import {
   barrierDirections,
+  beforeAfterPair,
   collectMedia,
   fuelAvailable,
   isOpenNow,
@@ -72,8 +73,14 @@ describe('media lists', () => {
       details_link_1: 'https://facebook.com/page',
       details_link_2: 'https://x.com/photo.webp',
     });
+    // a page link is not a "before" picture: both details fields stay in the list
     expect(items.map((i) => i.type)).toEqual(['image', 'image', 'youtube', 'link', 'image']);
     expect(items[2]).toEqual({ type: 'youtube', id: 'dQw4w9WgXcQ' });
+  });
+  it('two pictures in the details fields are the before / after pair, shown on their own', () => {
+    const props = { pic: 'a.com/1.jpg', details_link_1: 'a.com/b.jpg', details_link_2: 'https://youtu.be/dQw4w9WgXcQ' };
+    expect(beforeAfterPair(props)).toEqual({ before: 'https://a.com/b.jpg', after: 'https://youtu.be/dQw4w9WgXcQ' });
+    expect(collectMedia(props).map((i) => i.type)).toEqual(['image']);
   });
   it('shows the same video / picture only once even when two fields hold it', () => {
     const items = collectMedia({

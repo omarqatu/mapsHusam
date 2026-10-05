@@ -49,7 +49,6 @@ function backend(url: string): Response {
   const json = (body: unknown, status = 200) => new Response(JSON.stringify(body), { status });
   if (u.pathname === '/api/search-features') {
     const layer = p.get('layer');
-    if (p.get('operator_0') === 'notempty') return json(fc([]));
     if (p.get('value_0') !== '10') return json(fc([]));
     if (layer === 'service_all') return json(fc([HOTEL, PLUMBER]));
     if (layer === 'ApartRent') return json(fc([RENT]));

@@ -386,7 +386,12 @@
     "next": "Next",
     "openOnYoutube": "Open on YouTube",
     "play": "Play",
-    "playVideo": "Play video"
+    "playVideo": "Play video",
+    "photos": "Photos",
+    "beforeAfter": "Before & after",
+    "before": "Before",
+    "after": "After",
+    "views": "How the pictures are shown"
   },
   "search": {
     "title": "Search",
@@ -577,16 +582,13 @@
       "selectGroup": "Select every type in this group",
       "failed": "Could not load the featured services right now",
       "none": "None",
-      "before": "Before",
-      "after": "After",
       "showOnMap": "Show on map",
       "sections": {
         "featured": "Featured",
         "topRated": "Top rated",
         "recommended": "Recommended",
         "photos": "Photos",
-        "videos": "Videos",
-        "beforeAfter": "Before & after"
+        "videos": "Videos"
       },
       "badge": {
         "featured": "Featured",
@@ -594,7 +596,6 @@
         "recommended": "Recommended",
         "photos": "Photos",
         "videos": "Video",
-        "beforeAfter": "Before & after",
         "near": "Near you"
       },
       "groups": {
@@ -2152,6 +2153,15 @@
       "removeFailed": "Could not remove the picture.",
       "hint": "The first picture is the cover. Pictures are shrunk before upload.",
       "broken": "Not a picture link"
+    },
+    "beforeAfter": {
+      "title": "Before & after pictures (optional)",
+      "hint": "A picture of your work before and one after — shown side by side in your listing's details.",
+      "add": "Add picture: {{side}}",
+      "replace": "Change picture: {{side}}",
+      "remove": "Remove picture: {{side}}",
+      "showFirst": "What does your card show first?",
+      "needBoth": "Add a before and an after picture to show them first."
     }
   },
   "profile": {
