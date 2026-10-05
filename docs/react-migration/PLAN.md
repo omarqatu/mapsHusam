@@ -1759,6 +1759,20 @@ and give the Node process write access to it on IIS**), table `listing_photos` k
   404, a bad choice 400; `node --test lib/*.test.js` (24 pass). Commit: `feat(server): a provider's before / after pictures
   and the media their card opens on`.
 
+- **Ratings per service type, and a measured source for "services for this property"** (2026-10-05; the owner's plan:
+  rank a land's surveyors / valuers / lawyers by real ratings). Two additions, nothing existing changes shape:
+  (1) new public `GET /api/service-ratings-summary?service_layer=<type>` → `{ success, items: [{ feature_id, avg_rating,
+  total_ratings }] }` — the real ratings of ONE type grouped by listing, average and count only (no comments, no names);
+  unknown type 400, a type the admin hid → `items: []`. Why: `/api/top-rated-providers` is a global top 50, so it cannot
+  rank one type's providers. (2) `POST /api/log-map-event` accepts `source: 'property_services'` (stored in `source_page`;
+  anything else still falls back to `map`). Those events are measurement only: `checkUserRequestQuota` does not count them
+  and the quota gate never rejects them (otherwise looking at a land's surveyors would eat a user's request allowance, or a
+  user over the limit would get a 429 from a stats call). `GET /api/platform-stats` leaves that source out of the views
+  counters, because it computes map visits as total − quick_search and the new events would otherwise inflate the figures.
+  Verify (done against a real Postgres, 2026-10-05): the summary for a rated type / an unrated type / a bad name; log with
+  each source; 4 rows in `map_service_stats` (map ×2, quick_search, property_services) → stats `total 3, map 2, quick 1`.
+  Commit: `feat(server): ratings summary per service type; a separate source for property-services events`.
+
 ## Backend asks (needs the user's decision — behaviour-changing or larger)
 
 - **Public map:** `/api/log-contact-click` is `requireAuth`, so a visitor's call / WhatsApp tap is not counted in the provider's

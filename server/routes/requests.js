@@ -785,6 +785,27 @@ app.get('/api/service-ratings', async (req, res) => {
 
 
 
+// 9-ج) تقييمات نوع خدمة واحد مجمّعة لكل إعلان (عام): ما يرتّب مزودي النوع في بطاقة العقار (خدمات لهذه الأرض).
+// متوسط وعدد فقط، لا تعليقات ولا أسماء. نوع أخفاه المشرف يرجع فارغاً.
+app.get('/api/service-ratings-summary', async (req, res) => {
+    const serviceLayer = String(req.query.service_layer || '').trim();
+    if (!isValidLayer(serviceLayer)) {
+        return res.status(400).json({ success: false, error: 'نوع خدمة غير صالح.' });
+    }
+    try {
+        if (isLayerHidden(serviceLayer, await getHiddenLayers())) return res.json({ success: true, items: [] });
+        const result = await servicesPool.query(
+            `SELECT feature_id, ROUND(AVG(rating)::numeric, 1) AS avg_rating, COUNT(*)::int AS total_ratings
+             FROM public.service_ratings WHERE service_layer = $1 GROUP BY feature_id`,
+            [serviceLayer]
+        );
+        res.json({ success: true, items: result.rows });
+    } catch (err) {
+        console.error('❌ خطأ أثناء جلب ملخص التقييمات:', err.message);
+        res.status(500).json({ success: false, error: 'فشل جلب البيانات', details: IS_PROD ? undefined : err.message });
+    }
+});
+
 // 10) إضافة تعليق لاحقاً على تقييم موجود
 app.put('/api/service-ratings/:id/comment', requireAuth, async (req, res) => {
     const { id } = req.params;

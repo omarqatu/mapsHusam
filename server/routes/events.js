@@ -24,8 +24,9 @@ app.post('/api/log-map-event', requireAuth, async (req, res) => {
 
     try {
         // 🛡️ فحص حد الطلبات كحاجز أمان على مستوى السيرفر
+        // (أحداث «خدمات لهذا العقار» قياس فقط: لا تُحتسب من الحد ولا يرفضها الحد)
         const quota = await checkUserRequestQuota(user_id);
-        if (!quota.allowed) {
+        if (!quota.allowed && source !== 'property_services') {
             console.log(`⛔ تم رفض الحدث: المستخدم ${user_id} تجاوز الحد المسموح (${quota.limit} / ${quota.period})`);
             return res.status(429).json({
                 error: 'تم تجاوز الحد المسموح من الطلبات لهذه الفترة',
@@ -33,8 +34,8 @@ app.post('/api/log-map-event', requireAuth, async (req, res) => {
             });
         }
 
-        // 🆕 تسجيل مصدر الحدث (خريطة / بحث سريع) لإحصائيات المنصة
-        const sourcePage = source === 'quick_search' ? 'quick_search' : 'map';
+        // 🆕 تسجيل مصدر الحدث (خريطة / بحث سريع / خدمات لهذا العقار) لإحصائيات المنصة
+        const sourcePage = ['quick_search', 'property_services'].includes(source) ? source : 'map';
 
         const query = `
             INSERT INTO "public"."map_service_stats" ("user_identifier", "provider_name", "service_type", "request_date", "source_page")
@@ -90,8 +91,8 @@ app.post('/save-stat', publicEventsLimiter, async (req, res) => {
             });
         }
 
-                // 🆕 تسجيل مصدر الحدث (خريطة / بحث سريع) لإحصائيات المنصة
-        const sourcePage = source === 'quick_search' ? 'quick_search' : 'map';
+                // 🆕 تسجيل مصدر الحدث (خريطة / بحث سريع / خدمات لهذا العقار) لإحصائيات المنصة
+        const sourcePage = ['quick_search', 'property_services'].includes(source) ? source : 'map';
 
         const query = `
             INSERT INTO "public"."map_service_stats" ("user_identifier", "provider_name", "service_type", "request_date", "source_page")
