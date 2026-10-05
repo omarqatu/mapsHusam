@@ -182,6 +182,44 @@ async function ensurePropertyServicesEvents() {
 }
 ensurePropertyServicesEvents();
 
+// Who worked on a property ("surveyed by", "valued by"): a relation between a property and a provider's listing that both
+// sides agree to (lib/property-relations.js has the rules). Only accepted ones are public.
+async function ensurePropertyRelations() {
+    try {
+        await servicesPool.query(`
+            CREATE TABLE IF NOT EXISTS public.property_relations (
+                id BIGSERIAL PRIMARY KEY,
+                property_layer TEXT NOT NULL,
+                property_id BIGINT NOT NULL,
+                relation TEXT NOT NULL,
+                provider_layer TEXT NOT NULL,
+                provider_id BIGINT NOT NULL,
+                status TEXT NOT NULL DEFAULT 'pending',
+                property_ok_by INTEGER,
+                property_ok_at TIMESTAMPTZ,
+                provider_ok_by INTEGER,
+                provider_ok_at TIMESTAMPTZ,
+                requested_by INTEGER NOT NULL,
+                revoked_by INTEGER,
+                revoked_at TIMESTAMPTZ,
+                created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+                updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+            )
+        `);
+        // one live (pending or accepted) relation per property, relation and provider; a revoked one may be asked again
+        await servicesPool.query(`
+            CREATE UNIQUE INDEX IF NOT EXISTS property_relations_live_idx
+            ON public.property_relations (property_layer, property_id, relation, provider_layer, provider_id)
+            WHERE status IN ('pending', 'accepted')
+        `);
+        await servicesPool.query('CREATE INDEX IF NOT EXISTS property_relations_property_idx ON public.property_relations (property_layer, property_id)');
+        await servicesPool.query('CREATE INDEX IF NOT EXISTS property_relations_provider_idx ON public.property_relations (provider_layer, provider_id)');
+    } catch (err) {
+        console.error('❌ تعذر تهيئة جدول علاقات العقارات:', err.message);
+    }
+}
+ensurePropertyRelations();
+
 async function ensureWidgetsSchema() {
     try {
         await servicesPool.query(`

@@ -19,6 +19,7 @@ import './server/routes/requests.js';
 import './server/routes/listing-submissions.js';
 import './server/routes/provider-links.js';
 import './server/routes/my-listings.js';
+import './server/routes/property-relations.js';
 import './server/frontend.js';
 import './server/sockets.js';
 

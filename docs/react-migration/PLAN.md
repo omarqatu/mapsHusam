@@ -1840,6 +1840,39 @@ and give the Node process write access to it on IIS**), table `listing_photos` k
   through `log-map-event` with a new `source` and exempted them from the quota and the visit counters; that is gone —
   a dedicated table carries the listing, the type and the action instead of a label.)
 
+- **Who worked on a property: relations a provider and a property agree to** (owner, 2026-10-05: "the provider ↔ property
+  relationship model, right after the services card"). New table `property_relations` (created at start-up) and routes in
+  `server/routes/property-relations.js`; the rules are pure functions in `lib/property-relations.js` (`node --test`).
+  - **Model:** `relation` = `surveyed_by` (provider type `land_surveyors`) or `valued_by` (`real_estate_valuers`), on
+    `LandSale` only in V1 (one table in `RELATIONS` to widen). **No lawyer relation, on purpose:** "this lawyer represented the
+    owner of this land" is not something to show publicly on a card. Status `pending` → `accepted` → `revoked` (a decline
+    and a withdrawal are `revoked` with `revoked_by`). Two consents, each stored (`property_ok_by/at`, `provider_ok_by/at`):
+    pending = one side asked (that is its consent), accepted = both agreed.
+  - **Who may do what:** the **property side** is the property's registered owner (`listing_owners`), or an admin **only when
+    the property has no registered owner** (a plot an admin drew); an admin cannot stand in for an owned property. The
+    **provider side** is the owner of the provider's listing — nobody else, an admin included, can consent for a provider.
+    Either side may ask; someone on both sides gets it accepted at once; anyone else is refused (403). You cannot accept your own
+    request. Anyone involved may revoke (pending or accepted); an admin may always. One live (pending / accepted) relation per
+    property + relation + provider (partial unique index); a revoked one may be asked again.
+  - **Routes:** `POST /api/property-relations` `{ property_layer, property_id, relation, provider_layer, provider_id }` →
+    `{ id, status, waiting_for }`; `POST /api/property-relations/:id/respond` `{ accept }`; `POST …/:id/revoke`; public
+    `GET /api/property-relations?property_layer&property_id` → the **accepted** ones only, with the provider's name (types
+    the admin hid and withdrawn listings left out); `GET /api/my-property-relations` → every relation the account is a side of
+    (its properties, its provider listings, what it asked; an admin also every pending one), each with names, `waiting_for`,
+    `can_answer`, `can_revoke`. Writes are rate-limited (60 / hour).
+  - **Notifications** (existing `notifyUser`): the side a relation waits for — the provider's owners, the property's owners,
+    or the admins when nobody owns the property (link `/admin/relations`); the asker on accept / decline; everyone involved on
+    revoke.
+  - **What a relation is not:** it gives no right to rate (ratings stay tied to a completed request), it is not a
+    verification, and the card says it is a statement by the two sides.
+  - **Verify (real Postgres, 34 checks, 2026-10-05):** 401 without login; a stranger 403; wrong provider type / a lawyer /
+    a flat / SQL-looking id 400; unknown or withdrawn land 404; an admin refused on an owned land; owner asks → pending →
+    the asker, a stranger and another provider cannot answer → the provider accepts → public with the name (pending was not
+    public); duplicate 409; a provider's claim on an unowned land waits for the admin, who approves, while the provider and
+    an unrelated owner cannot; decline → not public → may be asked again; revoke by owner / admin, twice → 403; the
+    notifications reached the right accounts. `lib/property-relations.test.js` for the pure rules.
+    Commit: `feat(server): property relations — a provider and a property agree on who surveyed or valued it`.
+
 ## Backend asks (needs the user's decision — behaviour-changing or larger)
 
 - **Public map:** `/api/log-contact-click` is `requireAuth`, so a visitor's call / WhatsApp tap is not counted in the provider's
