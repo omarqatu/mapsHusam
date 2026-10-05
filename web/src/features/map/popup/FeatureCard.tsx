@@ -28,6 +28,7 @@ import {
   text,
   type SelectedFeature,
 } from './featureModel';
+import PropertyRelations from '@/features/property-relations/PropertyRelations';
 import PropertyServices from '@/features/property-services/PropertyServices';
 import MediaShowcase from './MediaShowcase';
 import {
@@ -256,6 +257,8 @@ export default function FeatureCard({ feature, onClose, className }: Props) {
         )}
 
         <MediaShowcase props={props} />
+
+        {kind.kind === 'realEstate' && <PropertyRelations target={kind} propertyId={id} />}
 
         {kind.kind === 'realEstate' && (
           <PropertyServices target={kind} propertyId={id} origin={feature.coordinate} props={props} />

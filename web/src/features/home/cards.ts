@@ -2,6 +2,7 @@ import {
   Bell,
   ClipboardList,
   Inbox,
+  Link2,
   LayoutDashboard,
   Map as MapIcon,
   PlusCircle,
@@ -28,7 +29,8 @@ export type CardId =
   | 'widgets'
   | 'addListing'
   | 'myListings'
-  | 'submissions';
+  | 'submissions'
+  | 'relations';
 
 export interface CardDef {
   id: CardId;
@@ -52,6 +54,7 @@ export const CARDS: CardDef[] = [
   { id: 'notifications', icon: Bell, tone: 'info', to: '/notifications' },
   { id: 'users', icon: Users, tone: 'brand', to: '/admin/users', roles: ['admin'] },
   { id: 'submissions', icon: Inbox, tone: 'warn', to: '/admin/submissions', roles: ['admin'] },
+  { id: 'relations', icon: Link2, tone: 'info', to: '/admin/relations', roles: ['admin'] },
   { id: 'dashboard', icon: LayoutDashboard, tone: 'info', to: '/admin/dashboard', roles: ['admin'] },
   { id: 'widgets', icon: SlidersHorizontal, tone: 'warn', to: '/admin/widgets', roles: ['admin'] },
 ];

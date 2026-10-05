@@ -1424,6 +1424,38 @@ For each page, list from the legacy code — not from memory:
     widened to 25 km, valuers falling back to the governorate, the events landing in the table for two visitors, no
     sideways scroll. **Not seen in a browser:** the same component on the map's details card (needs the map and
     GeoServer, not available here) — same component, the click point as origin; check it by hand on a land on the map.
+- ✅ **Property relations: "who worked on this land"** (owner, 2026-10-05; server: see Server changes → "Who worked on a property").
+  A relation both sides agree to, shown as their statement — not a verification, not a guarantee, and no right to rate.
+  - **The card** (`features/property-relations/PropertyRelations.tsx`, on the map's details card and the /search preview, above
+    "services for this land"): «من عمل على هذه الأرض» — 📐 مسح · name, 📊 تخمين · name, with the line «بموافقة صاحب العقار
+    والمزوّد معاً — إفادة منهما وليست ضماناً من المنصة». Only agreed relations are public (a pending one is not shown to
+    visitors). A signed-in provider with a matching listing sees «أنا مسحت هذه الأرض» / «أنا خمّنت هذه الأرض» (one per listing, named
+    when there are several); after it, «طلبك (مسح — الاسم) بانتظار موافقة الطرف الآخر» and no second button. Nothing shows when
+    there is nothing to say; flats show nothing (V1: land only).
+  - **"My listings"** (`RelationsManager`, in a listing's edit sheet): a land owner sees who was named / asked, each with its
+    state (waiting for the provider / the owner / the admin, agreed), **accept / decline** when it waits for them, **withdraw**
+    their own request, **end the link** (asks first); and «ذكر مسّاح أو مخمّن» — pick the kind, search a provider by name, one
+    tap «اطلب ربطه». A provider sees the properties that named them, with the same actions; naming a land is done from its card.
+    Ended links are not listed. Notifications already point here (`/my-listings`).
+  - **Admin** (`/admin/relations`, a home card for admins like "add requests"): tabs Pending / Agreed / Ended with counts; a
+    provider's claim on a plot nobody owns waits here («بانتظار موافقة المشرف») and the admin accepts or declines; any agreed
+    link can be ended. The page says a provider's consent is never given for them. The server enforces all of it; the web only
+    hides what the server would refuse (`model.ts` mirrors `lib/property-relations.js`).
+  - **Decisions taken** (the owner agreed to the defaults, 2026-10-05): an admin answers for plots with no registered owner;
+    no lawyer relation; V1 types `surveyed_by` and `valued_by`.
+  - **Not built:** a link shown on the provider's own card ("surveyed N lands") and a relation count for ranking — wait for
+    real use; the broker profile and saved searches (not touched until this works in practice); a live test against the dev
+    database (the seeded accounts own no land) — the server was verified by script instead.
+  - **Verified:** unit (`model.test.ts`: who may claim what, not twice, a revoked one may be asked again, status words),
+    components (`propertyRelations.test.tsx`: the card with the right request, a visitor sees no claim and asks nothing about
+    their own links, nothing for a flat / when empty, the claim body and the waiting state, several listings named; the manager's
+    accept / decline / withdraw / end-with-confirm / add by name (search, one tap, valuers fetch their own type) for both
+    perspectives; the admin page's tabs, accept, end), server against a real Postgres (34 checks, Server changes), browser at
+    1440 and 390 with the REAL server for everything but the featured land list (no PostGIS here): a visitor sees the agreed
+    surveyor and not the pending valuer; the surveyor's claim on an unowned land turns into «بانتظار موافقة الطرف الآخر»; the
+    owner accepts the valuer from "My listings" and sees the list of surveyors; the admin approves the claim and the land's
+    public list then names the surveyor. **Not seen in a browser:** the card on the map's details card (needs the map and
+    GeoServer) — same component.
 - ✅ **Directions** («اتجاهات», signed-in users only — owner) on the map card, the featured cards and the search
   results, except road barriers (`popup/DirectionsButton`): opens Google Maps directions to the point
   (`share.ts → directionsLink`; on a phone the Maps app, turn by turn, from where the person is). In-app routing on the
@@ -1858,7 +1890,7 @@ and give the Node process write access to it on IIS**), table `listing_photos` k
     `{ id, status, waiting_for }`; `POST /api/property-relations/:id/respond` `{ accept }`; `POST …/:id/revoke`; public
     `GET /api/property-relations?property_layer&property_id` → the **accepted** ones only, with the provider's name (types
     the admin hid and withdrawn listings left out); `GET /api/my-property-relations` → every relation the account is a side of
-    (its properties, its provider listings, what it asked; an admin also every pending one), each with names, `waiting_for`,
+    (its properties, its provider listings, what it asked; an admin gets all of them, newest 200), each with names, `waiting_for`,
     `can_answer`, `can_revoke`. Writes are rate-limited (60 / hour).
   - **Notifications** (existing `notifyUser`): the side a relation waits for — the provider's owners, the property's owners,
     or the admins when nobody owns the property (link `/admin/relations`); the asker on accept / decline; everyone involved on

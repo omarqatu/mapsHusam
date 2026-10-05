@@ -179,7 +179,8 @@
     "adminSubmissions": "Add requests",
     "adminContact": "Contact details",
     "myListings": "My listings",
-    "profile": "My profile"
+    "profile": "My profile",
+    "adminRelations": "Property links"
   },
   "roles": {
     "admin": "Admin",
@@ -1765,6 +1766,10 @@
       "myListings": {
         "title": "My listings",
         "desc": "Edit your services and properties, add pictures, change their state."
+      },
+      "relations": {
+        "title": "Property links",
+        "desc": "Who surveyed or valued which property: answer for plots nobody owns, end any link."
       }
     },
     "figures": {
@@ -2205,5 +2210,63 @@
     "within": "Within {{km}} km of the property",
     "widened": "Nobody within {{first}} km — we widened the search to {{km}} km.",
     "viaGovernorate": "Nobody within {{km}} km — these are from the property's governorate."
+  },
+  "propertyRelations": {
+    "title": "Who worked on this land",
+    "kind": {
+      "surveyed_by": "Survey",
+      "valued_by": "Valuation"
+    },
+    "note": "Agreed by the property's owner and the provider together — their statement, not a guarantee from the platform.",
+    "claim": {
+      "surveyed_by": "I surveyed this land",
+      "valued_by": "I valued this land"
+    },
+    "sent": "Request sent. It shows on the card once the other side agrees.",
+    "waiting": "Your request ({{kind}} — {{name}}) is waiting for the other side.",
+    "failed": "Could not send the request.",
+    "manager": {
+      "title": {
+        "property": "Who worked on this land",
+        "provider": "Properties that named you"
+      },
+      "hintProperty": "Name the surveyor or valuer who worked on your land. It shows on the card once they agree.",
+      "hintProvider": "Properties whose owners asked to name you. They show on the property's card once both sides agree. To say you surveyed a land, open it on the map and tap \"I surveyed this land\".",
+      "empty": "No links yet.",
+      "status": {
+        "accepted": "Agreed",
+        "waitingProvider": "Waiting for the provider",
+        "waitingOwner": "Waiting for the owner",
+        "waitingAdmin": "Waiting for the admin",
+        "ended": "Ended"
+      },
+      "accept": "Accept",
+      "decline": "Decline",
+      "withdraw": "Withdraw the request",
+      "end": "End the link",
+      "endTitle": "End the link?",
+      "endMessage": "\"{{name}}\" will be removed from the property's card. It can be asked again later.",
+      "addButton": "Name a surveyor or valuer",
+      "add": {
+        "surveyed_by": "Surveyor",
+        "valued_by": "Valuer"
+      },
+      "kind": "Kind of work",
+      "search": "Search by name",
+      "noMatch": "No results.",
+      "ask": "Ask to link",
+      "sent": "Request sent to \"{{name}}\".",
+      "failed": "Could not do that."
+    },
+    "admin": {
+      "title": "Property links",
+      "subtitle": "Who surveyed or valued which property. You answer here for plots with no registered owner, and may end any link. A provider's consent is never given for them.",
+      "status": {
+        "pending": "Pending",
+        "accepted": "Agreed",
+        "revoked": "Ended"
+      },
+      "empty": "Nothing here."
+    }
   }
 }
