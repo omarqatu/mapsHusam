@@ -6,7 +6,8 @@
   "scripts": {
     "start": "node server.js",
     "test": "node --test lib/*.test.js",
-    "check:server": "node --experimental-vm-modules --no-warnings=ExperimentalWarning tools/check-server.mjs"
+    "check:server": "node --experimental-vm-modules --no-warnings=ExperimentalWarning tools/check-server.mjs",
+    "prepare": "git config core.hooksPath .githooks || exit 0"
   },
   "dependencies": {
     "bcrypt": "^6.0.0",

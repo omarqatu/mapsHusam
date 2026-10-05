@@ -1274,7 +1274,7 @@ here so it can be corrected.
 | Check | Where | When |
 | --- | --- | --- |
 | root `npm ci` + `node --check server.js`; `npm run typecheck`, `npm run lint` (incl. `jsx-a11y` + the design-token rule), `npm test`, `npm run build` in `web/` | `.github/workflows/ci.yml`, `ubuntu-latest`, Node 22, npm cache | every pull request and every push to a branch other than `main` |
-| the same server + web checks, then staged deployment, restart smoke test, and automatic rollback on failure | `.github/workflows/deploy.yml`, self-hosted Windows runner — **all installs and builds finish before production is touched** | every push to `main`; deployments are serialized and the previous release is retained as `mapsHusam.__previous` |
+| install (only when a lock file changed), server module check, `vite build`, then staged deployment, restart smoke test, and automatic rollback on failure; type checks, lint and tests run before the push (`.githooks/pre-push`) and on the PR | `.github/workflows/deploy.yml`, self-hosted Windows runner — **all installs and builds finish before production is touched** | every push to `main` except docs-only (`docs/**`, `**/*.md`); deployments are serialized and the previous release is retained as `mapsHusam.__previous` |
 | `npm audit --omit=dev --audit-level=high` in `web/` and in the repo root | `ci.yml`, job `audit`, `continue-on-error` (report only) | same as CI |
 | `npm run e2e` (Playwright, `web/e2e/`, desktop 1440 + phone 390, Arabic) | **your machine only** — it needs the dev Postgres, the seeded accounts, the local GeoServer and the backend on :3000 | before merging anything that touches a page; not in CI (see `dev/README.md` → Browser tests) |
 
@@ -1931,6 +1931,24 @@ and give the Node process write access to it on IIS**), table `listing_photos` k
     notifications reached the right accounts. `lib/property-relations.test.js` for the pure rules.
     Commit: `feat(server): property relations — a provider and a property agree on who surveyed or valued it`.
 
+- **Faster deploy, same safety (2026-10-05).** The last run took ~17 min, the "Stage, deploy" step alone 454 s, mostly with
+  the service stopped. What changed (`.github/workflows/deploy.yml`, `tools/deploy-windows.ps1`, `lib/production-backup.js`,
+  `tools/npm-ci-if-changed.mjs`, `.githooks/pre-push`):
+  - **Checks before the push:** typecheck, lint and unit tests (server + web) run in `.githooks/pre-push`, only when pushing
+    to `main`; it refuses a dirty tree or a pushed commit other than `HEAD`. Root `prepare` sets `core.hooksPath`. PRs keep
+    the same checks in `ci.yml`. The runner installs, checks the server modules and runs `vite build` (no second `tsc -b`).
+  - **`npm ci` only when a lock changed:** checkout `clean: false` + `git clean -ffdx -e node_modules`; the SHA-256 of each
+    `package-lock.json` (+ Node version, platform) is kept in `node_modules/.package-lock.sha256`.
+  - **Seconds of downtime:** staging (now a fixed `mapsHusam.__next`, so `/MIR` copies only what changed), the rollback copy
+    (incremental, taken while the site runs — its code does not change while it runs) and a full copy of the snapshot's
+    pictures all happen **before** `Stop-Service`. Stopped: the pictures again (only the difference), the two dumps, the
+    release copy (changed files only), start + smoke test. Every snapshot still holds a complete, consistent set of dumps +
+    pictures; the backup refuses a picture copy with fewer files than the source. `web\node_modules` is no longer shipped
+    (the server never reads it) and is removed from the site once, before the stop.
+  - **Timings in the log:** `[time] <phase>` for every phase, a summary table, and "Service was down for N s".
+  - **Docs-only pushes do not deploy** (`paths-ignore: docs/**, **/*.md`).
+  - **Verify:** `node --test lib` (the prepared-snapshot path, incomplete copy refused); the hook passes other branches,
+    refuses a dirty tree; the script parses in PowerShell 7; the first two runs on the server (the first installs, no stamp yet).
 ## Backend asks (needs the user's decision — behaviour-changing or larger)
 
 - **Public map:** `/api/log-contact-click` is `requireAuth`, so a visitor's call / WhatsApp tap is not counted in the provider's

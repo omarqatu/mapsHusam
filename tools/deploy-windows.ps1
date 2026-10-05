@@ -25,8 +25,8 @@ if (-not $workspace) {
 
 $parent = Split-Path -Parent $DeployPath
 $leaf = Split-Path -Leaf $DeployPath
-$runId = if ($env:GITHUB_RUN_ID) { $env:GITHUB_RUN_ID } else { [DateTimeOffset]::UtcNow.ToUnixTimeSeconds() }
-$staging = Join-Path $parent "$leaf.__next_$runId"
+# Both kept between runs: robocopy /MIR then copies only what changed (a fresh folder would make every file look new).
+$staging = Join-Path $parent "$leaf.__next"
 $backup = Join-Path $parent "$leaf.__previous"
 $serviceStopped = $false
 
@@ -54,14 +54,35 @@ if (Test-Path $parametersPath) {
 $serviceEnvironmentJson = ConvertTo-Json -InputObject $serviceEnvironment -Compress
 
 function Invoke-ProductionBackup {
-    param([string]$Mode)
+    param([string]$Mode, [string]$Folder = '')
     $previousEncoding = $OutputEncoding
     try {
         $OutputEncoding = New-Object System.Text.UTF8Encoding($false)
-        $serviceEnvironmentJson | & node (Join-Path $workspace 'tools\backup-production.mjs') $Mode $DeployPath $BackupRoot $env:GITHUB_SHA
+        $output = $serviceEnvironmentJson | & node (Join-Path $workspace 'tools\backup-production.mjs') $Mode $DeployPath $BackupRoot $env:GITHUB_SHA $Folder
     }
     finally { $OutputEncoding = $previousEncoding }
     if ($LASTEXITCODE -ne 0) { throw "Production backup $Mode failed; deployment is blocked." }
+    return $output
+}
+
+# Where the time goes: each phase is timed and printed, and the run ends with a summary. A phase runs in this
+# function's scope: what it must hand on is set as $script:… .
+$timings = New-Object System.Collections.Generic.List[string]
+function Measure-Phase {
+    param([Parameter(Mandatory = $true)][string]$Name, [Parameter(Mandatory = $true)][scriptblock]$Block)
+    $watch = [Diagnostics.Stopwatch]::StartNew()
+    try { . $Block }
+    finally {
+        $line = '{0,-34} {1,7:N1}s' -f $Name, $watch.Elapsed.TotalSeconds
+        $timings.Add($line)
+        Write-Host "[time] $line"
+    }
+}
+$downtime = New-Object Diagnostics.Stopwatch
+function Write-Timings {
+    Write-Host '---- deploy timings ----'
+    $timings | ForEach-Object { Write-Host $_ }
+    Write-Host ('Service was down for {0:N1}s' -f $downtime.Elapsed.TotalSeconds)
 }
 
 function Invoke-Robocopy {
@@ -110,6 +131,18 @@ $copyExclusions = @(
 )
 # A rollback restores code only: retain the current credentials and user files.
 $persistentExclusions = @('/XD', 'DB_Backups', 'GeoServerData', 'uploads', 'pic', '/XF', '.env', '.env.*', 'env')
+# The web app's own dependencies only build web\dist; the server never loads them. Kept out of the release (tens of
+# thousands of files every copy would otherwise walk).
+$stagingExclusions = $copyExclusions + @('/XD', (Join-Path $workspace 'web\node_modules'))
+
+function Copy-SnapshotPictures {
+    param([Parameter(Mandatory = $true)]$Snapshot)
+    foreach ($pair in @(@($Snapshot.uploads, 'uploads'), @($Snapshot.pic, 'pic'))) {
+        if (Test-Path -LiteralPath $pair[0]) {
+            Invoke-Robocopy -Source $pair[0] -Destination (Join-Path $Snapshot.folder $pair[1])
+        }
+    }
+}
 $deploymentStarted = $false
 
 try {
@@ -124,12 +157,11 @@ try {
         return
     }
 
-    if (Test-Path -LiteralPath $staging) {
-        Remove-Item -LiteralPath $staging -Recurse -Force
+    # Everything that needs no stopped site happens first: staging, the rollback copy, the first picture copy.
+    Measure-Phase 'stage release' {
+        Write-Host "Preparing staged release at $staging"
+        Invoke-Robocopy -Source $workspace -Destination $staging -ExtraArgs $stagingExclusions
     }
-
-    Write-Host "Preparing staged release at $staging"
-    Invoke-Robocopy -Source $workspace -Destination $staging -ExtraArgs $copyExclusions
 
     if (-not (Test-Path -LiteralPath (Join-Path $staging 'server.js'))) {
         throw 'Staged release is missing server.js.'
@@ -147,28 +179,47 @@ try {
         throw 'Staged release is missing server node_modules.'
     }
 
+    # The running release does not change while it runs, so its rollback copy is taken before the stop.
+    if (Test-Path -LiteralPath $DeployPath) {
+        Measure-Phase 'rollback copy' {
+            Write-Host "Saving rollback copy at $backup"
+            Invoke-Robocopy -Source $DeployPath -Destination $backup -ExtraArgs $persistentExclusions
+        }
+    }
+
+    # Older releases carried web\node_modules; the running server never reads it, so it goes before the stop.
+    $deployedWebModules = Join-Path $DeployPath 'web\node_modules'
+    if (Test-Path -LiteralPath $deployedWebModules) {
+        Measure-Phase 'remove old web\node_modules' { Remove-Item -LiteralPath $deployedWebModules -Recurse -Force }
+    }
+
+    # The snapshot's pictures: a full copy now, while the site runs; after the stop only what changed meanwhile.
+    Measure-Phase 'snapshot pictures (site up)' {
+        $script:snapshot = (Invoke-ProductionBackup -Mode 'prepare' | Select-Object -Last 1) | ConvertFrom-Json
+        Copy-SnapshotPictures $snapshot
+    }
+
     Stop-Service -Name $ServiceName -Force
     $serviceStopped = $true
+    $downtime.Start()
     # Stop application writes before taking a consistent pair of database + picture snapshots.
-    Invoke-ProductionBackup -Mode 'backup'
-
-    if (Test-Path -LiteralPath $backup) {
-        Remove-Item -LiteralPath $backup -Recurse -Force
-    }
-    if (Test-Path -LiteralPath $DeployPath) {
-        Write-Host "Saving rollback copy at $backup"
-        Invoke-Robocopy -Source $DeployPath -Destination $backup -ExtraArgs $persistentExclusions
+    Measure-Phase 'snapshot pictures (changes only)' { Copy-SnapshotPictures $snapshot }
+    Measure-Phase 'snapshot databases' {
+        Invoke-ProductionBackup -Mode 'backup' -Folder $snapshot.folder | ForEach-Object { Write-Host $_ }
     }
 
     $deploymentStarted = $true
 
-    Write-Host "Deploying the staged release to $DeployPath"
-    Invoke-Robocopy -Source $staging -Destination $DeployPath -ExtraArgs $copyExclusions
-    Start-And-SmokeTest
+    Measure-Phase 'copy release to site' {
+        Write-Host "Deploying the staged release to $DeployPath"
+        Invoke-Robocopy -Source $staging -Destination $DeployPath -ExtraArgs $copyExclusions
+    }
+    Measure-Phase 'start + smoke test' { Start-And-SmokeTest }
     $serviceStopped = $false
+    $downtime.Stop()
 
-    Remove-Item -LiteralPath $staging -Recurse -Force -ErrorAction SilentlyContinue
     Write-Host "Deployment complete. Rollback copy retained at $backup"
+    Write-Timings
 }
 catch {
     $failure = $_
@@ -184,11 +235,13 @@ catch {
     }
 
     if ($serviceStopped) { Start-Service -Name $ServiceName }
+    $downtime.Stop()
+    Write-Timings
 
     throw $failure
 }
 finally {
-    if (Test-Path -LiteralPath $staging) {
-        Remove-Item -LiteralPath $staging -Recurse -Force -ErrorAction SilentlyContinue
-    }
+    # Releases staged by older versions of this script (one folder per run) are not reused.
+    Get-ChildItem -LiteralPath $parent -Directory -Filter "$leaf.__next_*" -ErrorAction SilentlyContinue |
+        Remove-Item -Recurse -Force -ErrorAction SilentlyContinue
 }

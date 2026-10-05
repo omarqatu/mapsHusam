@@ -1,0 +1,29 @@
+#!/bin/sh
+# Pushing to main deploys to production, and the deploy no longer type-checks, lints or tests (only builds and smoke
+# tests). So those run here first, on exactly what is being pushed. Other branches are checked by CI.
+# Enabled by `npm install` at the root (prepare → git config core.hooksPath .githooks).
+
+to_main=
+while read -r local_ref local_sha remote_ref remote_sha; do
+    [ "$remote_ref" = "refs/heads/main" ] && [ "$local_sha" != "0000000000000000000000000000000000000000" ] && to_main=$local_sha
+done
+[ -z "$to_main" ] && exit 0
+
+root=$(git rev-parse --show-toplevel) || exit 1
+cd "$root" || exit 1
+
+if [ -n "$(git status --porcelain)" ]; then
+    echo "pre-push: uncommitted or untracked changes — the checks would not test what is pushed. Commit or stash them." >&2
+    exit 1
+fi
+if [ "$(git rev-parse HEAD)" != "$to_main" ]; then
+    echo "pre-push: pushing $to_main to main, but $(git rev-parse --short HEAD) is checked out. Check it out first." >&2
+    exit 1
+fi
+
+echo "pre-push: checking before production deploy (server, then web)…"
+npm run --silent check:server && npm test --silent &&
+    (cd web && npm run --silent typecheck && npm run --silent lint && npm test --silent) || {
+    echo "pre-push: checks failed — nothing was pushed." >&2
+    exit 1
+}
