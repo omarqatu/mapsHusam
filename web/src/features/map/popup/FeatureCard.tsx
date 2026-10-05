@@ -12,7 +12,6 @@ function Field(props: Parameters<typeof DataField>[0]) {
     <DataField {...props} />
   );
 }
-import MediaGallery from '@/components/ui/MediaGallery';
 import StatusDot from '@/components/ui/StatusDot';
 import { toast } from '@/components/ui/toastStore';
 import clsx from 'clsx';
@@ -20,26 +19,19 @@ import MapSheet from '../panels/MapSheet';
 import { FuelBadges } from '../extras/StatusBadges';
 import {
   barrierDirections,
-  collectMedia,
   hoursLabel,
   AVAILABILITY_TONE,
   availability,
   availabilityLabelKey,
-  labelMedia,
   locationShareLink,
   priceLabel,
   text,
   type SelectedFeature,
 } from './featureModel';
-import {
-  hasPrice,
-  isFuelStation,
-  isRoadBarrier,
-  priceCurrencyDefault,
-  listingLayerOf,
-  targetIcon,
-  targetLabelKey,
-} from '../targets';
+import PropertyRelations from '@/features/property-relations/PropertyRelations';
+import PropertyServices from '@/features/property-services/PropertyServices';
+import MediaShowcase from './MediaShowcase';
+import { hasPrice, isFuelStation, isRoadBarrier, priceCurrencyDefault, listingLayerOf, targetLabelKey } from '../targets';
 import PublisherRating from './PublisherRating';
 import { copyText, isMobileBrowser, nativeShare } from '@/lib/clipboard';
 import ContactButtons from './ContactButtons';
@@ -47,6 +39,7 @@ import { formatArea, formatLength } from '../tools/measure';
 import DirectionsButton from './DirectionsButton';
 import RatingsBlock from './RatingsBlock';
 import { useContactActions } from './useContactActions';
+import TargetIcon from '../TargetIcon';
 
 interface Props {
   feature: SelectedFeature;
@@ -110,7 +103,6 @@ export default function FeatureCard({ feature, onClose, className }: Props) {
   const name = text(props.name);
   const providerName = name || (kind.kind === 'realEstate' ? t('popup.advertiser') : t('popup.provider'));
   const place = text(props.location_name) || text(props.location);
-  const media = labelMedia(collectMedia(props), t);
   const hoursText = hoursLabel(props.work_hours, t, i18n.language);
   const state = availability(props) ?? 'open';
 
@@ -149,7 +141,7 @@ export default function FeatureCard({ feature, onClose, className }: Props) {
             <MapPin className="h-6 w-6 text-danger" aria-hidden />
           ) : (
             <span aria-hidden className="text-xl">
-              {targetIcon(kind)}
+              <TargetIcon target={kind} />
             </span>
           )}
           <div className="min-w-0">
@@ -257,7 +249,13 @@ export default function FeatureCard({ feature, onClose, className }: Props) {
           </div>
         )}
 
-        {media.length > 0 && <MediaGallery items={media} />}
+        <MediaShowcase props={props} />
+
+        {kind.kind === 'realEstate' && <PropertyRelations target={kind} propertyId={id} />}
+
+        {kind.kind === 'realEstate' && (
+          <PropertyServices target={kind} propertyId={id} origin={feature.coordinate} props={props} />
+        )}
 
         <div className="flex flex-wrap items-center justify-between gap-2 border-t border-line pt-3">
           <div className="flex flex-wrap gap-2">

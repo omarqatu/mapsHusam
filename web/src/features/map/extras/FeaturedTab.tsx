@@ -1,23 +1,13 @@
 import { useMemo, type ReactNode } from 'react';
-import { Image, LocateFixed, Star, ThumbsUp, Trophy, Video, ArrowLeftRight } from 'lucide-react';
+import { Image, LocateFixed, Star, ThumbsUp, Trophy, Video } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { type Props } from '../popup/featureModel';
 import AlertMessage from '@/components/ui/AlertMessage';
 import SectionCard from '@/components/ui/SectionCard';
 import { CenteredSpinner } from '@/components/ui/Spinner';
 import FeaturedCard from './FeaturedCard';
-import {
-  FEATURED_RATING,
-  RECOMMENDED_RATING,
-  hasBeforeAfter,
-  hasPhotos,
-  hasVideos,
-  pickForSection,
-  type FeaturedEntry,
-  type FeaturedMode,
-} from './featured';
+import { pickForSection, type FeaturedEntry, type FeaturedMode } from './featured';
 import NearMeSection from './NearMeSection';
-import { useRatedFeatures, useTopRatedFeatures } from './queries';
+import { useFeaturedRows } from './useFeaturedRows';
 
 const icon = 'h-4 w-4';
 
@@ -29,32 +19,23 @@ interface SectionProps {
   /** null while loading. */
   entries: FeaturedEntry[] | null;
   failed: boolean;
-  /** Cards side by side on wide screens (the search page) instead of one column (the map panel). */
-  grid?: boolean;
 }
 
-function Section({ title, icon: sectionIcon, badge, mode, entries, failed, grid }: SectionProps) {
+/** One section; nothing at all once it is known to be empty (legacy hid empty sections). */
+function Section({ title, icon: sectionIcon, badge, mode, entries, failed }: SectionProps) {
   const { t } = useTranslation();
-  const shown = useMemo(() => (entries ? pickForSection(entries) : []), [entries]);
+  const shown = useMemo(() => (entries ? pickForSection(entries) : null), [entries]);
+  if (!failed && shown?.length === 0) return null;
   return (
     <SectionCard title={title} icon={sectionIcon}>
       {failed ? (
         <AlertMessage type="error" message={t('extras.featured.failed')} />
-      ) : entries === null ? (
+      ) : shown === null ? (
         <CenteredSpinner minHeight="5rem" size="sm" />
-      ) : shown.length === 0 ? (
-        <p className="text-sm text-muted">{t('extras.featured.empty')}</p>
       ) : (
-        <div
-          className={grid ? 'relative flex snap-x gap-3 overflow-x-auto pb-2' : 'space-y-2'}
-          tabIndex={grid ? 0 : undefined}
-          role={grid ? 'group' : undefined}
-          aria-label={grid ? title : undefined}
-        >
+        <div className="space-y-2">
           {shown.map((entry) => (
-            <div key={entry.r.key} className={grid ? 'w-[85%] shrink-0 snap-start sm:w-80' : undefined}>
-              <FeaturedCard entry={entry} mode={mode} badge={badge} />
-            </div>
+            <FeaturedCard key={entry.r.key} entry={entry} mode={mode} badge={badge} />
           ))}
         </div>
       )}
@@ -62,83 +43,24 @@ function Section({ title, icon: sectionIcon, badge, mode, entries, failed, grid 
   );
 }
 
-/** Featured, top rated, recommended, photos, videos and before/after sections (legacy featured-services portal). */
-export function FeaturedSections({ grid }: { grid?: boolean }) {
+/** Featured, top rated, recommended, photos and videos sections (legacy featured-services portal). */
+export function FeaturedSections() {
   const { t } = useTranslation();
-  const featured = useRatedFeatures(FEATURED_RATING);
-  const recommended = useRatedFeatures(RECOMMENDED_RATING);
-  const topRated = useTopRatedFeatures();
+  const rows = useFeaturedRows();
+  if (rows.allFailed) return <AlertMessage type="error" message={t('extras.featured.failed')} />;
 
-  const featuredEntries = useMemo(() => featured.data?.map((r) => ({ r })) ?? null, [featured.data]);
-  const recommendedEntries = useMemo(() => recommended.data?.map((r) => ({ r })) ?? null, [recommended.data]);
-  // The media sections draw from both rating tiers (legacy).
-  const pool = useMemo(
-    () =>
-      featuredEntries || recommendedEntries
-        ? [...(featuredEntries ?? []), ...(recommendedEntries ?? [])]
-        : null,
-    [featuredEntries, recommendedEntries],
-  );
-  const mediaEntries = (has: (p: Props) => boolean) =>
-    featured.isPending && recommended.isPending ? null : (pool ?? []).filter((e) => has(e.r.props));
-  const poolFailed = featured.isError && recommended.isError;
-
+  const sections: (Omit<SectionProps, 'entries' | 'failed'> & { key: Exclude<keyof typeof rows, 'allFailed'> })[] = [
+    { key: 'featured', title: t('extras.featured.sections.featured'), icon: <Star className={icon} aria-hidden />, badge: t('extras.featured.badge.featured'), mode: 'all' },
+    { key: 'topRated', title: t('extras.featured.sections.topRated'), icon: <Trophy className={icon} aria-hidden />, badge: t('extras.featured.badge.topRated'), mode: 'all' },
+    { key: 'recommended', title: t('extras.featured.sections.recommended'), icon: <ThumbsUp className={icon} aria-hidden />, badge: t('extras.featured.badge.recommended'), mode: 'all' },
+    { key: 'photos', title: t('extras.featured.sections.photos'), icon: <Image className={icon} aria-hidden />, badge: t('extras.featured.badge.photos'), mode: 'photo' },
+    { key: 'videos', title: t('extras.featured.sections.videos'), icon: <Video className={icon} aria-hidden />, badge: t('extras.featured.badge.videos'), mode: 'video' },
+  ];
   return (
     <>
-      <Section
-        title={t('extras.featured.sections.featured')}
-        icon={<Star className={icon} aria-hidden />}
-        badge={t('extras.featured.badge.featured')}
-        mode="all"
-        entries={featuredEntries}
-        failed={featured.isError}
-        grid={grid}
-      />
-      <Section
-        title={t('extras.featured.sections.topRated')}
-        icon={<Trophy className={icon} aria-hidden />}
-        badge={t('extras.featured.badge.topRated')}
-        mode="all"
-        entries={topRated.data ?? null}
-        failed={topRated.isError}
-        grid={grid}
-      />
-      <Section
-        title={t('extras.featured.sections.recommended')}
-        icon={<ThumbsUp className={icon} aria-hidden />}
-        badge={t('extras.featured.badge.recommended')}
-        mode="all"
-        entries={recommendedEntries}
-        failed={recommended.isError}
-        grid={grid}
-      />
-      <Section
-        title={t('extras.featured.sections.photos')}
-        icon={<Image className={icon} aria-hidden />}
-        badge={t('extras.featured.badge.photos')}
-        mode="photo"
-        entries={mediaEntries(hasPhotos)}
-        failed={poolFailed}
-        grid={grid}
-      />
-      <Section
-        title={t('extras.featured.sections.videos')}
-        icon={<Video className={icon} aria-hidden />}
-        badge={t('extras.featured.badge.videos')}
-        mode="video"
-        entries={mediaEntries(hasVideos)}
-        failed={poolFailed}
-        grid={grid}
-      />
-      <Section
-        title={t('extras.featured.sections.beforeAfter')}
-        icon={<ArrowLeftRight className={icon} aria-hidden />}
-        badge={t('extras.featured.badge.beforeAfter')}
-        mode="beforeAfter"
-        entries={mediaEntries(hasBeforeAfter)}
-        failed={poolFailed}
-        grid={grid}
-      />
+      {sections.map(({ key, ...section }) => (
+        <Section key={key} {...section} {...rows[key]} />
+      ))}
     </>
   );
 }

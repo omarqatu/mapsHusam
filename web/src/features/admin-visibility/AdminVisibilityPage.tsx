@@ -13,7 +13,7 @@ import { groupedTargets } from '@/features/map/extras/featured';
 import { matchesQuery } from '@/features/map/extras/status';
 import { groupLabelKey } from '@/features/map/registry';
 import { GROUP_ICON } from '@/features/map/registry/groupIcons';
-import { targetIcon, targetKey, targetLabelKey } from '@/features/map/targets';
+import { targetKey, targetLabelKey } from '@/features/map/targets';
 import {
   ALL_VISIBLE,
   SECTION_IDS,
@@ -27,6 +27,7 @@ import {
 } from '@/features/visibility/model';
 import { useSaveVisibility, useVisibilityQuery } from '@/features/visibility/store';
 import { errorText } from '@/lib/errorText';
+import TargetIcon from '@/features/map/TargetIcon';
 
 const GROUPS = groupedTargets();
 const TOTAL = GROUPS.reduce((n, g) => n + g.targets.length, 0);
@@ -206,7 +207,7 @@ export default function AdminVisibilityPage() {
                             label={
                               <span className="flex items-center gap-2">
                                 <span aria-hidden className="text-lg">
-                                  {targetIcon(x)}
+                                  <TargetIcon target={x} />
                                 </span>
                                 {t(targetLabelKey(x))}
                               </span>

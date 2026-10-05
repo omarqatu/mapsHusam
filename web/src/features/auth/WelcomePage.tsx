@@ -1,6 +1,25 @@
 import { Link, useLocation } from 'react-router';
 import { useTranslation } from 'react-i18next';
-import { LogIn, UserPlus } from 'lucide-react';
+import {
+  Ambulance,
+  Building2,
+  Camera,
+  CarTaxiFront,
+  ClipboardList,
+  Compass,
+  Gift,
+  Hammer,
+  House,
+  LogIn,
+  Map as MapIcon,
+  MapPin,
+  MessageCircle,
+  Stethoscope,
+  UserPlus,
+  Wrench,
+  Zap,
+  type LucideIcon,
+} from 'lucide-react';
 import { useCategoryCounts, usePlatformStats } from '@/api/platform';
 import { formatNumber } from '@/lib/format';
 import LegalLinks from '@/features/legal/LegalLinks';
@@ -9,27 +28,28 @@ import PromoSlideshow from './welcome/PromoSlideshow';
 /** Real numbers for the two cards that used to promise them in fixed words (keyed by the feature). */
 type Counts = Partial<Record<'realEstate' | 'providers', number>>;
 
-const FEATURES = [
-  { key: 'realEstate', icon: '🏘️' },
-  { key: 'providers', icon: '🔧' },
-  { key: 'location', icon: '📍' },
-  { key: 'contact', icon: '💬' },
-  { key: 'search', icon: '📋' },
-  { key: 'free', icon: '🆓' },
-] as const;
+const FEATURES: { key: 'realEstate' | 'providers' | 'location' | 'contact' | 'search' | 'free'; Icon: LucideIcon }[] = [
+  { key: 'realEstate', Icon: Building2 },
+  { key: 'providers', Icon: Wrench },
+  { key: 'location', Icon: MapPin },
+  { key: 'contact', Icon: MessageCircle },
+  { key: 'search', Icon: ClipboardList },
+  { key: 'free', Icon: Gift },
+];
 
-const FLOATING = [
-  { icon: '🧭', left: '5%', delay: '0s' },
-  { icon: '🏠', left: '15%', delay: '3s' },
-  { icon: '🔧', left: '30%', delay: '6s' },
-  { icon: '📍', left: '50%', delay: '2s' },
-  { icon: '📸', left: '65%', delay: '5s' },
-  { icon: '🚑', left: '78%', delay: '1s' },
-  { icon: '⚡', left: '90%', delay: '4s' },
-  { icon: '🩺', left: '10%', delay: '7s' },
-  { icon: '🚕', left: '40%', delay: '8s' },
-  { icon: '🛠️', left: '75%', delay: '9s' },
-] as const;
+/** Icons drifting up the splash (decoration only), each from the icon library. */
+const FLOATING: { Icon: LucideIcon; left: string; delay: string }[] = [
+  { Icon: Compass, left: '5%', delay: '0s' },
+  { Icon: House, left: '15%', delay: '3s' },
+  { Icon: Wrench, left: '30%', delay: '6s' },
+  { Icon: MapPin, left: '50%', delay: '2s' },
+  { Icon: Camera, left: '65%', delay: '5s' },
+  { Icon: Ambulance, left: '78%', delay: '1s' },
+  { Icon: Zap, left: '90%', delay: '4s' },
+  { Icon: Stethoscope, left: '10%', delay: '7s' },
+  { Icon: CarTaxiFront, left: '40%', delay: '8s' },
+  { Icon: Hammer, left: '75%', delay: '9s' },
+];
 
 /** `/welcome` — the original full-screen promo splash from the legacy site. */
 export default function WelcomePage() {
@@ -56,20 +76,20 @@ export default function WelcomePage() {
       <PromoSlideshow />
       <div className="absolute inset-0 z-[1] bg-[linear-gradient(180deg,rgba(0,0,0,0.85)_0%,rgba(0,0,0,0.6)_50%,rgba(0,0,0,0.85)_100%)]" />
 
-      {FLOATING.map((item) => (
+      {FLOATING.map(({ Icon, left, delay }) => (
         <span
-          key={`${item.left}-${item.icon}`}
-          className="welcome-float absolute z-[1] select-none text-4xl opacity-25 drop-shadow-[0_3px_10px_rgba(0,0,0,0.85)] sm:text-5xl"
-          style={{ left: item.left, animationDelay: item.delay }}
+          key={`${left}-${delay}`}
+          className="welcome-float absolute z-[1] select-none opacity-25 drop-shadow-[0_3px_10px_rgba(0,0,0,0.85)]"
+          style={{ left, animationDelay: delay }}
           aria-hidden
         >
-          {item.icon}
+          <Icon className="h-9 w-9 sm:h-12 sm:w-12" strokeWidth={1.5} />
         </span>
       ))}
 
       <section className="welcome-enter relative z-[2] mx-auto flex min-h-dvh w-[90%] max-w-[850px] flex-col items-center justify-center px-5 py-8 text-center">
-        <span className="welcome-pulse mb-4 block text-6xl drop-shadow-[0_0_40px_rgba(79,195,247,0.5)] max-sm:text-5xl" aria-hidden>
-          🗺️
+        <span className="welcome-pulse mb-4 block text-[#4fc3f7] drop-shadow-[0_0_40px_rgba(79,195,247,0.5)]" aria-hidden>
+          <MapIcon className="h-14 w-14 max-sm:h-12 max-sm:w-12" strokeWidth={1.5} />
         </span>
 
         <h1 className="m-0 text-[clamp(1.75rem,6vw,3.25rem)] font-black leading-[1.3] text-white drop-shadow-[0_4px_20px_rgba(0,0,0,0.5)]">
@@ -83,13 +103,13 @@ export default function WelcomePage() {
         </p>
 
         <ul className="my-6 grid w-full grid-cols-3 gap-4 max-md:grid-cols-2 max-sm:gap-2">
-          {FEATURES.map(({ key, icon }) => (
+          {FEATURES.map(({ key, Icon }) => (
             <li
               key={key}
               className="rounded-2xl border border-white/15 bg-white/[0.08] px-3 py-5 text-center shadow-none backdrop-blur-[10px] transition duration-300 hover:-translate-y-1 hover:bg-white/15 hover:shadow-[0_10px_30px_rgba(0,0,0,0.3)] max-sm:rounded-[10px] max-sm:px-1.5 max-sm:py-2.5"
             >
-              <span className="mb-2.5 block text-4xl max-sm:mb-1 max-sm:text-[22px]" aria-hidden>
-                {icon}
+              <span className="mb-2.5 flex justify-center text-[#4fc3f7] max-sm:mb-1" aria-hidden>
+                <Icon className="h-9 w-9 max-sm:h-6 max-sm:w-6" strokeWidth={1.6} />
               </span>
               <span className="block text-sm font-bold leading-snug text-white max-sm:text-[11px]">
                 {t(`auth.welcome.features.${key}.label`)}

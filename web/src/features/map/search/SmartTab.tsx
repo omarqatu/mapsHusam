@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { Plus, X } from 'lucide-react';
+import { List, Plus, X } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { searchApi, type SearchCondition, type SearchOperator } from '@/api/search';
 import Button from '@/components/ui/Button';
@@ -73,7 +73,7 @@ export default function SmartTab() {
     const v = value.trim();
     if (!field || !v) return [];
     const fixed = field.options?.find((o) => o.value === v);
-    const shown = fixed ? `${fixed.icon} ${t(fixed.labelKey)}` : v;
+    const shown = fixed ? t(fixed.labelKey) : v;
     const base: Chip = { field: field.id, operator, value: v, shown, fieldLabel: t(field.labelKey) };
     return withCurrency(field.id, base, currency).map((c) =>
       c.field === 'currency'
@@ -142,7 +142,7 @@ export default function SmartTab() {
                 placeholder={t('search.chooseValue')}
                 options={(field.options ?? []).map((o) => ({
                   value: o.value,
-                  label: `${o.icon} ${t(o.labelKey)}`,
+                  label: t(o.labelKey),
                 }))}
               />
             ) : field.type === 'number' ? (
@@ -170,8 +170,9 @@ export default function SmartTab() {
                     setValue('');
                   }}
                   title={t('search.backToList')}
+                  aria-label={t('search.backToList')}
                 >
-                  📋
+                  <List className="h-4 w-4" aria-hidden />
                 </Button>
               </div>
             ) : (

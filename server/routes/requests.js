@@ -135,7 +135,7 @@ app.post('/api/service-requests', requireAuth, async (req, res) => {
         await servicesPool.query(
             `INSERT INTO "public"."notifications" (user_id, title, message, type, is_read, created_at, link)
              VALUES ($1, $2, $3, 'info', false, NOW(), $4)`,
-            [provider.user_id, '📩 طلب خدمة جديد', `لديك طلب خدمة جديد (${safeServiceType || service_layer}). يرجى فتح التطبيق للرد عليه.`, `request:${newRequest.id}`]
+            [provider.user_id, 'طلب خدمة جديد', `لديك طلب خدمة جديد (${safeServiceType || service_layer}). يرجى فتح التطبيق للرد عليه.`, `request:${newRequest.id}`]
         );
 
         const providerSocketId = getSocketIdForUser(provider.user_id);
@@ -274,7 +274,7 @@ app.post('/api/service-requests/:id/respond', requireAuth, async (req, res) => {
             return res.status(409).json({ success: false, error: 'تم الرد على هذا الطلب مسبقاً.' });
         }
 
-        const title = action === 'accept' ? '✅ تم قبول طلبك' : '❌ تم رفض طلبك';
+        const title = action === 'accept' ? 'تم قبول طلبك' : 'تم رفض طلبك';
         const message = action === 'accept'
             ? `وافق مزود الخدمة على طلبك (${request.service_type}). يمكنك الآن الدردشة معه.`
                 + (appointment.value ? ` الموعد: ${appointmentText(appointment.value)}.` : '')
@@ -338,7 +338,7 @@ app.post('/api/service-requests/:id/appointment', requireAuth, async (req, res) 
             : `أُلغي الموعد المحدد (${request.service_type}).`;
         await servicesPool.query(
             `INSERT INTO "public"."notifications" (user_id, title, message, type, is_read, created_at, link)
-             VALUES ($1, '📅 موعد', $2, 'info', false, NOW(), $3)`,
+             VALUES ($1, 'موعد', $2, 'info', false, NOW(), $3)`,
             [other, message, `request:${id}`]
         );
         const socketId = getSocketIdForUser(other);
@@ -430,7 +430,7 @@ app.post('/api/service-requests/:id/cancel', requireAuth, async (req, res) => {
         const targetUserId = isOwner ? sRequest.provider_user_id : sRequest.user_id;
         await servicesPool.query(
             `INSERT INTO "public"."notifications" (user_id, title, message, type, is_read, created_at, link)
-             VALUES ($1, '⚠️ تم إلغاء الطلب', $2, 'error', false, NOW(), $3)`,
+             VALUES ($1, 'تم إلغاء الطلب', $2, 'error', false, NOW(), $3)`,
             [targetUserId, `تم إلغاء الطلب والسبب: ${reasonText}`, `request:${Number(requestId)}`]
         );
 
@@ -624,8 +624,8 @@ app.post('/api/service-requests/:id/confirm', requireAuth, async (req, res) => {
 
             await servicesPool.query(
                 `INSERT INTO "public"."notifications" (user_id, title, message, type, is_read, created_at, link)
-                 VALUES ($1, '🎉 تم الاتفاق بنجاح', 'تم تبادل أرقام التواصل، بالتوفيق!', 'success', false, NOW(), $3),
-                       ($2, '🎉 تم الاتفاق بنجاح', 'تم تبادل أرقام التواصل، بالتوفيق!', 'success', false, NOW(), $3)`,
+                 VALUES ($1, 'تم الاتفاق بنجاح', 'تم تبادل أرقام التواصل، بالتوفيق!', 'success', false, NOW(), $3),
+                       ($2, 'تم الاتفاق بنجاح', 'تم تبادل أرقام التواصل، بالتوفيق!', 'success', false, NOW(), $3)`,
                 [refreshed.user_id, refreshed.provider_user_id, `request:${Number(refreshed.id)}`]
             );
 
@@ -784,6 +784,27 @@ app.get('/api/service-ratings', async (req, res) => {
         });
 
 
+
+// 9-ج) تقييمات نوع خدمة واحد مجمّعة لكل إعلان (عام): ما يرتّب مزودي النوع في بطاقة العقار (خدمات لهذه الأرض).
+// متوسط وعدد فقط، لا تعليقات ولا أسماء. نوع أخفاه المشرف يرجع فارغاً.
+app.get('/api/service-ratings-summary', async (req, res) => {
+    const serviceLayer = String(req.query.service_layer || '').trim();
+    if (!isValidLayer(serviceLayer)) {
+        return res.status(400).json({ success: false, error: 'نوع خدمة غير صالح.' });
+    }
+    try {
+        if (isLayerHidden(serviceLayer, await getHiddenLayers())) return res.json({ success: true, items: [] });
+        const result = await servicesPool.query(
+            `SELECT feature_id, ROUND(AVG(rating)::numeric, 1) AS avg_rating, COUNT(*)::int AS total_ratings
+             FROM public.service_ratings WHERE service_layer = $1 GROUP BY feature_id`,
+            [serviceLayer]
+        );
+        res.json({ success: true, items: result.rows });
+    } catch (err) {
+        console.error('❌ خطأ أثناء جلب ملخص التقييمات:', err.message);
+        res.status(500).json({ success: false, error: 'فشل جلب البيانات', details: IS_PROD ? undefined : err.message });
+    }
+});
 
 // 10) إضافة تعليق لاحقاً على تقييم موجود
 app.put('/api/service-ratings/:id/comment', requireAuth, async (req, res) => {

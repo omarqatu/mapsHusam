@@ -10,7 +10,7 @@ import { copyText } from '@/lib/clipboard';
 import { formatDateTime } from '@/lib/format';
 import { availability, priceLabel, text, type SelectedFeature } from '../popup/featureModel';
 import { AvailabilityText } from '../popup/AvailabilityText';
-import { hasPrice, isRoadBarrier, priceCurrencyDefault, targetIcon } from '../targets';
+import { hasPrice, isRoadBarrier, priceCurrencyDefault } from '../targets';
 import MapSheet from '../panels/MapSheet';
 import { targetLabelKey } from '../targets';
 import { manualStars } from '../extras/featured';
@@ -20,6 +20,7 @@ import ResultContact from './ResultContact';
 import { toSelected, type SearchResult } from './results';
 import { buildShareLink, encodeShareState } from './shareLink';
 import { useSearchUi } from './store';
+import TargetIcon from '../TargetIcon';
 
 /** A card and a row show the same feature when both the id and the point match (ids repeat across types). */
 const isSameFeature = (s: SelectedFeature | null, r: SearchResult) =>
@@ -56,7 +57,7 @@ function ResultRow({
       <button type="button" onClick={onOpen} className="flex w-full items-start gap-3 text-start">
         <span className="mt-0.5 w-5 shrink-0 text-center text-xs font-bold text-muted">{index + 1}</span>
         <span aria-hidden className="text-xl">
-          {targetIcon(r.target)}
+          <TargetIcon target={r.target} />
         </span>
         <span className="min-w-0 flex-1">
           <span className="block truncate text-sm font-bold text-fg" dir="auto">

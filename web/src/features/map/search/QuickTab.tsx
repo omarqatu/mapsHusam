@@ -2,11 +2,12 @@ import { useMemo, useState } from 'react';
 import clsx from 'clsx';
 import { useTranslation } from 'react-i18next';
 import SearchInput from '@/components/ui/SearchInput';
-import { targetIcon } from '../targets';
+
 import { useShownTargets } from '@/features/visibility/store';
 import { targetKey, targetLabelKey } from '../targets';
 import { useSearchUi } from './store';
 import { useSearchActions } from './useSearchActions';
+import TargetIcon from '../TargetIcon';
 
 /** Quick search: tap a type → everything of that type in the part of the map you are looking at. */
 export default function QuickTab() {
@@ -39,7 +40,7 @@ export default function QuickTab() {
             )}
           >
             <span aria-hidden className="text-lg">
-              {targetIcon(x)}
+              <TargetIcon target={x} />
             </span>
             <span className="min-w-0 flex-1 leading-tight">{label}</span>
           </button>

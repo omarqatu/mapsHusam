@@ -4,6 +4,7 @@ import { describe, expect, it } from 'vitest';
 import ar from '@/locales/ar.json';
 import en from '@/locales/en.json';
 import { GROUP_ICON } from './groupIcons';
+import { PROPERTY_ICON, TYPE_ICON } from './typeIcons';
 import { EDIT_ONLY_LAYERS, POINT_TARGETS } from '../edit/schema';
 import { buildSearchTags } from '../edit/attributes';
 import { REAL_ESTATE_LAYERS, SERVICE_ALL_LAYER, SERVICE_TYPES, TIER_RULES } from '../config';
@@ -31,7 +32,7 @@ describe('service registry', () => {
     expect(new Set(keys).size).toBe(keys.length);
     for (const s of SERVICE_REGISTRY) {
       expect(s.key, 'key').toMatch(/^[A-Za-z][A-Za-z0-9_]*$/);
-      expect(s.icon.length, `${s.key} icon`).toBeGreaterThan(0);
+      expect(TYPE_ICON[s.key], `${s.key} icon`).toBeTruthy();
       expect(s.tagName.trim(), `${s.key} tagName`).not.toBe('');
       expect(s.tagKeywords.trim(), `${s.key} tagKeywords`).not.toBe('');
       expect(TYPE_GROUP_IDS as readonly string[], `${s.key} group`).toContain(s.group);
@@ -44,7 +45,7 @@ describe('service registry', () => {
   });
 
   it('shared/service-types.json entries have only known fields', () => {
-    const known = new Set(['key', 'icon', 'group', 'tier', 'editProfile', 'tagName', 'tagKeywords']);
+    const known = new Set(['key', 'group', 'tier', 'editProfile', 'tagName', 'tagKeywords']);
     for (const entry of serviceTypes as Record<string, unknown>[])
       for (const field of Object.keys(entry)) expect(known, `${String(entry.key)}.${field}`).toContain(field);
   });
@@ -55,6 +56,12 @@ describe('service registry', () => {
       for (const s of SERVICE_REGISTRY)
         expect(String(dig(locale, s.labelKey)).trim(), s.labelKey).not.toBe('');
     }
+  });
+
+  it('every type has an icon from the library (no emoji anywhere), and no icon is left without a type', () => {
+    expect(Object.keys(TYPE_ICON).sort()).toEqual([...keys].sort());
+    expect(Object.keys(PROPERTY_ICON).sort()).toEqual(['land', 'rent', 'sale']);
+    expect(JSON.stringify(serviceTypes)).not.toMatch(/\p{Extended_Pictographic}/u);
   });
 
   it('every group has a display name in ar and en and an icon', () => {

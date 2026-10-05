@@ -19,7 +19,7 @@ export interface FieldDef {
   labelKey: string;
   type: FieldType;
   /** `fixed` fields: value → i18n label key (+ emoji). */
-  options?: { value: string; labelKey: string; icon: string }[];
+  options?: { value: string; labelKey: string }[];
 }
 
 const dd = (id: string, labelKey = `search.fields.${id}`): FieldDef => ({ id, labelKey, type: 'dropdown' });
@@ -29,11 +29,10 @@ const num = (id: string, labelKey = `search.fields.${id}`): FieldDef => ({ id, l
 export const STOP_OPTIONS = Object.entries(ROAD_BARRIER_STATUS).map(([value, s]) => ({
   value,
   labelKey: `roadStatus.${s.key}`,
-  icon: s.icon,
 }));
 export const FUEL_OPTIONS = [
-  { value: '0', labelKey: 'popup.fuel.available', icon: '✔️' },
-  { value: '1', labelKey: 'popup.fuel.unavailable', icon: '❌' },
+  { value: '0', labelKey: 'popup.fuel.available' },
+  { value: '1', labelKey: 'popup.fuel.unavailable' },
 ];
 export { FUEL_FIELDS };
 

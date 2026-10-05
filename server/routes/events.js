@@ -3,6 +3,8 @@ import jwt from 'jsonwebtoken';
 import { ADMIN_JWT_SECRET, IS_PROD, app, publicEventsLimiter } from '../app.js';
 import { servicesPool } from '../database.js';
 import { bearerToken, checkUserRequestQuota, isTokenRevoked, requireAuth } from '../auth.js';
+import { isPropertyLayer, normalizeListingLayer } from '../listing-owners.js';
+import { isValidLayer } from '../layers.js';
 
 // 4-أ. مسار فحص حد الطلبات قبل تنفيذ أي "حدث/نقرة" (اتصال أو واتساب) - يُستدعى
 // من الواجهة الأمامية قبل فتح رابط الاتصال أو الواتساب فعلياً
@@ -108,5 +110,67 @@ app.post('/save-stat', publicEventsLimiter, async (req, res) => {
             error: 'Internal Server Error', 
             details: IS_PROD ? undefined : err.message 
         });
+    }
+});
+
+// "Services for this property" (a property's card offering surveyors, valuers…): one row per thing a person does there.
+// Public, like /save-stat: visitors are most of the traffic. A valid token puts the account's id on the row; otherwise
+// the visitor's own per-tab id (`guest-…`), else plain `guest`. Measurement only: it never touches the request quota.
+const PS_ACTIONS = ['view', 'open', 'contact', 'request'];
+const digits = (v) => (/^\d{1,12}$/.test(String(v ?? '')) ? Number(v) : null);
+
+app.post('/api/property-services-events', publicEventsLimiter, async (req, res) => {
+    const b = req.body && typeof req.body === 'object' ? req.body : {};
+    const bad = (error) => res.status(400).json({ success: false, error });
+
+    if (!PS_ACTIONS.includes(b.action)) return bad('إجراء غير صالح.');
+    const propertyLayer = normalizeListingLayer(b.property_layer);
+    const propertyId = digits(b.property_id);
+    if (!propertyLayer || !isPropertyLayer(propertyLayer) || propertyId === null) return bad('عقار غير صالح.');
+
+    let serviceType = null;
+    let providerId = null;
+    let channel = null;
+    let typesOffered = null;
+    if (b.action === 'view') {
+        const n = Number(b.types_offered);
+        typesOffered = Number.isInteger(n) && n >= 0 && n <= 20 ? n : null;
+    } else {
+        serviceType = normalizeListingLayer(b.service_type);
+        if (!serviceType || isPropertyLayer(serviceType) || !isValidLayer(serviceType)) return bad('نوع خدمة غير صالح.');
+    }
+    if (b.action === 'contact' || b.action === 'request') {
+        providerId = digits(b.provider_id);
+        if (providerId === null) return bad('مزود غير صالح.');
+    }
+    if (b.action === 'contact') {
+        if (!['call', 'whatsapp'].includes(b.channel)) return bad('نوع التواصل غير صالح.');
+        channel = b.channel;
+    }
+
+    let actor = null;
+    const sessionToken = bearerToken(req);
+    if (sessionToken && !isTokenRevoked(sessionToken)) {
+        try {
+            const decoded = jwt.verify(sessionToken, ADMIN_JWT_SECRET, { algorithms: ['HS256'] });
+            if (Number.isInteger(Number(decoded.uid)) && Number(decoded.uid) > 0) actor = String(Number(decoded.uid));
+        } catch (e) { /* توكن غير صالح: يُعامل كزائر */ }
+    }
+    if (!actor) {
+        const guest = String(b.visitor || '').replace(/[^\w-]/g, '').slice(0, 60);
+        actor = /^guest[_-]/i.test(guest) ? guest : 'guest';
+    }
+
+    try {
+        await servicesPool.query(
+            `INSERT INTO public.property_services_events
+                (actor, action, property_layer, property_id, service_type, provider_id, channel, types_offered)
+             VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
+            [actor, b.action, propertyLayer, propertyId, serviceType, providerId, channel, typesOffered]
+        );
+        res.json({ success: true });
+    } catch (err) {
+        console.error('❌ خطأ أثناء تسجيل حدث خدمات العقار:', err.message);
+        res.status(500).json({ success: false, error: 'تعذر تسجيل الحدث.' });
     }
 });

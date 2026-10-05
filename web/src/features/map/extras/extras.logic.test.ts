@@ -6,18 +6,18 @@ import type { SearchResult } from '../search/results';
 import { ALL_TARGETS, targetKey, type MapTarget } from '../targets';
 import { SERVICE_TYPES } from '../config';
 import {
+  customerRatingsKey,
   groupedTargets,
   groupOf,
-  hasBeforeAfter,
   hasPhotos,
   hasVideos,
   mediaForMode,
   nearestEntries,
   pickForSection,
-  sideMedia,
   type FeaturedEntry,
 } from './featured';
 import { formatAgo, matchesQuery, relativeUpdate } from './status';
+import { beforeAfterPair, collectMedia, mediaDefault, sideMedia } from '../popup/featureModel';
 
 const NOW = Date.parse('2026-09-29T12:00:00Z');
 const ago = (min: number) => new Date(NOW - min * 60_000).toISOString();
@@ -92,10 +92,33 @@ describe('pickForSection', () => {
     expect(picked).not.toContain(rent2);
     expect(picked.slice(2).map((e) => e.r.id)).toEqual(['0', '1', '2', '3', '4', '5', '6', '7']);
   });
+  it('keeps the first holiday villa and the first hotel too (Husam, 30 September), after the property kinds', () => {
+    const services = Array.from({ length: 12 }, (_, i): FeaturedEntry => ({ r: at('plumber', String(i), i) }));
+    const hotel = { r: at('hotels', 'h1', 200) };
+    const hotel2 = { r: at('hotels', 'h2', 201) };
+    const villa = { r: at('villas_rent', 'v1', 202) };
+    const sale = { r: at('sale', 's1', 203) };
+    const picked = pickForSection([...services, villa, hotel, hotel2, sale]);
+    expect(picked).toHaveLength(10);
+    expect(picked.slice(0, 3)).toEqual([sale, villa, hotel]); // registry order
+    expect(picked).not.toContain(hotel2);
+    expect(picked.slice(3).map((e) => e.r.id)).toEqual(['0', '1', '2', '3', '4', '5', '6']);
+  });
   it('a short list is returned whole', () => {
     const one = { r: at('plumber', '1', 0) };
     expect(pickForSection([one])).toEqual([one]);
     expect(pickForSection([])).toEqual([]);
+  });
+});
+
+describe('customerRatingsKey (whose cards show real ratings)', () => {
+  it('services with an id, except road barriers and fuel stations', () => {
+    expect(customerRatingsKey(at('hotels', '5', 0))).toEqual({ layer: 'hotels', featureId: '5' });
+    expect(customerRatingsKey(at('plumber', '9', 0))).toEqual({ layer: 'plumber', featureId: '9' });
+    expect(customerRatingsKey(at('road_barriers', '1', 0))).toBeNull();
+    expect(customerRatingsKey(at('fuel_stations', '1', 0))).toBeNull();
+    expect(customerRatingsKey(at('rent', '1', 0))).toBeNull();
+    expect(customerRatingsKey({ ...at('plumber', '1', 0), id: null })).toBeNull();
   });
 });
 
@@ -109,22 +132,21 @@ describe('media sections', () => {
   it('detects pictures, videos and before/after pairs', () => {
     expect(hasPhotos(both)).toBe(true);
     expect(hasVideos(both)).toBe(true);
-    expect(hasBeforeAfter(both)).toBe(true);
+    expect(beforeAfterPair(both)).toEqual({ before: 'https://a.com/b.jpg', after: 'https://a.com/c.jpg' });
     expect(hasPhotos({ video: 'https://youtu.be/dQw4w9WgXcQ' })).toBe(false);
     expect(hasVideos({ pic: 'a.com/1.jpg' })).toBe(false);
-    expect(hasBeforeAfter({ details_link_1: 'a.com/b.jpg' })).toBe(false);
+    expect(beforeAfterPair({ details_link_1: 'a.com/b.jpg' })).toBeNull();
     expect(hasPhotos({})).toBe(false);
   });
   it('an unsafe link never counts as media', () => {
-    expect(hasBeforeAfter({ details_link_1: 'javascript:alert(1)', details_link_2: 'a.com/c.jpg' })).toBe(
-      false,
-    );
+    expect(beforeAfterPair({ details_link_1: 'javascript:alert(1)', details_link_2: 'a.com/c.jpg' })).toBeNull();
     expect(hasPhotos({ pic: 'javascript:alert(1)' })).toBe(false);
   });
   it('each mode keeps only its kind', () => {
     expect(mediaForMode(both, 'photo').every((m) => m.type === 'image')).toBe(true);
     expect(mediaForMode(both, 'video').map((m) => m.type)).toEqual(['youtube']);
-    expect(mediaForMode(both, 'all').length).toBeGreaterThan(2);
+    // the before / after pair is shown as a pair of its own, not in the list
+    expect(mediaForMode(both, 'all').map((m) => m.type)).toEqual(['image', 'youtube']);
   });
   it('a before/after side is an image, a video, or a labelled link', () => {
     expect(sideMedia('https://a.com/b.jpg', 'k')).toEqual([{ type: 'image', url: 'https://a.com/b.jpg' }]);
@@ -133,6 +155,26 @@ describe('media sections', () => {
       { type: 'link', url: 'https://facebook.com/x', labelKey: 'popup.moreDetails2' },
     ]);
     expect(sideMedia(null, 'k')).toEqual([]);
+  });
+});
+
+describe('before / after in the details (provider\'s choice)', () => {
+  const pair = { details_link_1: 'a.com/b.jpg', details_link_2: 'a.com/c.jpg' };
+  it('opens on the photos unless the provider chose before / after', () => {
+    expect(mediaDefault({ ...pair, pic: 'a.com/1.jpg' })).toBe('photos');
+    expect(mediaDefault({ ...pair, pic: 'a.com/1.jpg', media_default: 'photos' })).toBe('photos');
+    expect(mediaDefault({ ...pair, pic: 'a.com/1.jpg', media_default: 'before_after' })).toBe('beforeAfter');
+  });
+  it('before / after needs both pictures; with nothing else, the pair is all there is', () => {
+    expect(mediaDefault({ details_link_1: 'a.com/b.jpg', pic: 'a.com/1.jpg', media_default: 'before_after' })).toBe('photos');
+    expect(mediaDefault({ media_default: 'before_after' })).toBe('photos');
+    expect(mediaDefault(pair)).toBe('beforeAfter');
+  });
+  it('a lone link stays a "more details" link in the list; a pair leaves the list', () => {
+    expect(collectMedia({ details_link_1: 'https://facebook.com/x' })).toEqual([
+      { type: 'link', url: 'https://facebook.com/x', labelKey: 'popup.moreDetails1' },
+    ]);
+    expect(collectMedia(pair)).toEqual([]);
   });
 });
 

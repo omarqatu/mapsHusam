@@ -34,10 +34,10 @@ export interface WfsLayerDef {
 
 // Legacy helper layers (Governorate, City, Location, RoadsTest) are in MAP_CONFIG.globalExclusions and never
 // shown, so they are not ported. Add them here if the exclusion is lifted.
-export const REAL_ESTATE_LAYERS: (WfsLayerDef & { key: RealEstateLayerKey; icon: string })[] = [
-  { key: 'rent', icon: '🏠', workspace: 'realestate', typeName: 'ApartRent', maxResolution: 1, zIndex: 20 },
-  { key: 'sale', icon: '🏡', workspace: 'realestate', typeName: 'ApartSale', maxResolution: 1, zIndex: 20 },
-  { key: 'land', icon: '🟥', workspace: 'realestate', typeName: 'LandSale', maxResolution: 1, zIndex: 10 },
+export const REAL_ESTATE_LAYERS: (WfsLayerDef & { key: RealEstateLayerKey })[] = [
+  { key: 'rent', workspace: 'realestate', typeName: 'ApartRent', maxResolution: 1, zIndex: 20 },
+  { key: 'sale', workspace: 'realestate', typeName: 'ApartSale', maxResolution: 1, zIndex: 20 },
+  { key: 'land', workspace: 'realestate', typeName: 'LandSale', maxResolution: 1, zIndex: 10 },
 ];
 
 /** GeoServer feature type of each property layer: the editor and the search read the names from the list above. */
@@ -69,14 +69,14 @@ export const TIER_RULES: Record<ServiceTier, { maxResolution: number; labelBelow
 };
 
 /** `stop` column of road_barriers → status (legacy getRoadBarrierStopInfo). Label text is `roadStatus.<key>`. */
-export const ROAD_BARRIER_STATUS: Record<number, { key: string; color: string; icon: string }> = {
-  0: { key: 'open', color: '#28a745', icon: '🟢' },
-  1: { key: 'closed', color: '#dc3545', icon: '🔴' },
-  2: { key: 'light', color: '#f39c12', icon: '🟠' },
-  3: { key: 'heavy', color: '#8b0000', icon: '🟤' },
-  4: { key: 'inspection', color: '#6f42c1', icon: '🟣' },
+export const ROAD_BARRIER_STATUS: Record<number, { key: string; color: string }> = {
+  0: { key: 'open', color: '#28a745' },
+  1: { key: 'closed', color: '#dc3545' },
+  2: { key: 'light', color: '#f39c12' },
+  3: { key: 'heavy', color: '#8b0000' },
+  4: { key: 'inspection', color: '#6f42c1' },
 };
-export const ROAD_BARRIER_UNKNOWN = { key: 'unknown', color: '#6c757d', icon: '⚪' };
+export const ROAD_BARRIER_UNKNOWN = { key: 'unknown', color: '#6c757d' };
 
 export function roadBarrierStatus(stop: unknown) {
   const n = typeof stop === 'number' ? stop : Number.parseInt(String(stop), 10);

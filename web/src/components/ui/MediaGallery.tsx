@@ -15,11 +15,11 @@ export type VisualItem = Exclude<MediaItem, { type: 'link' }>;
 type Visual = VisualItem;
 
 const tile =
-  'relative block h-24 w-32 shrink-0 snap-start overflow-hidden rounded-lg border border-black/10 bg-subtle focus-visible:outline-2 focus-visible:outline-brand';
-function Tile({ m, onOpen, onBroken }: { m: Visual; onOpen: () => void; onBroken: () => void }) {
+  'relative block shrink-0 snap-start overflow-hidden rounded-lg border border-black/10 bg-subtle focus-visible:outline-2 focus-visible:outline-brand';
+function Tile({ m, onOpen, onBroken, fill }: { m: Visual; onOpen: () => void; onBroken: () => void; fill?: boolean }) {
   const { t } = useTranslation();
   return (
-    <button type="button" onClick={onOpen} className={tile} aria-label={m.type === 'image' ? t('media.preview') : t('media.play')}>
+    <button type="button" onClick={onOpen} className={`${tile} ${fill ? 'aspect-[4/3] w-full' : 'h-24 w-32'}`} aria-label={m.type === 'image' ? t('media.preview') : t('media.play')}>
       {m.type === 'image' && (
         <img
           src={m.url}
@@ -144,9 +144,10 @@ export function MediaViewer({ items, index, onIndex }: ViewerProps) {
  * A strip of thumbnails (pictures, YouTube, video files) that opens in a viewer with previous / next, plus plain links.
  * Nothing heavy loads until it is tapped: YouTube is a thumbnail, not an iframe. A picture URL that is not a picture
  * (e.g. a Facebook page) becomes a link. URLs must already be validated as https (featureModel.safeMediaUrl).
- * Pattern from the water platform's AttachmentGallery.
+ * Pattern from the water platform's AttachmentGallery. `fill`: each tile takes the full width (one picture shown large,
+ * e.g. one side of a before / after pair).
  */
-export default function MediaGallery({ items }: { items: MediaItem[] }) {
+export default function MediaGallery({ items, fill }: { items: MediaItem[]; fill?: boolean }) {
   const { t } = useTranslation();
   const [open, setOpen] = useState<number | null>(null);
   const [broken, setBroken] = useState<ReadonlySet<string>>(new Set());
@@ -172,6 +173,7 @@ export default function MediaGallery({ items }: { items: MediaItem[] }) {
               m={m}
               onOpen={() => setOpen(i)}
               onBroken={() => m.type === 'image' && setBroken((b) => new Set(b).add(m.url))}
+              fill={fill}
             />
           ))}
         </div>

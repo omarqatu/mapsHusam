@@ -14,13 +14,17 @@ interface Props {
   className?: string;
   /** A provider with a registered account is contacted through a service request; show that (opens the request flow). */
   showRequest?: boolean;
+  /** Called when the person taps call or WhatsApp (a measurement hook; the contact itself is logged as before). */
+  onContact?: (channel: 'call' | 'whatsapp') => void;
+  /** Called when the person taps "request the service" (a measurement hook). */
+  onRequest?: () => void;
 }
 
 /**
  * Contact for one result (rows, featured cards): decides WHETHER and HOW to contact — never road checkpoints,
  * registered providers get "request service" — and renders the shared ContactButtons.
  */
-export default function ResultContact({ r, className, showRequest }: Props) {
+export default function ResultContact({ r, className, showRequest, onContact, onRequest }: Props) {
   const { t } = useTranslation();
   const linked = useProviderLinked();
   const contact = useContactActions();
@@ -36,6 +40,7 @@ export default function ResultContact({ r, className, showRequest }: Props) {
       <div className={className}>
         <RequestServiceButton
           size="sm"
+          onRequest={onRequest}
           target={{
             serviceLayer: layer,
             featureId: r.id ?? '',
@@ -58,10 +63,14 @@ export default function ResultContact({ r, className, showRequest }: Props) {
       className={className}
       phone={phone}
       whatsapp={whatsapp}
-      onCall={() => void contact.call(toSelected(r), providerName, phone)}
-      onWhatsapp={() =>
-        void contact.whatsapp(toSelected(r), providerName, whatsapp, t(targetLabelKey(r.target)))
-      }
+      onCall={() => {
+        onContact?.('call');
+        void contact.call(toSelected(r), providerName, phone);
+      }}
+      onWhatsapp={() => {
+        onContact?.('whatsapp');
+        void contact.whatsapp(toSelected(r), providerName, whatsapp, t(targetLabelKey(r.target)));
+      }}
     />
   );
 }

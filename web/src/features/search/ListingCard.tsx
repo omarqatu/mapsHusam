@@ -5,36 +5,40 @@ import { useTranslation } from 'react-i18next';
 import { playBadge, ytThumb } from '@/components/ui/media';
 import RatingSummary from '@/components/ui/RatingSummary';
 import type { VisualItem } from '@/components/ui/MediaGallery';
+import { useServiceRatings } from '@/api/mapEvents';
+import { useInView } from '@/hooks/useInView';
 import {
+  customerRatingsKey,
   groupOf,
   manualStars,
   mediaForMode,
-  sideMedia,
   type FeaturedEntry,
   type FeaturedMode,
 } from '../map/extras/featured';
 import { FEATURED_FRAME } from '../map/extras/featuredStyle';
 import { BarrierBadges, FuelBadges } from '../map/extras/StatusBadges';
 import { useShowOnMap } from '../map/extras/useShowOnMap';
-import { availability, detailLinks, priceLabel, text, type MediaItem } from '../map/popup/featureModel';
+import {
+  availability,
+  beforeAfterPair,
+  mediaDefault,
+  priceLabel,
+  sideMedia,
+  text,
+  type MediaItem,
+} from '../map/popup/featureModel';
 import { AvailabilityText } from '../map/popup/AvailabilityText';
 import { formatDistance } from '../map/search/nearby';
 import ResultContact from '../map/search/ResultContact';
-import {
-  hasPrice,
-  isFuelStation,
-  isRoadBarrier,
-  priceCurrencyDefault,
-  targetIcon,
-  targetLabelKey,
-} from '../map/targets';
+import { hasPrice, isFuelStation, isRoadBarrier, priceCurrencyDefault, targetLabelKey } from '../map/targets';
 import { GROUP_ART } from './art';
 import ListingPreview from './ListingPreview';
 import DirectionsButton from '../map/popup/DirectionsButton';
+import TargetIcon from '@/features/map/TargetIcon';
 
 interface Props {
   entry: FeaturedEntry;
-  /** Which media the picture area shows (`beforeAfter` = the two "details" links side by side). */
+  /** Which media the picture area shows: `all` = what the provider chose (first picture, or before / after side by side). */
   mode?: FeaturedMode;
   /** Small caption over the picture: "Featured", "Top rated"… */
   badge?: string;
@@ -42,9 +46,29 @@ interface Props {
   note?: string;
   /** A paid placement: the featured frame (see featuredStyle). */
   highlight?: boolean;
+  /**
+   * Services show their customers' real average instead of the hand-set `rating` column (as the map's featured cards
+   * do), fetched once the card comes into view. Off by default: result lists can hold hundreds of cards.
+   */
+  customerRatings?: boolean;
   /** Result lists: a row (thumbnail beside the text) on phones, so a screen holds several results. */
   rowOnPhone?: boolean;
   className?: string;
+}
+
+/**
+ * The customers' average, asked for once `seen` (the card came into view); "no ratings yet" when there are none.
+ * Loading and failures show nothing: ratings are a bonus and must not clutter the card.
+ */
+function LiveRating({ layer, featureId, seen }: { layer: string; featureId: string; seen: boolean }) {
+  const { t } = useTranslation();
+  const { data } = useServiceRatings(seen ? layer : null, seen ? featureId : null);
+  if (!data) return null;
+  return data.totalRatings > 0 ? (
+    <RatingSummary value={data.averageRating} count={data.totalRatings} />
+  ) : (
+    <span className="text-muted">{t('popup.rating.none')}</span>
+  );
 }
 
 const visuals = (items: MediaItem[]) => items.filter((m): m is VisualItem => m.type !== 'link');
@@ -93,6 +117,7 @@ export default function ListingCard({
   badge,
   note,
   highlight,
+  customerRatings,
   rowOnPhone,
   className,
 }: Props) {
@@ -112,16 +137,19 @@ export default function ListingCard({
   const price = priced ? priceLabel(p, t, i18n.language, priceCurrencyDefault(r.target)) : null;
   const area = priced && Number(p.area) > 0 ? text(p.area) : '';
   const state = isRoadBarrier(r.target) ? null : availability(p);
+  const ratingsKey = customerRatings && !ratings ? customerRatingsKey(r) : null;
+  // The card itself is watched: an empty rating slot has no box, and a box-less element is never "in view".
+  const [cardRef, seen] = useInView<HTMLElement>();
   const notBroken = (m: VisualItem) => !(m.type === 'image' && broken.has(m.url));
   const markBroken = (m: VisualItem) => () => m.type === 'image' && setBroken((b) => new Set(b).add(m.url));
 
-  const [before, after] = detailLinks(p);
-  const sides =
-    mode === 'beforeAfter'
-      ? [sideMedia(before, 'popup.moreDetails1'), sideMedia(after, 'popup.moreDetails2')].map(
-          (s) => visuals(s).filter(notBroken)[0],
-        )
-      : null;
+  // The provider's choice: their before / after pair side by side, or their first picture.
+  const pair = mode === 'all' && mediaDefault(p) === 'beforeAfter' ? beforeAfterPair(p) : null;
+  const sides = pair
+    ? [sideMedia(pair.before, 'popup.moreDetails1'), sideMedia(pair.after, 'popup.moreDetails2')].map(
+        (s) => visuals(s).filter(notBroken)[0],
+      )
+    : null;
   const items = sides
     ? sides.filter((m): m is VisualItem => !!m)
     : visuals(mediaForMode(p, mode)).filter(notBroken);
@@ -130,6 +158,7 @@ export default function ListingCard({
 
   return (
     <article
+      ref={ratingsKey ? cardRef : undefined}
       className={clsx(
         'group/card relative flex flex-col overflow-hidden rounded-xl border shadow-sm transition hover:-translate-y-0.5 hover:shadow-float',
         highlight ? FEATURED_FRAME : 'border-line bg-surface hover:border-brand',
@@ -157,8 +186,8 @@ export default function ListingCard({
                     {t('extras.featured.none')}
                   </div>
                 )}
-                <span className="absolute start-1.5 top-1.5 rounded-full bg-black/60 px-2 py-0.5 text-xs font-bold text-white">
-                  {t(i === 0 ? 'extras.featured.before' : 'extras.featured.after')}
+                <span className="absolute bottom-1.5 start-1.5 rounded-full bg-black/60 px-2 py-0.5 text-xs font-bold text-white">
+                  {t(i === 0 ? 'media.before' : 'media.after')}
                 </span>
               </div>
             ))}
@@ -178,13 +207,13 @@ export default function ListingCard({
             />
             <span className="absolute inset-0 flex items-center justify-center">
               <span className="flex h-14 w-14 items-center justify-center rounded-full bg-surface/95 text-3xl shadow-float max-sm:h-11 max-sm:w-11 max-sm:text-2xl">
-                {targetIcon(r.target)}
+                <TargetIcon target={r.target} />
               </span>
             </span>
           </div>
         ) : (
           <div className="flex h-full items-center justify-center text-5xl" aria-hidden>
-            {targetIcon(r.target)}
+            <TargetIcon target={r.target} />
           </div>
         )}
         {badge && (
@@ -204,7 +233,7 @@ export default function ListingCard({
 
       <div className="flex min-w-0 flex-1 flex-col gap-1 p-3">
         <div className="flex items-center gap-1.5 text-xs text-muted">
-          <span aria-hidden>{targetIcon(r.target)}</span>
+          <span aria-hidden><TargetIcon target={r.target} /></span>
           <span className="truncate">{typeTitle}</span>
           {r.id && <span className="ms-auto shrink-0">#{r.id}</span>}
         </div>
@@ -232,8 +261,12 @@ export default function ListingCard({
               {area} {t('map.areaUnit')}
             </span>
           )}
-          {(ratings || r.rating > 0) && (
-            <RatingSummary value={ratings ? ratings.avg : manualStars(r.rating)} count={ratings?.total} />
+          {ratingsKey ? (
+            <LiveRating layer={ratingsKey.layer} featureId={ratingsKey.featureId} seen={seen} />
+          ) : (
+            (ratings || r.rating > 0) && (
+              <RatingSummary value={ratings ? ratings.avg : manualStars(r.rating)} count={ratings?.total} />
+            )
           )}
           {state && <AvailabilityText value={state} className="font-semibold" />}
           {r.distance !== undefined && (

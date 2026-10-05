@@ -1,9 +1,9 @@
 import type { Coordinate } from '../config';
-import { collectMedia, detailLinks, type MediaItem, type Props } from '../popup/featureModel';
+import { collectMedia, type MediaItem, type Props } from '../popup/featureModel';
 import { distanceToResult } from '../search/nearby';
 import type { SearchResult } from '../search/results';
 import { SERVICE_BY_KEY, TYPE_GROUP_IDS, type TypeGroupId } from '../registry';
-import { ALL_TARGETS, targetKey, type MapTarget } from '../targets';
+import { ALL_TARGETS, hasPrice, isFuelStation, isRoadBarrier, targetKey, type MapTarget } from '../targets';
 
 // Pure logic of the featured-services portal (legacy featured-services-portal.js), testable without React or a map.
 
@@ -13,8 +13,8 @@ export interface FeaturedEntry {
   ratings?: { avg: number; total: number };
 }
 
-/** Which media a section's cards show. `all` = every picture/video/link (legacy "featured" cards). */
-export type FeaturedMode = 'all' | 'photo' | 'video' | 'beforeAfter';
+/** Which media a section's cards show. `all` = the listing's media as its provider set it up (pictures, before / after). */
+export type FeaturedMode = 'all' | 'photo' | 'video';
 
 /** A section shows at most this many cards (legacy). */
 export const SECTION_LIMIT = 10;
@@ -25,17 +25,30 @@ export const NEARBY_LIMIT = 10;
 export const FEATURED_RATING = '10';
 export const RECOMMENDED_RATING = '9.9';
 
+/**
+ * The service layer and id whose real customer ratings a card shows instead of the hand-set `rating` column: every
+ * service except road barriers and fuel stations (Husam, q1); `null` for property, those two, and rows without an id.
+ */
+export function customerRatingsKey(r: SearchResult): { layer: string; featureId: string } | null {
+  if (r.target.kind !== 'service' || isRoadBarrier(r.target) || isFuelStation(r.target) || !r.id) return null;
+  return { layer: r.target.discriminator, featureId: r.id };
+}
+
 /** The `rating` column is a hand-set score out of 10 (10 = featured); shown to visitors as stars out of 5. Customer ratings are already out of 5. */
 export const manualStars = (rating: number) => Math.min(5, Math.max(0, rating / 2));
 
 /**
- * Up to `limit` cards, but the first of each real-estate kind (rent, sale, land) is always in — legacy wanted the
- * property types visible even when services with the same rating fill the list.
+ * The kinds that always get a card in a section when one is there: the three property kinds (rent, sale, land), then
+ * the services priced like property (hotels, holiday villas). Legacy wanted them visible even when services with the
+ * same rating fill the list (Husam, 30 September: "do not drop hotels and villas").
  */
+const GUARANTEED_KINDS: readonly string[] = ALL_TARGETS.filter(hasPrice).map(targetKey);
+
+/** Up to `limit` cards; the first card of each guaranteed kind comes first, then the rest in their order. */
 export function pickForSection(items: FeaturedEntry[], limit = SECTION_LIMIT): FeaturedEntry[] {
-  const guaranteed = (['rent', 'sale', 'land'] as const)
-    .map((layer) => items.find((i) => i.r.target.kind === 'realEstate' && i.r.target.layer === layer))
-    .filter((i): i is FeaturedEntry => !!i);
+  const guaranteed = GUARANTEED_KINDS.map((kind) => items.find((i) => targetKey(i.r.target) === kind)).filter(
+    (i): i is FeaturedEntry => !!i,
+  );
   const rest = items.filter((i) => !guaranteed.includes(i)).slice(0, Math.max(0, limit - guaranteed.length));
   return [...guaranteed, ...rest].slice(0, limit);
 }
@@ -44,22 +57,12 @@ const isVideoItem = (m: MediaItem) => m.type === 'youtube' || m.type === 'video'
 
 export const hasPhotos = (props: Props) => collectMedia(props).some((m) => m.type === 'image');
 export const hasVideos = (props: Props) => collectMedia(props).some(isVideoItem);
-/** Both "details" links present (legacy: before / after). */
-export const hasBeforeAfter = (props: Props) => detailLinks(props).every((u) => u !== null);
-
-/** The media a card of this section displays (`beforeAfter` cards use `detailLinks` instead). */
+/** The media a card of the photos / videos section displays. */
 export function mediaForMode(props: Props, mode: FeaturedMode): MediaItem[] {
   const all = collectMedia(props);
   if (mode === 'photo') return all.filter((m) => m.type === 'image');
   if (mode === 'video') return all.filter(isVideoItem);
   return all;
-}
-
-/** One before/after side as media: an image, a YouTube/video file, or a link. */
-export function sideMedia(url: string | null, linkLabelKey: string): MediaItem[] {
-  if (!url) return [];
-  const [m] = collectMedia({ details_link_1: url });
-  return m ? [m.type === 'link' ? { ...m, labelKey: linkLabelKey } : m] : [];
 }
 
 // --- "near me" type filter (the type → group table is the `group` of each registry entry) ---------------

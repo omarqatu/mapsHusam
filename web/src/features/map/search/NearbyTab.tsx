@@ -112,7 +112,7 @@ export default function NearbyTab() {
             onChange={(e) => setExtra({ ...extra, stop: e.target.value })}
             options={[
               { value: '', label: t('search.nearby.anyStatus') },
-              ...STOP_OPTIONS.map((o) => ({ value: o.value, label: `${o.icon} ${t(o.labelKey)}` })),
+              ...STOP_OPTIONS.map((o) => ({ value: o.value, label: t(o.labelKey) })),
             ]}
           />
         </FormField>
@@ -130,7 +130,7 @@ export default function NearbyTab() {
               onChange={(e) => setExtra({ ...extra, fuel: { ...extra.fuel, [f]: e.target.value } })}
               options={[
                 { value: '', label: t('search.nearby.noCondition') },
-                ...FUEL_OPTIONS.map((o) => ({ value: o.value, label: `${o.icon} ${t(o.labelKey)}` })),
+                ...FUEL_OPTIONS.map((o) => ({ value: o.value, label: t(o.labelKey) })),
               ]}
             />
           </FormField>

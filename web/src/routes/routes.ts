@@ -116,6 +116,13 @@ export const appRoutes: AppRoute[] = [
       '(new page — approve or reject "add my business" requests; reached from the home card, not the header)',
   },
   {
+    path: '/admin/relations',
+    titleKey: 'nav.adminRelations',
+    access: ['admin'],
+    legacy:
+      '(new page — who surveyed / valued which property: answer for plots nobody owns, end any link; reached from the home card, not the header)',
+  },
+  {
     path: '/admin/dashboard',
     titleKey: 'nav.adminDashboard',
     access: ['admin'],

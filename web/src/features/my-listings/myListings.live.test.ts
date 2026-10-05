@@ -41,6 +41,8 @@ describe.skipIf(!BASE)('my listings against the live backend', () => {
     await asProvider();
     await myListingsApi.edit(original, { name: original.name, status: original.status });
     await myListingsApi.setPhotos(original, original.photos);
+    // before / after: an uploaded side was removed by its test; the choice goes back
+    await myListingsApi.edit(original, { media_default: original.media_default });
     useAuthStore.setState({ user: null });
     globalThis.fetch = nativeFetch;
   });
@@ -85,12 +87,43 @@ describe.skipIf(!BASE)('my listings against the live backend', () => {
     expect((await nativeFetch(`${BASE}/api/listing-photos/..%2F..%2Fserver.js`)).status).toBe(404);
   });
 
+  it('before / after: upload each side, replace one (the old file goes), choose it first, remove it', async () => {
+    const png = () => new Blob([PNG], { type: 'image/png' });
+    const before = (await myListingsApi.uploadSide(original, 'before', png())).listing.before!;
+    const { listing } = await myListingsApi.uploadSide(original, 'after', png());
+    expect(listing.before).toBe(before);
+    expect(listing.after).toMatch(/^\/api\/listing-photos\/[0-9a-f-]{36}\.png$/);
+    expect((await nativeFetch(BASE + before)).status).toBe(200);
+
+    const replaced = (await myListingsApi.uploadSide(original, 'before', png())).listing.before!;
+    expect(replaced).not.toBe(before);
+    expect((await nativeFetch(BASE + before)).status).toBe(404);
+
+    expect((await myListingsApi.edit(original, { media_default: 'before_after' })).listing.media_default).toBe('before_after');
+    await expect(myListingsApi.edit(original, { media_default: 'video' as never })).rejects.toMatchObject({ status: 400 });
+    await expect(
+      myListingsApi.uploadSide(original, 'before', new Blob(['not an image'], { type: 'image/png' })),
+    ).rejects.toMatchObject({ status: 415 });
+
+    for (const side of ['before', 'after'] as const) {
+      const url = (await find(original.layer, original.id))![side]!;
+      expect((await myListingsApi.removeSide(original, side)).listing[side]).toBeNull();
+      expect((await nativeFetch(BASE + url)).status).toBe(404);
+    }
+    // the pictures are not in the listing's picture list
+    expect((await find(original.layer, original.id))?.photos).toEqual(original.photos);
+  });
+
   it('another account cannot touch the listing; a visitor cannot list', async () => {
     await signIn('0590000003', 'User#12345');
     await expect(myListingsApi.edit(original, { name: 'x' })).rejects.toMatchObject({ status: 404 });
     await expect(
       myListingsApi.upload(original, new Blob([PNG], { type: 'image/png' })),
     ).rejects.toMatchObject({ status: 404 });
+    await expect(
+      myListingsApi.uploadSide(original, 'before', new Blob([PNG], { type: 'image/png' })),
+    ).rejects.toMatchObject({ status: 404 });
+    await expect(myListingsApi.removeSide(original, 'after')).rejects.toMatchObject({ status: 404 });
     useAuthStore.setState({ user: null });
     await expect(myListingsApi.list()).rejects.toMatchObject({ status: 401 });
     await asProvider();

@@ -101,11 +101,14 @@ const RENT = feature(1700, 1700, {
   auto_status: 0,
   rating: '10',
 });
-
 let calls: string[] = [];
+/** Per-test changes to the backend: return a value to answer the request differently. */
+let override: ((u: URL) => unknown) | null = null;
 function backend(url: string, init?: RequestInit): unknown {
   const u = new URL(url, 'http://x');
   const p = u.searchParams;
+  const changed = override?.(u);
+  if (changed !== undefined) return changed;
   if (u.pathname === '/api/platform-stats')
     return {
       success: true,
@@ -174,6 +177,7 @@ afterAll(async () => {
 });
 beforeEach(() => {
   calls = [];
+  override = null;
   vi.stubGlobal(
     'fetch',
     vi.fn((input: RequestInfo | URL, init?: RequestInit) => {
@@ -317,9 +321,8 @@ describe('FeaturedTab', () => {
     expect(within(topRated).getByText('4.5')).toBeInTheDocument();
     expect(within(topRated).getByText('(7)')).toBeInTheDocument();
 
-    const ba = await sections('Before & after');
-    expect(await within(ba).findByText('Before')).toBeInTheDocument();
-    expect(within(ba).getByText('After')).toBeInTheDocument();
+    // before / after is no longer a section of its own: it lives in the listing's card
+    expect(screen.queryByRole('heading', { name: 'Before & after' })).toBeNull();
     expect(within(await sections('Photos')).getByText('Painter Ali')).toBeInTheDocument();
     expect(within(await sections('Videos')).getByText('Painter Ali')).toBeInTheDocument();
   });
@@ -342,6 +345,72 @@ describe('FeaturedTab', () => {
     expect(calls).toContain('/api/top-rated-providers?limit=15');
     // an unknown service type from the ranking is dropped, the known one is fetched by id
     expect(calls.filter((c) => c.startsWith('/api/search-features-batch'))).toHaveLength(1);
+  });
+
+  it("a card with before / after pictures switches between them and the photos, opening on the provider's choice", async () => {
+    const user = userEvent.setup();
+    renderWith(<FeaturedTab />);
+    const featured = (await screen.findByRole('heading', { name: 'Featured' })).closest('section')!;
+    const card = (await within(featured).findByText('Painter Ali')).closest('article')!;
+    const photos = within(card).getByRole('tab', { name: 'Photos' });
+    expect(photos).toHaveAttribute('aria-selected', 'true');
+    expect(within(card).queryByText('Before')).toBeNull();
+    await user.click(within(card).getByRole('tab', { name: 'Before & after' }));
+    expect(within(card).getByText('Before')).toBeInTheDocument();
+    expect(within(card).getByText('After')).toBeInTheDocument();
+  });
+
+  it('opens on before / after when the provider chose it', async () => {
+    override = (u) =>
+      u.pathname === '/api/search-features' &&
+      u.searchParams.get('layer') === 'service_all' &&
+      u.searchParams.get('value_0') === '10'
+        ? fc([{ ...PAINTER, properties: { ...PAINTER.properties, media_default: 'before_after' } }])
+        : undefined;
+    renderWith(<FeaturedTab />);
+    const featured = (await screen.findByRole('heading', { name: 'Featured' })).closest('section')!;
+    const card = (await within(featured).findByText('Painter Ali')).closest('article')!;
+    expect(within(card).getByRole('tab', { name: 'Before & after' })).toHaveAttribute('aria-selected', 'true');
+    expect(within(card).getByText('Before')).toBeInTheDocument();
+  });
+
+  it('a section with nothing to show is left out', async () => {
+    override = (u) =>
+      u.pathname === '/api/search-features' && u.searchParams.get('value_0') === '9.9' ? fc([]) : undefined;
+    renderWith(<FeaturedTab />);
+    await screen.findByRole('heading', { name: 'Featured' });
+    await screen.findByRole('heading', { name: 'Photos' });
+    expect(screen.queryByRole('heading', { name: 'Recommended' })).toBeNull();
+  });
+
+  it('a hotel shows its price and area and its customers\' rating, not the hand-set stars', async () => {
+    const HOTEL = feature(1900, 1900, {
+      id: 77,
+      discriminator: 'hotels',
+      name: 'Hotel Jericho',
+      rating: '10',
+      price: '120',
+      currency: 'ILS',
+      area: '300',
+      auto_status: 0,
+    });
+    override = (u) => {
+      const p = u.searchParams;
+      if (u.pathname === '/api/search-features' && p.get('layer') === 'service_all' && p.get('value_0') === '10')
+        return fc([PAINTER, HOTEL]);
+      if (u.pathname === '/api/service-ratings')
+        return p.get('feature_id') === '77'
+          ? { success: true, averageRating: 3.5, totalRatings: 2, ratings: [] }
+          : { success: true, averageRating: 0, totalRatings: 0, ratings: [] };
+      return undefined;
+    };
+    renderWith(<FeaturedTab />);
+    const featured = (await screen.findByRole('heading', { name: 'Featured' })).closest('section')!;
+    const card = (await within(featured).findByText('Hotel Jericho')).closest('article')!;
+    expect(within(card).getByText('120 ILS')).toBeInTheDocument();
+    expect(within(card).getByText(/300/)).toBeInTheDocument();
+    expect(await within(card).findByText('3.5')).toBeInTheDocument();
+    expect(calls).toContain('/api/service-ratings?service_layer=hotels&feature_id=77');
   });
 
   it('user text is never interpreted as HTML', async () => {

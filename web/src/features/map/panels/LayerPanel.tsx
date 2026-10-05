@@ -10,8 +10,10 @@ import { useLayerFilter, useVisibility } from '@/features/visibility/store';
 import { GROUP_ICON } from '@/features/search/categories';
 import { BASEMAPS, REAL_ESTATE_LAYERS, SERVICE_TYPES } from '../config';
 import { groupedTargets } from '../extras/featured';
+import TargetIcon from '../TargetIcon';
 import { groupLabelKey, serviceLabelKey, type TypeGroupId } from '../registry';
 import { useMapUi } from '../store';
+import { targetFromKey, type MapTarget } from '../targets';
 import MapSheet from './MapSheet';
 
 const ALL_SERVICE_KEYS = SERVICE_TYPES.map((s) => s.key);
@@ -23,14 +25,15 @@ const SERVICE_GROUPS = groupedTargets()
 function Toggle({
   id,
   label,
-  icon,
+  target,
   checked,
   onChange,
   publicHidden = false,
 }: {
   id: string;
   label: string;
-  icon?: string;
+  /** Whose icon (from the icon library) is drawn before the name. */
+  target?: MapTarget | null;
   checked: boolean;
   onChange: (v: boolean) => void;
   /** Admins only see this: the type is hidden from the public (admin page "show & hide"). */
@@ -49,11 +52,7 @@ function Toggle({
         onChange={(e) => onChange(e.target.checked)}
         className="h-4 w-4 accent-brand"
       />
-      {icon && (
-        <span aria-hidden className="w-6 text-center text-lg">
-          {icon}
-        </span>
-      )}
+      {target && <TargetIcon target={target} className="h-5 w-5 shrink-0 text-muted" />}
       <span className="flex-1 text-sm text-fg">{label}</span>
       {publicHidden && (
         <span className="inline-flex items-center gap-1 rounded-full bg-subtle px-2 py-0.5 text-xs font-semibold text-muted">
@@ -67,7 +66,6 @@ function Toggle({
 
 interface GroupItem {
   key: string;
-  icon: string;
   label: string;
   publicHidden: boolean;
 }
@@ -122,7 +120,7 @@ function ServiceGroup({ id, items, forceOpen }: { id: TypeGroupId; items: GroupI
           <Toggle
             key={s.key}
             id={`svc-${s.key}`}
-            icon={s.icon}
+            target={targetFromKey(s.key)}
             label={s.label}
             checked={!hidden.has(s.key)}
             onChange={(v) => setServiceVisible(s.key, v)}
@@ -217,7 +215,7 @@ export default function LayerPanel({ open, onClose }: { open: boolean; onClose: 
               <Toggle
                 key={l.key}
                 id={`layer-${l.key}`}
-                icon={l.icon}
+                target={{ kind: 'realEstate', layer: l.key }}
                 label={t(`layers.${l.key}`)}
                 checked={ui.realEstateVisible[l.key]}
                 onChange={(v) => ui.setRealEstateVisible(l.key, v)}

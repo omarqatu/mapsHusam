@@ -2,6 +2,8 @@ import type { FeatureLike } from 'ol/Feature';
 import { Circle, Fill, Icon, Stroke, Style, Text } from 'ol/style';
 import { SERVICE_TYPE_BY_KEY, TIER_RULES, worstBarrierStatus, type RealEstateLayerKey } from './config';
 import type { ServiceGroupId } from './registry';
+import { iconElements } from './iconSvg';
+import { serviceTypeIcon } from './registry/typeIcons';
 import { INSERT_DEFAULTS } from './edit/attributes';
 
 // Port of legacy js/layers.js createStyle + per-layer styles. Style objects that don't depend on the feature
@@ -34,7 +36,7 @@ export function formatLabel(field: string, value: unknown, t: Translate): string
   return field.toLowerCase().includes('area') ? `${s} ${t('map.areaUnit')}` : s;
 }
 
-// --- emoji markers ---------------------------------------------------------------------------
+// --- type markers ---------------------------------------------------------------------------
 /** One colour per type group, so a kind of service can be found by colour from afar (kept mid-dark: the ring must show on imagery). */
 export const GROUP_COLOR: Record<ServiceGroupId, string> = {
   roads: '#e65100',
@@ -51,28 +53,33 @@ export const GROUP_COLOR: Record<ServiceGroupId, string> = {
   jobs: '#4f46e5',
 };
 
-const emojiIcons = new Map<string, Icon>();
+const markerIcons = new Map<string, Icon>();
 
 /**
- * Emoji on a light disc tinted with its group's colour and ringed by a thin line of that colour (a soft, glassy look that
- * sits lighter on the imagery than a solid white disc with a heavy border). The emoji comes from our own config, never from feature data.
+ * A service type's marker: its icon from the icon library, drawn in its group's colour on a light disc tinted with that
+ * colour and ringed by a thin line of it (a soft, glassy look that sits lighter on the imagery than a solid white disc with a
+ * heavy border). `solid` = a filled disc with a white icon (a road checkpoint, whose colour IS its status). The drawing comes
+ * from our own registry, never from feature data.
  */
-export function emojiIcon(emoji: string, color = '#3f51b5'): Icon {
-  const key = `${emoji}|${color}`;
-  let icon = emojiIcons.get(key);
+export function typeMarker(typeKey: string, group: ServiceGroupId, color = '#3f51b5', solid = false): Icon {
+  const key = `${typeKey}|${color}|${solid}`;
+  let icon = markerIcons.get(key);
   if (!icon) {
-    const svg =
-      '<svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 36 36">' +
-      `<circle cx="18" cy="18" r="16" fill="white" fill-opacity="0.86" stroke="${color}" stroke-opacity="0.45" stroke-width="1"/>` +
-      `<circle cx="18" cy="18" r="16" fill="${color}" fill-opacity="0.14"/>` +
-      `<text x="18" y="25" font-size="21" font-family="Arial, sans-serif" text-anchor="middle">${emoji}</text></svg>`;
+    const drawing =
+      `<g transform="translate(8.4 8.4) scale(0.8)" fill="none" stroke="${solid ? '#fff' : color}" stroke-width="2.2" ` +
+      `stroke-linecap="round" stroke-linejoin="round">${iconElements(serviceTypeIcon(typeKey, group))}</g>`;
+    const disc = solid
+      ? `<circle cx="18" cy="18" r="16" fill="${color}" stroke="#fff" stroke-width="1.5"/>`
+      : `<circle cx="18" cy="18" r="16" fill="white" fill-opacity="0.86" stroke="${color}" stroke-opacity="0.45" stroke-width="1"/>` +
+        `<circle cx="18" cy="18" r="16" fill="${color}" fill-opacity="0.14"/>`;
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 36 36">${disc}${drawing}</svg>`;
     icon = new Icon({
       anchor: [0.5, 0.5],
       src: `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`,
       scale: 1,
       declutterMode: 'obstacle',
     });
-    emojiIcons.set(key, icon);
+    markerIcons.set(key, icon);
   }
   return icon;
 }
@@ -156,7 +163,7 @@ export function serviceStyle({ t, isHidden }: ServiceStyleOptions) {
     const rule = TIER_RULES[type.tier ?? 'close'];
     if (resolution > rule.maxResolution) return undefined;
 
-    let icon = type.icon;
+    let barrierColor: string | null = null;
     let text = '';
     if (resolution < rule.labelBelow) {
       const name = feature.get('name');
@@ -166,14 +173,16 @@ export function serviceStyle({ t, isHidden }: ServiceStyleOptions) {
     }
     if (discriminator === 'road_barriers') {
       const status = worstBarrierStatus(feature.get('stop'), feature.get('stop2')); // the worse direction
-      icon = status.icon;
+      barrierColor = status.color;
       if (resolution < rule.labelBelow) {
         const statusText = t(`roadStatus.${status.key}`);
         text = text ? `${text} (${statusText})` : statusText;
       }
     }
     return new Style({
-      image: emojiIcon(icon, GROUP_COLOR[type.group]),
+      image: barrierColor
+        ? typeMarker(type.key, type.group, barrierColor, true)
+        : typeMarker(type.key, type.group, GROUP_COLOR[type.group]),
       text: text ? label(text, true) : undefined,
     });
   };

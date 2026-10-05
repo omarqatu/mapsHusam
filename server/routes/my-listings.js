@@ -12,7 +12,8 @@ import { requireAuth } from '../auth.js';
 import { platformStatsCache } from '../state.js';
 import { isPropertyLayer, normalizeListingLayer, ownedListings, ownsListing } from '../listing-owners.js';
 import {
-    MAX_PHOTOS, MAX_PHOTO_BYTES, PHOTO_MIME, joinPic, parseListingEdit, photoIdFromUrl, photoType, photoUrl, picList,
+    BEFORE_AFTER_COLUMNS, MAX_PHOTOS, MAX_PHOTO_BYTES, PHOTO_MIME, joinPic, parseListingEdit, photoIdFromUrl, photoType,
+    photoUrl, picList,
 } from '../../lib/listing-edit.js';
 
 // The picture files live on disk (UPLOADS_DIR, default `<project>/uploads`, outside git); the database keeps one row
@@ -41,10 +42,12 @@ async function ensurePhotosSchema() {
 ensurePhotosSchema();
 
 const SERVICE_COLUMNS = `id, discriminator AS layer, name, des, phone, whatsapp, work_hours, price, currency, area,
-    location_name AS location, status, auto_status, end_date, pic, x_coord, y_coord`;
+    location_name AS location, status, auto_status, end_date, pic, x_coord, y_coord,
+    details_link_1, details_link_2, media_default`;
 const PROPERTY_COLUMNS = (table) => `fid AS id, '${table}' AS layer, name, des, phone, whatsapp, NULL AS work_hours, price,
     currency, area, location, status, auto_status, end_date, pic,
-    ST_X(ST_PointOnSurface(geom)) AS x_coord, ST_Y(ST_PointOnSurface(geom)) AS y_coord`;
+    ST_X(ST_PointOnSurface(geom)) AS x_coord, ST_Y(ST_PointOnSurface(geom)) AS y_coord,
+    NULL AS details_link_1, NULL AS details_link_2, NULL AS media_default`;
 
 /** One listing row as the page reads it. */
 function toListing(row, ratings) {
@@ -66,6 +69,10 @@ function toListing(row, ratings) {
         auto_status: Number(row.auto_status) || 0,
         end_date: row.end_date || null,
         photos: picList(row.pic),
+        // services only: the before / after pair and what the card opens on
+        before: row.details_link_1 || null,
+        after: row.details_link_2 || null,
+        media_default: row.media_default === 'before_after' ? 'before_after' : 'photos',
         x: row.x_coord === null ? null : Number(row.x_coord),
         y: row.y_coord === null ? null : Number(row.y_coord),
         rating_avg: ratings.get(key)?.avg ?? null,
@@ -185,6 +192,32 @@ async function writePic(layer, id, list) {
     await poolFor(layer).query(`UPDATE ${w.table} SET pic = $1 WHERE ${w.where}`, [joinPic(list), ...w.params(id)]);
 }
 
+/** Saves an uploaded picture of this listing (file + its `listing_photos` row) → its url, or null if not an image. */
+async function storeUpload(target, uid, body) {
+    const type = Buffer.isBuffer(body) ? photoType(body) : null;
+    if (!type) return null;
+    const id = crypto.randomUUID();
+    await fs.writeFile(photoFile(id, type), body, { flag: 'wx' });
+    await servicesPool.query(
+        'INSERT INTO public.listing_photos (id, layer, feature_id, user_id, type) VALUES ($1, $2, $3, $4, $5)',
+        [id, target.layer, target.id, uid, type],
+    );
+    return photoUrl(id, type);
+}
+
+/** Deletes the files of these urls that were uploaded to this listing; links the admin entered are left alone. */
+async function deleteUploads(target, urls) {
+    const ids = urls.map(photoIdFromUrl).filter(Boolean);
+    if (!ids.length) return;
+    const gone = await servicesPool.query(
+        'DELETE FROM public.listing_photos WHERE id = ANY($1::uuid[]) AND layer = $2 AND feature_id = $3 RETURNING id, type',
+        [ids, target.layer, target.id],
+    );
+    await Promise.all(gone.rows.map((r) => fs.rm(photoFile(r.id, r.type), { force: true })));
+}
+
+const NOT_AN_IMAGE = 'الصورة يجب أن تكون JPG أو PNG أو WebP.';
+
 const uploadLimiter = rateLimit({
     windowMs: 60 * 60 * 1000,
     max: 60,
@@ -203,20 +236,15 @@ app.post(
         try {
             const target = await ownedTarget(req, res);
             if (!target) return;
-            const type = Buffer.isBuffer(req.body) ? photoType(req.body) : null;
-            if (!type) return res.status(415).json({ success: false, error: 'الصورة يجب أن تكون JPG أو PNG أو WebP.' });
+            if (!(Buffer.isBuffer(req.body) && photoType(req.body))) {
+                return res.status(415).json({ success: false, error: NOT_AN_IMAGE });
+            }
             const list = await readPic(target.layer, target.id);
             if (list === null) return res.status(404).json({ success: false, error: 'الإعلان غير موجود.' });
             if (list.length >= MAX_PHOTOS) {
                 return res.status(409).json({ success: false, error: `الحد ${MAX_PHOTOS} صور لكل إعلان.` });
             }
-            const id = crypto.randomUUID();
-            await fs.writeFile(photoFile(id, type), req.body, { flag: 'wx' });
-            await servicesPool.query(
-                'INSERT INTO public.listing_photos (id, layer, feature_id, user_id, type) VALUES ($1, $2, $3, $4, $5)',
-                [id, target.layer, target.id, req.auth.uid, type],
-            );
-            const url = photoUrl(id, type);
+            const url = await storeUpload(target, req.auth.uid, req.body);
             await writePic(target.layer, target.id, [...list, url]);
             res.json({ success: true, url, photos: [...list, url] });
         } catch (err) {
@@ -237,19 +265,96 @@ app.put('/api/my-listings/:layer/:id/photos', requireAuth, editLimiter, async (r
         const list = await readPic(target.layer, target.id);
         if (list === null) return res.status(404).json({ success: false, error: 'الإعلان غير موجود.' });
         const next = [...new Set(wanted)].filter((p) => list.includes(p));
-        const removed = list.filter((p) => !next.includes(p)).map(photoIdFromUrl).filter(Boolean);
         await writePic(target.layer, target.id, next);
-        if (removed.length) {
-            const gone = await servicesPool.query(
-                'DELETE FROM public.listing_photos WHERE id = ANY($1::uuid[]) AND layer = $2 AND feature_id = $3 RETURNING id, type',
-                [removed, target.layer, target.id],
-            );
-            await Promise.all(gone.rows.map((r) => fs.rm(photoFile(r.id, r.type), { force: true })));
-        }
+        await deleteUploads(target, list.filter((p) => !next.includes(p)));
         res.json({ success: true, photos: next });
     } catch (err) {
         console.error('❌ خطأ أثناء ترتيب الصور:', err.message);
         res.status(500).json({ success: false, error: 'فشل حفظ الصور.', details: IS_PROD ? undefined : err.message });
+    }
+});
+
+// --- before / after (services only): one picture per side, in details_link_1 / details_link_2 ---------------------
+
+/** `:side` of a service this account owns → `{ target, column }`, or an answer already sent. */
+async function beforeAfterTarget(req, res) {
+    const column = BEFORE_AFTER_COLUMNS[req.params.side];
+    if (!column) {
+        res.status(404).json({ success: false, error: 'غير موجود.' });
+        return null;
+    }
+    const target = await ownedTarget(req, res);
+    if (!target) return null;
+    if (isPropertyLayer(target.layer)) {
+        res.status(400).json({ success: false, error: 'صور قبل وبعد للخدمات فقط.' });
+        return null;
+    }
+    return { target, column };
+}
+
+/** Puts `url` (or NULL) in the side's column → the previous value, or undefined when the listing is gone. */
+async function swapSide(target, column, url) {
+    const w = whereFor(target.layer, 1);
+    const client = await servicesPool.connect();
+    try {
+        await client.query('BEGIN');
+        const prev = await client.query(`SELECT ${column} AS old FROM ${w.table} WHERE ${w.where} FOR UPDATE`, w.params(target.id));
+        if (!prev.rowCount) {
+            await client.query('ROLLBACK');
+            return undefined;
+        }
+        const set = whereFor(target.layer, 2);
+        await client.query(
+            `UPDATE ${set.table} SET ${column} = $1, updated_at = NOW() WHERE ${set.where}`,
+            [url, ...set.params(target.id)],
+        );
+        await client.query('COMMIT');
+        return prev.rows[0].old;
+    } catch (err) {
+        await client.query('ROLLBACK').catch(() => {});
+        throw err;
+    } finally {
+        client.release();
+    }
+}
+
+// The picture is the raw request body, as for the listing's pictures. It replaces the side's previous picture.
+app.post(
+    '/api/my-listings/:layer/:id/before-after/:side',
+    requireAuth,
+    uploadLimiter,
+    express.raw({ type: () => true, limit: MAX_PHOTO_BYTES }),
+    async (req, res) => {
+        try {
+            const found = await beforeAfterTarget(req, res);
+            if (!found) return;
+            const url = await storeUpload(found.target, req.auth.uid, req.body);
+            if (!url) return res.status(415).json({ success: false, error: NOT_AN_IMAGE });
+            const old = await swapSide(found.target, found.column, url);
+            if (old === undefined) {
+                await deleteUploads(found.target, [url]);
+                return res.status(404).json({ success: false, error: 'الإعلان غير موجود.' });
+            }
+            if (old && old !== url) await deleteUploads(found.target, [old]);
+            res.json({ success: true, listing: await readOne(found.target.layer, found.target.id) });
+        } catch (err) {
+            console.error('❌ خطأ أثناء رفع صورة قبل/بعد:', err.message);
+            res.status(500).json({ success: false, error: 'فشل رفع الصورة.', details: IS_PROD ? undefined : err.message });
+        }
+    },
+);
+
+app.delete('/api/my-listings/:layer/:id/before-after/:side', requireAuth, editLimiter, async (req, res) => {
+    try {
+        const found = await beforeAfterTarget(req, res);
+        if (!found) return;
+        const old = await swapSide(found.target, found.column, null);
+        if (old === undefined) return res.status(404).json({ success: false, error: 'الإعلان غير موجود.' });
+        if (old) await deleteUploads(found.target, [old]);
+        res.json({ success: true, listing: await readOne(found.target.layer, found.target.id) });
+    } catch (err) {
+        console.error('❌ خطأ أثناء حذف صورة قبل/بعد:', err.message);
+        res.status(500).json({ success: false, error: 'فشل حذف الصورة.', details: IS_PROD ? undefined : err.message });
     }
 });
 

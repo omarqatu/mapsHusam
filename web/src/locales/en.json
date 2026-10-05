@@ -179,7 +179,8 @@
     "adminSubmissions": "Add requests",
     "adminContact": "Contact details",
     "myListings": "My listings",
-    "profile": "My profile"
+    "profile": "My profile",
+    "adminRelations": "Property links"
   },
   "roles": {
     "admin": "Admin",
@@ -347,7 +348,7 @@
     "linkCopied": "Location link copied! You can share it now.",
     "copyFailed": "Could not copy the link. Please try again manually.",
     "cooldown": "Please wait {{seconds}} seconds before trying again",
-    "quotaExceeded": "⛔ You have exceeded your request limit ({{limit}}) {{period}}. Please try later or contact the administration.",
+    "quotaExceeded": "You have exceeded your request limit ({{limit}}) {{period}}. Please try later or contact the administration.",
     "period": {
       "daily": "today",
       "weekly": "this week",
@@ -386,7 +387,12 @@
     "next": "Next",
     "openOnYoutube": "Open on YouTube",
     "play": "Play",
-    "playVideo": "Play video"
+    "playVideo": "Play video",
+    "photos": "Photos",
+    "beforeAfter": "Before & after",
+    "before": "Before",
+    "after": "After",
+    "views": "How the pictures are shown"
   },
   "search": {
     "title": "Search",
@@ -397,7 +403,7 @@
     "value": "Value",
     "conditions": "Search conditions",
     "chooseValue": "-- Choose a value --",
-    "customValue": "✏️ Custom value (type)",
+    "customValue": "Custom value (type)",
     "typeValue": "Type the value here...",
     "backToList": "Back to the list",
     "currency": "Currency",
@@ -473,7 +479,7 @@
       "count": "{{count}} results",
       "copyLink": "Copy results link",
       "print": "Print",
-      "linkCopied": "✅ Results link copied. You can share it now.",
+      "linkCopied": "Results link copied. You can share it now.",
       "linkFailed": "Could not copy the link, please copy it manually.",
       "noLink": "There is no current search to share.",
       "badLink": "Could not open the shared results link.",
@@ -576,18 +582,14 @@
       "filterTypes": "Search for a service or property",
       "selectGroup": "Select every type in this group",
       "failed": "Could not load the featured services right now",
-      "empty": "No services available right now",
       "none": "None",
-      "before": "Before",
-      "after": "After",
       "showOnMap": "Show on map",
       "sections": {
         "featured": "Featured",
         "topRated": "Top rated",
         "recommended": "Recommended",
         "photos": "Photos",
-        "videos": "Videos",
-        "beforeAfter": "Before & after"
+        "videos": "Videos"
       },
       "badge": {
         "featured": "Featured",
@@ -595,7 +597,6 @@
         "recommended": "Recommended",
         "photos": "Photos",
         "videos": "Video",
-        "beforeAfter": "Before & after",
         "near": "Near you"
       },
       "groups": {
@@ -1765,6 +1766,10 @@
       "myListings": {
         "title": "My listings",
         "desc": "Edit your services and properties, add pictures, change their state."
+      },
+      "relations": {
+        "title": "Property links",
+        "desc": "Who surveyed or valued which property: answer for plots nobody owns, end any link."
       }
     },
     "figures": {
@@ -2153,6 +2158,15 @@
       "removeFailed": "Could not remove the picture.",
       "hint": "The first picture is the cover. Pictures are shrunk before upload.",
       "broken": "Not a picture link"
+    },
+    "beforeAfter": {
+      "title": "Before & after pictures (optional)",
+      "hint": "A picture of your work before and one after — shown side by side in your listing's details.",
+      "add": "Add picture: {{side}}",
+      "replace": "Change picture: {{side}}",
+      "remove": "Remove picture: {{side}}",
+      "showFirst": "What does your card show first?",
+      "needBoth": "Add a before and an after picture to show them first."
     }
   },
   "profile": {
@@ -2182,5 +2196,77 @@
     "unread": "new notifications",
     "listings": "my listings",
     "ratingCount": "from {{count}} ratings"
+  },
+  "propertyServices": {
+    "title": {
+      "land": "Services for this land",
+      "sale": "Services for this property",
+      "rent": "Services for this property"
+    },
+    "tabs": "Kinds of service",
+    "ranking": "Best first: active, then best rated, then nearest.",
+    "fromLand": "{{distance}} from the property",
+    "more": "Show {{count}} more",
+    "within": "Within {{km}} km of the property",
+    "widened": "Nobody within {{first}} km — we widened the search to {{km}} km.",
+    "viaGovernorate": "Nobody within {{km}} km — these are from the property's governorate."
+  },
+  "propertyRelations": {
+    "title": "Who worked on this land",
+    "kind": {
+      "surveyed_by": "Survey",
+      "valued_by": "Valuation"
+    },
+    "note": "Agreed by the property's owner and the provider together — their statement, not a guarantee from the platform.",
+    "claim": {
+      "surveyed_by": "I surveyed this land",
+      "valued_by": "I valued this land"
+    },
+    "sent": "Request sent. It shows on the card once the other side agrees.",
+    "waiting": "Your request ({{kind}} — {{name}}) is waiting for the other side.",
+    "failed": "Could not send the request.",
+    "manager": {
+      "title": {
+        "property": "Who worked on this land",
+        "provider": "Properties that named you"
+      },
+      "hintProperty": "Name the surveyor or valuer who worked on your land. It shows on the card once they agree.",
+      "hintProvider": "Properties whose owners asked to name you. They show on the property's card once both sides agree. To say you surveyed a land, open it on the map and tap \"I surveyed this land\".",
+      "empty": "No links yet.",
+      "status": {
+        "accepted": "Agreed",
+        "waitingProvider": "Waiting for the provider",
+        "waitingOwner": "Waiting for the owner",
+        "waitingAdmin": "Waiting for the admin",
+        "ended": "Ended"
+      },
+      "accept": "Accept",
+      "decline": "Decline",
+      "withdraw": "Withdraw the request",
+      "end": "End the link",
+      "endTitle": "End the link?",
+      "endMessage": "\"{{name}}\" will be removed from the property's card. It can be asked again later.",
+      "addButton": "Name a surveyor or valuer",
+      "add": {
+        "surveyed_by": "Surveyor",
+        "valued_by": "Valuer"
+      },
+      "kind": "Kind of work",
+      "search": "Search by name",
+      "noMatch": "No results.",
+      "ask": "Ask to link",
+      "sent": "Request sent to \"{{name}}\".",
+      "failed": "Could not do that."
+    },
+    "admin": {
+      "title": "Property links",
+      "subtitle": "Who surveyed or valued which property. You answer here for plots with no registered owner, and may end any link. A provider's consent is never given for them.",
+      "status": {
+        "pending": "Pending",
+        "accepted": "Agreed",
+        "revoked": "Ended"
+      },
+      "empty": "Nothing here."
+    }
   }
 }

@@ -6,30 +6,23 @@ import { AvailabilityText } from '../popup/AvailabilityText';
 import MediaGallery from '@/components/ui/MediaGallery';
 import RatingSummary from '@/components/ui/RatingSummary';
 import {
-  detailLinks,
   hoursLabel,
   availability,
   labelMedia,
   priceLabel,
   text,
-  type Props,
 } from '../popup/featureModel';
 import RatingsBlock from '../popup/RatingsBlock';
 import { formatDistance } from '../search/nearby';
 import ResultContact from '../search/ResultContact';
-import {
-  hasPrice,
-  isFuelStation,
-  isRoadBarrier,
-  priceCurrencyDefault,
-  targetIcon,
-  targetLabelKey,
-} from '../targets';
+import { hasPrice, isFuelStation, isRoadBarrier, priceCurrencyDefault, targetLabelKey } from '../targets';
 import { BarrierBadges, FuelBadges } from './StatusBadges';
-import { manualStars, mediaForMode, sideMedia, type FeaturedEntry, type FeaturedMode } from './featured';
+import { customerRatingsKey, manualStars, mediaForMode, type FeaturedEntry, type FeaturedMode } from './featured';
+import MediaShowcase from '../popup/MediaShowcase';
 import { FEATURED_FRAME } from './featuredStyle';
 import { useShowOnMap } from './useShowOnMap';
 import DirectionsButton from '../popup/DirectionsButton';
+import TargetIcon from '../TargetIcon';
 
 interface CardProps {
   entry: FeaturedEntry;
@@ -75,29 +68,6 @@ function Description({ value }: { value: string }) {
   );
 }
 
-function BeforeAfter({ props }: { props: Props }) {
-  const { t } = useTranslation();
-  const [before, after] = detailLinks(props);
-  const side = (label: string, url: string | null, labelKey: string) => (
-    <div className="min-w-0 space-y-1">
-      <div className="text-center text-sm font-bold text-muted">{label}</div>
-      {url ? (
-        <MediaGallery items={labelMedia(sideMedia(url, labelKey), t)} />
-      ) : (
-        <div className="rounded-lg bg-subtle p-3 text-center text-sm text-muted">
-          {t('extras.featured.none')}
-        </div>
-      )}
-    </div>
-  );
-  return (
-    <div className="grid grid-cols-2 gap-2">
-      {side(t('extras.featured.before'), before, 'popup.moreDetails1')}
-      {side(t('extras.featured.after'), after, 'popup.moreDetails2')}
-    </div>
-  );
-}
-
 /** One provider / property in the featured portal: media, key facts, status, contact and "show on map". */
 export default function FeaturedCard({
   entry,
@@ -124,10 +94,10 @@ export default function FeaturedCard({
   const price = priced ? priceLabel(p, t, i18n.language, priceCurrencyDefault(r.target)) : null;
   const area = priced && Number(p.area) > 0 ? text(p.area) : '';
   const stars = ratings?.avg ?? manualStars(r.rating);
-  const media = mode === 'beforeAfter' ? null : labelMedia(mediaForMode(p, mode), t);
+  // The photos / videos sections show only their kind; everywhere else, the listing's media as its provider set it up.
+  const media = mode === 'all' ? null : labelMedia(mediaForMode(p, mode), t);
   // A "top rated" entry already carries the real average; everything else asks for it.
-  const showCustomerRatings =
-    customerRatings !== false && r.target.kind === 'service' && !isBarrier && !isFuel && !!r.id && !ratings;
+  const ratingsKey = customerRatings !== false && !ratings ? customerRatingsKey(r) : null;
 
   return (
     <article
@@ -137,7 +107,7 @@ export default function FeaturedCard({
         !bare && (highlight ? FEATURED_FRAME : 'border-line bg-surface'),
       )}
     >
-      {mode === 'beforeAfter' ? <BeforeAfter props={p} /> : media && <MediaGallery items={media} />}
+      {media ? media.length > 0 && <MediaGallery items={media} /> : <MediaShowcase props={p} />}
 
       <div className="flex items-center gap-1.5 text-sm font-bold text-warn">
         {badge && <Star className="h-3.5 w-3.5" fill="currentColor" aria-hidden />}
@@ -145,14 +115,12 @@ export default function FeaturedCard({
         {r.id && <span className="font-normal text-muted">#{r.id}</span>}
       </div>
 
-      {showCustomerRatings && r.target.kind === 'service' && (
-        <RatingsBlock layer={r.target.discriminator} featureId={r.id ?? ''} />
-      )}
+      {ratingsKey && <RatingsBlock layer={ratingsKey.layer} featureId={ratingsKey.featureId} />}
 
       {!bare && (
         <h5 className="flex items-start gap-2 text-base font-bold text-fg" dir="auto">
           <span aria-hidden className="text-lg leading-none">
-            {targetIcon(r.target)}
+            <TargetIcon target={r.target} />
           </span>
           {name}
         </h5>
@@ -167,7 +135,7 @@ export default function FeaturedCard({
       )}
 
       <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm">
-        {!showCustomerRatings && stars > 0 && <RatingSummary value={stars} count={ratings?.total} />}
+        {!ratingsKey && stars > 0 && <RatingSummary value={stars} count={ratings?.total} />}
         {state && <AvailabilityText value={state} suffix={hoursLabel(p.work_hours, t, i18n.language)} />}
         {price && <span className="text-base font-black text-brand-fg">{price}</span>}
         {area && (

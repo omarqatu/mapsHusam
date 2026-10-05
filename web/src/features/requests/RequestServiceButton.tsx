@@ -12,13 +12,22 @@ import { useRequestsUi, type RequestTarget } from './store';
  */
 export default function RequestServiceButton({
   target,
+  onRequest,
   ...rest
-}: { target: RequestTarget } & Omit<ButtonProps, 'onClick' | 'children'>) {
+}: {
+  target: RequestTarget;
+  /** Called when the person taps the button (a measurement hook; a signed-out visitor is sent to log in, but the tap counts). */
+  onRequest?: () => void;
+} & Omit<ButtonProps, 'onClick' | 'children'>) {
   const { t } = useTranslation();
   const start = useRequestsUi((s) => s.startRequest);
   const signedIn = useAuthStore((s) => !!s.user);
   const openLogin = useLoginPrompt((s) => s.open);
-  const onClick = () => (signedIn ? start(target) : openLogin('request'));
+  const onClick = () => {
+    onRequest?.();
+    if (signedIn) start(target);
+    else openLogin('request');
+  };
   return (
     <Button
       startIcon={<Send className="h-4 w-4 rtl:-scale-x-100" aria-hidden />}

@@ -30,6 +30,7 @@ const AdminViewUserPage = lazy(() => import('@/features/admin-users/AdminViewUse
 const AdminWidgetsPage = lazy(() => import('@/features/admin-widgets/AdminWidgetsPage'));
 const AdminVisibilityPage = lazy(() => import('@/features/admin-visibility/AdminVisibilityPage'));
 const AdminSubmissionsPage = lazy(() => import('@/features/listing-submissions/AdminSubmissionsPage'));
+const AdminRelationsPage = lazy(() => import('@/features/property-relations/AdminRelationsPage'));
 const AddListingPage = lazy(() => import('@/features/listing-submissions/AddListingPage'));
 const MyListingsPage = lazy(() => import('@/features/my-listings/MyListingsPage'));
 const ProfilePage = lazy(() => import('@/features/profile/ProfilePage'));
@@ -58,6 +59,7 @@ const ported: Record<string, ReactElement> = {
   '/admin/appearance': <AdminAppearancePage />,
   '/admin/contact': <AdminContactPage />,
   '/admin/submissions': <AdminSubmissionsPage />,
+  '/admin/relations': <AdminRelationsPage />,
   '/add-listing': <AddListingPage />,
   '/my-listings': <MyListingsPage />,
   '/profile': <ProfilePage />,

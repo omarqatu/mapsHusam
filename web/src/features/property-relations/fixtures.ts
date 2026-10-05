@@ -1,0 +1,50 @@
+import type { MyListing } from '@/api/myListings';
+import type { MyRelation } from '@/api/propertyRelations';
+
+/** Test data shared by the property-relations tests. */
+export const listing = (over: Partial<MyListing>): MyListing => ({
+  layer: 'land_surveyors',
+  id: 2,
+  kind: 'service',
+  name: 'م. خالد للمساحة',
+  des: '',
+  phone: '0591234567',
+  whatsapp: '',
+  work_hours: '',
+  price: null,
+  currency: null,
+  area: null,
+  location: '',
+  status: 0,
+  auto_status: 0,
+  end_date: null,
+  photos: [],
+  before: null,
+  after: null,
+  media_default: 'photos',
+  x: 170000,
+  y: 145000,
+  rating_avg: null,
+  rating_count: 0,
+  ...over,
+});
+
+export const relation = (over: Partial<MyRelation>): MyRelation => ({
+  id: 1,
+  relation: 'surveyed_by',
+  status: 'pending',
+  property_layer: 'LandSale',
+  property_id: 1,
+  property_name: 'قطعة 12 حوض 5',
+  property_has_owner: true,
+  provider_layer: 'land_surveyors',
+  provider_id: 2,
+  provider_name: 'م. خالد للمساحة',
+  waiting_for: 'provider',
+  i_asked: false,
+  can_answer: false,
+  can_revoke: false,
+  created_at: '2026-10-05T10:00:00Z',
+  updated_at: '2026-10-05T10:00:00Z',
+  ...over,
+});

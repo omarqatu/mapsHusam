@@ -2,11 +2,12 @@ import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import SearchInput from '@/components/ui/SearchInput';
 import { useLayerFilter } from '@/features/visibility/store';
-import { targetIcon, targetKey, targetLabelKey, type MapTarget } from '../targets';
+import { targetKey, targetLabelKey, type MapTarget } from '../targets';
 import { groupLabelKey } from '../registry';
 import { GROUP_ICON } from '../registry/groupIcons';
 import { groupedTargets } from './featured';
 import { matchesQuery } from './status';
+import TargetIcon from '../TargetIcon';
 
 const GROUPS = groupedTargets();
 
@@ -117,7 +118,7 @@ export default function TypeFilter({ selected, onChange }: Props) {
                     checked={selected.has(targetKey(x))}
                     onChange={(v) => toggle([targetKey(x)], v)}
                   >
-                    <span aria-hidden>{targetIcon(x)}</span> {label(x)}
+                    <span aria-hidden><TargetIcon target={x} /></span> {label(x)}
                   </Check>
                 ))}
               </div>

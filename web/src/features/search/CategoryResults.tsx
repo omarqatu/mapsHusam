@@ -13,7 +13,7 @@ import { formatDateTime } from '@/lib/format';
 import type { Coordinate } from '../map/config';
 import { GeoError, locateOnce } from '../map/geolocate';
 import { printResults } from '../map/search/printResults';
-import { hasPrice, targetIcon, targetLabelKey } from '../map/targets';
+import { hasPrice, targetLabelKey } from '../map/targets';
 import FiltersPanel from './FiltersPanel';
 import ListingCard from './ListingCard';
 import PagedGrid from './PagedGrid';
@@ -22,6 +22,7 @@ import { mapSearchPath, type Selection } from './selection';
 import { EMPTY_FILTERS, fromConditions, toConditions, filterFields } from './filters';
 import { seededRandom } from './featuredOrder';
 import { pinFeatured, sortResults, type SortMode } from './sort';
+import TargetIcon from '@/features/map/TargetIcon';
 
 interface Props {
   selection: Selection;
@@ -115,7 +116,7 @@ export default function CategoryResults({ selection, onChange, onBack }: Props) 
           {t('searchPage.backToCategories')}
         </Button>
         <h2 id="category-title" className="flex items-center gap-2 text-xl font-black text-fg">
-          <span aria-hidden>{targetIcon(target)}</span>
+          <span aria-hidden><TargetIcon target={target} /></span>
           {title}
         </h2>
       </div>

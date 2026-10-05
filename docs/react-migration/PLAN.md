@@ -1066,8 +1066,43 @@ it at once); browser at 1440 / 390, no overflow.
     Dev: `dev/geoserver-setup.sh` now does the reset. Check: WFS `DescribeFeatureType` for `services:service_all` lists `price` and `area`.
   - **Also fixed:** `edit.live.test.ts` did not log in as an admin, so the proxy lock (`X-App-Token`, "Server changes") would refuse
     its writes; it logs in now.
-- ⬜ Featured: before/after via `details_link_1/2 notempty` query; hotel / villa cards with property details and live rating;
-  empty sections hidden.
+- ✅ Featured (Husam's `featured-services-portal.js`, 14739ac / 0a00037): before / after from its own query; hotels and villas
+  kept in every section with price, area and their customers' rating; empty sections hidden. Done 2026-10-05.
+  **Superseded the same day (owner):** before / after is no longer a section — it lives in the listing's own details, where
+  the provider adds it and chooses whether the card opens on it; see "Owner's notes, 5 October 2026" → "Before / after in
+  the service's details". The section, its query and `SearchQuery.notEmpty` were removed; the rest below stands.
+  - ~~**Before / after:**~~ (removed, see above) `useBeforeAfterFeatures` asks `service_all` for rows with `details_link_1` **and** `details_link_2`
+    not empty (services only, like his), instead of only filtering the featured + recommended rows. The section shows the
+    featured / recommended listings with both links first (paid placements lead), then every other service the query finds,
+    each listing once (`beforeAfterEntries`); the row waits for both sources so it does not appear and then grow.
+  - **Found while porting — his "not empty" filter never filtered.** The server skips a condition whose `value_N` is missing
+    or empty, and his request sent none, so it returned all of `service_all` (≤ 2000 rows) and the browser threw away the rows
+    without links. `SearchQuery.notEmpty` (`api/search.ts`) sends a placeholder value the `notempty` branch never reads, so
+    the database does the filtering. See Backend asks for the server-side alternative. (Removed with the section: nothing
+    in the app filters on "not empty" any more.)
+  - **Hotels / villas:** `pickForSection` keeps the first card of each kind priced like property (`hasPrice`: rent, sale, land,
+    then holiday villas, hotels in registry order) before the rest, as his "do not drop hotels and villas". Their cards already
+    showed price, currency and area (item "Price and area" above) and, on the map, the customers' rating (q1).
+  - **Live rating on /search (UX change):** the landing rows' cards now show a service's real customer average and count, or
+    "no ratings yet", instead of the hand-set `rating` column turned into stars (a featured plumber used to show five stars
+    nobody gave). One `GET /api/service-ratings` per card, asked only when the card comes into view (`hooks/useInView.ts`);
+    property keeps the hand-set stars; road barriers and fuel stations show none. The rule "whose card shows real ratings" is
+    one function used by both cards (`customerRatingsKey`). Result lists (categories, keyword search) keep the hand-set stars:
+    they can hold hundreds of cards.
+  - **Empty sections hidden:** the map panel's sections disappear when they have nothing (the "no services right now" line
+    and its locale strings are gone); /search already did. **Also fixed:** a /search row whose request failed stayed a loading
+    skeleton for good — it is left out now. The section data of both places is one hook (`extras/useFeaturedRows.ts`); the
+    unused `grid` variant of the map sections was removed.
+  - **Also fixed (seen in the browser):** on a before / after card the section badge covered the "before" label; the
+    before / after labels sit at the bottom of each picture now.
+  - **Verified:** unit (`search.test.ts` query string, `extras.logic.test.ts` picking / merging / rating rule), components
+    (`extras.test.tsx`: the before/after section lists a service only the new query finds and sends `notempty` with a value,
+    an empty section is left out, a hotel card shows price, area and its customers' 3.5; `LandingSections.test.tsx`: real
+    rating vs "no ratings yet" vs property stars, a failed row is left out). Browser (Chromium, Vite with `/api` answered by
+    test data — this container has no Postgres data or GeoServer): /search at 1440 and 390 and the map's featured tab — order
+    apartment · villa · hotel · plumber, hotel "4.5 (12)", before / after shows the recommended painter then the carpenter,
+    "top rated" and "videos" hidden, no sideways scroll. **Not run here:** `extras.live.test.ts` has a new real-server check
+    (every row has both links and none is missed) — run it with `VITE_LIVE_API` where the dev database is up.
 - ✅ Road-barrier icon = the worse of `stop` / `stop2` (`worstBarrierStatus`, order open < light < inspection < heavy < closed;
   the label on the map follows it; the card still shows both directions). Test: `map.test.ts`.
 - ✅ Edit tool after a failed save: nothing to port — React never turned the tool off. A refused save (wrong GeoServer login,
@@ -1312,6 +1347,141 @@ For each page, list from the legacy code — not from memory:
   `FormField` gained an optional `hint`. Tests: `features/profile/model.test.ts`, live `profile.live.test.ts`.
 - ✅ **"Go to the map" from a search result** opened a bare point: the listing is now selected first and the map keeps its
   card when the shared point is that listing (`useShowOnMap`, `MapView`; e2e `search.spec.ts`).
+- ✅ **Before / after in the service's details** (owner: "in the service's details, show before / after if he wants; he
+  chooses whether that or the normal pictures is the default; drop before / after as a section of its own").
+  - **Where it shows:** the map's details card, the featured cards and the /search preview share `popup/MediaShowcase`:
+    with photos and a pair, a "الصور / قبل وبعد" switch that opens on the provider's choice (`media_default`); with only
+    one of them, just that. The pair is two pictures side by side, each filling its half, labelled «قبل» / «بعد», opening
+    the viewer. On /search a card's picture follows the choice too (the pair side by side, or the first picture).
+  - **What counts as a pair** (`featureModel.beforeAfterPair`): both `details_link_1` and `details_link_2` hold a picture or
+    a video. Legacy data also keeps plain links there (a Facebook page, a website): those stay "more details" links and are
+    never labelled before / after. A pair is not repeated in the photo strip; the photos section ignores it.
+  - **The provider sets it up** in "My listings" → edit → «صور قبل وبعد (اختياري)» (services only): two slots, add /
+    replace / remove, saved at once like the pictures (shrunk in the browser first); then «ماذا يظهر أولاً في بطاقتك؟» —
+    photos or before / after, enabled once both pictures are there, shown at once and saved in the background. Server:
+    see "Server changes" → "Before / after pictures by the provider".
+  - **Removed:** the «قبل وبعد» section (map panel and /search), its query, `beforeAfterEntries`, `SearchQuery.notEmpty`
+    and their strings. **Not done:** the admin's map editor still edits the two links as text (as before) but not the
+    choice — it is the provider's; say if the admin should set it too.
+  - **Verified:** unit (`extras.logic.test.ts` choice / pair / plain links, `popup.test.tsx`), components (`extras.test.tsx`:
+    the switch opens on photos, or on before / after when chosen), live against a real server + Postgres
+    (`myListings.live.test.ts`: upload both sides, replace — old file 404 —, choose, remove, another account 404, a non-image
+    415), browser at 1440 and 390 with the real server for login and "My listings" (upload through the file picker, choice
+    saved on the server) and search results faked (no PostGIS here): painter opens on before / after, carpenter on photos,
+    an electrician with two page links gets no switch, no «قبل وبعد» row, no sideways scroll. **Deploy step:** GeoServer
+    reload of `service_all` (see Server changes) so the map card receives the choice.
+- ✅ **"Services for this land"** (owner's plan, 2026-10-05: a land card offers the professionals a buyer needs next —
+  surveyor, valuer, lawyer — ranked for THIS property; land first, flats only once it proves useful; no new trades).
+  - **What the visitor sees** (`features/property-services/`, one component on the map's details card and on the /search
+    preview): one quiet line «خدمات لهذه الأرض — مساحين أراضي · مخمنين عقاريين», closed until asked. Open: tabs with counts
+    (📐 مساحين (6) · 📊 مخمنين (3)), a line saying where the list came from and how it is ordered, then three providers (name, available now, real
+    rating or "no ratings yet", place · distance from the property, call / WhatsApp / request, and show-on-map); «عرض N
+    آخرين» up to ten. A type nobody offers is not shown; with nobody at all, nothing shows (no dead ends).
+  - **Finding them** (`queries.ts → findProviders`, owner's correction 2026-10-05: the governorate is an administrative
+    line, not a quality signal — a surveyor 3 km away across it can beat one 35 km away inside it): the search starts
+    around the property's own point, a box the server filters (`bbox` on the type's layer, so a type with hundreds of rows
+    never travels whole), cut to a real circle here, and widens 10 → 25 → 50 km only while it finds fewer than three. The
+    governorate is the LAST resort: when even 50 km finds too few, its providers are added (any distance) and the card
+    says so. The card always says where the list came from («ضمن 10 كم من العقار» / «لا يوجد ضمن 10 كم — وسّعنا البحث حتى
+    25 كم» / «لا يوجد ضمن 50 كم — هؤلاء من محافظة العقار»).
+  - **Ranking** (`rank.ts`, tested): inside those results — active first (not "unavailable for now"), then the trusted
+    rating, then distance. Trusted rating pulls few ratings toward a neutral 3.5 (weight 3), so 5.0 from one customer does
+    not beat 4.7 from forty, and ratings closer than a quarter star count as equal (4.5 vs 4.6 is noise) so the nearer wins.
+    "Closed right now" is a light nudge: one quarter-star band, shown as plain muted words, never red — a surveyor is not a
+    restaurant, closed at 8 pm says little about the work. Real ratings come from the new
+    `GET /api/service-ratings-summary` (Server changes). Distance is from the property's point, not the visitor.
+  - **Configurable, not hardcoded:** the types per property kind are the platform setting `settings.propertyServices`
+    (`{"land":["land_surveyors",…]}`) and it stores **stable type keys** (the registry's `land_surveyors`, never the
+    Arabic name), so renaming or translating a type cannot break the link; parsed in `model.ts` (unknown kinds / keys
+    dropped, at most 5 types), built-in default (surveyors, valuers, lawyers for land) until someone saves one. The
+    server already accepted any `settings.*` key, so no server change. **No admin screen for it yet** — it is saved through
+    the existing `PUT /api/admin/platform-content/:key`; say if you want the screen.
+  - **Measured from day one** (`api/propertyServices.ts`, server table `property_services_events`, see Server changes):
+    every event carries the property (layer + id), the service type, the provider and the channel — not a label. `view`
+    (the card showed the section, with how many types had somebody — so an empty city shows up as numbers, not silence),
+    `open` (looked at a type's list; once per tab and property), `contact` (call / WhatsApp, with provider and channel),
+    `request` (tapped "request the service", with provider). Visitors count too (a per-tab id); an account's id wins. The
+    funnel "100 opened a land → 28 looked at surveyors → 9 contacted → 3 requested" is the query in Server changes.
+    `request` is the tap, not a created request (that one is in `service_requests`).
+  - **Left out on purpose (owner's decisions, 2026-10-05):** **"verified" is out of V1 completely** — no badge, no grey
+    badge, no `listing_owners` as a stand-in; later a real verification with a definition, evidence and a reviewer.
+    **Brokers:** anyone may register as a broker for now, without the word "licensed"; blocking the unlicensed today would
+    strangle supply with no verification workflow behind it; later `verification_status` and a licence number / document if
+    that path is taken. Not touched until the relationship model works: the broker profile, saved searches. Also out:
+    flats, any new trade (contractor, cleaning, moving). **Next, right after this works:** the provider ↔ property
+    relationship model (SurveyedBy / ValuedBy …, pending → accepted → revoked, with the provider's consent).
+  - **Verified:** unit (`propertyServices.test.ts`: config parsing with stable keys, the ranking incl. 3 km across a
+    governorate line beating 35 km inside it, the few-ratings pull, the quarter-star bands, closed as a light nudge),
+    component (`PropertyServices.test.tsx`: the bbox sent around the point and no widening when enough, the corner of the
+    box cut to a circle, widening step by step, the governorate only as the last resort and not at all without one, order,
+    "show more", switching type, the admin's saved list, a failing type left out, and every event with its fields: view
+    once per tab and property with `types_offered`, open per type, contact with provider + channel, request, visitors
+    counted, nothing without a property id; `RequestServiceButton.test.tsx`: the tap is reported, for a visitor too),
+    server against a real Postgres (Server changes: the events, nine refusals; and the real `bbox` / governorate search
+    behind this card), browser at 1440 and 390 with the REAL server for the proximity search, ratings, settings and
+    events (only the land listing itself faked — no PostGIS here): surveyors ordered as designed (a 3 km neighbour in
+    another governorate is not held back, closed one step lower, unavailable last, the 35 km one absent), lawyers
+    widened to 25 km, valuers falling back to the governorate, the events landing in the table for two visitors, no
+    sideways scroll. **Not seen in a browser:** the same component on the map's details card (needs the map and
+    GeoServer, not available here) — same component, the click point as origin; check it by hand on a land on the map.
+- ✅ **Property relations: "who worked on this land"** (owner, 2026-10-05; server: see Server changes → "Who worked on a property").
+  A relation both sides agree to, shown as their statement — not a verification, not a guarantee, and no right to rate.
+  - **The card** (`features/property-relations/PropertyRelations.tsx`, on the map's details card and the /search preview, above
+    "services for this land"): «من عمل على هذه الأرض» — 📐 مسح · name, 📊 تخمين · name, with the line «بموافقة صاحب العقار
+    والمزوّد معاً — إفادة منهما وليست ضماناً من المنصة». Only agreed relations are public (a pending one is not shown to
+    visitors). A signed-in provider with a matching listing sees «أنا مسحت هذه الأرض» / «أنا خمّنت هذه الأرض» (one per listing, named
+    when there are several); after it, «طلبك (مسح — الاسم) بانتظار موافقة الطرف الآخر» and no second button. Nothing shows when
+    there is nothing to say; flats show nothing (V1: land only).
+  - **"My listings"** (`RelationsManager`, in a listing's edit sheet): a land owner sees who was named / asked, each with its
+    state (waiting for the provider / the owner / the admin, agreed), **accept / decline** when it waits for them, **withdraw**
+    their own request, **end the link** (asks first); and «ذكر مسّاح أو مخمّن» — pick the kind, search a provider by name, one
+    tap «اطلب ربطه». A provider sees the properties that named them, with the same actions; naming a land is done from its card.
+    Ended links are not listed. Notifications already point here (`/my-listings`).
+  - **Admin** (`/admin/relations`, a home card for admins like "add requests"): tabs Pending / Agreed / Ended with counts; a
+    provider's claim on a plot nobody owns waits here («بانتظار موافقة المشرف») and the admin accepts or declines; any agreed
+    link can be ended. The page says a provider's consent is never given for them. The server enforces all of it; the web only
+    hides what the server would refuse (`model.ts` mirrors `lib/property-relations.js`).
+  - **Decisions taken** (the owner agreed to the defaults, 2026-10-05): an admin answers for plots with no registered owner;
+    no lawyer relation; V1 types `surveyed_by` and `valued_by`.
+  - **Not built:** a link shown on the provider's own card ("surveyed N lands") and a relation count for ranking — wait for
+    real use; the broker profile and saved searches (not touched until this works in practice); a live test against the dev
+    database (the seeded accounts own no land) — the server was verified by script instead.
+  - **Verified:** unit (`model.test.ts`: who may claim what, not twice, a revoked one may be asked again, status words),
+    components (`propertyRelations.test.tsx`: the card with the right request, a visitor sees no claim and asks nothing about
+    their own links, nothing for a flat / when empty, the claim body and the waiting state, several listings named; the manager's
+    accept / decline / withdraw / end-with-confirm / add by name (search, one tap, valuers fetch their own type) for both
+    perspectives; the admin page's tabs, accept, end), server against a real Postgres (34 checks, Server changes), browser at
+    1440 and 390 with the REAL server for everything but the featured land list (no PostGIS here): a visitor sees the agreed
+    surveyor and not the pending valuer; the surveyor's claim on an unowned land turns into «بانتظار موافقة الطرف الآخر»; the
+    owner accepts the valuer from "My listings" and sees the list of surveyors; the admin approves the claim and the land's
+    public list then names the surveyor. **Not seen in a browser:** the card on the map's details card (needs the map and
+    GeoServer) — same component.
+- ✅ **No emoji anywhere — icons from the library** (owner, 2026-10-05: "no icons at all as emoji; nice pictures or a React
+  library"). Emoji differ on every phone, cannot be tinted or sized, and look unfinished.
+  - **One icon per type, from `lucide-react`:** `features/map/registry/typeIcons.ts` (`TYPE_ICON` for the 68 service types,
+    `PROPERTY_ICON` — rent key, sale house, land plot) and the `TargetIcon` component (as big as the text around it, `1em`).
+    The emoji field is gone from `shared/service-types.json` (the server never read it), from the registry type and from
+    `REAL_ESTATE_LAYERS`; a type without an icon fails `registry.test.ts`, and an icon without a type too.
+  - **The map's markers** (`styles.ts → typeMarker`): the same icon drawn as SVG in its group's colour on the tinted disc; a road
+    checkpoint is a solid disc in its status colour with a white cone (before: 🟢🔴🟠 emoji). The SVG comes from the library's own
+    drawing (`iconSvg.ts`, read from lucide-react 1.x internals; `iconSvg.test.ts` fails on an upgrade that changes them rather
+    than letting the map draw empty markers). Looked at all 68 markers in a gallery page: one consistent set.
+  - **Everywhere else:** the category browser, search cards and results, the featured / status / near-me / type-filter lists,
+    the layer panel (an icon before each name), "My listings", the admin pages, the new relation / services cards and the
+    welcome splash (feature cards, the floating decoration, the logo) use `TargetIcon` or a named lucide icon. In native
+    `<select>` options (they cannot hold a drawing) the emoji prefix was simply dropped (checkpoint status, fuel availability,
+    the submission type list); the "type a value" button shows a list icon.
+  - **Texts:** the emoji decorations were removed from the locale strings (toasts, measurement titles), from the legal / guide /
+    about texts (`legal/texts/*.json` — 67 headings; their byte-for-byte pins in `texts.sha256.json` were updated on purpose, as
+    that file's rule says; the wording itself is unchanged) and from the notification titles the server sends (17 strings in
+    `server/routes`: admin sessions, service requests, listing submissions, property links). Old notifications already stored
+    keep their emoji; a text an admin saved over the built-in ones is the admin's data and was not touched.
+  - **Not changed:** the promo pictures (`web/public/promo/*.webp`) contain emoji drawn into the artwork — they are pictures;
+    `©` in the footer is a legal sign. Guard: `noEmoji.test.ts` scans code, locales and texts; the rule is in `CLAUDE.md`.
+  - **Verified:** typecheck, lint, 534 tests (and `node --test lib`, 29); browser at 1440 and 390 — the welcome page, the search
+    landing, a land's card with its services tabs, no emoji left in the visible text of those pages (only `©`), no sideways scroll.
+    **Not seen in a browser:** the real map with its markers (needs GeoServer) and the layer panel on it; the markers were
+    checked as images in a gallery, drawn by the same code.
 - ✅ **Directions** («اتجاهات», signed-in users only — owner) on the map card, the featured cards and the search
   results, except road barriers (`popup/DirectionsButton`): opens Google Maps directions to the point
   (`share.ts → directionsLink`; on a phone the Maps app, turn by turn, from where the person is). In-app routing on the
@@ -1683,6 +1853,84 @@ and give the Node process write access to it on IIS**), table `listing_photos` k
   WhatsApp normalised like register, email format, unique → 409). Nothing existing changed. Verify: `node --test lib/`,
   live `features/profile/profile.live.test.ts`.
 
+- **Before / after pictures by the provider, and what the card opens on** (owner, 2026-10-05: "in the service's details,
+  show before / after if he wants; he chooses whether that or the normal pictures is the default; drop before / after as a
+  section of its own"). Asked by the owner. What: `service_all.media_default TEXT` (`'photos'` default / NULL, or
+  `'before_after'`), and `details_link_1` / `details_link_2` made sure to exist (they do on every installation that ran the
+  legacy editor), all `ADD COLUMN IF NOT EXISTS` at start-up (`ensureServiceMediaColumns`, `server/database.js`).
+  `GET /api/my-listings` items gain `before`, `after` (the two links, or null) and `media_default` — added fields, nothing
+  removed. `PATCH /api/my-listings/:layer/:id` accepts `media_default` (services only; rules in `lib/listing-edit.js`). New:
+  `POST /api/my-listings/:layer/:id/before-after/before|after` (raw JPG/PNG/WebP like the listing's pictures, same files,
+  `listing_photos` rows and limiter; replaces the side's picture and deletes the previous one if it was uploaded) and
+  `DELETE …/before-after/before|after` (empties the side; an uploaded file is deleted, a link the admin typed is only
+  cleared). Both answer `{ success, listing }`, owner only (404 for another account's listing), services only (400 for a
+  property). **Deploy step:** like `price` / `area`, GeoServer must re-read `service_all` (Layers → `service_all` → Reload
+  feature type) for the map's details card to receive `media_default`; until then the map opens on the photos.
+  Verified against a real Postgres (2026-10-05): upload before / after, replace (old file gone, its URL 404), the choice
+  saved, remove (an admin link cleared, no file touched), another account 404, no login 401, a non-image 415, a wrong side
+  404, a bad choice 400; `node --test lib/*.test.js` (24 pass). Commit: `feat(server): a provider's before / after pictures
+  and the media their card opens on`.
+
+- **Ratings per service type, and measured "services for this property"** (2026-10-05; the owner's plan: rank a land's
+  surveyors / valuers by real ratings, and know from day one whether the idea is a product or a pretty button).
+  Two additions, nothing existing changes shape:
+  (1) public `GET /api/service-ratings-summary?service_layer=<type>` → `{ success, items: [{ feature_id, avg_rating,
+  total_ratings }] }` — the real ratings of ONE type grouped by listing, average and count only (no comments, no names);
+  unknown type 400, a type the admin hid → `items: []`. Why: `/api/top-rated-providers` is a global top 50, so it cannot
+  rank one type's providers.
+  (2) table `property_services_events` (created at start-up) and public `POST /api/property-services-events` (the same
+  rate limiter as `/save-stat`: visitors are most of the traffic, so the endpoint takes an optional token like
+  `/save-stat` — the account's id when valid, else the visitor's per-tab id `guest-…`). Body `{ action, property_layer,
+  property_id, service_type?, provider_id?, channel?, types_offered?, visitor? }`, one row each:
+  `view` (a property's card showed the section; `types_offered` = how many types had somebody) · `open` (looked at one
+  type's list; needs `service_type`) · `contact` (`provider_id` + `channel` call | whatsapp) · `request` (tapped "request
+  the service"; `provider_id`). Validated: property layer must be ApartRent / ApartSale / LandSale, ids digits, type a
+  known service, anything else 400. Measurement only: it never touches the request quota, the visit counters or
+  `log-map-event`. **Reading the funnel** (people, not clicks):
+  `SELECT action, count(DISTINCT actor) FROM property_services_events WHERE created_at > now() - interval '30 days'
+  GROUP BY action;` — add `AND service_type = 'land_surveyors'` for one type, or group by `property_id` for one property;
+  "100 opened a land → 28 opened surveyors → 9 contacted → 3 requested" is that query. `request` is the tap (intent), a
+  created request is in `service_requests` and joins by provider.
+  Verify (done against a real Postgres, 2026-10-05): all four actions as a visitor and as an account, 9 refusals (bad
+  action, not a property, SQL-looking id, missing / property / unknown type, contact without provider or with a bad
+  channel, no body), the stored rows, the funnel query, the quota untouched. Commit: `feat(server): ratings summary per
+  service type; measured events for services on a property card`. (An earlier version of this entry logged these events
+  through `log-map-event` with a new `source` and exempted them from the quota and the visit counters; that is gone —
+  a dedicated table carries the listing, the type and the action instead of a label.)
+
+- **Who worked on a property: relations a provider and a property agree to** (owner, 2026-10-05: "the provider ↔ property
+  relationship model, right after the services card"). New table `property_relations` (created at start-up) and routes in
+  `server/routes/property-relations.js`; the rules are pure functions in `lib/property-relations.js` (`node --test`).
+  - **Model:** `relation` = `surveyed_by` (provider type `land_surveyors`) or `valued_by` (`real_estate_valuers`), on
+    `LandSale` only in V1 (one table in `RELATIONS` to widen). **No lawyer relation, on purpose:** "this lawyer represented the
+    owner of this land" is not something to show publicly on a card. Status `pending` → `accepted` → `revoked` (a decline
+    and a withdrawal are `revoked` with `revoked_by`). Two consents, each stored (`property_ok_by/at`, `provider_ok_by/at`):
+    pending = one side asked (that is its consent), accepted = both agreed.
+  - **Who may do what:** the **property side** is the property's registered owner (`listing_owners`), or an admin **only when
+    the property has no registered owner** (a plot an admin drew); an admin cannot stand in for an owned property. The
+    **provider side** is the owner of the provider's listing — nobody else, an admin included, can consent for a provider.
+    Either side may ask; someone on both sides gets it accepted at once; anyone else is refused (403). You cannot accept your own
+    request. Anyone involved may revoke (pending or accepted); an admin may always. One live (pending / accepted) relation per
+    property + relation + provider (partial unique index); a revoked one may be asked again.
+  - **Routes:** `POST /api/property-relations` `{ property_layer, property_id, relation, provider_layer, provider_id }` →
+    `{ id, status, waiting_for }`; `POST /api/property-relations/:id/respond` `{ accept }`; `POST …/:id/revoke`; public
+    `GET /api/property-relations?property_layer&property_id` → the **accepted** ones only, with the provider's name (types
+    the admin hid and withdrawn listings left out); `GET /api/my-property-relations` → every relation the account is a side of
+    (its properties, its provider listings, what it asked; an admin gets all of them, newest 200), each with names, `waiting_for`,
+    `can_answer`, `can_revoke`. Writes are rate-limited (60 / hour).
+  - **Notifications** (existing `notifyUser`): the side a relation waits for — the provider's owners, the property's owners,
+    or the admins when nobody owns the property (link `/admin/relations`); the asker on accept / decline; everyone involved on
+    revoke.
+  - **What a relation is not:** it gives no right to rate (ratings stay tied to a completed request), it is not a
+    verification, and the card says it is a statement by the two sides.
+  - **Verify (real Postgres, 34 checks, 2026-10-05):** 401 without login; a stranger 403; wrong provider type / a lawyer /
+    a flat / SQL-looking id 400; unknown or withdrawn land 404; an admin refused on an owned land; owner asks → pending →
+    the asker, a stranger and another provider cannot answer → the provider accepts → public with the name (pending was not
+    public); duplicate 409; a provider's claim on an unowned land waits for the admin, who approves, while the provider and
+    an unrelated owner cannot; decline → not public → may be asked again; revoke by owner / admin, twice → 403; the
+    notifications reached the right accounts. `lib/property-relations.test.js` for the pure rules.
+    Commit: `feat(server): property relations — a provider and a property agree on who surveyed or valued it`.
+
 ## Backend asks (needs the user's decision — behaviour-changing or larger)
 
 - **Public map:** `/api/log-contact-click` is `requireAuth`, so a visitor's call / WhatsApp tap is not counted in the provider's
@@ -1731,4 +1979,8 @@ and give the Node process write access to it on IIS**), table `listing_photos` k
   dropping subscriptions the push service answers 404 / 410 for; then a `push` handler in `web/public/sw.js` and a subscribe call after
   the user allows notifications. Adds endpoints, a table and a dependency — needs the user's decision. iOS: only for an app added to
   the Home Screen (16.4+).
+- **`notempty` without a value:** `/api/search-features` drops any condition whose `value_N` is empty before it looks at the
+  operator, so `operator_N=notempty` with no value (what legacy sent) matches every row. The React app does not use
+  `notempty` (the before / after section that did was removed, 2026-10-05). The server could accept `notempty` without a value (one line in the loop that reads the conditions); that changes what such a
+  request returns, so it is left for you to decide.
 - **Featured / recommended rule and pictures are constants:** `rating = 10` (featured) and `9.9` (recommended) and the section / slideshow pictures are fixed in the web app. Making them editable by an admin needs a settings table + admin page (and an upload endpoint for the pictures); not done — say if you want it.

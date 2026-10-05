@@ -5,7 +5,7 @@ import type { SelectOption } from '@/components/ui/SelectInput';
 import type { Coordinate } from '@/features/map/config';
 import { SERVICE_BY_KEY, groupLabelKey, serviceLabelKey } from '@/features/map/registry';
 import { listingTarget } from '@/features/my-listings/model';
-import { targetIcon, targetLabelKey } from '@/features/map/targets';
+import { targetLabelKey } from '@/features/map/targets';
 import { isPropertyLayer } from './model';
 import { EMPTY_FORM, validate, type FormErrors, type FormValues } from './model';
 
@@ -25,12 +25,12 @@ export function useListingForm(enabled = true) {
           const target = listingTarget(key);
           if (!target) return [];
           return [
-            { value: key, label: `${targetIcon(target)} ${t(targetLabelKey(target))}`, group: t('submit.propertyGroup') },
+            { value: key, label: t(targetLabelKey(target)), group: t('submit.propertyGroup') },
           ];
         }
         const s = SERVICE_BY_KEY.get(key);
         return s
-          ? [{ value: s.key, label: `${s.icon} ${t(serviceLabelKey(s.key))}`, group: t(groupLabelKey(s.group)) }]
+          ? [{ value: s.key, label: t(serviceLabelKey(s.key)), group: t(groupLabelKey(s.group)) }]
           : [];
       }),
     [layers.data, t],

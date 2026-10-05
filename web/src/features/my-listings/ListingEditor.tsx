@@ -23,7 +23,10 @@ import {
   type ListingFormErrors,
   type ListingFormValues,
 } from './model';
+import BeforeAfterManager from './BeforeAfterManager';
 import PhotoManager from './PhotoManager';
+import { hasRelations } from '@/features/property-relations/model';
+import RelationsManager from '@/features/property-relations/RelationsManager';
 
 /**
  * One listing's sheet: pictures (saved as they change), then the details and — for a service — its point, saved
@@ -102,6 +105,22 @@ export default function ListingEditor({ listing, onClose }: { listing: MyListing
           <h3 className={heading}>{t('myListings.editor.photos')}</h3>
           <PhotoManager listing={listing} />
         </section>
+
+        {listing.kind === 'service' && (
+          <section className={section}>
+            <h3 className={heading}>{t('myListings.beforeAfter.title')}</h3>
+            <BeforeAfterManager listing={listing} />
+          </section>
+        )}
+
+        {hasRelations(listing) && (
+          <section className={section}>
+            <h3 className={heading}>
+              {t(`propertyRelations.manager.title.${listing.kind === 'property' ? 'property' : 'provider'}`)}
+            </h3>
+            <RelationsManager listing={listing} />
+          </section>
+        )}
 
         <section className={section}>
           <h3 className={heading}>{t('myListings.editor.details')}</h3>

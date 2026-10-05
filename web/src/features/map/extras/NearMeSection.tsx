@@ -9,13 +9,14 @@ import type { Coordinate } from '../config';
 import { GeoError, locateOnce } from '../geolocate';
 import { useOlMap } from '../MapContext';
 import { useSearchUi } from '../search/store';
-import { targetIcon, targetFromKey } from '../targets';
+import { targetFromKey } from '../targets';
 import FeaturedCard from './FeaturedCard';
 import { nearestEntries } from './featured';
 import { useNearbyCandidates } from './queries';
 import TypeFilter from './TypeFilter';
 import { serviceLabelKey } from '../registry';
 import { useLayerFilter } from '@/features/visibility/store';
+import TargetIcon from '../TargetIcon';
 
 const PRESETS = ['road_barriers', 'fuel_stations'] as const;
 
@@ -88,7 +89,7 @@ export default function NearMeSection() {
             target &&
             shown(target) && (
               <Button key={key} size="sm" variant="secondary" disabled={locating} onClick={() => locate(key)}>
-                <span aria-hidden>{targetIcon(target)}</span> {t(serviceLabelKey(key))}
+                <span aria-hidden><TargetIcon target={target} /></span> {t(serviceLabelKey(key))}
               </Button>
             )
           );
