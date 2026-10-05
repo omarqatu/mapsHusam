@@ -28,9 +28,11 @@ jobs:
         with:
           clean: false
 
+      # The runner's user does not own the workspace (checkout trusts it only for its own step), hence safe.directory
+      # for this one command.
       - name: Clean the workspace, keeping node_modules
         shell: cmd
-        run: git clean -ffdx -e node_modules
+        run: git -c safe.directory=* clean -ffdx -e node_modules
 
       # No npm cache: this runner is self-hosted, npm's own cache stays on its disk.
       - uses: actions/setup-node@v4
