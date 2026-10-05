@@ -288,8 +288,7 @@ export async function checkUserRequestQuota(userId) {
 
         const countResult = await servicesPool.query(
             `SELECT COUNT(*) FROM "public"."map_service_stats"
-             WHERE user_identifier = $1 AND request_date >= NOW() - INTERVAL '${intervalSql}'
-               AND source_page IS DISTINCT FROM 'property_services'`,
+             WHERE user_identifier = $1 AND request_date >= NOW() - INTERVAL '${intervalSql}'`,
             [String(userId)]
         );
 

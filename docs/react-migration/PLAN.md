@@ -1792,19 +1792,32 @@ and give the Node process write access to it on IIS**), table `listing_photos` k
   404, a bad choice 400; `node --test lib/*.test.js` (24 pass). Commit: `feat(server): a provider's before / after pictures
   and the media their card opens on`.
 
-- **Ratings per service type, and a measured source for "services for this property"** (2026-10-05; the owner's plan:
-  rank a land's surveyors / valuers / lawyers by real ratings). Two additions, nothing existing changes shape:
-  (1) new public `GET /api/service-ratings-summary?service_layer=<type>` → `{ success, items: [{ feature_id, avg_rating,
+- **Ratings per service type, and measured "services for this property"** (2026-10-05; the owner's plan: rank a land's
+  surveyors / valuers by real ratings, and know from day one whether the idea is a product or a pretty button).
+  Two additions, nothing existing changes shape:
+  (1) public `GET /api/service-ratings-summary?service_layer=<type>` → `{ success, items: [{ feature_id, avg_rating,
   total_ratings }] }` — the real ratings of ONE type grouped by listing, average and count only (no comments, no names);
   unknown type 400, a type the admin hid → `items: []`. Why: `/api/top-rated-providers` is a global top 50, so it cannot
-  rank one type's providers. (2) `POST /api/log-map-event` accepts `source: 'property_services'` (stored in `source_page`;
-  anything else still falls back to `map`). Those events are measurement only: `checkUserRequestQuota` does not count them
-  and the quota gate never rejects them (otherwise looking at a land's surveyors would eat a user's request allowance, or a
-  user over the limit would get a 429 from a stats call). `GET /api/platform-stats` leaves that source out of the views
-  counters, because it computes map visits as total − quick_search and the new events would otherwise inflate the figures.
-  Verify (done against a real Postgres, 2026-10-05): the summary for a rated type / an unrated type / a bad name; log with
-  each source; 4 rows in `map_service_stats` (map ×2, quick_search, property_services) → stats `total 3, map 2, quick 1`.
-  Commit: `feat(server): ratings summary per service type; a separate source for property-services events`.
+  rank one type's providers.
+  (2) table `property_services_events` (created at start-up) and public `POST /api/property-services-events` (the same
+  rate limiter as `/save-stat`: visitors are most of the traffic, so the endpoint takes an optional token like
+  `/save-stat` — the account's id when valid, else the visitor's per-tab id `guest-…`). Body `{ action, property_layer,
+  property_id, service_type?, provider_id?, channel?, types_offered?, visitor? }`, one row each:
+  `view` (a property's card showed the section; `types_offered` = how many types had somebody) · `open` (looked at one
+  type's list; needs `service_type`) · `contact` (`provider_id` + `channel` call | whatsapp) · `request` (tapped "request
+  the service"; `provider_id`). Validated: property layer must be ApartRent / ApartSale / LandSale, ids digits, type a
+  known service, anything else 400. Measurement only: it never touches the request quota, the visit counters or
+  `log-map-event`. **Reading the funnel** (people, not clicks):
+  `SELECT action, count(DISTINCT actor) FROM property_services_events WHERE created_at > now() - interval '30 days'
+  GROUP BY action;` — add `AND service_type = 'land_surveyors'` for one type, or group by `property_id` for one property;
+  "100 opened a land → 28 opened surveyors → 9 contacted → 3 requested" is that query. `request` is the tap (intent), a
+  created request is in `service_requests` and joins by provider.
+  Verify (done against a real Postgres, 2026-10-05): all four actions as a visitor and as an account, 9 refusals (bad
+  action, not a property, SQL-looking id, missing / property / unknown type, contact without provider or with a bad
+  channel, no body), the stored rows, the funnel query, the quota untouched. Commit: `feat(server): ratings summary per
+  service type; measured events for services on a property card`. (An earlier version of this entry logged these events
+  through `log-map-event` with a new `source` and exempted them from the quota and the visit counters; that is gone —
+  a dedicated table carries the listing, the type and the action instead of a label.)
 
 ## Backend asks (needs the user's decision — behaviour-changing or larger)
 

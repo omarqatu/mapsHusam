@@ -154,6 +154,34 @@ async function ensureServiceMediaColumns() {
 ensureServiceMediaColumns();
 
 
+// "Services for this property": what people do on a property's card (opened it, looked at a kind of service, tapped
+// call / WhatsApp, tapped request) — so the funnel can be read later: how many opened a land, how many looked at
+// surveyors, how many contacted one, how many asked for the service. One row per event; the actor is an account id or a
+// visitor's per-tab id (visitors are most of the traffic and must be counted).
+async function ensurePropertyServicesEvents() {
+    try {
+        await servicesPool.query(`
+            CREATE TABLE IF NOT EXISTS public.property_services_events (
+                id BIGSERIAL PRIMARY KEY,
+                created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+                actor TEXT NOT NULL,
+                action TEXT NOT NULL,
+                property_layer TEXT NOT NULL,
+                property_id BIGINT NOT NULL,
+                service_type TEXT,
+                provider_id BIGINT,
+                channel TEXT,
+                types_offered SMALLINT
+            )
+        `);
+        await servicesPool.query('CREATE INDEX IF NOT EXISTS property_services_events_time_idx ON public.property_services_events (created_at)');
+        await servicesPool.query('CREATE INDEX IF NOT EXISTS property_services_events_property_idx ON public.property_services_events (property_layer, property_id)');
+    } catch (err) {
+        console.error('❌ تعذر تهيئة جدول أحداث خدمات العقار:', err.message);
+    }
+}
+ensurePropertyServicesEvents();
+
 async function ensureWidgetsSchema() {
     try {
         await servicesPool.query(`

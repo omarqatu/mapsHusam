@@ -64,13 +64,11 @@ app.get('/api/platform-stats', async (req, res) => {
         // 🆕 2) عدد المشاهدات مقسّمة حسب المصدر: زيارات الخريطة، زيارات البحث السريع،
         // وإجمالي زيارات كامل المنصة (= مجموع الاثنين). السجلات القديمة (قبل إضافة
         // عمود source_page) تُحتسب ضمن "زيارات الخريطة" افتراضياً حتى يبقى المجموع دقيقاً.
-        // أحداث «خدمات لهذا العقار» (source_page = property_services) تُقاس على حدة وليست زيارات.
         const viewsResult = await servicesPool.query(`
             SELECT
                 COUNT(*) AS total,
                 COUNT(*) FILTER (WHERE source_page = 'quick_search') AS quick_search
             FROM "public"."map_service_stats"
-            WHERE source_page IS DISTINCT FROM 'property_services'
         `);
         const viewsTotal = parseInt(viewsResult.rows[0].total, 10) || 0;
         const viewsQuickSearch = parseInt(viewsResult.rows[0].quick_search, 10) || 0;
