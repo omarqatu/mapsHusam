@@ -3,6 +3,10 @@ name: Deploy to IIS Server
 on:
   push:
     branches: [main]
+    # Documentation alone does not change the site.
+    paths-ignore:
+      - 'docs/**'
+      - '**/*.md'
   workflow_dispatch:
 
 concurrency:
@@ -17,30 +21,32 @@ jobs:
     if: github.ref == 'refs/heads/main'
     runs-on: [self-hosted, Windows]
     steps:
+      # node_modules stay in the workspace between runs (installed again only when a lock file changes, below); the
+      # clean after checkout removes everything else that is not in the commit, so the release is still exactly it.
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          clean: false
 
+      - name: Clean the workspace, keeping node_modules
+        shell: cmd
+        run: git clean -ffdx -e node_modules
+
+      # No npm cache: this runner is self-hosted, npm's own cache stays on its disk.
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-          cache: npm
-          cache-dependency-path: |
-            package-lock.json
-            web/package-lock.json
 
-      # Gate: install and validate both halves in the checkout before production is touched. These installed dependencies
-      # and web/dist become the staged release, so no install/build step can fail after the production copy starts.
-      - name: Check - install server dependencies
+      # Type checks, lint and unit tests run before the push to main (.githooks/pre-push) and on every PR (ci.yml).
+      # Here: install, a module check, the build. These dependencies and web/dist become the staged release, so no
+      # install/build step can fail after the production copy starts.
+      - name: Install server dependencies (only if the lock changed)
         shell: cmd
-        run: npm ci
+        run: node tools/npm-ci-if-changed.mjs .
 
       - name: Check - server modules
         shell: cmd
         run: npm run check:server
-
-      - name: Check - server unit tests
-        shell: cmd
-        run: npm test
 
       - name: Check - production backup prerequisites
         shell: powershell
@@ -50,30 +56,15 @@ jobs:
           -ServiceName "mapsHusam"
           -PreflightOnly
 
-      - name: Check - install web dependencies
+      - name: Install web dependencies (only if the lock changed)
         shell: cmd
-        working-directory: web
-        run: npm ci
+        run: node tools/npm-ci-if-changed.mjs web
 
-      - name: Check - typecheck
+      # `vite build` alone: `npm run build` would type-check again (tsc -b), which the pre-push hook and CI already did.
+      - name: Build
         shell: cmd
         working-directory: web
-        run: npm run typecheck
-
-      - name: Check - lint
-        shell: cmd
-        working-directory: web
-        run: npm run lint
-
-      - name: Check - unit tests
-        shell: cmd
-        working-directory: web
-        run: npm test
-
-      - name: Check - build
-        shell: cmd
-        working-directory: web
-        run: npm run build
+        run: npx --no-install vite build
 
       - name: Stage, deploy, smoke-test, and rollback on failure
         shell: powershell
