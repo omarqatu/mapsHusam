@@ -3,12 +3,15 @@ import {
   Apple,
   AppWindow,
   Axe,
+  BedDouble,
+  Blinds,
   Bike,
   BookOpen,
   BrickWall,
   Briefcase,
   BriefcaseMedical,
   Brush,
+  Building,
   Calculator,
   Camera,
   Car,
@@ -19,7 +22,6 @@ import {
   Code,
   Coffee,
   Disc,
-  DoorOpen,
   Droplets,
   Drum,
   Fuel,
@@ -32,7 +34,6 @@ import {
   Hospital,
   Hotel,
   House,
-  KeyRound,
   LandPlot,
   Landmark,
   Medal,
@@ -92,7 +93,7 @@ export const TYPE_ICON: Record<string, LucideIcon> = {
   blacksmith: Hammer,
   builder: BrickWall,
   house_cleaner: SprayCan,
-  aluminum_tech: DoorOpen,
+  aluminum_tech: Blinds,
   glass_tech: AppWindow,
   car_mechanic: Car,
   car_electrician: Plug,
@@ -149,8 +150,8 @@ export const TYPE_ICON: Record<string, LucideIcon> = {
 
 /** The three property layers. */
 export const PROPERTY_ICON: Record<RealEstateLayerKey, LucideIcon> = {
-  rent: KeyRound,
-  sale: House,
+  rent: BedDouble,
+  sale: Building,
   land: LandPlot,
 };
 
