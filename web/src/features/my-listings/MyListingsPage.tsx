@@ -20,11 +20,12 @@ import Tabs, { type TabDef } from '@/components/ui/Tabs';
 import { toast } from '@/components/ui/toastStore';
 import { mapLinkTo } from '@/features/map/mapLink';
 import { safeMediaUrl } from '@/features/map/popup/featureModel';
-import { targetIcon, targetLabelKey } from '@/features/map/targets';
+import { targetLabelKey } from '@/features/map/targets';
 import { errorText } from '@/lib/errorText';
 import ListingEditor from './ListingEditor';
 import { listingTarget } from './model';
 import StatePicker from './StatePicker';
+import TargetIcon from '@/features/map/TargetIcon';
 
 type Tab = 'services' | 'properties';
 const KIND: Record<Tab, ListingKind> = { services: 'service', properties: 'property' };
@@ -168,9 +169,7 @@ function ListingCard({ listing: l, onEdit }: { listing: MyListing; onEdit: () =>
           />
         ) : (
           <span className="flex h-full flex-col items-center justify-center gap-1 text-brand-fg">
-            <span aria-hidden className="text-4xl">
-              {target ? targetIcon(target) : '📍'}
-            </span>
+            <TargetIcon target={target} className="h-9 w-9" />
             <span className="text-xs font-semibold">{t('myListings.noPhoto')}</span>
           </span>
         )}
@@ -184,7 +183,7 @@ function ListingCard({ listing: l, onEdit }: { listing: MyListing; onEdit: () =>
       <div className="flex flex-1 flex-col gap-3 p-4">
         <div className="min-w-0">
           <p className="flex items-center gap-1.5 text-xs font-semibold text-muted">
-            {target && <span aria-hidden>{targetIcon(target)}</span>}
+            {target && <span aria-hidden><TargetIcon target={target} /></span>}
             {target ? t(targetLabelKey(target)) : l.layer}
             <span aria-hidden>·</span>
             <span dir="ltr">#{l.id}</span>

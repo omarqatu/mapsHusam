@@ -7,11 +7,12 @@ import { passesSearchQuota } from '@/lib/searchQuota';
 import { useOutsideClick } from '@/hooks/useOutsideClick';
 import { roadBarrierStatus } from '../config';
 import { useOlMap } from '../MapContext';
-import { targetIcon } from '../targets';
+
 import { useMapUi } from '../store';
 import { fetchGlobalHits, highlightParts, rankHits, type GlobalHit } from './globalSearch';
 import { targetLabelKey } from '../targets';
 import { toSelected } from './results';
+import TargetIcon from '../TargetIcon';
 
 const MIN_CHARS = 2;
 const DEBOUNCE_MS = 400; // legacy value
@@ -177,7 +178,7 @@ export default function GlobalSearchBox() {
                     className={`flex cursor-pointer items-start gap-3 border-b border-line px-4 py-2.5 last:border-0 ${i === active ? 'bg-brand-light/50' : ''}`}
                   >
                     <span aria-hidden className="text-lg">
-                      {targetIcon(h.result.target)}
+                      <TargetIcon target={h.result.target} />
                     </span>
                     <span className="min-w-0 flex-1">
                       <span className="block truncate text-sm font-bold text-fg" dir="auto">

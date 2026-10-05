@@ -6,8 +6,9 @@ import PropertyServices from '../property-services/PropertyServices';
 import type { FeaturedEntry, FeaturedMode } from '../map/extras/featured';
 import { groupOf } from '../map/extras/featured';
 import { beforeAfterPair, collectMedia, text } from '../map/popup/featureModel';
-import { targetIcon, targetLabelKey } from '../map/targets';
+import { targetLabelKey } from '../map/targets';
 import { GROUP_ART } from './art';
+import TargetIcon from '@/features/map/TargetIcon';
 
 interface Props {
   entry: FeaturedEntry | null;
@@ -38,7 +39,7 @@ export default function ListingPreview({ entry, onClose, mode = 'all', badge, no
             <div className="relative -mx-4 -mt-4 h-36 overflow-hidden bg-brand-light" aria-hidden>
               <img src={GROUP_ART[groupOf(entry.r.target)]} alt="" className="h-full w-full object-cover object-left-bottom opacity-70 saturate-50" />
               <span className="absolute inset-0 flex items-center justify-center">
-                <span className="flex h-16 w-16 items-center justify-center rounded-full bg-surface text-4xl shadow-float">{targetIcon(entry.r.target)}</span>
+                <span className="flex h-16 w-16 items-center justify-center rounded-full bg-surface text-4xl shadow-float"><TargetIcon target={entry.r.target} /></span>
               </span>
             </div>
           )}

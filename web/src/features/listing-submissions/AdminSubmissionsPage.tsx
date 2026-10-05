@@ -22,8 +22,9 @@ import { toast } from '@/components/ui/toastStore';
 import { serviceSearchTags } from '@/features/map/edit/attributes';
 import { mapLinkTo } from '@/features/map/mapLink';
 import type { Coordinate } from '@/features/map/config';
-import { targetIcon } from '@/features/map/targets';
+
 import { listingTarget } from '@/features/my-listings/model';
+import TargetIcon from '@/features/map/TargetIcon';
 import LocationPicker from './LocationPicker';
 import { hasHoursField, isPropertyLayer, submissionTypeKey } from './model';
 import { errorText } from '@/lib/errorText';
@@ -127,9 +128,7 @@ function SubmissionCard({ submission: s }: { submission: AdminSubmission }) {
     <article className="rounded-2xl border border-line bg-surface p-5 shadow-sm">
       <header className="flex flex-wrap items-center justify-between gap-2">
         <div className="flex items-center gap-2">
-          <span className="text-2xl" aria-hidden>
-            {target ? targetIcon(target) : '📍'}
-          </span>
+          <TargetIcon target={target} className="h-6 w-6 text-brand-fg" />
           <h2 className="text-lg font-black text-fg">{t(submissionTypeKey(s.layer))}</h2>
         </div>
         <Badge tone={pending ? 'amber' : s.status === 'approved' ? 'green' : 'red'}>

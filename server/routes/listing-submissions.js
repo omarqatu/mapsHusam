@@ -76,7 +76,7 @@ app.post('/api/listing-submissions', requireAuth, submissionLimiter, async (req,
         // المشرفون يعرفون بالطلب فوراً (إشعار + بث حي لمن هو متصل)
         try {
             const admins = await servicesPool.query(`SELECT user_id FROM public.users WHERE role = 'admin' AND is_active = true`);
-            await Promise.all(admins.rows.map(a => notifyUser(a.user_id, '📥 طلب إضافة نشاط جديد', `«${listing.name}» بانتظار المراجعة من صفحة طلبات الإضافة.`, 'info', '/admin/submissions')));
+            await Promise.all(admins.rows.map(a => notifyUser(a.user_id, 'طلب إضافة نشاط جديد', `«${listing.name}» بانتظار المراجعة من صفحة طلبات الإضافة.`, 'info', '/admin/submissions')));
         } catch (notifyErr) {
             console.error('⚠️ تعذر إشعار المشرفين بالطلب الجديد:', notifyErr.message);
         }
@@ -217,7 +217,7 @@ app.post('/api/admin/listing-submissions/:id/approve', requireAdmin, async (req,
         authStatusCache.delete(Number(sub.user_id)); // الدور الجديد يسري فوراً وتُبطل الجلسة القديمة
         clearProviderLinkedCache();
         platformStatsCache.clear();
-        await notifyUser(sub.user_id, '✅ تمت الموافقة على إعلانك',
+        await notifyUser(sub.user_id, 'تمت الموافقة على إعلانك',
             becomesProvider
                 ? `تمت إضافة «${name}» إلى الخريطة وأصبح حسابك حساب مزوّد خدمة. ${owner.is_active ? 'يرجى تسجيل الخروج ثم الدخول من جديد لتفعيل الصلاحيات.' : 'حسابك مفعّل الآن، يمكنك تسجيل الدخول.'}`
                 : `تمت إضافة «${name}» إلى الخريطة، وتجده في صفحة إعلاناتي.`,
@@ -247,7 +247,7 @@ app.post('/api/admin/listing-submissions/:id/reject', requireAdmin, async (req, 
             [reason, req.adminUserId, id]
         );
         if (result.rowCount === 0) return res.status(409).json({ success: false, error: 'الطلب غير موجود أو تمت مراجعته.' });
-        await notifyUser(result.rows[0].user_id, '❌ لم تتم الموافقة على طلبك', `«${result.rows[0].name}»: ${reason}`, 'warning', '/add-listing');
+        await notifyUser(result.rows[0].user_id, 'لم تتم الموافقة على طلبك', `«${result.rows[0].name}»: ${reason}`, 'warning', '/add-listing');
         res.json({ success: true });
     } catch (err) {
         console.error('❌ خطأ أثناء رفض طلب الإضافة:', err.message);

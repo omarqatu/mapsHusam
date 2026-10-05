@@ -9,12 +9,13 @@ import SearchInput from '@/components/ui/SearchInput';
 import { FUEL_FIELDS } from '../config';
 import { barrierDirections, text } from '../popup/featureModel';
 import { toResults, type SearchResult } from '../search/results';
-import { targetFromKey, targetIcon } from '../targets';
+import { targetFromKey } from '../targets';
 import { BarrierBadges, FuelBadges } from './StatusBadges';
 import { matchesQuery } from './status';
 import UpdatedAgo from './UpdatedAgo';
 import { useShowOnMap } from './useShowOnMap';
 import { serviceLabelKey } from '../registry';
+import TargetIcon from '../TargetIcon';
 
 /** What the search box matches: the row's own text plus the status words it displays (legacy matched rendered text). */
 function searchText(r: SearchResult, layer: StatusLayer, t: (k: string) => string) {
@@ -106,7 +107,7 @@ export default function StatusTab({
                 >
                   <span className="flex items-start gap-2">
                     <span aria-hidden className="text-xl">
-                      {targetIcon(r.target)}
+                      <TargetIcon target={r.target} />
                     </span>
                     <span className="min-w-0 flex-1">
                       <span className="block text-base font-bold text-fg" dir="auto">

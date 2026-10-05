@@ -15,20 +15,14 @@ import {
 import RatingsBlock from '../popup/RatingsBlock';
 import { formatDistance } from '../search/nearby';
 import ResultContact from '../search/ResultContact';
-import {
-  hasPrice,
-  isFuelStation,
-  isRoadBarrier,
-  priceCurrencyDefault,
-  targetIcon,
-  targetLabelKey,
-} from '../targets';
+import { hasPrice, isFuelStation, isRoadBarrier, priceCurrencyDefault, targetLabelKey } from '../targets';
 import { BarrierBadges, FuelBadges } from './StatusBadges';
 import { customerRatingsKey, manualStars, mediaForMode, type FeaturedEntry, type FeaturedMode } from './featured';
 import MediaShowcase from '../popup/MediaShowcase';
 import { FEATURED_FRAME } from './featuredStyle';
 import { useShowOnMap } from './useShowOnMap';
 import DirectionsButton from '../popup/DirectionsButton';
+import TargetIcon from '../TargetIcon';
 
 interface CardProps {
   entry: FeaturedEntry;
@@ -126,7 +120,7 @@ export default function FeaturedCard({
       {!bare && (
         <h5 className="flex items-start gap-2 text-base font-bold text-fg" dir="auto">
           <span aria-hidden className="text-lg leading-none">
-            {targetIcon(r.target)}
+            <TargetIcon target={r.target} />
           </span>
           {name}
         </h5>

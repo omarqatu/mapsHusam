@@ -130,7 +130,7 @@ app.post('/api/admin/users/force-logout', requireAdmin, async (req, res) => {
             return res.status(404).json({ success: false, error: 'المستخدم غير موجود' });
         }
 
-        const title = '🚨 تسجيل خروج إجباري من الإدارة';
+        const title = 'تسجيل خروج إجباري من الإدارة';
         const message = 'تم تسجيل خروجك فوراً من قبل الإدارة. يرجى التواصل مع الإدارة حالاً لحل مشكلة الحظر قبل محاولة الدخول مجدداً.';
 
         // 🆕 [إصلاح الثغرة]: تفعيل علامة إبطال الجلسة فعلياً في قاعدة البيانات.
@@ -177,7 +177,7 @@ app.post('/api/admin/users/force-logout-all', requireAdmin, async (req, res) => 
 
     try {
         let targetUsers = [];
-        let title = '🚨 تسجيل خروج جماعي من الإدارة';
+        let title = 'تسجيل خروج جماعي من الإدارة';
         let message = 'تم تسجيل خروجك من قبل الإدارة. يرجى إعادة تسجيل الدخول للمتابعة.';
 
         // تحديد المستخدمين المستهدفين حسب نوع الاستهداف
@@ -380,7 +380,7 @@ app.post('/api/admin/users/update', requireAdmin, async (req, res) => {
             `;
             await servicesPool.query(notifQuery, [
                 user_id,
-                '⚠️ تم تحديث حسابك من قبل الإدارة',
+                'تم تحديث حسابك من قبل الإدارة',
                 'تم تعديل بيانات حسابك (الصلاحيات/الحالة). يرجى تسجيل الخروج ثم إعادة تسجيل الدخول لتطبيق التغييرات.'
             ]);
 

@@ -85,15 +85,15 @@ async function notifyWaiting(row, propertyName, providerName, propertyOwners, pr
     const what = `${RELATION_AR[row.relation] || 'ربط'}`;
     if (side === 'provider') {
         await Promise.all(providerOwners.map((u) => notifyUser(
-            u, '🤝 طلب ربط بعقار', `طُلب ربط «${providerName}» بعقار «${propertyName || row.property_id}» (${what}). افتح إعلاناتي للرد.`, 'info', '/my-listings',
+            u, 'طلب ربط بعقار', `طُلب ربط «${providerName}» بعقار «${propertyName || row.property_id}» (${what}). افتح إعلاناتي للرد.`, 'info', '/my-listings',
         )));
     } else if (propertyOwners.length > 0) {
         await Promise.all(propertyOwners.map((u) => notifyUser(
-            u, '🤝 طلب ربط بعقارك', `«${providerName}» يطلب أن يُذكر على «${propertyName || row.property_id}» (${what}). افتح إعلاناتي للرد.`, 'info', '/my-listings',
+            u, 'طلب ربط بعقارك', `«${providerName}» يطلب أن يُذكر على «${propertyName || row.property_id}» (${what}). افتح إعلاناتي للرد.`, 'info', '/my-listings',
         )));
     } else {
         await Promise.all((await adminIds()).map((u) => notifyUser(
-            u, '🤝 طلب ربط بعقار بلا مالك', `«${providerName}» يطلب أن يُذكر على «${propertyName || row.property_id}» (${what}).`, 'info', '/admin/relations',
+            u, 'طلب ربط بعقار بلا مالك', `«${providerName}» يطلب أن يُذكر على «${propertyName || row.property_id}» (${what}).`, 'info', '/admin/relations',
         )));
     }
 }
@@ -225,7 +225,7 @@ app.post('/api/property-relations/:id/respond', requireAuth, writeLimiter, async
         if (Number(row.requested_by) !== req.auth.uid) {
             await notifyUser(
                 row.requested_by,
-                accept ? '✅ تم قبول طلب الربط' : '❌ تم رفض طلب الربط',
+                accept ? 'تم قبول طلب الربط' : 'تم رفض طلب الربط',
                 accept ? 'وافق الطرف الآخر على الربط وصار يظهر على بطاقة العقار.' : 'رفض الطرف الآخر طلب الربط.',
                 'info',
                 '/my-listings',
@@ -256,7 +256,7 @@ app.post('/api/property-relations/:id/revoke', requireAuth, writeLimiter, async 
         // tell everyone involved except the person who did it
         const involved = new Set([...propertyOwners, ...providerOwners, Number(row.requested_by)]);
         involved.delete(req.auth.uid);
-        await Promise.all([...involved].map((u) => notifyUser(u, '↩️ أُلغي ربط بعقار', 'أُلغي ربط عقار بمزود خدمة كان قائماً أو معلّقاً.', 'info', '/my-listings')));
+        await Promise.all([...involved].map((u) => notifyUser(u, '↩أُلغي ربط بعقار', 'أُلغي ربط عقار بمزود خدمة كان قائماً أو معلّقاً.', 'info', '/my-listings')));
         res.json({ success: true, status: 'revoked' });
     } catch (err) {
         console.error('❌ خطأ أثناء إلغاء ربط عقار:', err.message);

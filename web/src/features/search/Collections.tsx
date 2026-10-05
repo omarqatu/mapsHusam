@@ -4,10 +4,11 @@ import type { CSSProperties } from 'react';
 import { useCategoryCounts } from '@/api/platform';
 import { formatNumber } from '@/lib/format';
 import { groupLabelKey } from '../map/registry';
-import { targetIcon, targetLabelKey, targetToApi, type MapTarget } from '../map/targets';
+import { targetLabelKey, targetToApi, type MapTarget } from '../map/targets';
 import { GROUP_ART } from './art';
 import { useLayerFilter } from '@/features/visibility/store';
 import { GROUP_ICON, targetsInGroup, useShownGroupIds, type GroupId } from './categories';
+import TargetIcon from '@/features/map/TargetIcon';
 
 type Section = Exclude<GroupId, 'all'>;
 
@@ -92,7 +93,7 @@ export default function Collections({ onGroup, onPick }: Props) {
                   onClick={() => onPick(x)}
                   className="inline-flex h-10 items-center gap-1.5 rounded-full bg-surface/95 px-4 text-sm font-bold text-fg shadow-sm transition hover:bg-surface hover:shadow-float focus-visible:outline-2 focus-visible:outline-white"
                 >
-                  <span aria-hidden>{targetIcon(x)}</span> {t(targetLabelKey(x))}
+                  <span aria-hidden><TargetIcon target={x} /></span> {t(targetLabelKey(x))}
                   {counts && <span className="text-xs font-semibold tabular-nums text-muted">{formatNumber(listings([x]) ?? 0, i18n.language)}</span>}
                 </button>
               ))}

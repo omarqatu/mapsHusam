@@ -11,7 +11,7 @@ import { AvailabilityText } from '../map/popup/AvailabilityText';
 import { availabilityLabelKey, text, type Props } from '../map/popup/featureModel';
 import { formatDistance } from '../map/search/nearby';
 import ResultContact from '../map/search/ResultContact';
-import { listingLayerOf, targetFromKey, targetIcon, targetLabelKey, type MapTarget } from '../map/targets';
+import { listingLayerOf, targetFromKey, targetLabelKey, type MapTarget } from '../map/targets';
 import { servicesFor } from './model';
 import {
   RADII_KM,
@@ -22,6 +22,7 @@ import {
   useTypeRatings,
 } from './queries';
 import { rankProviders, type RankedProvider } from './rank';
+import TargetIcon from '@/features/map/TargetIcon';
 
 /** Providers shown at first, and after "show more". A card is not a directory: three answers, then a way to see more. */
 const TOP = 3;
@@ -207,7 +208,7 @@ export default function PropertyServices({ target, propertyId, origin, props, cl
               return {
                 id: l.type,
                 label: `${t(targetLabelKey(type))} (${l.nearby!.providers.length})`,
-                icon: <span aria-hidden>{targetIcon(type)}</span>,
+                icon: <span aria-hidden><TargetIcon target={type} /></span>,
               };
             })}
             value={active.type}

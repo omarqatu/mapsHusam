@@ -35,8 +35,6 @@ export type EditProfile = (typeof EDIT_PROFILES)[number];
 export interface ServiceEntry {
   /** The `discriminator` value in `service_all`, the whitelisted layer name on the server, and the i18n suffix. */
   key: string;
-  /** Emoji on the map, in lists and in the filters. */
-  icon: string;
   /** Type-filter / category-browser group. */
   group: ServiceGroupId;
   tier?: ServiceTier;

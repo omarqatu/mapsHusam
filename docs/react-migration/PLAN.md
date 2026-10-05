@@ -1456,6 +1456,32 @@ For each page, list from the legacy code — not from memory:
     owner accepts the valuer from "My listings" and sees the list of surveyors; the admin approves the claim and the land's
     public list then names the surveyor. **Not seen in a browser:** the card on the map's details card (needs the map and
     GeoServer) — same component.
+- ✅ **No emoji anywhere — icons from the library** (owner, 2026-10-05: "no icons at all as emoji; nice pictures or a React
+  library"). Emoji differ on every phone, cannot be tinted or sized, and look unfinished.
+  - **One icon per type, from `lucide-react`:** `features/map/registry/typeIcons.ts` (`TYPE_ICON` for the 68 service types,
+    `PROPERTY_ICON` — rent key, sale house, land plot) and the `TargetIcon` component (as big as the text around it, `1em`).
+    The emoji field is gone from `shared/service-types.json` (the server never read it), from the registry type and from
+    `REAL_ESTATE_LAYERS`; a type without an icon fails `registry.test.ts`, and an icon without a type too.
+  - **The map's markers** (`styles.ts → typeMarker`): the same icon drawn as SVG in its group's colour on the tinted disc; a road
+    checkpoint is a solid disc in its status colour with a white cone (before: 🟢🔴🟠 emoji). The SVG comes from the library's own
+    drawing (`iconSvg.ts`, read from lucide-react 1.x internals; `iconSvg.test.ts` fails on an upgrade that changes them rather
+    than letting the map draw empty markers). Looked at all 68 markers in a gallery page: one consistent set.
+  - **Everywhere else:** the category browser, search cards and results, the featured / status / near-me / type-filter lists,
+    the layer panel (an icon before each name), "My listings", the admin pages, the new relation / services cards and the
+    welcome splash (feature cards, the floating decoration, the logo) use `TargetIcon` or a named lucide icon. In native
+    `<select>` options (they cannot hold a drawing) the emoji prefix was simply dropped (checkpoint status, fuel availability,
+    the submission type list); the "type a value" button shows a list icon.
+  - **Texts:** the emoji decorations were removed from the locale strings (toasts, measurement titles), from the legal / guide /
+    about texts (`legal/texts/*.json` — 67 headings; their byte-for-byte pins in `texts.sha256.json` were updated on purpose, as
+    that file's rule says; the wording itself is unchanged) and from the notification titles the server sends (17 strings in
+    `server/routes`: admin sessions, service requests, listing submissions, property links). Old notifications already stored
+    keep their emoji; a text an admin saved over the built-in ones is the admin's data and was not touched.
+  - **Not changed:** the promo pictures (`web/public/promo/*.webp`) contain emoji drawn into the artwork — they are pictures;
+    `©` in the footer is a legal sign. Guard: `noEmoji.test.ts` scans code, locales and texts; the rule is in `CLAUDE.md`.
+  - **Verified:** typecheck, lint, 534 tests (and `node --test lib`, 29); browser at 1440 and 390 — the welcome page, the search
+    landing, a land's card with its services tabs, no emoji left in the visible text of those pages (only `©`), no sideways scroll.
+    **Not seen in a browser:** the real map with its markers (needs GeoServer) and the layer panel on it; the markers were
+    checked as images in a gallery, drawn by the same code.
 - ✅ **Directions** («اتجاهات», signed-in users only — owner) on the map card, the featured cards and the search
   results, except road barriers (`popup/DirectionsButton`): opens Google Maps directions to the point
   (`share.ts → directionsLink`; on a phone the Maps app, turn by turn, from where the person is). In-app routing on the

@@ -76,7 +76,7 @@ function FixedFilter({ field, state, onChange, fields }: CommonProps & { field: 
         onChange={(e) => onChange(setFilter(state, fields, field.id, { value: e.target.value }))}
         options={[
           { value: '', label: t('searchPage.all') },
-          ...(field.options ?? []).map((o) => ({ value: o.value, label: `${o.icon} ${t(o.labelKey)}` })),
+          ...(field.options ?? []).map((o) => ({ value: o.value, label: t(o.labelKey) })),
         ]}
       />
     </Field>

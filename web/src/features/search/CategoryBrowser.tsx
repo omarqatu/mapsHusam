@@ -4,9 +4,10 @@ import { useTranslation } from 'react-i18next';
 import SearchInput from '@/components/ui/SearchInput';
 import { matchesQuery } from '../map/extras/status';
 import { groupLabelKey } from '../map/registry';
-import { targetIcon, targetKey, targetLabelKey, type MapTarget } from '../map/targets';
+import { targetKey, targetLabelKey, type MapTarget } from '../map/targets';
 import { useLayerFilter } from '@/features/visibility/store';
 import { GROUP_ICON, targetsInGroup, useShownGroupIds, type GroupId } from './categories';
+import TargetIcon from '@/features/map/TargetIcon';
 
 interface Props {
   group: GroupId;
@@ -99,7 +100,7 @@ export default function CategoryBrowser({ group, onGroup, onPick }: Props) {
                   aria-hidden
                   className="flex h-11 w-11 items-center justify-center rounded-full bg-brand-light text-2xl leading-none transition group-hover:bg-brand"
                 >
-                  {targetIcon(x)}
+                  <TargetIcon target={x} />
                 </span>
                 <span className="line-clamp-2 text-sm font-semibold leading-tight text-fg">{t(targetLabelKey(x))}</span>
               </button>

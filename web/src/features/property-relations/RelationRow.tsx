@@ -7,7 +7,8 @@ import Button from '@/components/ui/Button';
 import ConfirmDialog from '@/components/ui/ConfirmDialog';
 import { toast } from '@/components/ui/toastStore';
 import { errorText } from '@/lib/errorText';
-import { targetFromKey, targetIcon } from '../map/targets';
+import TargetIcon from '../map/TargetIcon';
+import { targetFromKey } from '../map/targets';
 import { statusKey } from './model';
 
 interface Props {
@@ -34,7 +35,7 @@ export default function RelationRow({ relation: r, lead }: Props) {
       <div className="flex flex-wrap items-start justify-between gap-2">
         <div className="min-w-0">
           <p className="flex items-baseline gap-2 text-base font-bold text-fg">
-            <span aria-hidden>{type ? targetIcon(type) : '•'}</span>
+            {type && <TargetIcon target={type} className="h-5 w-5 shrink-0 translate-y-0.5 self-start text-brand-fg" />}
             <span className="min-w-0 break-words" dir="auto">
               {name}
             </span>

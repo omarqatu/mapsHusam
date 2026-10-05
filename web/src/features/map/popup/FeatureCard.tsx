@@ -31,15 +31,7 @@ import {
 import PropertyRelations from '@/features/property-relations/PropertyRelations';
 import PropertyServices from '@/features/property-services/PropertyServices';
 import MediaShowcase from './MediaShowcase';
-import {
-  hasPrice,
-  isFuelStation,
-  isRoadBarrier,
-  priceCurrencyDefault,
-  listingLayerOf,
-  targetIcon,
-  targetLabelKey,
-} from '../targets';
+import { hasPrice, isFuelStation, isRoadBarrier, priceCurrencyDefault, listingLayerOf, targetLabelKey } from '../targets';
 import PublisherRating from './PublisherRating';
 import { copyText, isMobileBrowser, nativeShare } from '@/lib/clipboard';
 import ContactButtons from './ContactButtons';
@@ -47,6 +39,7 @@ import { formatArea, formatLength } from '../tools/measure';
 import DirectionsButton from './DirectionsButton';
 import RatingsBlock from './RatingsBlock';
 import { useContactActions } from './useContactActions';
+import TargetIcon from '../TargetIcon';
 
 interface Props {
   feature: SelectedFeature;
@@ -148,7 +141,7 @@ export default function FeatureCard({ feature, onClose, className }: Props) {
             <MapPin className="h-6 w-6 text-danger" aria-hidden />
           ) : (
             <span aria-hidden className="text-xl">
-              {targetIcon(kind)}
+              <TargetIcon target={kind} />
             </span>
           )}
           <div className="min-w-0">

@@ -7,7 +7,8 @@ import Button from '@/components/ui/Button';
 import { toast } from '@/components/ui/toastStore';
 import { errorText } from '@/lib/errorText';
 import { useAuthStore } from '@/store/authStore';
-import { listingLayerOf, targetFromKey, targetIcon, type MapTarget } from '../map/targets';
+import TargetIcon from '../map/TargetIcon';
+import { listingLayerOf, targetFromKey, type MapTarget } from '../map/targets';
 import { canHaveRelations, claimsFor, myWaitingOn } from './model';
 
 interface Props {
@@ -70,7 +71,7 @@ export default function PropertyRelations({ target, propertyId, className }: Pro
               const type = targetFromKey(r.provider_layer);
               return (
                 <li key={r.id} className="flex items-baseline gap-2 text-sm">
-                  <span aria-hidden>{type ? targetIcon(type) : '•'}</span>
+                  {type && <TargetIcon target={type} className="h-4 w-4 shrink-0 translate-y-0.5 self-start text-brand-fg" />}
                   <span className="text-muted">{t(`propertyRelations.kind.${r.relation}`)}</span>
                   <strong className="min-w-0 break-words text-fg" dir="auto">
                     {r.provider_name}

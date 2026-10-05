@@ -30,17 +30,11 @@ import {
 import { AvailabilityText } from '../map/popup/AvailabilityText';
 import { formatDistance } from '../map/search/nearby';
 import ResultContact from '../map/search/ResultContact';
-import {
-  hasPrice,
-  isFuelStation,
-  isRoadBarrier,
-  priceCurrencyDefault,
-  targetIcon,
-  targetLabelKey,
-} from '../map/targets';
+import { hasPrice, isFuelStation, isRoadBarrier, priceCurrencyDefault, targetLabelKey } from '../map/targets';
 import { GROUP_ART } from './art';
 import ListingPreview from './ListingPreview';
 import DirectionsButton from '../map/popup/DirectionsButton';
+import TargetIcon from '@/features/map/TargetIcon';
 
 interface Props {
   entry: FeaturedEntry;
@@ -213,13 +207,13 @@ export default function ListingCard({
             />
             <span className="absolute inset-0 flex items-center justify-center">
               <span className="flex h-14 w-14 items-center justify-center rounded-full bg-surface/95 text-3xl shadow-float max-sm:h-11 max-sm:w-11 max-sm:text-2xl">
-                {targetIcon(r.target)}
+                <TargetIcon target={r.target} />
               </span>
             </span>
           </div>
         ) : (
           <div className="flex h-full items-center justify-center text-5xl" aria-hidden>
-            {targetIcon(r.target)}
+            <TargetIcon target={r.target} />
           </div>
         )}
         {badge && (
@@ -239,7 +233,7 @@ export default function ListingCard({
 
       <div className="flex min-w-0 flex-1 flex-col gap-1 p-3">
         <div className="flex items-center gap-1.5 text-xs text-muted">
-          <span aria-hidden>{targetIcon(r.target)}</span>
+          <span aria-hidden><TargetIcon target={r.target} /></span>
           <span className="truncate">{typeTitle}</span>
           {r.id && <span className="ms-auto shrink-0">#{r.id}</span>}
         </div>

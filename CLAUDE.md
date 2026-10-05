@@ -46,6 +46,9 @@ server can't produce on demand (network failure, 401 mid-session).
   checklist in PLAN.md). The *experience* may change (fewer modals, less clutter, mobile-first) — record each
   UX change under the page's PLAN item. Visual identity comes from legacy `css/design-system.css` tokens. Legacy files stay until the React page is verified, then are
   deleted in the same commit that switches the route.
+- **No emoji as icons — ever.** Icons are drawings from the icon library (`lucide-react`: `components/…`, `features/map/TargetIcon`,
+  `registry/typeIcons.ts`; on the map `typeMarker` draws the same icon as SVG) or pictures. `web/src/noEmoji.test.ts` fails on any emoji in
+  code, locales or texts (comments excepted).
 - **No `innerHTML` / `dangerouslySetInnerHTML`.** User content (names, descriptions, chat, ratings)
   is rendered through JSX only. This is the main XSS fix of the migration.
 - **All HTTP goes through `web/src/api/client.ts`** (Bearer token, 401 → logout). No raw `fetch`
