@@ -5,7 +5,7 @@ description: Port one legacy page or feature to the React app in web/
 Port ${input:page:the legacy page or feature to port} to React. One page per session.
 
 1. Inventory first. Find its row in `docs/react-migration/PLAN.md`. Read the legacy HTML and every `js/` file it loads
-   (`git show <commit>^:index.html`, the legacy files were deleted; see CLAUDE.md or PLAN.md for the commit). Write a parity
+   (the legacy files were deleted in commit `0239d8a`; read them with `git show 0239d8a^:<file>`). Write a parity
    checklist under the row: API calls with the response fields used, socket events, user actions, role differences, storage
    keys, mobile behaviour. For each API call open the handler in `server/routes/` and copy the exact response shape into the
    TypeScript type; do not guess field names.
