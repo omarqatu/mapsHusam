@@ -5,15 +5,10 @@
       "command": "npx",
       "args": ["-y", "@playwright/mcp@latest"]
     },
-    "psm-services-db": {
+    "psm-db": {
       "type": "stdio",
       "command": "npx",
-      "args": ["-y", "@modelcontextprotocol/server-postgres", "postgresql://psm:psm_dev_only@127.0.0.1:55432/services_db"]
-    },
-    "psm-realestate-db": {
-      "type": "stdio",
-      "command": "npx",
-      "args": ["-y", "@modelcontextprotocol/server-postgres", "postgresql://psm:psm_dev_only@127.0.0.1:55432/realestate"]
+      "args": ["-y", "@bytebase/dbhub@latest", "--config=dev/dbhub.toml", "--transport", "stdio"]
     }
   }
 }

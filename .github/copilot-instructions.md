@@ -26,9 +26,9 @@ Run all three checks before saying a change is done. Test against the real backe
 
 - `playwright`: opens the running app in a real browser. After any visible change, load `http://localhost:5173/` (or the
   port Vite prints), look at it at 1440 px and 390 px wide, in Arabic, and check there is no horizontal scroll.
-- `psm-services-db`, `psm-realestate-db`: read-only SQL on the LOCAL dev databases (`dev/dev.sh db-up && dev/dev.sh seed`
-  first). Use them to look at real rows before writing a query or a type. The credentials are the dev-only ones from
-  `dev/dev.env`; never point these at production.
+- `psm-db`: read-only SQL on the LOCAL dev databases (`services` and `realestate`, configured in `dev/dbhub.toml`; start them
+  with `dev/dev.sh db-up && dev/dev.sh seed` first). Use it to look at real rows before writing a query or a type. The
+  credentials are the dev-only ones from `dev/dev.env`; never point this at production.
 
 ## Rules that must hold
 

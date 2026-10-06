@@ -1,0 +1,27 @@
+# Read-only SQL for AI tools (Copilot / Cline / Continue via .vscode/mcp.json) on the LOCAL dev databases only.
+# Start them first: dev/dev.sh db-up && dev/dev.sh seed. Credentials are the dev-only ones from dev/dev.env.
+[[sources]]
+id = "services"
+dsn = "postgres://psm:psm_dev_only@127.0.0.1:55432/services_db?sslmode=disable"
+
+[[sources]]
+id = "realestate"
+dsn = "postgres://psm:psm_dev_only@127.0.0.1:55432/realestate?sslmode=disable"
+
+[[tools]]
+name = "execute_sql"
+source = "services"
+readonly = true
+
+[[tools]]
+name = "execute_sql"
+source = "realestate"
+readonly = true
+
+[[tools]]
+name = "search_objects"
+source = "services"
+
+[[tools]]
+name = "search_objects"
+source = "realestate"
