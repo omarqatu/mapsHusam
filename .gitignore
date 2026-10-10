@@ -28,3 +28,4 @@ dev/db/dumps/
 # Uploaded listing pictures (server data, not code)
 uploads/
 /pic/
+web/.gitignore

@@ -4,3 +4,4 @@ coverage
 e2e/.auth/
 e2e/.results/
 playwright-report/
+package-lock.json
