@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { useOlMap } from '../MapContext';
 import { clearProviderMarker } from './flyLayer';
-import { LIVE_INTERVAL_MS } from './model';
+import { LIVE_INTERVAL_MS, supportsLocationUpdates } from './model';
 import { useProviderActions } from './useProviderActions';
 import { useProviderUi } from './store';
 
@@ -18,6 +18,7 @@ export default function ProviderTracker() {
     latest.current = { service, tick };
   });
   const ready = service !== null;
+  const canTrack = service !== null && supportsLocationUpdates(service.layer);
 
   // Legacy showed the panel at once; on a phone it would cover the map, so only wide screens open it by themselves.
   const opened = useRef(false);
@@ -28,7 +29,7 @@ export default function ProviderTracker() {
 
   useEffect(() => {
     if (!live) return;
-    if (!ready) {
+    if (!canTrack) {
       useProviderUi.getState().setLive(false);
       return;
     }
@@ -39,7 +40,7 @@ export default function ProviderTracker() {
     run();
     const id = setInterval(run, LIVE_INTERVAL_MS);
     return () => clearInterval(id);
-  }, [live, ready]);
+  }, [canTrack, live]);
 
   useEffect(
     () => () => {

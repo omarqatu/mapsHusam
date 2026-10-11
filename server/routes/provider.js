@@ -3,7 +3,7 @@ import { IS_PROD, app } from '../app.js';
 import { servicesPool } from '../database.js';
 import { REAL_ESTATE_LAYERS, getPoolForLayer, isValidLayer } from '../layers.js';
 import { requireAuth } from '../auth.js';
-import { normalizeListingLayer, ownsListing } from '../listing-owners.js';
+import { isPropertyLayer, normalizeListingLayer, ownsListing, ownedListings } from '../listing-owners.js';
 
 // =========================================================================
 // مسار جلب الخدمة المربوطة بمزود الخدمة والتحقق من اكتمال الحقول مع الإحداثيات
@@ -18,7 +18,7 @@ app.get('/api/get-provider-service', requireAuth, async (req, res) => {
     try {
         // الاستعلام عن الحقول من جدول المستخدمين مباشرة مع جلب الرتبة
         const userQuery = `
-            SELECT service_layer, feature_id, status, role, x_coord, y_coord 
+            SELECT status, service_layer, feature_id
             FROM public.users 
             WHERE user_id = $1
         `;
@@ -30,80 +30,64 @@ app.get('/api/get-provider-service', requireAuth, async (req, res) => {
 
         const userRow = result.rows[0];
 
-        // عزل وتجهيز قيم الطبقة والمعرف مع عمل Trim للنصوص
-        let layer = userRow.service_layer ? userRow.service_layer.trim() : null;
-        let featId = userRow.feature_id;
-
-        // 🆕 استخراج discriminator الصحيح من service_layer
-        // service_layer قد يكون "services:electricianLayer" ونحتاج "electrician"
-        let discriminator = layer;
-        if (layer && layer.includes(':')) {
-            discriminator = layer.split(':')[1].replace(/Layer$/i, '').toLowerCase();
-        } else if (layer && layer.endsWith('Layer')) {
-            discriminator = layer.replace(/Layer$/i, '').toLowerCase();
-        }
-
-        // [حماية SQL]: التحقق من أن الطبقة ضمن القائمة البيضاء
-        if (discriminator && !isValidLayer(discriminator)) {
-            return res.status(403).json({ success: false, error: 'محاولة وصول غير مصرح بها لجدول محمي' });
-        }
-
-        // 🛑 [تعديل حاسم]: تم حذف الإسناد التلقائي للنجار 14. إذا كانت الحقول فارغة، نرفض فتح اللوحة فوراً.
-        if (!discriminator || !featId) {
+        const listings = await ownedListings(user_id);
+        const primaryLayer = normalizeListingLayer(userRow.service_layer);
+        const primaryId = Number(userRow.feature_id);
+        listings.sort((a, b) => {
+            const aPrimary = a.layer === primaryLayer && a.feature_id === primaryId;
+            const bPrimary = b.layer === primaryLayer && b.feature_id === primaryId;
+            return Number(bPrimary) - Number(aPrimary);
+        });
+        if (listings.length === 0) {
             return res.json({
                 success: false,
                 show_panel: false,
-                message: 'الحساب ليس مزود خدمة مفعّل أو حقول المعالم الجغرافية فارغة تماماً.'
+                message: 'الحساب ليس مزود خدمة مفعّل أو لا توجد إعلانات مرتبطة به.'
             });
         }
 
-        // 🔥 [تطوير استراتيجي]: جلب الإحداثيات الحالية مباشرة من جدول الطبقة الديناميكية
-        let coordsData = { x_coord: null, y_coord: null, layer_status: userRow.status };
-        try {
+        const services = [];
+        for (const listing of listings) {
+            const discriminator = normalizeListingLayer(listing.layer);
+            if (!discriminator || !isValidLayer(discriminator)) continue;
             const targetPool = getPoolForLayer(discriminator);
-            const isRealEstate = ['ApartRent', 'ApartSale', 'LandSale', 'Location', 'RoadsTest'].includes(discriminator);
-
-            // العقارات تستخدم fid، الخدمات تستخدم id
-            const idField = isRealEstate ? 'fid' : 'id';
-
-            // 🆕 كل الخدمات أصبحت بجدول service_all موحّد، ولازم فلترة إضافية بعمود discriminator
+            const idField = isPropertyLayer(discriminator) ? 'fid' : 'id';
+            const isRealEstate = isPropertyLayer(discriminator);
             const coordsQuery = isRealEstate
-                ? `SELECT x_coord, y_coord, status FROM public."${discriminator}" WHERE ${idField} = $1 LIMIT 1`
-                : `SELECT x_coord, y_coord, status, discriminator FROM public.service_all WHERE id = $1 AND discriminator = $2 LIMIT 1`;
-            const coordsParams = isRealEstate ? [featId] : [featId, discriminator];
-
-            const coordsResult = await targetPool.query(coordsQuery, coordsParams);
-            if (coordsResult.rows.length > 0) {
-                const cRow = coordsResult.rows[0];
-                coordsData.x_coord = cRow.x_coord;
-                coordsData.y_coord = cRow.y_coord;
-                coordsData.layer_status = cRow.status; // جلب الحالة الفعلية من جدول الطبقة
-
-                // 🛡️ [تزامن احترافي]: إذا كانت الإحداثيات في جدول users فارغة، نقوم بتعبئتها الآن
-                if (userRow.x_coord === null || userRow.y_coord === null) {
-                    await servicesPool.query('UPDATE public.users SET x_coord = $1, y_coord = $2 WHERE user_id = $3',
-                    [coordsData.x_coord, coordsData.y_coord, user_id]);
-                }
+                ? discriminator === 'LandSale'
+                    ? `SELECT name, ST_X(ST_PointOnSurface(geom)) AS x_coord, ST_Y(ST_PointOnSurface(geom)) AS y_coord, status
+                       FROM public."${discriminator}" WHERE ${idField} = $1 LIMIT 1`
+                    : `SELECT name, x_coord, y_coord, status FROM public."${discriminator}" WHERE ${idField} = $1 LIMIT 1`
+                : `SELECT name, x_coord, y_coord, status FROM public.service_all WHERE id = $1 AND discriminator = $2 LIMIT 1`;
+            const featureId = listing.feature_id;
+            const coordsResult = await targetPool.query(
+                coordsQuery,
+                isRealEstate ? [featureId] : [featureId, discriminator]
+            );
+            const row = coordsResult.rows[0];
+            if (row) {
+                services.push({
+                    service_layer: discriminator,
+                    feature_id: featureId,
+                    id: featureId,
+                    name: row.name == null ? '' : String(row.name),
+                    status: row.status,
+                    x_coord: row.x_coord,
+                    y_coord: row.y_coord
+                });
             }
-        } catch (coordErr) {
-            console.warn(`⚠️ تنبيه: تعذر جلب الإحداثيات المسبقة من جدول [${layer}]:`, coordErr.message);
         }
 
-        // إرجاع البيانات في حال كانت مكتملة ومربوطة بشكل قانوني وصحيح
+        if (services.length === 0) {
+            return res.json({ success: false, show_panel: false, message: 'لا توجد إعلانات نشطة مرتبطة بهذا الحساب.' });
+        }
+
         res.json({
             success: true,
             show_panel: true,
             user_status: parseInt(userRow.status), // إرسال الحالة الإدارية (0 نشط، 1 مجمد)
-            service: {
-                service_layer: discriminator, // 🆕 إرسال discriminator الصحيح بدلاً من layer القديم
-                feature_id: featId,
-                id: featId,
-                status: coordsData.layer_status !== null ? parseInt(coordsData.layer_status) : parseInt(userRow.status),
-                x_coord: coordsData.x_coord,
-                y_coord: coordsData.y_coord,
-                x_global: coordsData.x_global,
-                y_global: coordsData.y_global
-            }
+            service: services[0],
+            services
         });
 
     } catch (err) {
@@ -146,6 +130,9 @@ app.post('/api/update-service-status', requireAuth, async (req, res) => {
 
     // مصفوفة طبقات العقارات لتحديد السلوك برمجياً
     const isRealEstate = REAL_ESTATE_LAYERS.includes(layerName);
+    if (isPropertyLayer(layerName) && (x_coord !== undefined || y_coord !== undefined)) {
+        return res.status(400).json({ success: false, error: 'لا يمكن لمزود الخدمة تغيير موقع العقار.' });
+    }
 
         try {
         // 🔒 لا يستطيع المستخدم تعديل إلا المعلم المربوط بحسابه فعلاً
@@ -169,8 +156,7 @@ app.post('/api/update-service-status', requireAuth, async (req, res) => {
         let updateLayerQuery = '';
         let queryParams = [];
 
-        // العقارات تستخدم fid، الخدمات تستخدم id
-        const idField = isRealEstate ? 'fid' : 'id';
+        const idField = isPropertyLayer(layerName) ? 'fid' : 'id';
         // 🆕 اسم الجدول الفعلي: للعقارات يبقى نفس اسم الطبقة، ولكل الخدمات service_all
         const tableName = isRealEstate ? `"${layerName}"` : `service_all`;
         // 🆕 شرط إضافي على discriminator (فقط للخدمات) — نضيفه بنهاية كل استعلام لاحقاً

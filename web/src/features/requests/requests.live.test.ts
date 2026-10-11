@@ -80,9 +80,16 @@ describe.skipIf(!BASE)('service requests against the live backend', () => {
     await signIn('0590000003', 'User#12345');
     const a = await requestsApi.create(body);
     await signIn('0590000002', 'Provider#12345');
-    expect((await requestsApi.respond(a.requestId, 'reject')).status).toBe('rejected');
+    await expect(requestsApi.respond(a.requestId, 'reject')).rejects.toMatchObject({ status: 400 });
+    const reason = 'الخدمة غير متاحة في منطقتك حالياً';
+    expect((await requestsApi.respond(a.requestId, 'reject', undefined, reason)).status).toBe('rejected');
 
     await signIn('0590000003', 'User#12345');
+    const requests = await requestsApi.mine(3);
+    expect(requests.requests.find((r) => r.id === a.requestId)?.rejection_reason).toBe(reason);
+    expect((await requestsApi.messages(a.requestId)).messages.map((m) => m.message)).toContain(
+      `تم رفض الطلب. السبب: ${reason}`,
+    );
     const b = await requestsApi.create(body);
     await expect(requestsApi.cancel(b.requestId, '')).rejects.toMatchObject({ status: 400 });
     expect((await requestsApi.cancel(b.requestId, 'changed my mind')).success).toBe(true);

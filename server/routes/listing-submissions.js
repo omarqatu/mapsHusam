@@ -7,6 +7,9 @@ import { authStatusCache, requireAdmin, requireAuth } from '../auth.js';
 import { clearProviderLinkedCache, notifyUser, platformStatsCache } from '../state.js';
 import { INSERT_SUBMISSION_SQL, SUBMISSION_MAX_LEN, SUBMITTABLE_LAYERS, SUBMITTABLE_PROPERTY_LAYERS, cleanText, parseListingInput, submissionParams, gridPoint } from '../listings.js';
 import { linkOwner } from '../listing-owners.js';
+import { getHiddenLayers } from '../visibility.js';
+import { visibleSubmissionLayers } from '../../lib/listing-rules.js';
+import { INSERT_LAND_SALE_SQL, landSaleApprovalParams } from '../../lib/land-sale-approval.js';
 
 async function ensureListingSubmissionsSchema() {
     try {
@@ -27,13 +30,15 @@ async function ensureListingSubmissionsSchema() {
                 reject_reason TEXT,
                 feature_id INTEGER,
                 reviewed_by INTEGER,
+                geometry JSONB,
                 created_at TIMESTAMP NOT NULL DEFAULT NOW(),
                 reviewed_at TIMESTAMP
             )
         `);
-        // شقق: المساحة والعملة
+        // العقارات: حدود الأرض اختيارية، والمساحة والعملة.
         await servicesPool.query('ALTER TABLE public.listing_submissions ADD COLUMN IF NOT EXISTS area INTEGER');
         await servicesPool.query('ALTER TABLE public.listing_submissions ADD COLUMN IF NOT EXISTS currency TEXT');
+        await servicesPool.query('ALTER TABLE public.listing_submissions ADD COLUMN IF NOT EXISTS geometry JSONB');
         // طلب معلّق واحد فقط لكل مستخدم (يمنع الإغراق ويحسم التسابق بين نقرتين)
         await servicesPool.query(`CREATE UNIQUE INDEX IF NOT EXISTS listing_submissions_one_pending ON public.listing_submissions (user_id) WHERE status = 'pending'`);
         await servicesPool.query(`CREATE INDEX IF NOT EXISTS listing_submissions_status_idx ON public.listing_submissions (status, created_at DESC)`);
@@ -44,6 +49,7 @@ async function ensureListingSubmissionsSchema() {
 ensureListingSubmissionsSchema();
 
 const SUBMITTER_ROLES = ['user', 'provider'];
+const SUBMISSION_LOCK_NAMESPACE = 73142;
 
 const submissionLimiter = rateLimit({
     windowMs: 24 * 60 * 60 * 1000,
@@ -55,23 +61,41 @@ const submissionLimiter = rateLimit({
 
 
 
-app.get('/api/listing-submissions/layers', (req, res) => res.json({ success: true, layers: SUBMITTABLE_LAYERS }));
+app.get('/api/listing-submissions/layers', async (req, res) => {
+    const hidden = await getHiddenLayers();
+    res.json({ success: true, layers: visibleSubmissionLayers(SUBMITTABLE_LAYERS, hidden) });
+});
 
 
 
 app.post('/api/listing-submissions', requireAuth, submissionLimiter, async (req, res) => {
-    const parsed = parseListingInput(req.body);
+    const parsed = parseListingInput(req.body, await getHiddenLayers());
     if (parsed.error) return res.status(400).json({ success: false, error: parsed.error });
     const listing = parsed.value;
 
+    const client = await servicesPool.connect();
     try {
+        await client.query('BEGIN');
+        await client.query('SELECT pg_advisory_xact_lock($1, $2)', [SUBMISSION_LOCK_NAMESPACE, req.auth.uid]);
+        const pending = await client.query(
+            `SELECT 1 FROM public.listing_submissions WHERE user_id = $1 AND status = 'pending' LIMIT 1`,
+            [req.auth.uid],
+        );
+        if (pending.rowCount > 0) {
+            await client.query('ROLLBACK');
+            return res.status(409).json({ success: false, error: 'لديك طلب قيد المراجعة بالفعل.' });
+        }
+
         // A user (becomes a provider on approval) or a provider adding one more listing.
-        const owner = await servicesPool.query('SELECT role FROM public.users WHERE user_id = $1', [req.auth.uid]);
+        const owner = await client.query('SELECT role FROM public.users WHERE user_id = $1', [req.auth.uid]);
         const row = owner.rows[0];
         if (!row || !SUBMITTER_ROLES.includes(row.role)) {
+            await client.query('ROLLBACK');
             return res.status(403).json({ success: false, error: 'حسابك لا يملك صلاحية التقديم.' });
         }
-        const inserted = await servicesPool.query(INSERT_SUBMISSION_SQL, submissionParams(req.auth.uid, listing));
+
+        const inserted = await client.query(INSERT_SUBMISSION_SQL, submissionParams(req.auth.uid, listing));
+        await client.query('COMMIT');
         res.json({ success: true, submission: inserted.rows[0] });
         // المشرفون يعرفون بالطلب فوراً (إشعار + بث حي لمن هو متصل)
         try {
@@ -81,9 +105,12 @@ app.post('/api/listing-submissions', requireAuth, submissionLimiter, async (req,
             console.error('⚠️ تعذر إشعار المشرفين بالطلب الجديد:', notifyErr.message);
         }
     } catch (err) {
+        await client.query('ROLLBACK').catch(() => {});
         if (err.code === '23505') return res.status(409).json({ success: false, error: 'لديك طلب قيد المراجعة بالفعل.' });
         console.error('❌ خطأ أثناء تقديم طلب إضافة نشاط:', err.message);
         res.status(500).json({ success: false, error: 'فشل تقديم الطلب.' });
+    } finally {
+        client.release();
     }
 });
 
@@ -138,7 +165,7 @@ app.post('/api/admin/listing-submissions/:id/approve', requireAdmin, async (req,
     if (!Number.isInteger(id) || id <= 0) return res.status(400).json({ success: false, error: 'رقم غير صالح.' });
     const body = req.body || {};
     const client = await servicesPool.connect();
-    let createdProperty = null; // a flat inserted before a failure is removed again
+    let createdProperty = null; // a property inserted before a failure is removed again
     try {
         await client.query('BEGIN');
         const found = await client.query('SELECT * FROM public.listing_submissions WHERE id = $1 FOR UPDATE', [id]);
@@ -171,17 +198,23 @@ app.post('/api/admin/listing-submissions/:id/approve', requireAdmin, async (req,
 
         const isProperty = SUBMITTABLE_PROPERTY_LAYERS.includes(sub.layer);
         let feature;
-        if (isProperty) {
-            // A flat is a point in its own table (the real-estate database: outside this transaction, undone below).
+        if (sub.layer === 'LandSale') {
+            const values = landSaleApprovalParams(sub, { name, des, searchTags });
+            const created = await realestatePool.query(INSERT_LAND_SALE_SQL, values);
+            feature = created.rows[0];
+            createdProperty = { layer: sub.layer, id: Number(feature.id), keyColumn: 'fid' };
+        } else if (isProperty) {
+            const values = [name, des || null, sub.phone, sub.whatsapp, sub.price === null ? null : Math.round(Number(sub.price)),
+                sub.currency || 'USD', sub.area, searchTags, sub.x_coord, sub.y_coord];
+            // Property layers live in the real-estate database, outside this transaction, so undo on failure below.
             const created = await realestatePool.query(
                 `INSERT INTO public."${sub.layer}" (name, des, phone, whatsapp, price, currency, area, search_tags, status, geom)
                  VALUES ($1, $2, $3, $4, $5, $6, $7, $8, 0, ST_SetSRID(ST_MakePoint($9, $10), 28191))
                  RETURNING fid AS id`,
-                [name, des || null, sub.phone, sub.whatsapp, sub.price === null ? null : Math.round(Number(sub.price)),
-                    sub.currency || 'USD', sub.area, searchTags, sub.x_coord, sub.y_coord]
+                values
             );
             feature = { id: Number(created.rows[0].id), x_coord: sub.x_coord, y_coord: sub.y_coord };
-            createdProperty = { layer: sub.layer, id: feature.id };
+            createdProperty = { layer: sub.layer, id: feature.id, keyColumn: 'fid' };
         } else {
             const created = await client.query(
                 `INSERT INTO public.service_all (discriminator, name, des, phone, whatsapp, work_hours, price, search_tags, status, geom)
@@ -226,7 +259,7 @@ app.post('/api/admin/listing-submissions/:id/approve', requireAdmin, async (req,
     } catch (err) {
         await client.query('ROLLBACK').catch(() => {});
         if (createdProperty) {
-            await realestatePool.query(`DELETE FROM public."${createdProperty.layer}" WHERE fid = $1`, [createdProperty.id]).catch(() => {});
+            await realestatePool.query(`DELETE FROM public."${createdProperty.layer}" WHERE ${createdProperty.keyColumn} = $1`, [createdProperty.id]).catch(() => {});
         }
         console.error('❌ خطأ أثناء الموافقة على طلب الإضافة:', err.message);
         res.status(500).json({ success: false, error: 'فشلت الموافقة.', details: IS_PROD ? undefined : err.message });

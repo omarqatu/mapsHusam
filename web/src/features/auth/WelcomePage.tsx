@@ -1,4 +1,4 @@
-import { Link, useLocation } from 'react-router';
+import { Link, useLocation, useNavigate } from 'react-router';
 import { useTranslation } from 'react-i18next';
 import {
   Ambulance,
@@ -15,6 +15,7 @@ import {
   MapPin,
   MessageCircle,
   Stethoscope,
+  User,
   UserPlus,
   Wrench,
   Zap,
@@ -22,6 +23,7 @@ import {
 } from 'lucide-react';
 import { useCategoryCounts, usePlatformStats } from '@/api/platform';
 import { formatNumber } from '@/lib/format';
+import LanguageSwitcher from '@/components/LanguageSwitcher';
 import LegalLinks from '@/features/legal/LegalLinks';
 import PromoSlideshow from './welcome/PromoSlideshow';
 
@@ -55,6 +57,7 @@ const FLOATING: { Icon: LucideIcon; left: string; delay: string }[] = [
 export default function WelcomePage() {
   const { t, i18n } = useTranslation();
   const { state } = useLocation();
+  const navigate = useNavigate();
   const arabic = i18n.resolvedLanguage?.startsWith('ar') ?? true;
   // Real figures under the feature cards; nothing is shown until they arrive (or if the request fails).
   const stats = usePlatformStats().data;
@@ -75,6 +78,9 @@ export default function WelcomePage() {
     <main className="relative isolate min-h-dvh overflow-hidden bg-[#0a0a1a] text-white" dir={arabic ? 'rtl' : 'ltr'}>
       <PromoSlideshow />
       <div className="absolute inset-0 z-[1] bg-[linear-gradient(180deg,rgba(0,0,0,0.85)_0%,rgba(0,0,0,0.6)_50%,rgba(0,0,0,0.85)_100%)]" />
+      <div className="absolute end-4 top-4 z-[3] rounded-xl border border-white/15 bg-white/10 text-white backdrop-blur-md [&_button]:text-white">
+        <LanguageSwitcher />
+      </div>
 
       {FLOATING.map(({ Icon, left, delay }) => (
         <span
@@ -147,11 +153,21 @@ export default function WelcomePage() {
           <Link
             to="/login"
             state={state}
-            className="inline-flex min-h-14 min-w-[200px] items-center justify-center gap-2.5 rounded-full border-2 border-white/30 bg-white/10 px-8 py-4 text-base font-bold text-white backdrop-blur-[10px] transition duration-300 hover:-translate-y-1 hover:border-white/60 hover:bg-white/20 max-sm:w-full max-sm:max-w-[300px] max-sm:min-w-0 max-sm:px-5 max-sm:py-3.5 max-sm:text-sm"
+            className="inline-flex min-h-14 min-w-[200px] items-center justify-center gap-2.5 rounded-full bg-gradient-to-br from-[#4fc3f7] to-[#00e676] px-8 py-4 text-base font-bold text-[#0a0a1a] shadow-[0_4px_20px_rgba(79,195,247,0.4)] transition duration-300 hover:-translate-y-1 hover:shadow-[0_8px_30px_rgba(79,195,247,0.6)] max-sm:w-full max-sm:max-w-[300px] max-sm:min-w-0 max-sm:px-5 max-sm:py-3.5 max-sm:text-sm"
           >
             <LogIn className="h-5 w-5" aria-hidden />
             {t('auth.welcome.login')}
           </Link>
+          <button
+            onClick={() => {
+              localStorage.setItem('guest_mode', 'true');
+              navigate('/');
+            }}
+            className="inline-flex min-h-14 min-w-[200px] items-center justify-center gap-2.5 rounded-full bg-gradient-to-br from-[#00e676] to-[#4fc3f7] px-8 py-4 text-base font-bold text-[#0a0a1a] shadow-[0_4px_20px_rgba(0,230,118,0.4)] transition duration-300 hover:-translate-y-1 hover:shadow-[0_8px_30px_rgba(0,230,118,0.6)] max-sm:w-full max-sm:max-w-[300px] max-sm:min-w-0 max-sm:px-5 max-sm:py-3.5 max-sm:text-sm"
+          >
+            <User className="h-5 w-5" aria-hidden />
+            {t('auth.welcome.guest')}
+          </button>
         </div>
 
         <p className="mt-1 text-[13px] leading-relaxed text-white/50">{t('auth.welcome.footer')}</p>

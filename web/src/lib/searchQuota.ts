@@ -1,10 +1,10 @@
 import { ApiError } from '@/api/client';
-import { mapEventsApi, type MapEventType } from '@/api/mapEvents';
+import { mapEventsApi, type MapEventSource, type MapEventType } from '@/api/mapEvents';
 import { toast } from '@/components/ui/toastStore';
 import { useAuthStore } from '@/store/authStore';
 
 /** `map` = the map page; `quick_search` = the search-without-map page (the server files them under different statistics). */
-export type SearchSource = 'map' | 'quick_search';
+export type SearchSource = MapEventSource;
 
 /**
  * Counts the search against the per-user request quota (POST /api/log-map-event → 429 when exceeded).

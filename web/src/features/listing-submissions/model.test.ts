@@ -5,10 +5,12 @@ import {
   hasPriceField,
   isPropertyLayer,
   pointInBounds,
+  PROPERTY_WORK_HOURS,
   toInput,
   validate,
   type FormValues,
 } from './model';
+import type { LandPolygon } from '@/api/listingSubmissions';
 
 const ok: FormValues = { ...EMPTY_FORM, layer: 'plumber', name: ' سباكة الأمل ', phone: '0591234567' };
 const point: [number, number] = [169463.41234, 145767.99876];
@@ -34,7 +36,7 @@ describe('listing submission form', () => {
     expect(pointInBounds([Number.NaN, 145767])).toBe(false);
   });
 
-  it('only hotels and villas take a price', () => {
+  it('prices hotels, villas and properties but not ordinary services', () => {
     expect(hasPriceField('hotels')).toBe(true);
     expect(hasPriceField('villas_rent')).toBe(true);
     expect(hasPriceField('plumber')).toBe(false);
@@ -60,9 +62,9 @@ describe('listing submission form', () => {
     expect(toInput({ ...ok, price: '80' }, point).price).toBeUndefined();
   });
 
-  it('a flat takes a price, a currency and an area, and no hours', () => {
+  it('property listings send fixed 24-hour work hours', () => {
     expect(isPropertyLayer('ApartRent')).toBe(true);
-    expect(isPropertyLayer('LandSale')).toBe(false);
+    expect(isPropertyLayer('LandSale')).toBe(true);
     expect(hasHoursField('ApartSale')).toBe(false);
     const flat = {
       ...ok,
@@ -75,7 +77,50 @@ describe('listing submission form', () => {
     expect(validate({ ...flat, area: '0' }, point).area).toBe('invalid');
     expect(validate({ ...ok, area: '0' }, point).area).toBeUndefined();
     const body = toInput(flat, point);
-    expect(body).toMatchObject({ layer: 'ApartRent', price: 400, currency: 'ILS', area: 120 });
-    expect(body.work_hours).toBeUndefined();
+    expect(body).toMatchObject({
+      layer: 'ApartRent',
+      price: 400,
+      currency: 'ILS',
+      area: 120,
+      work_hours: PROPERTY_WORK_HOURS,
+    });
+    expect(toInput({ ...flat, layer: 'ApartSale' }, point).work_hours).toBe(PROPERTY_WORK_HOURS);
+  });
+
+  it('requires a valid polygon for land sale and sends it with the request', () => {
+    const land = { ...ok, layer: 'LandSale', price: '12000', area: '800' };
+    const geometry: LandPolygon = {
+      type: 'Polygon',
+      coordinates: [[
+        [169000, 145000],
+        [169100, 145000],
+        [169100, 145100],
+        [169000, 145100],
+        [169000, 145000],
+      ]],
+    };
+    const selfIntersecting: LandPolygon = {
+      type: 'Polygon',
+      coordinates: [[
+        [169000, 145000],
+        [169100, 145100],
+        [169100, 145000],
+        [169000, 145100],
+        [169000, 145000],
+      ]],
+    };
+
+    expect(validate(land, point)).toMatchObject({ point: 'required' });
+    expect(validate(land, point, geometry)).toEqual({});
+    expect(validate(land, point, selfIntersecting)).toMatchObject({ point: 'invalid' });
+    const outside: LandPolygon = { ...geometry, coordinates: [[[1, 2], ...geometry.coordinates[0].slice(1)]] };
+    expect(validate(land, point, outside)).toMatchObject({ point: 'invalid' });
+    expect(toInput(land, point, geometry)).toMatchObject({
+      layer: 'LandSale',
+      geometry,
+      price: 12000,
+      area: 800,
+      work_hours: PROPERTY_WORK_HOURS,
+    });
   });
 });

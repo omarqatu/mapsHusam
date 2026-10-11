@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next';
-import { useProviderLinked } from '@/api/mapEvents';
+import { useProviderLinked, type MapEventSource } from '@/api/mapEvents';
 import RequestServiceButton from '@/features/requests/RequestServiceButton';
 import { useSectionShown } from '@/features/visibility/store';
 import ContactButtons from '../popup/ContactButtons';
@@ -18,16 +18,25 @@ interface Props {
   onContact?: (channel: 'call' | 'whatsapp') => void;
   /** Called when the person taps "request the service" (a measurement hook). */
   onRequest?: () => void;
+  /** Where the contact was initiated, for the map / no-map search statistics. */
+  source?: MapEventSource;
 }
 
 /**
  * Contact for one result (rows, featured cards): decides WHETHER and HOW to contact — never road checkpoints,
  * registered providers get "request service" — and renders the shared ContactButtons.
  */
-export default function ResultContact({ r, className, showRequest, onContact, onRequest }: Props) {
+export default function ResultContact({
+  r,
+  className,
+  showRequest,
+  onContact,
+  onRequest,
+  source = 'map',
+}: Props) {
   const { t } = useTranslation();
   const linked = useProviderLinked();
-  const contact = useContactActions();
+  const contact = useContactActions(source);
   const requestsOn = useSectionShown('requests');
   const p = r.props;
   if (isRoadBarrier(r.target)) return null;

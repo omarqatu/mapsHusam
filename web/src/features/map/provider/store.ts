@@ -5,6 +5,7 @@ interface ProviderUiState {
   open: boolean;
   /** Live tracking is on: the phone's position is sent every 10 s. Kept here so it survives closing the panel. */
   live: boolean;
+  selectedListing: string | null;
   /** `Date.now()` until which the status buttons stay locked after a successful update; 0 = not locked. */
   cooldownUntil: number;
   /** Last failed update, already translated / from the server; shown in the panel. */
@@ -13,17 +14,20 @@ interface ProviderUiState {
   openPanel: () => void;
   closePanel: () => void;
   setLive: (live: boolean) => void;
+  setSelectedListing: (key: string) => void;
   startCooldown: (until: number) => void;
 }
 
 export const useProviderUi = create<ProviderUiState>((set) => ({
   open: false,
   live: false,
+  selectedListing: null,
   cooldownUntil: 0,
   error: null,
   setError: (error) => set({ error }),
   openPanel: () => set({ open: true }),
   closePanel: () => set({ open: false }),
   setLive: (live) => set({ live }),
+  setSelectedListing: (selectedListing) => set({ selectedListing, live: false }),
   startCooldown: (cooldownUntil) => set({ cooldownUntil }),
 }));

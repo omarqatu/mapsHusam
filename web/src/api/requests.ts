@@ -33,6 +33,8 @@ export interface ServiceRequest extends ContactNumbers {
   user_confirmed: boolean;
   provider_confirmed: boolean;
   cancellation_reason: string | null;
+  /** Provider's explanation when the request was declined. */
+  rejection_reason: string | null;
   /** The agreed time of the visit / viewing (ISO), set by either side; null = not set. */
   appointment_at: string | null;
   created_at: string;
@@ -95,10 +97,10 @@ export const requestsApi = {
   create: (body: CreateRequestBody) =>
     api.post<{ success: boolean; requestId: number; status: RequestStatus }>('/api/service-requests', body),
   /** Accepting may fix the appointment at once (ISO time). */
-  respond: (id: number, action: 'accept' | 'reject', appointmentAt?: string) =>
+  respond: (id: number, action: 'accept' | 'reject', appointmentAt?: string, reason?: string) =>
     api.post<{ success: boolean; status: RequestStatus; appointment_at?: string | null }>(
       `/api/service-requests/${id}/respond`,
-      appointmentAt ? { action, appointment_at: appointmentAt } : { action },
+      { action, ...(appointmentAt ? { appointment_at: appointmentAt } : {}), ...(reason ? { reason } : {}) },
     ),
   /** Sets, moves or (null) clears the appointment; the other side is notified. */
   setAppointment: (id: number, appointmentAt: string | null) =>
@@ -220,8 +222,8 @@ export function useCreateRequest() {
 export function useRespondToRequest() {
   const invalidate = useInvalidateRequests();
   return useMutation({
-    mutationFn: (v: { id: number; action: 'accept' | 'reject'; appointmentAt?: string }) =>
-      requestsApi.respond(v.id, v.action, v.appointmentAt),
+    mutationFn: (v: { id: number; action: 'accept' | 'reject'; appointmentAt?: string; reason?: string }) =>
+      requestsApi.respond(v.id, v.action, v.appointmentAt, v.reason),
     // A 409/400 "already answered" means the queue is stale — refresh it either way.
     onSettled: invalidate,
   });

@@ -1,10 +1,11 @@
 // Admin: users, online users, forced logout, editing a user.
 import bcrypt from 'bcrypt';
 import { BCRYPT_SALT_ROUNDS, IS_PROD, app } from '../app.js';
-import { servicesPool } from '../database.js';
+import { realestatePool, servicesPool } from '../database.js';
 import { authStatusCache, requireAdmin } from '../auth.js';
 import { clearProviderLinkedCache, connectedUsers } from '../state.js';
-import { linkOwner, normalizeListingLayer, unlinkOwner } from '../listing-owners.js';
+import { isPropertyLayer, linkOwner, normalizeListingLayer, ready, unlinkOwner } from '../listing-owners.js';
+import { PLATFORM_PROPERTY_LAYERS, PLATFORM_SERVICE_LAYERS } from '../layers.js';
 
 // 1. جلب جميع المستخدمين مع خيارات البحث والتصفية
 app.get('/api/admin/users', requireAdmin, async (req, res) => {
@@ -85,13 +86,35 @@ app.get('/api/admin/users', requireAdmin, async (req, res) => {
         query += ' ORDER BY user_id ASC';
 
         const result = await servicesPool.query(query, params);
+        await ready;
+        const ownershipResult = await servicesPool.query(
+            'SELECT user_id, layer, feature_id FROM public.listing_owners ORDER BY created_at, layer, feature_id'
+        );
+        const linksByUser = new Map();
+        for (const link of ownershipResult.rows) {
+            const links = linksByUser.get(Number(link.user_id)) ?? [];
+            links.push({ service_layer: link.layer, feature_id: Number(link.feature_id) });
+            linksByUser.set(Number(link.user_id), links);
+        }
 
         // إضافة حالة الاتصال لكل مستخدم
         const onlineUserIds = Array.from(connectedUsers.keys()).map(id => String(id));
-        const usersWithStatus = result.rows.map(user => ({
-            ...user,
-            is_online: onlineUserIds.includes(String(user.user_id))
-        }));
+        const usersWithStatus = result.rows.map(user => {
+            const listingLinks = linksByUser.get(Number(user.user_id)) ?? [];
+            const primaryIndex = listingLinks.findIndex(
+                (link) =>
+                    link.service_layer === normalizeListingLayer(user.service_layer) &&
+                    link.feature_id === Number(user.feature_id)
+            );
+            if (primaryIndex > 0) {
+                listingLinks.unshift(listingLinks.splice(primaryIndex, 1)[0]);
+            }
+            return {
+                ...user,
+                listing_links: listingLinks,
+                is_online: onlineUserIds.includes(String(user.user_id))
+            };
+        });
 
         res.json({
             success: true,
@@ -271,7 +294,7 @@ app.post('/api/admin/users/force-logout-all', requireAdmin, async (req, res) => 
 
 // 2. تحديث بيانات مستخدم (تفعيل، تغيير الدور، ربط مزود خدمة، تغيير كلمة المرور)
 app.post('/api/admin/users/update', requireAdmin, async (req, res) => {
-    const { user_id, role, is_active, service_layer, feature_id, new_password, request_limit, request_limit_period } = req.body;
+    const { user_id, role, is_active, service_layer, feature_id, listing_links, new_password, request_limit, request_limit_period } = req.body;
 
     if (!user_id) {
         return res.status(400).json({ success: false, error: 'معرف المستخدم (user_id) مطلوب' });
@@ -285,9 +308,67 @@ app.post('/api/admin/users/update', requireAdmin, async (req, res) => {
         }
 
         const currentUser = checkUser.rows[0];
+        const linksWereProvided = listing_links !== undefined;
+        if (linksWereProvided && !Array.isArray(listing_links)) {
+            return res.status(400).json({ success: false, error: 'قائمة الإعلانات غير صالحة.' });
+        }
+        let desiredLinks;
+        if (linksWereProvided) {
+            desiredLinks = [];
+            const unique = new Set();
+            for (const link of listing_links) {
+                if (!link || typeof link.service_layer !== 'string' || !/^\d+$/.test(String(link.feature_id))) {
+                    return res.status(400).json({ success: false, error: 'بيانات أحد الإعلانات غير صالحة.' });
+                }
+                const layer = normalizeListingLayer(link.service_layer);
+                const featureId = Number(link.feature_id);
+                if (
+                    !layer ||
+                    (!PLATFORM_SERVICE_LAYERS.includes(layer) && !PLATFORM_PROPERTY_LAYERS.includes(layer)) ||
+                    !Number.isSafeInteger(featureId) ||
+                    featureId <= 0
+                ) {
+                    return res.status(400).json({ success: false, error: 'طبقة الإعلان أو رقمه غير صالح.' });
+                }
+                const key = `${layer}:${featureId}`;
+                if (unique.has(key)) return res.status(400).json({ success: false, error: 'الإعلان مكرر في القائمة.' });
+                unique.add(key);
+                const pool = isPropertyLayer(layer) ? realestatePool : servicesPool;
+                const exists = isPropertyLayer(layer)
+                    ? await pool.query(`SELECT 1 FROM public."${layer}" WHERE fid = $1 LIMIT 1`, [featureId])
+                    : await pool.query('SELECT 1 FROM public.service_all WHERE id = $1 AND discriminator = $2 LIMIT 1', [featureId, layer]);
+                if (exists.rowCount === 0) {
+                    return res.status(404).json({ success: false, error: `الإعلان ${layer} رقم ${featureId} غير موجود.` });
+                }
+                desiredLinks.push({ layer, feature_id: featureId });
+            }
+        }
         const updateFields = [];
         const updateValues = [];
         let idx = 1;
+        if (service_layer !== undefined && service_layer !== null && typeof service_layer !== 'string') {
+            return res.status(400).json({ success: false, error: 'طبقة الخدمة غير صالحة.' });
+        }
+        const requestedLayer = linksWereProvided
+            ? (desiredLinks[0]?.layer ?? null)
+            : service_layer === undefined
+            ? currentUser.service_layer
+            : (typeof service_layer === 'string' && service_layer.trim() ? normalizeListingLayer(service_layer) : null);
+        if (typeof service_layer === 'string' && service_layer.trim() && !requestedLayer) {
+            return res.status(400).json({ success: false, error: 'طبقة الخدمة غير صالحة.' });
+        }
+        const requestedFeatureId = linksWereProvided
+            ? (desiredLinks[0]?.feature_id ?? null)
+            : feature_id === undefined
+            ? currentUser.feature_id
+            : (feature_id === null || feature_id === '' ? null : Number(feature_id));
+        if (
+            feature_id !== undefined &&
+            requestedFeatureId !== null &&
+            (!Number.isSafeInteger(requestedFeatureId) || requestedFeatureId <= 0)
+        ) {
+            return res.status(400).json({ success: false, error: 'معرّف الإعلان غير صالح.' });
+        }
 
         // تحديث role (نوع الحساب)
         if (role !== undefined) {
@@ -306,15 +387,15 @@ app.post('/api/admin/users/update', requireAdmin, async (req, res) => {
         }
 
         // تحديث service_layer (ربط مزود خدمة)
-        if (service_layer !== undefined) {
+        if (service_layer !== undefined || linksWereProvided) {
             updateFields.push(`service_layer = $${idx++}`);
-            updateValues.push(service_layer && service_layer.trim() !== '' ? service_layer.trim() : null);
+            updateValues.push(requestedLayer);
         }
 
         // تحديث feature_id
-        if (feature_id !== undefined) {
+        if (feature_id !== undefined || linksWereProvided) {
             updateFields.push(`feature_id = $${idx++}`);
-            updateValues.push(feature_id ? parseInt(feature_id) : null);
+            updateValues.push(requestedFeatureId);
         }
 
         // تحديث كلمة المرور (مشفّرة دائماً بـ bcrypt، وليس كنص صريح)
@@ -357,13 +438,44 @@ app.post('/api/admin/users/update', requireAdmin, async (req, res) => {
         const finalQuery = `UPDATE public.users SET ${updateFields.join(', ')} WHERE user_id = $${idx}`;
         updateValues.push(user_id);
 
-        const updated = await servicesPool.query(`${finalQuery} RETURNING service_layer, feature_id`, updateValues);
-        // The account's first listing, as linked here, is mirrored into listing_owners (its other listings stay).
-        const before = { layer: normalizeListingLayer(currentUser.service_layer), id: currentUser.feature_id };
-        const after = { layer: normalizeListingLayer(updated.rows[0]?.service_layer), id: updated.rows[0]?.feature_id };
-        if (before.layer !== after.layer || String(before.id) !== String(after.id)) {
-            if (before.layer && before.id) await unlinkOwner(servicesPool, before.layer, before.id, user_id);
-            if (after.layer && after.id) await linkOwner(servicesPool, after.layer, after.id, user_id);
+        if (linksWereProvided) await ready;
+        const client = await servicesPool.connect();
+        let updated;
+        try {
+            await client.query('BEGIN');
+            updated = await client.query(`${finalQuery} RETURNING service_layer, feature_id`, updateValues);
+            if (linksWereProvided) {
+            const existing = await client.query(
+                'SELECT layer, feature_id FROM public.listing_owners WHERE user_id = $1',
+                [user_id]
+            );
+            const desiredKeys = new Set(desiredLinks.map((link) => `${link.layer}:${link.feature_id}`));
+            const existingKeys = new Set(existing.rows.map((link) => `${link.layer}:${link.feature_id}`));
+            for (const link of existing.rows) {
+                if (!desiredKeys.has(`${link.layer}:${link.feature_id}`)) {
+                    await unlinkOwner(client, link.layer, link.feature_id, user_id);
+                }
+            }
+            for (const link of desiredLinks) {
+                if (!existingKeys.has(`${link.layer}:${link.feature_id}`)) {
+                    await linkOwner(client, link.layer, link.feature_id, user_id);
+                }
+            }
+            } else {
+                // Legacy single-link updates remain supported and preserve any other listing links.
+                const before = { layer: normalizeListingLayer(currentUser.service_layer), id: currentUser.feature_id };
+                const after = { layer: normalizeListingLayer(updated.rows[0]?.service_layer), id: updated.rows[0]?.feature_id };
+                if (before.layer !== after.layer || String(before.id) !== String(after.id)) {
+                    if (before.layer && before.id) await unlinkOwner(client, before.layer, before.id, user_id);
+                    if (after.layer && after.id) await linkOwner(client, after.layer, after.id, user_id);
+                }
+            }
+            await client.query('COMMIT');
+        } catch (transactionError) {
+            await client.query('ROLLBACK');
+            throw transactionError;
+        } finally {
+            client.release();
         }
         authStatusCache.delete(Number(user_id)); // 🔒 يسري تغيير الدور/التفعيل فوراً
         clearProviderLinkedCache(); // ربط مزود الخدمة قد تغيّر

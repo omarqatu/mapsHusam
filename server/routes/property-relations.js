@@ -292,10 +292,10 @@ app.get('/api/my-property-relations', requireAuth, async (req, res) => {
             const want = rows.filter((r) => r.property_layer === table).map((r) => Number(r.property_id));
             if (!want.length) continue;
             const found = await realestatePool.query(
-                `SELECT fid, COALESCE(NULLIF(name, ''), NULLIF(location, '')) AS name FROM public."${table}" WHERE fid = ANY($1::bigint[])`,
+                `SELECT fid AS id, COALESCE(NULLIF(name, ''), NULLIF(location, '')) AS name FROM public."${table}" WHERE fid = ANY($1::bigint[])`,
                 [want],
             );
-            for (const f of found.rows) propertyNames.set(`${table}:${f.fid}`, f.name || '');
+            for (const f of found.rows) propertyNames.set(`${table}:${f.id}`, f.name || '');
         }
         const providerNames = new Map();
         if (providerKeys.length) {
@@ -356,5 +356,3 @@ app.get('/api/my-property-relations', requireAuth, async (req, res) => {
         res.status(500).json({ success: false, error: 'فشل جلب البيانات', details: IS_PROD ? undefined : err.message });
     }
 });
-
-

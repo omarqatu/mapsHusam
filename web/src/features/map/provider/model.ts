@@ -12,11 +12,16 @@ export const LIVE_INTERVAL_MS = GPS_MIN_INTERVAL_MS;
 export const AVAILABLE: ProviderStatus = 0;
 export const BUSY: ProviderStatus = 1;
 
+/** Property positions are fixed; only service listings may follow provider GPS. */
+export const supportsLocationUpdates = (layer: string) =>
+  !REAL_ESTATE_LAYERS.some((property) => property.typeName === layer);
+
 /** The feature the provider account is linked to. */
 export interface ProviderService {
   /** Value to send back to the server as `service_layer`. */
   layer: string;
   featureId: number;
+  name: string;
   status: ProviderStatus;
   /** Last saved position (Palestine Grid) — `null` when the row has none. */
   location: Coordinate | null;
@@ -28,7 +33,7 @@ export type ProviderAccount =
   | { kind: 'unlinked' }
   /** Linked, but an admin froze the account (`users.status` ≠ 0). */
   | { kind: 'frozen' }
-  | { kind: 'ready'; service: ProviderService };
+  | { kind: 'ready'; service: ProviderService; services: ProviderService[] };
 
 /** Legacy: anything but 0 counts as "busy" (hidden). */
 export const toStatus = (v: unknown): ProviderStatus =>
@@ -50,16 +55,15 @@ export const roundGrid = ([x, y]: Coordinate): Coordinate => [
 export function interpretService(res: ProviderServiceResponse): ProviderAccount {
   if (!res.success || !res.service) return { kind: 'unlinked' };
   if (res.user_status !== 0) return { kind: 'frozen' };
-  const s = res.service;
-  return {
-    kind: 'ready',
-    service: {
+  const rows = res.services?.length ? res.services : [res.service];
+  const services = rows.map((s) => ({
       layer: s.service_layer,
       featureId: Number(s.feature_id),
+      name: s.name ?? '',
       status: toStatus(s.status),
       location: validLocation(s.x_coord, s.y_coord),
-    },
-  };
+    }));
+  return { kind: 'ready', service: services[0], services };
 }
 
 /** The map target of the linked feature: a service type, or one of the three real-estate layers. `null` if the map can't draw it. */

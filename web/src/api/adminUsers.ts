@@ -18,6 +18,7 @@ export interface AdminUser {
   status: number | null;
   service_layer: string | null;
   feature_id: number | null;
+  listing_links?: { service_layer: string; feature_id: number }[];
   x_coord: number | string | null;
   y_coord: number | string | null;
   created_at: string | null;
@@ -42,6 +43,7 @@ export interface UserUpdate {
   is_active?: boolean;
   service_layer?: string | null;
   feature_id?: number | null;
+  listing_links?: { service_layer: string; feature_id: number }[];
   new_password?: string;
   request_limit?: number | null;
   request_limit_period?: RequestPeriod;

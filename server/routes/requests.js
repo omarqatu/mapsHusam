@@ -6,12 +6,25 @@ import { requireAdmin, requireAuth } from '../auth.js';
 import { getSocketIdForUser } from '../state.js';
 import { isLayerHidden } from '../../lib/listing-rules.js';
 import { getHiddenLayers } from '../visibility.js';
-import { listingProvider, ready as ownersReady } from '../listing-owners.js';
+import { isPropertyLayer, listingProvider, ready as ownersReady } from '../listing-owners.js';
 import { appointmentText, parseAppointment } from '../../lib/appointment.js';
 
 // =========================================================================
 // 🆕 نظام طلب الخدمة + الدردشة + تسجيل عمليات النجاح (Backend Server)
 // =========================================================================
+
+let rejectionReasonSchemaReady;
+function ensureRejectionReasonSchema() {
+    if (!rejectionReasonSchemaReady) {
+        rejectionReasonSchemaReady = servicesPool.query(
+            'ALTER TABLE public.service_requests ADD COLUMN IF NOT EXISTS rejection_reason TEXT'
+        ).catch((err) => {
+            rejectionReasonSchemaReady = null;
+            throw err;
+        });
+    }
+    return rejectionReasonSchemaReady;
+}
 
 
 // 🆕 استخراج رقم محلي من رقم واتساب دولي (00970598512667 -> 0598512667)
@@ -58,7 +71,7 @@ async function getFeatureContactInfo(serviceLayer, featureId) {
 
         // 🆕 الخدمات كلها بجدول service_all موحّد، فلازم فلترة إضافية بعمود discriminator
         const query = isRealEstate
-            ? `SELECT whatsapp, phone FROM public."${serviceLayer}" WHERE fid = $1 LIMIT 1` // property tables key on fid
+            ? `SELECT whatsapp, phone FROM public."${serviceLayer}" WHERE ${isPropertyLayer(serviceLayer) ? 'fid' : 'id'} = $1 LIMIT 1`
             : `SELECT whatsapp, phone FROM public.service_all WHERE id = $1 AND discriminator = $2 LIMIT 1`;
         const queryParams = isRealEstate ? [featureId] : [featureId, serviceLayer.trim()];
 
@@ -175,6 +188,7 @@ app.get('/api/service-requests', requireAuth, async (req, res) => {
     }
 
     try {
+        await ensureRejectionReasonSchema();
         let query = `
             SELECT sr.*,
                    ru.full_name AS requester_name, ru.phone AS requester_phone, ru.whatsapp_number AS requester_whatsapp,
@@ -247,12 +261,19 @@ app.post('/api/service-requests/:id/respond', requireAuth, async (req, res) => {
     if (!provider_user_id || !['accept', 'reject'].includes(action)) {
         return res.status(400).json({ success: false, error: 'بيانات الرد غير صالحة.' });
     }
+    const rejectionReason = action === 'reject' && typeof req.body.reason === 'string'
+        ? req.body.reason.replace(/[<>]/g, '').trim().slice(0, 300)
+        : '';
+    if (action === 'reject' && !rejectionReason) {
+        return res.status(400).json({ success: false, error: 'اكتب سبب رفض الطلب ليعرفه صاحبه.' });
+    }
     // Accepting may set the time of the visit / viewing at once (optional; either side can set it later).
     const appointment = action === 'accept' && req.body.appointment_at !== undefined
         ? parseAppointment(req.body.appointment_at) : { value: null };
     if (appointment.error) return res.status(400).json({ success: false, error: appointment.error });
 
     try {
+        await ensureRejectionReasonSchema();
         const reqResult = await servicesPool.query('SELECT * FROM public.service_requests WHERE id = $1', [id]);
         if (reqResult.rows.length === 0) return res.status(404).json({ success: false, error: 'الطلب غير موجود.' });
 
@@ -267,8 +288,9 @@ app.post('/api/service-requests/:id/respond', requireAuth, async (req, res) => {
         const newStatus = action === 'accept' ? 'accepted' : 'rejected';
         const upd = await servicesPool.query(
             `UPDATE public.service_requests SET status = $1, updated_at = NOW(),
-                    appointment_at = COALESCE($3, appointment_at) WHERE id = $2 AND status = 'pending'`,
-            [newStatus, id, appointment.value]
+                    appointment_at = COALESCE($3, appointment_at), rejection_reason = $4
+             WHERE id = $2 AND status = 'pending'`,
+            [newStatus, id, appointment.value, action === 'reject' ? rejectionReason : null]
         );
         if (upd.rowCount === 0) {
             return res.status(409).json({ success: false, error: 'تم الرد على هذا الطلب مسبقاً.' });
@@ -278,7 +300,15 @@ app.post('/api/service-requests/:id/respond', requireAuth, async (req, res) => {
         const message = action === 'accept'
             ? `وافق مزود الخدمة على طلبك (${request.service_type}). يمكنك الآن الدردشة معه.`
                 + (appointment.value ? ` الموعد: ${appointmentText(appointment.value)}.` : '')
-            : `اعتذر مزود الخدمة عن طلبك (${request.service_type}).`;
+            : `اعتذر مزود الخدمة عن طلبك (${request.service_type}). سبب الرفض: ${rejectionReason}`;
+
+        if (action === 'reject') {
+            await servicesPool.query(
+                `INSERT INTO public.service_request_messages (request_id, sender_role, sender_id, message)
+                 VALUES ($1, 'provider', $2, $3)`,
+                [id, provider_user_id, `تم رفض الطلب. السبب: ${rejectionReason}`]
+            );
+        }
 
         await servicesPool.query(
             `INSERT INTO "public"."notifications" (user_id, title, message, type, is_read, created_at, link)
@@ -294,7 +324,8 @@ app.post('/api/service-requests/:id/respond', requireAuth, async (req, res) => {
                 requestId: Number(id),
                 status: newStatus,
                 serviceType: request.service_type,
-                providerName: request.provider_name
+                providerName: request.provider_name,
+                rejectionReason: action === 'reject' ? rejectionReason : null
             });
         } else {
             console.log('⚠️ [RESPONSE] User not connected via socket');

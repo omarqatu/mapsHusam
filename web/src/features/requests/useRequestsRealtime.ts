@@ -25,13 +25,22 @@ export function useRequestsRealtime() {
     // The provider's queue (banner + ring) lives in the incoming query.
     const onNew = () => refresh();
 
-    const onResponse = (p: { requestId: number; status: 'accepted' | 'rejected'; providerName: string | null }) => {
+    const onResponse = (p: {
+      requestId: number;
+      status: 'accepted' | 'rejected';
+      providerName: string | null;
+      rejectionReason?: string | null;
+    }) => {
       refresh();
       if (p.status === 'accepted') {
         toast.success(t('requests.live.accepted'));
         ui().openChat(p.requestId);
       } else {
-        toast.error(t('requests.live.rejected'));
+        toast.error(
+          p.rejectionReason
+            ? t('requests.live.rejectedWithReason', { reason: p.rejectionReason })
+            : t('requests.live.rejected'),
+        );
         useUnseen.getState().clear(p.requestId);
       }
     };

@@ -48,6 +48,7 @@ function RequestCard({
   const openChat = useRequestsUi((s) => s.openChat);
   const openRating = useRequestsUi((s) => s.openRating);
   const openComment = useRequestsUi((s) => s.openComment);
+  const openReject = useRequestsUi((s) => s.openReject);
   const unseen = useUnseen((s) => s.ids.includes(r.id));
   const pendingRatings = usePendingRatings();
   const pendingComments = usePendingComments();
@@ -85,8 +86,15 @@ function RequestCard({
         {t('requests.statusLabel')}:{' '}
         {r.status === 'cancelled'
           ? t('requests.status.cancelled', { reason: r.cancellation_reason || t('requests.noReason') })
-          : t(`requests.status.${r.status}`)}
+          : r.status === 'pending'
+            ? t(role === 'provider' ? 'requests.status.pendingProvider' : 'requests.status.pendingUser')
+            : t(`requests.status.${r.status}`)}
       </p>
+      {r.status === 'rejected' && r.rejection_reason && (
+        <p className="text-sm text-danger">
+          {t('requests.status.rejectionReason', { reason: r.rejection_reason })}
+        </p>
+      )}
       {r.appointment_at && (r.status === 'pending' || r.status === 'accepted') && (
         <p className="flex items-center gap-1.5 text-sm font-semibold text-fg">
           <CalendarClock className="h-4 w-4 text-brand-fg" aria-hidden />
@@ -128,7 +136,7 @@ function RequestCard({
               variant="secondary"
               startIcon={<X className="h-4 w-4" aria-hidden />}
               disabled={pending}
-              onClick={() => respond(r, 'reject')}
+              onClick={() => openReject(r.id)}
             >
               {t('requests.reject')}
             </Button>

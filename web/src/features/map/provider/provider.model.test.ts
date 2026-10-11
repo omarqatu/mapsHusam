@@ -1,6 +1,13 @@
 import { describe, expect, it } from 'vitest';
 import type { ProviderServiceResponse } from '@/api/provider';
-import { interpretService, providerTarget, roundGrid, toStatus, validLocation } from './model';
+import {
+  interpretService,
+  providerTarget,
+  roundGrid,
+  supportsLocationUpdates,
+  toStatus,
+  validLocation,
+} from './model';
 
 const linked = (over: Partial<Extract<ProviderServiceResponse, { success: true }>> = {}, status: unknown = 0) =>
   ({
@@ -29,7 +36,8 @@ describe('interpretService', () => {
   it('reads numeric strings from Postgres', () => {
     expect(interpretService(linked())).toEqual({
       kind: 'ready',
-      service: { layer: 'plumber', featureId: 7, status: 0, location: [169463.41, 145767.99] },
+      service: { layer: 'plumber', featureId: 7, name: '', status: 0, location: [169463.41, 145767.99] },
+      services: [{ layer: 'plumber', featureId: 7, name: '', status: 0, location: [169463.41, 145767.99] }],
     });
   });
   it('anything but 0 is busy; a missing position is null', () => {
@@ -56,7 +64,17 @@ describe('providerTarget', () => {
   it('maps service types and real-estate layers, refuses unknown ones', () => {
     expect(providerTarget('plumber')).toEqual({ kind: 'service', discriminator: 'plumber' });
     expect(providerTarget('ApartRent')).toEqual({ kind: 'realEstate', layer: 'rent' });
+    expect(providerTarget('LandSale')).toEqual({ kind: 'realEstate', layer: 'land' });
     expect(providerTarget('nope')).toBeNull();
     expect(providerTarget('rent')).toBeNull();
+  });
+});
+
+describe('supportsLocationUpdates', () => {
+  it('keeps all property locations fixed while allowing services to move', () => {
+    expect(supportsLocationUpdates('LandSale')).toBe(false);
+    expect(supportsLocationUpdates('ApartRent')).toBe(false);
+    expect(supportsLocationUpdates('ApartSale')).toBe(false);
+    expect(supportsLocationUpdates('plumber')).toBe(true);
   });
 });

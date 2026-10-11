@@ -18,6 +18,8 @@ interface RequestsUi {
   commentFor: { ratingId: number; providerName: string; serviceType: string } | null;
   /** The "send a service request?" flow. */
   requestFor: RequestTarget | null;
+  /** Provider is writing the required reason for declining a request. */
+  rejectRequestId: number | null;
   openList: () => void;
   closeList: () => void;
   openChat: (id: number) => void;
@@ -28,6 +30,8 @@ interface RequestsUi {
   closeComment: () => void;
   startRequest: (t: RequestTarget) => void;
   endRequest: () => void;
+  openReject: (id: number) => void;
+  closeReject: () => void;
 }
 
 export const useRequestsUi = create<RequestsUi>((set) => ({
@@ -36,6 +40,7 @@ export const useRequestsUi = create<RequestsUi>((set) => ({
   ratingFor: null,
   commentFor: null,
   requestFor: null,
+  rejectRequestId: null,
   openList: () => set({ listOpen: true }),
   closeList: () => set({ listOpen: false }),
   openChat: (chatId) => set({ chatId, listOpen: false }),
@@ -46,4 +51,6 @@ export const useRequestsUi = create<RequestsUi>((set) => ({
   closeComment: () => set({ commentFor: null }),
   startRequest: (requestFor) => set((s) => (s.requestFor ? s : { requestFor })),
   endRequest: () => set({ requestFor: null }),
+  openReject: (rejectRequestId) => set({ rejectRequestId }),
+  closeReject: () => set({ rejectRequestId: null }),
 }));

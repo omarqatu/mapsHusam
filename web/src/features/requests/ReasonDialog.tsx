@@ -8,16 +8,19 @@ import TextareaInput from '@/components/ui/TextareaInput';
 interface Props {
   open: boolean;
   loading?: boolean;
+  intent?: 'cancel' | 'reject';
   onSubmit: (reason: string) => void;
   onClose: () => void;
 }
 
-/** Cancelling needs a real reason (the server refuses an empty one; legacy blocked it here too). */
-export default function ReasonDialog({ open, loading, onSubmit, onClose }: Props) {
+/** Cancelling or declining a request needs a real reason, also enforced by the server. */
+export default function ReasonDialog({ open, loading, intent = 'cancel', onSubmit, onClose }: Props) {
   const { t } = useTranslation();
   const [reason, setReason] = useState('');
   const [touched, setTouched] = useState(false);
   const empty = reason.trim() === '';
+  const key = intent === 'reject' ? 'requests.rejectDialog' : 'requests.cancelDialog';
+  const inputId = `${intent}-reason`;
 
   const close = () => {
     setReason('');
@@ -33,7 +36,7 @@ export default function ReasonDialog({ open, loading, onSubmit, onClose }: Props
     <Modal
       open={open}
       onClose={loading ? () => undefined : close}
-      title={t('requests.cancelDialog.title')}
+      title={t(`${key}.title`)}
       widthClass="max-w-sm"
       footer={
         <>
@@ -41,28 +44,28 @@ export default function ReasonDialog({ open, loading, onSubmit, onClose }: Props
             {t('common.cancel')}
           </Button>
           <Button variant="danger" onClick={submit} loading={loading}>
-            {t('requests.cancelDialog.submit')}
+            {t(`${key}.submit`)}
           </Button>
         </>
       }
     >
-      <label htmlFor="cancel-reason" className="mb-1.5 block text-sm font-semibold text-fg">
-        {t('requests.cancelDialog.label')}
+      <label htmlFor={inputId} className="mb-1.5 block text-sm font-semibold text-fg">
+        {t(`${key}.label`)}
       </label>
       <TextareaInput
-        id="cancel-reason"
+        id={inputId}
         rows={3}
         // eslint-disable-next-line jsx-a11y/no-autofocus -- the dialog was just opened by the user; focus goes to its only field
         autoFocus
         value={reason}
         maxLength={REQUEST_LIMITS.cancelReason}
         hasError={touched && empty}
-        placeholder={t('requests.cancelDialog.placeholder')}
+        placeholder={t(`${key}.placeholder`)}
         onChange={(e) => setReason(e.target.value)}
       />
       {touched && empty && (
         <p role="alert" className="mt-1.5 text-xs font-semibold text-danger">
-          {t('requests.cancelDialog.required')}
+          {t(`${key}.required`)}
         </p>
       )}
     </Modal>

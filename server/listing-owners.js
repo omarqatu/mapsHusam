@@ -1,5 +1,6 @@
 // Who owns which listing: one account may own several services and properties. `layer` is the service discriminator
-// or the property table (`ApartRent` / `ApartSale` / `LandSale`); `feature_id` is `service_all.id` or the table's `fid`.
+// or the property table (`ApartRent` / `ApartSale` / `LandSale`); `feature_id` is the row's `id` in service_all or
+// `fid` in a property table.
 // `users.service_layer` / `users.feature_id` stay as the account's first listing (the provider panel, the admin's
 // user editor and the login answer read them); every link written there is mirrored here.
 import { servicesPool } from './database.js';

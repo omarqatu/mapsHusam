@@ -10,9 +10,11 @@ import { CenteredSpinner } from '@/components/ui/Spinner';
 import { toast } from '@/components/ui/toastStore';
 import { copyText } from '@/lib/clipboard';
 import { formatDateTime } from '@/lib/format';
+import { useProviderLinked } from '@/api/mapEvents';
+import { useSectionShown } from '@/features/visibility/store';
 import type { Coordinate } from '../map/config';
 import { GeoError, locateOnce } from '../map/geolocate';
-import { printResults } from '../map/search/printResults';
+import { isPlatformRequest, printResults } from '../map/search/printResults';
 import { hasPrice, targetLabelKey } from '../map/targets';
 import FiltersPanel from './FiltersPanel';
 import ListingCard from './ListingCard';
@@ -40,6 +42,8 @@ export default function CategoryResults({ selection, onChange, onBack }: Props) 
   const fields = useMemo(() => filterFields(target), [target]);
   const state = useMemo(() => fromConditions(conditions), [conditions]);
   const query = useCategoryResults(target, conditions);
+  const linked = useProviderLinked();
+  const requestsOn = useSectionShown('requests');
   const [sort, setSort] = useState<SortMode>('rating');
   const [origin, setOrigin] = useState<Coordinate | null>(null);
   const [locating, setLocating] = useState(false);
@@ -76,13 +80,26 @@ export default function CategoryResults({ selection, onChange, onBack }: Props) 
   };
 
   const print = () => {
+    if (!linked.data) {
+      toast.error(t('search.results.contactInfoUnavailable'));
+      return;
+    }
     const ok = printResults(items, (r) => t(targetLabelKey(r.target)), {
       title: `${t('search.results.reportTitle')} — ${title}`,
       date: `${t('search.results.printedOn')} ${formatDateTime(new Date(), i18n.language)}`,
-      columns: ['#', t('popup.name'), t('search.type'), t('popup.place'), t('popup.call')],
+      columns: [
+        '#',
+        t('popup.name'),
+        t('search.type'),
+        t('popup.place'),
+        t('popup.phone'),
+        t('popup.whatsapp'),
+        t('popup.contactMethod'),
+      ],
+      platformRequest: t('popup.requestViaPlatform'),
       dir: i18n.language === 'ar' ? 'rtl' : 'ltr',
       lang: i18n.language,
-    });
+    }, (r) => isPlatformRequest(r, linked.data, requestsOn));
     if (!ok) toast.warning(t('search.results.popupBlocked'));
   };
 
@@ -154,7 +171,7 @@ export default function CategoryResults({ selection, onChange, onBack }: Props) 
             <button type="button" onClick={() => void copyLink()} aria-label={t('search.results.copyLink')} title={t('search.results.copyLink')} className={iconButton}>
               <Copy className="h-4 w-4" aria-hidden />
             </button>
-            <button type="button" onClick={print} disabled={items.length === 0} aria-label={t('search.results.print')} title={t('search.results.print')} className={iconButton}>
+            <button type="button" onClick={print} disabled={items.length === 0 || linked.isPending} aria-label={t('search.results.print')} title={t('search.results.print')} className={iconButton}>
               <Printer className="h-4 w-4" aria-hidden />
             </button>
             <Link to={mapSearchPath(selection)} title={t('searchPage.openOnMap')} className={`${iconButton} w-auto gap-1.5 px-3 text-sm font-semibold`}>

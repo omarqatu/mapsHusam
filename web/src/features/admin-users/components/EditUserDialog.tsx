@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { Plus, X } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { REQUEST_PERIODS, type AdminUser } from '@/api/adminUsers';
 import AlertMessage from '@/components/ui/AlertMessage';
@@ -11,8 +12,9 @@ import TextInput from '@/components/ui/TextInput';
 import { toast } from '@/components/ui/toastStore';
 import { errorText } from '@/lib/errorText';
 import { useAuthStore } from '@/store/authStore';
-import { SERVICE_TYPES } from '@/features/map/config';
+import { REAL_ESTATE_LAYERS, SERVICE_TYPES } from '@/features/map/config';
 import { serviceLabelKey } from '@/features/map/registry';
+import { targetLabelKey } from '@/features/map/targets';
 import { useUpdateUser } from '../hooks/useAdminUsers';
 import { buildUpdate, formFromUser, MIN_PASSWORD, validateForm, type EditForm } from '../model';
 
@@ -32,6 +34,10 @@ export default function EditUserDialog({ user, onClose }: { user: AdminUser; onC
   const layerOptions = useMemo(
     () => [
       { value: '', label: t('adminUsers.edit.notLinked') },
+      ...REAL_ESTATE_LAYERS.map((layer) => ({
+        value: layer.typeName,
+        label: `${t(targetLabelKey({ kind: 'realEstate', layer: layer.key }))} — ${layer.typeName}`,
+      })),
       ...SERVICE_TYPES.map((s) => ({ value: s.key, label: `${t(serviceLabelKey(s.key))} — ${s.key}` })),
     ],
     [t],
@@ -39,7 +45,7 @@ export default function EditUserDialog({ user, onClose }: { user: AdminUser; onC
 
   const isSelf = user.user_id === me;
   const selfRisk = isSelf && (!form.is_active || form.role !== 'admin');
-  const providerNeedsLink = form.role === 'provider' && !form.service_layer;
+  const providerNeedsLink = form.role === 'provider' && !form.listing_links.some((link) => link.service_layer && link.feature_id.trim());
 
   const save = () => {
     setTried(true);
@@ -115,42 +121,80 @@ export default function EditUserDialog({ user, onClose }: { user: AdminUser; onC
         </FormField>
         {providerNeedsLink && <AlertMessage type="info" message={t('adminUsers.edit.providerHint')} />}
 
-        <fieldset className="space-y-1 rounded-xl border border-line p-3">
+        <fieldset className="space-y-3 rounded-xl border border-line p-3">
           <legend className="px-1 text-sm font-bold text-fg">
             {t('adminUsers.edit.serviceLink')}
           </legend>
-          <FormField label={t('adminUsers.edit.layer')} name="edit-layer">
-            <SelectInput
-              id="edit-layer"
-              searchable
-              value={form.service_layer}
-              onChange={(e) =>
-                setForm((f) => ({
-                  ...f,
-                  service_layer: e.target.value,
-                  feature_id: e.target.value ? f.feature_id : '',
-                }))
-              }
-              options={layerOptions}
-            />
-          </FormField>
-          {form.service_layer && (
-            <FormField
-              label={t('adminUsers.edit.featureId')}
-              name="edit-feature"
-              error={err('feature_id', 'adminUsers.edit.errors.integer')}
-            >
-              <TextInput
-                id="edit-feature"
-                inputMode="numeric"
-                dir="ltr"
-                value={form.feature_id}
-                hasError={tried && !!errors.feature_id}
-                placeholder={t('adminUsers.edit.featureIdPlaceholder')}
-                onChange={(e) => set('feature_id', e.target.value)}
-              />
-            </FormField>
+          {form.listing_links.map((link, index) => (
+            <div key={index} className="flex items-end gap-2 rounded-lg bg-subtle p-2">
+              <div className="min-w-0 flex-1 space-y-2">
+                <FormField label={t('adminUsers.edit.layer')} name={`edit-layer-${index}`}>
+                  <SelectInput
+                    id={`edit-layer-${index}`}
+                    searchable
+                    value={link.service_layer}
+                    onChange={(e) =>
+                      setForm((f) => ({
+                        ...f,
+                        listing_links: f.listing_links.map((item, i) =>
+                          i === index
+                            ? { ...item, service_layer: e.target.value, feature_id: e.target.value ? item.feature_id : '' }
+                            : item,
+                        ),
+                      }))
+                    }
+                    options={layerOptions}
+                  />
+                </FormField>
+                {link.service_layer && (
+                  <FormField
+                    label={t('adminUsers.edit.featureId')}
+                    name={`edit-feature-${index}`}
+                    error={err('listing_links', 'adminUsers.edit.errors.integer')}
+                  >
+                    <TextInput
+                      id={`edit-feature-${index}`}
+                      inputMode="numeric"
+                      dir="ltr"
+                      value={link.feature_id}
+                      hasError={tried && !!errors.listing_links}
+                      placeholder={t('adminUsers.edit.featureIdPlaceholder')}
+                      onChange={(e) =>
+                        setForm((f) => ({
+                          ...f,
+                          listing_links: f.listing_links.map((item, i) =>
+                            i === index ? { ...item, feature_id: e.target.value } : item,
+                          ),
+                        }))
+                      }
+                    />
+                  </FormField>
+                )}
+              </div>
+              <Button
+                variant="ghost"
+                size="sm"
+                aria-label={t('adminUsers.edit.removeLink')}
+                onClick={() => setForm((f) => ({ ...f, listing_links: f.listing_links.filter((_, i) => i !== index) }))}
+              >
+                <X className="h-4 w-4" aria-hidden />
+              </Button>
+            </div>
+          ))}
+          {tried && errors.listing_links && (
+            <p className="text-sm text-danger">{t('adminUsers.edit.errors.integer')}</p>
           )}
+          <p className="text-sm text-muted">{t('adminUsers.edit.featureIdHint')}</p>
+          <Button
+            variant="secondary"
+            size="sm"
+            startIcon={<Plus className="h-4 w-4" aria-hidden />}
+            onClick={() =>
+              setForm((f) => ({ ...f, listing_links: [...f.listing_links, { service_layer: '', feature_id: '' }] }))
+            }
+          >
+            {t('adminUsers.edit.addLink')}
+          </Button>
         </fieldset>
 
         <fieldset className="space-y-1 rounded-xl border border-line p-3">

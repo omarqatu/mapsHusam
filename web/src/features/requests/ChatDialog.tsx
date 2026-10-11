@@ -26,6 +26,7 @@ import { errorText } from './errors';
 import { appointmentLabel } from './appointment';
 import { contactFor, hasConfirmed, otherPartyName, roleIn } from './model';
 import ReasonDialog from './ReasonDialog';
+import { useRespond } from './respond';
 import { useRequestsUi } from './store';
 import { useUnseen } from './unseen';
 
@@ -35,6 +36,7 @@ const RATING_DELAY_MS = 1200;
 function Chat({ req, uid }: { req: ServiceRequest; uid: number }) {
   const { t, i18n } = useTranslation();
   const closeChat = useRequestsUi((s) => s.closeChat);
+  const openReject = useRequestsUi((s) => s.openReject);
   const openRating = useRequestsUi((s) => s.openRating);
   const role = roleIn(req, uid);
   const other = otherPartyName(req, role);
@@ -45,10 +47,12 @@ function Chat({ req, uid }: { req: ServiceRequest; uid: number }) {
   const status = messagesQ.data?.requestStatus ?? req.status;
   const completed = status === 'completed';
   const open = status === 'accepted';
+  const waitingForProvider = status === 'pending' && role === 'provider';
   const pendingRatings = usePendingRatings();
   const send = useSendMessage();
   const confirm = useConfirmAgreement();
   const cancel = useCancelRequest();
+  const { respond, pending: responding, pendingId } = useRespond();
   const [text, setText] = useState('');
   const [askConfirm, setAskConfirm] = useState(false);
   const [askCancel, setAskCancel] = useState(false);
@@ -139,7 +143,28 @@ function Chat({ req, uid }: { req: ServiceRequest; uid: number }) {
         title={t('requests.chat.title', { name: otherLabel })}
         widthClass="max-w-md"
         footer={
-          open ? (
+          waitingForProvider ? (
+            <>
+              <Button
+                className="flex-1"
+                startIcon={<Handshake className="h-4 w-4" aria-hidden />}
+                loading={responding && pendingId === req.id}
+                disabled={responding}
+                onClick={() => respond(req, 'accept')}
+              >
+                {t('requests.accept')}
+              </Button>
+              <Button
+                variant="danger"
+                className="flex-1"
+                startIcon={<Ban className="h-4 w-4" aria-hidden />}
+                disabled={responding}
+                onClick={() => openReject(req.id)}
+              >
+                {t('requests.reject')}
+              </Button>
+            </>
+          ) : open ? (
             <>
               <Button
                 className="flex-[3]"
@@ -169,6 +194,8 @@ function Chat({ req, uid }: { req: ServiceRequest; uid: number }) {
           <div className="rounded-lg bg-subtle p-2.5 text-sm text-fg">
             {completed ? (
               <ContactBox contact={contact} otherName={other} serviceType={req.service_type} />
+            ) : waitingForProvider ? (
+              t('requests.chat.waitingProvider')
             ) : open ? (
               t('requests.chat.hint')
             ) : (
@@ -180,6 +207,12 @@ function Chat({ req, uid }: { req: ServiceRequest; uid: number }) {
               />
             )}
           </div>
+          {status === 'rejected' && req.rejection_reason && (
+            <AlertMessage
+              type="error"
+              message={t('requests.status.rejectionReason', { reason: req.rejection_reason })}
+            />
+          )}
 
           {open && <AppointmentBar req={req} />}
           {completed && req.appointment_at && (

@@ -96,9 +96,7 @@ export function newestFirst(a: AdminUser, b: AdminUser): number {
 export interface EditForm {
   is_active: boolean;
   role: Role;
-  /** '' = not linked. */
-  service_layer: string;
-  feature_id: string;
+  listing_links: { service_layer: string; feature_id: string }[];
   /** '' = unlimited. */
   request_limit: string;
   request_limit_period: RequestPeriod;
@@ -112,8 +110,12 @@ export function formFromUser(u: AdminUser): EditForm {
   return {
     is_active: u.is_active === true,
     role: u.role,
-    service_layer: u.service_layer ?? '',
-    feature_id: u.feature_id == null ? '' : String(u.feature_id),
+    listing_links: (u.listing_links !== undefined
+      ? u.listing_links
+      : u.service_layer && u.feature_id != null
+        ? [{ service_layer: u.service_layer, feature_id: u.feature_id }]
+        : []
+    ).map((link) => ({ service_layer: link.service_layer, feature_id: String(link.feature_id) })),
     request_limit: u.request_limit ? String(u.request_limit) : '',
     request_limit_period: u.request_limit_period ?? 'daily',
     new_password: '',
@@ -121,15 +123,20 @@ export function formFromUser(u: AdminUser): EditForm {
 }
 
 export type FormErrors = Partial<
-  Record<'feature_id' | 'request_limit' | 'new_password', 'integer' | 'min' | 'short'>
+  Record<'listing_links' | 'request_limit' | 'new_password', 'integer' | 'min' | 'short'>
 >;
 
 const isPositiveInt = (s: string) => /^\d+$/.test(s) && Number(s) > 0;
 
 export function validateForm(f: EditForm): FormErrors {
   const errors: FormErrors = {};
-  if (f.service_layer && f.feature_id.trim() && !isPositiveInt(f.feature_id.trim()))
-    errors.feature_id = 'integer';
+  if (
+    f.listing_links.some(
+      (link) =>
+        (link.service_layer || link.feature_id.trim()) &&
+        (!link.service_layer || !isPositiveInt(link.feature_id.trim())),
+    )
+  ) errors.listing_links = 'integer';
   if (f.request_limit.trim() && !isPositiveInt(f.request_limit.trim())) errors.request_limit = 'min';
   if (f.new_password && f.new_password.trim().length < MIN_PASSWORD) errors.new_password = 'short';
   return errors;
@@ -152,14 +159,17 @@ export function buildUpdate(u: AdminUser, f: EditForm): UserUpdate | null {
     changed = true;
   }
 
-  const layer = f.service_layer.trim();
-  const featureText = layer ? f.feature_id.trim() : '';
-  if (
-    layer !== (u.service_layer ?? '') ||
-    featureText !== (u.feature_id == null ? '' : String(u.feature_id))
-  ) {
-    body.service_layer = layer || null;
-    body.feature_id = featureText ? Number(featureText) : null;
+  const links = f.listing_links
+    .filter((link) => link.service_layer && link.feature_id.trim())
+    .map((link) => ({ service_layer: link.service_layer.trim(), feature_id: Number(link.feature_id.trim()) }));
+  const currentLinks = (u.listing_links !== undefined
+    ? u.listing_links
+    : u.service_layer && u.feature_id != null
+      ? [{ service_layer: u.service_layer, feature_id: u.feature_id }]
+      : []
+  ).map((link) => `${link.service_layer}:${link.feature_id}`).sort();
+  if (links.map((link) => `${link.service_layer}:${link.feature_id}`).sort().join('|') !== currentLinks.join('|')) {
+    body.listing_links = links;
     changed = true;
   }
 

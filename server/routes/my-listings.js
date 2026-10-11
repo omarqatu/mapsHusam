@@ -10,6 +10,7 @@ import { IS_PROD, ROOT_DIR, app } from '../app.js';
 import { realestatePool, servicesPool } from '../database.js';
 import { requireAuth } from '../auth.js';
 import { platformStatsCache } from '../state.js';
+import { notifyExpiredListingsForUser } from '../listing-expiry-notifications.js';
 import { isPropertyLayer, normalizeListingLayer, ownedListings, ownsListing } from '../listing-owners.js';
 import {
     BEFORE_AFTER_COLUMNS, MAX_PHOTOS, MAX_PHOTO_BYTES, PHOTO_MIME, joinPic, parseListingEdit, photoIdFromUrl, photoType,
@@ -134,7 +135,10 @@ async function readOne(layer, id) {
 
 app.get('/api/my-listings', requireAuth, async (req, res) => {
     try {
-        res.json({ success: true, listings: await readListings(await ownedListings(req.auth.uid)) });
+        const userId = Number(req.auth.uid);
+        const listings = await readListings(await ownedListings(userId));
+        await notifyExpiredListingsForUser(userId);
+        res.json({ success: true, listings });
     } catch (err) {
         console.error('❌ خطأ أثناء جلب إعلاناتي:', err.message);
         res.status(500).json({ success: false, error: 'فشل جلب الإعلانات.', details: IS_PROD ? undefined : err.message });
@@ -164,8 +168,12 @@ app.patch('/api/my-listings/:layer/:id', requireAuth, editLimiter, async (req, r
             at[col] = values.length;
             sets.push(`${col} = $${values.length}`);
         }
-        // a moved service: the point itself, not only the two number columns
-        if (at.x_coord) sets.push(`geom = ST_SetSRID(ST_MakePoint($${at.x_coord}::float8, $${at.y_coord}::float8), 28191)`);
+        // Use separate parameters for the geometry: x_coord / y_coord columns may infer a
+        // different PostgreSQL type than ST_MakePoint, and a reused placeholder conflicts.
+        if (at.x_coord !== undefined) {
+            values.push(parsed.value.x_coord, parsed.value.y_coord);
+            sets.push(`geom = ST_SetSRID(ST_MakePoint($${values.length - 1}::float8, $${values.length}::float8), 28191)`);
+        }
         if (!isPropertyLayer(target.layer)) sets.push('updated_at = NOW()');
         const w = whereFor(target.layer, values.length + 1);
         const result = await poolFor(target.layer).query(

@@ -144,7 +144,9 @@ function FormStep({ onBack, onDone }: { onBack: () => void; onDone: (to: string)
         whatsapp_number: toWhatsappNumber(prefix, phone),
         password,
         email: '',
-        ...(hasBusiness && business.point ? { listing: toInput(effective, business.point) } : {}),
+        ...(hasBusiness && business.point
+          ? { listing: toInput(effective, business.point, business.geometry) }
+          : {}),
       },
       {
         onSuccess: ({ user }) => {
@@ -215,7 +217,7 @@ function FormStep({ onBack, onDone }: { onBack: () => void; onDone: (to: string)
               maxLength={10}
               value={phone}
               onChange={(e) => setPhone(e.target.value)}
-              placeholder="0598512667"
+              placeholder=""
               hasError={!!errors.phone}
               startIcon={<Phone className="h-4 w-4" />}
               inputSize="lg"

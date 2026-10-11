@@ -14,6 +14,7 @@ export interface ProviderServiceRow {
   id: number;
   /** The feature row's status. */
   status: number | string | null;
+  name?: string;
   /** Palestine Grid metres. Postgres `numeric` → arrives as a string. */
   x_coord: number | string | null;
   y_coord: number | string | null;
@@ -26,6 +27,7 @@ export type ProviderServiceResponse =
       /** `users.status`: 0 = active, anything else = frozen by an admin. */
       user_status: number | null;
       service: ProviderServiceRow;
+      services?: ProviderServiceRow[];
     }
   | { success: false; show_panel?: false; message?: string; error?: string };
 

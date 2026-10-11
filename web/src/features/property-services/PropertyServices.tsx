@@ -2,6 +2,7 @@ import { useEffect, useId, useMemo, useState } from 'react';
 import clsx from 'clsx';
 import { ChevronDown, Handshake, MapPin } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import type { MapEventSource } from '@/api/mapEvents';
 import RatingSummary from '@/components/ui/RatingSummary';
 import Tabs from '@/components/ui/Tabs';
 import { useLayerFilter } from '../visibility/store';
@@ -33,7 +34,15 @@ interface Tracker {
   request: () => void;
 }
 
-function ProviderRow({ p, track }: { p: RankedProvider; track: Tracker }) {
+function ProviderRow({
+  p,
+  track,
+  contactSource,
+}: {
+  p: RankedProvider;
+  track: Tracker;
+  contactSource: MapEventSource;
+}) {
   const { t } = useTranslation();
   const showOnMap = useShowOnMap();
   const props = p.r.props;
@@ -59,10 +68,19 @@ function ProviderRow({ p, track }: { p: RankedProvider; track: Tracker }) {
         )}
       </div>
       <p className="text-sm text-muted" dir="auto">
-        {[place, t('propertyServices.fromLand', { distance: formatDistance(p.distance, t) })].filter(Boolean).join(' · ')}
+        {[place, t('propertyServices.fromLand', { distance: formatDistance(p.distance, t) })]
+          .filter(Boolean)
+          .join(' · ')}
       </p>
       <div className="flex flex-wrap items-center gap-2 pt-0.5">
-        <ResultContact r={p.r} showRequest className="contents" onContact={track.contact} onRequest={track.request} />
+        <ResultContact
+          r={p.r}
+          showRequest
+          className="contents"
+          onContact={track.contact}
+          onRequest={track.request}
+          source={contactSource}
+        />
         <button
           type="button"
           onClick={() => showOnMap(p.r)}
@@ -87,6 +105,7 @@ interface Props_ {
   /** The property's data (its governorate is the fallback when the radius finds too few). */
   props: Props;
   className?: string;
+  contactSource?: MapEventSource;
 }
 
 /**
@@ -95,7 +114,14 @@ interface Props_ {
  * then active first, best trusted rating, nearest. Collapsed to one line until asked; a type nobody offers is left
  * out, and nothing shows when no type has anyone. What people do here is measured (see queries.ts).
  */
-export default function PropertyServices({ target, propertyId, origin, props, className }: Props_) {
+export default function PropertyServices({
+  target,
+  propertyId,
+  origin,
+  props,
+  className,
+  contactSource = 'map',
+}: Props_) {
   const { t } = useTranslation();
   const id = useId();
   const config = usePropertyServicesConfig();
@@ -180,7 +206,10 @@ export default function PropertyServices({ target, propertyId, origin, props, cl
       : t('propertyServices.within', { km: radiusKm });
 
   return (
-    <section aria-labelledby={`${id}-title`} className={clsx('rounded-xl border border-line bg-subtle', className)}>
+    <section
+      aria-labelledby={`${id}-title`}
+      className={clsx('rounded-xl border border-line bg-subtle', className)}
+    >
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
@@ -197,7 +226,10 @@ export default function PropertyServices({ target, propertyId, origin, props, cl
           </span>
           {!open && <span className="block truncate text-sm text-muted">{names.join(' · ')}</span>}
         </span>
-        <ChevronDown className={clsx('h-5 w-5 shrink-0 text-muted transition', open && 'rotate-180')} aria-hidden />
+        <ChevronDown
+          className={clsx('h-5 w-5 shrink-0 text-muted transition', open && 'rotate-180')}
+          aria-hidden
+        />
       </button>
 
       {open && (
@@ -208,7 +240,11 @@ export default function PropertyServices({ target, propertyId, origin, props, cl
               return {
                 id: l.type,
                 label: `${t(targetLabelKey(type))} (${l.nearby!.providers.length})`,
-                icon: <span aria-hidden><TargetIcon target={type} /></span>,
+                icon: (
+                  <span aria-hidden>
+                    <TargetIcon target={type} />
+                  </span>
+                ),
               };
             })}
             value={active.type}
@@ -220,14 +256,19 @@ export default function PropertyServices({ target, propertyId, origin, props, cl
             idPrefix={id}
             scrollable
           />
-          <div role="tabpanel" id={`${id}-tabpanel-${active.type}`} aria-labelledby={`${id}-tab-${active.type}`} className="space-y-2">
+          <div
+            role="tabpanel"
+            id={`${id}-tabpanel-${active.type}`}
+            aria-labelledby={`${id}-tab-${active.type}`}
+            className="space-y-2"
+          >
             <div className="space-y-0.5 text-sm">
               <p className="font-semibold text-fg">{reach}</p>
               <p className="text-muted">{t('propertyServices.ranking')}</p>
             </div>
             <ul className="space-y-2">
               {shown.map((p) => (
-                <ProviderRow key={p.r.key} p={p} track={track(p)} />
+                <ProviderRow key={p.r.key} p={p} track={track(p)} contactSource={contactSource} />
               ))}
             </ul>
             {rest > 0 && (

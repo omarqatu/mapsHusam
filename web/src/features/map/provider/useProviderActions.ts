@@ -23,6 +23,7 @@ export function useProviderActions() {
   const account = useProviderAccount().data;
   const { mutateAsync, isPending } = useSetProviderStatus();
   const inFlight = useRef(false);
+  const selectedListing = useProviderUi((s) => s.selectedListing);
 
   const send = useCallback(
     async (service: ProviderService, status: typeof AVAILABLE | typeof BUSY, { gps, tick }: SendOptions = {}) => {
@@ -61,9 +62,12 @@ export function useProviderActions() {
     [map, mutateAsync, t],
   );
 
-  const service = account?.kind === 'ready' ? account.service : null;
+  const services = account?.kind === 'ready' ? account.services : [];
+  const service =
+    services.find((item) => `${item.layer}:${item.featureId}` === selectedListing) ?? services[0] ?? null;
   return {
     account,
+    services,
     service,
     pending: isPending,
     availableHere: () => service && send(service, AVAILABLE, { gps: true }),

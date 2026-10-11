@@ -1,5 +1,5 @@
 import { lazy, Suspense, type ReactElement } from 'react';
-import { createBrowserRouter, Outlet, RouterProvider } from 'react-router';
+import { createBrowserRouter, Outlet, RouterProvider, Navigate, useLocation } from 'react-router';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { queryClient } from '@/api/queryClient';
 import SocketConnector from '@/api/SocketConnector';
@@ -20,6 +20,7 @@ import NotFoundPage from '@/routes/NotFoundPage';
 import PlaceholderPage from '@/routes/PlaceholderPage';
 import { appRoutes, type AppRoute } from '@/routes/routes';
 import { CenteredSpinner } from '@/components/ui/Spinner';
+import { useAuthStore } from '@/store/authStore';
 
 // One chunk per page: a visitor on the login screen downloads neither OpenLayers nor the admin and search code.
 const HomePage = lazy(() => import('@/features/home/HomePage'));
@@ -69,6 +70,26 @@ const page = (r: AppRoute) => ({ path: r.path, element: ported[r.path] ?? <Place
 
 const shelled = appRoutes.filter((r) => !r.own);
 
+/** Wrapper for the map route to redirect visitors to welcome page unless they have direct access params or guest mode in localStorage */
+function MapWelcomeRedirect({ children }: { children: React.ReactNode }) {
+  const user = useAuthStore((s) => s.user);
+  const location = useLocation();
+  const searchParams = new URLSearchParams(location.search);
+
+  // Check if URL has direct access params (shared location/results)
+  const hasDirectAccess = searchParams.has('x') && searchParams.has('y') || searchParams.has('resultsShare');
+
+  // Check if user entered as guest (stored in localStorage)
+  const isGuest = localStorage.getItem('guest_mode') === 'true';
+
+  // If not logged in and no direct access params and not guest mode, redirect to welcome
+  if (!user && !hasDirectAccess && !isGuest) {
+    return <Navigate to="/welcome" replace state={{ from: location.pathname + location.search }} />;
+  }
+
+  return <>{children}</>;
+}
+
 const router = createBrowserRouter([
   // Everything under one root so app-wide sheets that navigate (LoginPrompt) live inside the router.
   {
@@ -79,9 +100,11 @@ const router = createBrowserRouter([
       {
         path: '/',
         element: (
-          <Suspense fallback={<CenteredSpinner minHeight="100vh" />}>
-            <MapPage />
-          </Suspense>
+          <MapWelcomeRedirect>
+            <Suspense fallback={<CenteredSpinner minHeight="100vh" />}>
+              <MapPage />
+            </Suspense>
+          </MapWelcomeRedirect>
         ),
       },
       // The public welcome route is the full-screen legacy promo splash.
@@ -102,11 +125,11 @@ const router = createBrowserRouter([
           // The landing page sends a visitor to /welcome (log in / register) rather than to a bare form.
           {
             element: <ProtectedRoute to="/welcome" />,
-            children: shelled.filter((r) => r.path === '/home').map(page),
+            children: shelled.filter((r) => r.path === '/home' || r.path === '/search').map(page),
           },
           {
             element: <ProtectedRoute />,
-            children: shelled.filter((r) => r.access === 'auth' && r.path !== '/home').map(page),
+            children: shelled.filter((r) => r.access === 'auth' && r.path !== '/home' && r.path !== '/search').map(page),
           },
           {
             element: <RoleRoute roles={['admin']} />,

@@ -99,6 +99,7 @@
       },
       "register": "Create an account",
       "login": "Have an account? Log in",
+      "guest": "Continue as a guest",
       "footer": "Visit the map: start by creating an account, or log in if you already have one",
       "agreeNote": "By continuing you agree to the"
     },
@@ -341,7 +342,10 @@
       "user": "User"
     },
     "call": "Call",
+    "phone": "Phone",
     "whatsapp": "WhatsApp",
+    "contactMethod": "Contact method",
+    "requestViaPlatform": "You can request the service or property through the platform",
     "requestService": "Request service",
     "requestSoon": "Service requests are being moved to the new version",
     "copyLink": "Copy location link",
@@ -370,7 +374,8 @@
       "open": "Open now",
       "closed": "Closed now",
       "unavailable": "Not available right now",
-      "withdrawn": "Withdrawn — hidden from visitors"
+      "withdrawn": "Withdrawn — hidden from visitors",
+      "expired": "Subscription expired — hidden from visitors"
     },
     "requestViewing": "Request a viewing",
     "publisher": {
@@ -479,6 +484,7 @@
       "count": "{{count}} results",
       "copyLink": "Copy results link",
       "print": "Print",
+      "contactInfoUnavailable": "Provider-link information could not be loaded, so the report was not printed.",
       "linkCopied": "Results link copied. You can share it now.",
       "linkFailed": "Could not copy the link, please copy it manually.",
       "noLink": "There is no current search to share.",
@@ -628,9 +634,11 @@
     "checking": "Checking your service…",
     "loadFailed": "Could not load your service. Try again.",
     "noAccess": "You do not have permission to change the status of any listing right now.",
+    "selectListing": "Select a service or property",
     "statusAvailable": "Your status: available (shown on the map and in search)",
     "statusBusy": "Your status: not available (visitors see “not available right now”)",
     "availableHere": "Available (my location)",
+    "availableAtListing": "Show property on the map",
     "availablePrevious": "Available (previous location)",
     "busy": "Not available",
     "trackStart": "Live tracking (every 10 s)",
@@ -662,10 +670,13 @@
     "myRequests": "My requests",
     "status": {
       "pending": "Waiting for a reply",
+      "pendingUser": "Waiting for the provider to reply",
+      "pendingProvider": "Waiting for your reply",
       "accepted": "Accepted (open the chat)",
       "rejected": "Declined",
       "completed": "Agreed",
-      "cancelled": "Cancelled ({{reason}})"
+      "cancelled": "Cancelled ({{reason}})",
+      "rejectionReason": "Reason for declining: {{reason}}"
     },
     "flow": {
       "loginFirst": "Sign in first to request a service.",
@@ -686,9 +697,17 @@
       "rejected": "Request declined.",
       "respondFailed": "Could not send the reply."
     },
+    "rejectDialog": {
+      "title": "Decline service request",
+      "label": "Write a reason so the requester knows why:",
+      "placeholder": "Reason for declining (required)...",
+      "required": "Please write a reason.",
+      "submit": "Send decline"
+    },
     "live": {
       "accepted": "The provider accepted your request! Opening the chat.",
       "rejected": "The provider declined your request.",
+      "rejectedWithReason": "The provider declined your request. Reason: {{reason}}",
       "completed": "The agreement is complete.",
       "cancelled": "Request cancelled: {{reason}}"
     },
@@ -711,6 +730,7 @@
       "loadFailed": "Could not load the messages.",
       "sendFailed": "Could not send the message.",
       "notFound": "Request not found.",
+      "waitingProvider": "This request is waiting for your reply. Accept it or decline with a reason.",
       "hint": "Talk it over with the other side; when you agree, each side presses \"Agreed\".",
       "archived": "Agreed (archive)",
       "confirmTitle": "Agreed",
@@ -1174,11 +1194,14 @@
       "active": "Account active",
       "activeHint": "An active user can log in; a deactivated one is blocked.",
       "role": "Account type",
-      "providerHint": "A service provider also needs a service layer and a feature id below.",
-      "serviceLink": "Service provider link",
+      "providerHint": "A service provider needs at least one linked listing.",
+      "serviceLink": "Listings linked to this provider",
+      "addLink": "Add listing",
+      "removeLink": "Remove listing",
       "layer": "Service layer",
       "notLinked": "-- not linked --",
-      "featureId": "Feature id in the layer",
+      "featureId": "Listing id",
+      "featureIdHint": "Enter id for services and fid for properties (apartments and land).",
       "featureIdPlaceholder": "e.g. 14",
       "quota": "Request limit (events)",
       "limit": "Maximum requests (calls / WhatsApp)",
@@ -1890,7 +1913,24 @@
       "label": "Location picker map",
       "hint": "Move the map until the pin sits right on your place, or tap the place.",
       "picked": "Location set. Move the map to adjust it.",
-      "myLocation": "My location"
+      "myLocation": "My location",
+      "city": "Governorate / city",
+      "region": "Town / area",
+      "locality": "Neighborhood (optional)",
+      "loadingRegions": "Loading areas...",
+      "chooseCityFirst": "Choose a governorate first",
+      "chooseRegionFirst": "Choose a town or area first",
+      "regionHint": "Choose a governorate, then a town or area to move the map there. Adjust the pin to the exact location.",
+      "regionsFailed": "Could not load areas. You can still choose the location directly on the map.",
+      "retryRegions": "Retry"
+    },
+    "landMap": {
+      "label": "Land boundary drawing map",
+      "hint": "Choose “Draw boundary”, mark the land's corners on the map, then double-click to finish.",
+      "picked": "Land boundary set. Drag the corners to adjust it.",
+      "draw": "Draw boundary",
+      "drawing": "Click the map to add land corners",
+      "clear": "Clear boundary"
     },
     "errors": {
       "layer": {
@@ -1909,6 +1949,10 @@
       "point": {
         "required": "Mark the business on the map.",
         "invalid": "That location is outside the allowed area."
+      },
+      "polygon": {
+        "required": "Draw the land boundary on the map.",
+        "invalid": "The land boundary is invalid or outside the allowed area."
       },
       "area": {
         "invalid": "Enter the area in square metres, as a whole number."
@@ -2073,6 +2117,7 @@
       "hint": "Add your listing; once the admins approve it, it shows here and on the map."
     },
     "loadFailed": "Could not load your listings.",
+    "subscriptionExpired": "The subscription has expired. This listing is hidden from visitors.",
     "pending": "“{{name}}” is waiting for the admins’ approval.",
     "rejected": "“{{name}}” was not approved: {{reason}}",
     "edit": "Edit",

@@ -4,6 +4,8 @@ import { Link } from 'react-router';
 import { useTranslation } from 'react-i18next';
 import RatingSummary from '@/components/ui/RatingSummary';
 import { toast } from '@/components/ui/toastStore';
+import { useProviderLinked } from '@/api/mapEvents';
+import { useSectionShown } from '@/features/visibility/store';
 import { useOlMap } from '../MapContext';
 import { useMapUi } from '../store';
 import { copyText } from '@/lib/clipboard';
@@ -15,7 +17,7 @@ import MapSheet from '../panels/MapSheet';
 import { targetLabelKey } from '../targets';
 import { manualStars } from '../extras/featured';
 import { formatDistance } from './nearby';
-import { printResults } from './printResults';
+import { isPlatformRequest, printResults } from './printResults';
 import ResultContact from './ResultContact';
 import { toSelected, type SearchResult } from './results';
 import { buildShareLink, encodeShareState } from './shareLink';
@@ -82,7 +84,7 @@ function ResultRow({
           </span>
         </span>
       </button>
-      <ResultContact r={r} className="mt-2 ps-8" />
+      <ResultContact r={r} showRequest className="mt-2 ps-8" />
     </li>
   );
 }
@@ -95,6 +97,8 @@ export default function ResultsPanel({ className }: { className?: string }) {
   const setResults = useSearchUi((s) => s.setResults);
   const selected = useMapUi((s) => s.selected);
   const setSelected = useMapUi((s) => s.setSelected);
+  const linked = useProviderLinked();
+  const requestsOn = useSectionShown('requests');
 
   const close = () => setResults(null);
 
@@ -115,13 +119,26 @@ export default function ResultsPanel({ className }: { className?: string }) {
   };
 
   const print = () => {
+    if (!linked.data) {
+      toast.error(t('search.results.contactInfoUnavailable'));
+      return;
+    }
     const ok = printResults(results.items, (r) => t(targetLabelKey(r.target)), {
       title: `${t('search.results.reportTitle')} — ${results.title}`,
       date: `${t('search.results.printedOn')} ${formatDateTime(new Date(), i18n.language)}`,
-      columns: ['#', t('popup.name'), t('search.type'), t('popup.place'), t('popup.call')],
+      columns: [
+        '#',
+        t('popup.name'),
+        t('search.type'),
+        t('popup.place'),
+        t('popup.phone'),
+        t('popup.whatsapp'),
+        t('popup.contactMethod'),
+      ],
+      platformRequest: t('popup.requestViaPlatform'),
       dir: i18n.language === 'ar' ? 'rtl' : 'ltr',
       lang: i18n.language,
-    });
+    }, (r) => isPlatformRequest(r, linked.data, requestsOn));
     if (!ok) toast.warning(t('search.results.popupBlocked'));
   };
 
@@ -152,6 +169,7 @@ export default function ResultsPanel({ className }: { className?: string }) {
               type="button"
               className={iconBtn}
               onClick={print}
+              disabled={linked.isPending}
               aria-label={t('search.results.print')}
               title={t('search.results.print')}
             >

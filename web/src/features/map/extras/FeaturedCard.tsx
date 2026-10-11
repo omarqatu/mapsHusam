@@ -5,24 +5,25 @@ import { useTranslation } from 'react-i18next';
 import { AvailabilityText } from '../popup/AvailabilityText';
 import MediaGallery from '@/components/ui/MediaGallery';
 import RatingSummary from '@/components/ui/RatingSummary';
-import {
-  hoursLabel,
-  availability,
-  labelMedia,
-  priceLabel,
-  text,
-} from '../popup/featureModel';
+import { hoursLabel, availability, labelMedia, priceLabel, text } from '../popup/featureModel';
 import RatingsBlock from '../popup/RatingsBlock';
 import { formatDistance } from '../search/nearby';
 import ResultContact from '../search/ResultContact';
 import { hasPrice, isFuelStation, isRoadBarrier, priceCurrencyDefault, targetLabelKey } from '../targets';
 import { BarrierBadges, FuelBadges } from './StatusBadges';
-import { customerRatingsKey, manualStars, mediaForMode, type FeaturedEntry, type FeaturedMode } from './featured';
+import {
+  customerRatingsKey,
+  manualStars,
+  mediaForMode,
+  type FeaturedEntry,
+  type FeaturedMode,
+} from './featured';
 import MediaShowcase from '../popup/MediaShowcase';
 import { FEATURED_FRAME } from './featuredStyle';
 import { useShowOnMap } from './useShowOnMap';
 import DirectionsButton from '../popup/DirectionsButton';
 import TargetIcon from '../TargetIcon';
+import type { MapEventSource } from '@/api/mapEvents';
 
 interface CardProps {
   entry: FeaturedEntry;
@@ -40,6 +41,8 @@ interface CardProps {
   highlight?: boolean;
   /** Inside a dialog (the search preview): no frame of its own, and no name (the dialog's title carries it). */
   bare?: boolean;
+  /** Where the contact was initiated, for the map / no-map search statistics. */
+  contactSource?: MapEventSource;
 }
 
 const LONG_DESCRIPTION = 160;
@@ -77,6 +80,7 @@ export default function FeaturedCard({
   customerRatings,
   highlight,
   bare,
+  contactSource = 'map',
 }: CardProps) {
   const { t, i18n } = useTranslation();
   const showOnMap = useShowOnMap();
@@ -154,7 +158,7 @@ export default function FeaturedCard({
       {text(p.des) && <Description value={text(p.des)} />}
 
       <div className="mt-auto flex flex-wrap gap-2 pt-2">
-        <ResultContact r={r} showRequest className="contents" />
+        <ResultContact r={r} showRequest className="contents" source={contactSource} />
         <button
           type="button"
           onClick={() => showOnMap(r)}

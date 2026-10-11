@@ -78,7 +78,7 @@ export default function LoginPage() {
             inputSize="lg"
             className="bg-white/80"
             hasError={!!phoneError}
-            placeholder="0598512667"
+            placeholder=""
             required
           />
         </FormField>

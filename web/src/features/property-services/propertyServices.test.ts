@@ -87,6 +87,12 @@ describe('ranking', () => {
     const away = provider('away', 1, { status: 1 });
     expect(order([away, provider('ok', 8)], { away: { avg: 5, count: 50 } })).toEqual(['ok', 'away']);
   });
+  it('an expired subscription is not ranked as active', () => {
+    const endDate = new Date(Date.now() - 86_400_000).toISOString().slice(0, 10);
+    const [expired] = rankProviders([provider('ended', 1, { end_date: endDate })], ORIGIN, new Map());
+    expect(expired.state).toBe('expired');
+    expect(expired.active).toBe(false);
+  });
   it('a proven rating comes before distance; equal ratings are decided by distance', () => {
     const proven = provider('far-proven', 9);
     const nearUnrated = provider('near-unrated', 1);

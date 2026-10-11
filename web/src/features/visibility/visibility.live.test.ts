@@ -6,6 +6,7 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { authApi } from '@/api/auth';
 import { api, ApiError } from '@/api/client';
 import { fetchWfs } from '@/api/geoserver';
+import { listingSubmissionsApi, type SubmissionInput } from '@/api/listingSubmissions';
 import { platformContentApi } from '@/api/platformContent';
 import { searchApi } from '@/api/search';
 import { useAuthStore } from '@/store/authStore';
@@ -92,6 +93,46 @@ describe.skipIf(!BASE)('visibility setting against the live backend', () => {
       (await searchApi.search({ layer: 'plumber', workspace: 'services' })).features.length,
     ).toBeGreaterThan(0);
     if (gsUp) expect(await plumbersInWfs()).toBeGreaterThan(0);
+  });
+
+  it('submission choices and writes exclude hidden services and properties', async () => {
+    const { user: admin } = await authApi.login({ phone: '0590000001', password: 'Admin#12345' });
+    useAuthStore.getState().setSession(admin);
+    await platformContentApi.save(
+      VISIBILITY_KEY,
+      'test',
+      serializeVisibility(withLayers(ALL_VISIBLE, ['plumber', 'sale'], false)),
+    );
+
+    const { user } = await authApi.login({ phone: '0590000003', password: 'User#12345' });
+    useAuthStore.getState().setSession(user);
+    const { layers } = await listingSubmissionsApi.layers();
+    expect(layers).not.toContain('plumber');
+    expect(layers).not.toContain('ApartSale');
+    expect(layers).toContain('ApartRent');
+
+    const hiddenListing: SubmissionInput = {
+      layer: 'plumber',
+      name: 'خدمة مخفية للاختبار',
+      phone: '0591234567',
+      x_coord: 169463.41,
+      y_coord: 145767.99,
+    };
+    await expect(listingSubmissionsApi.submit(hiddenListing)).rejects.toMatchObject({
+      status: 400,
+      message: 'نوع النشاط غير مسموح به.',
+    });
+
+    useAuthStore.setState({ user: null });
+    await expect(
+      authApi.register({
+        name: 'Hidden type test',
+        phone: '0590000003',
+        whatsapp_number: '',
+        password: 'secret1',
+        listing: hiddenListing,
+      }),
+    ).rejects.toMatchObject({ status: 400, message: 'نوع النشاط غير مسموح به.' });
   });
 
   it('a visitor gets listings without phone / WhatsApp unless the admin allows it; a signed-in user gets them', async () => {

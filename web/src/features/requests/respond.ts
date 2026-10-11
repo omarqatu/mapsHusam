@@ -8,25 +8,29 @@ import { useUnseen } from './unseen';
 
 /**
  * Provider's accept / reject, shared by the incoming banner and the requests list.
- * Accepting opens the chat; a request someone already answered (409) is just dropped from the queue.
+ * Accepting opens the chat; declining requires a reason. A request someone already answered (409) is refreshed.
  */
 export function useRespond() {
   const { t } = useTranslation();
   const mutation = useRespondToRequest();
-  const respond = (req: Pick<ServiceRequest, 'id'>, action: 'accept' | 'reject', onDone?: () => void) =>
+  const respond = (
+    req: Pick<ServiceRequest, 'id'>,
+    action: 'accept' | 'reject',
+    reason?: string,
+    onSuccess?: () => void,
+  ) =>
     mutation.mutate(
-      { id: req.id, action },
+      { id: req.id, action, reason },
       {
         onSuccess: () => {
           useUnseen.getState().clear(req.id);
           if (action === 'accept') useRequestsUi.getState().openChat(req.id);
           else toast.info(t('requests.incoming.rejected'));
-          onDone?.();
+          onSuccess?.();
         },
         onError: (e) => {
           const answered = e instanceof ApiError && (e.status === 409 || e.status === 400);
           toast[answered ? 'warning' : 'error'](errorText(e, t('requests.incoming.respondFailed')));
-          onDone?.();
         },
       },
     );

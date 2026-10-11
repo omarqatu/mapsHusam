@@ -250,7 +250,7 @@ export default function AppHeader() {
             </Dropdown>
           </div>
 
-          <UserMenu />
+          <UserMenu closeSheet={() => setSheet(false)} forceClose={sheet} />
 
           <div className="md:hidden">
             <button

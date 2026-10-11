@@ -2,6 +2,7 @@
 import { IS_PROD, app, debugLog } from '../app.js';
 import { realestatePool, servicesPool } from '../database.js';
 import { REAL_ESTATE_LAYERS, isValidLayer, isValidSqlIdentifier } from '../layers.js';
+import { isPropertyLayer } from '../listing-owners.js';
 import { activeAdminUidFromToken, bearerToken } from '../auth.js';
 import { AVAILABLE_FIRST_SQL, CONTACT_FIELDS, hiddenDiscriminators, isLayerHidden, publicListingSql, withoutContact } from '../../lib/listing-rules.js';
 import { viewerRulesFor } from '../visibility.js';
@@ -68,7 +69,7 @@ app.post('/api/search-features-batch', async (req, res) => {
         const targetPool = workspace === 'realestate' ? realestatePool : servicesPool;
         const isRealEstate = REAL_ESTATE_LAYERS.includes(layer);
         const tableName = isRealEstate ? `"${layer}"` : `service_all`;
-        const idField = isRealEstate ? 'fid' : 'id';
+        const idField = isPropertyLayer(layer) ? 'fid' : 'id';
 
         // سقف لعدد المعرفات: الأقسام تطلب بضع عشرات فقط
         const cleanIds = ids.slice(0, 100).map(id => parseInt(id, 10)).filter(id => !isNaN(id));
@@ -77,7 +78,8 @@ app.post('/api/search-features-batch', async (req, res) => {
         if (isLayerHidden(layer, viewer.hidden)) return res.json(EMPTY_COLLECTION);
 
         // نفس قاعدة الظهور العامة: لا يظهر المسحوب أو المنتهي في "الأعلى تقييماً" و"موصى بهم"
-        let query = `SELECT *, ST_AsGeoJSON(geom) as geom_json FROM public.${tableName} WHERE ${idField} = ANY($1) AND ${publicListingSql(isRealEstate)}`;
+        const selectId = idField === 'fid' ? 'fid AS id, ' : '';
+        let query = `SELECT *, ${selectId}ST_AsGeoJSON(geom) as geom_json FROM public.${tableName} WHERE ${idField} = ANY($1) AND ${publicListingSql(isRealEstate)}`;
         const params = [cleanIds];
 
         if (!isRealEstate) {

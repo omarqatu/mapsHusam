@@ -43,7 +43,7 @@ beforeEach(() => {
   serviceResponse = linked();
   vi.mocked(locateOnce).mockResolvedValue([170000.123, 146000.987]);
   useAuthStore.setState({ user: { user_id: 5, role: 'provider', full_name: 'Sami', token: 't' } as AuthUser });
-  useProviderUi.setState({ open: true, live: false, cooldownUntil: 0, error: null });
+  useProviderUi.setState({ open: true, live: false, selectedListing: 'plumber:7', cooldownUntil: 0, error: null });
   vi.stubGlobal(
     'fetch',
     vi.fn((input: RequestInfo | URL, init?: RequestInit) => {
@@ -148,6 +148,49 @@ describe('ProviderPanel', () => {
     await user.click(screen.getByRole('button', { name: 'Not available' }));
     await waitFor(() => expect(updates).toHaveLength(2));
     expect(updates[1]).toMatchObject({ status: 1 });
+  });
+
+  it('a land listing can be shown without sending the phone location or enabling tracking', async () => {
+    serviceResponse = linked({
+      service: {
+        service_layer: 'LandSale',
+        feature_id: 17,
+        id: 17,
+        status: 1,
+        x_coord: '169000',
+        y_coord: '145000',
+      },
+    });
+    useProviderUi.setState({ selectedListing: 'LandSale:17' });
+    const user = userEvent.setup();
+    renderPanel(<ProviderTracker />);
+
+    await user.click(await screen.findByRole('button', { name: 'Show property on the map' }));
+    await waitFor(() => expect(updates).toHaveLength(1));
+    expect(updates[0]).toMatchObject({ service_layer: 'LandSale', feature_id: 17, status: 0 });
+    expect(updates[0]).not.toHaveProperty('x_coord');
+    expect(locateOnce).not.toHaveBeenCalled();
+    expect(screen.queryByRole('button', { name: 'Available (previous location)' })).toBeNull();
+    expect(screen.queryByRole('button', { name: /Live tracking/ })).toBeNull();
+  });
+
+  it('lets the provider select a linked listing and applies status changes to that listing', async () => {
+    serviceResponse = linked({
+      services: [
+        { service_layer: 'plumber', feature_id: 7, id: 7, name: 'First listing', status: 1 },
+        { service_layer: 'electrician', feature_id: 12, id: 12, name: 'Second listing', status: 1 },
+      ],
+    });
+    useProviderUi.setState({ selectedListing: 'plumber:7' });
+    const user = userEvent.setup();
+    renderPanel();
+    const select = await screen.findByRole('combobox', { name: 'Select a service or property' });
+    await user.click(select);
+    await user.click(await screen.findByRole('option', { name: 'Electrician — Second listing (12)' }));
+    expect(await screen.findByText('Second listing')).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'Available (my location)' }));
+    await waitFor(() => expect(updates).toHaveLength(1));
+    expect(updates[0]).toMatchObject({ service_layer: 'electrician', feature_id: 12, status: 0 });
   });
 
   it('a server refusal shows its message and does not lock the buttons', async () => {

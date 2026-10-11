@@ -27,6 +27,7 @@ export interface RequestQuota {
 }
 
 export type ContactType = 'call' | 'whatsapp';
+export type MapEventSource = 'map' | 'quick_search';
 
 /** Counted against the same per-user quota as contact clicks (server checkUserRequestQuota). */
 export type MapEventType =
@@ -69,13 +70,13 @@ export const mapEventsApi = {
     contact_type: ContactType;
   }) => api.post<{ success: boolean; id: number }>('/api/log-contact-click', body),
   /** Legacy "stats" row (dashboard counters). Public endpoint; user_id is the account id or a guest id. */
-  saveStat: (body: { user_id: string; provider: string; service: string }) =>
+  saveStat: (body: { user_id: string; provider: string; service: string; source?: MapEventSource }) =>
     api.post<unknown>('/save-stat', body),
   logMapEvent: (body: {
     event_type: MapEventType;
     provider: string | null;
     service: string | null;
-    source?: string;
+    source?: MapEventSource;
   }) => api.post<unknown>('/api/log-map-event', body),
 };
 

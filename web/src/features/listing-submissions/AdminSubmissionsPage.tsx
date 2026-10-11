@@ -26,7 +26,8 @@ import type { Coordinate } from '@/features/map/config';
 import { listingTarget } from '@/features/my-listings/model';
 import TargetIcon from '@/features/map/TargetIcon';
 import LocationPicker from './LocationPicker';
-import { hasHoursField, isPropertyLayer, submissionTypeKey } from './model';
+import LandPolygonPicker from './LandPolygonPicker';
+import { hasHoursField, isLandLayer, isPropertyLayer, submissionTypeKey } from './model';
 import { errorText } from '@/lib/errorText';
 import { formatDateTime } from '@/lib/format';
 
@@ -214,14 +215,20 @@ function SubmissionCard({ submission: s }: { submission: AdminSubmission }) {
       {pending && (
         <div className="mt-4 space-y-1">
           <p className="text-sm font-semibold text-fg">{t('submit.admin.checkPoint')}</p>
-          <LocationPicker value={point} onChange={setPoint} />
-          {moved && (
-            <div className="flex flex-wrap items-center gap-2 text-sm">
-              <span className="font-semibold text-warn">{t('submit.admin.pointMoved')}</span>
-              <Button size="sm" variant="ghost" onClick={() => setPoint(picked)}>
-                {t('submit.admin.pointReset')}
-              </Button>
-            </div>
+          {isLandLayer(s.layer) && s.geometry ? (
+            <LandPolygonPicker value={s.geometry} readOnly />
+          ) : (
+            <>
+              <LocationPicker value={point} onChange={(next) => next && setPoint(next)} />
+              {moved && (
+                <div className="flex flex-wrap items-center gap-2 text-sm">
+                  <span className="font-semibold text-warn">{t('submit.admin.pointMoved')}</span>
+                  <Button size="sm" variant="ghost" onClick={() => setPoint(picked)}>
+                    {t('submit.admin.pointReset')}
+                  </Button>
+                </div>
+              )}
+            </>
           )}
         </div>
       )}

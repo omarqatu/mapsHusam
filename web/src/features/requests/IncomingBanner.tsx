@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { useIncomingRequests } from '@/api/requests';
 import Button from '@/components/ui/Button';
 import { useRespond } from './respond';
+import { useRequestsUi } from './store';
 import { useUnseen } from './unseen';
 import { useRing } from './useRing';
 
@@ -15,6 +16,7 @@ export default function IncomingBanner() {
   const { t } = useTranslation();
   const incoming = useIncomingRequests(true);
   const { respond, pending, pendingId } = useRespond();
+  const openReject = useRequestsUi((s) => s.openReject);
   const { play, stop } = useRing();
   const known = useRef<Set<number> | null>(null);
 
@@ -68,7 +70,7 @@ export default function IncomingBanner() {
           size="sm"
           variant="danger"
           disabled={pending}
-          onClick={() => respond(req, 'reject')}
+          onClick={() => openReject(req.id)}
         >
           {t('requests.reject')}
         </Button>

@@ -52,7 +52,7 @@ const item =
  * Header actions of the signed-in user: bell, my requests, and one account menu (name, role, my profile, change
  * password, log out). Signed out: a login button.
  */
-export default function UserMenu() {
+export default function UserMenu({ closeSheet, forceClose }: { closeSheet?: () => void; forceClose?: boolean }) {
   const { t } = useTranslation();
   const user = useAuthStore((s) => s.user);
   const logout = useAuthStore((s) => s.logout);
@@ -64,6 +64,11 @@ export default function UserMenu() {
   const openRequests = useRequestsUi((s) => s.openList);
   const hasNew = useUnseen((s) => s.ids.length > 0);
   const tone = useHeaderTone();
+
+  // Force close when parent component requests it (e.g., mobile menu opened)
+  if (forceClose && open) {
+    setOpen(false);
+  }
 
   if (!user) {
     return (
@@ -104,7 +109,10 @@ export default function UserMenu() {
       <div ref={menu} className="relative ms-1">
         <button
           type="button"
-          onClick={() => setOpen((v) => !v)}
+          onClick={() => {
+            setOpen((v) => !v);
+            if (!open && closeSheet) closeSheet();
+          }}
           aria-expanded={open}
           aria-haspopup="menu"
           aria-label={name}

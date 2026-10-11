@@ -266,12 +266,31 @@ export const isOpenNow = (autoStatus: unknown) => Number.parseInt(String(autoSta
 /** `status` of a listing (server lib/listing-rules.js): 0 available, 1 unavailable for now, 2 withdrawn. */
 export const LISTING_STATUS = { available: 0, unavailable: 1, withdrawn: 2 } as const;
 
+/** The subscription end date is inclusive, matching the server's `end_date >= CURRENT_DATE` rule. */
+export function isSubscriptionExpired(endDate: unknown, now = new Date()): boolean {
+  const value = endDate instanceof Date ? endDate.toISOString().slice(0, 10) : text(endDate);
+  const match = /^(\d{4}-\d{2}-\d{2})(?:$|T| )/.exec(value);
+  if (!match) return false;
+
+  const parsed = new Date(`${match[1]}T00:00:00.000Z`);
+  if (Number.isNaN(parsed.getTime()) || parsed.toISOString().slice(0, 10) !== match[1]) return false;
+
+  const today = [
+    now.getFullYear(),
+    String(now.getMonth() + 1).padStart(2, '0'),
+    String(now.getDate()).padStart(2, '0'),
+  ].join('-');
+  return match[1] < today;
+}
+
 /**
  * What a card says about a listing right now. `unavailable` = the provider marked it so (still listed);
- * `withdrawn` only reaches an admin (the server never sends it to the public). `null` = nothing known (no auto_status).
+ * `withdrawn` only reaches an admin (the server never sends it to the public). Expired listings are hidden publicly
+ * and labelled separately for admins. `null` = nothing known (no auto_status).
  */
-export type Availability = 'open' | 'closed' | 'unavailable' | 'withdrawn';
-export function availability(props: Props): Availability | null {
+export type Availability = 'open' | 'closed' | 'unavailable' | 'withdrawn' | 'expired';
+export function availability(props: Props, now = new Date()): Availability | null {
+  if (isSubscriptionExpired(prop(props, 'end_date'), now)) return 'expired';
   const status = Number.parseInt(text(props.status), 10);
   if (status === LISTING_STATUS.withdrawn) return 'withdrawn';
   if (status === LISTING_STATUS.unavailable) return 'unavailable';
@@ -285,6 +304,7 @@ export const AVAILABILITY_TONE: Record<Availability, string> = {
   closed: 'var(--color-danger)',
   unavailable: 'var(--color-warn)',
   withdrawn: 'var(--color-muted)',
+  expired: 'var(--color-danger)',
 };
 
 export const availabilityLabelKey = (a: Availability) => `popup.availability.${a}` as const;

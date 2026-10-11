@@ -22,12 +22,14 @@ import './server/routes/my-listings.js';
 import './server/routes/property-relations.js';
 import './server/frontend.js';
 import './server/sockets.js';
+import { startListingExpiryNotifications } from './server/listing-expiry-notifications.js';
 
 // تصدير io لاستخدامه في أماكن أخرى إذا لزم الأمر
 global.io = io;
 
 // بدء السيرفر مع دعم Socket.io
 server.listen(PORT, () => {
+    startListingExpiryNotifications();
     console.log('==============================================');
     console.log(`🚀 السيرفر يعمل الآن على: http://0.0.0.0:${PORT}`);
     console.log(`📊 لوحة التحكم: http://0.0.0.0:${PORT}/dashboard.html`);

@@ -10,6 +10,7 @@ import IncomingBanner from './IncomingBanner';
 import MyRequestsDialog from './MyRequestsDialog';
 import RatingDialog from './RatingDialog';
 import RequestFlow from './RequestFlow';
+import RequestRejectionDialog from './RequestRejectionDialog';
 import { useRequestsRealtime } from './useRequestsRealtime';
 import { useUnseen } from './unseen';
 
@@ -40,6 +41,7 @@ function Active({ uid, provider }: { uid: number; provider: boolean }) {
       <RatingDialog />
       <CommentDialog />
       <RequestFlow />
+      <RequestRejectionDialog />
     </>
   );
 }

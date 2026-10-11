@@ -6,6 +6,7 @@ import { normalizeWhatsappNumber, servicesPool } from '../database.js';
 import { authStatusCache, bearerToken, requireAuth, revokeToken, signSessionToken } from '../auth.js';
 import { notifyUser } from '../state.js';
 import { INSERT_SUBMISSION_SQL, parseListingInput, submissionParams } from '../listings.js';
+import { getHiddenLayers } from '../visibility.js';
 import rateLimit from 'express-rate-limit';
 import { parseProfileEdit } from '../../lib/profile.js';
 
@@ -52,7 +53,7 @@ app.post('/api/auth/register', authLimiter, registerLimiter, async (req, res) =>
     // 🆕 صاحب نشاط يسجّل حسابه ونشاطه معاً: الحساب يعمل فوراً، والنشاط ينتظر موافقة المشرف
     let listing = null;
     if (req.body.listing) {
-        const parsedListing = parseListingInput(req.body.listing);
+        const parsedListing = parseListingInput(req.body.listing, await getHiddenLayers());
         if (parsedListing.error) return res.status(400).json({ error: parsedListing.error });
         listing = parsedListing.value;
     }

@@ -290,7 +290,8 @@ describe('form values', () => {
     expect(validateValues(svc, { rating: 'abc' })).toEqual({ rating: 'number' });
     expect(validateValues(svc, { rating: '11' })).toEqual({ rating: 'rating' });
     expect(validateValues(svc, { rating: '10' })).toEqual({});
-    expect(validateValues(target('polygon', 'land'), { rating: '6' })).toEqual({ rating: 'rating' });
+    expect(validateValues(target('polygon', 'land'), { rating: '10' })).toEqual({});
+    expect(validateValues(target('polygon', 'land'), { rating: '11' })).toEqual({ rating: 'rating' });
     expect(validateValues(target('point', 'rent'), { price: '-3' })).toEqual({ price: 'number' });
     expect(validateValues(target('line', 'roads'), { road_type: '1.5' })).toEqual({ road_type: 'integer' });
   });
@@ -390,6 +391,16 @@ describe('buildFeatureTx', () => {
       currency: 'USD',
     });
     expect(r.tx.columns).toContain('phone');
+  });
+  it('insert (land): rating supports 10 and defaults to 5', () => {
+    const t = target('polygon', 'land');
+    const withRating = insert(t, { rating: '10' }, square);
+    if (!withRating.ok) throw new Error(withRating.error);
+    expect(withRating.tx.properties.rating).toBe(10);
+
+    const withDefault = insert(t, {}, square);
+    if (!withDefault.ok) throw new Error(withDefault.error);
+    expect(withDefault.tx.properties.rating).toBe(5);
   });
   it('insert (road): name default, pgRouting columns, region of the first vertex', () => {
     const t = target('line', 'roads');

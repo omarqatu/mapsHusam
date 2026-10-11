@@ -1,11 +1,26 @@
 import type { SearchResult } from './results';
+import { listingLayerOf, isRoadBarrier } from '../targets';
 
 interface PrintLabels {
   title: string;
   date: string;
-  columns: [string, string, string, string, string];
+  columns: [string, string, string, string, string, string, string];
+  platformRequest: string;
   dir: 'rtl' | 'ltr';
   lang: string;
+}
+
+export function isPlatformRequest(
+  result: SearchResult,
+  linked: ReadonlyMap<string, ReadonlySet<string>> | undefined,
+  requestsOn: boolean,
+): boolean {
+  return (
+    requestsOn &&
+    !isRoadBarrier(result.target) &&
+    !!result.id &&
+    !!linked?.get(listingLayerOf(result.target))?.has(result.id)
+  );
 }
 
 /**
@@ -16,6 +31,7 @@ export function printResults(
   items: SearchResult[],
   typeTitle: (r: SearchResult) => string,
   labels: PrintLabels,
+  isRequest: (r: SearchResult) => boolean = () => false,
 ): boolean {
   const w = window.open('', '_blank');
   if (!w) return false;
@@ -35,7 +51,7 @@ export function printResults(
   p.textContent = labels.date;
   const table = d.createElement('table');
   const head = d.createElement('tr');
-  ['#', ...labels.columns.slice(1)].forEach((c) => {
+  labels.columns.forEach((c) => {
     const th = d.createElement('th');
     th.textContent = c;
     head.appendChild(th);
@@ -45,6 +61,7 @@ export function printResults(
   items.forEach((r, i) => {
     const props = r.props;
     const text = (k: string) => (props[k] === null || props[k] === undefined ? '' : String(props[k]));
+    const platformRequest = isRequest(r);
     const cells = [
       String(i + 1),
       text('name'),
@@ -52,7 +69,9 @@ export function printResults(
       [text('location_name') || text('location'), text('village_a'), text('gov_a')]
         .filter(Boolean)
         .join(' - '),
-      text('phone') || text('whatsapp'),
+      platformRequest ? '' : text('phone'),
+      platformRequest ? '' : text('whatsapp'),
+      platformRequest ? labels.platformRequest : '',
     ];
     const tr = d.createElement('tr');
     cells.forEach((c) => {

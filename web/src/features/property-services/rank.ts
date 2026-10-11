@@ -44,7 +44,8 @@ export const trustedRating = (s: RatingSummary | null) =>
 export const ratingBand = (rating: RatingSummary | null, state: Availability | null) =>
   Math.round((trustedRating(rating) - (state === 'closed' ? CLOSED_PENALTY : 0)) / BAND);
 
-export const isActive = (state: Availability | null) => state !== 'unavailable' && state !== 'withdrawn';
+export const isActive = (state: Availability | null) =>
+  state !== 'unavailable' && state !== 'withdrawn' && state !== 'expired';
 
 /** Every provider, best first. `ratings` is keyed by the provider's feature id. */
 export function rankProviders(

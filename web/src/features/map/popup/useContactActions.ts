@@ -1,10 +1,12 @@
 import { useTranslation } from 'react-i18next';
 import i18n from '@/i18n';
-import { mapEventsApi, type ContactType } from '@/api/mapEvents';
+import { mapEventsApi, type ContactType, type MapEventSource } from '@/api/mapEvents';
 import { toast } from '@/components/ui/toastStore';
 import { useAuthStore } from '@/store/authStore';
+import { getVisitorId } from '@/lib/visitorId';
 import { telLink, whatsappLink, type SelectedFeature } from './featureModel';
 import { serviceLabelKey } from '../registry';
+import { listingLayerOf } from '../targets';
 
 const COOLDOWN_S = 10;
 
@@ -27,7 +29,8 @@ export function contactContext(f: SelectedFeature) {
   const ar = i18n.getFixedT('ar');
   if (f.kind.kind === 'service')
     return { layer: f.kind.discriminator, typeTitleAr: ar(serviceLabelKey(f.kind.discriminator)) };
-  if (f.kind.kind === 'realEstate') return { layer: f.kind.layer, typeTitleAr: ar(`layers.${f.kind.layer}`) };
+  if (f.kind.kind === 'realEstate')
+    return { layer: listingLayerOf(f.kind), typeTitleAr: ar(`layers.${f.kind.layer}`) };
   return { layer: 'location', typeTitleAr: '' };
 }
 
@@ -35,7 +38,7 @@ export function contactContext(f: SelectedFeature) {
  * Call / WhatsApp buttons (legacy handlePhoneCall / handleServiceRequest):
  * cooldown → quota check (fail-open) → log contact click + stats row → open tel: / WhatsApp.
  */
-export function useContactActions() {
+export function useContactActions(source: MapEventSource = 'map') {
   const { t } = useTranslation();
   const user = useAuthStore((s) => s.user);
 
@@ -45,7 +48,7 @@ export function useContactActions() {
       toast.warning(t('popup.cooldown', { seconds: wait }));
       return false;
     }
-    // Visitors have no account, so no quota (same as search); the check and the click log need a session.
+    // Visitors have no account or quota; their aggregate click stat uses a per-tab guest id.
     if (!user) return true;
     try {
       const quota = await mapEventsApi.checkRequestLimit();
@@ -64,32 +67,35 @@ export function useContactActions() {
     return true;
   }
 
-  function log(type: ContactType, f: SelectedFeature, providerName: string) {
+  async function log(type: ContactType, f: SelectedFeature, providerName: string) {
     const { layer, typeTitleAr } = contactContext(f);
     const label = type === 'call' ? 'اتصال مباشر' : 'واتساب'; // stored as data (legacy wording)
-    if (f.id && user)
-      void mapEventsApi
-        .logContactClick({
-          service_layer: layer,
-          feature_id: f.id,
-          provider_name: providerName,
-          contact_type: type,
-        })
-        .catch(() => undefined);
-    if (user)
-      void mapEventsApi
-        .saveStat({
-          user_id: String(user.user_id),
-          provider: providerName,
-          service: `(${typeTitleAr}) ${label}`,
-        })
-        .catch(() => undefined);
+    const contactClick =
+      f.id && user
+        ? mapEventsApi
+            .logContactClick({
+              service_layer: layer,
+              feature_id: f.id,
+              provider_name: providerName,
+              contact_type: type,
+            })
+            .catch((error: unknown) => console.error('Failed to log contact click', error))
+        : Promise.resolve();
+    const stat = mapEventsApi
+      .saveStat({
+        user_id: user ? String(user.user_id) : (getVisitorId() ?? 'guest'),
+        provider: providerName,
+        service: `(${typeTitleAr}) ${label}`,
+        source,
+      })
+      .catch((error: unknown) => console.error('Failed to save contact statistics', error));
+    await Promise.all([contactClick, stat]);
   }
 
   async function call(f: SelectedFeature, providerName: string, phone: string) {
     const href = telLink(phone);
     if (!href || !(await passesChecks('call', f))) return;
-    log('call', f, providerName);
+    await log('call', f, providerName);
     window.location.href = href;
   }
 
@@ -105,7 +111,7 @@ export function useContactActions() {
       tab?.close();
       return;
     }
-    log('whatsapp', f, providerName);
+    await log('whatsapp', f, providerName);
     if (tab) {
       tab.opener = null;
       tab.location.href = href;

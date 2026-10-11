@@ -11,6 +11,8 @@ import { useIsDesktop } from '@/hooks/useMediaQuery';
 import { formatDateTime } from '@/lib/format';
 import { parseServerDate } from '../model';
 import { serviceLabelKey } from '@/features/map/registry';
+import { targetLabelKey } from '@/features/map/targets';
+import { listingTarget } from '@/features/my-listings/model';
 
 interface Props {
   users: AdminUser[] | undefined;
@@ -167,19 +169,35 @@ export default function UsersTable({
         key: 'service',
         header: t('adminUsers.col.service'),
         sortValue: (u) => u.service_layer ?? '',
-        cell: (u) =>
-          u.service_layer ? (
-            <div>
-              <div className="font-semibold text-info">
-                {t(serviceLabelKey(u.service_layer), u.service_layer)}
-              </div>
-              <div className="text-xs font-medium text-muted">
-                {t('adminUsers.featureShort')} {u.feature_id ?? '—'}
-              </div>
+        cell: (u) => {
+          const links = u.listing_links !== undefined
+            ? u.listing_links
+            : u.service_layer
+              ? [{ service_layer: u.service_layer, feature_id: u.feature_id }]
+              : [];
+          return links.length ? (
+            <div className="space-y-2">
+              {links.map((link) => {
+                const target = listingTarget(link.service_layer);
+                return (
+                  <div key={`${link.service_layer}:${link.feature_id}`}>
+                    <div className="font-semibold text-info">
+                      {t(
+                        target ? targetLabelKey(target) : serviceLabelKey(link.service_layer),
+                        link.service_layer,
+                      )}
+                    </div>
+                    <div className="text-xs font-medium text-muted">
+                      {t('adminUsers.featureShort')} {link.feature_id ?? '—'}
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           ) : (
             <span className="text-muted">—</span>
-          ),
+          );
+        },
       },
       { key: 'quota', header: t('adminUsers.col.quota'), cell: quota },
       {

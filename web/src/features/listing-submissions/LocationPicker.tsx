@@ -1,15 +1,29 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import clsx from 'clsx';
 import { LocateFixed, MapPin, Minus, Plus } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import OlMap from 'ol/Map';
 import View from 'ol/View';
+import VectorLayer from 'ol/layer/Vector';
+import VectorSource from 'ol/source/Vector';
+import { Fill, Stroke, Style } from 'ol/style';
 import Button from '@/components/ui/Button';
+import FormField from '@/components/ui/FormField';
+import SelectInput from '@/components/ui/SelectInput';
 import { toast } from '@/components/ui/toastStore';
 import { DEFAULT_CENTER, type Coordinate } from '@/features/map/config';
 import { GeoError, locateOnce } from '@/features/map/geolocate';
 import { createBasemaps } from '@/features/map/layers';
 import { palestineGrid } from '@/features/map/projection';
+import { fetchRegions, matchingRegions, regionValues, regionsExtent } from './regionPicker';
+import { isLatestLocationIntent } from './locationIntent';
+import type { RegionField } from './regionPicker';
+
+const REGION_STYLE = new Style({
+  stroke: new Stroke({ color: '#6d28d9', width: 2.5 }),
+  fill: new Fill({ color: 'rgba(109, 40, 217, 0.12)' }),
+});
 
 /**
  * Where a listing is: the pin stays in the middle and the map moves under it (drag, or tap a spot to bring it to the
@@ -23,18 +37,41 @@ export default function LocationPicker({
   tall,
 }: {
   value: Coordinate | null;
-  onChange: (point: Coordinate) => void;
+  onChange: (point: Coordinate | null) => void;
   invalid?: boolean;
   /** Most of the screen (the add flow's location step). */
   tall?: boolean;
 }) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const target = useRef<HTMLDivElement>(null);
   const mapRef = useRef<OlMap | null>(null);
+  const regionSourceRef = useRef<VectorSource | null>(null);
   const onChangeRef = useRef(onChange);
   const startValue = useRef(value);
+  const locationIntentRef = useRef(0);
   const [locating, setLocating] = useState(false);
   const [moving, setMoving] = useState(false);
+  const [city, setCity] = useState('');
+  const [region, setRegion] = useState('');
+  const [locality, setLocality] = useState('');
+  const movedByUserRef = useRef(false);
+  const regionsQuery = useQuery({
+    queryKey: ['listing-location-regions'],
+    queryFn: ({ signal }) => fetchRegions(signal),
+    staleTime: 60 * 60_000,
+    retry: false,
+  });
+
+  const regions = useMemo(() => regionsQuery.data ?? [], [regionsQuery.data]);
+  const cities = useMemo(() => regionValues(regions, 'gov_a', {}, i18n.language), [regions, i18n.language]);
+  const areaOptions = useMemo(
+    () => regionValues(regions, 'village_a', { gov_a: city }, i18n.language),
+    [regions, city, i18n.language],
+  );
+  const localities = useMemo(
+    () => regionValues(regions, 'location', { gov_a: city, village_a: region }, i18n.language),
+    [regions, city, region, i18n.language],
+  );
 
   useEffect(() => {
     onChangeRef.current = onChange;
@@ -49,27 +86,39 @@ export default function LocationPicker({
       constrainResolution: true,
       enableRotation: false,
     });
-    const map = new OlMap({ target: target.current!, layers: [createBasemaps().esri!], controls: [], view });
+    const regionSource = new VectorSource();
+    const regionLayer = new VectorLayer({ source: regionSource, style: REGION_STYLE });
+    regionLayer.set('key', 'listing-location-region');
+    const map = new OlMap({
+      target: target.current!,
+      layers: [createBasemaps().esri!, regionLayer],
+      controls: [],
+      view,
+    });
     // Only a move the person made picks the point (not the first view, nor a GPS jump they did not ask for).
-    let touched = false;
     map.on('pointerdrag', () => {
-      touched = true;
+      locationIntentRef.current += 1;
+      movedByUserRef.current = true;
       setMoving(true);
     });
     map.on('singleclick', (e) => {
-      touched = true;
+      locationIntentRef.current += 1;
+      movedByUserRef.current = true;
       view.animate({ center: e.coordinate, duration: 250 });
     });
     map.on('moveend', () => {
       setMoving(false);
       const c = view.getCenter();
-      if (touched && c) onChangeRef.current([c[0], c[1]]);
+      if (movedByUserRef.current && c) onChangeRef.current([c[0], c[1]]);
+      movedByUserRef.current = false;
     });
     mapRef.current = map;
+    regionSourceRef.current = regionSource;
     return () => {
       map.setTarget(undefined);
       map.dispose();
       mapRef.current = null;
+      regionSourceRef.current = null;
     };
   }, []);
 
@@ -78,14 +127,18 @@ export default function LocationPicker({
     const view = mapRef.current?.getView();
     const c = view?.getCenter();
     if (view && value && (!c || Math.hypot(c[0] - value[0], c[1] - value[1]) > 0.5)) {
+      movedByUserRef.current = false;
       view.animate({ center: value, duration: 250 });
     }
   }, [value]);
 
   async function locate(quiet = false) {
+    const intent = quiet ? locationIntentRef.current : ++locationIntentRef.current;
     setLocating(true);
     try {
       const point = await locateOnce();
+      if (!isLatestLocationIntent(intent, locationIntentRef.current)) return;
+      movedByUserRef.current = false;
       mapRef.current?.getView().animate({ center: point, zoom: 18, duration: 300 });
       onChangeRef.current(point);
     } catch (e) {
@@ -107,8 +160,94 @@ export default function LocationPicker({
     view?.animate({ zoom: (view.getZoom() ?? 15) + d, duration: 200 });
   };
 
+  function focusRegion(field: RegionField, value: string) {
+    locationIntentRef.current += 1;
+    const filters =
+      field === 'gov_a'
+        ? { gov_a: value }
+        : field === 'village_a'
+          ? { gov_a: city, village_a: value }
+          : { gov_a: city, village_a: region, location: value };
+    const selected = matchingRegions(regions, filters);
+    const extent = regionsExtent(selected);
+    if (!extent) return;
+
+    onChangeRef.current(null);
+    movedByUserRef.current = false;
+    const source = regionSourceRef.current;
+    source?.clear();
+    source?.addFeatures(selected);
+    mapRef.current?.getView().fit(extent, {
+      duration: 450,
+      maxZoom: field === 'gov_a' ? 11 : field === 'village_a' ? 14 : 17,
+      padding: [36, 36, 36, 36],
+    });
+  }
+
+  function chooseCity(value: string) {
+    setCity(value);
+    setRegion('');
+    setLocality('');
+    if (value) focusRegion('gov_a', value);
+  }
+
+  function chooseRegion(value: string) {
+    setRegion(value);
+    setLocality('');
+    if (value) focusRegion('village_a', value);
+  }
+
+  function chooseLocality(value: string) {
+    setLocality(value);
+    if (value) focusRegion('location', value);
+  }
+
   return (
     <div className="flex flex-col gap-2">
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+        <FormField label={t('submit.map.city')} name="submit-location-city">
+          <SelectInput
+            id="submit-location-city"
+            value={city}
+            onChange={(event) => chooseCity(event.target.value)}
+            options={cities.map((value) => ({ value, label: value }))}
+            placeholder={regionsQuery.isLoading ? t('submit.map.loadingRegions') : t('search.chooseValue')}
+            disabled={regionsQuery.isLoading || regionsQuery.isError}
+            searchable
+          />
+        </FormField>
+        <FormField label={t('submit.map.region')} name="submit-location-region">
+          <SelectInput
+            id="submit-location-region"
+            value={region}
+            onChange={(event) => chooseRegion(event.target.value)}
+            options={areaOptions.map((value) => ({ value, label: value }))}
+            placeholder={t('submit.map.chooseCityFirst')}
+            disabled={!city || regionsQuery.isLoading || regionsQuery.isError}
+            searchable
+          />
+        </FormField>
+        <FormField label={t('submit.map.locality')} name="submit-location-locality">
+          <SelectInput
+            id="submit-location-locality"
+            value={locality}
+            onChange={(event) => chooseLocality(event.target.value)}
+            options={localities.map((value) => ({ value, label: value }))}
+            placeholder={t('submit.map.chooseRegionFirst')}
+            disabled={!region || regionsQuery.isLoading || regionsQuery.isError || localities.length === 0}
+            searchable
+          />
+        </FormField>
+      </div>
+      {regionsQuery.isError && (
+        <div role="alert" className="flex flex-wrap items-center gap-2 text-sm text-danger">
+          <span>{t('submit.map.regionsFailed')}</span>
+          <Button size="sm" variant="secondary" onClick={() => void regionsQuery.refetch()}>
+            {t('submit.map.retryRegions')}
+          </Button>
+        </div>
+      )}
+      <p className="text-sm text-muted">{t('submit.map.regionHint')}</p>
       <div
         className={clsx(
           'relative w-full overflow-hidden rounded-xl border',

@@ -108,19 +108,31 @@ describe('edit form', () => {
       role: 'user',
     });
   });
-  it('unlinking clears the feature id too; linking sends both', () => {
-    expect(buildUpdate(provider, { ...formFromUser(provider), service_layer: '' })).toEqual({
+  it('uses an explicitly empty ownership list instead of falling back to legacy fields', () => {
+    const stale = u({ service_layer: 'plumber', feature_id: 5, listing_links: [] });
+    expect(formFromUser(stale).listing_links).toEqual([]);
+    expect(buildUpdate(stale, formFromUser(stale))).toBeNull();
+  });
+  it('removing all links clears them; adding several sends each layer and id', () => {
+    expect(buildUpdate(provider, { ...formFromUser(provider), listing_links: [] })).toEqual({
       user_id: 2,
-      service_layer: null,
-      feature_id: null,
+      listing_links: [],
     });
     const plain = users[0];
     expect(
-      buildUpdate(plain, { ...formFromUser(plain), service_layer: 'painter', feature_id: '14' }),
+      buildUpdate(plain, {
+        ...formFromUser(plain),
+        listing_links: [
+          { service_layer: 'painter', feature_id: '14' },
+          { service_layer: 'ApartSale', feature_id: '32' },
+        ],
+      }),
     ).toEqual({
       user_id: 1,
-      service_layer: 'painter',
-      feature_id: 14,
+      listing_links: [
+        { service_layer: 'painter', feature_id: 14 },
+        { service_layer: 'ApartSale', feature_id: 32 },
+      ],
     });
   });
   it('request limit: number + period, empty = null (unlimited); the period alone is ignored without a limit', () => {
@@ -138,8 +150,8 @@ describe('edit form', () => {
   });
   it('validates feature id, limit and password length', () => {
     const f = formFromUser(users[0]);
-    expect(validateForm({ ...f, service_layer: 'painter', feature_id: 'x' })).toEqual({
-      feature_id: 'integer',
+    expect(validateForm({ ...f, listing_links: [{ service_layer: 'painter', feature_id: 'x' }] })).toEqual({
+      listing_links: 'integer',
     });
     expect(validateForm({ ...f, request_limit: '0' })).toEqual({ request_limit: 'min' });
     expect(validateForm({ ...f, new_password: '123' })).toEqual({ new_password: 'short' });

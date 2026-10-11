@@ -3,10 +3,8 @@ import { featuredApi } from '@/api/featured';
 import { platformContentApi, platformContentKeys } from '@/api/platformContent';
 import { geoQueryOptions } from '@/api/queryClient';
 import { searchApi } from '@/api/search';
-import {
-  propertyServicesApi,
-  type PropertyServicesEvent,
-} from '@/api/propertyServices';
+import { getVisitorId } from '@/lib/visitorId';
+import { propertyServicesApi, type PropertyServicesEvent } from '@/api/propertyServices';
 import type { Coordinate } from '../map/config';
 import { distanceToResult } from '../map/search/nearby';
 import { toResults, type SearchResult } from '../map/search/results';
@@ -25,7 +23,8 @@ const FIVE_MINUTES = 5 * 60_000;
 export function usePropertyServicesConfig(): PropertyServicesConfig | null {
   const q = useQuery({
     queryKey: platformContentKeys.item(PROPERTY_SERVICES_KEY),
-    queryFn: async () => parsePropertyServices((await platformContentApi.get(PROPERTY_SERVICES_KEY)).item?.content_value),
+    queryFn: async () =>
+      parsePropertyServices((await platformContentApi.get(PROPERTY_SERVICES_KEY)).item?.content_value),
     staleTime: FIVE_MINUTES,
   });
   return q.isError ? DEFAULT_PROPERTY_SERVICES : (q.data ?? null);
@@ -111,7 +110,9 @@ export function useTypeProviders(types: readonly string[], origin: Coordinate, g
   });
   return types.map((type, i) => ({
     type,
-    nearby: results[i].isError ? { providers: [], radiusKm: RADII_KM[0], viaGovernorate: false } : (results[i].data ?? null),
+    nearby: results[i].isError
+      ? { providers: [], radiusKm: RADII_KM[0], viaGovernorate: false }
+      : (results[i].data ?? null),
   }));
 }
 
@@ -124,7 +125,10 @@ export function useTypeRatings(type: string | null): ReadonlyMap<string, RatingS
     queryFn: async ({ signal }) => {
       const { items } = await featuredApi.ratingsSummary(type!, signal);
       return new Map<string, RatingSummary>(
-        (items ?? []).map((i) => [String(i.feature_id), { avg: Number(i.avg_rating), count: Number(i.total_ratings) }]),
+        (items ?? []).map((i) => [
+          String(i.feature_id),
+          { avg: Number(i.avg_rating), count: Number(i.total_ratings) },
+        ]),
       );
     },
     enabled: !!type,
@@ -136,23 +140,9 @@ export function useTypeRatings(type: string | null): ReadonlyMap<string, RatingS
 
 // --- measurement ------------------------------------------------------------------------------------------------------
 
-/** One id per browser tab for visitors (sessionStorage), so "people" can be counted without an account. */
-function visitorId(): string | undefined {
-  try {
-    let id = sessionStorage.getItem('psm-visitor');
-    if (!id) {
-      id = `guest-${Math.random().toString(36).slice(2, 12)}`;
-      sessionStorage.setItem('psm-visitor', id);
-    }
-    return id;
-  } catch {
-    return undefined; // blocked storage: the server files the event under plain "guest"
-  }
-}
-
 /** Fire and forget: measurement never blocks and never shows an error. */
 export function trackPropertyServices(event: Omit<PropertyServicesEvent, 'visitor'>) {
-  void propertyServicesApi.track({ ...event, visitor: visitorId() }).catch(() => undefined);
+  void propertyServicesApi.track({ ...event, visitor: getVisitorId() }).catch(() => undefined);
 }
 
 /** Events that repeat while a card is open (view, looking at a type) are sent once per tab and property. */

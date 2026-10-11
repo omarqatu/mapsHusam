@@ -67,9 +67,8 @@ const CURRENCY = f('currency', 'select', { options: CURRENCIES });
 const AREA = f('area', 'number');
 const END_DATE = f('end_date', 'date');
 const WORK_HOURS = f('work_hours', 'hours');
-/** Real estate and services rate out of 10; land out of 5. */
+/** Real estate and services rate out of 10. */
 const RATING_10 = f('rating', 'number', { max: 10 });
-const RATING_5 = f('rating', 'number', { max: 5 });
 
 const REAL_ESTATE_FIELDS: readonly FieldDef[] = [
   NAME,
@@ -112,7 +111,7 @@ const LAND_FIELDS: readonly FieldDef[] = [
   WHATSAPP,
   END_DATE,
   WORK_HOURS,
-  RATING_5,
+  RATING_10,
 ];
 
 const LOCATION_FIELDS: readonly FieldDef[] = [

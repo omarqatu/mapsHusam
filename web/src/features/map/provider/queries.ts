@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { providerApi, type ProviderServiceResponse, type ProviderStatus } from '@/api/provider';
+import { providerApi, type ProviderServiceResponse, type ProviderServiceRow, type ProviderStatus } from '@/api/provider';
 import { searchApi } from '@/api/search';
 import { useAuthStore } from '@/store/authStore';
 import type { Coordinate } from '../config';
@@ -46,20 +46,23 @@ export function useSetProviderStatus() {
         status,
         ...(location ? { x_coord: location[0], y_coord: location[1] } : {}),
       }),
-    onSuccess: (_res, { status, location }) => {
-      qc.setQueryData<ProviderServiceResponse>(providerKeys.service, (old) =>
-        old && old.success
-          ? {
-              ...old,
-              service: {
-                ...old.service,
-                status,
-                ...(location ? { x_coord: location[0], y_coord: location[1] } : {}),
-              },
-            }
-          : old,
-      );
-    },
+      onSuccess: (_res, { service, status, location }) => {
+        const updateRow = (row: ProviderServiceRow) =>
+          row.service_layer === service.layer && Number(row.feature_id) === service.featureId
+            ? { ...row, status, ...(location ? { x_coord: location[0], y_coord: location[1] } : {}) }
+            : row;
+        qc.setQueryData<ProviderServiceResponse>(providerKeys.service, (old) =>
+          old && old.success
+            ? {
+                ...old,
+                service: updateRow(old.service),
+                ...(old.services
+                  ? { services: old.services.map(updateRow) }
+                  : {}),
+              }
+            : old,
+        );
+      },
   });
 }
 

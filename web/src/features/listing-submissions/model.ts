@@ -5,7 +5,7 @@ import { toWhatsappNumber, isLocalMobile } from '@/features/auth/phone';
 import { SERVICE_BY_KEY } from '@/features/map/registry';
 import type { Currency } from '@/api/myListings';
 import type { Coordinate } from '@/features/map/config';
-import type { SubmissionInput } from '@/api/listingSubmissions';
+import type { LandPolygon, SubmissionInput } from '@/api/listingSubmissions';
 
 // Pure logic of the "add my business" form: values -> checks -> the request body. The server repeats every check.
 
@@ -50,12 +50,14 @@ export type FormErrors = Partial<
   Record<'layer' | 'name' | 'phone' | 'price' | 'area' | 'point', 'required' | 'invalid'>
 >;
 
-/** The property layers a provider may submit (a flat is a point; a plot is drawn by the admins). */
-export const SUBMITTABLE_PROPERTY_LAYERS = ['ApartRent', 'ApartSale'] as const;
+/** Flats are point locations; land sale submissions include a provider-drawn polygon. */
+export const SUBMITTABLE_PROPERTY_LAYERS = ['ApartRent', 'ApartSale', 'LandSale'] as const;
+export const PROPERTY_WORK_HOURS = '24 ساعة';
+export const isLandLayer = (layer: string) => layer === 'LandSale';
 export const isPropertyLayer = (layer: string) =>
   (SUBMITTABLE_PROPERTY_LAYERS as readonly string[]).includes(layer);
 
-/** Flats, hotels and holiday villas are priced (with an area); every other type has no price field. */
+/** Properties, hotels and holiday villas are priced (with an area for properties). */
 export const hasPriceField = (layer: string) =>
   isPropertyLayer(layer) || SERVICE_BY_KEY.get(layer)?.editProfile === 'propertyService';
 /** Only a service has work hours. */
@@ -69,7 +71,62 @@ export const pointInBounds = (p: Coordinate) =>
   p[1] >= GRID_Y_RANGE[0] &&
   p[1] <= GRID_Y_RANGE[1];
 
-export function validate(v: FormValues, point: Coordinate | null): FormErrors {
+function cross(o: Coordinate, a: Coordinate, b: Coordinate) {
+  return (a[0] - o[0]) * (b[1] - o[1]) - (a[1] - o[1]) * (b[0] - o[0]);
+}
+
+function segmentsIntersect(a: Coordinate, b: Coordinate, c: Coordinate, d: Coordinate) {
+  const epsilon = 1e-8;
+  const onSegment = (p: Coordinate, q: Coordinate, r: Coordinate) =>
+    q[0] >= Math.min(p[0], r[0]) - epsilon &&
+    q[0] <= Math.max(p[0], r[0]) + epsilon &&
+    q[1] >= Math.min(p[1], r[1]) - epsilon &&
+    q[1] <= Math.max(p[1], r[1]) + epsilon;
+  const orientation = (value: number) => (value > epsilon ? 1 : value < -epsilon ? -1 : 0);
+  const o1 = orientation(cross(a, b, c));
+  const o2 = orientation(cross(a, b, d));
+  const o3 = orientation(cross(c, d, a));
+  const o4 = orientation(cross(c, d, b));
+  if (o1 * o2 < 0 && o3 * o4 < 0) return true;
+  return (
+    (o1 === 0 && onSegment(a, c, b)) ||
+    (o2 === 0 && onSegment(a, d, b)) ||
+    (o3 === 0 && onSegment(c, a, d)) ||
+    (o4 === 0 && onSegment(c, b, d))
+  );
+}
+
+function isValidLandPolygon(geometry: LandPolygon) {
+  if (geometry.type !== 'Polygon' || geometry.coordinates.length !== 1) return false;
+  const ring = geometry.coordinates[0];
+  if (ring.length < 4 || ring.length > 500 || ring.some((point) => !pointInBounds(point))) return false;
+  const first = ring[0];
+  const last = ring[ring.length - 1];
+  if (first[0] !== last[0] || first[1] !== last[1]) return false;
+  if (ring.slice(0, -1).some((point, index) => point[0] === ring[index + 1][0] && point[1] === ring[index + 1][1])) {
+    return false;
+  }
+  if (new Set(ring.slice(0, -1).map((point) => `${point[0]},${point[1]}`)).size < 3) return false;
+
+  let twiceArea = 0;
+  const segmentCount = ring.length - 1;
+  for (let i = 0; i < segmentCount; i++) {
+    const current = ring[i];
+    const next = ring[i + 1];
+    twiceArea += current[0] * next[1] - next[0] * current[1];
+    for (let j = i + 1; j < segmentCount; j++) {
+      if (j === i + 1 || (i === 0 && j === segmentCount - 1)) continue;
+      if (segmentsIntersect(current, next, ring[j], ring[j + 1])) return false;
+    }
+  }
+  return twiceArea !== 0;
+}
+
+export function validate(
+  v: FormValues,
+  point: Coordinate | null,
+  geometry: LandPolygon | null = null,
+): FormErrors {
   const errors: FormErrors = {};
   if (!v.layer) errors.layer = 'required';
   if (!v.name.trim()) errors.name = 'required';
@@ -83,13 +140,17 @@ export function validate(v: FormValues, point: Coordinate | null): FormErrors {
     const n = Number(v.area);
     if (!Number.isInteger(n) || n <= 0) errors.area = 'invalid';
   }
-  if (!point) errors.point = 'required';
+  if (isLandLayer(v.layer)) {
+    if (!geometry) errors.point = 'required';
+    else if (!isValidLandPolygon(geometry)) errors.point = 'invalid';
+    else if (!point || !pointInBounds(point)) errors.point = 'invalid';
+  } else if (!point) errors.point = 'required';
   else if (!pointInBounds(point)) errors.point = 'invalid';
   return errors;
 }
 
 /** The request body. Call only when `validate` found nothing. Grid metres are kept to the millimetre. */
-export function toInput(v: FormValues, point: Coordinate): SubmissionInput {
+export function toInput(v: FormValues, point: Coordinate, geometry: LandPolygon | null = null): SubmissionInput {
   const phone = v.phone.trim();
   const input: SubmissionInput = {
     layer: v.layer,
@@ -99,13 +160,15 @@ export function toInput(v: FormValues, point: Coordinate): SubmissionInput {
     y_coord: Number(point[1].toFixed(3)),
   };
   if (v.des.trim()) input.des = v.des.trim();
-  if (hasHoursField(v.layer) && v.workHours.trim()) input.work_hours = v.workHours.trim();
+  if (isPropertyLayer(v.layer)) input.work_hours = PROPERTY_WORK_HOURS;
+  else if (hasHoursField(v.layer) && v.workHours.trim()) input.work_hours = v.workHours.trim();
   if (v.whatsappSame) input.whatsapp = toWhatsappNumber('970', phone);
   if (hasPriceField(v.layer) && v.price.trim() !== '') input.price = Number(v.price);
   if (isPropertyLayer(v.layer)) {
     input.currency = v.currency;
     if (v.area.trim() !== '') input.area = Number(v.area);
   }
+  if (isLandLayer(v.layer) && geometry) input.geometry = geometry;
   return input;
 }
 

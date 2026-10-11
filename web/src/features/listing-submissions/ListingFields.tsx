@@ -7,8 +7,9 @@ import SelectInput from '@/components/ui/SelectInput';
 import TextInput from '@/components/ui/TextInput';
 import TextareaInput from '@/components/ui/TextareaInput';
 import HourPresets from './HourPresets';
+import LandPolygonPicker from './LandPolygonPicker';
 import LocationPicker from './LocationPicker';
-import { DES_MAX, HOURS_MAX, NAME_MAX, hasHoursField, hasPriceField, isPropertyLayer } from './model';
+import { DES_MAX, HOURS_MAX, NAME_MAX, hasHoursField, hasPriceField, isLandLayer, isPropertyLayer } from './model';
 import type { ListingForm } from './useListingForm';
 
 /** Type, name, description, hours, price (hotels and villas). `idPrefix` keeps ids unique when two forms share a page. */
@@ -173,7 +174,15 @@ export function ContactFields({
 export function LocationField({ form }: { form: ListingForm }) {
   return (
     <>
-      <LocationPicker value={form.point} onChange={form.setPoint} invalid={!!form.errors.point} />
+      {isLandLayer(form.values.layer) ? (
+        <LandPolygonPicker
+          value={form.geometry}
+          onChange={form.setGeometry}
+          invalid={!!form.errors.point}
+        />
+      ) : (
+        <LocationPicker value={form.point} onChange={form.setPoint} invalid={!!form.errors.point} />
+      )}
       {form.errors.point && (
         <p role="alert" className="mt-2 text-sm font-medium text-danger">
           {form.message('point')}

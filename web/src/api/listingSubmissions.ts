@@ -6,6 +6,11 @@ import { api } from './client';
 
 export type SubmissionStatus = 'pending' | 'approved' | 'rejected';
 
+export interface LandPolygon {
+  type: 'Polygon';
+  coordinates: [Array<[number, number]>];
+}
+
 export interface SubmissionInput {
   layer: string;
   name: string;
@@ -14,9 +19,11 @@ export interface SubmissionInput {
   whatsapp?: string;
   work_hours?: string;
   price?: number | null;
-  /** Flats only. */
+  /** Property listings, including land. */
   area?: number;
   currency?: 'ILS' | 'USD' | 'JOD';
+  /** LandSale only: one polygon ring in EPSG:28191. */
+  geometry?: LandPolygon;
   /** Palestine Grid metres (EPSG:28191). */
   x_coord: number;
   y_coord: number;
@@ -46,9 +53,10 @@ export interface AdminSubmission {
   whatsapp: string | null;
   work_hours: string | null;
   price: string | null;
-  /** Flats only. */
+  /** Property listings. */
   area: number | null;
   currency: 'ILS' | 'USD' | 'JOD' | null;
+  geometry: LandPolygon | null;
   x_coord: string;
   y_coord: string;
   status: SubmissionStatus;
@@ -90,7 +98,7 @@ export const useSubmittableLayers = (enabled = true) =>
     enabled,
     queryKey: submissionKeys.layers,
     queryFn: () => listingSubmissionsApi.layers().then((r) => r.layers),
-    staleTime: Infinity,
+    staleTime: 30_000,
   });
 
 export const useMySubmissions = (enabled = true) =>

@@ -38,7 +38,8 @@ import { formatDate } from '@/lib/format';
 import { useAuthStore } from '@/store/authStore';
 import { ContactFields, HoursField, PriceFields } from './ListingFields';
 import LocationPicker from './LocationPicker';
-import { DES_MAX, NAME_MAX, hasHoursField, hasPriceField, submissionTypeKey, toInput } from './model';
+import LandPolygonPicker from './LandPolygonPicker';
+import { DES_MAX, NAME_MAX, hasHoursField, hasPriceField, isLandLayer, submissionTypeKey, toInput } from './model';
 import { useListingForm, type ListingForm } from './useListingForm';
 
 type Step = 'type' | 'place' | 'details';
@@ -218,7 +219,7 @@ function Wizard() {
       if (form.errors.point || !form.point) setStep('place');
       return;
     }
-    submit.mutate(toInput(form.values, form.point), {
+    submit.mutate(toInput(form.values, form.point, form.geometry), {
       onSuccess: () => toast.success(t('submit.sent')),
       onError: (err) => toast.error(errorText(err, t('submit.sendFailed'))),
     });
@@ -230,11 +231,25 @@ function Wizard() {
       {step === 'type' && <TypeStep form={form} onPicked={() => setStep('place')} />}
       {step === 'place' && (
         <SectionCard title={t('submit.steps.placeTitle')} icon={<MapPin className="h-5 w-5" aria-hidden />}>
-          <LocationPicker tall value={form.point} onChange={form.setPoint} invalid={!!form.errors.point} />
+          {isLandLayer(form.values.layer) ? (
+            <LandPolygonPicker
+              tall
+              value={form.geometry}
+              onChange={form.setGeometry}
+              invalid={!!form.errors.point}
+            />
+          ) : (
+            <LocationPicker tall value={form.point} onChange={form.setPoint} invalid={!!form.errors.point} />
+          )}
+          {form.errors.point && (
+            <p role="alert" className="text-sm font-medium text-danger">
+              {form.message('point')}
+            </p>
+          )}
           <div className="mt-4 flex justify-between gap-2">
             {back('type')}
             <Button
-              disabled={!form.point}
+              disabled={isLandLayer(form.values.layer) ? !form.geometry : !form.point}
               startIcon={<ArrowLeft className="h-4 w-4 ltr:rotate-180" aria-hidden />}
               onClick={() => setStep('details')}
             >

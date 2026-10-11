@@ -233,7 +233,9 @@ export default function ListingCard({
 
       <div className="flex min-w-0 flex-1 flex-col gap-1 p-3">
         <div className="flex items-center gap-1.5 text-xs text-muted">
-          <span aria-hidden><TargetIcon target={r.target} /></span>
+          <span aria-hidden>
+            <TargetIcon target={r.target} />
+          </span>
           <span className="truncate">{typeTitle}</span>
           {r.id && <span className="ms-auto shrink-0">#{r.id}</span>}
         </div>
@@ -283,7 +285,7 @@ export default function ListingCard({
           rowOnPhone && 'max-sm:col-span-2',
         )}
       >
-        <ResultContact r={r} showRequest className="contents" />
+        <ResultContact r={r} showRequest className="contents" source="quick_search" />
         <button
           type="button"
           onClick={() => showOnMap(r)}
@@ -297,7 +299,14 @@ export default function ListingCard({
       </div>
 
       {open && (
-        <ListingPreview entry={entry} mode={mode} badge={badge} note={note} onClose={() => setOpen(false)} />
+        <ListingPreview
+          entry={entry}
+          mode={mode}
+          badge={badge}
+          note={note}
+          contactSource="quick_search"
+          onClose={() => setOpen(false)}
+        />
       )}
     </article>
   );

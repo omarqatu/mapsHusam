@@ -4,13 +4,16 @@ import { useTranslation } from 'react-i18next';
 import AlertMessage from '@/components/ui/AlertMessage';
 import Button from '@/components/ui/Button';
 import ButtonLink from '@/components/ui/ButtonLink';
+import FormField from '@/components/ui/FormField';
+import SelectInput from '@/components/ui/SelectInput';
 import { Spinner } from '@/components/ui/Spinner';
 import { toast } from '@/components/ui/toastStore';
 import { useAuthStore } from '@/store/authStore';
 import { useOlMap } from '../MapContext';
 import MapSheet from '../panels/MapSheet';
 import { flyToProvider } from './flyLayer';
-import { AVAILABLE, providerTarget } from './model';
+import { AVAILABLE, providerTarget, supportsLocationUpdates } from './model';
+import { targetLabelKey } from '../targets';
 import { useIsProvider, useProviderAccount, useProviderFeature } from './queries';
 import { useProviderUi } from './store';
 import { useProviderActions } from './useProviderActions';
@@ -52,11 +55,19 @@ function Panel({ onClose }: { onClose: () => void }) {
   const name = useAuthStore((s) => s.user?.full_name);
   const live = useProviderUi((s) => s.live);
   const error = useProviderUi((s) => s.error);
+  const selectedListing = useProviderUi((s) => s.selectedListing);
   const seconds = useCooldown();
   const { isError, refetch } = useProviderAccount();
-  const { account, service, pending, availableHere, availablePrevious, busy } = useProviderActions();
+  const { account, services, service, pending, availableHere, availablePrevious, busy } = useProviderActions();
+  useEffect(() => {
+    if (services.length > 0 && !services.some((item) => `${item.layer}:${item.featureId}` === selectedListing)) {
+      useProviderUi.getState().setSelectedListing(`${services[0].layer}:${services[0].featureId}`);
+    }
+  }, [selectedListing, services]);
   const featureQuery = useProviderFeature(service ? providerTarget(service.layer) : null, service?.featureId);
-  const featureName = String(featureQuery.data?.name ?? '');
+  const featureName = service?.name || String(featureQuery.data?.name ?? '');
+  const supportsLocation = service ? supportsLocationUpdates(service.layer) : false;
+  const selectedKey = service ? `${service.layer}:${service.featureId}` : '';
 
   const locked = seconds > 0 || pending;
   const available = service?.status === AVAILABLE;
@@ -93,7 +104,26 @@ function Panel({ onClose }: { onClose: () => void }) {
           <AlertMessage type="error" message={t('provider.noAccess')} />
         ) : (
           <>
-            {featureName && <p className="text-sm font-semibold text-fg">{featureName}</p>}
+            {services.length > 1 && (
+              <FormField label={t('provider.selectListing')} name="provider-listing">
+                <SelectInput
+                  id="provider-listing"
+                  value={selectedListing ?? selectedKey}
+                  onChange={(event) => useProviderUi.getState().setSelectedListing(event.target.value)}
+                  options={services.map((item) => ({
+                    value: `${item.layer}:${item.featureId}`,
+                    label: `${t(targetLabelKey(providerTarget(item.layer) ?? { kind: 'service', discriminator: item.layer }))} — ${item.name || `#${item.featureId}`} (${item.featureId})`,
+                  }))}
+                />
+              </FormField>
+            )}
+            <div className="rounded-lg bg-subtle px-3 py-2 text-sm">
+              <p className="font-semibold text-fg">
+                {service ? t(targetLabelKey(providerTarget(service.layer) ?? { kind: 'service', discriminator: service.layer })) : ''}
+              </p>
+              {featureName && <p className="mt-1 text-fg">{featureName}</p>}
+              {service && <p className="mt-1 font-mono text-muted" dir="ltr">ID {service.featureId}</p>}
+            </div>
             <p
               className={`flex items-center gap-2 text-sm font-semibold ${available ? 'text-ok' : 'text-danger'}`}
               role="status"
@@ -109,13 +139,15 @@ function Panel({ onClose }: { onClose: () => void }) {
                 startIcon={<MapPin className="h-4 w-4" />}
                 disabled={locked || live}
                 loading={pending}
-                onClick={() => void availableHere()}
+                onClick={() => void (supportsLocation ? availableHere() : availablePrevious())}
               >
-                {t('provider.availableHere')}
+                {t(supportsLocation ? 'provider.availableHere' : 'provider.availableAtListing')}
               </Button>
-              <Button variant="secondary" disabled={locked || live} onClick={() => void availablePrevious()}>
-                {t('provider.availablePrevious')}
-              </Button>
+              {supportsLocation && (
+                <Button variant="secondary" disabled={locked || live} onClick={() => void availablePrevious()}>
+                  {t('provider.availablePrevious')}
+                </Button>
+              )}
               <Button
                 variant="danger"
                 disabled={locked}
@@ -126,14 +158,16 @@ function Panel({ onClose }: { onClose: () => void }) {
               >
                 {t('provider.busy')}
               </Button>
-              <Button
-                variant={live ? 'primary' : 'secondary'}
-                startIcon={<Radio className="h-4 w-4" />}
-                aria-pressed={live}
-                onClick={() => useProviderUi.getState().setLive(!live)}
-              >
-                {t(live ? 'provider.trackStop' : 'provider.trackStart')}
-              </Button>
+              {supportsLocation && (
+                <Button
+                  variant={live ? 'primary' : 'secondary'}
+                  startIcon={<Radio className="h-4 w-4" />}
+                  aria-pressed={live}
+                  onClick={() => useProviderUi.getState().setLive(!live)}
+                >
+                  {t(live ? 'provider.trackStop' : 'provider.trackStart')}
+                </Button>
+              )}
               <Button variant="ghost" startIcon={<LocateFixed className="h-4 w-4" />} onClick={flyToMe}>
                 {t('provider.flyToMe')}
               </Button>

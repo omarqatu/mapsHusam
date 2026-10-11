@@ -42,7 +42,7 @@ export interface GeoJsonGeometry {
 export interface ApiFeature {
   type: 'Feature';
   geometry: GeoJsonGeometry | null;
-  /** Row columns (SELECT *) minus geometry: id / fid, name, rating, discriminator, price … — all optional/nullable. */
+  /** Row columns (SELECT *) minus geometry: id, name, rating, discriminator, price … — all optional/nullable. */
   properties: Record<string, unknown>;
 }
 export interface FeatureCollectionResponse {
@@ -60,7 +60,7 @@ export interface UniqueValuesQuery {
 }
 
 export const searchApi = {
-  /** POST /api/search-features-batch — several features of ONE type by id (services: `id`, real estate: `fid`). Public. */
+  /** POST /api/search-features-batch — several features of ONE type by its `id`. Public. */
   batch: (body: { layer: string; workspace: Workspace; ids: (number | string)[] }, signal?: AbortSignal) =>
     api.post<FeatureCollectionResponse>('/api/search-features-batch', body, { signal }),
   search: (q: SearchQuery, signal?: AbortSignal) =>

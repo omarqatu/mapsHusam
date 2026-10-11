@@ -229,7 +229,7 @@ Left as constants on purpose: the `rating` values 10 / 9.9 that mean featured / 
       notes, media, no contact.
 - [~] Contact buttons (buttons render and are hidden for road barriers / linked providers as on the map; the click flow is the map's `useContactActions`, covered by its tests — NOT clicked in the browser here): call (only when `phone`), WhatsApp (needs `whatsapp`), "request service" instead when the feature belongs to
       a registered provider (`GET /api/provider-linked-features`); 10 s per-feature cooldown (`click_cooldown_*` keys),
-      quota check (`POST /api/check-request-limit`, fail-open), `POST /api/log-contact-click`, `POST /save-stat` (`source: quick_search`).
+      quota check (`POST /api/check-request-limit`, fail-open), `POST /api/log-contact-click`, and `POST /save-stat` (`source: quick_search`, including guest visits). Contact records finish before opening the phone / WhatsApp link, so navigation cannot interrupt persistence. Property clicks use server table names (`ApartRent`, `ApartSale`, `LandSale`).
 - [~] "Go to map" button on a card (a link to `/?x=&y=&z=19`; rendered, not followed in the browser) → map at the feature (`?x=&y=`), in a new tab in legacy.
 - [~] Quota (the event is accepted by the real server — live test; the 429 path could not be produced locally): every executed category search is logged `POST /api/log-map-event` `event_type: no_map_search`,
       `source: quick_search` (the server files it under the quick-search statistics); 429 = message + no results. Fail-open otherwise.
@@ -323,6 +323,8 @@ Left as constants on purpose: the `rating` values 10 / 9.9 that mean featured / 
 **Added (not in legacy, cheap because the map's code was reused):** sort (top rated, name, nearest-to-me with distance on the cards,
 price low / high when one currency is chosen); print report (map's `printResults`); copy link; "show on the map" for the
 current type + filters; category filter box inside the browser; distance sort uses one GPS fix (`locateOnce`).
+The print report separates phone and WhatsApp numbers for direct-contact listings; linked provider listings suppress both
+numbers and instead say the service or property can be requested through the platform.
 
 **Decision — way back from the map to the same search:** the AppHeader "search" link stays a plain `/search` (a map view has no
 equivalent list). Where the map HAS a query that a list can express — an attribute (smart) search — its results header now has an
@@ -334,7 +336,13 @@ geometry-bound and have no list form, so they get no link.
 the legacy files are NOT deleted: `index.html` and `original-index.html` still load `js/no-map-search.js` + `css/no-map-search.css`,
 and every legacy page links `/no-map-search.html` while the server does not serve `web/dist` yet — delete `no-map-search.html`,
 `js/no-map-search.js`, `js/no-map-mobile.js`, `js/market-search.js`, `css/no-map-search.css` together with the server switch.
-Not verified: real contact clicks (call / WhatsApp / request service) from this page, the 429 quota message, print output.
+Contact flow audit: category, keyword, and landing cards use `ListingCard` → `ResultContact` → `useContactActions` with
+`quick_search`; the map result rows use `ResultContact` with `map`; map popups use `useContactActions` directly; map
+featured / near-me cards use `FeaturedCard` → `ResultContact`; property-service provider rows use the same contact path,
+passing their page source through. Listing previews preserve the no-map source for both the listing and its property-service
+rows. The shared handler saves contact and aggregate-stat records before navigating to `tel:` or WhatsApp. Unit tests cover
+call / WhatsApp, map / no-map source, guest aggregate stats, and all three property table names. Live contact clicks and the
+429 quota message remain unverified here because the local development database was unavailable.
 
 **Reused from the map page (`web/src/features/map/…`, not duplicated):** `targets` / `config` (type catalogue, icons, names),
 `search/model.ts` (fields per type, cascade rules, operators), `search/results.ts` (API row → `SearchResult`), `search/globalSearch.ts`
@@ -486,7 +494,7 @@ Split `index.html` into features, in this order:
      first vertex; insert sets `source`=0, `target`=0, `cost`=0 (pgRouting columns). Geometry sent as `MultiLineString` with
      `gml:posList`. Cancel in the modal removes the drawn line.
    - *Polygons (`editPolygons.js`): `realestate:LandSale` (Polygon) and `realestate:Location` (MultiPolygon):* fields land = `name, phone,
-     price, currency, des, pic, video, area, whatsapp, end_date, work_hours, rating 0-5`; location = `gov_a, village_a, location`.
+     price, currency, des, pic, video, area, whatsapp, end_date, work_hours, rating 0-10 (default 5)`; location = `gov_a, village_a, location`.
      Add/Modify = `Draw Polygon` / `Select` → modal ("continue to shape") → **shape phase** with a sub-toolbar: *move points*
      (`Modify`), *reshape* (a free `Draw LineString` that is never applied to the polygon — effectively a no-op), *new drawing*
      (removes the polygon, draws another, restores properties and id) and **final save**. Land: `search_tags` from the fixed land
@@ -1195,7 +1203,8 @@ here so it can be corrected.
 - **`/my-listings`** (role provider; home card "إعلاناتي"; route `nav.myListings`): two tabs, services / properties, with
   counts, opening on the tab that has something. One card per listing: cover picture (or the type's icon), type, `#id`,
   place, rating, the three states as one segmented control (saved on tap, with a one-line hint of what each means), "edit",
-  "on the map". Pending / rejected submission shown on top.
+  "on the map". An expired subscription replaces the state control with an expiry notice. Pending / rejected submission
+  shown on top.
 - **Edit sheet** (bottom sheet on a phone): pictures first (up to 8; shrunk in the browser to ≤1600 px JPEG before upload,
   first = cover, reorder by "make cover", remove; saved as they change), then name, description, phone, WhatsApp, hours
   (preset chips + free text), price / currency / area where the type has a price, and — services only — the point on the
@@ -1204,9 +1213,12 @@ here so it can be corrected.
 - **`/add-listing`** is now a three-step flow for a user **or** a provider (was: users only, one big form): 1. type — every
   type as a tile, grouped, with a search; flats (rent / sale) included; 2. place — a satellite map where the pin is fixed
   in the middle and the map moves under it (drag, or tap a spot), starting at the GPS position, "my location" button,
-  60 % of the screen; 3. details — name, description, hours (presets) or price / currency / area, phone (filled from the
-  account), WhatsApp. Pictures are added from "my listings" after approval (an unapproved listing has no row to attach
-  them to). Each step scrolls to the stepper. One pending request at a time (server rule, unchanged).
+  60 % of the screen; a GPS result cannot overwrite a newer map choice, and choosing a region clears the old point until
+  the user taps or moves the pin there; region navigation filters the `Location` layer by governorate → town → locality
+  and highlights matching boundaries; 3. details — name, description, hours (presets) or price /
+  currency / area, phone (filled from the account), WhatsApp. Pictures are added from "my listings" after approval (an
+  unapproved listing has no row to attach them to). Each step scrolls to the stepper. One pending request at a time
+  (server rule, unchanged).
 - UX changes vs the old form: steps instead of one long page; the pin-under-crosshair instead of tap-to-place; flats can
   be submitted; providers can add more listings.
 - Tests: `my-listings/model.test.ts`, `listing-submissions/model.test.ts` (flats), live `myListings.live.test.ts` (list,
@@ -1219,7 +1231,7 @@ here so it can be corrected.
 ### Listing state and hidden layers (points 4 and 7) ✅
 
 - **One rule** (`lib/listing-rules.js`, unit tests `lib/listing-rules.test.js`): `status` 0 available · 1 unavailable for
-  now · 2 withdrawn. The public sees services with status 0 or 1, properties with status 0, and nothing whose `end_date` has
+  now · 2 withdrawn. The public sees services and properties with status 0 or 1, and nothing whose `end_date` has
   passed. Work hours no longer hide anything: a service outside its hours is listed as "closed now". Results put what is
   usable now first (available and open), then the rest, each by rating.
 - **Where it applies (server):** `/api/search-features` (+ hidden service types left out of `service_all`),
@@ -1234,7 +1246,9 @@ here so it can be corrected.
   carry `X-App-Token` (`api/geoserver.ts`) and are not filtered, so the admin map still shows withdrawn / hidden rows.
 - **Hidden layers** are read from `settings.visibility` (30 s cache, cleared when an admin saves it — `server/visibility.js`).
 - **Web:** every card / result row says *open now*, *closed now*, *not available right now* (amber) or, for an admin,
-  *withdrawn* (`availability()` in `popup/featureModel.ts`, `AvailabilityText`). The provider panel's "not available" now
+  *withdrawn* / *subscription expired* (`availability()` in `popup/featureModel.ts`, `AvailabilityText`). Expired
+  subscriptions take precedence over the withdrawn label; the provider's "My listings" card shows an expiry notice instead
+  of its status selector. The provider panel's "not available" now
   says visitors see it as not available (it used to hide the listing).
 - Verified against the real backend + local GeoServer: a plumber with status 1 is listed (amber, after the open ones), one
   with status 2 and one with a past `end_date` are not, in search and in WFS (with and without bbox); the admin gets all
@@ -1492,6 +1506,32 @@ For each page, list from the legacy code — not from memory:
 Rule: URLs, methods, auth rules and response shapes stay identical; legacy pages keep working.
 Log each change here: **what · why · how to verify · commit**.
 
+- **Multiple listings per service provider.** Admin user rows now expose each `listing_owners` association, and
+  `/api/admin/users/update` accepts a validated `listing_links` list, verifies every service `id` or property `fid`
+  exists, and synchronizes the links plus the legacy first-listing fields atomically. The provider endpoint retains its
+  original `service` object and adds `services` for all linked listings. Provider status updates remain ownership-checked;
+  property layers reject provider-supplied coordinates. Why: one provider may manage several services or properties.
+  Verify: focused admin/provider UI tests, server checks, and a live provider account with multiple service/property links.
+  Commit: pending.
+
+- **Clear a provider link when changing the account to a regular user.** `/api/admin/users/update` now treats an explicit
+  `service_layer: null` like an empty selection instead of calling `.trim()` on null and returning 500. The account role and
+  listing link can then be cleared together, including when the linked listing was deleted first. Verify:
+  `web/src/features/admin-users/admin.live.test.ts` (provider → regular user with null service layer and feature id). Commit: pending.
+
+- **Unavailable properties remain visible.** Public SQL search and GeoServer WFS filters now include listing `status` 0 and 1 for services, apartments, and land alike; status 2 (withdrawn) and expired listings remain excluded. Why: a provider selecting “not available now” should keep the listing visible with its unavailable badge, while “withdrawn” removes it from public searches and sections. Verify: `node --test lib/listing-rules.test.js`; check `/api/search-features`, batch results, and public GeoServer reads for each property layer. Commit: pending.
+- **Automatic subscription-expiry notices.** A low-frequency server check runs every 15 minutes; opening `/api/my-listings` also checks that provider immediately. It finds expired services and properties, looks up their provider owners, and sends one persisted notification per listing / owner / end date with the listing name and type. The key on the notification row prevents duplicates across restarts and allows a renewed subscription with a new end date to notify again. Verify: `node --test lib/listing-expiry-notification.test.js`; inspect an expired listing notice in the provider's notifications and confirm the public listing stays hidden. Commit: pending.
+- **Provider service location edits.** The geometry update uses dedicated coordinate parameters rather than reusing the x/y column parameters, because PostgreSQL can infer incompatible types for the same placeholder. Property geometry remains admin-only. Verify: move a provider-owned service and save; confirm the new map position, and confirm property edits still cannot include coordinates. Commit: pending.
+- **Provider replies survive offline time; declined requests explain why.** A pending request opened from its notification now exposes accept/decline actions, and provider request lists distinguish “waiting for your reply” from the requester's status. Declining requires a reason, saved on the request and as a chat message, and included in the requester's notification. Verify: receive a request while signed out, sign back in and open its notification to accept/decline; decline with a reason and check the requester notification and request history. Commit: pending.
+
+- **Property submissions use 24-hour work hours.** Client payloads include `work_hours: "24 ساعة"` for apartment rent, apartment sale, and land sale; the server enforces the same value for both the add-listing and registration flows, regardless of submitted input. Land approval writes the value to `LandSale.work_hours`. Apartment tables currently do not expose a work-hours column, so the value is retained in the submission record. Verify: web model tests, `node --test lib/listing-rules.test.js lib/land-sale-approval.test.js`. Commit: pending.
+
+- **Only one pending listing submission per user.** Serialize submissions per user with a transaction-scoped advisory lock, check for an existing pending request, and keep the partial unique index as the final race-safe constraint. This preserves the intended sequence: after approval or rejection ends the pending state, the user can submit the next service, apartment, or land listing. Verify: the live submission test attempts a different type while pending, then approves a service, apartment, and land listing in sequence. Commit: pending.
+
+- **Submission types follow the admin's show & hide setting.** `GET /api/listing-submissions/layers` now omits hidden service and property layers. Both listing submissions and registration with a listing reject hidden types, so a manually crafted request cannot submit one. Why: users should only be offered publicly enabled categories. Verify: `npm test` (server rules) and the listing-submissions live test with a hidden layer. Commit: pending.
+
+- **Property approval uses each layer's actual key.** `ApartRent`, `ApartSale`, and `LandSale` use `fid` in PostgreSQL; approval returns `fid AS id` for owner linking, and rollback deletes by `fid`. Land insertion writes the complete schema and returns an interior map point without assuming `x_coord`/`y_coord` columns. Service listings continue to use `service_all.id`. Verify: `node --test lib/land-sale-approval.test.js` and approve test submissions against local PostGIS.
+
 - **`POST /api/update-service-status`: cast `x_coord`/`y_coord` to `float8`.** The same `$2`/`$3` were used as column values and as
   `ST_MakePoint` arguments; PostgreSQL deduced conflicting types (numeric vs double) and the update failed with 500 "فشل تحديث قاعدة
   البيانات الخلفية" whenever a provider sent coordinates. Response and request unchanged. Verify: `web/src/features/map/provider/provider.live.test.ts`
@@ -1627,7 +1667,7 @@ Log each change here: **what · why · how to verify · commit**.
   `user` submits a service (`POST /api/listing-submissions`: layer, name, phone, optional description / WhatsApp / hours / price, and a
   point in EPSG:28191); one pending request per user (partial unique index), 10 per day. `GET /api/listing-submissions/mine`,
   `DELETE /api/listing-submissions/:id` (own, pending only), `GET /api/listing-submissions/layers` (types offered: service types minus
-  road barriers, fuel, landmarks, jobs, free distribution; property stays admin-only). Admin: `GET /api/admin/listing-submissions?status=`,
+  road barriers, fuel, landmarks, jobs, free distribution; ApartRent/ApartSale point listings and LandSale polygons). Admin: `GET /api/admin/listing-submissions?status=`,
   `POST …/:id/approve` (one transaction: inserts the row into `service_all`, the DB trigger fills place/coordinates/visibility; makes the
   account a `provider` linked to it, bumps `token_version`, clears the caches; the admin may correct name/description/hours and send
   `search_tags`), `POST …/:id/reject` (reason required). The user gets a notification either way (after approval they must log in again,
@@ -1834,15 +1874,28 @@ and give the Node process write access to it on IIS**), table `listing_photos` k
   sets it once accepting), from now to 90 days ahead (`lib/appointment.js`), the other side gets a notification + socket
   `service_request_appointment`; new public `GET /api/publisher-rating?service_layer&feature_id` →
   `{publisher, averageRating, totalRatings, listings}` over every rating of the owner's listings (no names). Fix:
-  the owner's numbers after a completed deal were read from property tables by `id` (they key on `fid`) — always empty.
-  Rating rules unchanged: only the requester, only after both confirm, once per listing. Verify: `node --test lib/`,
-  live `requests/viewing.live.test.ts`.
+  the owner's numbers after a completed deal are read from property tables by their PostgreSQL `fid` primary key.
+  Rating rules unchanged: only the requester, only after both confirm, once per listing. The owner's numbers after a completed
+  deal are read from property tables by their PostgreSQL `fid` primary key. Verify: `node --test lib/`, live
+  `requests/viewing.live.test.ts`.
 
 - **The admin may move a submission's point before approving.** `POST /api/admin/listing-submissions/:id/approve`
   takes optional `x_coord` / `y_coord` (Palestine Grid metres, same bounds as a submission — `gridPoint` in
   `server/listings.js`; outside → 400); without them the submitted point is used as before. Why: a phone's GPS / the
   person's pin is often a few houses off. Verify: live `listingSubmissions.live.test.ts` (throwaway account, approve with
   a bad point → 400, with a moved point → the published row has it).
+- **Land sale submissions and admin property links.** `LandSale` is now offered when visible and requires a validated,
+  single-ring polygon that is stored with the submission and inserted into the real-estate layer on approval. The admin
+  user editor includes ApartRent, ApartSale, and LandSale; property lookups and owner linking use PostgreSQL `fid`
+  for all three layers (GeoServer/WFS feature IDs remain `fid`). A linked land provider's
+  location is read from the polygon surface, and the provider controls update its visibility only, never replace the
+  polygon with a GPS point. Verify: geometry and provider tests, listing-submission model tests, and the live submission /
+  user-link tests against the local databases.
+- **Property approvals use the actual property key column.** Apartment approval returns `fid AS id`, and rollback removes
+  partial apartment or land rows by `fid`; land approval also follows the layer's editor schema and returns a point on the
+  polygon without assuming `x_coord`/`y_coord` columns. Why: none of the three property tables has an `id` column, so using
+  it caused PostgreSQL's `column "id" does not exist` error. Verify:
+  `node --test lib/land-sale-approval.test.js` and approve a land submission on a real local PostGIS database.
 - **Deploy keeps `uploads/`.** `tools/deploy-windows.ps1` copies with `robocopy /MIR`, which purged every folder of the
   live site not in the release — the pictures folder included. `uploads` is now excluded like `DB_Backups`
   (deploy and rollback). Better still on the server: `UPLOADS_DIR` outside the site folder.
@@ -1951,8 +2004,9 @@ and give the Node process write access to it on IIS**), table `listing_photos` k
     refuses a dirty tree; the script parses in PowerShell 7; the first two runs on the server (the first installs, no stamp yet).
 ## Backend asks (needs the user's decision — behaviour-changing or larger)
 
-- **Public map:** `/api/log-contact-click` is `requireAuth`, so a visitor's call / WhatsApp tap is not counted in the provider's
-  statistics (and has no quota). If visitor contacts should count, the endpoint needs a public, rate-limited variant.
+- **Public map:** `/api/log-contact-click` is `requireAuth`, so visitors do not get a per-listing `service_requests` row.
+  Their call / WhatsApp taps are counted in aggregate `map_service_stats` via public `/save-stat` with a per-tab guest id;
+  decide separately if visitor contacts should also appear as per-listing provider request-history rows.
 
 - WFS-T editing sends GeoServer credentials from the browser (`js/edit-wfs.js`); should move server-side.
   Detail (from porting item 5): `/geoserver-proxy` has **no role check** — the proxy forwards any `POST` (a WFS-T Transaction whose layer is

@@ -49,7 +49,7 @@ describe.skipIf(!BASE)('a viewing of a flat against the live backend', () => {
     ).map(Number);
     const free = devSql(
       'realestate',
-      `SELECT fid FROM public."${LAYER}" WHERE status = 0 ORDER BY fid LIMIT 50`,
+      `SELECT id FROM public."${LAYER}" WHERE status = 0 ORDER BY id LIMIT 50`,
     )
       .map(Number)
       .find((id) => !owned.includes(id));
@@ -106,7 +106,7 @@ describe.skipIf(!BASE)('a viewing of a flat against the live backend', () => {
     await asUser();
     const done = await requestsApi.confirm(id, 'user');
     expect(done.status).toBe('completed');
-    // the owner's numbers come from the flat's own row (property tables key on fid)
+    // the owner's numbers come from the flat's own row (property tables key on id)
     expect(done).toHaveProperty('providerPhone');
     await expect(requestsApi.setAppointment(id, inHours(5))).rejects.toMatchObject({ status: 409 });
 

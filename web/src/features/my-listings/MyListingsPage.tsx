@@ -19,7 +19,7 @@ import { CenteredSpinner } from '@/components/ui/Spinner';
 import Tabs, { type TabDef } from '@/components/ui/Tabs';
 import { toast } from '@/components/ui/toastStore';
 import { mapLinkTo } from '@/features/map/mapLink';
-import { safeMediaUrl } from '@/features/map/popup/featureModel';
+import { isSubscriptionExpired, safeMediaUrl } from '@/features/map/popup/featureModel';
 import { targetLabelKey } from '@/features/map/targets';
 import { errorText } from '@/lib/errorText';
 import ListingEditor from './ListingEditor';
@@ -141,6 +141,7 @@ function ListingCard({ listing: l, onEdit }: { listing: MyListing; onEdit: () =>
   const target = listingTarget(l.layer);
   const cover = l.photos.map(safeMediaUrl).find((u): u is string => !!u);
   const [coverFailed, setCoverFailed] = useState(false);
+  const subscriptionExpired = isSubscriptionExpired(l.end_date);
 
   const setState = (status: ListingState) =>
     edit.mutate(
@@ -164,7 +165,9 @@ function ListingCard({ listing: l, onEdit }: { listing: MyListing; onEdit: () =>
             src={cover}
             alt=""
             loading="lazy"
-            className={`h-full w-full object-cover ${l.status === 2 ? 'opacity-50 grayscale' : ''}`}
+            className={`h-full w-full object-cover ${
+              l.status === 2 || subscriptionExpired ? 'opacity-50 grayscale' : ''
+            }`}
             onError={() => setCoverFailed(true)}
           />
         ) : (
@@ -203,13 +206,17 @@ function ListingCard({ listing: l, onEdit }: { listing: MyListing; onEdit: () =>
             )}
           </p>
         </div>
-        <StatePicker
-          name={`state-${l.layer}-${l.id}`}
-          value={l.status}
-          kind={l.kind}
-          disabled={edit.isPending}
-          onChange={setState}
-        />
+        {subscriptionExpired ? (
+          <AlertMessage type="warning" message={t('myListings.subscriptionExpired')} />
+        ) : (
+          <StatePicker
+            name={`state-${l.layer}-${l.id}`}
+            value={l.status}
+            kind={l.kind}
+            disabled={edit.isPending}
+            onChange={setState}
+          />
+        )}
         <div className="mt-auto flex gap-2">
           <Button className="flex-1" startIcon={<Pencil className="h-4 w-4" aria-hidden />} onClick={onEdit}>
             {t('myListings.edit')}
