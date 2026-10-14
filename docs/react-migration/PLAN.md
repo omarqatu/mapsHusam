@@ -2002,6 +2002,11 @@ and give the Node process write access to it on IIS**), table `listing_photos` k
   - **Docs-only pushes do not deploy** (`paths-ignore: docs/**, **/*.md`).
   - **Verify:** `node --test lib` (the prepared-snapshot path, incomplete copy refused); the hook passes other branches,
     refuses a dirty tree; the script parses in PowerShell 7; the first two runs on the server (the first installs, no stamp yet).
+- **The daily submission limit is configurable (2026-10-15).** `POST /api/listing-submissions` allows 10 per IP per day,
+  unchanged in production; `SUBMISSION_DAILY_LIMIT` overrides it and `dev/dev.sh server` sets 200, because one run of
+  `listingSubmissions.live.test.ts` submits 17 and could never pass. **Verify:** without the variable the 11th submission
+  of a day is refused (429); with `dev/dev.sh server` the whole live file passes (8/8).
+
 ## Backend asks (needs the user's decision — behaviour-changing or larger)
 
 - **Public map:** `/api/log-contact-click` is `requireAuth`, so visitors do not get a per-listing `service_requests` row.
