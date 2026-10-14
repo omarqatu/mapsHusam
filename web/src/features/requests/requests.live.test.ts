@@ -77,7 +77,7 @@ describe.skipIf(!BASE)('service requests against the live backend', () => {
   });
 
   it('request → provider rejects; request → user cancels with a reason', async () => {
-    await signIn('0590000003', 'User#12345');
+    const user = await signIn('0590000003', 'User#12345');
     const a = await requestsApi.create(body);
     await signIn('0590000002', 'Provider#12345');
     await expect(requestsApi.respond(a.requestId, 'reject')).rejects.toMatchObject({ status: 400 });
@@ -85,7 +85,7 @@ describe.skipIf(!BASE)('service requests against the live backend', () => {
     expect((await requestsApi.respond(a.requestId, 'reject', undefined, reason)).status).toBe('rejected');
 
     await signIn('0590000003', 'User#12345');
-    const requests = await requestsApi.mine(3);
+    const requests = await requestsApi.mine(user.user_id);
     expect(requests.requests.find((r) => r.id === a.requestId)?.rejection_reason).toBe(reason);
     expect((await requestsApi.messages(a.requestId)).messages.map((m) => m.message)).toContain(
       `تم رفض الطلب. السبب: ${reason}`,
