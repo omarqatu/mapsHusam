@@ -9,7 +9,6 @@ import { useServiceRatings } from '@/api/mapEvents';
 import { useInView } from '@/hooks/useInView';
 import {
   customerRatingsKey,
-  groupOf,
   manualStars,
   mediaForMode,
   type FeaturedEntry,
@@ -22,6 +21,7 @@ import {
   availability,
   beforeAfterPair,
   mediaDefault,
+  listingTitle,
   priceLabel,
   sideMedia,
   text,
@@ -31,7 +31,6 @@ import { AvailabilityText } from '../map/popup/AvailabilityText';
 import { formatDistance } from '../map/search/nearby';
 import ResultContact from '../map/search/ResultContact';
 import { hasPrice, isFuelStation, isRoadBarrier, priceCurrencyDefault, targetLabelKey } from '../map/targets';
-import { GROUP_ART } from './art';
 import ListingPreview from './ListingPreview';
 import DirectionsButton from '../map/popup/DirectionsButton';
 import TargetIcon from '@/features/map/TargetIcon';
@@ -107,7 +106,7 @@ function Thumb({ m, onBroken }: { m: VisualItem; onBroken?: () => void }) {
 }
 
 /**
- * A listing the way a classifieds site shows one: picture first (or its section's illustration), name, place, price or
+ * A listing the way a classifieds site shows one: picture first (or its type's icon), name, place, price or
  * opening state, and one row of actions (contact, map). The whole card opens the preview with everything else; the
  * action buttons sit above that click area. One card for the landing rows and every result list.
  */
@@ -128,7 +127,7 @@ export default function ListingCard({
   const { r, ratings } = entry;
   const p = r.props;
   const typeTitle = t(targetLabelKey(r.target));
-  const name = text(p.name) || text(p.location_name) || typeTitle;
+  const name = listingTitle(r.target, p, t);
   // The place people recognise (street / area, town); the governorate is only a fallback.
   const place =
     [text(p.location_name) || text(p.location), text(p.village_a)].filter(Boolean).join(' · ') ||
@@ -154,7 +153,6 @@ export default function ListingCard({
     ? sides.filter((m): m is VisualItem => !!m)
     : visuals(mediaForMode(p, mode)).filter(notBroken);
   const first = items[0];
-  const art = GROUP_ART[groupOf(r.target)];
 
   return (
     <article
@@ -197,23 +195,15 @@ export default function ListingCard({
             <Thumb m={first} onBroken={markBroken(first)} />
             {first.type !== 'image' && playBadge}
           </>
-        ) : art ? (
-          <div className="relative h-full" aria-hidden>
-            <img
-              src={art}
-              alt=""
-              loading="lazy"
-              className="h-full w-full object-cover object-left-bottom opacity-60 saturate-50"
-            />
-            <span className="absolute inset-0 flex items-center justify-center">
-              <span className="flex h-14 w-14 items-center justify-center rounded-full bg-surface/95 text-3xl shadow-float max-sm:h-11 max-sm:w-11 max-sm:text-2xl">
-                <TargetIcon target={r.target} />
-              </span>
-            </span>
-          </div>
         ) : (
-          <div className="flex h-full items-center justify-center text-5xl" aria-hidden>
-            <TargetIcon target={r.target} />
+          // No picture: the type's icon on its own tint (a section illustration here read like a screenshot of the app).
+          <div
+            className="flex h-full items-center justify-center bg-gradient-to-br from-brand-light to-subtle"
+            aria-hidden
+          >
+            <span className="flex h-14 w-14 items-center justify-center rounded-full bg-surface/95 text-3xl text-brand-fg shadow-sm max-sm:h-11 max-sm:w-11 max-sm:text-2xl">
+              <TargetIcon target={r.target} />
+            </span>
           </div>
         )}
         {badge && (

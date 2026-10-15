@@ -4,10 +4,7 @@ import FeaturedCard from '../map/extras/FeaturedCard';
 import PropertyRelations from '../property-relations/PropertyRelations';
 import PropertyServices from '../property-services/PropertyServices';
 import type { FeaturedEntry, FeaturedMode } from '../map/extras/featured';
-import { groupOf } from '../map/extras/featured';
-import { beforeAfterPair, collectMedia, text } from '../map/popup/featureModel';
-import { targetLabelKey } from '../map/targets';
-import { GROUP_ART } from './art';
+import { beforeAfterPair, collectMedia, listingTitle } from '../map/popup/featureModel';
 import TargetIcon from '@/features/map/TargetIcon';
 import type { MapEventSource } from '@/api/mapEvents';
 
@@ -37,33 +34,23 @@ export default function ListingPreview({
     <Modal
       open={entry !== null}
       onClose={onClose}
-      title={
-        entry
-          ? text(entry.r.props.name) || text(entry.r.props.location_name) || t(targetLabelKey(entry.r.target))
-          : ''
-      }
+      title={entry ? listingTitle(entry.r.target, entry.r.props, t) : ''}
       widthClass="sm:max-w-xl"
       sheetOnPhone
     >
       {entry && (
         <div className="space-y-3">
-          {/* No picture of its own: its section's illustration as a header, so the preview never opens on bare text. */}
-          {collectMedia(entry.r.props).length === 0 &&
-            !beforeAfterPair(entry.r.props) &&
-            GROUP_ART[groupOf(entry.r.target)] && (
-              <div className="relative -mx-4 -mt-4 h-36 overflow-hidden bg-brand-light" aria-hidden>
-                <img
-                  src={GROUP_ART[groupOf(entry.r.target)]}
-                  alt=""
-                  className="h-full w-full object-cover object-left-bottom opacity-70 saturate-50"
-                />
-                <span className="absolute inset-0 flex items-center justify-center">
-                  <span className="flex h-16 w-16 items-center justify-center rounded-full bg-surface text-4xl shadow-float">
-                    <TargetIcon target={entry.r.target} />
-                  </span>
-                </span>
-              </div>
-            )}
+          {/* No picture of its own: its type's icon as a header, so the preview never opens on bare text. */}
+          {collectMedia(entry.r.props).length === 0 && !beforeAfterPair(entry.r.props) && (
+            <div
+              className="-mx-4 -mt-4 flex h-28 items-center justify-center bg-gradient-to-br from-brand-light to-subtle"
+              aria-hidden
+            >
+              <span className="flex h-16 w-16 items-center justify-center rounded-full bg-surface text-4xl text-brand-fg shadow-float">
+                <TargetIcon target={entry.r.target} />
+              </span>
+            </div>
+          )}
           <FeaturedCard
             entry={entry}
             mode={mode}

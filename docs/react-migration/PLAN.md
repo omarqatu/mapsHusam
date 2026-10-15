@@ -1513,6 +1513,12 @@ data; the owner accepted every proposal ("نفذ اقتراحتك كلها"). On
   the hero, `search/popular.ts` → `/search?type=…`), "Search without the map" (map only, carries the words to
   `/search?q=`) and "Not here? Add your business" (`/add-listing`; visitors meet the sign-in prompt). Tested:
   `search/NoResultsNext.test.tsx`.
+- **Cards say what a listing is (UX change):** a listing without a name of its own is titled by what it is and where —
+  «شقة للإيجار في بيتونيا», «أرض للبيع في أريحا», «<type> في <town>» (`listingTitle` in `popup/featureModel.ts`) — on the
+  listing cards, the preview, the map's featured cards, results list, search suggestions and feature popup, instead of
+  the section name («شقق الإيجار») on every card. A card or preview with no picture shows the type's icon on a tint; the
+  section illustrations (they read like screenshots of the app) stay on the section tiles only. Tested:
+  `popup/listingTitle.test.ts`.
 
 ## Server changes (allowed: functionality-preserving improvements, one commit each)
 

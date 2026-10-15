@@ -1,7 +1,7 @@
 import { formatNumber } from '@/lib/format';
 import type { MediaItem as GalleryItem } from '@/components/ui/MediaGallery';
 import { FUEL_FIELDS, roadBarrierStatus, type FuelField } from '../config';
-import type { MapTarget } from '../targets';
+import { targetLabelKey, type MapTarget } from '../targets';
 
 // Pure helpers behind the feature details card (legacy popup.js + shared-utils.js), testable without a map.
 
@@ -403,3 +403,15 @@ export const CURRENCY_KEYS: Record<string, string> = {
   ILS: 'popup.currency.ILS',
   JOD: 'popup.currency.JOD',
 };
+
+/**
+ * The title a listing card shows: its name, else its place name, else what it is and where — «شقة للإيجار في بيتونيا»
+ * (a property has no name of its own, and a bare type name such as «شقق الإيجار» reads like a section, not a listing).
+ */
+export function listingTitle(target: MapTarget, props: Props, t: (key: string, o?: Record<string, string>) => string) {
+  const own = text(props.name) || text(props.location_name);
+  if (own) return own;
+  const what = target.kind === 'realEstate' ? t(`listingTitle.${target.layer}`) : t(targetLabelKey(target));
+  const place = text(props.location) || text(props.village_a) || text(props.gov_a);
+  return place ? t('listingTitle.in', { what, place }) : what;
+}

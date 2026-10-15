@@ -5,7 +5,7 @@ import { useTranslation } from 'react-i18next';
 import { AvailabilityText } from '../popup/AvailabilityText';
 import MediaGallery from '@/components/ui/MediaGallery';
 import RatingSummary from '@/components/ui/RatingSummary';
-import { hoursLabel, availability, labelMedia, priceLabel, text } from '../popup/featureModel';
+import { hoursLabel, availability, labelMedia, listingTitle, priceLabel, text } from '../popup/featureModel';
 import RatingsBlock from '../popup/RatingsBlock';
 import { formatDistance } from '../search/nearby';
 import ResultContact from '../search/ResultContact';
@@ -89,7 +89,7 @@ export default function FeaturedCard({
   const isBarrier = isRoadBarrier(r.target);
   const isFuel = isFuelStation(r.target);
   const typeTitle = t(targetLabelKey(r.target));
-  const name = text(p.name) || text(p.location_name) || typeTitle;
+  const name = listingTitle(r.target, p, t);
   const place = [text(p.location_name) || text(p.location), text(p.village_a), text(p.gov_a)]
     .filter(Boolean)
     .join(' · ');

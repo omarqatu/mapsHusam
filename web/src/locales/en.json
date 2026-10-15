@@ -2311,5 +2311,11 @@
       },
       "empty": "Nothing here."
     }
+  },
+  "listingTitle": {
+    "rent": "Flat for rent",
+    "sale": "Flat for sale",
+    "land": "Land for sale",
+    "in": "{{what}} in {{place}}"
   }
 }

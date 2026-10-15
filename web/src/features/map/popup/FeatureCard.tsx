@@ -27,11 +27,19 @@ import {
   priceLabel,
   text,
   type SelectedFeature,
+  listingTitle,
 } from './featureModel';
 import PropertyRelations from '@/features/property-relations/PropertyRelations';
 import PropertyServices from '@/features/property-services/PropertyServices';
 import MediaShowcase from './MediaShowcase';
-import { hasPrice, isFuelStation, isRoadBarrier, priceCurrencyDefault, listingLayerOf, targetLabelKey } from '../targets';
+import {
+  hasPrice,
+  isFuelStation,
+  isRoadBarrier,
+  priceCurrencyDefault,
+  listingLayerOf,
+  targetLabelKey,
+} from '../targets';
 import PublisherRating from './PublisherRating';
 import { copyText, isMobileBrowser, nativeShare } from '@/lib/clipboard';
 import ContactButtons from './ContactButtons';
@@ -101,6 +109,7 @@ export default function FeatureCard({ feature, onClose, className }: Props) {
   const isBarrier = isRoadBarrier(kind);
   const typeTitle = kind.kind === 'location' ? t('popup.sharedLocation') : t(targetLabelKey(kind));
   const name = text(props.name);
+  const title = name || (kind.kind === 'location' ? typeTitle : listingTitle(kind, props, t));
   const providerName = name || (kind.kind === 'realEstate' ? t('popup.advertiser') : t('popup.provider'));
   const place = text(props.location_name) || text(props.location);
   const hoursText = hoursLabel(props.work_hours, t, i18n.language);
@@ -145,8 +154,8 @@ export default function FeatureCard({ feature, onClose, className }: Props) {
             </span>
           )}
           <div className="min-w-0">
-            <div className="truncate text-sm">{name || typeTitle}</div>
-            {name && (
+            <div className="truncate text-sm">{title}</div>
+            {title !== typeTitle && (
               <div className="truncate text-xs font-normal text-muted">
                 {typeTitle}
                 {id ? ` · #${id}` : ''}
