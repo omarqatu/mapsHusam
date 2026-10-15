@@ -566,7 +566,7 @@
     },
     "stats": {
       "users": "Users",
-      "providers": "Service providers",
+      "providers": "Listings",
       "services": "Services",
       "viewsTotal": "Total platform visits",
       "viewsMap": "Map visits",
@@ -1795,7 +1795,7 @@
       }
     },
     "figures": {
-      "features": "places",
+      "features": "listings",
       "services": "service types",
       "open": "open requests",
       "unread": "unread",

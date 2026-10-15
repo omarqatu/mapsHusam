@@ -28,7 +28,8 @@ export default function SearchHero({ term, onCommit, onPick, searchRef }: Props)
     { value: s?.featuresCount, label: t('searchPage.statProviders') },
     { value: s?.servicesCount, label: t('searchPage.statServices') },
     { value: s?.viewsTotal, label: t('searchPage.statVisits') },
-  ];
+  ].filter((f) => f.value !== 0); // a real 0 ("0 visits") reads as a dead platform; unknown still shows "—"
+
   const popular = usePopularTargets();
 
   return (
@@ -41,7 +42,9 @@ export default function SearchHero({ term, onCommit, onPick, searchRef }: Props)
         </p>
         <h1 className="text-3xl font-black leading-[1.25] text-balance text-fg md:text-[2.6rem]">
           {t('searchPage.heroLine1')}{' '}
-          <span className="whitespace-nowrap bg-gradient-to-l from-brand to-brand-2 bg-clip-text text-transparent">{t('searchPage.heroLine2')}</span>
+          <span className="whitespace-nowrap bg-gradient-to-l from-brand to-brand-2 bg-clip-text text-transparent">
+            {t('searchPage.heroLine2')}
+          </span>
         </h1>
         <p className="mx-auto max-w-md text-base text-muted">{t('searchPage.heroText')}</p>
 
@@ -65,14 +68,14 @@ export default function SearchHero({ term, onCommit, onPick, searchRef }: Props)
 
         {/* Fixed height before the figures arrive: nothing below moves. Off when the admin hides the statistics. */}
         {statsOn && (
-        <dl className="mx-auto grid max-w-md grid-cols-3 divide-x divide-line pt-2">
-          {figures.map((f) => (
-            <div key={f.label} className="px-3">
-              <dd className="text-xl font-black text-fg">{n(f.value)}</dd>
-              <dt className="text-xs text-muted">{f.label}</dt>
-            </div>
-          ))}
-        </dl>
+          <dl className="mx-auto grid max-w-md auto-cols-fr grid-flow-col divide-x divide-line pt-2">
+            {figures.map((f) => (
+              <div key={f.label} className="px-3">
+                <dd className="text-xl font-black text-fg">{n(f.value)}</dd>
+                <dt className="text-xs text-muted">{f.label}</dt>
+              </div>
+            ))}
+          </dl>
         )}
       </div>
     </section>

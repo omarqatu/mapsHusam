@@ -17,8 +17,15 @@ export default function HomeCards({ data }: { data: HomeData }) {
 
   const stats = data.platform;
   const num = (n: number) => formatNumber(n, i18n.language);
-  const statFigure = (pick: (s: NonNullable<typeof stats.data>) => number, label: string): CardFigure | undefined =>
-    stats.isLoading ? 'loading' : stats.data ? { value: num(pick(stats.data)), label } : undefined;
+  const statFigure = (
+    pick: (s: NonNullable<typeof stats.data>) => number,
+    label: string,
+  ): CardFigure | undefined =>
+    stats.isLoading
+      ? 'loading'
+      : stats.data && pick(stats.data) > 0
+        ? { value: num(pick(stats.data)), label }
+        : undefined;
   const count = (n: number, label: string, tone?: 'warn'): CardFigure | undefined =>
     n > 0 ? { value: num(n), label, tone } : undefined;
 

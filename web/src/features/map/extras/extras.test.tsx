@@ -197,7 +197,7 @@ describe('StatsTab', () => {
     expect(await screen.findByText('Users')).toBeInTheDocument();
     for (const [label, value] of [
       ['Users', '3'],
-      ['Service providers', '388'],
+      ['Listings', '388'],
       ['Services', '69'],
       ['Total platform visits', '37'],
       ['Map visits', '30'],

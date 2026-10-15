@@ -71,7 +71,7 @@ export default function WelcomePage() {
         { value: stats.featuresCount, label: t('searchPage.statProviders') },
         { value: stats.servicesCount, label: t('searchPage.statServices') },
         { value: stats.viewsTotal, label: t('searchPage.statVisits') },
-      ]
+      ].filter((f) => f.value > 0) // "0 visits" reads as a dead platform
     : [];
 
   return (

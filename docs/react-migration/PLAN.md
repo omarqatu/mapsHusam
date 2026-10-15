@@ -1528,6 +1528,11 @@ data; the owner accepted every proposal ("نفذ اقتراحتك كلها"). On
   registry's bed / building icon on a solid orange / green disc (`iconMarker` in `map/styles.ts`) — instead of
   `rent_icon.png` / `sale_icon.png`, which carried the English words RENT / SALE; the two PNGs are deleted. Tested:
   `map/iconSvg.test.ts`.
+- **Numbers that read right (UX change):** the count of every feature on the map is called "listings" everywhere
+  («إعلان», «عدد الإعلانات») — it was «معلم» on `/home`, «إعلان ومعلم» on `/search` and `/welcome`, and "service
+  providers" in the map's statistics and the home figures row, though it counts properties and services, not provider
+  accounts. A figure that is really 0 (visits on a fresh platform) is not shown on `/search`, `/welcome` and the
+  `/home` cards; one still loading shows "—" as before.
 
 ## Server changes (allowed: functionality-preserving improvements, one commit each)
 
