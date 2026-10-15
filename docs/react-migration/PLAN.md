@@ -2006,6 +2006,13 @@ and give the Node process write access to it on IIS**), table `listing_photos` k
   unchanged in production; `SUBMISSION_DAILY_LIMIT` overrides it and `dev/dev.sh server` sets 200, because one run of
   `listingSubmissions.live.test.ts` submits 17 and could never pass. **Verify:** without the variable the 11th submission
   of a day is refused (429); with `dev/dev.sh server` the whole live file passes (8/8).
+- **Fuel prices read the redesigned thefuelprice.com page (2026-10-15).** The site changed its page (Arabic as HTML
+  entities, a five-cell row: name, price, unit, change, start date; the old hidden `lblCalc*` inputs are gone), so
+  `GET /api/fuel-prices` returned 502 "تغيّر شكل صفحة المصدر" for every visitor and the fuel card fell back to the admin's
+  numbers. `lib/thefuelprice.js` now decodes entities, takes only five-cell rows with a unit, and derives the previous price
+  from the change (Unicode minus included); the "updated on" date comes from the «حدّثت الأسعار …» chip. Same response
+  shape, same range checks and the same "fewer than 4 rows = changed" refusal. **Verify:** `node --test lib/thefuelprice.test.js`
+  (new excerpt of the live page in `lib/fixtures`); `curl localhost:3000/api/fuel-prices` → 200 with 7 items.
 
 ## Backend asks (needs the user's decision — behaviour-changing or larger)
 
