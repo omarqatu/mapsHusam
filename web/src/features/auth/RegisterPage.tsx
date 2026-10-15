@@ -63,6 +63,14 @@ function LegalLink({ to, children }: { to: 'terms' | 'privacy'; children?: React
   );
 }
 
+function FacebookLink({ children }: { children?: ReactNode }) {
+  return (
+    <a href={FACEBOOK_PAGE} target="_blank" rel="noopener" className="font-semibold text-brand-fg underline">
+      {children}
+    </a>
+  );
+}
+
 function RegisterForm({ onDone }: { onDone: (to: string) => void }) {
   const { t } = useTranslation();
   const navigate = useNavigate();
@@ -252,7 +260,7 @@ function RegisterForm({ onDone }: { onDone: (to: string) => void }) {
               // Optional: ticking it opens the page; it never blocks registering.
               if (on) window.open(FACEBOOK_PAGE, '_blank', 'noopener');
             }}
-            label={t('auth.register.followFacebook')}
+            label={<Trans i18nKey="auth.register.followFacebook" components={{ fb: <FacebookLink /> }} />}
           />
         </div>
         <Button

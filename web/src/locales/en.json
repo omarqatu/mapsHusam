@@ -139,7 +139,7 @@
       "businessTitle": "Your business",
       "businessHint": "Sent with your sign-up and reviewed once by the admins: on approval your account is activated and your business is published.",
       "successBusiness": "Your account is ready and your business request reached the admins. You will get a notification once it is approved.",
-      "followFacebook": "Follow us on Facebook (optional)"
+      "followFacebook": "Follow <fb>our Facebook page</fb> (optional)"
     },
     "changePassword": {
       "open": "Change password",

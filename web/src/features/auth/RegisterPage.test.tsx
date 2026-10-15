@@ -91,7 +91,12 @@ describe('RegisterPage', () => {
     ).toBeNull();
     await passTerms();
     expect(submit).toBeEnabled();
-    await userEvent.click(screen.getByRole('checkbox', { name: /تابعنا على فيسبوك|Follow us on Facebook/ }));
+    // the page itself is a visible link, not only a side effect of the box
+    expect(screen.getByRole('link', { name: /صفحتنا على فيسبوك|our Facebook page/ })).toHaveAttribute(
+      'href',
+      expect.stringContaining('facebook.com/MapServesPalestine'),
+    );
+    await userEvent.click(screen.getByRole('checkbox', { name: /تابعنا على|Follow our/ }));
     expect(open).toHaveBeenCalledWith(expect.stringContaining('facebook.com'), '_blank', 'noopener');
     expect(submit).toBeEnabled();
     open.mockRestore();
