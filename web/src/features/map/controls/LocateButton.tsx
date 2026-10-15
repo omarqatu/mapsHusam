@@ -7,7 +7,7 @@ import { Circle, Fill, Stroke, Style } from 'ol/style';
 import { Crosshair, LocateFixed, Loader2 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { toast } from '@/components/ui/toastStore';
-import { GPS_MIN_INTERVAL_MS } from '../config';
+import { GPS_MIN_INTERVAL_MS, NEAR_ME_ZOOM } from '../config';
 import { useOlMap } from '../MapContext';
 import { geolocationErrorKey } from '../mapUtils';
 import { fromLonLat } from '../projection';
@@ -70,7 +70,7 @@ export default function LocateButton({ autoStart = false }: { autoStart?: boolea
         source?.addFeature(new Feature(new Point(coord)));
         const view = map?.getView();
         const z = view?.getZoom() ?? 0;
-        view?.animate({ center: coord, zoom: z < 17 ? 18 : z, duration: 500 });
+        view?.animate({ center: coord, zoom: Math.max(z, NEAR_ME_ZOOM), duration: 500 });
         setState('tracking');
       },
       (err) => {

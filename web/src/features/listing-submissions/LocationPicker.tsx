@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import clsx from 'clsx';
-import { LocateFixed, MapPin, Minus, Plus } from 'lucide-react';
+import { ChevronDown, LocateFixed, MapPin, Minus, Plus } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import OlMap from 'ol/Map';
 import View from 'ol/View';
@@ -12,6 +12,7 @@ import Button from '@/components/ui/Button';
 import FormField from '@/components/ui/FormField';
 import SelectInput from '@/components/ui/SelectInput';
 import { toast } from '@/components/ui/toastStore';
+import { useIsDesktop } from '@/hooks/useMediaQuery';
 import { DEFAULT_CENTER, type Coordinate } from '@/features/map/config';
 import { GeoError, locateOnce } from '@/features/map/geolocate';
 import { createBasemaps } from '@/features/map/layers';
@@ -43,6 +44,7 @@ export default function LocationPicker({
   tall?: boolean;
 }) {
   const { t, i18n } = useTranslation();
+  const isDesktop = useIsDesktop();
   const target = useRef<HTMLDivElement>(null);
   const mapRef = useRef<OlMap | null>(null);
   const regionSourceRef = useRef<VectorSource | null>(null);
@@ -204,50 +206,76 @@ export default function LocationPicker({
 
   return (
     <div className="flex flex-col gap-2">
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-        <FormField label={t('submit.map.city')} name="submit-location-city">
-          <SelectInput
-            id="submit-location-city"
-            value={city}
-            onChange={(event) => chooseCity(event.target.value)}
-            options={cities.map((value) => ({ value, label: value }))}
-            placeholder={regionsQuery.isLoading ? t('submit.map.loadingRegions') : t('search.chooseValue')}
-            disabled={regionsQuery.isLoading || regionsQuery.isError}
-            searchable
+      {/* The quickest way first: most people add the place they are standing in. */}
+      <Button
+        type="button"
+        className="w-full"
+        loading={locating}
+        startIcon={<LocateFixed className="h-4 w-4" aria-hidden />}
+        onClick={() => void locate()}
+      >
+        {t('submit.map.myLocation')}
+      </Button>
+      {/* Open by default on desktop, where there is room; on phones it waits behind one line. */}
+      <details open={isDesktop} className="group rounded-xl border border-line px-3 py-2">
+        <summary className="flex cursor-pointer list-none items-center justify-between gap-2 text-sm font-semibold text-fg [&::-webkit-details-marker]:hidden">
+          {t('submit.map.orPickRegion')}
+          <ChevronDown
+            className="h-4 w-4 text-muted transition-transform group-open:rotate-180"
+            aria-hidden
           />
-        </FormField>
-        <FormField label={t('submit.map.region')} name="submit-location-region">
-          <SelectInput
-            id="submit-location-region"
-            value={region}
-            onChange={(event) => chooseRegion(event.target.value)}
-            options={areaOptions.map((value) => ({ value, label: value }))}
-            placeholder={t('submit.map.chooseCityFirst')}
-            disabled={!city || regionsQuery.isLoading || regionsQuery.isError}
-            searchable
-          />
-        </FormField>
-        <FormField label={t('submit.map.locality')} name="submit-location-locality">
-          <SelectInput
-            id="submit-location-locality"
-            value={locality}
-            onChange={(event) => chooseLocality(event.target.value)}
-            options={localities.map((value) => ({ value, label: value }))}
-            placeholder={t('submit.map.chooseRegionFirst')}
-            disabled={!region || regionsQuery.isLoading || regionsQuery.isError || localities.length === 0}
-            searchable
-          />
-        </FormField>
-      </div>
-      {regionsQuery.isError && (
-        <div role="alert" className="flex flex-wrap items-center gap-2 text-sm text-danger">
-          <span>{t('submit.map.regionsFailed')}</span>
-          <Button size="sm" variant="secondary" onClick={() => void regionsQuery.refetch()}>
-            {t('submit.map.retryRegions')}
-          </Button>
+        </summary>
+        <div className="mt-3 flex flex-col gap-2">
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            <FormField label={t('submit.map.city')} name="submit-location-city">
+              <SelectInput
+                id="submit-location-city"
+                value={city}
+                onChange={(event) => chooseCity(event.target.value)}
+                options={cities.map((value) => ({ value, label: value }))}
+                placeholder={
+                  regionsQuery.isLoading ? t('submit.map.loadingRegions') : t('search.chooseValue')
+                }
+                disabled={regionsQuery.isLoading || regionsQuery.isError}
+                searchable
+              />
+            </FormField>
+            <FormField label={t('submit.map.region')} name="submit-location-region">
+              <SelectInput
+                id="submit-location-region"
+                value={region}
+                onChange={(event) => chooseRegion(event.target.value)}
+                options={areaOptions.map((value) => ({ value, label: value }))}
+                placeholder={t('submit.map.chooseCityFirst')}
+                disabled={!city || regionsQuery.isLoading || regionsQuery.isError}
+                searchable
+              />
+            </FormField>
+            <FormField label={t('submit.map.locality')} name="submit-location-locality">
+              <SelectInput
+                id="submit-location-locality"
+                value={locality}
+                onChange={(event) => chooseLocality(event.target.value)}
+                options={localities.map((value) => ({ value, label: value }))}
+                placeholder={t('submit.map.chooseRegionFirst')}
+                disabled={
+                  !region || regionsQuery.isLoading || regionsQuery.isError || localities.length === 0
+                }
+                searchable
+              />
+            </FormField>
+          </div>
+          {regionsQuery.isError && (
+            <div role="alert" className="flex flex-wrap items-center gap-2 text-sm text-danger">
+              <span>{t('submit.map.regionsFailed')}</span>
+              <Button size="sm" variant="secondary" onClick={() => void regionsQuery.refetch()}>
+                {t('submit.map.retryRegions')}
+              </Button>
+            </div>
+          )}
+          <p className="text-sm text-muted">{t('submit.map.regionHint')}</p>
         </div>
-      )}
-      <p className="text-sm text-muted">{t('submit.map.regionHint')}</p>
+      </details>
       <div
         className={clsx(
           'relative w-full overflow-hidden rounded-xl border',
@@ -291,19 +319,6 @@ export default function LocationPicker({
           >
             <Minus className="h-4 w-4" aria-hidden />
           </button>
-        </div>
-        <div className="absolute inset-x-2 bottom-2 flex justify-center">
-          <Button
-            type="button"
-            size="sm"
-            variant="secondary"
-            className="shadow"
-            loading={locating}
-            startIcon={<LocateFixed className="h-4 w-4" aria-hidden />}
-            onClick={() => void locate()}
-          >
-            {t('submit.map.myLocation')}
-          </Button>
         </div>
       </div>
       <p className="text-sm text-muted">{t(value ? 'submit.map.picked' : 'submit.map.hint')}</p>

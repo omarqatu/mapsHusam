@@ -1,7 +1,7 @@
 import { formatNumber } from '@/lib/format';
 import type { MediaItem as GalleryItem } from '@/components/ui/MediaGallery';
 import { FUEL_FIELDS, roadBarrierStatus, type FuelField } from '../config';
-import type { MapTarget } from '../targets';
+import { targetLabelKey, type MapTarget } from '../targets';
 
 // Pure helpers behind the feature details card (legacy popup.js + shared-utils.js), testable without a map.
 
@@ -140,6 +140,15 @@ export function youtubeId(url: string): string | null {
 }
 export const isImageUrl = (url: string) => /\.(jpg|jpeg|png|gif|webp)(\?.*)?$/i.test(url);
 export const isVideoFileUrl = (url: string) => /\.(mp4|webm|ogg)(\?.*)?$/i.test(url);
+/** A social / web page (not a picture) that providers sometimes paste into the picture field. */
+const PAGE_HOST = /(^|\.)(facebook|fb|instagram|tiktok|twitter|x|linkedin)\.com$|(^|\.)wa\.me$/i;
+const isPageUrl = (url: string) => {
+  try {
+    return PAGE_HOST.test(new URL(url, 'https://local.invalid').hostname);
+  } catch {
+    return false;
+  }
+};
 
 /** Like the gallery's MediaItem, but a link carries an i18n key (translated by the card). */
 export type MediaItem =
@@ -162,7 +171,11 @@ export function collectMedia(props: Props): MediaItem[] {
   };
   for (const raw of parseUrlList(firstProp(props, MEDIA.pic))) {
     const url = safeMediaUrl(raw);
-    if (url) out.push({ type: 'image', url });
+    if (!url) continue;
+    // Legacy data has YouTube links and Facebook pages in the picture field: never load those as an <img>.
+    if (youtubeId(url) || isVideoFileUrl(url)) out.push(asVideo(url, 'popup.watchVideo'));
+    else if (!isImageUrl(url) && isPageUrl(url)) out.push({ type: 'link', url, labelKey: 'popup.openPage' });
+    else out.push({ type: 'image', url });
   }
   const video = safeMediaUrl(firstProp(props, MEDIA.video));
   if (video) out.push(asVideo(video, 'popup.watchVideo'));
@@ -390,3 +403,15 @@ export const CURRENCY_KEYS: Record<string, string> = {
   ILS: 'popup.currency.ILS',
   JOD: 'popup.currency.JOD',
 };
+
+/**
+ * The title a listing card shows: its name, else its place name, else what it is and where — «شقة للإيجار في بيتونيا»
+ * (a property has no name of its own, and a bare type name such as «شقق الإيجار» reads like a section, not a listing).
+ */
+export function listingTitle(target: MapTarget, props: Props, t: (key: string, o?: Record<string, string>) => string) {
+  const own = text(props.name) || text(props.location_name);
+  if (own) return own;
+  const what = target.kind === 'realEstate' ? t(`listingTitle.${target.layer}`) : t(targetLabelKey(target));
+  const place = text(props.location) || text(props.village_a) || text(props.gov_a);
+  return place ? t('listingTitle.in', { what, place }) : what;
+}

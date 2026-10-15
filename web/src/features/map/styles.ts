@@ -3,7 +3,8 @@ import { Circle, Fill, Icon, Stroke, Style, Text } from 'ol/style';
 import { SERVICE_TYPE_BY_KEY, TIER_RULES, worstBarrierStatus, type RealEstateLayerKey } from './config';
 import type { ServiceGroupId } from './registry';
 import { iconElements } from './iconSvg';
-import { serviceTypeIcon } from './registry/typeIcons';
+import type { LucideIcon } from 'lucide-react';
+import { PROPERTY_ICON, serviceTypeIcon } from './registry/typeIcons';
 import { INSERT_DEFAULTS } from './edit/attributes';
 
 // Port of legacy js/layers.js createStyle + per-layer styles. Style objects that don't depend on the feature
@@ -62,12 +63,17 @@ const markerIcons = new Map<string, Icon>();
  * from our own registry, never from feature data.
  */
 export function typeMarker(typeKey: string, group: ServiceGroupId, color = '#3f51b5', solid = false): Icon {
+  return iconMarker(typeKey, serviceTypeIcon(typeKey, group), color, solid);
+}
+
+/** A lucide drawing on a disc, as an SVG image (cached per key, colour and fill). */
+function iconMarker(typeKey: string, drawingIcon: LucideIcon, color: string, solid: boolean): Icon {
   const key = `${typeKey}|${color}|${solid}`;
   let icon = markerIcons.get(key);
   if (!icon) {
     const drawing =
       `<g transform="translate(8.4 8.4) scale(0.8)" fill="none" stroke="${solid ? '#fff' : color}" stroke-width="2.2" ` +
-      `stroke-linecap="round" stroke-linejoin="round">${iconElements(serviceTypeIcon(typeKey, group))}</g>`;
+      `stroke-linecap="round" stroke-linejoin="round">${iconElements(drawingIcon)}</g>`;
     const disc = solid
       ? `<circle cx="18" cy="18" r="16" fill="${color}" stroke="#fff" stroke-width="1.5"/>`
       : `<circle cx="18" cy="18" r="16" fill="white" fill-opacity="0.86" stroke="${color}" stroke-opacity="0.45" stroke-width="1"/>` +
@@ -96,23 +102,14 @@ interface RealEstateStyleSpec {
 const reSpecs: Record<RealEstateLayerKey, RealEstateStyleSpec> = {
   rent: {
     labelBelow: 0.8,
-    icon: new Icon({
-      anchor: [0.5, 0.5],
-      src: '/icons/rent_icon.png',
-      scale: 0.12,
-      declutterMode: 'obstacle',
-    }),
+    // Drawn like the service markers (the old PNGs carried the English words RENT / SALE); solid: a property, not a trade.
+    icon: iconMarker('property:rent', PROPERTY_ICON.rent, '#ea580c', true),
     fill: new Fill({ color: 'rgba(255, 102, 0, 0.15)' }),
     stroke: new Stroke({ color: '#000', width: 2 }),
   },
   sale: {
     labelBelow: 0.8,
-    icon: new Icon({
-      anchor: [0.5, 0.5],
-      src: '/icons/sale_icon.png',
-      scale: 0.18,
-      declutterMode: 'obstacle',
-    }),
+    icon: iconMarker('property:sale', PROPERTY_ICON.sale, '#16a34a', true),
     fill: new Fill({ color: 'rgba(0, 128, 0, 0.15)' }),
     stroke: new Stroke({ color: '#000', width: 2 }),
   },

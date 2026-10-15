@@ -1,13 +1,24 @@
 import type { ReactNode } from 'react';
-import { CloudSun, Coins, Gem, MoonStar } from 'lucide-react';
+import { CloudSun, Coins, Fuel, Gem, MoonStar } from 'lucide-react';
 import { Link } from 'react-router';
 import { useTranslation } from 'react-i18next';
+import { useFuelPrices } from '@/api/fuel';
 import { useMarketRates } from '@/api/market';
 import { intlLocale } from '@/lib/format';
 import { nextPrayer, palestineNow, weatherLabel, type CardId } from '../widgets/model';
 import { useNow, usePrayerTimes, useWeather } from '../widgets/hooks/useWidgets';
 
-function Chip({ card, icon, title, children }: { card: CardId; icon: ReactNode; title?: string; children: ReactNode }) {
+function Chip({
+  card,
+  icon,
+  title,
+  children,
+}: {
+  card: CardId;
+  icon: ReactNode;
+  title?: string;
+  children: ReactNode;
+}) {
   return (
     <Link
       to={`/widgets/portal?card=${card}`}
@@ -20,11 +31,13 @@ function Chip({ card, icon, title, children }: { card: CardId; icon: ReactNode; 
   );
 }
 
-const Value = ({ children }: { children: ReactNode }) => <b className="font-bold tabular-nums text-fg">{children}</b>;
+const Value = ({ children }: { children: ReactNode }) => (
+  <b className="font-bold tabular-nums text-fg">{children}</b>
+);
 
 /**
  * One quiet line of "today" under the search: the weather (Open-Meteo, from the browser), the next prayer (Aladhan), and the
- * world exchange rates and gold price (fetched and cached by our server). Every chip opens the information centre at its card.
+ * world exchange rates and gold price, and today's petrol 95 price (fetched and cached by our server). Every chip opens the information centre at its card.
  * A part whose source is down simply is not shown; with nothing to show the line is not there.
  */
 export default function TodayStrip() {
@@ -34,18 +47,25 @@ export default function TodayStrip() {
   const { cities } = useWeather();
   const prayer = usePrayerTimes(now).data;
   const market = useMarketRates().data;
+  const petrol = useFuelPrices().data?.items.find((f) => f.key === 'fuel-95');
 
   const city = cities[0];
   const temp = city ? weatherLabel(city) : null;
   const next = prayer ? nextPrayer(prayer, palestineNow(now).minutes) : null;
-  const money = (n: number, digits: number) => n.toLocaleString(locale, { minimumFractionDigits: digits, maximumFractionDigits: digits });
+  const money = (n: number, digits: number) =>
+    n.toLocaleString(locale, { minimumFractionDigits: digits, maximumFractionDigits: digits });
   const worldPrice = t('searchPage.today.worldPrice');
   const ils = t('searchPage.today.ils');
 
   const chips: ReactNode[] = [];
   if (city && temp)
     chips.push(
-      <Chip key="weather" card="weather" title={t('searchPage.today.highLow')} icon={<CloudSun className="h-4 w-4 text-info" aria-hidden />}>
+      <Chip
+        key="weather"
+        card="weather"
+        title={t('searchPage.today.highLow')}
+        icon={<CloudSun className="h-4 w-4 text-info" aria-hidden />}
+      >
         {city.label || t(`widgets.cities.${city.id}`)} <Value>{temp}</Value>
       </Chip>,
     );
@@ -57,18 +77,46 @@ export default function TodayStrip() {
     );
   if (market?.rates) {
     chips.push(
-      <Chip key="usd" card="currency" title={worldPrice} icon={<Coins className="h-4 w-4 text-ok" aria-hidden />}>
+      <Chip
+        key="usd"
+        card="currency"
+        title={worldPrice}
+        icon={<Coins className="h-4 w-4 text-ok" aria-hidden />}
+      >
         {t('searchPage.today.usd')} <Value>{money(market.rates.USD_ILS, 2)}</Value> {ils}
       </Chip>,
-      <Chip key="jod" card="currency" title={worldPrice} icon={<Coins className="h-4 w-4 text-ok" aria-hidden />}>
+      <Chip
+        key="jod"
+        card="currency"
+        title={worldPrice}
+        icon={<Coins className="h-4 w-4 text-ok" aria-hidden />}
+      >
         {t('searchPage.today.jod')} <Value>{money(market.rates.JOD_ILS, 2)}</Value> {ils}
       </Chip>,
     );
   }
   if (market?.gold?.ilsPerGram21)
     chips.push(
-      <Chip key="gold" card="gold" title={worldPrice} icon={<Gem className="h-4 w-4 text-warn" aria-hidden />}>
+      <Chip
+        key="gold"
+        card="gold"
+        title={worldPrice}
+        icon={<Gem className="h-4 w-4 text-warn" aria-hidden />}
+      >
         {t('searchPage.today.gold21')} <Value>{money(market.gold.ilsPerGram21, 0)}</Value> {ils}
+      </Chip>,
+    );
+
+  // The one price people check every day: petrol 95, a shekel figure per litre (the local retail price, not a world one).
+  if (petrol && petrol.value > 0)
+    chips.push(
+      <Chip
+        key="petrol"
+        card="fuel"
+        title={t('searchPage.today.petrolHint')}
+        icon={<Fuel className="h-4 w-4 text-danger" aria-hidden />}
+      >
+        {t('searchPage.today.petrol95')} <Value>{money(petrol.value, 2)}</Value> {ils}
       </Chip>,
     );
 

@@ -3,6 +3,7 @@ import Feature from 'ol/Feature';
 import Point from 'ol/geom/Point';
 import { render, screen } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import userEvent from '@testing-library/user-event';
 import i18n from '@/i18n';
 import { useAuthStore } from '@/store/authStore';
 import type { AuthUser } from '@/types/auth';
@@ -76,6 +77,16 @@ describe('media lists', () => {
     // a page link is not a "before" picture: both details fields stay in the list
     expect(items.map((i) => i.type)).toEqual(['image', 'image', 'youtube', 'link', 'image']);
     expect(items[2]).toEqual({ type: 'youtube', id: 'dQw4w9WgXcQ' });
+  });
+  it('a YouTube link or a Facebook page in the picture field is a video / link, never an <img>', () => {
+    const items = collectMedia({
+      pic: 'https://www.youtube.com/watch?v=PpBD_uHoHJk&list=RDPpBD_uHoHJk, https://www.facebook.com/SomePage, https://x.com/a.png',
+    });
+    expect(items).toEqual([
+      { type: 'youtube', id: 'PpBD_uHoHJk' },
+      { type: 'link', url: 'https://www.facebook.com/SomePage', labelKey: 'popup.openPage' },
+      { type: 'image', url: 'https://x.com/a.png' },
+    ]);
   });
   it('two pictures in the details fields are the before / after pair, shown on their own', () => {
     const props = { pic: 'a.com/1.jpg', details_link_1: 'a.com/b.jpg', details_link_2: 'https://youtu.be/dQw4w9WgXcQ' };
@@ -260,6 +271,24 @@ describe('FeatureCard', () => {
     expect(screen.getByRole('button', { name: i18n.t('loginPrompt.contactButton') })).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /اتصال|Call/ })).toBeNull();
     expect(screen.queryByText(i18n.t('popup.noContact'))).toBeNull();
+  });
+
+  it('a listing shares its own page; a dropped pin keeps "copy the place link"', async () => {
+    useAuthStore.setState({ user: null });
+    const { unmount } = wrap({
+      kind: { kind: 'realEstate', layer: 'rent' },
+      id: '19',
+      coordinate: [1, 2],
+      props: { location: 'رام الله' },
+    });
+    await userEvent.click(screen.getByRole('button', { name: i18n.t('listing.share') }));
+    const wa = screen.getByRole('link', { name: i18n.t('listing.shareWhatsapp') });
+    expect(decodeURIComponent(wa.getAttribute('href') ?? '')).toContain(`${window.location.origin}/l/rent/19`);
+    expect(screen.queryByRole('button', { name: i18n.t('popup.copyLink') })).toBeNull();
+    unmount();
+    wrap({ kind: { kind: 'location' }, id: null, coordinate: [1, 2], props: {} });
+    expect(screen.getByRole('button', { name: i18n.t('popup.copyLink') })).toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: i18n.t('listing.shareWhatsapp') })).toBeNull();
   });
 
   it('hotel: price in dollars (no currency column) and area; a plumber shows neither', async () => {

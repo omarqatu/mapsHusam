@@ -1,4 +1,5 @@
 import { Link, useLocation, useNavigate } from 'react-router';
+import BrandMark from '@/components/BrandMark';
 import { useTranslation } from 'react-i18next';
 import {
   Ambulance,
@@ -11,7 +12,6 @@ import {
   Hammer,
   House,
   LogIn,
-  Map as MapIcon,
   MapPin,
   MessageCircle,
   Stethoscope,
@@ -71,7 +71,7 @@ export default function WelcomePage() {
         { value: stats.featuresCount, label: t('searchPage.statProviders') },
         { value: stats.servicesCount, label: t('searchPage.statServices') },
         { value: stats.viewsTotal, label: t('searchPage.statVisits') },
-      ]
+      ].filter((f) => f.value > 0) // "0 visits" reads as a dead platform
     : [];
 
   return (
@@ -94,9 +94,7 @@ export default function WelcomePage() {
       ))}
 
       <section className="welcome-enter relative z-[2] mx-auto flex min-h-dvh w-[90%] max-w-[850px] flex-col items-center justify-center px-5 py-8 text-center">
-        <span className="welcome-pulse mb-4 block text-[#4fc3f7] drop-shadow-[0_0_40px_rgba(79,195,247,0.5)]" aria-hidden>
-          <MapIcon className="h-14 w-14 max-sm:h-12 max-sm:w-12" strokeWidth={1.5} />
-        </span>
+        <BrandMark className="welcome-pulse mb-4 h-16 w-16 rounded-2xl shadow-[0_0_40px_rgba(45,212,191,0.45)] max-sm:h-14 max-sm:w-14" />
 
         <h1 className="m-0 text-[clamp(1.75rem,6vw,3.25rem)] font-black leading-[1.3] text-white drop-shadow-[0_4px_20px_rgba(0,0,0,0.5)]">
           <span className="welcome-highlight">{t('auth.welcome.title')}</span>
@@ -114,7 +112,7 @@ export default function WelcomePage() {
               key={key}
               className="rounded-2xl border border-white/15 bg-white/[0.08] px-3 py-5 text-center shadow-none backdrop-blur-[10px] transition duration-300 hover:-translate-y-1 hover:bg-white/15 hover:shadow-[0_10px_30px_rgba(0,0,0,0.3)] max-sm:rounded-[10px] max-sm:px-1.5 max-sm:py-2.5"
             >
-              <span className="mb-2.5 flex justify-center text-[#4fc3f7] max-sm:mb-1" aria-hidden>
+              <span className="mb-2.5 flex justify-center text-[#2dd4bf] max-sm:mb-1" aria-hidden>
                 <Icon className="h-9 w-9 max-sm:h-6 max-sm:w-6" strokeWidth={1.6} />
               </span>
               <span className="block text-sm font-bold leading-snug text-white max-sm:text-[11px]">
@@ -145,7 +143,7 @@ export default function WelcomePage() {
           <Link
             to="/register"
             state={state}
-            className="inline-flex min-h-14 min-w-[200px] items-center justify-center gap-2.5 rounded-full bg-gradient-to-br from-[#4fc3f7] to-[#00e676] px-8 py-4 text-base font-bold text-[#0a0a1a] shadow-[0_4px_20px_rgba(79,195,247,0.4)] transition duration-300 hover:-translate-y-1 hover:shadow-[0_8px_30px_rgba(79,195,247,0.6)] max-sm:w-full max-sm:max-w-[300px] max-sm:min-w-0 max-sm:px-5 max-sm:py-3.5 max-sm:text-sm"
+            className="inline-flex min-h-14 min-w-[200px] items-center justify-center gap-2.5 rounded-full bg-gradient-to-br from-[#2dd4bf] to-[#a3e635] px-8 py-4 text-base font-bold text-[#0a0a1a] shadow-[0_4px_20px_rgba(45,212,191,0.4)] transition duration-300 hover:-translate-y-1 hover:shadow-[0_8px_30px_rgba(45,212,191,0.6)] max-sm:w-full max-sm:max-w-[300px] max-sm:min-w-0 max-sm:px-5 max-sm:py-3.5 max-sm:text-sm"
           >
             <UserPlus className="h-5 w-5" aria-hidden />
             {t('auth.welcome.register')}
@@ -153,7 +151,7 @@ export default function WelcomePage() {
           <Link
             to="/login"
             state={state}
-            className="inline-flex min-h-14 min-w-[200px] items-center justify-center gap-2.5 rounded-full bg-gradient-to-br from-[#4fc3f7] to-[#00e676] px-8 py-4 text-base font-bold text-[#0a0a1a] shadow-[0_4px_20px_rgba(79,195,247,0.4)] transition duration-300 hover:-translate-y-1 hover:shadow-[0_8px_30px_rgba(79,195,247,0.6)] max-sm:w-full max-sm:max-w-[300px] max-sm:min-w-0 max-sm:px-5 max-sm:py-3.5 max-sm:text-sm"
+            className="inline-flex min-h-14 min-w-[200px] items-center justify-center gap-2.5 rounded-full bg-gradient-to-br from-[#2dd4bf] to-[#a3e635] px-8 py-4 text-base font-bold text-[#0a0a1a] shadow-[0_4px_20px_rgba(45,212,191,0.4)] transition duration-300 hover:-translate-y-1 hover:shadow-[0_8px_30px_rgba(45,212,191,0.6)] max-sm:w-full max-sm:max-w-[300px] max-sm:min-w-0 max-sm:px-5 max-sm:py-3.5 max-sm:text-sm"
           >
             <LogIn className="h-5 w-5" aria-hidden />
             {t('auth.welcome.login')}
@@ -163,7 +161,7 @@ export default function WelcomePage() {
               localStorage.setItem('guest_mode', 'true');
               navigate('/');
             }}
-            className="inline-flex min-h-14 min-w-[200px] items-center justify-center gap-2.5 rounded-full bg-gradient-to-br from-[#00e676] to-[#4fc3f7] px-8 py-4 text-base font-bold text-[#0a0a1a] shadow-[0_4px_20px_rgba(0,230,118,0.4)] transition duration-300 hover:-translate-y-1 hover:shadow-[0_8px_30px_rgba(0,230,118,0.6)] max-sm:w-full max-sm:max-w-[300px] max-sm:min-w-0 max-sm:px-5 max-sm:py-3.5 max-sm:text-sm"
+            className="inline-flex min-h-14 min-w-[200px] items-center justify-center gap-2.5 rounded-full bg-gradient-to-br from-[#a3e635] to-[#2dd4bf] px-8 py-4 text-base font-bold text-[#0a0a1a] shadow-[0_4px_20px_rgba(0,230,118,0.4)] transition duration-300 hover:-translate-y-1 hover:shadow-[0_8px_30px_rgba(0,230,118,0.6)] max-sm:w-full max-sm:max-w-[300px] max-sm:min-w-0 max-sm:px-5 max-sm:py-3.5 max-sm:text-sm"
           >
             <User className="h-5 w-5" aria-hidden />
             {t('auth.welcome.guest')}

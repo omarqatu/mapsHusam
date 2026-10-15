@@ -28,3 +28,4 @@ export { default as Badge } from './Badge';
 export type { BadgeTone } from './Badge';
 export { default as Checkbox } from './Checkbox';
 export { default as FilterField } from './FilterField';
+export { default as ActionTile, ActionTiles } from './ActionTile';

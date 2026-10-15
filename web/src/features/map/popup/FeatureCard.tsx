@@ -27,11 +27,19 @@ import {
   priceLabel,
   text,
   type SelectedFeature,
+  listingTitle,
 } from './featureModel';
 import PropertyRelations from '@/features/property-relations/PropertyRelations';
 import PropertyServices from '@/features/property-services/PropertyServices';
 import MediaShowcase from './MediaShowcase';
-import { hasPrice, isFuelStation, isRoadBarrier, priceCurrencyDefault, listingLayerOf, targetLabelKey } from '../targets';
+import {
+  hasPrice,
+  isFuelStation,
+  isRoadBarrier,
+  priceCurrencyDefault,
+  listingLayerOf,
+  targetLabelKey,
+} from '../targets';
 import PublisherRating from './PublisherRating';
 import { copyText, isMobileBrowser, nativeShare } from '@/lib/clipboard';
 import ContactButtons from './ContactButtons';
@@ -40,6 +48,8 @@ import DirectionsButton from './DirectionsButton';
 import RatingsBlock from './RatingsBlock';
 import { useContactActions } from './useContactActions';
 import TargetIcon from '../TargetIcon';
+import ShareListingButton from '@/features/listing/ShareListingButton';
+import { listingUrl } from '@/features/listing/link';
 
 interface Props {
   feature: SelectedFeature;
@@ -101,6 +111,7 @@ export default function FeatureCard({ feature, onClose, className }: Props) {
   const isBarrier = isRoadBarrier(kind);
   const typeTitle = kind.kind === 'location' ? t('popup.sharedLocation') : t(targetLabelKey(kind));
   const name = text(props.name);
+  const title = name || (kind.kind === 'location' ? typeTitle : listingTitle(kind, props, t));
   const providerName = name || (kind.kind === 'realEstate' ? t('popup.advertiser') : t('popup.provider'));
   const place = text(props.location_name) || text(props.location);
   const hoursText = hoursLabel(props.work_hours, t, i18n.language);
@@ -145,8 +156,8 @@ export default function FeatureCard({ feature, onClose, className }: Props) {
             </span>
           )}
           <div className="min-w-0">
-            <div className="truncate text-sm">{name || typeTitle}</div>
-            {name && (
+            <div className="truncate text-sm">{title}</div>
+            {title !== typeTitle && (
               <div className="truncate text-xs font-normal text-muted">
                 {typeTitle}
                 {id ? ` · #${id}` : ''}
@@ -260,20 +271,25 @@ export default function FeatureCard({ feature, onClose, className }: Props) {
         <div className="flex flex-wrap items-center justify-between gap-2 border-t border-line pt-3">
           <div className="flex flex-wrap gap-2">
             {!isBarrier && <DirectionsButton coordinate={feature.coordinate} />}
-            <Button
-              variant="secondary"
-              size="sm"
-              startIcon={
-                typeof navigator.share === 'function' ? (
-                  <Link2 className="h-4 w-4" />
-                ) : (
-                  <Copy className="h-4 w-4" />
-                )
-              }
-              onClick={() => void shareLocation(feature, typeTitle, t)}
-            >
-              {t('popup.copyLink')}
-            </Button>
+            {/* A listing shares its own page (a preview with its picture); a dropped pin shares the place. */}
+            {kind.kind !== 'location' && id ? (
+              <ShareListingButton title={title} url={listingUrl(kind, String(id))} />
+            ) : (
+              <Button
+                variant="secondary"
+                size="sm"
+                startIcon={
+                  typeof navigator.share === 'function' ? (
+                    <Link2 className="h-4 w-4" />
+                  ) : (
+                    <Copy className="h-4 w-4" />
+                  )
+                }
+                onClick={() => void shareLocation(feature, typeTitle, t)}
+              >
+                {t('popup.copyLink')}
+              </Button>
+            )}
           </div>
           <span className="text-xs text-muted" dir="ltr">
             {feature.coordinate.map((n) => n.toFixed(1)).join(', ')}

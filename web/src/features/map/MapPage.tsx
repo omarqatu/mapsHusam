@@ -1,6 +1,6 @@
 import clsx from 'clsx';
-import { useEffect } from 'react';
-import { Layers, Search } from 'lucide-react';
+import { useEffect, useId, useState } from 'react';
+import { Ellipsis, Layers, Search } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import AppHeader from '@/components/AppHeader';
 import Toaster from '@/components/ui/Toaster';
@@ -35,6 +35,10 @@ import { useTickerUi } from '../widgets/tickerStore';
 /** `/` — the map. Full-screen: a slim brand bar and the map; every tool floats on the map's end edge. */
 export default function MapPage() {
   const { t } = useTranslation();
+  const moreId = useId();
+  const [moreOpen, setMoreOpen] = useState(false);
+  const activeTool = useMapUi((s) => s.activeTool);
+  const moreShown = moreOpen || activeTool !== null;
   const layersOpen = useMapUi((s) => s.layersOpen);
   const setLayersOpen = useMapUi((s) => s.setLayersOpen);
   const selected = useMapUi((s) => s.selected);
@@ -105,10 +109,30 @@ export default function MapPage() {
             </MapButton>
             <ExtrasButton />
             <ProviderButton />
-            <ToolButtons />
+            {/* Phones: measure, share and refresh fold behind "more" (the rail was seven buttons tall); a tool in use
+                stays in view. Desktop shows them all, in the same order. */}
+            <MapButton
+              label={t('map.moreTools')}
+              active={moreShown}
+              aria-pressed={undefined}
+              aria-expanded={moreShown}
+              aria-controls={moreId}
+              onClick={() => setMoreOpen((o) => !o)}
+              className="sm:hidden max-sm:order-last"
+            >
+              <Ellipsis className="h-5 w-5" />
+            </MapButton>
+            <div
+              id={moreId}
+              className={clsx('flex flex-col gap-2 max-sm:order-last', !moreShown && 'max-sm:hidden')}
+            >
+              <ToolButtons />
+            </div>
             <LocateButton />
-            <div className="flex flex-col gap-2 [@media(max-height:560px)]:hidden">
-              <RefreshButton />
+            <div className="flex flex-col gap-2 max-sm:order-last [@media(max-height:560px)]:hidden">
+              <div className={clsx('flex flex-col', !moreShown && 'max-sm:hidden')}>
+                <RefreshButton />
+              </div>
               {/* Phones zoom by pinch / double-tap; the two buttons only cost screen height there. */}
               <div className="flex flex-col gap-2 max-sm:hidden">
                 <ZoomButtons />

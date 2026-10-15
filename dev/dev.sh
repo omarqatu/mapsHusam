@@ -55,7 +55,8 @@ case "${1:-}" in
     done
     ;;
   seed)   load_env; node dev/seed-users.mjs ;;
-  server) load_env; exec node server.js ;;
+  # The live tests submit more listings in one run than the production daily limit allows.
+  server) load_env; export SUBMISSION_DAILY_LIMIT="${SUBMISSION_DAILY_LIMIT:-200}"; exec node server.js ;;
   db-down) podman stop "$NAME" ;;
   db-reset) podman rm -f "$NAME" >/dev/null 2>&1 || true; podman volume rm -f "$VOLUME" >/dev/null 2>&1 || true; echo "removed; run db-up" ;;
   *) sed -n 2,9p "$0"; exit 1 ;;

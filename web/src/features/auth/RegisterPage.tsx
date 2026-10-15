@@ -1,7 +1,7 @@
-import { useState, type FormEvent } from 'react';
+import { useState, type FormEvent, type ReactNode } from 'react';
 import { Link, Navigate, useLocation, useNavigate } from 'react-router';
-import { useTranslation } from 'react-i18next';
-import { Eye, EyeOff, Lock, ShieldCheck, Phone, UserRound } from 'lucide-react';
+import { Trans, useTranslation } from 'react-i18next';
+import { Eye, EyeOff, Lock, Phone, UserRound } from 'lucide-react';
 import { useRegister } from '@/api/auth';
 import { ApiError } from '@/api/client';
 import { useAuthStore } from '@/store/authStore';
@@ -12,7 +12,6 @@ import SelectInput from '@/components/ui/SelectInput';
 import TextInput from '@/components/ui/TextInput';
 import Checkbox from '@/components/ui/Checkbox';
 import { toast } from '@/components/ui/toastStore';
-import InlineLegal from '@/features/legal/InlineLegal';
 import LegalLinks from '@/features/legal/LegalLinks';
 import { AboutFields, ContactFields, LocationField } from '@/features/listing-submissions/ListingFields';
 import { toInput } from '@/features/listing-submissions/model';
@@ -27,11 +26,13 @@ import {
 
 const FACEBOOK_PAGE = 'https://www.facebook.com/MapServesPalestine/';
 
-/** Legacy welcome terms step (both boxes must be ticked) + register form. New accounts are active and signed in at once. */
+/**
+ * Registration on one screen: name, phone, password, one box for the terms (with links to them) and an optional
+ * "follow us on Facebook". New accounts are active and signed in at once.
+ */
 export default function RegisterPage() {
   const { t } = useTranslation();
   const user = useAuthStore((s) => s.user);
-  const [step, setStep] = useState<'terms' | 'form'>('terms');
   // Where the visitor was (the login sheet passes it): login, after registering, goes back there.
   const back = useLocation().state as { from?: string } | null;
   // Set by the form just before it starts the new account's session.
@@ -39,11 +40,7 @@ export default function RegisterPage() {
   if (user) return <Navigate to={doneTo ?? back?.from ?? '/home'} replace />;
   return (
     <div className="auth-glass-panel mx-auto w-full max-w-xl rounded-[1.75rem] p-5 sm:p-8">
-      {step === 'terms' ? (
-        <TermsStep onContinue={() => setStep('form')} />
-      ) : (
-        <FormStep onBack={() => setStep('terms')} onDone={setDoneTo} />
-      )}
+      <RegisterForm onDone={setDoneTo} />
       <p className="mt-5 text-center text-sm text-muted">
         {t('auth.haveAccount')}{' '}
         <Link to="/login" state={back} className="font-semibold text-brand-fg hover:underline">
@@ -57,63 +54,24 @@ export default function RegisterPage() {
   );
 }
 
-function TermsStep({ onContinue }: { onContinue: () => void }) {
-  const { t } = useTranslation();
-  const [agreed, setAgreed] = useState(false);
-  const [liked, setLiked] = useState(false);
-  const ready = agreed && liked;
+/** A legal page link inside the agreement sentence (`Trans` passes the words as children). A new tab keeps the form. */
+function LegalLink({ to, children }: { to: 'terms' | 'privacy'; children?: ReactNode }) {
   return (
-    <>
-      <div className="text-center">
-        <span className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-[#4fc3f7] to-[#00e676] text-[#07131d] shadow-lg shadow-cyan-500/20">
-          <ShieldCheck className="h-7 w-7" aria-hidden />
-        </span>
-        <h1 className="text-xl font-black text-fg sm:text-2xl">{t('auth.register.platformName')}</h1>
-        <p className="mt-2 text-sm leading-7 text-muted">{t('auth.register.about')}</p>
-      </div>
-      <hr className="my-4 border-line" />
-      <h2 className="mb-2 font-bold text-fg">{t('auth.register.termsTitle')}</h2>
-      <InlineLegal />
-      <Checkbox
-        className="mt-4 items-start leading-6"
-        checked={agreed}
-        onChange={setAgreed}
-        label={t('auth.register.agree')}
-      />
-      <div className="mt-3 rounded-xl border border-info-line bg-info-soft/85 p-3 text-sm text-info">
-        <p>{t('auth.register.fbAsk')}</p>
-        <a
-          href={FACEBOOK_PAGE}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="mt-2 inline-block rounded-lg bg-info-solid px-3 py-2 font-semibold text-white"
-        >
-          {t('auth.register.fbLink')}
-        </a>
-        <Checkbox
-          className="mt-3 items-start text-info"
-          checked={liked}
-          onChange={setLiked}
-          label={t('auth.register.fbDone')}
-        />
-      </div>
-      {!ready && <p className="mt-4 text-sm text-muted">{t('auth.register.gateHint')}</p>}
-      <Button
-        size="lg"
-        className="mt-3 w-full bg-gradient-to-br from-[#29b6d1] to-[#00c978] text-[#07131d] shadow-lg shadow-emerald-500/20 hover:brightness-105"
-        disabled={!ready}
-        onClick={onContinue}
-      >
-        {t('auth.register.continue')}
-      </Button>
-      <div className="mt-3">
-        <LegalLinks keys={['terms', 'privacy']} linkClassName="text-brand-fg" />
-      </div>
-    </>
+    <a href={`/legal/${to}`} target="_blank" rel="noopener" className="font-semibold text-brand-fg underline">
+      {children}
+    </a>
   );
 }
 
-function FormStep({ onBack, onDone }: { onBack: () => void; onDone: (to: string) => void }) {
+function FacebookLink({ children }: { children?: ReactNode }) {
+  return (
+    <a href={FACEBOOK_PAGE} target="_blank" rel="noopener" className="font-semibold text-brand-fg underline">
+      {children}
+    </a>
+  );
+}
+
+function RegisterForm({ onDone }: { onDone: (to: string) => void }) {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const back = useLocation().state as { from?: string } | null;
@@ -125,6 +83,8 @@ function FormStep({ onBack, onDone }: { onBack: () => void; onDone: (to: string)
   const [showPassword, setShowPassword] = useState(false);
   const [errors, setErrors] = useState<{ phone?: string; password?: string }>({});
   const [hasBusiness, setHasBusiness] = useState(false);
+  const [agreed, setAgreed] = useState(false);
+  const [followed, setFollowed] = useState(false);
   const business = useListingForm(hasBusiness);
 
   const submit = (e: FormEvent) => {
@@ -172,7 +132,7 @@ function FormStep({ onBack, onDone }: { onBack: () => void; onDone: (to: string)
   return (
     <>
       <div className="mb-5 text-center">
-        <span className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-[#4fc3f7] to-[#00e676] text-[#07131d] shadow-lg shadow-cyan-500/20">
+        <span className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-[#2dd4bf] to-[#a3e635] text-[#07131d] shadow-lg shadow-teal-500/20">
           <UserRound className="h-7 w-7" aria-hidden />
         </span>
         <h1 className="text-xl font-black text-fg sm:text-2xl">{t('auth.register.title')}</h1>
@@ -278,17 +238,39 @@ function FormStep({ onBack, onDone }: { onBack: () => void; onDone: (to: string)
             )}
           </fieldset>
         )}
+        {/* A column: each box on its own line (two short labels would otherwise share one on desktop). */}
+        <div className="flex flex-col items-start">
+          <Checkbox
+            className="mb-2 items-start leading-6"
+            checked={agreed}
+            onChange={setAgreed}
+            required
+            label={
+              <Trans
+                i18nKey="auth.register.agree"
+                components={{ terms: <LegalLink to="terms" />, privacy: <LegalLink to="privacy" /> }}
+              />
+            }
+          />
+          <Checkbox
+            className="mb-4 items-start leading-6"
+            checked={followed}
+            onChange={(on) => {
+              setFollowed(on);
+              // Optional: ticking it opens the page; it never blocks registering.
+              if (on) window.open(FACEBOOK_PAGE, '_blank', 'noopener');
+            }}
+            label={<Trans i18nKey="auth.register.followFacebook" components={{ fb: <FacebookLink /> }} />}
+          />
+        </div>
         <Button
           type="submit"
           size="lg"
           className="mt-1 w-full bg-gradient-to-br from-[#29b6d1] to-[#00c978] text-[#07131d] shadow-lg shadow-emerald-500/20 hover:brightness-105"
           loading={register.isPending}
-          disabled={!name.trim() || !phone.trim() || !password}
+          disabled={!name.trim() || !phone.trim() || !password || !agreed}
         >
           {register.isPending ? t('auth.register.submitting') : t('auth.register.submit')}
-        </Button>
-        <Button variant="ghost" className="mt-2 w-full" onClick={onBack}>
-          {t('auth.register.backToTerms')}
         </Button>
       </form>
     </>

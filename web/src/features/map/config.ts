@@ -102,3 +102,6 @@ export function worstBarrierStatus(stop: unknown, stop2: unknown) {
 /** Fuel availability columns of fuel_stations: 0 = available, anything else = not available. */
 export const FUEL_FIELDS = ['diesel', 'banzen95', 'banzen98'] as const;
 export type FuelField = (typeof FUEL_FIELDS)[number];
+
+/** "Near me": the streets around you with their listings, not single rooftops (closer zooms are kept). */
+export const NEAR_ME_ZOOM = 16;

@@ -10,7 +10,7 @@ import { useOlMap } from '../MapContext';
 import { useMapUi } from '../store';
 import { copyText } from '@/lib/clipboard';
 import { formatDateTime } from '@/lib/format';
-import { availability, priceLabel, text, type SelectedFeature } from '../popup/featureModel';
+import { availability, listingTitle, priceLabel, text, type SelectedFeature } from '../popup/featureModel';
 import { AvailabilityText } from '../popup/AvailabilityText';
 import { hasPrice, isRoadBarrier, priceCurrencyDefault } from '../targets';
 import MapSheet from '../panels/MapSheet';
@@ -43,7 +43,7 @@ function ResultRow({
   const p = r.props;
   const typeTitle = t(targetLabelKey(r.target));
   const place = [text(p.location_name) || text(p.location), text(p.village_a)].filter(Boolean).join(' · ');
-  const name = text(p.name) || typeTitle;
+  const name = listingTitle(r.target, p, t);
   const priced = hasPrice(r.target);
   const price = priced ? priceLabel(p, t, i18n.language, priceCurrencyDefault(r.target)) : null;
   const state = availability(p);

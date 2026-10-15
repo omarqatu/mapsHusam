@@ -11,8 +11,10 @@ import { useOlMap } from '../MapContext';
 import { useMapUi } from '../store';
 import { fetchGlobalHits, highlightParts, rankHits, type GlobalHit } from './globalSearch';
 import { targetLabelKey } from '../targets';
+import { listingTitle } from '../popup/featureModel';
 import { toSelected } from './results';
 import TargetIcon from '../TargetIcon';
+import NoResultsNext from '@/features/search/NoResultsNext';
 
 const MIN_CHARS = 2;
 const DEBOUNCE_MS = 400; // legacy value
@@ -149,12 +151,15 @@ export default function GlobalSearchBox() {
           ) : query.isError ? (
             <p className="p-4 text-sm text-danger">{t('search.failed')}</p>
           ) : !hits.length ? (
-            <p className="p-4 text-sm text-muted">{t('search.globalNone')}</p>
+            <div className="space-y-2 p-4 text-center">
+              <p className="text-sm text-muted">{t('search.globalNone')}</p>
+              <NoResultsNext term={term} fromMap />
+            </div>
           ) : (
             <ul id={`${uid}-list`} role="listbox">
               {hits.map((h, i) => {
                 const p = h.result.props;
-                const name = String(p.name ?? p.location ?? p.location_name ?? t('search.unnamed'));
+                const name = listingTitle(h.result.target, p, t);
                 const sub = [
                   t(targetLabelKey(h.result.target)),
                   p.location ?? p.location_name,

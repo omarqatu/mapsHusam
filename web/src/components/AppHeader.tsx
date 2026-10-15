@@ -1,5 +1,6 @@
 import { useCallback, useRef, useState, type ReactNode, type RefObject } from 'react';
 import {
+  Download,
   ChartColumn,
   ChevronDown,
   EyeOff,
@@ -7,7 +8,6 @@ import {
   House,
   Languages,
   Map,
-  MapPin,
   Menu,
   Moon,
   Headset,
@@ -27,12 +27,14 @@ import type { LegalKey } from '@/features/legal/types';
 import { NavLink, useLocation } from 'react-router';
 import { useTranslation } from 'react-i18next';
 import clsx from 'clsx';
+import { installApp, useInstallPrompt } from '@/lib/installPrompt';
 import { useOutsideClick } from '@/hooks/useOutsideClick';
 import { useAuthStore } from '@/store/authStore';
 import { appRoutes, canAccess, type AppRoute } from '@/routes/routes';
 import { changeLanguage } from '@/i18n';
 import { currentTheme, setTheme } from '@/lib/theme';
 import { InfoList } from './InfoMenu';
+import BrandMark from './BrandMark';
 import { useHeaderTone } from './headerStyles';
 import UserMenu from './UserMenu';
 
@@ -93,6 +95,7 @@ function PreferenceRows() {
   const [theme, setLocal] = useState(currentTheme);
   const nextLang = i18n.language === 'ar' ? 'en' : 'ar';
   const nextTheme = theme === 'dark' ? 'light' : 'dark';
+  const canInstall = useInstallPrompt((st) => st.prompt !== null);
   return (
     <>
       <button type="button" className={menuRow()} onClick={() => changeLanguage(nextLang)}>
@@ -115,6 +118,12 @@ function PreferenceRows() {
         )}
         {t(nextTheme === 'dark' ? 'common.themeDark' : 'common.themeLight')}
       </button>
+      {canInstall && (
+        <button type="button" className={menuRow()} onClick={() => void installApp()}>
+          <Download className="h-4 w-4 shrink-0 text-brand-fg" aria-hidden />
+          <span className="flex-1">{t('common.installApp')}</span>
+        </button>
+      )}
     </>
   );
 }
@@ -162,13 +171,8 @@ export default function AppHeader() {
     >
       <div className="flex h-full items-center gap-2 px-3 lg:px-5">
         <NavLink to={role ? '/home' : '/'} className="flex shrink-0 items-center gap-2.5">
-          <span className={clsx('flex h-9 w-9 items-center justify-center rounded-xl', tone.mark)}>
-            <MapPin className="h-5 w-5" aria-hidden />
-          </span>
-          <span className="whitespace-nowrap text-base font-black lg:text-lg">
-            <span className="xl:hidden">{t('app.shortName')}</span>
-            <span className="max-xl:hidden">{t('app.name')}</span>
-          </span>
+          <BrandMark className={clsx('h-9 w-9', tone.mark)} />
+          <span className="whitespace-nowrap text-lg font-black">{t('app.shortName')}</span>
         </NavLink>
 
         <nav

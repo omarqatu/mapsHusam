@@ -1,4 +1,4 @@
-import { useMemo, useState, type ReactNode } from 'react';
+import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import { Link } from 'react-router';
 import clsx from 'clsx';
 import {
@@ -16,6 +16,7 @@ import {
   Zap,
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { useMediaQuery } from '@/hooks/useMediaQuery';
 import { useLayerFilter, useSectionShown } from '@/features/visibility/store';
 import { formatHijri, buildTickerItems, palestineNow, type CardId, type TickerItem } from '../model';
 import { useTickerUi } from '../tickerStore';
@@ -63,6 +64,39 @@ function Item({ item, hidden, large }: { item: TickerItem; hidden?: boolean; lar
   );
 }
 
+/** Seconds each item stays on a phone, where one item at a time replaces the marquee. */
+const ROTATE_MS = 4000;
+
+/**
+ * Phones: a marquee across 300 px is unreadable (an item is gone before it is read), so one item shows at a time and the
+ * next one fades in every few seconds. Stops with the pause button, and while a finger or the keyboard is on it.
+ */
+function OneAtATime({ items, paused }: { items: TickerItem[]; paused: boolean }) {
+  const [index, setIndex] = useState(0);
+  const [holding, setHolding] = useState(false);
+  const several = items.length > 1;
+  // Not restarted when the list grows (weather and prayer times arrive later): the current item keeps its full time.
+  useEffect(() => {
+    if (paused || holding || !several) return;
+    const id = setInterval(() => setIndex((i) => i + 1), ROTATE_MS);
+    return () => clearInterval(id);
+  }, [paused, holding, several]);
+  const item = items[index % items.length];
+  return (
+    <div
+      onPointerEnter={() => setHolding(true)}
+      onPointerLeave={() => setHolding(false)}
+      onFocus={() => setHolding(true)}
+      onBlur={() => setHolding(false)}
+    >
+      {/* A new list per item: remounting replays the fade-in. */}
+      <ul key={item.key} className="flex min-w-0 items-center motion-safe:animate-[rise_0.4s_ease-out_both]">
+        <Item item={item} large={false} />
+      </ul>
+    </div>
+  );
+}
+
 /**
  * The live-information ticker (legacy "تحديثات فورية" footer bar): a slow marquee of the first rows of every group —
  * exchange rates, gold, weather, fuel and fares, the next prayer, the date — and the two status lists. Each item opens the
@@ -92,6 +126,10 @@ export default function TickerBar({
   const large = variant === 'page';
   const stripOn = useSectionShown('ticker');
   const layerShown = useLayerFilter();
+  // One item at a time on phones (`max-sm`), unless the user asked for less motion (then the static row, as elsewhere).
+  const phone = useMediaQuery('(max-width: 639.98px)', false);
+  const lessMotion = useMediaQuery('(prefers-reduced-motion: reduce)', false);
+  const oneAtATime = phone && !lessMotion && !large;
 
   const items = useMemo(
     () =>
@@ -143,7 +181,8 @@ export default function TickerBar({
       aria-label={title}
       className={clsx(
         'flex items-center gap-2 px-3',
-        collapsible && 'glass-bar absolute inset-x-0 bottom-0 z-10 h-10 rounded-t-2xl [@media(max-height:560px)]:hidden',
+        collapsible &&
+          'glass-bar absolute inset-x-0 bottom-0 z-10 h-10 rounded-t-2xl [@media(max-height:560px)]:hidden',
         !collapsible && 'bg-surface',
         large && 'h-16 rounded-2xl border border-line shadow-sm',
         !collapsible && !large && 'h-10 shrink-0 border-t border-line [@media(max-height:560px)]:hidden',
@@ -175,6 +214,8 @@ export default function TickerBar({
           <span className="text-sm text-muted">{t('widgets.ticker.loading')}</span>
         ) : items.length === 0 ? (
           <span className="text-sm text-muted">{t('widgets.empty')}</span>
+        ) : oneAtATime ? (
+          <OneAtATime items={items} paused={paused} />
         ) : (
           <ul
             className="ticker-track flex w-max items-center"

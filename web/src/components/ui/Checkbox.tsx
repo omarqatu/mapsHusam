@@ -1,5 +1,5 @@
 import { useEffect, useRef, type InputHTMLAttributes, type ReactNode } from 'react';
-import { Minus } from 'lucide-react';
+import { Check, Minus } from 'lucide-react';
 import clsx from 'clsx';
 
 interface CheckboxProps extends Omit<InputHTMLAttributes<HTMLInputElement>, 'type' | 'onChange'> {
@@ -26,7 +26,8 @@ export default function Checkbox({
   return (
     <label
       className={clsx(
-        'inline-flex items-center gap-2 text-sm font-medium text-fg',
+        // `relative`: the sr-only input stays inside its label (otherwise it sits at the page corner).
+        'relative inline-flex items-center gap-2 text-sm font-medium text-fg',
         disabled ? 'cursor-not-allowed opacity-60' : 'cursor-pointer',
         className,
       )}
@@ -43,13 +44,19 @@ export default function Checkbox({
       <span
         aria-hidden
         className={clsx(
-          "flex h-5 w-5 shrink-0 items-center justify-center rounded border-2 border-line-strong bg-surface shadow-sm transition-colors after:hidden after:h-2.5 after:w-1.5 after:-translate-y-px after:rotate-45 after:border-b-2 after:border-e-2 after:border-white after:content-[''] peer-checked:border-brand peer-checked:bg-brand peer-checked:after:block peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-brand",
-          indeterminate && 'border-brand bg-brand after:!hidden',
+          // The tick is an icon, not a rotated border: a border tick drawn with logical sides mirrors into « < » in RTL.
+          'flex h-5 w-5 shrink-0 items-center justify-center rounded border-2 border-line-strong bg-surface shadow-sm transition-colors [&>svg]:hidden peer-checked:border-brand peer-checked:bg-brand peer-checked:[&>svg]:block peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-brand',
+          indeterminate && 'border-brand bg-brand [&>svg]:!block',
         )}
       >
-        {indeterminate && <Minus className="h-3.5 w-3.5 text-white" strokeWidth={3} />}
+        {indeterminate ? (
+          <Minus className="h-3.5 w-3.5 text-white" strokeWidth={3} />
+        ) : (
+          <Check className="h-3.5 w-3.5 text-white" strokeWidth={3} />
+        )}
       </span>
-      {label}
+      {/* One flex item: a label made of text and links (terms, privacy) flows as one sentence. */}
+      {label && <span className="min-w-0">{label}</span>}
     </label>
   );
 }

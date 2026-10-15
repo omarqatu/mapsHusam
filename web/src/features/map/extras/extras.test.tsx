@@ -12,6 +12,7 @@ import FeaturedTab from './FeaturedTab';
 import StatsTab from './StatsTab';
 import StatusTab from './StatusTab';
 import { useExtrasUi } from './store';
+import { useMyBarriers } from './myBarriers';
 
 vi.mock('../geolocate', () => ({
   GeoError: class GeoError extends Error {
@@ -197,7 +198,7 @@ describe('StatsTab', () => {
     expect(await screen.findByText('Users')).toBeInTheDocument();
     for (const [label, value] of [
       ['Users', '3'],
-      ['Service providers', '388'],
+      ['Listings', '388'],
       ['Services', '69'],
       ['Total platform visits', '37'],
       ['Map visits', '30'],
@@ -252,6 +253,22 @@ describe('StatusTab — road checkpoints', () => {
     await user.clear(box);
     await user.type(box, 'zzz');
     expect(await screen.findByText('No matching results')).toBeInTheDocument();
+  });
+
+  it('a starred checkpoint («my checkpoints») comes first, and the star is kept on the device', async () => {
+    const user = userEvent.setup();
+    useMyBarriers.setState({ ids: [] });
+    renderWith(<StatusTab layer="road_barriers" />);
+    await screen.findByText('Atara');
+    const names = () =>
+      screen.getAllByRole('listitem').map((li) => within(li).getAllByRole('button')[0].textContent);
+    expect(names()[0]).toContain('Atara');
+    const star = screen.getByRole('button', { name: 'Add <img src=x onerror=alert(1)> to my checkpoints' });
+    await user.click(star);
+    expect(star).toHaveAttribute('aria-pressed', 'true');
+    expect(names()[0]).toContain('<img src=x onerror=alert(1)>');
+    expect(JSON.parse(localStorage.getItem('psm-my-barriers')!)).toEqual(['2']);
+    useMyBarriers.setState({ ids: [] });
   });
 
   it('tapping a row opens its details card on the map', async () => {
@@ -370,7 +387,10 @@ describe('FeaturedTab', () => {
     renderWith(<FeaturedTab />);
     const featured = (await screen.findByRole('heading', { name: 'Featured' })).closest('section')!;
     const card = (await within(featured).findByText('Painter Ali')).closest('article')!;
-    expect(within(card).getByRole('tab', { name: 'Before & after' })).toHaveAttribute('aria-selected', 'true');
+    expect(within(card).getByRole('tab', { name: 'Before & after' })).toHaveAttribute(
+      'aria-selected',
+      'true',
+    );
     expect(within(card).getByText('Before')).toBeInTheDocument();
   });
 
@@ -383,7 +403,7 @@ describe('FeaturedTab', () => {
     expect(screen.queryByRole('heading', { name: 'Recommended' })).toBeNull();
   });
 
-  it('a hotel shows its price and area and its customers\' rating, not the hand-set stars', async () => {
+  it("a hotel shows its price and area and its customers' rating, not the hand-set stars", async () => {
     const HOTEL = feature(1900, 1900, {
       id: 77,
       discriminator: 'hotels',
@@ -396,7 +416,11 @@ describe('FeaturedTab', () => {
     });
     override = (u) => {
       const p = u.searchParams;
-      if (u.pathname === '/api/search-features' && p.get('layer') === 'service_all' && p.get('value_0') === '10')
+      if (
+        u.pathname === '/api/search-features' &&
+        p.get('layer') === 'service_all' &&
+        p.get('value_0') === '10'
+      )
         return fc([PAINTER, HOTEL]);
       if (u.pathname === '/api/service-ratings')
         return p.get('feature_id') === '77'

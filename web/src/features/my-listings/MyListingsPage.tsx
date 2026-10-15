@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Building2, ImageIcon, MapPin, Pencil, Plus, Store, Wrench } from 'lucide-react';
+import { Building2, ImageIcon, MapPin, Pencil, Plus, QrCode, Store, Wrench } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useMySubmissions } from '@/api/listingSubmissions';
 import {
@@ -26,6 +26,7 @@ import ListingEditor from './ListingEditor';
 import { listingTarget } from './model';
 import StatePicker from './StatePicker';
 import TargetIcon from '@/features/map/TargetIcon';
+import QrSticker from '@/features/listing/QrSticker';
 
 type Tab = 'services' | 'properties';
 const KIND: Record<Tab, ListingKind> = { services: 'service', properties: 'property' };
@@ -142,6 +143,9 @@ function ListingCard({ listing: l, onEdit }: { listing: MyListing; onEdit: () =>
   const cover = l.photos.map(safeMediaUrl).find((u): u is string => !!u);
   const [coverFailed, setCoverFailed] = useState(false);
   const subscriptionExpired = isSubscriptionExpired(l.end_date);
+  const [sticker, setSticker] = useState(false);
+  // Only a listing people can open: not withdrawn, not expired.
+  const canSticker = !!target && l.status !== 2 && !subscriptionExpired;
 
   const setState = (status: ListingState) =>
     edit.mutate(
@@ -232,7 +236,20 @@ function ListingCard({ listing: l, onEdit }: { listing: MyListing; onEdit: () =>
             </ButtonLink>
           )}
         </div>
+        {canSticker && (
+          <Button
+            variant="ghost"
+            size="sm"
+            startIcon={<QrCode className="h-4 w-4" aria-hidden />}
+            onClick={() => setSticker(true)}
+          >
+            {t('myListings.qr.open')}
+          </Button>
+        )}
       </div>
+      {sticker && target && (
+        <QrSticker target={target} id={String(l.id)} name={l.name} onClose={() => setSticker(false)} />
+      )}
     </article>
   );
 }

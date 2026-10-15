@@ -55,7 +55,7 @@ export default function LoginPage() {
   return (
     <div className="auth-glass-panel mx-auto w-full max-w-md rounded-[1.75rem] p-6 sm:p-8">
       <div className="mb-5 text-center">
-        <span className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-[#4fc3f7] to-[#00e676] text-[#07131d] shadow-lg shadow-cyan-500/20">
+        <span className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-[#2dd4bf] to-[#a3e635] text-[#07131d] shadow-lg shadow-teal-500/20">
           <LogIn className="h-7 w-7" aria-hidden />
         </span>
         <h1 className="text-2xl font-black text-fg sm:text-3xl">{t('auth.loginTitle')}</h1>

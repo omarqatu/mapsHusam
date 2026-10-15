@@ -1,5 +1,5 @@
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import { render, screen, waitFor, within } from '@testing-library/react';
+import { act, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { MemoryRouter } from 'react-router';
@@ -176,5 +176,34 @@ describe('ticker', () => {
     await screen.findAllByRole('link', { name: /USD\/ILS/ });
     // Only the first copy is exposed: one accessible "USD/ILS" link, one more in the aria-hidden copy.
     expect(screen.getAllByRole('link', { name: /USD\/ILS/ })).toHaveLength(1);
+  });
+
+  it('on a phone shows one item at a time, the next after a few seconds, and stops with pause', async () => {
+    // A phone that allows motion: only the max-width query matches.
+    vi.stubGlobal('matchMedia', (query: string) => ({
+      matches: query.includes('max-width'),
+      addEventListener: () => undefined,
+      removeEventListener: () => undefined,
+    }));
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+    try {
+      renderWith(<TickerBar />, '/');
+      const items = () =>
+        screen.getAllByRole('link').filter((a) => a.getAttribute('href')?.includes('card='));
+      await waitFor(() => expect(items()).toHaveLength(1));
+      const before = items()[0].textContent;
+      await act(() => vi.advanceTimersByTimeAsync(4000));
+      expect(items()).toHaveLength(1);
+      expect(items()[0].textContent).not.toBe(before);
+
+      const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
+      await user.click(screen.getByRole('button', { name: 'Pause scrolling' }));
+      const held = items()[0].textContent;
+      await act(() => vi.advanceTimersByTimeAsync(12000));
+      expect(items()[0].textContent).toBe(held);
+    } finally {
+      vi.useRealTimers();
+      vi.unstubAllGlobals();
+    }
   });
 });

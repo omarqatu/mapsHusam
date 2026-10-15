@@ -7,6 +7,7 @@ import { CenteredSpinner } from '@/components/ui/Spinner';
 import { roadBarrierStatus } from '../map/config';
 import type { GlobalHit } from '../map/search/globalSearch';
 import ListingCard from './ListingCard';
+import NoResultsNext from './NoResultsNext';
 import PagedGrid from './PagedGrid';
 import { KEYWORD_LIMIT, useKeywordResults } from './queries';
 
@@ -46,6 +47,7 @@ export default function KeywordResults({ term }: { term: string }) {
           icon={<SearchX className="h-10 w-10" aria-hidden />}
           title={t('searchPage.noKeywordResults', { term })}
           description={t('searchPage.noKeywordHint')}
+          action={<NoResultsNext />}
         />
       ) : (
         <>

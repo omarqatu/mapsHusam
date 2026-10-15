@@ -26,6 +26,7 @@ import FormField from '@/components/ui/FormField';
 import PageHeader from '@/components/ui/PageHeader';
 import SearchInput from '@/components/ui/SearchInput';
 import SectionCard from '@/components/ui/SectionCard';
+import { useIsDesktop } from '@/hooks/useMediaQuery';
 import { CenteredSpinner } from '@/components/ui/Spinner';
 import TextInput from '@/components/ui/TextInput';
 import TextareaInput from '@/components/ui/TextareaInput';
@@ -39,7 +40,15 @@ import { useAuthStore } from '@/store/authStore';
 import { ContactFields, HoursField, PriceFields } from './ListingFields';
 import LocationPicker from './LocationPicker';
 import LandPolygonPicker from './LandPolygonPicker';
-import { DES_MAX, NAME_MAX, hasHoursField, hasPriceField, isLandLayer, submissionTypeKey, toInput } from './model';
+import {
+  DES_MAX,
+  NAME_MAX,
+  hasHoursField,
+  hasPriceField,
+  isLandLayer,
+  submissionTypeKey,
+  toInput,
+} from './model';
 import { useListingForm, type ListingForm } from './useListingForm';
 
 type Step = 'type' | 'place' | 'details';
@@ -52,6 +61,8 @@ const STEPS: Step[] = ['type', 'place', 'details'];
  */
 export default function AddListingPage() {
   const { t, i18n } = useTranslation();
+  // Phones: one line before the work starts (the full explanation pushed the first step below the fold).
+  const isDesktop = useIsDesktop();
   const role = useAuthStore((s) => s.user?.role);
   const canSubmit = role === 'user' || role === 'provider';
   const mine = useMySubmissions(canSubmit);
@@ -59,7 +70,7 @@ export default function AddListingPage() {
   const header = (
     <PageHeader
       title={t('submit.title')}
-      description={t('submit.subtitle')}
+      description={t(isDesktop ? 'submit.subtitle' : 'submit.subtitleShort')}
       icon={<Plus className="h-6 w-6" aria-hidden />}
       actions={
         role === 'provider' ? (
@@ -295,16 +306,16 @@ function Wizard() {
 function TypeStep({ form, onPicked }: { form: ListingForm; onPicked: () => void }) {
   const { t } = useTranslation();
   const [query, setQuery] = useState('');
-  const { options } = form;
+  const { options, keywords } = form;
   const groups = useMemo(() => {
     const out = new Map<string, typeof options>();
     for (const o of options) {
-      if (!matchesQuery(o.label, query)) continue;
+      if (!matchesQuery(`${o.label} ${keywords.get(o.value) ?? ''}`, query)) continue;
       const g = o.group ?? '';
       out.set(g, [...(out.get(g) ?? []), o]);
     }
     return [...out.entries()];
-  }, [options, query]);
+  }, [options, keywords, query]);
 
   return (
     <SectionCard title={t('submit.steps.typeTitle')} icon={<Shapes className="h-5 w-5" aria-hidden />}>

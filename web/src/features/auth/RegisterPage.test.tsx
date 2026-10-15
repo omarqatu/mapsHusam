@@ -38,10 +38,7 @@ function setup() {
  * `registerCalls` are the requests to /api/auth/register only.
  */
 const SIGNED_IN = { user: { user_id: 7, full_name: 'Sara', phone: '0598512667', role: 'user', token: 't' } };
-function stubFetch(
-  registerResponse: Response,
-  loginResponse = new Response(JSON.stringify(SIGNED_IN)),
-) {
+function stubFetch(registerResponse: Response, loginResponse = new Response(JSON.stringify(SIGNED_IN))) {
   const registerCalls: [string, RequestInit][] = [];
   vi.stubGlobal(
     'fetch',
@@ -58,12 +55,10 @@ function stubFetch(
   return registerCalls;
 }
 
-const CONTINUE = /التسجيل عبر رقم واتساب|Register with a WhatsApp number/;
+const SUBMIT = /إتمام التسجيل|Complete registration/;
 
 async function passTerms() {
-  await userEvent.click(screen.getAllByRole('checkbox')[0]);
-  await userEvent.click(screen.getAllByRole('checkbox')[1]);
-  await userEvent.click(screen.getByRole('button', { name: CONTINUE }));
+  await userEvent.click(screen.getByRole('checkbox', { name: /أوافق على|I agree to/ }));
 }
 
 describe('RegisterPage', () => {
@@ -73,40 +68,38 @@ describe('RegisterPage', () => {
   });
   afterEach(() => vi.unstubAllGlobals());
 
-  it('writes the full privacy policy and terms in a box before the tick boxes; an admin replacement wins', async () => {
-    const custom = JSON.stringify({
-      title: 'شروطنا المعدّلة',
-      html: '<p>نص من المشرف</p><script>alert(1)</script>',
-    });
-    vi.stubGlobal(
-      'fetch',
-      vi.fn(async (url: string) =>
-        String(url).endsWith('/api/platform-content/legal.terms')
-          ? new Response(
-              JSON.stringify({ success: true, item: { content_key: 'legal.terms', content_value: custom } }),
-            )
-          : new Response(JSON.stringify({ success: true, item: null })),
-      ),
+  it('is one screen: submit waits for the terms box only; following on Facebook is optional and opens the page', async () => {
+    const open = vi.spyOn(window, 'open').mockReturnValue(null);
+    stubFetch(new Response('{}'));
+    setup();
+    await userEvent.type(screen.getByLabelText(/الاسم الكامل|Full name/), 'Sara');
+    await userEvent.type(screen.getByLabelText(/رقم الموبايل المحلي|Local mobile number/), '0598512667');
+    await userEvent.type(screen.getByLabelText(/كلمة المرور|Password/), 'secret1');
+    const submit = screen.getByRole('button', { name: SUBMIT });
+    expect(submit).toBeDisabled();
+    // the terms and privacy policy are links (new tab), not a wall of text before the form
+    expect(screen.getByRole('link', { name: /شروط الاستخدام|terms of use/ })).toHaveAttribute(
+      'href',
+      '/legal/terms',
     );
-    setup();
-    const box = await screen.findByRole('region', {
-      name: /سياسة الخصوصية وشروط الاستخدام كاملة|full privacy policy/,
-    });
-    expect(await screen.findByText('نص من المشرف')).toBeInTheDocument(); // the replaced terms
-    expect(await screen.findByRole('heading', { name: 'شروطنا المعدّلة' })).toBeInTheDocument();
-    expect(box.textContent).toMatch(/الخصوصية/); // the built-in privacy policy is there too
-    expect(document.querySelector('script')).toBeNull();
-    expect(box).toHaveAttribute('tabindex', '0'); // scrollable by keyboard
-  });
-
-  it('keeps the form locked until both the terms and the Facebook box are ticked', async () => {
-    setup();
-    const go = screen.getByRole('button', { name: CONTINUE });
-    expect(go).toBeDisabled();
-    await userEvent.click(screen.getAllByRole('checkbox')[0]);
-    expect(go).toBeDisabled();
-    await userEvent.click(screen.getAllByRole('checkbox')[1]);
-    expect(go).toBeEnabled();
+    expect(screen.getByRole('link', { name: /سياسة الخصوصية|privacy policy/ })).toHaveAttribute(
+      'href',
+      '/legal/privacy',
+    );
+    expect(
+      screen.queryByRole('region', { name: /سياسة الخصوصية وشروط الاستخدام كاملة|full privacy policy/ }),
+    ).toBeNull();
+    await passTerms();
+    expect(submit).toBeEnabled();
+    // the page itself is a visible link, not only a side effect of the box
+    expect(screen.getByRole('link', { name: /صفحتنا على فيسبوك|our Facebook page/ })).toHaveAttribute(
+      'href',
+      expect.stringContaining('facebook.com/MapServesPalestine'),
+    );
+    await userEvent.click(screen.getByRole('checkbox', { name: /تابعنا على|Follow our/ }));
+    expect(open).toHaveBeenCalledWith(expect.stringContaining('facebook.com'), '_blank', 'noopener');
+    expect(submit).toBeEnabled();
+    open.mockRestore();
   });
 
   it('sends the WhatsApp number built from prefix + local number, then is signed in at once', async () => {
@@ -118,7 +111,7 @@ describe('RegisterPage', () => {
     await userEvent.type(screen.getByLabelText(/الاسم الكامل|Full name/), 'Sara');
     await userEvent.type(screen.getByLabelText(/رقم الموبايل المحلي|Local mobile number/), '0598512667');
     await userEvent.type(screen.getByLabelText(/كلمة المرور|Password/), 'secret1');
-    await userEvent.click(screen.getByRole('button', { name: /إتمام التسجيل|Complete registration/ }));
+    await userEvent.click(screen.getByRole('button', { name: SUBMIT }));
     await waitFor(() => expect(screen.getByText('home page')).toBeInTheDocument());
     const [url, init] = calls[0];
     expect(url).toBe('/api/auth/register');
@@ -142,7 +135,7 @@ describe('RegisterPage', () => {
     await userEvent.type(screen.getByLabelText(/الاسم الكامل|Full name/), 'Sara');
     await userEvent.type(screen.getByLabelText(/رقم الموبايل المحلي|Local mobile number/), '0598512667');
     await userEvent.type(screen.getByLabelText(/كلمة المرور|Password/), 'secret1');
-    await userEvent.click(screen.getByRole('button', { name: /إتمام التسجيل|Complete registration/ }));
+    await userEvent.click(screen.getByRole('button', { name: SUBMIT }));
     await waitFor(() => expect(screen.getByText('login page')).toBeInTheDocument());
     expect(useAuthStore.getState().user).toBeNull();
   });
@@ -156,14 +149,14 @@ describe('RegisterPage', () => {
     await userEvent.type(screen.getByLabelText(/الاسم الكامل|Full name/), 'Sara');
     await userEvent.type(screen.getByLabelText(/رقم الموبايل المحلي|Local mobile number/), '123');
     await userEvent.type(screen.getByLabelText(/كلمة المرور|Password/), '12');
-    await userEvent.click(screen.getByRole('button', { name: /إتمام التسجيل|Complete registration/ }));
+    await userEvent.click(screen.getByRole('button', { name: SUBMIT }));
     expect(calls).toHaveLength(0); // nothing is sent until the local checks pass
     expect(screen.getAllByRole('alert')).toHaveLength(2);
 
     await userEvent.clear(screen.getByLabelText(/رقم الموبايل المحلي|Local mobile number/));
     await userEvent.type(screen.getByLabelText(/رقم الموبايل المحلي|Local mobile number/), '0598512667');
     await userEvent.type(screen.getByLabelText(/كلمة المرور|Password/), '3456');
-    await userEvent.click(screen.getByRole('button', { name: /إتمام التسجيل|Complete registration/ }));
+    await userEvent.click(screen.getByRole('button', { name: SUBMIT }));
     expect(await screen.findByText('رقم الجوال هذا مستخدم بالفعل')).toBeInTheDocument();
   });
 
@@ -179,14 +172,14 @@ describe('RegisterPage', () => {
     await userEvent.click(screen.getByRole('checkbox', { name: /عندي نشاط تجاري|I have a business/ }));
 
     // Nothing is sent while the business part is incomplete.
-    await userEvent.click(screen.getByRole('button', { name: /إتمام التسجيل|Complete registration/ }));
+    await userEvent.click(screen.getByRole('button', { name: SUBMIT }));
     expect(calls).toHaveLength(0);
 
     await userEvent.click(await screen.findByRole('combobox', { name: /نوع النشاط|Type of business/ }));
     await userEvent.click(await screen.findByRole('option', { name: /سباك|Plumber/i }));
     await userEvent.type(screen.getByLabelText(/اسم النشاط|Business name/), 'سباكة الأمل');
     await userEvent.click(screen.getByRole('button', { name: 'pick-location' }));
-    await userEvent.click(screen.getByRole('button', { name: /إتمام التسجيل|Complete registration/ }));
+    await userEvent.click(screen.getByRole('button', { name: SUBMIT }));
 
     await waitFor(() => expect(screen.getByText('add listing page')).toBeInTheDocument());
     expect(JSON.parse(calls[0][1].body as string)).toMatchObject({

@@ -12,11 +12,12 @@ export function registerServiceWorker() {
 
 /**
  * A system notification. Goes through the service worker when there is one (the only way on Android),
- * else the plain constructor; does nothing without permission or when the browser refuses.
+ * else the plain constructor; does nothing without permission or when the browser refuses. `url`: the page a tap opens
+ * when no window of the app is open.
  */
-export async function showSystemNotification(title: string, body: string) {
+export async function showSystemNotification(title: string, body: string, url = '/home') {
   if (!('Notification' in window) || Notification.permission !== 'granted') return;
-  const options: NotificationOptions = { body, icon: '/icons/icon-192.png', lang: i18n.language, data: { url: '/home' } };
+  const options: NotificationOptions = { body, icon: '/icons/icon-192.png', lang: i18n.language, data: { url } };
   try {
     const registration = 'serviceWorker' in navigator ? await navigator.serviceWorker.getRegistration() : undefined;
     if (registration) await registration.showNotification(title, options);

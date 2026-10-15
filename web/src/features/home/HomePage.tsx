@@ -4,6 +4,7 @@ import NeedsYou from './NeedsYou';
 import PlatformFigures from './PlatformFigures';
 import { useHomeData } from './useHomeData';
 import { useSectionShown } from '@/features/visibility/store';
+import SavedListings from '@/features/listing/SavedListings';
 
 /**
  * Signed-in landing page (`/home`): a greeting and search, what is waiting for the user, and the entrances to the
@@ -20,6 +21,7 @@ export default function HomePage() {
         <NeedsYou data={data} />
         <HomeCards data={data} />
       </div>
+      <SavedListings />
       {statsOn && <PlatformFigures platform={data.platform} />}
     </div>
   );

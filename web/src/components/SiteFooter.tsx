@@ -1,4 +1,5 @@
-import { ChevronLeft, MapPinned } from 'lucide-react';
+import { ChevronLeft } from 'lucide-react';
+import BrandMark from './BrandMark';
 import { useTranslation } from 'react-i18next';
 import LegalLinks from '@/features/legal/LegalLinks';
 import type { LegalKey } from '@/features/legal/types';
@@ -39,7 +40,7 @@ export default function SiteFooter({ className }: { className?: string }) {
       <div className="mx-auto grid w-full max-w-5xl grid-cols-2 gap-x-6 gap-y-4 px-4 py-4 md:grid-cols-[1.4fr_1fr_1fr] md:gap-x-10">
         <div className="col-span-2 space-y-2 md:col-span-1">
           <p className="flex items-center gap-2 text-lg font-black text-white">
-            <MapPinned className="h-5 w-5 text-brand-fg" aria-hidden />
+            <BrandMark className="h-8 w-8 rounded-lg" />
             {t('app.name')}
           </p>
           <p className="text-xs leading-relaxed text-footer-muted">{t('searchPage.about')}</p>

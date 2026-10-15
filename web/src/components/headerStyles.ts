@@ -6,6 +6,7 @@ export interface HeaderTone {
   bar: string;
   /** The bar on the map: see-through over the imagery. */
   glass: string;
+  /** Ring around the logo's white tile. */
   mark: string;
   group: string;
   tabOn: string;
@@ -30,7 +31,7 @@ export const HEADER_TONES: Record<HeaderStyle, HeaderTone> = {
   soft: {
     bar: 'border-b border-brand/15 bg-gradient-to-l from-brand-light to-surface text-fg',
     glass: `border-b border-brand/15 bg-gradient-to-l from-brand-light/80 to-surface/65 text-fg ${glass}`,
-    mark: brandMark,
+    mark: 'shadow-card ring-1 ring-brand/15',
     group: 'bg-surface/70 ring-1 ring-brand/10',
     tabOn: 'bg-brand text-white shadow-card',
     tabOff: 'text-muted hover:bg-brand-light hover:text-brand-fg',
@@ -45,7 +46,7 @@ export const HEADER_TONES: Record<HeaderStyle, HeaderTone> = {
   gradient: {
     bar: 'bg-gradient-to-l from-brand to-brand-2 text-white shadow-card',
     glass: `bg-gradient-to-l from-brand/85 to-brand-2/85 text-white ${glass}`,
-    mark: 'bg-white/15 text-white ring-1 ring-white/25',
+    mark: 'shadow-card ring-1 ring-white/40',
     group: 'bg-black/10',
     tabOn: 'bg-white text-brand shadow-card',
     tabOff: 'text-white/85 hover:bg-white/10 hover:text-white',
@@ -60,7 +61,7 @@ export const HEADER_TONES: Record<HeaderStyle, HeaderTone> = {
   surface: {
     bar: 'border-b border-line bg-surface/90 text-fg backdrop-blur-md',
     glass: `border-b border-line/50 bg-surface/50 text-fg ${glass}`,
-    mark: brandMark,
+    mark: 'shadow-card ring-1 ring-brand/15',
     group: 'bg-subtle',
     tabOn: 'bg-surface text-brand-fg shadow-card',
     tabOff: 'text-muted hover:text-fg',

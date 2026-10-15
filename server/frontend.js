@@ -5,6 +5,10 @@ import path from 'path';
 import crypto from 'node:crypto';
 import { IS_PROD, ROOT_DIR, app } from './app.js';
 import { servicesPool, realestatePool } from './database.js';
+import { LAYER_AR_NAMES, SERVICE_TYPE_KEYS } from './layers.js';
+import { viewerRules } from './visibility.js';
+import { isLayerHidden, publicListingSql } from '../lib/listing-rules.js';
+import { listingId, listingSource, ogImage, ogText, withListingMeta } from '../lib/listing-og.js';
 
 // ❤️ فحص الصحة (لأنظمة المراقبة): يتأكد من الاتصال بقاعدة البيانات
 app.get('/healthz', async (req, res) => {
@@ -83,6 +87,43 @@ if (SERVE_REACT) {
     // ملفات مبنية بأسماء تحمل بصمة المحتوى: تُخزَّن سنة. باقي الملفات (أيقونات، أصوات) ساعة.
     app.use('/assets', express.static(path.join(REACT_DIST, 'assets'), { immutable: true, maxAge: '1y', index: false, fallthrough: false }));
     app.use(express.static(REACT_DIST, { index: false, maxAge: '1h', redirect: false, dotfiles: 'ignore' }));
+
+    // صفحة الإعلان المشترَك (/l/<type>/<id>): نفس index.html مع عنوان الإعلان ووصفه وصورته، لتظهر معاينة الرابط
+    // في واتساب وفيسبوك. نفس قواعد البحث العام لزائر بلا حساب (الطبقات المخفية، المسحوب والمنتهي)، وبلا أي رقم تواصل.
+    const INDEX_HTML = path.join(REACT_DIST, 'index.html');
+    let indexCache = { mtimeMs: 0, html: '' };
+    const indexHtml = async () => {
+        const { mtimeMs } = await fs.promises.stat(INDEX_HTML);
+        if (mtimeMs !== indexCache.mtimeMs) indexCache = { mtimeMs, html: await fs.promises.readFile(INDEX_HTML, 'utf8') };
+        return indexCache.html;
+    };
+    app.get('/l/:key/:id', async (req, res, next) => {
+        try {
+            const source = listingSource(req.params.key, SERVICE_TYPE_KEYS);
+            const id = listingId(req.params.id);
+            const html = await indexHtml();
+            res.set('Cache-Control', 'no-cache');
+            if (!source || id === null || isLayerHidden(req.params.key, (await viewerRules(null)).hidden)) return res.type('html').send(html);
+            const pool = source.isProperty ? realestatePool : servicesPool;
+            const { rows } = source.isProperty
+                ? await pool.query(`SELECT * FROM public."${source.table}" WHERE fid = $1 AND ${publicListingSql(true)}`, [id])
+                : await pool.query(`SELECT * FROM public.service_all WHERE id = $1 AND discriminator = $2 AND ${publicListingSql(false)}`, [id, source.discriminator]);
+            if (!rows[0]) return res.type('html').send(html);
+            const origin = `${req.protocol}://${req.get('host')}`;
+            const { title, description } = ogText(rows[0], LAYER_AR_NAMES[req.params.key] || 'خدمة');
+            res.type('html').send(withListingMeta(html, {
+                title,
+                description,
+                url: `${origin}/l/${req.params.key}/${id}`,
+                image: ogImage(rows[0].pic, origin),
+                siteName: 'نطاق',
+            }));
+        } catch (error) {
+            // تعذّرت القراءة: الصفحة نفسها بلا معاينة، والتطبيق يقرأ الإعلان بنفسه
+            console.error('Listing preview error:', error.message);
+            indexHtml().then((html) => res.type('html').send(html), next);
+        }
+    });
 
     // مسارات التطبيق (بلا امتداد ملف) → index.html دون تخزين مؤقت حتى يلتقط كل نشر جديد فوراً
     app.get(/^\/(?!api(?:\/|$)|geoserver-proxy(?:\/|$)|socket\.io(?:\/|$))[^.]*$/, (req, res) => {

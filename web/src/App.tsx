@@ -15,6 +15,7 @@ import RegisterPage from '@/features/auth/RegisterPage';
 import WelcomePage from '@/features/auth/WelcomePage';
 import LoginPrompt from '@/features/auth/LoginPrompt';
 import RequestsHost from '@/features/requests/RequestsHost';
+import MyBarriersWatcher from '@/features/map/extras/MyBarriersWatcher';
 import { ProtectedRoute, RoleRoute } from '@/routes/guards';
 import NotFoundPage from '@/routes/NotFoundPage';
 import PlaceholderPage from '@/routes/PlaceholderPage';
@@ -43,12 +44,14 @@ const SearchPage = lazy(() => import('@/features/search/SearchPage'));
 const WidgetsPortalPage = lazy(() => import('@/features/widgets/WidgetsPortalPage'));
 const WidgetsTickerPage = lazy(() => import('@/features/widgets/WidgetsTickerPage'));
 const LegalPage = lazy(() => import('@/features/legal/LegalPage'));
+const ListingPage = lazy(() => import('@/features/listing/ListingPage'));
 
 // Ported pages by path; everything else still shows its placeholder.
 const ported: Record<string, ReactElement> = {
   '/home': <HomePage />,
   '/notifications': <NotificationsPage />,
   '/search': <SearchPage />,
+  '/l/:key/:id': <ListingPage />,
   '/widgets/portal': <WidgetsPortalPage />,
   '/widgets/ticker': <WidgetsTickerPage />,
   '/admin/users': <AdminUsersPage />,
@@ -163,6 +166,7 @@ export default function App() {
         <TextOverridesSync />
         <BrandThemeSync />
         <RequestsHost />
+        <MyBarriersWatcher />
         <RouterProvider router={router} />
       </QueryClientProvider>
     </ErrorBoundary>

@@ -13,12 +13,13 @@
 @theme {
   --font-sans: 'Cairo Variable', system-ui, -apple-system, 'Segoe UI', Tahoma, sans-serif;
 
-  /* Brand (indigo → violet, the platform's identity; darker than legacy #667eea so white text passes AA) */
-  --color-brand: #4f46e5; /* fills: buttons, active states (white text on it) */
-  --color-brand-2: #7c3aed; /* second stop of the brand gradient */
-  --color-brand-hover: #4338ca;
-  --color-brand-fg: #4338ca; /* brand-coloured TEXT and icons on a surface */
-  --color-brand-light: #e8e9fd; /* tinted background for selected / hover */
+  /* Brand: Nitaq blue → deep teal (the logo's blue and a darkened logo teal, so white text passes AA on both stops) */
+  --color-brand: #0f4c81; /* fills: buttons, active states (white text on it) */
+  --color-brand-2: #0f766e; /* second stop of the brand gradient */
+  --color-brand-hover: #0c3d69;
+  --color-brand-fg: #0f4677; /* brand-coloured TEXT and icons on a surface */
+  --color-brand-light: #e3eef8; /* tinted background for selected / hover */
+  --color-brand-2-fg: #0f766e; /* the second brand colour as TEXT (gradient headlines) */
 
   /* Surfaces and lines */
   --color-canvas: #f4f5fa; /* page background */
@@ -74,8 +75,9 @@
 /* Dark theme: same names, deeper cool neutrals; brand text and status text lighten to keep contrast. */
 :root[data-theme='dark'] {
   color-scheme: dark;
-  --color-brand-fg: #a5b0ff;
-  --color-brand-light: #262b57;
+  --color-brand-fg: #8cc8f5;
+  --color-brand-light: #13304e;
+  --color-brand-2-fg: #5eead4;
   --color-canvas: #0d1020;
   --color-surface: #161a2c;
   --color-subtle: #1e2339;
@@ -102,8 +104,9 @@
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme='light']):not([data-theme='dark']) {
     color-scheme: dark;
-    --color-brand-fg: #a5b0ff;
-    --color-brand-light: #262b57;
+    --color-brand-fg: #8cc8f5;
+    --color-brand-light: #13304e;
+    --color-brand-2-fg: #5eead4;
     --color-canvas: #0d1020;
     --color-surface: #161a2c;
     --color-subtle: #1e2339;
@@ -179,7 +182,7 @@ body {
 .welcome-enter { animation: welcome-enter-up 1.2s ease-out; }
 .welcome-pulse { animation: welcome-pulse 2s ease-in-out infinite; }
 .welcome-highlight {
-  background: linear-gradient(135deg, #4fc3f7, #00e676);
+  background: linear-gradient(135deg, #2dd4bf, #a3e635);
   background-clip: text;
   -webkit-background-clip: text;
   color: transparent;
@@ -326,5 +329,22 @@ body {
   }
   50% {
     transform: translateY(-8px);
+  }
+}
+
+/* The QR sticker (my listings) prints alone: everything else on the page is hidden while it is open. */
+@media print {
+  body:has([data-print-sticker]) * {
+    visibility: hidden;
+  }
+  [data-print-sticker],
+  [data-print-sticker] * {
+    visibility: visible;
+  }
+  [data-print-sticker] {
+    position: fixed;
+    inset-inline: 0;
+    top: 2cm;
+    margin-inline: auto;
   }
 }

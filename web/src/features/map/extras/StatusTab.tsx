@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
-import { RefreshCw } from 'lucide-react';
+import { RefreshCw, Star } from 'lucide-react';
+import clsx from 'clsx';
 import { useTranslation } from 'react-i18next';
 import { useStatusRows, useStatusUpdatedAt, type StatusLayer } from '@/api/liveStatus';
 import AlertMessage from '@/components/ui/AlertMessage';
@@ -16,6 +17,7 @@ import UpdatedAgo from './UpdatedAgo';
 import { useShowOnMap } from './useShowOnMap';
 import { serviceLabelKey } from '../registry';
 import TargetIcon from '../TargetIcon';
+import { useMyBarriers } from './myBarriers';
 
 /** What the search box matches: the row's own text plus the status words it displays (legacy matched rendered text). */
 function searchText(r: SearchResult, layer: StatusLayer, t: (k: string) => string) {
@@ -50,13 +52,20 @@ export default function StatusTab({
   const showOnMap = useShowOnMap();
   const [query, setQuery] = useState('');
   const [expanded, setExpanded] = useState(false);
+  const starred = useMyBarriers((s) => s.ids);
+  const toggleStar = useMyBarriers((s) => s.toggle);
+  const canStar = layer === 'road_barriers';
 
   const target = targetFromKey(layer);
   const all = useMemo(() => (rows.data && target ? toResults(rows.data, target) : []), [rows.data, target]);
-  const shown = useMemo(
-    () => all.filter((r) => matchesQuery(searchText(r, layer, t), query)),
-    [all, layer, query, t],
-  );
+  const shown = useMemo(() => {
+    const matching = all.filter((r) => matchesQuery(searchText(r, layer, t), query));
+    if (!canStar) return matching;
+    // «حواجزي» first, in the order they were starred; the rest keep the server's order.
+    const rank = (r: SearchResult) =>
+      r.id && starred.includes(r.id) ? starred.indexOf(r.id) : starred.length;
+    return [...matching].sort((a, b) => rank(a) - rank(b));
+  }, [all, layer, query, t, canStar, starred]);
 
   const visible = initialCount && !expanded && !query.trim() ? shown.slice(0, initialCount) : shown;
   const refresh = () => {
@@ -99,11 +108,14 @@ export default function StatusTab({
             const note = layer === 'road_barriers' ? text(r.props.des) : '';
             const place = text(r.props.location_name) || text(r.props.village_a);
             return (
-              <li key={r.key}>
+              <li key={r.key} className="relative">
                 <button
                   type="button"
                   onClick={() => showOnMap(r)}
-                  className="w-full rounded-xl border border-line bg-surface/60 p-3 text-start hover:border-brand hover:bg-brand-light/30"
+                  className={clsx(
+                    'w-full rounded-xl border border-line bg-surface/60 p-3 text-start hover:border-brand hover:bg-brand-light/30',
+                    canStar && r.id && 'pe-12',
+                  )}
                 >
                   <span className="flex items-start gap-2">
                     <span aria-hidden className="text-xl">
@@ -125,6 +137,21 @@ export default function StatusTab({
                     )}
                   </span>
                 </button>
+                {canStar && r.id && (
+                  <button
+                    type="button"
+                    aria-pressed={starred.includes(r.id)}
+                    aria-label={t('myBarriers.star', { name })}
+                    title={t('myBarriers.starHint')}
+                    onClick={() => toggleStar(r.id!)}
+                    className="absolute end-1.5 top-1.5 flex h-10 w-10 items-center justify-center rounded-full text-muted hover:bg-subtle focus-visible:outline-2 focus-visible:outline-brand"
+                  >
+                    <Star
+                      className={clsx('h-5 w-5', starred.includes(r.id) && 'fill-current text-warn')}
+                      aria-hidden
+                    />
+                  </button>
+                )}
               </li>
             );
           })}

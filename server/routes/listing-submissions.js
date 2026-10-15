@@ -51,9 +51,12 @@ ensureListingSubmissionsSchema();
 const SUBMITTER_ROLES = ['user', 'provider'];
 const SUBMISSION_LOCK_NAMESPACE = 73142;
 
+// Submissions per IP per day. 10 unless SUBMISSION_DAILY_LIMIT says otherwise (dev/dev.sh raises it: one run of the
+// live tests submits more than 10).
+const SUBMISSION_DAILY_LIMIT = Number.parseInt(process.env.SUBMISSION_DAILY_LIMIT ?? '', 10) || 10;
 const submissionLimiter = rateLimit({
     windowMs: 24 * 60 * 60 * 1000,
-    max: 10,
+    max: SUBMISSION_DAILY_LIMIT,
     standardHeaders: true,
     legacyHeaders: false,
     message: { success: false, error: 'وصلت الحد اليومي لتقديم الطلبات، حاول غداً.' }

@@ -1,11 +1,12 @@
-import { useState } from 'react';
+import { useState, type ReactNode } from 'react';
 import clsx from 'clsx';
 import { MapPin, Star } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { AvailabilityText } from '../popup/AvailabilityText';
 import MediaGallery from '@/components/ui/MediaGallery';
 import RatingSummary from '@/components/ui/RatingSummary';
-import { hoursLabel, availability, labelMedia, priceLabel, text } from '../popup/featureModel';
+import ActionTile, { ActionTiles } from '@/components/ui/ActionTile';
+import { hoursLabel, availability, labelMedia, listingTitle, priceLabel, text } from '../popup/featureModel';
 import RatingsBlock from '../popup/RatingsBlock';
 import { formatDistance } from '../search/nearby';
 import ResultContact from '../search/ResultContact';
@@ -43,6 +44,8 @@ interface CardProps {
   bare?: boolean;
   /** Where the contact was initiated, for the map / no-map search statistics. */
   contactSource?: MapEventSource;
+  /** `bare` only: more tiles for the action row (save, share). */
+  actions?: ReactNode;
 }
 
 const LONG_DESCRIPTION = 160;
@@ -81,6 +84,7 @@ export default function FeaturedCard({
   highlight,
   bare,
   contactSource = 'map',
+  actions,
 }: CardProps) {
   const { t, i18n } = useTranslation();
   const showOnMap = useShowOnMap();
@@ -89,7 +93,7 @@ export default function FeaturedCard({
   const isBarrier = isRoadBarrier(r.target);
   const isFuel = isFuelStation(r.target);
   const typeTitle = t(targetLabelKey(r.target));
-  const name = text(p.name) || text(p.location_name) || typeTitle;
+  const name = listingTitle(r.target, p, t);
   const place = [text(p.location_name) || text(p.location), text(p.village_a), text(p.gov_a)]
     .filter(Boolean)
     .join(' · ');
@@ -157,17 +161,29 @@ export default function FeaturedCard({
 
       {text(p.des) && <Description value={text(p.des)} />}
 
-      <div className="mt-auto flex flex-wrap gap-2 pt-2">
-        <ResultContact r={r} showRequest className="contents" source={contactSource} />
-        <button
-          type="button"
-          onClick={() => showOnMap(r)}
-          className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-line-strong bg-surface px-3 text-sm font-semibold text-fg hover:bg-subtle"
-        >
-          <MapPin className="h-4 w-4" aria-hidden /> {t('extras.featured.showOnMap')}
-        </button>
-        {!isBarrier && <DirectionsButton coordinate={r.center} />}
-      </div>
+      {bare ? (
+        // The listing preview / page: contact is the one big action; everything else is a row of equal tiles.
+        <div className="space-y-2 pt-2">
+          <ResultContact r={r} showRequest wide className="w-full" source={contactSource} />
+          <ActionTiles>
+            <ActionTile icon={<MapPin />} label={t('extras.featured.onMap')} onClick={() => showOnMap(r)} />
+            {!isBarrier && <DirectionsButton coordinate={r.center} tile />}
+            {actions}
+          </ActionTiles>
+        </div>
+      ) : (
+        <div className="mt-auto flex flex-wrap gap-2 pt-2">
+          <ResultContact r={r} showRequest className="contents" source={contactSource} />
+          <button
+            type="button"
+            onClick={() => showOnMap(r)}
+            className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-line-strong bg-surface px-3 text-sm font-semibold text-fg hover:bg-subtle"
+          >
+            <MapPin className="h-4 w-4" aria-hidden /> {t('extras.featured.showOnMap')}
+          </button>
+          {!isBarrier && <DirectionsButton coordinate={r.center} />}
+        </div>
+      )}
     </article>
   );
 }

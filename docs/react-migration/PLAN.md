@@ -666,7 +666,10 @@ Split `index.html` into features, in this order:
 8. ✅ Auth UI: `auth-core-functions.js`, `auth-app-events.js`, `auth-fetch.js`, `legal-content.js`
    **Parity checklist (from the legacy code).**
    - ✅ Promo splash → `/welcome` (pitch, 6 feature cards, "create account" / "log in", terms + privacy links).
-   - ✅ Terms gate → first step of `/register`: terms list, "I agree" box, Facebook page link + "I liked it" box; the continue button stays disabled until both are ticked.
+   - ✅ Terms gate → `/register` is one screen since 2026-10-15 (owner: "one screen, keep Facebook as a follow-us box"): the
+     form plus ONE required "I agree to the terms of use and privacy policy" box whose two names are links (new tab), and an
+     optional "follow us on Facebook" box that opens the page. The inline policy and the "I liked it" gate are gone (the
+     real-user scenario showed the whole policy and a Facebook condition before the form even appeared).
    - ✅ Register (`POST /api/auth/register`): name, WhatsApp prefix 970/972, local mobile `^05\d{8}$`, password. Sends `whatsapp_number = +<prefix><phone without 0>`, `email: ''`. Role is always `user` (server forces it). Account is created inactive: no session, toast "contact us on Facebook to activate", then `/login`.
    - ✅ Login (`POST /api/auth/login`): phone regex check, server error message shown, welcome toast, redirect to the page the user came from (`state.from`) or `/`. Session stays in `map_user` (shared with the legacy pages; `authStore.ts`).
    - ✅ Change password (`POST /api/auth/change-password`): current password required, new one at least 6 chars, server message on failure, rotated `X-New-Token` stored by `api/client.ts`. Opened from the key icon in `UserMenu`.
@@ -1120,9 +1123,8 @@ it at once); browser at 1440 / 390, no overflow.
 - ✅ Weather off when its request fails: React shows nothing broken instead of switching a widget off — a city without data
   gets no ticker item and no chip, the card shows the error with a retry button, the next forecast is tried in 30 minutes.
   Test: `widgets/model.test.ts`.
-- ✅ Register: the full privacy policy and terms are written in a box that scrolls (`legal/InlineLegal.tsx`, the admin's
-  replacement if there is one) instead of four hand-written bullets (their locale strings are removed); the box takes keyboard
-  focus. Test: `RegisterPage.test.tsx` (which now answers the legal-text requests separately from the register call).
+- ✅ Register: ~~the full policy in a scrolling box (`legal/InlineLegal.tsx`)~~ — replaced 2026-10-15 by links to
+  `/legal/terms` and `/legal/privacy` in the one agreement box (see item 8); `InlineLegal.tsx` deleted. Test: `RegisterPage.test.tsx`.
 
 #### Interface texts (`/admin/texts` → "نصوص الواجهة") — `settings.texts`
 
@@ -1501,11 +1503,146 @@ For each page, list from the legacy code — not from memory:
   (`share.ts → directionsLink`; on a phone the Maps app, turn by turn, from where the person is). In-app routing on the
   roads layer (`realestate:RoadsTest` covers Ramallah / Al-Bireh / Beitunia only) is not built — not requested yet.
 
+## UX round from the real-user scenarios, 15 October 2026
+
+Playwright scenarios (visitor, user, registration, add a listing, admin approval) run against a copy of the production
+data; the owner accepted every proposal ("نفذ اقتراحتك كلها"). One commit per item; each UX change is listed here.
+
+- **A search that finds nothing is not a dead end (UX change):** the keyword results on `/search` and the map's
+  search suggestions now offer, under "nothing matches", chips of the popular types this viewer may see (same list as
+  the hero, `search/popular.ts` → `/search?type=…`), "Search without the map" (map only, carries the words to
+  `/search?q=`) and "Not here? Add your business" (`/add-listing`; visitors meet the sign-in prompt). Tested:
+  `search/NoResultsNext.test.tsx`.
+- **Cards say what a listing is (UX change):** a listing without a name of its own is titled by what it is and where —
+  «شقة للإيجار في بيتونيا», «أرض للبيع في أريحا», «<type> في <town>» (`listingTitle` in `popup/featureModel.ts`) — on the
+  listing cards, the preview, the map's featured cards, results list, search suggestions and feature popup, instead of
+  the section name («شقق الإيجار») on every card. A card or preview with no picture shows the type's icon on a tint; the
+  section illustrations (they read like screenshots of the app) stay on the section tiles only. Tested:
+  `popup/listingTitle.test.ts`.
+- **"Near me" shows the neighbourhood (UX change):** the locate button, the nearby search and the "near me" row zoom to
+  16 (`NEAR_ME_ZOOM`: streets with their listings) instead of 18 (single rooftops, often no marker in view); a closer
+  zoom the viewer already chose is kept. Picking a point when adding a listing still zooms to 18.
+- **A lighter map rail on phones, no English on markers (UX change):** on phones measure, share (and the admin's edit)
+  and refresh fold behind one "more tools" button (`aria-expanded`; a tool in use stays in view), so the rail is
+  five buttons (six for a provider) instead of seven or eight; desktop is unchanged. Flats for rent and for sale are drawn like the service markers — the
+  registry's bed / building icon on a solid orange / green disc (`iconMarker` in `map/styles.ts`) — instead of
+  `rent_icon.png` / `sale_icon.png`, which carried the English words RENT / SALE; the two PNGs are deleted. Tested:
+  `map/iconSvg.test.ts`.
+- **Numbers that read right (UX change):** the count of every feature on the map is called "listings" everywhere
+  («إعلان», «عدد الإعلانات») — it was «معلم» on `/home`, «إعلان ومعلم» on `/search` and `/welcome`, and "service
+  providers" in the map's statistics and the home figures row, though it counts properties and services, not provider
+  accounts. A figure that is really 0 (visits on a fresh platform) is not shown on `/search`, `/welcome` and the
+  `/home` cards; one still loading shows "—" as before.
+- **Clearer contact and approval texts (UX change):** a visitor's contact button says what signing in gives — «سجّل دخولك
+  لرؤية الرقم» (was «سجّل الدخول للتواصل»; short enough for one line on a card; the prompt already returns to the same listing). The add-listing
+  page no longer tells people to sign out and in after approval: it says the app will ask them to sign in once, which
+  is what happens (approval bumps `token_version`, the next call is a 401, the login opens). Making that silent is
+  logged under "Backend asks".
+- **Ticker on phones: one item at a time (UX change):** below `sm` the live-updates strip (map, `/search`) shows one
+  item and fades in the next every 4 s, instead of a marquee that moved each item off a 300 px screen before it could be
+  read; it stops with the pause button and while a finger or the keyboard is on it. Reduced-motion users keep the
+  static row they scroll; desktop and `/widgets/ticker` keep the marquee. Tested: `widgets/widgets.test.tsx`
+  (fake timers: next item after 4 s, none while paused).
+- **Add a listing: less before the work (UX change):** on phones the page intro is one line («ثلاث خطوات…») instead of
+  the full paragraph; the place step starts with a full-width «موقعي الحالي» (it was a small button over the map) and
+  the governorate / town / area selects sit under «أو اختر المحافظة والمدينة», open on desktop and folded on phones.
+
+## Growth round, 15 October 2026 — sharing and reasons to come back (owner: «افرم»)
+
+Web work, plus one new server route (logged under "Server changes"). Showing phones to visitors stays the admin's
+`visitorContact` switch in `/admin/visibility` — not changed here.
+
+- **A page for every listing: `/l/<type>/<id>` (new page).** `features/listing/ListingPage.tsx`, public (a visitor
+  opens a shared link without signing in). It reads the row through the public `/api/search-features-batch`, which
+  applies the same rules as the search (hidden types, withdrawn / expired listings, visitor contact), and shows the same
+  body as the listing preview (`ListingDetails`, now shared by both): pictures, description, ratings, contact, "show on
+  the map", what is linked to it, and share. Gone / hidden / unknown type → "This listing is not available" + a link to
+  the search. `<type>` = rent | sale | land | a service type; `<id>` = the property's fid or the service id. Tested:
+  `features/listing/ListingPage.test.tsx`.
+- **Share a listing (UX change):** the preview and the listing page get «مشاركة» — the phone's share sheet where there
+  is one; elsewhere «شارك على واتساب» (a ready message: the title, then the `/l/…` link) and «نسخ الرابط». Tested in
+  the same file (both branches, link format).
+- **Map popup shares the listing, not only the spot (UX change):** a listing's popup now shares its `/l/…` page (the same
+  button as above) instead of «نسخ رابط الموقع», so the person who opens it sees the listing with its picture, not a
+  bare pin. A dropped / shared location keeps «نسخ رابط الموقع». Tested: `map/popup/popup.test.tsx`.
+
+- **Saved listings, no account needed (new).** A heart on every listing card (over the picture) and «احفظ» in the
+  preview / listing page keep the listing on this device (`localStorage` `psm-saved-listings`, at most 100, newest
+  first). «المحفوظة» is a row of cards on the `/search` landing and on `/home`, read fresh through the public batch
+  (one request per type); a saved listing that is withdrawn, expired or hidden drops out by itself. Nothing shows
+  while none are saved. Tested: `features/listing/saved.test.tsx`.
+
+- **Today strip: the petrol 95 price (UX change).** The `/search` "today" line (weather, prayer, rates, gold) also
+  shows «بنزين 95 · 7.24 ₪» from `/api/fuel-prices`, opening the fuel card of the information centre; left out
+  when the source has no price. The checkpoint open / closed counts were left out on purpose: each checkpoint has two
+  directions and five states, so one «مفتوح X · مغلق Y» figure would mislead — «حواجزي» below answers that question
+  per checkpoint instead. Tested: `features/search/TodayStrip.test.tsx`.
+
+- **«حواجزي» — my checkpoints (new).** A star on each checkpoint in the road-status list (map extras, `/search`
+  dialog, information centre) keeps it on this device (`localStorage` `psm-my-barriers`, at most 30). Starred ones
+  come first in the list and appear as pills next to «حالة الطرق» on `/search` («قلنديا · مفتوح», inbound state,
+  opening the list). While any is starred, the app reads the same checkpoint list every minute (the query the list
+  already uses) and, when a starred checkpoint's state changes in either direction, shows a toast — and a system
+  notification when the app is in the background and notifications were allowed (`showSystemNotification` takes the
+  page to open, here `/search`). Nothing is sent to the server. Tested: `map/extras/myBarriers.test.tsx` (baseline
+  read is silent; a flip gives one toast), `map/extras/extras.test.tsx` (starred first, kept).
+
+- **Install the app (UX change).** The browser's install offer (`beforeinstallprompt`, Chrome / Edge / Samsung on
+  Android and desktop) is caught at start-up (`lib/installPrompt.ts`, called from `main.tsx`) instead of the browser's
+  own mini-bar, and offered as «ثبّت التطبيق على جهازك» in the header menu's preferences (desktop "more" menu and the
+  phone sheet). Hidden until the browser offers it, after installing and after one answer (the event can be used once).
+  iPhone Safari never fires it (installing there is Share → Add to Home Screen), so nothing shows there. Tested:
+  `lib/installPrompt.test.tsx`.
+
+- **QR sticker for providers (new).** «ملصق QR للمحل أو السيارة» on each of the provider's listings in `/my-listings`
+  (not on withdrawn or expired ones) opens a sticker: «لاقيني على خريطة الخدمات», a QR code of the listing's own page
+  (`/l/<type>/<id>`), its name and «صوّر الرمز بكاميرا الجوال». «طباعة» prints the sticker alone (a print rule in
+  `index.css` hides the rest of the page); «حفظ كصورة» saves the code as an SVG for a print shop. The sticker is always
+  light (white, brand border) so it prints the same in dark mode. The code is drawn from `qrcode`'s module matrix as
+  SVG squares in JSX (no HTML strings). New dependency: `qrcode` (+ `@types/qrcode`). Tested:
+  `features/listing/QrSticker.test.tsx`.
+
+- **Listing actions in two tiers (UX change, owner: «هيك صناديق عادي؟»).** In the listing preview and page the
+  buttons were four bordered boxes of different widths wrapping over three lines. Now contact is the one big action
+  (call / WhatsApp side by side across the full width, or «سجّل دخولك لرؤية الرقم» as the primary button), and under it
+  one row of equal tiles, icon over a short label: «على الخريطة» · «اتجاهات» · «احفظ» · «مشاركة»
+  (`components/ui/ActionTile`). Without a share sheet «مشاركة» is one button with a small menu (WhatsApp / copy link)
+  instead of two buttons; the map popup uses the same button.
+
+- **Listing cards: the action row fits (UX change).** On a 16 rem card call + WhatsApp + map + directions did not fit
+  and the last buttons were cut off. Call and WhatsApp now share the row equally, then the map icon; «اتجاهات» is in
+  the preview's tile row and the map popup instead.
+
+- **New name and logo: «نطاق» / Nitaq (owner: «دبر حالك انت وزبط الديزاين»).** Picked from the owner's three logo
+  concepts, then the owner's final brand board: the letter «ن» as an isometric block of land parcels on a navy tile.
+  The tile is cut from that board (the navy keyed out and laid on a clean navy gradient, so no seam), and the same
+  picture makes `components/BrandMark.tsx` (`public/icons/nitaq-mark-144.png`), the favicon and the PWA icons
+  (rounded, full-bleed for iOS, and a smaller mark inside the maskable safe zone). Palette from the concepts: brand blue `#0f4c81` + deep teal `#0f766e` for the gradient (the
+  logo's bright teal `#14b8a6` fails AA under white text), dark-theme brand text `#8cc8f5`; the green `#84cc16` and
+  yellow lie in the logo only. The admin appearance page gets a «نطاق» preset (the default) and keeps the old indigo
+  as a choice. The name changes in the header (always the short «نطاق» now, the long name no longer fits next to the
+  tabs), auth pages, footer, manifest, page title, WhatsApp greetings, the QR sticker («لاقيني على نطاق»). The legal texts (about / terms / privacy / guide) still say «خريطة الخدمات
+  الفلسطينية»: they are pinned byte for byte (`legal.content.test.ts`), so renaming them is the owner's call. Open: the owner checks the domain and the trademark (Saudi «نطاقات»
+  is a different, government programme).
+
 ## Server changes (allowed: functionality-preserving improvements, one commit each)
 
 Rule: URLs, methods, auth rules and response shapes stay identical; legacy pages keep working.
 Log each change here: **what · why · how to verify · commit**.
 
+- **Link previews for a listing's page (`GET /l/:key/:id`, new route, growth round 2026-10-15).** What: when the built
+  app is served, `server/frontend.js` answers `/l/<type>/<id>` with the same `index.html`, but with the listing's
+  `<title>`, description, `og:title` / `og:description` (type · place · price · the start of the description),
+  `og:url`, `og:image` (its first own picture under `/api/listing-photos/` or `/pic/`, else the app icon),
+  `og:site_name` and `twitter:card`. Same rules as `/api/search-features-batch` for a visitor without an account
+  (hidden types, withdrawn / expired); the key must be rent | sale | land | a service type from
+  `shared/service-types.json` (not `service_all`, `Location`, `RoadsTest`); no phone or WhatsApp is ever written;
+  every value is HTML-escaped; `Cache-Control: no-cache`; anything unknown, hidden or failing → the plain `index.html`
+  (the React page then says "not available"). `index.html` is read once and re-read when its file changes. Why: a
+  link shared on WhatsApp / Facebook showed the site's generic title, so nobody could tell what it was. No existing
+  route changes (`/l/…` used to fall through to the same `index.html`). Verify: `node --test lib/listing-og.test.js`;
+  `curl -s localhost:3000/l/rent/<fid> | grep og:` shows the flat's title; a hidden type's link shows the site's own
+  tags.
 - **Multiple listings per service provider.** Admin user rows now expose each `listing_owners` association, and
   `/api/admin/users/update` accepts a validated `listing_links` list, verifies every service `id` or property `fid`
   exists, and synchronizes the links plus the legacy first-listing fields atomically. The provider endpoint retains its
@@ -1513,6 +1650,10 @@ Log each change here: **what · why · how to verify · commit**.
   property layers reject provider-supplied coordinates. Why: one provider may manage several services or properties.
   Verify: focused admin/provider UI tests, server checks, and a live provider account with multiple service/property links.
   Commit: pending.
+
+- **Link previews carry the new name (2026-10-15).** What: `og:site_name` of `/l/:key/:id` is «نطاق» instead of
+  «خريطة الخدمات الفلسطينية» (the rebrand). Behaviour otherwise unchanged. Verify: `curl -s localhost:3000/l/rent/<fid>
+  | grep og:site_name`.
 
 - **Clear a provider link when changing the account to a regular user.** `/api/admin/users/update` now treats an explicit
   `service_layer: null` like an empty selection instead of calling `.trim()` on null and returning 500. The account role and
@@ -2002,7 +2143,37 @@ and give the Node process write access to it on IIS**), table `listing_photos` k
   - **Docs-only pushes do not deploy** (`paths-ignore: docs/**, **/*.md`).
   - **Verify:** `node --test lib` (the prepared-snapshot path, incomplete copy refused); the hook passes other branches,
     refuses a dirty tree; the script parses in PowerShell 7; the first two runs on the server (the first installs, no stamp yet).
+- **The daily submission limit is configurable (2026-10-15).** `POST /api/listing-submissions` allows 10 per IP per day,
+  unchanged in production; `SUBMISSION_DAILY_LIMIT` overrides it and `dev/dev.sh server` sets 200, because one run of
+  `listingSubmissions.live.test.ts` submits 17 and could never pass. **Verify:** without the variable the 11th submission
+  of a day is refused (429); with `dev/dev.sh server` the whole live file passes (8/8).
+- **Fuel prices read the redesigned thefuelprice.com page (2026-10-15).** The site changed its page (Arabic as HTML
+  entities, a five-cell row: name, price, unit, change, start date; the old hidden `lblCalc*` inputs are gone), so
+  `GET /api/fuel-prices` returned 502 "تغيّر شكل صفحة المصدر" for every visitor and the fuel card fell back to the admin's
+  numbers. `lib/thefuelprice.js` now decodes entities, takes only five-cell rows with a unit, and derives the previous price
+  from the change (Unicode minus included); the "updated on" date comes from the «حدّثت الأسعار …» chip. Same response
+  shape, same range checks and the same "fewer than 4 rows = changed" refusal. **Verify:** `node --test lib/thefuelprice.test.js`
+  (new excerpt of the live page in `lib/fixtures`); `curl localhost:3000/api/fuel-prices` → 200 with 7 items.
+
 ## Backend asks (needs the user's decision — behaviour-changing or larger)
+
+- **Growth round, 15 October 2026 — ideas that need the server or outside accounts (not done):**
+  - *Weekly stats to providers on WhatsApp* («انشاف إعلانك 120 مرة هالأسبوع»): needs the WhatsApp Business API (an
+    account, templates approved by Meta) and a scheduled job.
+  - *Views per listing*: `map_service_stats` counts per type, not per listing; counting each listing's opens needs a
+    new column / table and a write on every open.
+  - *Saved-search alerts / push while the app is closed* («نزل شقة جديدة برام الله»): needs Web Push (VAPID keys, a
+    subscriptions table, a sender job). Today's «حواجزي» alerts work only while the app is open.
+  - *A rating prompt after a contact* (call / WhatsApp → «كيف كانت الخدمة؟» the next day): needs the server to remember
+    who contacted whom and to send the reminder.
+  - *Posting the checkpoint status picture to Facebook / WhatsApp automatically*: needs page tokens from Meta and a
+    scheduled job.
+
+- **Provider role without signing in again (asked 2026-10-15, from the real-user scenarios):** approving a listing
+  request makes the user a provider and bumps `token_version`, so their next call is a 401 and they must sign in again
+  (the app now says so). A seamless switch needs a behaviour change: e.g. `POST /api/auth/refresh` that re-issues a
+  token for a still-valid password session, or approval that updates the role without bumping `token_version` (the
+  role would then be re-read from the database on each request). Not done; needs the owner's decision.
 
 - **Public map:** `/api/log-contact-click` is `requireAuth`, so visitors do not get a per-listing `service_requests` row.
   Their call / WhatsApp taps are counted in aggregate `map_service_stats` via public `/save-stat` with a per-tab guest id;
