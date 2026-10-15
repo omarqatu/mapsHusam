@@ -1543,6 +1543,9 @@ data; the owner accepted every proposal ("نفذ اقتراحتك كلها"). On
   read; it stops with the pause button and while a finger or the keyboard is on it. Reduced-motion users keep the
   static row they scroll; desktop and `/widgets/ticker` keep the marquee. Tested: `widgets/widgets.test.tsx`
   (fake timers: next item after 4 s, none while paused).
+- **Add a listing: less before the work (UX change):** on phones the page intro is one line («ثلاث خطوات…») instead of
+  the full paragraph; the place step starts with a full-width «موقعي الحالي» (it was a small button over the map) and
+  the governorate / town / area selects sit under «أو اختر المحافظة والمدينة», open on desktop and folded on phones.
 
 ## Server changes (allowed: functionality-preserving improvements, one commit each)
 

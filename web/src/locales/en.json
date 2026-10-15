@@ -1921,7 +1921,8 @@
       "chooseRegionFirst": "Choose a town or area first",
       "regionHint": "Choose a governorate, then a town or area to move the map there. Adjust the pin to the exact location.",
       "regionsFailed": "Could not load areas. You can still choose the location directly on the map.",
-      "retryRegions": "Retry"
+      "retryRegions": "Retry",
+      "orPickRegion": "Or choose the governorate and town"
     },
     "landMap": {
       "label": "Land boundary drawing map",
@@ -2003,7 +2004,8 @@
       "back": "Back",
       "chosenType": "Type: {{type}}",
       "photosLater": "Add pictures from “My listings” once it is approved."
-    }
+    },
+    "subtitleShort": "Three steps: type, place, details. The admins review it, then it shows on the map."
   },
   "notify": {
     "title": "Send a notification",
