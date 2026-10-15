@@ -2336,5 +2336,13 @@
     "save": "Save",
     "saved": "Saved",
     "savedTitle": "Saved"
+  },
+  "myBarriers": {
+    "title": "My checkpoints",
+    "checkpoint": "Checkpoint",
+    "star": "Add {{name}} to my checkpoints",
+    "starHint": "My checkpoints: shown first, and you are told when one changes",
+    "changed": "{{name}}: {{status}}",
+    "changedTitle": "{{name}} changed"
   }
 }

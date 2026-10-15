@@ -2336,5 +2336,13 @@
     "save": "احفظ",
     "saved": "محفوظ",
     "savedTitle": "المحفوظة"
+  },
+  "myBarriers": {
+    "title": "حواجزي",
+    "checkpoint": "حاجز",
+    "star": "أضف {{name}} إلى حواجزي",
+    "starHint": "حواجزي: تظهر أولاً، وننبّهك إذا تغيّرت حالتها",
+    "changed": "{{name}}: {{status}}",
+    "changedTitle": "تغيّرت حالة {{name}}"
   }
 }

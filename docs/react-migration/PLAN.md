@@ -1578,6 +1578,15 @@ Web work, plus one new server route (logged under "Server changes"). Showing pho
   directions and five states, so one «مفتوح X · مغلق Y» figure would mislead — «حواجزي» below answers that question
   per checkpoint instead. Tested: `features/search/TodayStrip.test.tsx`.
 
+- **«حواجزي» — my checkpoints (new).** A star on each checkpoint in the road-status list (map extras, `/search`
+  dialog, information centre) keeps it on this device (`localStorage` `psm-my-barriers`, at most 30). Starred ones
+  come first in the list and appear as pills next to «حالة الطرق» on `/search` («قلنديا · مفتوح», inbound state,
+  opening the list). While any is starred, the app reads the same checkpoint list every minute (the query the list
+  already uses) and, when a starred checkpoint's state changes in either direction, shows a toast — and a system
+  notification when the app is in the background and notifications were allowed (`showSystemNotification` takes the
+  page to open, here `/search`). Nothing is sent to the server. Tested: `map/extras/myBarriers.test.tsx` (baseline
+  read is silent; a flip gives one toast), `map/extras/extras.test.tsx` (starred first, kept).
+
 ## Server changes (allowed: functionality-preserving improvements, one commit each)
 
 Rule: URLs, methods, auth rules and response shapes stay identical; legacy pages keep working.

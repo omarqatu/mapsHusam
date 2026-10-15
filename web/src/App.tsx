@@ -15,6 +15,7 @@ import RegisterPage from '@/features/auth/RegisterPage';
 import WelcomePage from '@/features/auth/WelcomePage';
 import LoginPrompt from '@/features/auth/LoginPrompt';
 import RequestsHost from '@/features/requests/RequestsHost';
+import MyBarriersWatcher from '@/features/map/extras/MyBarriersWatcher';
 import { ProtectedRoute, RoleRoute } from '@/routes/guards';
 import NotFoundPage from '@/routes/NotFoundPage';
 import PlaceholderPage from '@/routes/PlaceholderPage';
@@ -165,6 +166,7 @@ export default function App() {
         <TextOverridesSync />
         <BrandThemeSync />
         <RequestsHost />
+        <MyBarriersWatcher />
         <RouterProvider router={router} />
       </QueryClientProvider>
     </ErrorBoundary>

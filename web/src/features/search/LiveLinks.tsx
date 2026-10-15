@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next';
 import { useLayerFilter } from '@/features/visibility/store';
 import { useStatusUpdatedAt, type StatusLayer } from '@/api/liveStatus';
 import { formatAgo, relativeUpdate } from '../map/extras/status';
+import MyBarrierPills from './MyBarrierPills';
 
 interface Props {
   onRoads: () => void;
@@ -49,6 +50,7 @@ export default function LiveLinks({ onRoads, onFuel }: Props) {
       {layerShown('road_barriers') && (
         <StatusPill layer="road_barriers" icon={Signpost} label={t('searchPage.roadStatus')} onClick={onRoads} />
       )}
+      {layerShown('road_barriers') && <MyBarrierPills pill={pill} onClick={onRoads} />}
       {layerShown('fuel_stations') && (
         <StatusPill layer="fuel_stations" icon={Fuel} label={t('searchPage.fuelStatus')} onClick={onFuel} />
       )}
