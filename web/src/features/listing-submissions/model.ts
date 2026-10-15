@@ -14,7 +14,13 @@ export const GRID_X_RANGE: readonly [number, number] = [100_000, 300_000];
 export const GRID_Y_RANGE: readonly [number, number] = [30_000, 300_000];
 
 /** Ready work-hours choices (HourPresets); the free text stays for anything else. */
-export const HOUR_PRESETS = ['00:00-23:59', '08:00-17:00', '09:00-21:00', '07:00-15:00'] as const;
+/** Ready work-hours choices: the stored value, and its label key (a key with ':' would read as an i18next namespace). */
+export const HOUR_PRESETS = [
+  { value: '00:00-23:59', key: 'allDay' },
+  { value: '08:00-17:00', key: 'h8to17' },
+  { value: '09:00-21:00', key: 'h9to21' },
+  { value: '07:00-15:00', key: 'h7to15' },
+] as const;
 
 export const NAME_MAX = 100;
 export const DES_MAX = 1000;
@@ -103,7 +109,11 @@ function isValidLandPolygon(geometry: LandPolygon) {
   const first = ring[0];
   const last = ring[ring.length - 1];
   if (first[0] !== last[0] || first[1] !== last[1]) return false;
-  if (ring.slice(0, -1).some((point, index) => point[0] === ring[index + 1][0] && point[1] === ring[index + 1][1])) {
+  if (
+    ring
+      .slice(0, -1)
+      .some((point, index) => point[0] === ring[index + 1][0] && point[1] === ring[index + 1][1])
+  ) {
     return false;
   }
   if (new Set(ring.slice(0, -1).map((point) => `${point[0]},${point[1]}`)).size < 3) return false;
@@ -150,7 +160,11 @@ export function validate(
 }
 
 /** The request body. Call only when `validate` found nothing. Grid metres are kept to the millimetre. */
-export function toInput(v: FormValues, point: Coordinate, geometry: LandPolygon | null = null): SubmissionInput {
+export function toInput(
+  v: FormValues,
+  point: Coordinate,
+  geometry: LandPolygon | null = null,
+): SubmissionInput {
   const phone = v.phone.trim();
   const input: SubmissionInput = {
     layer: v.layer,

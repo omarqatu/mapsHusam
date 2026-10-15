@@ -2162,10 +2162,10 @@
       "currency": "Currency",
       "area": "Area (m²)",
       "presets": {
-        "00:00-23:59": "24 hours",
-        "08:00-17:00": "8 – 5",
-        "09:00-21:00": "9 – 9",
-        "07:00-15:00": "7 – 3"
+        "allDay": "24 hours",
+        "h8to17": "8 am – 5 pm",
+        "h9to21": "9 am – 9 pm",
+        "h7to15": "7 am – 3 pm"
       },
       "propertyLocation": "A property’s location is set by the admins. Contact us if it is off.",
       "save": "Save",
