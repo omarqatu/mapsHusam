@@ -666,7 +666,10 @@ Split `index.html` into features, in this order:
 8. ✅ Auth UI: `auth-core-functions.js`, `auth-app-events.js`, `auth-fetch.js`, `legal-content.js`
    **Parity checklist (from the legacy code).**
    - ✅ Promo splash → `/welcome` (pitch, 6 feature cards, "create account" / "log in", terms + privacy links).
-   - ✅ Terms gate → first step of `/register`: terms list, "I agree" box, Facebook page link + "I liked it" box; the continue button stays disabled until both are ticked.
+   - ✅ Terms gate → `/register` is one screen since 2026-10-15 (owner: "one screen, keep Facebook as a follow-us box"): the
+     form plus ONE required "I agree to the terms of use and privacy policy" box whose two names are links (new tab), and an
+     optional "follow us on Facebook" box that opens the page. The inline policy and the "I liked it" gate are gone (the
+     real-user scenario showed the whole policy and a Facebook condition before the form even appeared).
    - ✅ Register (`POST /api/auth/register`): name, WhatsApp prefix 970/972, local mobile `^05\d{8}$`, password. Sends `whatsapp_number = +<prefix><phone without 0>`, `email: ''`. Role is always `user` (server forces it). Account is created inactive: no session, toast "contact us on Facebook to activate", then `/login`.
    - ✅ Login (`POST /api/auth/login`): phone regex check, server error message shown, welcome toast, redirect to the page the user came from (`state.from`) or `/`. Session stays in `map_user` (shared with the legacy pages; `authStore.ts`).
    - ✅ Change password (`POST /api/auth/change-password`): current password required, new one at least 6 chars, server message on failure, rotated `X-New-Token` stored by `api/client.ts`. Opened from the key icon in `UserMenu`.
@@ -1120,9 +1123,8 @@ it at once); browser at 1440 / 390, no overflow.
 - ✅ Weather off when its request fails: React shows nothing broken instead of switching a widget off — a city without data
   gets no ticker item and no chip, the card shows the error with a retry button, the next forecast is tried in 30 minutes.
   Test: `widgets/model.test.ts`.
-- ✅ Register: the full privacy policy and terms are written in a box that scrolls (`legal/InlineLegal.tsx`, the admin's
-  replacement if there is one) instead of four hand-written bullets (their locale strings are removed); the box takes keyboard
-  focus. Test: `RegisterPage.test.tsx` (which now answers the legal-text requests separately from the register call).
+- ✅ Register: ~~the full policy in a scrolling box (`legal/InlineLegal.tsx`)~~ — replaced 2026-10-15 by links to
+  `/legal/terms` and `/legal/privacy` in the one agreement box (see item 8); `InlineLegal.tsx` deleted. Test: `RegisterPage.test.tsx`.
 
 #### Interface texts (`/admin/texts` → "نصوص الواجهة") — `settings.texts`
 
