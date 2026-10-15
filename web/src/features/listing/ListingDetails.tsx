@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import FeaturedCard from '../map/extras/FeaturedCard';
 import PropertyRelations from '../property-relations/PropertyRelations';
@@ -16,6 +17,8 @@ interface Props {
   badge?: string;
   note?: string;
   contactSource?: MapEventSource;
+  /** The page's heading (the listing page): under the header picture, above the details. */
+  heading?: ReactNode;
 }
 
 /**
@@ -28,6 +31,7 @@ export default function ListingDetails({
   badge,
   note,
   contactSource = 'quick_search',
+  heading,
 }: Props) {
   const { t } = useTranslation();
   const { r } = entry;
@@ -44,6 +48,7 @@ export default function ListingDetails({
           </span>
         </div>
       )}
+      {heading}
       <FeaturedCard entry={entry} mode={mode} badge={badge} note={note} bare contactSource={contactSource} />
       {r.id !== null && (
         <div className="flex flex-wrap gap-2">

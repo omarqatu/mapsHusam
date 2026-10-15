@@ -48,8 +48,11 @@ export default function ListingPage() {
     );
   return (
     <article className="mx-auto w-full max-w-xl overflow-hidden rounded-xl border border-line bg-surface p-4 shadow-sm">
-      <h1 className="mb-3 text-xl font-bold text-fg">{title}</h1>
-      <ListingDetails entry={{ r: data }} contactSource="quick_search" />
+      <ListingDetails
+        entry={{ r: data }}
+        contactSource="quick_search"
+        heading={<h1 className="text-xl font-bold text-fg">{title}</h1>}
+      />
     </article>
   );
 }
