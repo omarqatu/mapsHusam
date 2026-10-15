@@ -1568,6 +1568,19 @@ Web work, plus one new server route (logged under "Server changes"). Showing pho
 Rule: URLs, methods, auth rules and response shapes stay identical; legacy pages keep working.
 Log each change here: **what · why · how to verify · commit**.
 
+- **Link previews for a listing's page (`GET /l/:key/:id`, new route, growth round 2026-10-15).** What: when the built
+  app is served, `server/frontend.js` answers `/l/<type>/<id>` with the same `index.html`, but with the listing's
+  `<title>`, description, `og:title` / `og:description` (type · place · price · the start of the description),
+  `og:url`, `og:image` (its first own picture under `/api/listing-photos/` or `/pic/`, else the app icon),
+  `og:site_name` and `twitter:card`. Same rules as `/api/search-features-batch` for a visitor without an account
+  (hidden types, withdrawn / expired); the key must be rent | sale | land | a service type from
+  `shared/service-types.json` (not `service_all`, `Location`, `RoadsTest`); no phone or WhatsApp is ever written;
+  every value is HTML-escaped; `Cache-Control: no-cache`; anything unknown, hidden or failing → the plain `index.html`
+  (the React page then says "not available"). `index.html` is read once and re-read when its file changes. Why: a
+  link shared on WhatsApp / Facebook showed the site's generic title, so nobody could tell what it was. No existing
+  route changes (`/l/…` used to fall through to the same `index.html`). Verify: `node --test lib/listing-og.test.js`;
+  `curl -s localhost:3000/l/rent/<fid> | grep og:` shows the flat's title; a hidden type's link shows the site's own
+  tags.
 - **Multiple listings per service provider.** Admin user rows now expose each `listing_owners` association, and
   `/api/admin/users/update` accepts a validated `listing_links` list, verifies every service `id` or property `fid`
   exists, and synchronizes the links plus the legacy first-listing fields atomically. The provider endpoint retains its
