@@ -26,7 +26,8 @@ export default function Checkbox({
   return (
     <label
       className={clsx(
-        'inline-flex items-center gap-2 text-sm font-medium text-fg',
+        // `relative`: the sr-only input stays inside its label (otherwise it sits at the page corner).
+        'relative inline-flex items-center gap-2 text-sm font-medium text-fg',
         disabled ? 'cursor-not-allowed opacity-60' : 'cursor-pointer',
         className,
       )}
@@ -54,7 +55,8 @@ export default function Checkbox({
           <Check className="h-3.5 w-3.5 text-white" strokeWidth={3} />
         )}
       </span>
-      {label}
+      {/* One flex item: a label made of text and links (terms, privacy) flows as one sentence. */}
+      {label && <span className="min-w-0">{label}</span>}
     </label>
   );
 }
