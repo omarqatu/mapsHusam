@@ -1587,6 +1587,13 @@ Web work, plus one new server route (logged under "Server changes"). Showing pho
   page to open, here `/search`). Nothing is sent to the server. Tested: `map/extras/myBarriers.test.tsx` (baseline
   read is silent; a flip gives one toast), `map/extras/extras.test.tsx` (starred first, kept).
 
+- **Install the app (UX change).** The browser's install offer (`beforeinstallprompt`, Chrome / Edge / Samsung on
+  Android and desktop) is caught at start-up (`lib/installPrompt.ts`, called from `main.tsx`) instead of the browser's
+  own mini-bar, and offered as «ثبّت التطبيق على جهازك» in the header menu's preferences (desktop "more" menu and the
+  phone sheet). Hidden until the browser offers it, after installing and after one answer (the event can be used once).
+  iPhone Safari never fires it (installing there is Share → Add to Home Screen), so nothing shows there. Tested:
+  `lib/installPrompt.test.tsx`.
+
 ## Server changes (allowed: functionality-preserving improvements, one commit each)
 
 Rule: URLs, methods, auth rules and response shapes stay identical; legacy pages keep working.

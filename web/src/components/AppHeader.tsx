@@ -1,5 +1,6 @@
 import { useCallback, useRef, useState, type ReactNode, type RefObject } from 'react';
 import {
+  Download,
   ChartColumn,
   ChevronDown,
   EyeOff,
@@ -27,6 +28,7 @@ import type { LegalKey } from '@/features/legal/types';
 import { NavLink, useLocation } from 'react-router';
 import { useTranslation } from 'react-i18next';
 import clsx from 'clsx';
+import { installApp, useInstallPrompt } from '@/lib/installPrompt';
 import { useOutsideClick } from '@/hooks/useOutsideClick';
 import { useAuthStore } from '@/store/authStore';
 import { appRoutes, canAccess, type AppRoute } from '@/routes/routes';
@@ -93,6 +95,7 @@ function PreferenceRows() {
   const [theme, setLocal] = useState(currentTheme);
   const nextLang = i18n.language === 'ar' ? 'en' : 'ar';
   const nextTheme = theme === 'dark' ? 'light' : 'dark';
+  const canInstall = useInstallPrompt((st) => st.prompt !== null);
   return (
     <>
       <button type="button" className={menuRow()} onClick={() => changeLanguage(nextLang)}>
@@ -115,6 +118,12 @@ function PreferenceRows() {
         )}
         {t(nextTheme === 'dark' ? 'common.themeDark' : 'common.themeLight')}
       </button>
+      {canInstall && (
+        <button type="button" className={menuRow()} onClick={() => void installApp()}>
+          <Download className="h-4 w-4 shrink-0 text-brand-fg" aria-hidden />
+          <span className="flex-1">{t('common.installApp')}</span>
+        </button>
+      )}
     </>
   );
 }

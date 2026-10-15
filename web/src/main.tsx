@@ -4,6 +4,7 @@ import './i18n';
 import './index.css';
 import App from './App';
 import { queryClient } from './api/queryClient';
+import { captureInstallPrompt } from './lib/installPrompt';
 import { registerServiceWorker } from './lib/pwa';
 import { useAuthStore } from './store/authStore';
 
@@ -13,6 +14,7 @@ useAuthStore.subscribe((state, prev) => {
 });
 
 registerServiceWorker();
+captureInstallPrompt();
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>

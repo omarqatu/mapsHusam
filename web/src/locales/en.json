@@ -30,7 +30,8 @@
     "reorder": "Reorder",
     "showAll": "Show all ({{count}})",
     "themeDark": "Dark mode",
-    "themeLight": "Light mode"
+    "themeLight": "Light mode",
+    "installApp": "Install the app"
   },
   "errors": {
     "network": "Could not reach the server. Check your connection and try again.",
