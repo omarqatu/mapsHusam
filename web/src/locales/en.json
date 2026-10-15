@@ -207,7 +207,8 @@
       "failed": "Could not access your location. Make sure GPS is on and permission is granted."
     },
     "refresh": "Refresh map",
-    "refreshed": "Map data refreshed."
+    "refreshed": "Map data refreshed.",
+    "moreTools": "More tools"
   },
   "basemaps": {
     "esri": "Satellite (Esri)",

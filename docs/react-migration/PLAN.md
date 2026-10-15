@@ -1522,6 +1522,12 @@ data; the owner accepted every proposal ("نفذ اقتراحتك كلها"). On
 - **"Near me" shows the neighbourhood (UX change):** the locate button, the nearby search and the "near me" row zoom to
   16 (`NEAR_ME_ZOOM`: streets with their listings) instead of 18 (single rooftops, often no marker in view); a closer
   zoom the viewer already chose is kept. Picking a point when adding a listing still zooms to 18.
+- **A lighter map rail on phones, no English on markers (UX change):** on phones measure, share (and the admin's edit)
+  and refresh fold behind one "more tools" button (`aria-expanded`; a tool in use stays in view), so the rail is
+  five buttons (six for a provider) instead of seven or eight; desktop is unchanged. Flats for rent and for sale are drawn like the service markers — the
+  registry's bed / building icon on a solid orange / green disc (`iconMarker` in `map/styles.ts`) — instead of
+  `rent_icon.png` / `sale_icon.png`, which carried the English words RENT / SALE; the two PNGs are deleted. Tested:
+  `map/iconSvg.test.ts`.
 
 ## Server changes (allowed: functionality-preserving improvements, one commit each)
 
