@@ -1538,6 +1538,11 @@ data; the owner accepted every proposal ("نفذ اقتراحتك كلها"). On
   page no longer tells people to sign out and in after approval: it says the app will ask them to sign in once, which
   is what happens (approval bumps `token_version`, the next call is a 401, the login opens). Making that silent is
   logged under "Backend asks".
+- **Ticker on phones: one item at a time (UX change):** below `sm` the live-updates strip (map, `/search`) shows one
+  item and fades in the next every 4 s, instead of a marquee that moved each item off a 300 px screen before it could be
+  read; it stops with the pause button and while a finger or the keyboard is on it. Reduced-motion users keep the
+  static row they scroll; desktop and `/widgets/ticker` keep the marquee. Tested: `widgets/widgets.test.tsx`
+  (fake timers: next item after 4 s, none while paused).
 
 ## Server changes (allowed: functionality-preserving improvements, one commit each)
 
