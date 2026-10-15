@@ -116,7 +116,7 @@ if (SERVE_REACT) {
                 description,
                 url: `${origin}/l/${req.params.key}/${id}`,
                 image: ogImage(rows[0].pic, origin),
-                siteName: 'خريطة الخدمات الفلسطينية',
+                siteName: 'نطاق',
             }));
         } catch (error) {
             // تعذّرت القراءة: الصفحة نفسها بلا معاينة، والتطبيق يقرأ الإعلان بنفسه
