@@ -48,6 +48,8 @@ import DirectionsButton from './DirectionsButton';
 import RatingsBlock from './RatingsBlock';
 import { useContactActions } from './useContactActions';
 import TargetIcon from '../TargetIcon';
+import ShareListingButton from '@/features/listing/ShareListingButton';
+import { listingUrl } from '@/features/listing/link';
 
 interface Props {
   feature: SelectedFeature;
@@ -269,20 +271,25 @@ export default function FeatureCard({ feature, onClose, className }: Props) {
         <div className="flex flex-wrap items-center justify-between gap-2 border-t border-line pt-3">
           <div className="flex flex-wrap gap-2">
             {!isBarrier && <DirectionsButton coordinate={feature.coordinate} />}
-            <Button
-              variant="secondary"
-              size="sm"
-              startIcon={
-                typeof navigator.share === 'function' ? (
-                  <Link2 className="h-4 w-4" />
-                ) : (
-                  <Copy className="h-4 w-4" />
-                )
-              }
-              onClick={() => void shareLocation(feature, typeTitle, t)}
-            >
-              {t('popup.copyLink')}
-            </Button>
+            {/* A listing shares its own page (a preview with its picture); a dropped pin shares the place. */}
+            {kind.kind !== 'location' && id ? (
+              <ShareListingButton title={title} url={listingUrl(kind, String(id))} />
+            ) : (
+              <Button
+                variant="secondary"
+                size="sm"
+                startIcon={
+                  typeof navigator.share === 'function' ? (
+                    <Link2 className="h-4 w-4" />
+                  ) : (
+                    <Copy className="h-4 w-4" />
+                  )
+                }
+                onClick={() => void shareLocation(feature, typeTitle, t)}
+              >
+                {t('popup.copyLink')}
+              </Button>
+            )}
           </div>
           <span className="text-xs text-muted" dir="ltr">
             {feature.coordinate.map((n) => n.toFixed(1)).join(', ')}

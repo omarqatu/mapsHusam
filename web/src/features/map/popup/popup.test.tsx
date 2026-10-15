@@ -272,6 +272,23 @@ describe('FeatureCard', () => {
     expect(screen.queryByText(i18n.t('popup.noContact'))).toBeNull();
   });
 
+  it('a listing shares its own page; a dropped pin keeps "copy the place link"', () => {
+    useAuthStore.setState({ user: null });
+    const { unmount } = wrap({
+      kind: { kind: 'realEstate', layer: 'rent' },
+      id: '19',
+      coordinate: [1, 2],
+      props: { location: 'رام الله' },
+    });
+    const wa = screen.getByRole('link', { name: i18n.t('listing.shareWhatsapp') });
+    expect(decodeURIComponent(wa.getAttribute('href') ?? '')).toContain(`${window.location.origin}/l/rent/19`);
+    expect(screen.queryByRole('button', { name: i18n.t('popup.copyLink') })).toBeNull();
+    unmount();
+    wrap({ kind: { kind: 'location' }, id: null, coordinate: [1, 2], props: {} });
+    expect(screen.getByRole('button', { name: i18n.t('popup.copyLink') })).toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: i18n.t('listing.shareWhatsapp') })).toBeNull();
+  });
+
   it('hotel: price in dollars (no currency column) and area; a plumber shows neither', async () => {
     const hotel = wrap({
       kind: { kind: 'service', discriminator: 'hotels' },

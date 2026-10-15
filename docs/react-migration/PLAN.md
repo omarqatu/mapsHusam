@@ -1562,6 +1562,9 @@ Web work, plus one new server route (logged under "Server changes"). Showing pho
 - **Share a listing (UX change):** the preview and the listing page get «مشاركة» — the phone's share sheet where there
   is one; elsewhere «شارك على واتساب» (a ready message: the title, then the `/l/…` link) and «نسخ الرابط». Tested in
   the same file (both branches, link format).
+- **Map popup shares the listing, not only the spot (UX change):** a listing's popup now shares its `/l/…` page (the same
+  button as above) instead of «نسخ رابط الموقع», so the person who opens it sees the listing with its picture, not a
+  bare pin. A dropped / shared location keeps «نسخ رابط الموقع». Tested: `map/popup/popup.test.tsx`.
 
 ## Server changes (allowed: functionality-preserving improvements, one commit each)
 
