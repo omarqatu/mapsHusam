@@ -1078,7 +1078,9 @@
       "gold21": "Gold 21k (gram)",
       "ils": "₪",
       "worldPrice": "World market price — may differ from exchange shops and jewellers",
-      "highLow": "Today's high / low"
+      "highLow": "Today's high / low",
+      "petrol95": "Petrol 95",
+      "petrolHint": "Price per litre at the pumps today"
     }
   },
   "adminUsers": {

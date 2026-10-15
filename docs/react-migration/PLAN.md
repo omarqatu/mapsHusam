@@ -1572,6 +1572,12 @@ Web work, plus one new server route (logged under "Server changes"). Showing pho
   (one request per type); a saved listing that is withdrawn, expired or hidden drops out by itself. Nothing shows
   while none are saved. Tested: `features/listing/saved.test.tsx`.
 
+- **Today strip: the petrol 95 price (UX change).** The `/search` "today" line (weather, prayer, rates, gold) also
+  shows «بنزين 95 · 7.24 ₪» from `/api/fuel-prices`, opening the fuel card of the information centre; left out
+  when the source has no price. The checkpoint open / closed counts were left out on purpose: each checkpoint has two
+  directions and five states, so one «مفتوح X · مغلق Y» figure would mislead — «حواجزي» below answers that question
+  per checkpoint instead. Tested: `features/search/TodayStrip.test.tsx`.
+
 ## Server changes (allowed: functionality-preserving improvements, one commit each)
 
 Rule: URLs, methods, auth rules and response shapes stay identical; legacy pages keep working.

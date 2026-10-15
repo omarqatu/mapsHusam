@@ -55,7 +55,9 @@ describe('a listing page', () => {
       },
     ];
     show('/l/rent/42');
-    expect(await screen.findByRole('heading', { level: 1, name: 'Flat for rent in Ramallah' })).toBeInTheDocument();
+    expect(
+      await screen.findByRole('heading', { level: 1, name: 'Flat for rent in Ramallah' }),
+    ).toBeInTheDocument();
     expect(batchBodies[0]).toMatchObject({ workspace: 'realestate', ids: ['42'] });
   });
 
