@@ -7,6 +7,8 @@ import type { Coordinate } from '@/features/map/config';
 import { SERVICE_BY_KEY, groupLabelKey, serviceLabelKey } from '@/features/map/registry';
 import { listingTarget } from '@/features/my-listings/model';
 import { targetLabelKey } from '@/features/map/targets';
+import { buildSearchTags } from '@/features/map/edit/attributes';
+import { EDIT_TARGETS } from '@/features/map/edit/schema';
 import { isLandLayer, isPropertyLayer } from './model';
 import { EMPTY_FORM, validate, type FormErrors, type FormValues } from './model';
 
@@ -37,8 +39,21 @@ export function useListingForm(enabled = true) {
       }),
     [layers.data, t],
   );
+  // What the type search matches besides the label: the same Arabic keywords the map search uses
+  // ("شقة" finds the flats, "كهربا" the electrician), so a person need not know our exact type names.
+  const keywords = useMemo(() => {
+    const out = new Map<string, string>();
+    for (const key of layers.data ?? []) {
+      const target = isPropertyLayer(key) ? EDIT_TARGETS.find((e) => e.typeName === key) : undefined;
+      const s = SERVICE_BY_KEY.get(key);
+      const text = target ? buildSearchTags(target, {}) : s ? `${s.tagName} ${s.tagKeywords}` : null;
+      if (text) out.set(key, text);
+    }
+    return out;
+  }, [layers.data]);
 
   return {
+    keywords,
     layers,
     options,
     values,

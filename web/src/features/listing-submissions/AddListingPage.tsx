@@ -295,16 +295,16 @@ function Wizard() {
 function TypeStep({ form, onPicked }: { form: ListingForm; onPicked: () => void }) {
   const { t } = useTranslation();
   const [query, setQuery] = useState('');
-  const { options } = form;
+  const { options, keywords } = form;
   const groups = useMemo(() => {
     const out = new Map<string, typeof options>();
     for (const o of options) {
-      if (!matchesQuery(o.label, query)) continue;
+      if (!matchesQuery(`${o.label} ${keywords.get(o.value) ?? ''}`, query)) continue;
       const g = o.group ?? '';
       out.set(g, [...(out.get(g) ?? []), o]);
     }
     return [...out.entries()];
-  }, [options, query]);
+  }, [options, keywords, query]);
 
   return (
     <SectionCard title={t('submit.steps.typeTitle')} icon={<Shapes className="h-5 w-5" aria-hidden />}>
