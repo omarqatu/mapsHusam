@@ -1533,6 +1533,11 @@ data; the owner accepted every proposal ("نفذ اقتراحتك كلها"). On
   providers" in the map's statistics and the home figures row, though it counts properties and services, not provider
   accounts. A figure that is really 0 (visits on a fresh platform) is not shown on `/search`, `/welcome` and the
   `/home` cards; one still loading shows "—" as before.
+- **Clearer contact and approval texts (UX change):** a visitor's contact button says what signing in gives — «سجّل دخولك
+  لتظهر أرقام التواصل» (was «سجّل الدخول للتواصل»; the prompt already returns to the same listing). The add-listing
+  page no longer tells people to sign out and in after approval: it says the app will ask them to sign in once, which
+  is what happens (approval bumps `token_version`, the next call is a 401, the login opens). Making that silent is
+  logged under "Backend asks".
 
 ## Server changes (allowed: functionality-preserving improvements, one commit each)
 
@@ -2048,6 +2053,12 @@ and give the Node process write access to it on IIS**), table `listing_photos` k
   (new excerpt of the live page in `lib/fixtures`); `curl localhost:3000/api/fuel-prices` → 200 with 7 items.
 
 ## Backend asks (needs the user's decision — behaviour-changing or larger)
+
+- **Provider role without signing in again (asked 2026-10-15, from the real-user scenarios):** approving a listing
+  request makes the user a provider and bumps `token_version`, so their next call is a 401 and they must sign in again
+  (the app now says so). A seamless switch needs a behaviour change: e.g. `POST /api/auth/refresh` that re-issues a
+  token for a still-valid password session, or approval that updates the role without bumping `token_version` (the
+  role would then be re-read from the database on each request). Not done; needs the owner's decision.
 
 - **Public map:** `/api/log-contact-click` is `requireAuth`, so visitors do not get a per-listing `service_requests` row.
   Their call / WhatsApp taps are counted in aggregate `map_service_stats` via public `/save-stat` with a per-tab guest id;

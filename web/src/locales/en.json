@@ -1888,8 +1888,8 @@
     "sent": "Your request was received. We will review it and notify you.",
     "sendFailed": "Could not send the request.",
     "send": "Send for review",
-    "reviewNote": "The admins review every request before it is published. After approval, sign out and in again to get the provider tools.",
-    "approved": "“{{name}}” was approved and is now on the map. Sign out and in again to activate your provider account.",
+    "reviewNote": "The admins review every request before it is published and notify you of the result. After approval the app asks you to sign in once, to switch on the provider tools.",
+    "approved": "“{{name}}” was approved and is now on the map. If the app asks you to sign in, that switches on the provider tools on your account.",
     "rejected": "“{{name}}” was not approved: {{reason}}. You can fix it and send a new request.",
     "sections": {
       "about": "About the business",
@@ -2083,7 +2083,7 @@
     }
   },
   "loginPrompt": {
-    "contactButton": "Log in to contact",
+    "contactButton": "Sign in to see the contact numbers",
     "title": {
       "contact": "Log in to see the contact number",
       "request": "Log in to request the service"
