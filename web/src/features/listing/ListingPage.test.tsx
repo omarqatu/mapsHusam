@@ -1,5 +1,6 @@
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { MemoryRouter, Route, Routes } from 'react-router';
 import i18n from '@/i18n';
@@ -85,9 +86,14 @@ describe('listing links', () => {
 });
 
 describe('the share button', () => {
-  it('without a share sheet: WhatsApp with the message, and copy link', async () => {
+  it('without a share sheet: one button opening WhatsApp with the message, or copy link', async () => {
     const { default: ShareListingButton } = await import('./ShareListingButton');
     render(<ShareListingButton title="Plumber" url="https://x.ps/l/plumber/7" />);
+    const share = screen.getByRole('button', { name: 'Share' });
+    expect(share).toHaveAttribute('aria-expanded', 'false');
+    expect(screen.queryByRole('link', { name: 'Share on WhatsApp' })).toBeNull();
+    await userEvent.click(share);
+    expect(share).toHaveAttribute('aria-expanded', 'true');
     expect(screen.getByRole('link', { name: 'Share on WhatsApp' })).toHaveAttribute(
       'href',
       whatsappShareLink('Plumber', 'https://x.ps/l/plumber/7'),

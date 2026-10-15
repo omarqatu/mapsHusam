@@ -1,6 +1,7 @@
 import { Navigation } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import clsx from 'clsx';
+import ActionTile from '@/components/ui/ActionTile';
 import { useAuthStore } from '@/store/authStore';
 import { directionsLink } from '../tools/share';
 
@@ -11,20 +12,25 @@ import { directionsLink } from '../tools/share';
 export default function DirectionsButton({
   coordinate,
   iconOnly = false,
+  tile = false,
   className,
 }: {
   coordinate: readonly number[];
   iconOnly?: boolean;
+  /** The icon-over-label look of a listing's action row. */
+  tile?: boolean;
   className?: string;
 }) {
   const { t } = useTranslation();
   const signedIn = useAuthStore((s) => s.user !== null);
   if (!signedIn) return null;
   const label = t('popup.directions');
+  const open = () => window.open(directionsLink(coordinate), '_blank', 'noopener,noreferrer');
+  if (tile) return <ActionTile icon={<Navigation />} label={label} onClick={open} />;
   return (
     <button
       type="button"
-      onClick={() => window.open(directionsLink(coordinate), '_blank', 'noopener,noreferrer')}
+      onClick={open}
       aria-label={iconOnly ? label : undefined}
       title={iconOnly ? label : undefined}
       className={clsx(

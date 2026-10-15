@@ -1602,6 +1602,13 @@ Web work, plus one new server route (logged under "Server changes"). Showing pho
   SVG squares in JSX (no HTML strings). New dependency: `qrcode` (+ `@types/qrcode`). Tested:
   `features/listing/QrSticker.test.tsx`.
 
+- **Listing actions in two tiers (UX change, owner: «هيك صناديق عادي؟»).** In the listing preview and page the
+  buttons were four bordered boxes of different widths wrapping over three lines. Now contact is the one big action
+  (call / WhatsApp side by side across the full width, or «سجّل دخولك لرؤية الرقم» as the primary button), and under it
+  one row of equal tiles, icon over a short label: «على الخريطة» · «اتجاهات» · «احفظ» · «مشاركة»
+  (`components/ui/ActionTile`). Without a share sheet «مشاركة» is one button with a small menu (WhatsApp / copy link)
+  instead of two buttons; the map popup uses the same button.
+
 ## Server changes (allowed: functionality-preserving improvements, one commit each)
 
 Rule: URLs, methods, auth rules and response shapes stay identical; legacy pages keep working.

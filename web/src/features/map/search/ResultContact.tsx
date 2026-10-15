@@ -20,6 +20,8 @@ interface Props {
   onRequest?: () => void;
   /** Where the contact was initiated, for the map / no-map search statistics. */
   source?: MapEventSource;
+  /** `wide`: the listing's main action, big and full width (the listing preview / page). */
+  wide?: boolean;
 }
 
 /**
@@ -33,6 +35,7 @@ export default function ResultContact({
   onContact,
   onRequest,
   source = 'map',
+  wide,
 }: Props) {
   const { t } = useTranslation();
   const linked = useProviderLinked();
@@ -48,7 +51,8 @@ export default function ResultContact({
     return (
       <div className={className}>
         <RequestServiceButton
-          size="sm"
+          size={wide ? 'md' : 'sm'}
+          className={wide ? 'w-full' : undefined}
           onRequest={onRequest}
           target={{
             serviceLayer: layer,
@@ -68,7 +72,7 @@ export default function ResultContact({
     text(p.name) || t(r.target.kind === 'realEstate' ? 'popup.advertiser' : 'popup.provider');
   return (
     <ContactButtons
-      layout="row"
+      layout={wide ? 'wide' : 'row'}
       className={className}
       phone={phone}
       whatsapp={whatsapp}

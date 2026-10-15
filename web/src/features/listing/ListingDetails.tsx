@@ -49,13 +49,26 @@ export default function ListingDetails({
         </div>
       )}
       {heading}
-      <FeaturedCard entry={entry} mode={mode} badge={badge} note={note} bare contactSource={contactSource} />
-      {r.id !== null && (
-        <div className="flex flex-wrap gap-2">
-          <SaveListingButton target={r.target} id={r.id} />
-          <ShareListingButton title={listingTitle(r.target, r.props, t)} url={listingUrl(r.target, r.id)} />
-        </div>
-      )}
+      <FeaturedCard
+        entry={entry}
+        mode={mode}
+        badge={badge}
+        note={note}
+        bare
+        contactSource={contactSource}
+        actions={
+          r.id !== null && (
+            <>
+              <SaveListingButton target={r.target} id={r.id} />
+              <ShareListingButton
+                title={listingTitle(r.target, r.props, t)}
+                url={listingUrl(r.target, r.id)}
+                tile
+              />
+            </>
+          )
+        }
+      />
       <PropertyRelations target={r.target} propertyId={r.id} />
       <PropertyServices
         target={r.target}

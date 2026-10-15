@@ -620,7 +620,8 @@
         "commercial": "Shops & restaurants",
         "education": "Schools & kindergartens",
         "jobs": "Job vacancies"
-      }
+      },
+      "onMap": "On the map"
     },
     "chips": {
       "fuel": "Fuel stations",

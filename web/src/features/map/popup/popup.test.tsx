@@ -3,6 +3,7 @@ import Feature from 'ol/Feature';
 import Point from 'ol/geom/Point';
 import { render, screen } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import userEvent from '@testing-library/user-event';
 import i18n from '@/i18n';
 import { useAuthStore } from '@/store/authStore';
 import type { AuthUser } from '@/types/auth';
@@ -272,7 +273,7 @@ describe('FeatureCard', () => {
     expect(screen.queryByText(i18n.t('popup.noContact'))).toBeNull();
   });
 
-  it('a listing shares its own page; a dropped pin keeps "copy the place link"', () => {
+  it('a listing shares its own page; a dropped pin keeps "copy the place link"', async () => {
     useAuthStore.setState({ user: null });
     const { unmount } = wrap({
       kind: { kind: 'realEstate', layer: 'rent' },
@@ -280,6 +281,7 @@ describe('FeatureCard', () => {
       coordinate: [1, 2],
       props: { location: 'رام الله' },
     });
+    await userEvent.click(screen.getByRole('button', { name: i18n.t('listing.share') }));
     const wa = screen.getByRole('link', { name: i18n.t('listing.shareWhatsapp') });
     expect(decodeURIComponent(wa.getAttribute('href') ?? '')).toContain(`${window.location.origin}/l/rent/19`);
     expect(screen.queryByRole('button', { name: i18n.t('popup.copyLink') })).toBeNull();
