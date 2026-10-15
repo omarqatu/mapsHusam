@@ -1534,7 +1534,7 @@ data; the owner accepted every proposal ("نفذ اقتراحتك كلها"). On
   accounts. A figure that is really 0 (visits on a fresh platform) is not shown on `/search`, `/welcome` and the
   `/home` cards; one still loading shows "—" as before.
 - **Clearer contact and approval texts (UX change):** a visitor's contact button says what signing in gives — «سجّل دخولك
-  لتظهر أرقام التواصل» (was «سجّل الدخول للتواصل»; the prompt already returns to the same listing). The add-listing
+  لرؤية الرقم» (was «سجّل الدخول للتواصل»; short enough for one line on a card; the prompt already returns to the same listing). The add-listing
   page no longer tells people to sign out and in after approval: it says the app will ask them to sign in once, which
   is what happens (approval bumps `token_version`, the next call is a 401, the login opens). Making that silent is
   logged under "Backend asks".

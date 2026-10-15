@@ -2085,7 +2085,7 @@
     }
   },
   "loginPrompt": {
-    "contactButton": "Sign in to see the contact numbers",
+    "contactButton": "Sign in to see the number",
     "title": {
       "contact": "Log in to see the contact number",
       "request": "Log in to request the service"

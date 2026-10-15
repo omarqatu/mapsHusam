@@ -230,28 +230,31 @@ function RegisterForm({ onDone }: { onDone: (to: string) => void }) {
             )}
           </fieldset>
         )}
-        <Checkbox
-          className="mb-2 items-start leading-6"
-          checked={agreed}
-          onChange={setAgreed}
-          required
-          label={
-            <Trans
-              i18nKey="auth.register.agree"
-              components={{ terms: <LegalLink to="terms" />, privacy: <LegalLink to="privacy" /> }}
-            />
-          }
-        />
-        <Checkbox
-          className="mb-4 items-start leading-6"
-          checked={followed}
-          onChange={(on) => {
-            setFollowed(on);
-            // Optional: ticking it opens the page; it never blocks registering.
-            if (on) window.open(FACEBOOK_PAGE, '_blank', 'noopener');
-          }}
-          label={t('auth.register.followFacebook')}
-        />
+        {/* A column: each box on its own line (two short labels would otherwise share one on desktop). */}
+        <div className="flex flex-col items-start">
+          <Checkbox
+            className="mb-2 items-start leading-6"
+            checked={agreed}
+            onChange={setAgreed}
+            required
+            label={
+              <Trans
+                i18nKey="auth.register.agree"
+                components={{ terms: <LegalLink to="terms" />, privacy: <LegalLink to="privacy" /> }}
+              />
+            }
+          />
+          <Checkbox
+            className="mb-4 items-start leading-6"
+            checked={followed}
+            onChange={(on) => {
+              setFollowed(on);
+              // Optional: ticking it opens the page; it never blocks registering.
+              if (on) window.open(FACEBOOK_PAGE, '_blank', 'noopener');
+            }}
+            label={t('auth.register.followFacebook')}
+          />
+        </div>
         <Button
           type="submit"
           size="lg"
