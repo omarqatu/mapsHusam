@@ -32,6 +32,7 @@ import { formatDistance } from '../map/search/nearby';
 import ResultContact from '../map/search/ResultContact';
 import { hasPrice, isFuelStation, isRoadBarrier, priceCurrencyDefault, targetLabelKey } from '../map/targets';
 import ListingPreview from './ListingPreview';
+import SaveListingButton from '../listing/SaveListingButton';
 import DirectionsButton from '../map/popup/DirectionsButton';
 import TargetIcon from '@/features/map/TargetIcon';
 
@@ -209,6 +210,11 @@ export default function ListingCard({
         {badge && (
           <span className="absolute start-2 top-2 inline-flex items-center gap-1 rounded-full bg-surface/95 px-2 py-0.5 text-xs font-bold text-warn shadow-sm">
             <Star className="h-3 w-3" fill="currentColor" aria-hidden /> {badge}
+          </span>
+        )}
+        {r.id && (
+          <span className="absolute end-2 top-2 z-10">
+            <SaveListingButton target={r.target} id={r.id} overlay />
           </span>
         )}
         {!sides && items.length > 1 && (

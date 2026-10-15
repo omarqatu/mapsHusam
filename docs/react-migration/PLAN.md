@@ -1566,6 +1566,12 @@ Web work, plus one new server route (logged under "Server changes"). Showing pho
   button as above) instead of «نسخ رابط الموقع», so the person who opens it sees the listing with its picture, not a
   bare pin. A dropped / shared location keeps «نسخ رابط الموقع». Tested: `map/popup/popup.test.tsx`.
 
+- **Saved listings, no account needed (new).** A heart on every listing card (over the picture) and «احفظ» in the
+  preview / listing page keep the listing on this device (`localStorage` `psm-saved-listings`, at most 100, newest
+  first). «المحفوظة» is a row of cards on the `/search` landing and on `/home`, read fresh through the public batch
+  (one request per type); a saved listing that is withdrawn, expired or hidden drops out by itself. Nothing shows
+  while none are saved. Tested: `features/listing/saved.test.tsx`.
+
 ## Server changes (allowed: functionality-preserving improvements, one commit each)
 
 Rule: URLs, methods, auth rules and response shapes stay identical; legacy pages keep working.

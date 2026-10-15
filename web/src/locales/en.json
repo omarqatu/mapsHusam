@@ -2330,6 +2330,9 @@
     "notFound": "This listing is not available",
     "loadFailed": "The listing could not be opened",
     "notFoundHint": "It may have been withdrawn or expired. Look for another one near you.",
-    "browse": "Browse listings"
+    "browse": "Browse listings",
+    "save": "Save",
+    "saved": "Saved",
+    "savedTitle": "Saved"
   }
 }

@@ -17,6 +17,7 @@ import StatusDialog from './StatusDialog';
 import TickerBar from '../widgets/components/TickerBar';
 import { useSectionShown } from '@/features/visibility/store';
 import TodayStrip from './TodayStrip';
+import SavedListings from '../listing/SavedListings';
 
 /**
  * Search without a map (legacy no-map-search.html). What is shown is decided by the URL:
@@ -98,6 +99,7 @@ export default function SearchPage() {
           ) : (
             <CategoryBrowser group={group} onGroup={pickGroup} onPick={openTarget} />
           )}
+          <SavedListings />
           {featuredOn && <LandingSections />}
         </>
       ) : (

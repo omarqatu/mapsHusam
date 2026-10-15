@@ -6,6 +6,7 @@ import type { FeaturedEntry, FeaturedMode } from '../map/extras/featured';
 import { beforeAfterPair, collectMedia, listingTitle } from '../map/popup/featureModel';
 import TargetIcon from '@/features/map/TargetIcon';
 import type { MapEventSource } from '@/api/mapEvents';
+import SaveListingButton from './SaveListingButton';
 import ShareListingButton from './ShareListingButton';
 import { listingUrl } from './link';
 
@@ -21,7 +22,13 @@ interface Props {
  * Everything about one listing: its pictures / video, the description, ratings, contact, "show on the map", sharing,
  * and what is linked to it. The body of the listing preview and of the listing's own page (`/l/:key/:id`).
  */
-export default function ListingDetails({ entry, mode = 'all', badge, note, contactSource = 'quick_search' }: Props) {
+export default function ListingDetails({
+  entry,
+  mode = 'all',
+  badge,
+  note,
+  contactSource = 'quick_search',
+}: Props) {
   const { t } = useTranslation();
   const { r } = entry;
   return (
@@ -40,6 +47,7 @@ export default function ListingDetails({ entry, mode = 'all', badge, note, conta
       <FeaturedCard entry={entry} mode={mode} badge={badge} note={note} bare contactSource={contactSource} />
       {r.id !== null && (
         <div className="flex flex-wrap gap-2">
+          <SaveListingButton target={r.target} id={r.id} />
           <ShareListingButton title={listingTitle(r.target, r.props, t)} url={listingUrl(r.target, r.id)} />
         </div>
       )}
