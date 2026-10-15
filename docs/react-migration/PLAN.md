@@ -1609,6 +1609,10 @@ Web work, plus one new server route (logged under "Server changes"). Showing pho
   (`components/ui/ActionTile`). Without a share sheet «مشاركة» is one button with a small menu (WhatsApp / copy link)
   instead of two buttons; the map popup uses the same button.
 
+- **Listing cards: the action row fits (UX change).** On a 16 rem card call + WhatsApp + map + directions did not fit
+  and the last buttons were cut off. Call and WhatsApp now share the row equally, then the map icon; «اتجاهات» is in
+  the preview's tile row and the map popup instead.
+
 ## Server changes (allowed: functionality-preserving improvements, one commit each)
 
 Rule: URLs, methods, auth rules and response shapes stay identical; legacy pages keep working.

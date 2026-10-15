@@ -33,7 +33,6 @@ import ResultContact from '../map/search/ResultContact';
 import { hasPrice, isFuelStation, isRoadBarrier, priceCurrencyDefault, targetLabelKey } from '../map/targets';
 import ListingPreview from './ListingPreview';
 import SaveListingButton from '../listing/SaveListingButton';
-import DirectionsButton from '../map/popup/DirectionsButton';
 import TargetIcon from '@/features/map/TargetIcon';
 
 interface Props {
@@ -281,7 +280,10 @@ export default function ListingCard({
           rowOnPhone && 'max-sm:col-span-2',
         )}
       >
-        <ResultContact r={r} showRequest className="contents" source="quick_search" />
+        {/* Contact shares the row; "directions" lives in the preview (four buttons do not fit a 16 rem card). */}
+        <div className="flex min-w-0 flex-1 gap-1.5 [&_button]:min-w-0 [&_button]:flex-1">
+          <ResultContact r={r} showRequest className="contents" source="quick_search" />
+        </div>
         <button
           type="button"
           onClick={() => showOnMap(r)}
@@ -291,7 +293,6 @@ export default function ListingCard({
         >
           <MapPin className="h-4 w-4" aria-hidden />
         </button>
-        {!isRoadBarrier(r.target) && <DirectionsButton coordinate={r.center} iconOnly />}
       </div>
 
       {open && (
