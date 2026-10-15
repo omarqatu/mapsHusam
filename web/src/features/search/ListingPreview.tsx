@@ -1,12 +1,9 @@
 import { useTranslation } from 'react-i18next';
 import Modal from '@/components/ui/Modal';
-import FeaturedCard from '../map/extras/FeaturedCard';
-import PropertyRelations from '../property-relations/PropertyRelations';
-import PropertyServices from '../property-services/PropertyServices';
 import type { FeaturedEntry, FeaturedMode } from '../map/extras/featured';
-import { beforeAfterPair, collectMedia, listingTitle } from '../map/popup/featureModel';
-import TargetIcon from '@/features/map/TargetIcon';
+import { listingTitle } from '../map/popup/featureModel';
 import type { MapEventSource } from '@/api/mapEvents';
+import ListingDetails from '../listing/ListingDetails';
 
 interface Props {
   entry: FeaturedEntry | null;
@@ -21,14 +18,7 @@ interface Props {
  * Everything about one listing, opened from its card: every picture / video / link, the description, the real customer
  * ratings with comments, contact with the number shown, and "show on the map". A sheet from the bottom on phones.
  */
-export default function ListingPreview({
-  entry,
-  onClose,
-  mode = 'all',
-  badge,
-  note,
-  contactSource = 'quick_search',
-}: Props) {
+export default function ListingPreview({ entry, onClose, mode = 'all', badge, note, contactSource }: Props) {
   const { t } = useTranslation();
   return (
     <Modal
@@ -38,37 +28,7 @@ export default function ListingPreview({
       widthClass="sm:max-w-xl"
       sheetOnPhone
     >
-      {entry && (
-        <div className="space-y-3">
-          {/* No picture of its own: its type's icon as a header, so the preview never opens on bare text. */}
-          {collectMedia(entry.r.props).length === 0 && !beforeAfterPair(entry.r.props) && (
-            <div
-              className="-mx-4 -mt-4 flex h-28 items-center justify-center bg-gradient-to-br from-brand-light to-subtle"
-              aria-hidden
-            >
-              <span className="flex h-16 w-16 items-center justify-center rounded-full bg-surface text-4xl text-brand-fg shadow-float">
-                <TargetIcon target={entry.r.target} />
-              </span>
-            </div>
-          )}
-          <FeaturedCard
-            entry={entry}
-            mode={mode}
-            badge={badge}
-            note={note}
-            bare
-            contactSource={contactSource}
-          />
-          <PropertyRelations target={entry.r.target} propertyId={entry.r.id} />
-          <PropertyServices
-            target={entry.r.target}
-            propertyId={entry.r.id}
-            origin={entry.r.center}
-            props={entry.r.props}
-            contactSource={contactSource}
-          />
-        </div>
-      )}
+      {entry && <ListingDetails entry={entry} mode={mode} badge={badge} note={note} contactSource={contactSource} />}
     </Modal>
   );
 }

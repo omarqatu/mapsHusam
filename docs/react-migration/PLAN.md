@@ -1547,6 +1547,22 @@ data; the owner accepted every proposal ("نفذ اقتراحتك كلها"). On
   the full paragraph; the place step starts with a full-width «موقعي الحالي» (it was a small button over the map) and
   the governorate / town / area selects sit under «أو اختر المحافظة والمدينة», open on desktop and folded on phones.
 
+## Growth round, 15 October 2026 — sharing and reasons to come back (owner: «افرم»)
+
+Web work, plus one new server route (logged under "Server changes"). Showing phones to visitors stays the admin's
+`visitorContact` switch in `/admin/visibility` — not changed here.
+
+- **A page for every listing: `/l/<type>/<id>` (new page).** `features/listing/ListingPage.tsx`, public (a visitor
+  opens a shared link without signing in). It reads the row through the public `/api/search-features-batch`, which
+  applies the same rules as the search (hidden types, withdrawn / expired listings, visitor contact), and shows the same
+  body as the listing preview (`ListingDetails`, now shared by both): pictures, description, ratings, contact, "show on
+  the map", what is linked to it, and share. Gone / hidden / unknown type → "This listing is not available" + a link to
+  the search. `<type>` = rent | sale | land | a service type; `<id>` = the property's fid or the service id. Tested:
+  `features/listing/ListingPage.test.tsx`.
+- **Share a listing (UX change):** the preview and the listing page get «مشاركة» — the phone's share sheet where there
+  is one; elsewhere «شارك على واتساب» (a ready message: the title, then the `/l/…` link) and «نسخ الرابط». Tested in
+  the same file (both branches, link format).
+
 ## Server changes (allowed: functionality-preserving improvements, one commit each)
 
 Rule: URLs, methods, auth rules and response shapes stay identical; legacy pages keep working.

@@ -43,12 +43,14 @@ const SearchPage = lazy(() => import('@/features/search/SearchPage'));
 const WidgetsPortalPage = lazy(() => import('@/features/widgets/WidgetsPortalPage'));
 const WidgetsTickerPage = lazy(() => import('@/features/widgets/WidgetsTickerPage'));
 const LegalPage = lazy(() => import('@/features/legal/LegalPage'));
+const ListingPage = lazy(() => import('@/features/listing/ListingPage'));
 
 // Ported pages by path; everything else still shows its placeholder.
 const ported: Record<string, ReactElement> = {
   '/home': <HomePage />,
   '/notifications': <NotificationsPage />,
   '/search': <SearchPage />,
+  '/l/:key/:id': <ListingPage />,
   '/widgets/portal': <WidgetsPortalPage />,
   '/widgets/ticker': <WidgetsTickerPage />,
   '/admin/users': <AdminUsersPage />,

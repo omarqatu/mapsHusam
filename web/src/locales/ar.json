@@ -173,7 +173,8 @@
     "adminContact": "بيانات التواصل",
     "myListings": "إعلاناتي",
     "profile": "الملف الشخصي",
-    "adminRelations": "ربط العقارات"
+    "adminRelations": "ربط العقارات",
+    "listing": "الإعلان"
   },
   "roles": {
     "admin": "مشرف",
@@ -2320,5 +2321,15 @@
     "sale": "شقة للبيع",
     "land": "أرض للبيع",
     "in": "{{what}} في {{place}}"
+  },
+  "listing": {
+    "share": "مشاركة",
+    "shareWhatsapp": "شارك على واتساب",
+    "copyLink": "نسخ الرابط",
+    "linkCopied": "تم نسخ رابط الإعلان",
+    "notFound": "هذا الإعلان غير متوفر",
+    "loadFailed": "تعذّر فتح الإعلان",
+    "notFoundHint": "ربما سُحب أو انتهت مدته. ابحث عن غيره قريب منك.",
+    "browse": "تصفّح الإعلانات"
   }
 }

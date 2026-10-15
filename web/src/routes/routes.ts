@@ -45,6 +45,8 @@ export const appRoutes: AppRoute[] = [
     legacy: '(new page — owner, 2026-10-04)',
   },
   { path: '/search', titleKey: 'nav.search', access: 'public', legacy: 'no-map-search.html', nav: true },
+  // A listing's own page: what a shared link opens (growth round, 2026-10-15). Public, like the search.
+  { path: '/l/:key/:id', titleKey: 'nav.listing', access: 'public', legacy: '(new page — growth 2026-10-15)' },
   {
     path: '/notifications',
     titleKey: 'nav.notifications',

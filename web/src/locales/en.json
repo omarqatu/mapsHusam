@@ -173,7 +173,8 @@
     "adminContact": "Contact details",
     "myListings": "My listings",
     "profile": "My profile",
-    "adminRelations": "Property links"
+    "adminRelations": "Property links",
+    "listing": "Listing"
   },
   "roles": {
     "admin": "Admin",
@@ -2320,5 +2321,15 @@
     "sale": "Flat for sale",
     "land": "Land for sale",
     "in": "{{what}} in {{place}}"
+  },
+  "listing": {
+    "share": "Share",
+    "shareWhatsapp": "Share on WhatsApp",
+    "copyLink": "Copy link",
+    "linkCopied": "Listing link copied",
+    "notFound": "This listing is not available",
+    "loadFailed": "The listing could not be opened",
+    "notFoundHint": "It may have been withdrawn or expired. Look for another one near you.",
+    "browse": "Browse listings"
   }
 }
