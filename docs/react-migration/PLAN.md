@@ -1519,6 +1519,9 @@ data; the owner accepted every proposal ("نفذ اقتراحتك كلها"). On
   the section name («شقق الإيجار») on every card. A card or preview with no picture shows the type's icon on a tint; the
   section illustrations (they read like screenshots of the app) stay on the section tiles only. Tested:
   `popup/listingTitle.test.ts`.
+- **"Near me" shows the neighbourhood (UX change):** the locate button, the nearby search and the "near me" row zoom to
+  16 (`NEAR_ME_ZOOM`: streets with their listings) instead of 18 (single rooftops, often no marker in view); a closer
+  zoom the viewer already chose is kept. Picking a point when adding a listing still zooms to 18.
 
 ## Server changes (allowed: functionality-preserving improvements, one commit each)
 

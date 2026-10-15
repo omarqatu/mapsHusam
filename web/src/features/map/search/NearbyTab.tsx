@@ -12,6 +12,7 @@ import { FUEL_FIELDS, FUEL_OPTIONS, STOP_OPTIONS } from './model';
 import { type MapTarget } from '../targets';
 import { EMPTY_EXTRA, MAX_RADIUS_M, type NearbyExtra } from './nearby';
 import { useSearchUi } from './store';
+import { NEAR_ME_ZOOM } from '../config';
 import { isFuelStation, isRoadBarrier } from '../targets';
 import TargetSelect from './TargetSelect';
 import { useSearchActions } from './useSearchActions';
@@ -38,7 +39,9 @@ export default function NearbyTab() {
     locateOnce()
       .then((c) => {
         setNearbyCenter(c);
-        map?.getView().animate({ center: c, zoom: 18, duration: 1000 });
+        map
+          ?.getView()
+          .animate({ center: c, zoom: Math.max(map.getView().getZoom() ?? 0, NEAR_ME_ZOOM), duration: 1000 });
       })
       .catch((e: unknown) => toast.error(t(e instanceof GeoError ? e.messageKey : 'map.gps.failed')))
       .finally(() => setLocating(false));

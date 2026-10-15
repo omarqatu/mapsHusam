@@ -5,7 +5,7 @@ import AlertMessage from '@/components/ui/AlertMessage';
 import Button from '@/components/ui/Button';
 import { Spinner } from '@/components/ui/Spinner';
 import { toast } from '@/components/ui/toastStore';
-import type { Coordinate } from '../config';
+import { NEAR_ME_ZOOM, type Coordinate } from '../config';
 import { GeoError, locateOnce } from '../geolocate';
 import { useOlMap } from '../MapContext';
 import { useSearchUi } from '../search/store';
@@ -46,7 +46,9 @@ export default function NearMeSection() {
         setCenter(c);
         // Same blue dot as the "search near a location" tab.
         useSearchUi.getState().setNearbyCenter(c);
-        map?.getView().animate({ center: c, zoom: 18, duration: 800 });
+        map
+          ?.getView()
+          .animate({ center: c, zoom: Math.max(map.getView().getZoom() ?? 0, NEAR_ME_ZOOM), duration: 800 });
       })
       .catch((e: unknown) => toast.error(t(e instanceof GeoError ? e.messageKey : 'map.gps.failed')))
       .finally(() => setLocating(false));
@@ -89,7 +91,10 @@ export default function NearMeSection() {
             target &&
             shown(target) && (
               <Button key={key} size="sm" variant="secondary" disabled={locating} onClick={() => locate(key)}>
-                <span aria-hidden><TargetIcon target={target} /></span> {t(serviceLabelKey(key))}
+                <span aria-hidden>
+                  <TargetIcon target={target} />
+                </span>{' '}
+                {t(serviceLabelKey(key))}
               </Button>
             )
           );
