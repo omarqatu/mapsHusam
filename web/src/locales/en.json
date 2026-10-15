@@ -489,6 +489,11 @@
       "printedOn": "Printed on:",
       "popupBlocked": "Allow pop-ups to print the report.",
       "openAsList": "Open as a list on the search page"
+    },
+    "next": {
+      "browse": "Browse:",
+      "fullSearch": "Search without the map",
+      "addListing": "Not here? Add your business"
     }
   },
   "tools": {

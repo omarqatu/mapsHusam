@@ -1503,6 +1503,17 @@ For each page, list from the legacy code — not from memory:
   (`share.ts → directionsLink`; on a phone the Maps app, turn by turn, from where the person is). In-app routing on the
   roads layer (`realestate:RoadsTest` covers Ramallah / Al-Bireh / Beitunia only) is not built — not requested yet.
 
+## UX round from the real-user scenarios, 15 October 2026
+
+Playwright scenarios (visitor, user, registration, add a listing, admin approval) run against a copy of the production
+data; the owner accepted every proposal ("نفذ اقتراحتك كلها"). One commit per item; each UX change is listed here.
+
+- **A search that finds nothing is not a dead end (UX change):** the keyword results on `/search` and the map's
+  search suggestions now offer, under "nothing matches", chips of the popular types this viewer may see (same list as
+  the hero, `search/popular.ts` → `/search?type=…`), "Search without the map" (map only, carries the words to
+  `/search?q=`) and "Not here? Add your business" (`/add-listing`; visitors meet the sign-in prompt). Tested:
+  `search/NoResultsNext.test.tsx`.
+
 ## Server changes (allowed: functionality-preserving improvements, one commit each)
 
 Rule: URLs, methods, auth rules and response shapes stay identical; legacy pages keep working.
