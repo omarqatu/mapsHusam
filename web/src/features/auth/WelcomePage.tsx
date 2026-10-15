@@ -94,7 +94,7 @@ export default function WelcomePage() {
       ))}
 
       <section className="welcome-enter relative z-[2] mx-auto flex min-h-dvh w-[90%] max-w-[850px] flex-col items-center justify-center px-5 py-8 text-center">
-        <BrandMark className="welcome-pulse mb-4 h-16 w-16 rounded-2xl p-1.5 shadow-[0_0_40px_rgba(45,212,191,0.45)] max-sm:h-14 max-sm:w-14" />
+        <BrandMark className="welcome-pulse mb-4 h-16 w-16 rounded-2xl shadow-[0_0_40px_rgba(45,212,191,0.45)] max-sm:h-14 max-sm:w-14" />
 
         <h1 className="m-0 text-[clamp(1.75rem,6vw,3.25rem)] font-black leading-[1.3] text-white drop-shadow-[0_4px_20px_rgba(0,0,0,0.5)]">
           <span className="welcome-highlight">{t('auth.welcome.title')}</span>

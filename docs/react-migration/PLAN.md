@@ -1614,9 +1614,10 @@ Web work, plus one new server route (logged under "Server changes"). Showing pho
   the preview's tile row and the map popup instead.
 
 - **New name and logo: «نطاق» / Nitaq (owner: «دبر حالك انت وزبط الديزاين»).** Picked from the owner's three logo
-  concepts: concept 1, land parcels on top of layers, redrawn as a clean SVG (`components/BrandMark.tsx`, same drawing
-  in `public/icon.svg` and the PNG app icons). The mark sits on its own white tile so it reads on every header style
-  and in both themes. Palette from the concepts: brand blue `#0f4c81` + deep teal `#0f766e` for the gradient (the
+  concepts, then the owner's final brand board: the letter «ن» as an isometric block of land parcels on a navy tile.
+  The tile is cut from that board (the navy keyed out and laid on a clean navy gradient, so no seam), and the same
+  picture makes `components/BrandMark.tsx` (`public/icons/nitaq-mark-144.png`), the favicon and the PWA icons
+  (rounded, full-bleed for iOS, and a smaller mark inside the maskable safe zone). Palette from the concepts: brand blue `#0f4c81` + deep teal `#0f766e` for the gradient (the
   logo's bright teal `#14b8a6` fails AA under white text), dark-theme brand text `#8cc8f5`; the green `#84cc16` and
   yellow lie in the logo only. The admin appearance page gets a «نطاق» preset (the default) and keeps the old indigo
   as a choice. The name changes in the header (always the short «نطاق» now, the long name no longer fits next to the
