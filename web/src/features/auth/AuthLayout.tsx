@@ -2,7 +2,7 @@ import { Suspense } from 'react';
 import { Link, Outlet } from 'react-router';
 import { CenteredSpinner } from '@/components/ui/Spinner';
 import { useTranslation } from 'react-i18next';
-import { MapPinned } from 'lucide-react';
+import BrandMark from '@/components/BrandMark';
 import LanguageSwitcher from '@/components/LanguageSwitcher';
 import Toaster from '@/components/ui/Toaster';
 import LegalLinks from '@/features/legal/LegalLinks';
@@ -18,9 +18,7 @@ export default function AuthLayout() {
       <header className="relative z-[3] border-b border-white/10 bg-black/15 backdrop-blur-xl">
         <div className="mx-auto flex h-16 w-full max-w-5xl items-center justify-between px-4">
         <Link to="/welcome" className="flex items-center gap-2 text-lg font-black text-white">
-          <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-[#4fc3f7] to-[#00e676] text-[#07131d] shadow-lg shadow-cyan-500/20">
-            <MapPinned className="h-5 w-5" aria-hidden />
-          </span>
+          <BrandMark className="h-9 w-9 shadow-lg shadow-teal-500/20" />
           {t('app.name')}
         </Link>
           <div className="rounded-xl border border-white/15 bg-white/10 text-white backdrop-blur-md [&_button]:text-white">

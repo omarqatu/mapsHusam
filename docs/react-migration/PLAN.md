@@ -1613,6 +1613,17 @@ Web work, plus one new server route (logged under "Server changes"). Showing pho
   and the last buttons were cut off. Call and WhatsApp now share the row equally, then the map icon; «اتجاهات» is in
   the preview's tile row and the map popup instead.
 
+- **New name and logo: «نطاق» / Nitaq (owner: «دبر حالك انت وزبط الديزاين»).** Picked from the owner's three logo
+  concepts: concept 1, land parcels on top of layers, redrawn as a clean SVG (`components/BrandMark.tsx`, same drawing
+  in `public/icon.svg` and the PNG app icons). The mark sits on its own white tile so it reads on every header style
+  and in both themes. Palette from the concepts: brand blue `#0f4c81` + deep teal `#0f766e` for the gradient (the
+  logo's bright teal `#14b8a6` fails AA under white text), dark-theme brand text `#8cc8f5`; the green `#84cc16` and
+  yellow lie in the logo only. The admin appearance page gets a «نطاق» preset (the default) and keeps the old indigo
+  as a choice. The name changes in the header (always the short «نطاق» now, the long name no longer fits next to the
+  tabs), auth pages, footer, manifest, page title, WhatsApp greetings, the QR sticker («لاقيني على نطاق»). The legal texts (about / terms / privacy / guide) still say «خريطة الخدمات
+  الفلسطينية»: they are pinned byte for byte (`legal.content.test.ts`), so renaming them is the owner's call. Open: the owner checks the domain and the trademark (Saudi «نطاقات»
+  is a different, government programme).
+
 ## Server changes (allowed: functionality-preserving improvements, one commit each)
 
 Rule: URLs, methods, auth rules and response shapes stay identical; legacy pages keep working.
@@ -1638,6 +1649,10 @@ Log each change here: **what · why · how to verify · commit**.
   property layers reject provider-supplied coordinates. Why: one provider may manage several services or properties.
   Verify: focused admin/provider UI tests, server checks, and a live provider account with multiple service/property links.
   Commit: pending.
+
+- **Link previews carry the new name (2026-10-15).** What: `og:site_name` of `/l/:key/:id` is «نطاق» instead of
+  «خريطة الخدمات الفلسطينية» (the rebrand). Behaviour otherwise unchanged. Verify: `curl -s localhost:3000/l/rent/<fid>
+  | grep og:site_name`.
 
 - **Clear a provider link when changing the account to a regular user.** `/api/admin/users/update` now treats an explicit
   `service_layer: null` like an empty selection instead of calling `.trim()` on null and returning 500. The account role and

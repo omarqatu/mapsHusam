@@ -132,7 +132,7 @@ function RegisterForm({ onDone }: { onDone: (to: string) => void }) {
   return (
     <>
       <div className="mb-5 text-center">
-        <span className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-[#4fc3f7] to-[#00e676] text-[#07131d] shadow-lg shadow-cyan-500/20">
+        <span className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-[#2dd4bf] to-[#a3e635] text-[#07131d] shadow-lg shadow-teal-500/20">
           <UserRound className="h-7 w-7" aria-hidden />
         </span>
         <h1 className="text-xl font-black text-fg sm:text-2xl">{t('auth.register.title')}</h1>

@@ -28,7 +28,7 @@ describe('the QR sticker', () => {
     const dark = Array.from(modules.data).filter(Boolean).length;
     const code = screen.getByRole('img', { name: "QR code of Abu Sami's listing" });
     expect(code.querySelectorAll('rect')).toHaveLength(dark + 1); // + the white background
-    expect(screen.getByText('Find me on the services map')).toBeInTheDocument();
+    expect(screen.getByText('Find me on Nitaq')).toBeInTheDocument();
     expect(screen.getByText('Abu Sami')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Print' })).toBeInTheDocument();
   });

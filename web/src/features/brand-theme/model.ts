@@ -15,9 +15,10 @@ export const THEME_KEY = 'brand_theme';
 export const HEADER_STYLES: HeaderStyle[] = ['soft', 'gradient', 'surface'];
 
 /** Same values as the @theme block of index.css: saving these means "no override". */
-export const DEFAULT_THEME: BrandTheme = { primary: '#4f46e5', secondary: '#7c3aed', header: 'soft' };
+export const DEFAULT_THEME: BrandTheme = { primary: '#0f4c81', secondary: '#0f766e', header: 'soft' };
 
 export const PRESETS: { id: string; primary: string; secondary: string }[] = [
+  { id: 'nitaq', primary: '#0f4c81', secondary: '#0f766e' },
   { id: 'indigo', primary: '#4f46e5', secondary: '#7c3aed' },
   { id: 'ocean', primary: '#0369a1', secondary: '#0891b2' },
   { id: 'teal', primary: '#0f766e', secondary: '#0d9488' },
@@ -99,10 +100,12 @@ export function deriveTokens(t: BrandTheme): { light: Record<string, string>; da
       '--color-brand-hover': mix(brand, '#0f172a', 0.18),
       '--color-brand-fg': ensureContrast(mix(brand, '#0f172a', 0.12), '#ffffff', 5.5, '#000000'),
       '--color-brand-light': mix(t.primary, '#ffffff', 0.88),
+      '--color-brand-2-fg': ensureContrast(t.secondary, '#ffffff', 4.5, '#000000'),
     },
     dark: {
       '--color-brand-fg': ensureContrast(mix(t.primary, '#ffffff', 0.45), DARK_SURFACE, 7, '#ffffff'),
       '--color-brand-light': mix(t.primary, DARK_SURFACE, 0.72),
+      '--color-brand-2-fg': ensureContrast(mix(t.secondary, '#ffffff', 0.45), DARK_SURFACE, 7, '#ffffff'),
     },
   };
 }

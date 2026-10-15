@@ -10,7 +10,7 @@ import { listingUrl } from './link';
 
 /**
  * A sticker for the provider's shop window or car: a QR code that opens the listing's own page, its name, and
- * «لاقيني على خريطة الخدمات». Printed from the browser, or saved as a picture (SVG) to send to a print shop.
+ * «لاقيني على نطاق». Printed from the browser, or saved as a picture (SVG) to send to a print shop.
  */
 export default function QrSticker({
   target,
@@ -61,9 +61,9 @@ export default function QrSticker({
       {/* The sticker itself: always light, so it prints the same in dark mode. */}
       <div
         data-print-sticker
-        className="mx-auto max-w-xs rounded-2xl border-2 border-[#4f46e5] bg-white p-5 text-center text-[#111827]"
+        className="mx-auto max-w-xs rounded-2xl border-2 border-[#0f4c81] bg-white p-5 text-center text-[#111827]"
       >
-        <p className="flex items-center justify-center gap-1.5 text-lg font-black text-[#4f46e5]">
+        <p className="flex items-center justify-center gap-1.5 text-lg font-black text-[#0f4c81]">
           <MapPin className="h-5 w-5" aria-hidden /> {t('myListings.qr.findMe')}
         </p>
         <div className="mx-auto my-3 w-48">

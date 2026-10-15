@@ -42,7 +42,7 @@ export default function SearchHero({ term, onCommit, onPick, searchRef }: Props)
         </p>
         <h1 className="text-3xl font-black leading-[1.25] text-balance text-fg md:text-[2.6rem]">
           {t('searchPage.heroLine1')}{' '}
-          <span className="whitespace-nowrap bg-gradient-to-l from-brand to-brand-2 bg-clip-text text-transparent">
+          <span className="whitespace-nowrap bg-gradient-to-l from-brand-fg to-brand-2-fg bg-clip-text text-transparent">
             {t('searchPage.heroLine2')}
           </span>
         </h1>

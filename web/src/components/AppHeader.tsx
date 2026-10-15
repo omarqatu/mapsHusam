@@ -8,7 +8,6 @@ import {
   House,
   Languages,
   Map,
-  MapPin,
   Menu,
   Moon,
   Headset,
@@ -35,6 +34,7 @@ import { appRoutes, canAccess, type AppRoute } from '@/routes/routes';
 import { changeLanguage } from '@/i18n';
 import { currentTheme, setTheme } from '@/lib/theme';
 import { InfoList } from './InfoMenu';
+import BrandMark from './BrandMark';
 import { useHeaderTone } from './headerStyles';
 import UserMenu from './UserMenu';
 
@@ -171,13 +171,8 @@ export default function AppHeader() {
     >
       <div className="flex h-full items-center gap-2 px-3 lg:px-5">
         <NavLink to={role ? '/home' : '/'} className="flex shrink-0 items-center gap-2.5">
-          <span className={clsx('flex h-9 w-9 items-center justify-center rounded-xl', tone.mark)}>
-            <MapPin className="h-5 w-5" aria-hidden />
-          </span>
-          <span className="whitespace-nowrap text-base font-black lg:text-lg">
-            <span className="xl:hidden">{t('app.shortName')}</span>
-            <span className="max-xl:hidden">{t('app.name')}</span>
-          </span>
+          <BrandMark className={clsx('h-9 w-9', tone.mark)} />
+          <span className="whitespace-nowrap text-lg font-black">{t('app.shortName')}</span>
         </NavLink>
 
         <nav

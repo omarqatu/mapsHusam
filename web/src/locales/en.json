@@ -1,7 +1,7 @@
 {
   "app": {
-    "shortName": "Services Map",
-    "name": "Palestine Services Map",
+    "shortName": "Nitaq",
+    "name": "Nitaq — Palestine services & property",
     "loading": "Loading…"
   },
   "common": {
@@ -67,7 +67,7 @@
     "sessionInactive": "Your account is currently disabled. Contact the administration through the Facebook page.",
     "sessionNotFound": "This account was not found, please log in again.",
     "welcome": {
-      "title": "Palestine Services Map",
+      "title": "Nitaq",
       "tagline": "Everything you need, in one place",
       "subtitle": "The first interactive platform in Palestine: find any service or property in one tap, contact providers directly, and be one step from everything you want.",
       "features": {
@@ -758,7 +758,7 @@
       "whatsapp": "WhatsApp {{number}}",
       "otherFallback": "there",
       "serviceFallback": "the service",
-      "waMessage": "Hello {{name}}, I am contacting you about the service ({{service}}) through the Palestine services map platform."
+      "waMessage": "Hello {{name}}, I am contacting you about the service ({{service}}) through the Nitaq platform."
     },
     "rating": {
       "title": "Rate the service",
@@ -1843,6 +1843,7 @@
     "resetConfirm": "The platform colour and top bar return to the default for every visitor.",
     "resetDone": "Appearance restored to the default.",
     "presets": {
+      "nitaq": "Nitaq",
       "indigo": "Indigo",
       "ocean": "Ocean",
       "teal": "Teal",
@@ -2067,7 +2068,7 @@
   },
   "platformContact": {
     "title": "Contact the platform",
-    "greeting": "Hello, I am contacting you from the services map",
+    "greeting": "Hello, I am contacting you from Nitaq",
     "whatsapp": "WhatsApp",
     "phone": "Phone",
     "email": "Email",
@@ -2223,7 +2224,7 @@
       "open": "QR sticker for the shop or car",
       "title": "QR sticker",
       "hint": "Print it and stick it on the shop or car: whoever scans it with the camera opens your listing.",
-      "findMe": "Find me on the services map",
+      "findMe": "Find me on Nitaq",
       "scan": "Scan the code with your phone camera",
       "codeLabel": "QR code of {{name}}'s listing",
       "download": "Save as picture",
