@@ -77,6 +77,16 @@ describe('media lists', () => {
     expect(items.map((i) => i.type)).toEqual(['image', 'image', 'youtube', 'link', 'image']);
     expect(items[2]).toEqual({ type: 'youtube', id: 'dQw4w9WgXcQ' });
   });
+  it('a YouTube link or a Facebook page in the picture field is a video / link, never an <img>', () => {
+    const items = collectMedia({
+      pic: 'https://www.youtube.com/watch?v=PpBD_uHoHJk&list=RDPpBD_uHoHJk, https://www.facebook.com/SomePage, https://x.com/a.png',
+    });
+    expect(items).toEqual([
+      { type: 'youtube', id: 'PpBD_uHoHJk' },
+      { type: 'link', url: 'https://www.facebook.com/SomePage', labelKey: 'popup.openPage' },
+      { type: 'image', url: 'https://x.com/a.png' },
+    ]);
+  });
   it('two pictures in the details fields are the before / after pair, shown on their own', () => {
     const props = { pic: 'a.com/1.jpg', details_link_1: 'a.com/b.jpg', details_link_2: 'https://youtu.be/dQw4w9WgXcQ' };
     expect(beforeAfterPair(props)).toEqual({ before: 'https://a.com/b.jpg', after: 'https://youtu.be/dQw4w9WgXcQ' });
