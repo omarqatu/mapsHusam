@@ -2217,6 +2217,16 @@
       "remove": "Remove picture: {{side}}",
       "showFirst": "What does your card show first?",
       "needBoth": "Add a before and an after picture to show them first."
+    },
+    "qr": {
+      "open": "QR sticker for the shop or car",
+      "title": "QR sticker",
+      "hint": "Print it and stick it on the shop or car: whoever scans it with the camera opens your listing.",
+      "findMe": "Find me on the services map",
+      "scan": "Scan the code with your phone camera",
+      "codeLabel": "QR code of {{name}}'s listing",
+      "download": "Save as picture",
+      "print": "Print"
     }
   },
   "profile": {

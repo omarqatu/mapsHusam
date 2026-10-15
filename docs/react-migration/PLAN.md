@@ -1594,6 +1594,14 @@ Web work, plus one new server route (logged under "Server changes"). Showing pho
   iPhone Safari never fires it (installing there is Share → Add to Home Screen), so nothing shows there. Tested:
   `lib/installPrompt.test.tsx`.
 
+- **QR sticker for providers (new).** «ملصق QR للمحل أو السيارة» on each of the provider's listings in `/my-listings`
+  (not on withdrawn or expired ones) opens a sticker: «لاقيني على خريطة الخدمات», a QR code of the listing's own page
+  (`/l/<type>/<id>`), its name and «صوّر الرمز بكاميرا الجوال». «طباعة» prints the sticker alone (a print rule in
+  `index.css` hides the rest of the page); «حفظ كصورة» saves the code as an SVG for a print shop. The sticker is always
+  light (white, brand border) so it prints the same in dark mode. The code is drawn from `qrcode`'s module matrix as
+  SVG squares in JSX (no HTML strings). New dependency: `qrcode` (+ `@types/qrcode`). Tested:
+  `features/listing/QrSticker.test.tsx`.
+
 ## Server changes (allowed: functionality-preserving improvements, one commit each)
 
 Rule: URLs, methods, auth rules and response shapes stay identical; legacy pages keep working.
@@ -2121,6 +2129,18 @@ and give the Node process write access to it on IIS**), table `listing_photos` k
   (new excerpt of the live page in `lib/fixtures`); `curl localhost:3000/api/fuel-prices` → 200 with 7 items.
 
 ## Backend asks (needs the user's decision — behaviour-changing or larger)
+
+- **Growth round, 15 October 2026 — ideas that need the server or outside accounts (not done):**
+  - *Weekly stats to providers on WhatsApp* («انشاف إعلانك 120 مرة هالأسبوع»): needs the WhatsApp Business API (an
+    account, templates approved by Meta) and a scheduled job.
+  - *Views per listing*: `map_service_stats` counts per type, not per listing; counting each listing's opens needs a
+    new column / table and a write on every open.
+  - *Saved-search alerts / push while the app is closed* («نزل شقة جديدة برام الله»): needs Web Push (VAPID keys, a
+    subscriptions table, a sender job). Today's «حواجزي» alerts work only while the app is open.
+  - *A rating prompt after a contact* (call / WhatsApp → «كيف كانت الخدمة؟» the next day): needs the server to remember
+    who contacted whom and to send the reminder.
+  - *Posting the checkpoint status picture to Facebook / WhatsApp automatically*: needs page tokens from Meta and a
+    scheduled job.
 
 - **Provider role without signing in again (asked 2026-10-15, from the real-user scenarios):** approving a listing
   request makes the user a provider and bumps `token_version`, so their next call is a 401 and they must sign in again

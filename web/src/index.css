@@ -328,3 +328,20 @@ body {
     transform: translateY(-8px);
   }
 }
+
+/* The QR sticker (my listings) prints alone: everything else on the page is hidden while it is open. */
+@media print {
+  body:has([data-print-sticker]) * {
+    visibility: hidden;
+  }
+  [data-print-sticker],
+  [data-print-sticker] * {
+    visibility: visible;
+  }
+  [data-print-sticker] {
+    position: fixed;
+    inset-inline: 0;
+    top: 2cm;
+    margin-inline: auto;
+  }
+}
