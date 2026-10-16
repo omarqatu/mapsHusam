@@ -103,7 +103,12 @@
       "login": "Sign in",
       "guest": "Look around without an account",
       "footer": "Visit the map: start by creating an account, or log in if you already have one",
-      "agreeNote": "By continuing you agree to the"
+      "agreeNote": "By continuing you agree to the",
+      "chips": {
+        "realEstate": "Property near you",
+        "services": "Services around you",
+        "areas": "Every town and village"
+      }
     },
     "legal": {
       "terms": "Terms of use",

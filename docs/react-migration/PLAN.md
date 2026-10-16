@@ -1640,6 +1640,11 @@ Web work, plus one new server route (logged under "Server changes"). Showing pho
   `sm`), no emoji. Note: the dev and production databases hold an admin copy of the old guide (`legal.guide`, the
   legacy HTML), which wins over the built-in text; the admin presses «استعادة الافتراضي» for the guide at
   /admin/texts to show the new one.
+  Then (owner: «شوية شفافيات وحركات»): frosted glass (`.glass-card`, `.auth-glass-panel`) over two big colour blobs
+  drifting slowly behind the page (`.brand-backdrop::before/::after`), a staggered entrance (`.anim-rise` + `--d`),
+  the map picture and three glass chips («عقارات قريبة منك», «خدمات حولك», «كل المدن والقرى») floating over it
+  (`.anim-float`), a hover lift on cards and buttons (`.lift`), the primary button in the blue → teal brand gradient.
+  All motion stops under `prefers-reduced-motion`.
 
 ## Server changes (allowed: functionality-preserving improvements, one commit each)
 

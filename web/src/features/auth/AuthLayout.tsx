@@ -17,16 +17,16 @@ export default function AuthLayout() {
           <BrandMark className="h-10 w-10" />
           <span className="text-2xl font-black text-brand-fg">{t('app.shortName')}</span>
         </Link>
-        <div className="rounded-xl border border-line bg-surface/80">
+        <div className="glass-card rounded-xl">
           <LanguageSwitcher />
         </div>
       </header>
-      <main className="mx-auto flex w-full max-w-5xl flex-1 items-center justify-center px-4 py-6 sm:py-10">
+      <main className="anim-rise mx-auto flex w-full max-w-5xl flex-1 items-center justify-center px-4 py-6 sm:py-10">
         <Suspense fallback={<CenteredSpinner minHeight="30vh" />}>
           <Outlet />
         </Suspense>
       </main>
-      <footer className="border-t border-line bg-surface/70 px-4 py-3">
+      <footer className="glass-card border-x-0 border-b-0 px-4 py-3">
         <LegalLinks linkClassName="text-muted hover:text-brand-fg" />
       </footer>
       <Toaster />
