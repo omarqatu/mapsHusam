@@ -55,7 +55,7 @@ export default function LoginPage() {
   return (
     <div className="auth-glass-panel mx-auto w-full max-w-md rounded-[1.75rem] p-6 sm:p-8">
       <div className="mb-5 text-center">
-        <span className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-[#2dd4bf] to-[#a3e635] text-[#07131d] shadow-lg shadow-teal-500/20">
+        <span className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-2xl bg-brand-light text-brand-fg">
           <LogIn className="h-7 w-7" aria-hidden />
         </span>
         <h1 className="text-2xl font-black text-fg sm:text-3xl">{t('auth.loginTitle')}</h1>
@@ -111,7 +111,7 @@ export default function LoginPage() {
         <Button
           type="submit"
           size="lg"
-          className="mt-2 w-full bg-gradient-to-br from-[#29b6d1] to-[#00c978] text-[#07131d] shadow-lg shadow-emerald-500/20 hover:brightness-105"
+          className="mt-2 w-full"
           loading={login.isPending}
           disabled={!phone.trim() || !password}
         >

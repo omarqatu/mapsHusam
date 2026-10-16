@@ -68,6 +68,7 @@
     "sessionNotFound": "This account was not found, please log in again.",
     "welcome": {
       "title": "Nitaq",
+      "eyebrow": "Palestine's services and property on one map",
       "tagline": "Everything you need, in one place",
       "subtitle": "The first interactive platform in Palestine: find any service or property in one tap, contact providers directly, and be one step from everything you want.",
       "features": {
@@ -99,10 +100,15 @@
         }
       },
       "register": "Create an account",
-      "login": "Have an account? Log in",
-      "guest": "Continue as a guest",
+      "login": "Sign in",
+      "guest": "Look around without an account",
       "footer": "Visit the map: start by creating an account, or log in if you already have one",
-      "agreeNote": "By continuing you agree to the"
+      "agreeNote": "By continuing you agree to the",
+      "chips": {
+        "realEstate": "Property near you",
+        "services": "Services around you",
+        "areas": "Every town and village"
+      }
     },
     "legal": {
       "terms": "Terms of use",

@@ -1,11 +1,27 @@
 import type { ReactNode } from 'react';
 import clsx from 'clsx';
-import { ExternalLink, ThumbsUp, Info, List, Video } from 'lucide-react';
+import {
+  Download,
+  ExternalLink,
+  Info,
+  List,
+  Map as MapIcon,
+  Phone,
+  PlusCircle,
+  Radio,
+  Search,
+  Share2,
+  Star,
+  ThumbsUp,
+  UserRound,
+  Video,
+} from 'lucide-react';
 import { Link } from 'react-router';
 import type {
   LegalBlock,
   LegalCallout,
   LegalCard,
+  LegalCardIcon,
   LegalDoc,
   LegalIconName,
   LegalInline,
@@ -19,6 +35,18 @@ const inlineIcons: Record<LegalIconName, typeof Info> = {
   list: List,
   video: Video,
   facebook: ThumbsUp,
+};
+
+const cardIcons: Record<LegalCardIcon, typeof Info> = {
+  search: Search,
+  map: MapIcon,
+  phone: Phone,
+  share: Share2,
+  live: Radio,
+  add: PlusCircle,
+  user: UserRound,
+  install: Download,
+  star: Star,
 };
 
 const tones: Record<LegalTone, string> = {
@@ -85,6 +113,27 @@ function Callout({ block }: { block: LegalCallout }) {
 }
 
 function Card({ block }: { block: LegalCard }) {
+  if (block.icon) {
+    const Icon = cardIcons[block.icon];
+    return (
+      <div className="flex gap-3 rounded-2xl border border-line bg-surface p-4 text-sm leading-7 shadow-card">
+        <span
+          className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-white"
+          style={{ backgroundColor: block.accent }}
+          aria-hidden
+        >
+          <Icon className="h-5 w-5" />
+        </span>
+        <div className="min-w-0">
+          <h4 className="font-bold leading-6 text-fg">{block.title}</h4>
+          <p className="mt-1 text-muted">
+            <Inline parts={block.text} />
+          </p>
+          {block.action && <ActionLink {...block.action} />}
+        </div>
+      </div>
+    );
+  }
   return (
     <div
       className="rounded-xl border border-line bg-surface p-3 ps-4 text-sm leading-7"
@@ -152,7 +201,11 @@ function Block({ block }: { block: LegalBlock }): ReactNode {
       return <Callout block={block} />;
     case 'cards':
       return (
-        <div className="space-y-2">
+        <div
+          className={clsx(
+            block.items.every((it) => it.kind === 'card' && it.icon) ? 'grid gap-3 sm:grid-cols-2' : 'space-y-2',
+          )}
+        >
           {block.items.map((it, i) =>
             it.kind === 'card' ? <Card key={i} block={it} /> : <Callout key={i} block={it} />,
           )}
