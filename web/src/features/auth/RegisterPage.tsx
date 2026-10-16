@@ -151,7 +151,7 @@ function RegisterForm({ onDone }: { onDone: (to: string) => void }) {
             placeholder={t('auth.register.namePlaceholder')}
             startIcon={<UserRound className="h-4 w-4" />}
             inputSize="lg"
-            className="bg-white/80"
+            className="bg-surface/80"
             required
           />
         </FormField>
@@ -181,7 +181,7 @@ function RegisterForm({ onDone }: { onDone: (to: string) => void }) {
               hasError={!!errors.phone}
               startIcon={<Phone className="h-4 w-4" />}
               inputSize="lg"
-              className="bg-white/80"
+              className="bg-surface/80"
               required
             />
           </FormField>
@@ -211,7 +211,7 @@ function RegisterForm({ onDone }: { onDone: (to: string) => void }) {
               </button>
             }
             inputSize="lg"
-            className="bg-white/80"
+            className="bg-surface/80"
             required
           />
         </FormField>
