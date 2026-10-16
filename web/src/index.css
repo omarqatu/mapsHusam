@@ -176,7 +176,11 @@ body {
 .brand-backdrop {
   position: relative;
   isolation: isolate;
+  /* Fallbacks first for older browsers (Safari < 16, old Android web views): without them the blobs widen the page. */
+  overflow: hidden;
   overflow: clip;
+  min-height: 100vh;
+  min-height: 100dvh;
   background-color: var(--color-canvas);
   background-image:
     radial-gradient(60rem 30rem at 100% -10%, rgb(20 184 166 / 0.14), transparent 60%),
@@ -211,7 +215,9 @@ body {
 
 /* Frosted glass on the brand backdrop: the surface at ~70 % with the blobs blurred through it. */
 .glass-card {
+  background: var(--color-surface);
   background: color-mix(in srgb, var(--color-surface) 70%, transparent);
+  border: 1px solid var(--color-line);
   border: 1px solid color-mix(in srgb, var(--color-surface) 55%, var(--color-line));
   box-shadow: var(--shadow-card), inset 0 1px 0 rgb(255 255 255 / 0.35);
   -webkit-backdrop-filter: blur(16px) saturate(140%);
@@ -219,11 +225,19 @@ body {
 }
 /* The card that carries the login / register form on that backdrop (more opaque: it holds inputs). */
 .auth-glass-panel {
+  background: var(--color-surface);
   background: color-mix(in srgb, var(--color-surface) 86%, transparent);
+  border: 1px solid var(--color-line);
   border: 1px solid color-mix(in srgb, var(--color-surface) 50%, var(--color-line));
   box-shadow: var(--shadow-float), inset 0 1px 0 rgb(255 255 255 / 0.4);
   -webkit-backdrop-filter: blur(20px) saturate(140%);
   backdrop-filter: blur(20px) saturate(140%);
+}
+
+/* A bright picture (the welcome map) toned down a little in the dark theme so it does not glare. */
+:root[data-theme='dark'] .dim-in-dark { filter: brightness(0.82) saturate(0.95); }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']):not([data-theme='dark']) .dim-in-dark { filter: brightness(0.82) saturate(0.95); }
 }
 
 /* Motion on the pages before sign-in. `--d` = the element's delay, for a staggered entrance. */

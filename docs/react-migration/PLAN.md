@@ -1645,6 +1645,10 @@ Web work, plus one new server route (logged under "Server changes"). Showing pho
   the map picture and three glass chips («عقارات قريبة منك», «خدمات حولك», «كل المدن والقرى») floating over it
   (`.anim-float`), a hover lift on cards and buttons (`.lift`), the primary button in the blue → teal brand gradient.
   All motion stops under `prefers-reduced-motion`.
+  Fix (owner's screenshot, 2026-10-16): on browsers without `overflow: clip` / `dvh` / `color-mix()` (Safari < 16, old
+  web views) the drifting blobs widened the page (cut on the left) and left a gap under the footer; `.brand-backdrop`
+  and the glass classes now declare plain fallbacks first, the chips and the glow stay inside the picture, the footer
+  sits at the bottom (`mt-auto`), and the bright map picture is toned down in the dark theme (`.dim-in-dark`).
 
 ## Server changes (allowed: functionality-preserving improvements, one commit each)
 
