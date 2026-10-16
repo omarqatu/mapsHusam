@@ -76,7 +76,7 @@ export default function LoginPage() {
             onChange={(e) => setPhone(e.target.value)}
             startIcon={<Phone className="h-4 w-4" />}
             inputSize="lg"
-            className="bg-white/80"
+            className="bg-surface/80"
             hasError={!!phoneError}
             placeholder=""
             required
@@ -104,7 +104,7 @@ export default function LoginPage() {
               </button>
             }
             inputSize="lg"
-            className="bg-white/80"
+            className="bg-surface/80"
             required
           />
         </FormField>
