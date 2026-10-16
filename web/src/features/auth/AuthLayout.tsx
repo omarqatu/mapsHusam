@@ -6,33 +6,28 @@ import BrandMark from '@/components/BrandMark';
 import LanguageSwitcher from '@/components/LanguageSwitcher';
 import Toaster from '@/components/ui/Toaster';
 import LegalLinks from '@/features/legal/LegalLinks';
-import PromoSlideshow from './welcome/PromoSlideshow';
 
 /** Shell for welcome / login / register / legal: brand + language only, no app navigation. */
 export default function AuthLayout() {
   const { t } = useTranslation();
   return (
-    <div className="relative isolate flex min-h-dvh flex-col overflow-hidden bg-[#0a0a1a]">
-      <PromoSlideshow />
-      <div className="absolute inset-0 z-[1] bg-[linear-gradient(180deg,rgba(3,8,20,0.82)_0%,rgba(4,12,25,0.68)_48%,rgba(3,8,20,0.88)_100%)]" />
-      <header className="relative z-[3] border-b border-white/10 bg-black/15 backdrop-blur-xl">
-        <div className="mx-auto flex h-16 w-full max-w-5xl items-center justify-between px-4">
-        <Link to="/welcome" className="flex items-center gap-2 text-lg font-black text-white">
-          <BrandMark className="h-9 w-9 shadow-lg shadow-teal-500/20" />
-          {t('app.name')}
+    <div className="brand-backdrop flex min-h-dvh flex-col text-fg">
+      <header className="mx-auto flex h-16 w-full max-w-5xl items-center justify-between px-4">
+        <Link to="/welcome" className="flex items-center gap-2.5">
+          <BrandMark className="h-10 w-10" />
+          <span className="text-2xl font-black text-brand-fg">{t('app.shortName')}</span>
         </Link>
-          <div className="rounded-xl border border-white/15 bg-white/10 text-white backdrop-blur-md [&_button]:text-white">
-            <LanguageSwitcher />
-          </div>
+        <div className="rounded-xl border border-line bg-surface/80">
+          <LanguageSwitcher />
         </div>
       </header>
-      <main className="relative z-[2] mx-auto flex w-full max-w-5xl flex-1 items-center justify-center px-4 py-8 sm:py-12">
+      <main className="mx-auto flex w-full max-w-5xl flex-1 items-center justify-center px-4 py-6 sm:py-10">
         <Suspense fallback={<CenteredSpinner minHeight="30vh" />}>
           <Outlet />
         </Suspense>
       </main>
-      <footer className="relative z-[2] border-t border-white/10 bg-black/20 px-4 py-3 backdrop-blur-lg">
-        <LegalLinks linkClassName="text-white/75 hover:text-white" />
+      <footer className="border-t border-line bg-surface/70 px-4 py-3">
+        <LegalLinks linkClassName="text-muted hover:text-brand-fg" />
       </footer>
       <Toaster />
     </div>

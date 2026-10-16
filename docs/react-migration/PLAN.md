@@ -1625,6 +1625,22 @@ Web work, plus one new server route (logged under "Server changes"). Showing pho
   الفلسطينية»: they are pinned byte for byte (`legal.content.test.ts`), so renaming them is the owner's call. Open: the owner checks the domain and the trademark (Saudi «نطاقات»
   is a different, government programme).
 
+- **First screen, sign-in pages and the guide in the Nitaq look (UX change, owner: «مش ولا بد — واجهة الأولى، ألوان
+  الكبسات، دليل الاستخدام», 2026-10-16).** `/welcome` was the legacy night-city slideshow with floating icons and
+  neon teal-lime buttons; now it is a light page on the brand backdrop (`.brand-backdrop`: faint teal / green washes
+  of the logo): logo + «نطاق», a headline, one solid primary button «إنشاء حساب جديد», an outlined «تسجيل الدخول», a
+  quiet link «تصفّح كزائر بدون حساب», the live figures, the map illustration cut from the owner's brand board
+  (`public/brand/welcome-map.webp`), and the six features on white cards with solid icon tiles in the logo's colours
+  (`--color-tile-*`). The login / register / legal shell (`AuthLayout`) uses the same backdrop and header instead of
+  the slideshow; the form card is a plain surface card and its submit button is the normal brand button (it was a
+  teal-lime gradient with dark text, and the panel forced a teal brand of its own). `PromoSlideshow` is gone (the promo
+  pictures stay: the search page's art uses them). The guide (`texts/guide.json`, pin updated) is rewritten for Nitaq
+  and today's features (search, map, contact, share + saved, live info and «حواجزي», add a listing + QR sticker,
+  account, install, ratings), each step a card with an icon on a coloured badge (`LegalCard.icon`, two columns from
+  `sm`), no emoji. Note: the dev and production databases hold an admin copy of the old guide (`legal.guide`, the
+  legacy HTML), which wins over the built-in text; the admin presses «استعادة الافتراضي» for the guide at
+  /admin/texts to show the new one.
+
 ## Server changes (allowed: functionality-preserving improvements, one commit each)
 
 Rule: URLs, methods, auth rules and response shapes stay identical; legacy pages keep working.

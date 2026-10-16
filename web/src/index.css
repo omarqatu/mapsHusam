@@ -20,6 +20,11 @@
   --color-brand-fg: #0f4677; /* brand-coloured TEXT and icons on a surface */
   --color-brand-light: #e3eef8; /* tinted background for selected / hover */
   --color-brand-2-fg: #0f766e; /* the second brand colour as TEXT (gradient headlines) */
+  /* Solid tiles behind a white icon (feature tiles, like the brand board): the logo's colours, dark enough for white. */
+  --color-tile-green: #15803d;
+  --color-tile-teal: #0f766e;
+  --color-tile-blue: #1d64c8;
+  --color-tile-amber: #b45309;
 
   /* Surfaces and lines */
   --color-canvas: #f4f5fa; /* page background */
@@ -164,51 +169,22 @@ body {
   }
 }
 
-/* The original full-screen welcome splash from the legacy site. */
-@keyframes welcome-float-up {
-  0% { transform: translateY(100vh); opacity: 0; }
-  10%, 90% { opacity: 1; }
-  100% { transform: translateY(-100vh); opacity: 0; }
+/*
+ * The pages before sign-in (welcome, login, register, legal): the canvas with soft washes of the logo's teal and green
+ * from the top corners, like the brand board. Follows the theme (the washes are faint enough for dark too).
+ */
+.brand-backdrop {
+  background-color: var(--color-canvas);
+  background-image:
+    radial-gradient(60rem 30rem at 100% -10%, rgb(20 184 166 / 0.14), transparent 60%),
+    radial-gradient(50rem 28rem at 0% 0%, rgb(132 204 22 / 0.12), transparent 60%),
+    radial-gradient(40rem 30rem at 50% 110%, rgb(15 76 129 / 0.08), transparent 70%);
 }
-@keyframes welcome-enter-up {
-  from { opacity: 0; transform: translateY(40px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-@keyframes welcome-pulse {
-  0%, 100% { transform: scale(1); }
-  50% { transform: scale(1.1); }
-}
-.welcome-float { animation: welcome-float-up 20s linear infinite; }
-.welcome-enter { animation: welcome-enter-up 1.2s ease-out; }
-.welcome-pulse { animation: welcome-pulse 2s ease-in-out infinite; }
-.welcome-highlight {
-  background: linear-gradient(135deg, #2dd4bf, #a3e635);
-  background-clip: text;
-  -webkit-background-clip: text;
-  color: transparent;
-  -webkit-text-fill-color: transparent;
-}
+/* The card that carries the login / register form on that backdrop. */
 .auth-glass-panel {
-  color-scheme: light;
-  --color-surface: rgb(255 255 255 / 0.94);
-  --color-subtle: rgb(241 245 249 / 0.9);
-  --color-subtle-2: #e2e8f0;
-  --color-line: rgb(203 213 225 / 0.85);
-  --color-line-strong: #aeb9c8;
-  --color-fg: #172033;
-  --color-muted: #536176;
-  --color-brand: #087f8c;
-  --color-brand-fg: #08717d;
-  --color-brand-hover: #066b75;
-  --color-brand-light: #d9f4f1;
-  background: rgb(255 255 255 / 0.86);
-  border: 1px solid rgb(255 255 255 / 0.48);
-  box-shadow: 0 24px 70px rgb(0 0 0 / 0.34), inset 0 1px 0 rgb(255 255 255 / 0.55);
-  -webkit-backdrop-filter: blur(22px) saturate(135%);
-  backdrop-filter: blur(22px) saturate(135%);
-}
-@media (prefers-reduced-motion: reduce) {
-  .welcome-float, .welcome-enter, .welcome-pulse { animation: none; }
+  background: var(--color-surface);
+  border: 1px solid var(--color-line);
+  box-shadow: var(--shadow-float);
 }
 
 /*

@@ -13,6 +13,8 @@ export type LegalKey =
 
 export type LegalTone = 'blue' | 'yellow' | 'green' | 'gray' | 'cyan';
 export type LegalIconName = 'info' | 'external' | 'list' | 'video' | 'facebook';
+/** Icon on a card's coloured badge (the guide's steps). */
+export type LegalCardIcon = 'search' | 'map' | 'phone' | 'share' | 'live' | 'add' | 'user' | 'install' | 'star';
 export type LegalTitleIcon =
   'book' | 'search' | 'provider' | 'userPlus' | 'map' | 'info' | 'terms' | 'privacy' | 'mail';
 
@@ -22,8 +24,9 @@ export type LegalInline =
 
 export interface LegalCard {
   kind: 'card';
-  /** Border colour of the card (hex). */
+  /** Border colour of the card (hex); with `icon`, the colour of the icon's badge instead. */
   accent: string;
+  icon?: LegalCardIcon;
   title: string;
   text: LegalInline[];
   action?: { href: string; text: string; icon?: LegalIconName };
