@@ -50,7 +50,7 @@ const CHIPS: {
   d: string;
 }[] = [
   { key: 'realEstate', Icon: House, tile: 'bg-tile-green', place: '-top-4 start-4 sm:start-8', d: '0s' },
-  { key: 'services', Icon: Wrench, tile: 'bg-tile-teal', place: 'top-1/2 -end-3 sm:-end-6', d: '1.5s' },
+  { key: 'services', Icon: Wrench, tile: 'bg-tile-teal', place: 'top-1/2 end-3', d: '1.5s' },
   { key: 'areas', Icon: Building, tile: 'bg-tile-blue', place: '-bottom-5 start-10 sm:start-16', d: '3s' },
 ];
 
@@ -91,7 +91,7 @@ export default function WelcomePage() {
   };
 
   return (
-    <main className="brand-backdrop min-h-dvh text-fg" dir={arabic ? 'rtl' : 'ltr'}>
+    <main className="brand-backdrop flex min-h-dvh flex-col text-fg" dir={arabic ? 'rtl' : 'ltr'}>
       <header className="anim-rise mx-auto flex h-16 w-full max-w-6xl items-center justify-between px-4">
         <span className="flex items-center gap-2.5">
           <BrandMark className="h-10 w-10" />
@@ -178,7 +178,7 @@ export default function WelcomePage() {
         <div style={delay(200)} className="anim-rise relative mx-auto w-full max-w-xl">
           <div
             aria-hidden
-            className="absolute -inset-6 -z-10 rounded-[2.5rem] bg-gradient-to-br from-tile-teal/25 via-transparent to-tile-green/25 blur-2xl"
+            className="absolute -inset-3 -z-10 rounded-[2.5rem] bg-gradient-to-br from-tile-teal/25 via-transparent to-tile-green/25 blur-2xl"
           />
           <div className="anim-float" style={{ animationDuration: '9s' }}>
             <img
@@ -186,7 +186,7 @@ export default function WelcomePage() {
               alt=""
               width={562}
               height={349}
-              className="w-full rounded-3xl border border-white/60 shadow-float"
+              className="dim-in-dark w-full rounded-3xl border border-white/60 shadow-float"
             />
           </div>
           {CHIPS.map(({ key, Icon, tile, place, d }) => (
@@ -240,7 +240,7 @@ export default function WelcomePage() {
         </ul>
       </section>
 
-      <footer className="glass-card border-x-0 border-b-0 px-4 py-4 text-center text-sm text-muted">
+      <footer className="glass-card mt-auto border-x-0 border-b-0 px-4 py-4 text-center text-sm text-muted">
         <span className="me-1">{t('auth.welcome.agreeNote')}</span>
         <LegalLinks className="mt-1 justify-center" linkClassName="font-bold text-brand-fg" />
       </footer>
