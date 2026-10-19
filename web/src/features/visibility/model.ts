@@ -58,6 +58,9 @@ export interface Visibility {
 
 const SERVICE_KEYS = ALL_TARGETS.filter((t) => t.kind === 'service').map(targetKey);
 const DEFAULT_MOVABLE_SERVICE_KEYS = SERVICE_KEYS.filter((key) => !(fixedLocationServices as string[]).includes(key));
+// Keep this list in step with the server migration so newly added services are movable in old saved settings.
+const MOVABLE_LAYER_MIGRATION_VERSION = 1;
+const MOVABLE_LAYER_MIGRATION_KEYS = ['tile_mason'];
 
 export const ALL_VISIBLE: Visibility = {
   hiddenLayers: new Set(),
@@ -79,15 +82,22 @@ export function parseVisibility(raw: string | null | undefined): Visibility {
     return ALL_VISIBLE;
   }
   if (!data || typeof data !== 'object') return ALL_VISIBLE;
-  const { hiddenLayers, hiddenSections, visitorContact, ratingVisibility, providerMovableLayers } = data as {
+  const { hiddenLayers, hiddenSections, visitorContact, ratingVisibility, providerMovableLayers, providerMovableLayersVersion } = data as {
     hiddenLayers?: unknown;
     hiddenSections?: unknown;
     visitorContact?: unknown;
     ratingVisibility?: unknown;
     providerMovableLayers?: unknown;
+    providerMovableLayersVersion?: unknown;
   };
   const layers = Array.isArray(hiddenLayers) ? hiddenLayers.filter((k) => targetFromKey(k) !== null) : [];
   const sections = Array.isArray(hiddenSections) ? hiddenSections.filter(isSection) : [];
+  const movableLayers = Array.isArray(providerMovableLayers)
+    ? providerMovableLayers.filter((key): key is string => typeof key === 'string' && SERVICE_KEYS.includes(key))
+    : DEFAULT_MOVABLE_SERVICE_KEYS;
+  if (Number(providerMovableLayersVersion || 0) < MOVABLE_LAYER_MIGRATION_VERSION) {
+    movableLayers.push(...MOVABLE_LAYER_MIGRATION_KEYS.filter((key) => DEFAULT_MOVABLE_SERVICE_KEYS.includes(key)));
+  }
   return {
     hiddenLayers: new Set(layers as string[]),
     hiddenSections: new Set(sections),
@@ -100,10 +110,7 @@ export function parseVisibility(raw: string | null | undefined): Visibility {
       }),
     ) as RatingVisibility,
     visitorContact: visitorContact === true,
-    providerMovableLayers: new Set(
-      (Array.isArray(providerMovableLayers) ? providerMovableLayers : DEFAULT_MOVABLE_SERVICE_KEYS)
-        .filter((key): key is string => typeof key === 'string' && SERVICE_KEYS.includes(key)),
-    ),
+    providerMovableLayers: new Set(movableLayers),
   };
 }
 
@@ -115,6 +122,7 @@ export function serializeVisibility(v: Visibility): string {
     ratingVisibility: v.ratingVisibility,
     visitorContact: v.visitorContact,
     providerMovableLayers: [...v.providerMovableLayers].sort(),
+    providerMovableLayersVersion: MOVABLE_LAYER_MIGRATION_VERSION,
   });
 }
 

@@ -267,6 +267,7 @@ export const TYPE_ICON: Record<string, LucideIcon> = {
   food_drinks_carts: UtensilsCrossed,
   car_radiator_repair: Thermometer,
   tile_roofing_installation: House,
+  tile_mason: BrickWall,
   health_medical_labs: Microscope,
 };
 
