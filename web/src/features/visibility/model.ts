@@ -1,4 +1,5 @@
 import { ALL_TARGETS, targetFromKey, targetKey, type MapTarget } from '@/features/map/targets';
+import fixedLocationServices from '../../../../shared/fixed-location-services.json';
 
 // What the public sees: the admin hides layers (map types) and whole sections of the site. Stored on the server as one
 // JSON value under `settings.visibility` (platform_content), applied by every page through `useVisibility`.
@@ -51,13 +52,19 @@ export interface Visibility {
   ratingVisibility: RatingVisibility;
   /** A visitor without an account sees a listing's phone / WhatsApp (default: no — the server leaves them out). */
   visitorContact: boolean;
+  /** Service layers whose providers may update their location. Property layers are always fixed. */
+  providerMovableLayers: ReadonlySet<string>;
 }
+
+const SERVICE_KEYS = ALL_TARGETS.filter((t) => t.kind === 'service').map(targetKey);
+const DEFAULT_MOVABLE_SERVICE_KEYS = SERVICE_KEYS.filter((key) => !(fixedLocationServices as string[]).includes(key));
 
 export const ALL_VISIBLE: Visibility = {
   hiddenLayers: new Set(),
   hiddenSections: new Set(),
   ratingVisibility: DEFAULT_RATING_VISIBILITY,
   visitorContact: false,
+  providerMovableLayers: new Set(DEFAULT_MOVABLE_SERVICE_KEYS),
 };
 
 const isSection = (v: unknown): v is SectionId => (SECTION_IDS as readonly unknown[]).includes(v);
@@ -72,11 +79,12 @@ export function parseVisibility(raw: string | null | undefined): Visibility {
     return ALL_VISIBLE;
   }
   if (!data || typeof data !== 'object') return ALL_VISIBLE;
-  const { hiddenLayers, hiddenSections, visitorContact, ratingVisibility } = data as {
+  const { hiddenLayers, hiddenSections, visitorContact, ratingVisibility, providerMovableLayers } = data as {
     hiddenLayers?: unknown;
     hiddenSections?: unknown;
     visitorContact?: unknown;
     ratingVisibility?: unknown;
+    providerMovableLayers?: unknown;
   };
   const layers = Array.isArray(hiddenLayers) ? hiddenLayers.filter((k) => targetFromKey(k) !== null) : [];
   const sections = Array.isArray(hiddenSections) ? hiddenSections.filter(isSection) : [];
@@ -92,6 +100,10 @@ export function parseVisibility(raw: string | null | undefined): Visibility {
       }),
     ) as RatingVisibility,
     visitorContact: visitorContact === true,
+    providerMovableLayers: new Set(
+      (Array.isArray(providerMovableLayers) ? providerMovableLayers : DEFAULT_MOVABLE_SERVICE_KEYS)
+        .filter((key): key is string => typeof key === 'string' && SERVICE_KEYS.includes(key)),
+    ),
   };
 }
 
@@ -102,6 +114,7 @@ export function serializeVisibility(v: Visibility): string {
     hiddenSections: [...v.hiddenSections].sort(),
     ratingVisibility: v.ratingVisibility,
     visitorContact: v.visitorContact,
+    providerMovableLayers: [...v.providerMovableLayers].sort(),
   });
 }
 

@@ -18,7 +18,13 @@ export default function SearchPanel() {
   if (!open) return null;
 
   return (
-    <MapSheet side="end" label={t('search.title')} title={t('search.title')} onClose={close}>
+    <MapSheet
+      side="end"
+      label={t('search.title')}
+      title={t('search.title')}
+      onClose={close}
+      className="sm:min-h-[min(72vh,40rem)] sm:w-[24rem]"
+    >
       <Tabs
         className="mb-4"
         tabs={TAB_DEFS.map((id) => ({ id, label: t(`search.tabs.${id}`) }))}

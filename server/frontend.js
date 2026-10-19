@@ -22,8 +22,11 @@ app.get('/healthz', async (req, res) => {
 
 // Deployment readiness: connectivity alone cannot reveal a failed CREATE/ALTER or an unwritable upload folder.
 app.get('/readyz', async (req, res) => {
-    const photoDir = path.join(process.env.UPLOADS_DIR || path.join(ROOT_DIR, 'uploads'), 'listing-photos');
-    const probe = path.join(photoDir, `.readiness-${crypto.randomUUID()}`);
+    const uploadRoot = process.env.UPLOADS_DIR || path.join(ROOT_DIR, 'uploads');
+    const photoDir = path.join(uploadRoot, 'listing-photos');
+    const videoDir = path.join(uploadRoot, 'listing-videos');
+    const photoProbe = path.join(photoDir, `.readiness-${crypto.randomUUID()}`);
+    const videoProbe = path.join(videoDir, `.readiness-${crypto.randomUUID()}`);
     try {
         await Promise.all([
             servicesPool.query(`SELECT force_logout_flag, token_version, whatsapp_number FROM public.users LIMIT 0;
@@ -32,15 +35,22 @@ app.get('/readyz', async (req, res) => {
                 SELECT id FROM public.service_ratings LIMIT 0;
                 SELECT layer, feature_id, user_id FROM public.listing_owners LIMIT 0;
                 SELECT id, type FROM public.listing_photos LIMIT 0;
+                SELECT id, layer, feature_id, user_id, type FROM public.listing_videos LIMIT 0;
+                SELECT video, media_default FROM public.service_all LIMIT 0;
                 SELECT area, currency FROM public.listing_submissions LIMIT 0;
                 SELECT content_key FROM public.platform_content LIMIT 0;`),
-            realestatePool.query('SELECT 1'),
+            realestatePool.query(`SELECT video, media_default FROM public."ApartRent" LIMIT 0;
+                SELECT video, media_default FROM public."ApartSale" LIMIT 0;
+                SELECT video, media_default FROM public."LandSale" LIMIT 0;`),
         ]);
-        await fs.promises.writeFile(probe, '', { flag: 'wx' });
-        await fs.promises.unlink(probe);
+        await Promise.all([
+            fs.promises.writeFile(photoProbe, '', { flag: 'wx' }),
+            fs.promises.writeFile(videoProbe, '', { flag: 'wx' }),
+        ]);
+        await Promise.all([fs.promises.unlink(photoProbe), fs.promises.unlink(videoProbe)]);
         res.json({ ok: true });
     } catch (error) {
-        await fs.promises.unlink(probe).catch(() => {});
+        await Promise.all([photoProbe, videoProbe].map((probe) => fs.promises.unlink(probe).catch(() => {})));
         res.status(503).json({ ok: false });
     }
 });

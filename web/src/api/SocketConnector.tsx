@@ -4,7 +4,11 @@ import { useAuthStore } from '@/store/authStore';
 import { authApi } from './auth';
 import { queryClient } from './queryClient';
 import { widgetsKeys } from './widgets';
+import { platformKeys } from './platform';
 import { setSocket, type AppSocket } from './socket';
+import { platformContentApi, platformContentKeys } from './platformContent';
+import { VISIBILITY_KEY, parseVisibility } from '@/features/visibility/model';
+import { setVisibility } from '@/features/visibility/store';
 
 /**
  * Mount once. The socket only exists while logged in (the server rejects unauthenticated
@@ -12,6 +16,47 @@ import { setSocket, type AppSocket } from './socket';
  */
 export default function SocketConnector() {
   const token = useAuthStore((s) => s.user?.token);
+
+  useEffect(() => {
+    // Public, read-only event channel: visitors also receive admin settings and map edits immediately.
+    const transports = import.meta.env.DEV ? ['polling'] : ['websocket', 'polling'];
+    const s = io('/public', { transports });
+    const refreshMapData = () => {
+      window.dispatchEvent(new Event('map-data-updated'));
+      for (const root of ['featured', 'search-page', 'global-search', 'unique-values', 'listing-page', 'provider-linked-features', 'provider', 'my-listings'])
+        void queryClient.invalidateQueries({ queryKey: [root] });
+      void queryClient.invalidateQueries({ queryKey: platformKeys.stats });
+    };
+    const syncVisibility = () => {
+      void platformContentApi.get(VISIBILITY_KEY).then((res) => {
+        const visibility = parseVisibility(res.item?.content_value);
+        setVisibility(visibility);
+      }).catch(() => undefined);
+    };
+    const syncLatest = () => {
+      void queryClient.invalidateQueries({ predicate: (q) => q.queryKey[0] === 'platform-content' });
+      syncVisibility();
+      refreshMapData();
+    };
+    s.on('connect', syncLatest);
+    s.on('platform_content_updated', ({ key }: { key: string }) => {
+      if (key !== VISIBILITY_KEY) {
+        void queryClient.invalidateQueries({ queryKey: platformContentKeys.item(key) });
+        return;
+      }
+      void platformContentApi.get(VISIBILITY_KEY).then((res) => {
+        const visibility = parseVisibility(res.item?.content_value);
+        setVisibility(visibility);
+        void queryClient.invalidateQueries({ predicate: (q) => q.queryKey[0] !== 'platform-content' });
+      }).catch(() => void queryClient.invalidateQueries({ queryKey: platformContentKeys.item(VISIBILITY_KEY) }));
+    });
+    s.on('map_data_updated', () => {
+      refreshMapData();
+    });
+    return () => {
+      s.disconnect();
+    };
+  }, []);
 
   useEffect(() => {
     if (!token) return;

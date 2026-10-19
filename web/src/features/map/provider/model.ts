@@ -1,4 +1,5 @@
 import type { ProviderServiceResponse, ProviderStatus } from '@/api/provider';
+import { ALL_VISIBLE } from '@/features/visibility/model';
 import { GPS_MIN_INTERVAL_MS, REAL_ESTATE_LAYERS, SERVICE_ALL_LAYER, type Coordinate } from '../config';
 import { targetFromKey, type MapTarget } from '../targets';
 
@@ -12,9 +13,9 @@ export const LIVE_INTERVAL_MS = GPS_MIN_INTERVAL_MS;
 export const AVAILABLE: ProviderStatus = 0;
 export const BUSY: ProviderStatus = 1;
 
-/** Property positions are fixed; only service listings may follow provider GPS. */
-export const supportsLocationUpdates = (layer: string) =>
-  !REAL_ESTATE_LAYERS.some((property) => property.typeName === layer);
+/** Property listings and established venues stay pinned; mobile trades and on-call services may follow provider GPS. */
+export const supportsLocationUpdates = (layer: string, movableLayers: ReadonlySet<string> = ALL_VISIBLE.providerMovableLayers) =>
+  !REAL_ESTATE_LAYERS.some((property) => property.typeName === layer) && movableLayers.has(layer);
 
 /** The feature the provider account is linked to. */
 export interface ProviderService {

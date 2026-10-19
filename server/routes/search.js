@@ -1,13 +1,19 @@
 // Search: unique field values and feature search (single and batch).
 import { IS_PROD, app, debugLog } from '../app.js';
 import { realestatePool, servicesPool } from '../database.js';
-import { REAL_ESTATE_LAYERS, SERVICE_TYPE_KEYS, isValidLayer, isValidSqlIdentifier } from '../layers.js';
+import { REAL_ESTATE_LAYERS, SERVICE_TYPE_KEYS, SERVICE_TYPE_SEARCH_TERMS, isValidLayer, isValidSqlIdentifier } from '../layers.js';
 import { isPropertyLayer } from '../listing-owners.js';
 import { activeAdminUidFromToken, bearerToken } from '../auth.js';
 import { AVAILABLE_FIRST_SQL, CONTACT_FIELDS, hiddenDiscriminators, isLayerHidden, publicListingSql, withoutContact } from '../../lib/listing-rules.js';
 import { viewerRulesFor } from '../visibility.js';
 
 const EMPTY_COLLECTION = { type: 'FeatureCollection', features: [] };
+const normalizeArabicSearchText = (value) => String(value)
+    .replace(/[أإآ]/g, 'ا')
+    .replace(/[ةه]/g, 'ه')
+    .replace(/[ىي]/g, 'ي')
+    .replace(/[ؤئء]/g, 'ء');
+
 /** Keep explicitly zero-rated listings off ordinary public search; only the map's global suggestion box opts in. */
 function zeroRatingSearchFilter(layer, isRealEstate, viewer, includeZeroRating = false) {
     if (viewer.isAdmin || includeZeroRating) return '';
@@ -259,6 +265,11 @@ app.get('/api/search-features', async (req, res) => {
                         LandSale: ['أرض للبيع', 'اراضي للبيع', 'أراضي للبيع', 'أرض بيع'],
                     };
                     const typeNames = [layerNameAr, ...(propertyTypeAliases[layer] || [])].filter(Boolean);
+                    const serviceTypeTerms = layer === 'service_all'
+                        ? Object.entries(SERVICE_TYPE_SEARCH_TERMS)
+                        : SERVICE_TYPE_SEARCH_TERMS[layer]
+                            ? [[layer, SERVICE_TYPE_SEARCH_TERMS[layer]]]
+                            : [];
                     const wordGroups = words.map(word => {
                         const colParts = searchColumns.map(col => {
                             params.push(`%${word}%`);
@@ -268,6 +279,16 @@ app.get('/api/search-features', async (req, res) => {
                             params.push(typeName);
                             params.push(`%${word}%`);
                             colParts.push(`translate($${params.length - 1}, '${NORM_FROM}', '${NORM_TO}') ILIKE translate($${params.length}, '${NORM_FROM}', '${NORM_TO}')`);
+                        }
+                        // Match the type's catalog label/keywords against its own discriminator. This lets global and
+                        // per-type search find older rows whose search_tags were saved before the type was registered.
+                        const normalizedWord = normalizeArabicSearchText(word);
+                        const matchingServiceTypes = serviceTypeTerms
+                            .filter(([, terms]) => terms.some((term) => normalizeArabicSearchText(term).includes(normalizedWord)))
+                            .map(([discriminator]) => discriminator);
+                        if (matchingServiceTypes.length > 0) {
+                            params.push(matchingServiceTypes);
+                            colParts.push(`discriminator = ANY($${params.length}::text[])`);
                         }
                         return `(${colParts.join(' OR ')})`;
                     });

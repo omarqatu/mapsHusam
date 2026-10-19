@@ -228,6 +228,18 @@ export const io = new Server(server, {
         methods: ['GET', 'POST']
     }
 });
+// Public channel carries server-originated refresh signals only; it has no client event handlers or user data.
+export const publicIo = io.of('/public');
+publicIo.use((socket, next) => {
+    const rate = { count: 0, resetAt: Date.now() + 1000 };
+    socket.use((_packet, allow) => {
+        const now = Date.now();
+        if (now > rate.resetAt) { rate.count = 0; rate.resetAt = now + 1000; }
+        if (++rate.count > 20) return;
+        allow();
+    });
+    next();
+});
 
 app.set('trust proxy', Number(process.env.TRUST_PROXY_HOPS || 1)); // عدد الوسطاء الفعلي أمام Node (IIS = 1)
 export const PORT = process.env.PORT || 3000;

@@ -1,5 +1,5 @@
 // The live information centre: widget groups, road barriers and fuel stations.
-import { IS_PROD, app } from '../app.js';
+import { IS_PROD, app, publicIo } from '../app.js';
 import { servicesPool } from '../database.js';
 import { requireAdmin } from '../auth.js';
 
@@ -14,6 +14,7 @@ const WIDGETS_CONFIG_GROUPS = ['currency', 'gold', 'weather', 'fuel', 'transport
 function broadcastLiveUpdate(event, payload) {
     try {
         if (global.io) global.io.emit(event, payload);
+        publicIo.emit('map_data_updated');
     } catch (e) {
         console.warn('⚠️ تعذر بثّ التحديث الفوري:', e.message);
     }
@@ -118,6 +119,7 @@ app.post('/api/admin/reorder-features', requireAdmin, async (req, res) => {
                 [index, id, layer]
             )
         ));
+        publicIo.emit('map_data_updated');
         res.json({ success: true });
     } catch (err) {
         console.error('❌ خطأ أثناء حفظ الترتيب:', err.message);

@@ -1,9 +1,11 @@
 // A provider's own service: read it, change its status and location.
-import { IS_PROD, app } from '../app.js';
+import { IS_PROD, app, publicIo } from '../app.js';
 import { servicesPool } from '../database.js';
 import { REAL_ESTATE_LAYERS, getPoolForLayer, isValidLayer } from '../layers.js';
+import { getVisibilitySettings } from '../visibility.js';
 import { requireAuth } from '../auth.js';
 import { isPropertyLayer, normalizeListingLayer, ownsListing, ownedListings } from '../listing-owners.js';
+import { clearPublicListingCaches } from '../state.js';
 
 // =========================================================================
 // مسار جلب الخدمة المربوطة بمزود الخدمة والتحقق من اكتمال الحقول مع الإحداثيات
@@ -125,6 +127,13 @@ app.post('/api/update-service-status', requireAuth, async (req, res) => {
     if (![0, 1].includes(parsedStatus)) {
         return res.status(400).json({ success: false, error: 'قيمة الحالة يجب أن تكون 0 (متوفر) أو 1 (غير متوفر).' });
     }
+    const locationChangeRequested = x_coord !== undefined || y_coord !== undefined;
+    if ((x_coord === undefined) !== (y_coord === undefined)) {
+        return res.status(400).json({ success: false, error: 'يجب إرسال إحداثيي الموقع معاً.' });
+    }
+    if (!REAL_ESTATE_LAYERS.includes(layerName) && !(await getVisibilitySettings()).providerMovableLayers.has(layerName) && locationChangeRequested) {
+        return res.status(403).json({ success: false, error: 'موقع هذا المعلم ثابت، ويمكن للمشرف فقط تغييره من الخريطة.' });
+    }
     const parsedXCoord = x_coord ? Number(x_coord) : null;
     const parsedYCoord = y_coord ? Number(y_coord) : null;
 
@@ -220,6 +229,9 @@ app.post('/api/update-service-status', requireAuth, async (req, res) => {
         }
 
         console.log(`\x1b[36m%s\x1b[0m`, `🎯 [نجاح التحديث] تم تحديث البيانات بنجاح للطبقة [${layerName}] المعلم [${targetIdValue}]`);
+
+        clearPublicListingCaches();
+        publicIo.emit('map_data_updated');
 
         res.json({
             success: true, 

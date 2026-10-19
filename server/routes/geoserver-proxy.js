@@ -1,12 +1,14 @@
 // /geoserver-proxy: whitelisted reads for everyone, WFS-T writes for admins only.
 import { createProxyMiddleware } from 'http-proxy-middleware';
 import path from 'path';
-import { app, debugLog } from '../app.js';
+import { app, debugLog, publicIo } from '../app.js';
 import { GEOSERVER_TARGET } from '../database.js';
 import { isValidLayer } from '../layers.js';
 import { PROPERTY_TABLES, localIsoDate, publicProxyQuery } from '../../lib/listing-rules.js';
 import { viewerRules } from '../visibility.js';
 import { SERVICE_TYPE_KEYS } from '../layers.js';
+import { clearPublicListingCaches } from '../state.js';
+import { reconcileDeletedListing } from '../listing-owners.js';
 
 // 3. إعداد البروكسي لـ GeoServer
 // [إجراء أمني 2]: تشفير وحماية البروكسي لمنع الحذف العشوائي (WFS-T protection)
@@ -61,6 +63,24 @@ const LISTING_LAYERS = new Set(['service_all', ...PROPERTY_TABLES, ...SERVICE_TY
 // أشكال المسارات التي تطلبها الواجهة: /ows و /wfs و /wms، أو مسبوقة بمساحة العمل
 const PUBLIC_PROXY_PATH = /^\/(?:[A-Za-z0-9_]+\/)?(?:ows|wfs|wms)$/i;
 const PUBLIC_WFS_REQUESTS = new Set(['getcapabilities', 'describefeaturetype']);
+
+function requestedListingDeletes(xml) {
+    const targets = [];
+    const deletes = xml.matchAll(/<(?:\w+:)?Delete\b([^>]*)>([\s\S]*?)<\/(?:\w+:)?Delete>/gi);
+    for (const [, attrs, body] of deletes) {
+        const typeName = /\btypeName="([^"]+)"/i.exec(attrs)?.[1]?.split(':').pop();
+        if (!typeName) continue;
+        const fids = [...body.matchAll(/<(?:\w+:)?FeatureId\b[^>]*\bfid="([^"]+)"/gi)]
+            .map((m) => Number(/\.(\d+)$/.exec(m[1])?.[1]))
+            .filter((id) => Number.isSafeInteger(id) && id > 0);
+        if (PROPERTY_TABLES.includes(typeName)) {
+            fids.forEach((id) => targets.push({ layer: typeName, id }));
+        } else if (typeName === 'service_all') {
+            fids.forEach((id) => targets.push({ layer: null, id }));
+        }
+    }
+    return targets;
+}
 
 // أعمدة كل طبقة كما يعرفها GeoServer نفسه (DescribeFeatureType)، لنطلب كل شيء ما عدا الهاتف/الواتساب لزائر بلا حساب.
 // كاش 10 دقائق؛ فشل القراءة = رفض الطلب (لا نرسل الأرقام احتياطاً).
@@ -119,6 +139,27 @@ app.use('/geoserver-proxy', async (req, res, next) => {
         if (!isValidLayer(layerOnly) && !PROXY_EXTRA_LAYERS.includes(layerOnly)) {
             console.warn(`🚫 [Proxy Guard] رُفض طلب لطبقة غير مصرح بها: ${rawName} من IP: ${req.ip}`);
             return res.status(403).json({ error: 'الوصول لهذه الطبقة غير مسموح به.' });
+        }
+    }
+    if (req.method === 'POST' && typeof req.body === 'string' && /<(?:\w+:)?Transaction\b/i.test(req.body)) {
+        const targets = requestedListingDeletes(req.body);
+        const serviceIds = [...new Set(targets.filter((t) => !t.layer).map((t) => t.id))];
+        if (serviceIds.length) {
+            const existingRows = await servicesPool.query(
+                'SELECT id, discriminator FROM public.service_all WHERE id = ANY($1::bigint[])',
+                [serviceIds],
+            );
+            const known = new Map(existingRows.rows.map((row) => [Number(row.id), row.discriminator]));
+            const owners = await servicesPool.query(
+                'SELECT feature_id, layer FROM public.listing_owners WHERE feature_id = ANY($1::bigint[])',
+                [serviceIds],
+            );
+            for (const row of owners.rows) if (!known.has(Number(row.feature_id))) known.set(Number(row.feature_id), row.layer);
+            req.listingDeletionTargets = targets
+                .filter((t) => t.layer || known.has(t.id))
+                .map((t) => ({ ...t, layer: t.layer || known.get(t.id) }));
+        } else {
+            req.listingDeletionTargets = targets;
         }
     }
     if (!isAdmin) {
@@ -193,6 +234,36 @@ app.use('/geoserver-proxy', async (req, res, next) => {
     },
     onProxyRes: (proxyRes, req) => {
         if (req.listingRead) proxyRes.headers['cache-control'] = 'private, no-store';
+        // A successful WFS-T transaction is visible to every open map immediately.
+        // WFS GetFeature can also be sent as POST, so identify the transaction XML explicitly.
+        if (req.method !== 'POST' || typeof req.body !== 'string' || !/<(?:\w+:)?Transaction\b/i.test(req.body)) return;
+        const chunks = [];
+        let bytes = 0;
+        proxyRes.on('data', (chunk) => {
+            if (bytes >= 256 * 1024) return;
+            chunks.push(chunk);
+            bytes += chunk.length;
+        });
+        proxyRes.on('end', async () => {
+            const xml = Buffer.concat(chunks).toString('utf8');
+            if (proxyRes.statusCode >= 400 || !/<(?:\w+:)?TransactionResponse\b/.test(xml) || /<(?:\w+:)?(?:ExceptionReport|ServiceExceptionReport)\b/.test(xml)) return;
+            const count = (tag) => Number(new RegExp(`<(?:\\w+:)?${tag}>\\s*(\\d+)\\s*<`).exec(xml)?.[1] || 0);
+            const inserted = count('totalInserted');
+            const updated = count('totalUpdated');
+            const deleted = count('totalDeleted');
+            if (inserted + updated + deleted === 0) return;
+            try {
+                if (deleted > 0) {
+                    for (const target of req.listingDeletionTargets || []) {
+                        if (target.layer) await reconcileDeletedListing(target.layer, target.id);
+                    }
+                }
+                clearPublicListingCaches();
+            } catch (err) {
+                console.error('تعذر تنظيف ربط مزود الخدمة بعد حذف المعلم:', err.message);
+            }
+            publicIo.emit('map_data_updated');
+        });
     },
     onError: (err, req, res) => {
         console.error('[Proxy] Error:', err.message, '| url:', req.url);

@@ -4,6 +4,7 @@ import { clearProviderMarker } from './flyLayer';
 import { LIVE_INTERVAL_MS, supportsLocationUpdates } from './model';
 import { useProviderActions } from './useProviderActions';
 import { useProviderUi } from './store';
+import { useVisibility } from '@/features/visibility/store';
 
 /**
  * Invisible; mounted on the map page for provider accounts. Owns the live-tracking timer (so it keeps running while the
@@ -12,13 +13,14 @@ import { useProviderUi } from './store';
 export default function ProviderTracker() {
   const map = useOlMap();
   const live = useProviderUi((s) => s.live);
+  const visibility = useVisibility();
   const { service, tick } = useProviderActions();
   const latest = useRef({ service, tick });
   useEffect(() => {
     latest.current = { service, tick };
   });
   const ready = service !== null;
-  const canTrack = service !== null && supportsLocationUpdates(service.layer);
+  const canTrack = service !== null && supportsLocationUpdates(service.layer, visibility.providerMovableLayers);
 
   // Legacy showed the panel at once; on a phone it would cover the map, so only wide screens open it by themselves.
   const opened = useRef(false);

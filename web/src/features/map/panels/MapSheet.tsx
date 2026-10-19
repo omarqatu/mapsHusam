@@ -74,7 +74,7 @@ export default function MapSheet({
           </button>
         </div>
       </header>
-      {!folded && <div className="flex-1 overflow-y-auto p-4">{children}</div>}
+      {!folded && <div className="min-h-0 flex-1 overflow-y-auto p-4">{children}</div>}
     </aside>
   );
 }

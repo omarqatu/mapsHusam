@@ -6,8 +6,17 @@ import { realestatePool, servicesPool } from './database.js';
 
 // [إجراء أمني 1]: قائمة بيضاء للطبقات المسموح بالوصول إليها والتعديل عليها (تشمل كافة الخدمات والعقارات الفعالة)
 // أنواع الخدمات من shared/service-types.json: نفس الملف الذي تبني منه الواجهة قائمتها (مصدر واحد)
-export const SERVICE_TYPE_KEYS = JSON.parse(fs.readFileSync(path.join(ROOT_DIR, 'shared', 'service-types.json'), 'utf8'))
-    .map((type) => type.key);
+const SERVICE_TYPE_DEFS = JSON.parse(fs.readFileSync(path.join(ROOT_DIR, 'shared', 'service-types.json'), 'utf8'));
+export const FIXED_LOCATION_SERVICE_KEYS = new Set(
+    JSON.parse(fs.readFileSync(path.join(ROOT_DIR, 'shared', 'fixed-location-services.json'), 'utf8')),
+);
+export const SERVICE_TYPE_KEYS = SERVICE_TYPE_DEFS.map((type) => type.key);
+export const SERVICE_TYPE_SEARCH_TERMS = Object.fromEntries(
+    SERVICE_TYPE_DEFS.map((type) => [
+        type.key,
+        [...new Set([type.tagName, ...(type.tagKeywords || '').split(/[،,]/)].map((term) => term.trim()).filter(Boolean))],
+    ])
+);
 // طبقات العقارات والمواقع الفعالة + قيمة service_all الخاصة بالبحث العالمي (كل الخدمات دفعة واحدة بدون discriminator)
 const OTHER_LAYERS = ['ApartRent', 'ApartSale', 'LandSale', 'Location', 'RoadsTest', 'service_all'];
 const ALLOWED_LAYERS = [...SERVICE_TYPE_KEYS, ...OTHER_LAYERS];
@@ -26,7 +35,12 @@ export function getPoolForLayer(layerName) {
 // 🆕 [إصلاح عرض اسم الطبقة بالعربي]: قاموس ترجمة موحّد يُستخدم عند تسجيل نقرات
 // الاتصال/الواتساب (log-contact-click) لتخزين service_type بالعربي بدل الاسم
 // الإنجليزي الخام للطبقة، تماماً كما يحدث أصلاً لطلبات "طلب الخدمة" الحقيقية.
+// Default Arabic labels for every registered service come from the shared catalog. Keep explicit legacy labels below
+// where the user-facing wording already differs from the short search tag.
+const SERVICE_TYPE_AR_NAMES = Object.fromEntries(SERVICE_TYPE_DEFS.map((type) => [type.key, type.tagName]));
+
 export const LAYER_AR_NAMES = {
+    ...SERVICE_TYPE_AR_NAMES,
     'road_barriers': 'حواجز الطرق', 'fuel_stations': 'محطات الوقود',
     'electrician': 'فني كهرباء', 'ac_technician': 'فني تكييف وتبريد', 'plumber': 'سباك (مواسيرجي)',
     'general_maintenance': 'صيانة عامة', 'painter': 'دهان/طراشة', 'Finisher': 'فني ديكور', 'carpenter': 'نجار',

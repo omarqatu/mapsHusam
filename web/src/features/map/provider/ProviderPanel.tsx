@@ -17,6 +17,7 @@ import { targetLabelKey } from '../targets';
 import { useIsProvider, useProviderAccount, useProviderFeature } from './queries';
 import { useProviderUi } from './store';
 import { useProviderActions } from './useProviderActions';
+import { useVisibility } from '@/features/visibility/store';
 
 /** Seconds left of the post-update lock; re-renders once a second while it runs. */
 function useCooldown() {
@@ -51,6 +52,7 @@ export default function ProviderPanel() {
 
 function Panel({ onClose }: { onClose: () => void }) {
   const { t } = useTranslation();
+  const visibility = useVisibility();
   const map = useOlMap();
   const name = useAuthStore((s) => s.user?.full_name);
   const live = useProviderUi((s) => s.live);
@@ -66,7 +68,7 @@ function Panel({ onClose }: { onClose: () => void }) {
   }, [selectedListing, services]);
   const featureQuery = useProviderFeature(service ? providerTarget(service.layer) : null, service?.featureId);
   const featureName = service?.name || String(featureQuery.data?.name ?? '');
-  const supportsLocation = service ? supportsLocationUpdates(service.layer) : false;
+  const supportsLocation = service ? supportsLocationUpdates(service.layer, visibility.providerMovableLayers) : false;
   const selectedKey = service ? `${service.layer}:${service.featureId}` : '';
 
   const locked = seconds > 0 || pending;

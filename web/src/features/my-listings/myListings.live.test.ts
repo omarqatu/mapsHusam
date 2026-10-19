@@ -100,7 +100,7 @@ describe.skipIf(!BASE)('my listings against the live backend', () => {
     expect((await nativeFetch(BASE + before)).status).toBe(404);
 
     expect((await myListingsApi.edit(original, { media_default: 'before_after' })).listing.media_default).toBe('before_after');
-    await expect(myListingsApi.edit(original, { media_default: 'video' as never })).rejects.toMatchObject({ status: 400 });
+    expect((await myListingsApi.edit(original, { media_default: 'video' })).listing.media_default).toBe('video');
     await expect(
       myListingsApi.uploadSide(original, 'before', new Blob(['not an image'], { type: 'image/png' })),
     ).rejects.toMatchObject({ status: 415 });

@@ -2,6 +2,7 @@ import type { Currency, ListingEdit, ListingState, MyListing } from '@/api/myLis
 import { isLocalMobile, toWhatsappNumber } from '@/features/auth/phone';
 import { REAL_ESTATE_LAYERS } from '@/features/map/config';
 import { hasPrice, targetFromKey, type MapTarget } from '@/features/map/targets';
+import { ALL_VISIBLE, type Visibility } from '@/features/visibility/model';
 
 // Pure logic of "My listings": which form fields a listing has, the form ↔ the edit body. The server repeats every check.
 
@@ -38,9 +39,15 @@ export const toFormValues = (l: MyListing): ListingFormValues => ({
 });
 
 /** What the form shows for this listing. */
-export function listingFields(l: Pick<MyListing, 'kind' | 'layer'>) {
+export function listingFields(l: Pick<MyListing, 'kind' | 'layer'>, visibility: Visibility = ALL_VISIBLE) {
   const priced = hasPrice(listingTarget(l.layer));
-  return { hours: l.kind === 'service', price: priced, area: priced, move: l.kind === 'service' };
+  return {
+    hours: l.kind === 'service',
+    price: priced,
+    area: priced,
+    move: l.kind === 'service' && visibility.providerMovableLayers.has(l.layer),
+    fixedLocation: l.kind === 'service' && !visibility.providerMovableLayers.has(l.layer),
+  };
 }
 
 export type ListingFormErrors = Partial<

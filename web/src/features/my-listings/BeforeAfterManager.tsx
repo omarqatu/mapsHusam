@@ -113,14 +113,15 @@ function Slot({ listing, side }: { listing: MyListing; side: BeforeAfterSide }) 
  * A service's before / after pictures (optional) and what its card shows first: the pictures above, or the pair.
  * Every change is saved at once, like the pictures.
  */
-export default function BeforeAfterManager({ listing }: { listing: MyListing }) {
+export default function BeforeAfterManager({ listing, showBeforeAfter = true }: { listing: MyListing; showBeforeAfter?: boolean }) {
   const { t } = useTranslation();
   const edit = useEditListing();
-  const complete = !!listing.before && !!listing.after;
+  const complete = showBeforeAfter && !!listing.before && !!listing.after;
   // The choice shows at once while it is being saved (and goes back if saving fails); without both pictures the card
   // cannot open on them.
   const [saving, setSaving] = useState<MediaDefault | null>(null);
-  const chosen: MediaDefault = complete ? (saving ?? listing.media_default) : 'photos';
+  const hasVideo = (listing.videos?.length ?? (listing.video ? 1 : 0)) > 0;
+  const chosen: MediaDefault = saving ?? (listing.media_default === 'before_after' && !complete ? (hasVideo ? 'video' : 'photos') : listing.media_default);
 
   const choose = (value: MediaDefault) => {
     if (value === chosen) return;
@@ -136,16 +137,20 @@ export default function BeforeAfterManager({ listing }: { listing: MyListing }) 
 
   return (
     <div className="space-y-3">
-      <p className="text-sm text-muted">{t('myListings.beforeAfter.hint')}</p>
-      <div className="grid grid-cols-2 gap-3">
-        {SIDES.map((side) => (
-          <Slot key={side} listing={listing} side={side} />
-        ))}
-      </div>
-      <fieldset disabled={!complete} className="space-y-1.5 disabled:opacity-60">
+      {showBeforeAfter && <>
+        <p className="text-sm text-muted">{t('myListings.beforeAfter.hint')}</p>
+        <div className="grid grid-cols-2 gap-3">
+          {SIDES.map((side) => (
+            <Slot key={side} listing={listing} side={side} />
+          ))}
+        </div>
+      </>}
+      <fieldset className="space-y-1.5">
         <legend className="text-sm font-bold text-fg">{t('myListings.beforeAfter.showFirst')}</legend>
         <div className="flex flex-wrap gap-2">
-          {(['photos', 'before_after'] as const).map((value) => (
+          {(['video', 'photos', 'before_after'] as const)
+            .filter((value) => value === 'before_after' ? complete : value === 'video' ? hasVideo : listing.photos.length > 0)
+            .map((value) => (
             <label
               key={value}
               className={clsx(
@@ -161,11 +166,11 @@ export default function BeforeAfterManager({ listing }: { listing: MyListing }) 
                 onChange={() => choose(value)}
                 className="accent-brand"
               />
-              {t(value === 'photos' ? 'media.photos' : 'media.beforeAfter')}
+              {t(value === 'video' ? 'media.videos' : value === 'photos' ? 'media.photos' : 'media.beforeAfter')}
             </label>
           ))}
         </div>
-        {!complete && <p className="text-xs text-muted">{t('myListings.beforeAfter.needBoth')}</p>}
+        {showBeforeAfter && !complete && <p className="text-xs text-muted">{t('myListings.beforeAfter.needBoth')}</p>}
       </fieldset>
     </div>
   );

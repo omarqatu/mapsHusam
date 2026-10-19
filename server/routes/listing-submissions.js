@@ -1,10 +1,10 @@
 // "Add my business": submit, list, cancel; the admin approves or rejects.
 import rateLimit from 'express-rate-limit';
-import { IS_PROD, app } from '../app.js';
+import { IS_PROD, app, publicIo } from '../app.js';
 import { realestatePool, servicesPool } from '../database.js';
-import { LAYER_AR_NAMES, isValidLayer } from '../layers.js';
+import { LAYER_AR_NAMES, SERVICE_TYPE_SEARCH_TERMS, isValidLayer } from '../layers.js';
 import { authStatusCache, requireAdmin, requireAuth } from '../auth.js';
-import { clearProviderLinkedCache, notifyUser, platformStatsCache } from '../state.js';
+import { clearProviderLinkedCache, clearPublicListingCaches, notifyUser } from '../state.js';
 import { INSERT_SUBMISSION_SQL, SUBMISSION_MAX_LEN, SUBMITTABLE_LAYERS, SUBMITTABLE_PROPERTY_LAYERS, cleanText, parseListingInput, submissionParams, gridPoint } from '../listings.js';
 import { linkOwner } from '../listing-owners.js';
 import { getHiddenLayers } from '../visibility.js';
@@ -196,8 +196,13 @@ app.post('/api/admin/listing-submissions/:id/approve', requireAdmin, async (req,
         const name = cleanText(body.name, SUBMISSION_MAX_LEN.name) || sub.name;
         const des = body.des !== undefined ? cleanText(body.des, SUBMISSION_MAX_LEN.des) : sub.des;
         const workHours = body.work_hours !== undefined ? cleanText(body.work_hours, SUBMISSION_MAX_LEN.work_hours) : sub.work_hours;
-        const searchTags = cleanText(body.search_tags, SUBMISSION_MAX_LEN.search_tags)
-            || [LAYER_AR_NAMES[sub.layer] || sub.layer, name].join('، ');
+        const defaultSearchTags = [
+            LAYER_AR_NAMES[sub.layer] || sub.layer,
+            name,
+            String(des || '').trim().substring(0, 40),
+            ...(SERVICE_TYPE_SEARCH_TERMS[sub.layer] || []),
+        ].filter(Boolean).join('، ');
+        const searchTags = cleanText(body.search_tags, SUBMISSION_MAX_LEN.search_tags) || defaultSearchTags;
         const rating = body.rating === undefined ? 5 : Number(body.rating);
         if (!Number.isFinite(rating) || rating < 0 || rating > 10) {
             await client.query('ROLLBACK');
@@ -261,10 +266,11 @@ app.post('/api/admin/listing-submissions/:id/approve', requireAdmin, async (req,
         );
         await client.query('COMMIT');
         createdProperty = null;
+        publicIo.emit('map_data_updated');
 
         authStatusCache.delete(Number(sub.user_id)); // الدور الجديد يسري فوراً وتُبطل الجلسة القديمة
         clearProviderLinkedCache();
-        platformStatsCache.clear();
+        clearPublicListingCaches();
         await notifyUser(sub.user_id, 'تمت الموافقة على إعلانك',
             becomesProvider
                 ? `تمت إضافة «${name}» إلى الخريطة وأصبح حسابك حساب مزوّد خدمة. ${owner.is_active ? 'يرجى تسجيل الخروج ثم الدخول من جديد لتفعيل الصلاحيات.' : 'حسابك مفعّل الآن، يمكنك تسجيل الدخول.'}`

@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { api } from './client';
+import videoLimits from '../../../shared/listing-video-limits.json';
 
 // "My listings": the signed-in account's own services and properties (server/routes/my-listings.js). Edits are
 // published at once; the server takes the account from the token and checks it owns the listing.
@@ -9,7 +10,7 @@ export type ListingKind = 'service' | 'property';
 export type ListingState = 0 | 1 | 2;
 export type Currency = 'ILS' | 'USD' | 'JOD';
 /** What a service's card opens on: its pictures, or its before / after pair. */
-export type MediaDefault = 'photos' | 'before_after';
+export type MediaDefault = 'photos' | 'video' | 'before_after';
 export type BeforeAfterSide = 'before' | 'after';
 
 export interface MyListing {
@@ -32,6 +33,10 @@ export interface MyListing {
   end_date: string | null;
   /** Picture URLs, in order (uploaded ones and links the admin entered). */
   photos: string[];
+  /** Optional uploaded video or a link entered by an admin. */
+  video?: string | null;
+  /** Existing video URLs, including older listings that only had one video. */
+  videos?: string[];
   /** Services: the before / after pictures (an uploaded one or a link the admin entered), or null. */
   before: string | null;
   after: string | null;
@@ -59,6 +64,9 @@ export interface ListingEdit {
 }
 
 export const MAX_PHOTOS = 8;
+export const MAX_VIDEO_BYTES = videoLimits.maxBytes;
+export const MAX_VIDEO_SECONDS = videoLimits.maxSeconds;
+export const MAX_VIDEOS = videoLimits.maxCount;
 
 export const myListingsKeys = { all: ['my-listings'] as const };
 
@@ -71,6 +79,10 @@ export const myListingsApi = {
     api.patch<{ success: true; listing: MyListing }>(path(l), body),
   upload: (l: Pick<MyListing, 'layer' | 'id'>, file: Blob) =>
     api.post<{ success: true; url: string; photos: string[] }>(`${path(l)}/photos`, file),
+  uploadVideo: (l: Pick<MyListing, 'layer' | 'id'>, file: Blob) =>
+    api.post<{ success: true; videos: string[]; media_default: MediaDefault | null }>(`${path(l)}/video`, file),
+  removeVideo: (l: Pick<MyListing, 'layer' | 'id'>, url: string) =>
+    api.delete<{ success: true; videos: string[]; media_default: MediaDefault | null }>(`${path(l)}/video?url=${encodeURIComponent(url)}`),
   setPhotos: (l: Pick<MyListing, 'layer' | 'id'>, photos: string[]) =>
     api.put<{ success: true; photos: string[] }>(`${path(l)}/photos`, { photos }),
   /** Uploads one side's picture (replacing the previous one). Services only. */
@@ -113,6 +125,22 @@ export function useUploadPhoto() {
   return useMutation({
     mutationFn: (v: { listing: MyListing; file: Blob }) => myListingsApi.upload(v.listing, v.file),
     onSuccess: (r, v) => apply(v.listing.layer, v.listing.id, { photos: r.photos }),
+  });
+}
+
+export function useUploadListingVideo() {
+  const apply = useApplyListing();
+  return useMutation({
+    mutationFn: (v: { listing: MyListing; file: Blob }) => myListingsApi.uploadVideo(v.listing, v.file),
+    onSuccess: (r, v) => apply(v.listing.layer, v.listing.id, { videos: r.videos, ...(r.media_default ? { media_default: r.media_default } : {}) }),
+  });
+}
+
+export function useRemoveListingVideo() {
+  const apply = useApplyListing();
+  return useMutation({
+    mutationFn: (v: { listing: MyListing; url: string }) => myListingsApi.removeVideo(v.listing, v.url),
+    onSuccess: (r, v) => apply(v.listing.layer, v.listing.id, { videos: r.videos, ...(r.media_default ? { media_default: r.media_default } : {}) }),
   });
 }
 

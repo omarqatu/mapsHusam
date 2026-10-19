@@ -1,0 +1,6 @@
+{
+  "maxBytes": 26214400,
+  "maxSeconds": 60,
+  "maxCount": 3,
+  "types": ["mp4", "webm"]
+}

@@ -3,6 +3,13 @@ import { servicesPool } from './database.js';
 
 // إحصائيات المنصة العامة (/api/platform-stats): كاش 60 ثانية لكل مجموعة استثناءات، يُمسح عند الموافقة على نشاط
 export const platformStatsCache = new Map();
+// Raw per-type counts for `/api/category-counts`; hidden layers are filtered per request.
+export const categoryCountsCache = { data: null, expiresAt: 0 };
+export function clearPublicListingCaches() {
+    platformStatsCache.clear();
+    categoryCountsCache.data = null;
+    categoryCountsCache.expiresAt = 0;
+}
 
 // تخزين المستخدمين المتصلين مع معرفاتهم
 export const connectedUsers = new Map(); // userId -> اسم غرفة المستخدم (user:<id>)، يُمرَّر لـ io.to() مباشرة

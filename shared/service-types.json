@@ -412,5 +412,431 @@
     "group": "commercial",
     "tagName": "مطاعم وكوفي شوبات",
     "tagKeywords": "مطاعم، أكل جاهز، وجبات سريعة، توصيل طعام، مطاعم وكوفي شوبات محلية، مأكولات شعبية"
+  },
+  {
+    "key": "grocery_store",
+    "group": "commercial",
+    "tagName": "بقالة",
+    "tagKeywords": "مواد غذائية، تموينات، دكان، بقالة قريبة"
+  },
+  {
+    "key": "butcher_shop",
+    "group": "commercial",
+    "tagName": "ملحمة وتجارة لحوم",
+    "tagKeywords": "لحوم طازجة، قصاب، لحوم بلدية، ذبحيات"
+  },
+  {
+    "key": "fish_market",
+    "group": "commercial",
+    "tagName": "محل أسماك ومأكولات بحرية",
+    "tagKeywords": "سمك طازج، مأكولات بحرية، روبيان، أسماك"
+  },
+  {
+    "key": "fruit_vegetable_shop",
+    "group": "commercial",
+    "tagName": "محل خضار وفواكه",
+    "tagKeywords": "خضار، خضراوات، فواكه طازجة، سوق خضار"
+  },
+  {
+    "key": "bakery_croissant",
+    "group": "commercial",
+    "tagName": "مخبز وكرواسون ومعجنات",
+    "tagKeywords": "خبز، معجنات، كرواسون، كعك، مناقيش"
+  },
+  {
+    "key": "roastery_nuts",
+    "group": "commercial",
+    "tagName": "محمص ومكسرات",
+    "tagKeywords": "مكسرات، قهوة، بن، تحميص، تسالي"
+  },
+  {
+    "key": "spices_herbs",
+    "group": "commercial",
+    "tagName": "بهارات وعطارة",
+    "tagKeywords": "عطارة، توابل، أعشاب، زعتر، خلطات بهارات"
+  },
+  {
+    "key": "oriental_western_sweets",
+    "group": "commercial",
+    "tagName": "حلويات عربية وغربية",
+    "tagKeywords": "كنافة، بقلاوة، حلويات شرقية، شوكولاتة، كيك"
+  },
+  {
+    "key": "dairy_eggs_pet_products",
+    "group": "commercial",
+    "tagName": "منتوجات حليب وحيوانات",
+    "tagKeywords": "ألبان، أجبان، بيض، حليب، طعام حيوانات"
+  },
+  {
+    "key": "wholesale_food_supplies",
+    "group": "commercial",
+    "tagName": "محل مواد تموينية بالجملة",
+    "tagKeywords": "مواد غذائية بالجملة، تموينات جملة، تجار مواد غذائية"
+  },
+  {
+    "key": "shopping_mall",
+    "group": "commercial",
+    "tagName": "مول تجاري",
+    "tagKeywords": "مركز تسوق، محلات، تسوق، مجمع تجاري"
+  },
+  {
+    "key": "men_clothing",
+    "group": "commercial",
+    "tagName": "ملابس رجالي",
+    "tagKeywords": "ألبسة رجالية، أزياء رجال، قمصان، بناطيل"
+  },
+  {
+    "key": "women_clothing",
+    "group": "commercial",
+    "tagName": "ملابس نسائي",
+    "tagKeywords": "ألبسة نسائية، أزياء نساء، فساتين، ملابس حريمي"
+  },
+  {
+    "key": "kids_baby_clothing",
+    "group": "commercial",
+    "tagName": "ملابس أطفال وبيبي",
+    "tagKeywords": "ألبسة أطفال، ملابس مواليد، بيبي، ملابس رضع"
+  },
+  {
+    "key": "mixed_family_clothing",
+    "group": "commercial",
+    "tagName": "ملابس مختلطة وعائلية",
+    "tagKeywords": "ألبسة عائلية، ملابس للجنسين، ملابس كل الأعمار"
+  },
+  {
+    "key": "fashion_evening_dresses",
+    "group": "commercial",
+    "tagName": "ازياء وفساتين سهرة",
+    "tagKeywords": "فساتين، فساتين مناسبات، فساتين أعراس، أزياء سهرة"
+  },
+  {
+    "key": "embroidery_traditional_clothing",
+    "group": "commercial",
+    "tagName": "مطرزات وملابس تراثية",
+    "tagKeywords": "تطريز فلسطيني، ثوب فلسطيني، تراث شعبي، أثواب"
+  },
+  {
+    "key": "tailor_alterations",
+    "group": "technicians",
+    "tagName": "خياط وتعديل ملابس",
+    "tagKeywords": "تفصيل ملابس، تعديل قياس، تصليح ملابس، خياطة"
+  },
+  {
+    "key": "men_shoes",
+    "group": "commercial",
+    "tagName": "محلات أحذية رجالي",
+    "tagKeywords": "جزم رجالية، أحذية رجال، أحذية رسمية، أحذية رياضية"
+  },
+  {
+    "key": "women_shoes",
+    "group": "commercial",
+    "tagName": "محلات أحذية نسائي",
+    "tagKeywords": "جزم نسائية، أحذية نساء، كعب عالي، صندل"
+  },
+  {
+    "key": "kids_shoes",
+    "group": "commercial",
+    "tagName": "محلات أحذية أطفال",
+    "tagKeywords": "جزم أطفال، أحذية صغار، أحذية مدرسية"
+  },
+  {
+    "key": "mixed_shoes",
+    "group": "commercial",
+    "tagName": "محلات أحذية مختلطة",
+    "tagKeywords": "أحذية، جزم، أحذية عائلية، أحذية رياضية"
+  },
+  {
+    "key": "cosmetics_makeup",
+    "group": "commercial",
+    "tagName": "محلات كوزماتيكس ومكياج",
+    "tagKeywords": "مستحضرات تجميل، مكياج، كريمات، عناية بالبشرة"
+  },
+  {
+    "key": "women_bags_accessories",
+    "group": "commercial",
+    "tagName": "حقائب نسائية وإكسسوارات",
+    "tagKeywords": "شنط نسائية، حقائب، إكسسوارات، محافظ"
+  },
+  {
+    "key": "perfumes_men_women",
+    "group": "commercial",
+    "tagName": "محل عطور",
+    "tagKeywords": "عطور نسائية، عطور رجالية، بخور، عود"
+  },
+  {
+    "key": "hairdresser_salon",
+    "group": "commercial",
+    "tagName": "كوافيرة / صالون نسائي",
+    "tagKeywords": "تسريحات شعر، صبغة، قص شعر نسائي، سشوار"
+  },
+  {
+    "key": "beauty_centers",
+    "group": "commercial",
+    "tagName": "مراكز تجميل",
+    "tagKeywords": "عناية بالبشرة، ليزر، تنظيف بشرة، تجميل نسائي"
+  },
+  {
+    "key": "salon_beauty_supplies",
+    "group": "commercial",
+    "tagName": "مستلزمات الصالونات ومراكز التجميل",
+    "tagKeywords": "أدوات كوافير، مستحضرات صالون، معدات تجميل"
+  },
+  {
+    "key": "building_materials",
+    "group": "commercial",
+    "tagName": "محل مواد بناء",
+    "tagKeywords": "إسمنت، رمل، حصمة، طوب، حجر بناء"
+  },
+  {
+    "key": "sanitary_ware_ceramics",
+    "group": "commercial",
+    "tagName": "أدوات صحية وسيراميك",
+    "tagKeywords": "أدوات حمام، خلاطات، مغاسل، بلاط، سيراميك"
+  },
+  {
+    "key": "paints_insulation",
+    "group": "commercial",
+    "tagName": "دهانات وألوان ومواد عزل",
+    "tagKeywords": "دهان، أصباغ، عزل مائي، عزل حراري، معجون"
+  },
+  {
+    "key": "lighting_electrical_supplies",
+    "group": "commercial",
+    "tagName": "كهرباء إنارة وثريات",
+    "tagKeywords": "لمبات، ثريات، إنارة منزلية، تمديدات كهرباء"
+  },
+  {
+    "key": "hardware_industrial_tools",
+    "group": "commercial",
+    "tagName": "أدوات ومعدات يدوية وصناعية",
+    "tagKeywords": "عدد صناعية، أدوات يدوية، معدات ورش، مفكات ومثاقب"
+  },
+  {
+    "key": "mixed_building_sanitary_paints",
+    "group": "commercial",
+    "tagName": "محل مواد بناء ومعدات شامل",
+    "tagKeywords": "مواد تشطيب، أدوات بناء، سباكة، دهانات، معدات"
+  },
+  {
+    "key": "aluminum_glass_shop",
+    "group": "commercial",
+    "tagName": "ألمنيوم وزجاج",
+    "tagKeywords": "شبابيك ألمنيوم، أبواب ألمنيوم، واجهات زجاج، سكريت"
+  },
+  {
+    "key": "doors_windows_decor",
+    "group": "commercial",
+    "tagName": "أبواب وشبابيك وديكورات",
+    "tagKeywords": "أبواب خشب، أبواب حديد، شبابيك، ديكور منازل"
+  },
+  {
+    "key": "cleaning_supplies_comprehensive",
+    "group": "commercial",
+    "tagName": "أدوات تنظيف شاملة",
+    "tagKeywords": "منظفات، مواد تنظيف، صابون، مطهرات، أدوات منزلية"
+  },
+  {
+    "key": "furniture_showroom",
+    "group": "commercial",
+    "tagName": "معرض أثاث ومفروشات منزلية",
+    "tagKeywords": "غرف نوم، كنب، طاولات، مفروشات، أثاث منزلي"
+  },
+  {
+    "key": "carpets_flooring_parquet",
+    "group": "commercial",
+    "tagName": "سجاد وموكيت وأرضيات باركيه وفورسيرنج",
+    "tagKeywords": "موكيت، باركيه، أرضيات، فورسيرنج، تركيب سجاد"
+  },
+  {
+    "key": "curtains_home_textiles",
+    "group": "commercial",
+    "tagName": "ستائر ومنسوجات منزلية",
+    "tagKeywords": "أقمشة، شراشف، ستائر جاهزة، تفصيل ستائر، مفارش"
+  },
+  {
+    "key": "home_appliances_showroom",
+    "group": "commercial",
+    "tagName": "معرض أجهزة كهربائية ومنزلية",
+    "tagKeywords": "غسالات، ثلاجات، أفران، تلفزيونات، أجهزة كهربائية"
+  },
+  {
+    "key": "house_market_appliances",
+    "group": "commercial",
+    "tagName": "سوق بيت",
+    "tagKeywords": "أدوات مطبخ، مستلزمات منزلية، أواني، أدوات بيت"
+  },
+  {
+    "key": "used_house_market_appliances",
+    "group": "commercial",
+    "tagName": "سوق بيت مستعمل",
+    "tagKeywords": "أغراض مستعملة، أثاث مستعمل، أجهزة مستعملة، شراء وبيع مستعمل"
+  },
+  {
+    "key": "disposable_plastics_cardboard",
+    "group": "commercial",
+    "tagName": "بلاستيكيات وكرتون",
+    "tagKeywords": "صحون بلاستيك، أكياس، كرتون، مواد تغليف"
+  },
+  {
+    "key": "dry_cleaning_clothes_carpets",
+    "group": "commercial",
+    "tagName": "دراي كلين ملابس وسجاد",
+    "tagKeywords": "مغسلة ملابس، كي ملابس، تنظيف جاف، غسل سجاد"
+  },
+  {
+    "key": "carpet_sofa_upholstery_cleaning",
+    "group": "commercial",
+    "tagName": "تنظيف سجاد وكنب وصالونات",
+    "tagKeywords": "غسيل كنب، تنظيف مجالس، جلي سجاد، تنظيف مفروشات"
+  },
+  {
+    "key": "mobile_phones_accessories",
+    "group": "commercial",
+    "tagName": "هواتف محمولة وإكسسواراتها",
+    "tagKeywords": "جوالات، موبايلات، شواحن، سماعات، كفرات"
+  },
+  {
+    "key": "mobile_pc_maintenance",
+    "group": "technicians",
+    "tagName": "صيانة هواتف وكمبيوترات",
+    "tagKeywords": "تصليح موبايل، صيانة لابتوب، سوفتوير، تبديل شاشة، صيانة حاسوب"
+  },
+  {
+    "key": "computers_laptops_networking",
+    "group": "commercial",
+    "tagName": "أجهزة حاسوب ولابتوب ومستلزمات شبكات",
+    "tagKeywords": "كمبيوترات، لابتوبات، راوتر، شبكات، طابعات"
+  },
+  {
+    "key": "cctv_security_systems",
+    "group": "commercial",
+    "tagName": "كاميرات مراقبة وأنظمة أمان",
+    "tagKeywords": "تركيب كاميرات، DVR، أجهزة إنذار، حماية من السرقة"
+  },
+  {
+    "key": "gaming_playstation_shop",
+    "group": "commercial",
+    "tagName": "ألعاب إلكترونية وبلايستيشن",
+    "tagKeywords": "بلايستيشن، ألعاب فيديو، PS5، أشرطة ألعاب، اكس بوكس"
+  },
+  {
+    "key": "mixed_gaming_maintenance",
+    "group": "commercial",
+    "tagName": "محل ألعاب وصيانة أجهزة",
+    "tagKeywords": "تصليح بلايستيشن، صيانة أجهزة ألعاب، ألعاب إلكترونية، يد تحكم"
+  },
+  {
+    "key": "gold_jewelry_crafting",
+    "group": "commercial",
+    "tagName": "صياغة وبيع الذهب والمجوهرات",
+    "tagKeywords": "ذهب، صياغة ذهب، خواتم، أساور، مجوهرات"
+  },
+  {
+    "key": "silver_house_watches",
+    "group": "commercial",
+    "tagName": "بيت فضة وساعات",
+    "tagKeywords": "فضيات، ساعات يد، إكسسوارات فضة، هدايا فضة"
+  },
+  {
+    "key": "watches_shop",
+    "group": "commercial",
+    "tagName": "محل ساعات",
+    "tagKeywords": "ساعات يد، ساعات حائط، تصليح ساعات، بطارية ساعة"
+  },
+  {
+    "key": "gifts_antiques_wrapping",
+    "group": "commercial",
+    "tagName": "هدايا وتحف وتغليف",
+    "tagKeywords": "تحف، تغليف هدايا، هدايا مناسبات، هدايا مواليد"
+  },
+  {
+    "key": "flower_shop_arrangements",
+    "group": "commercial",
+    "tagName": "ورد وزهور وتنسيق مناسبات",
+    "tagKeywords": "محل ورد، باقات ورد، تنسيق زهور، تنسيق مناسبات"
+  },
+  {
+    "key": "toys_birthday_gifts",
+    "group": "commercial",
+    "tagName": "ألعاب أطفال وهدايا عيد ميلاد",
+    "tagKeywords": "ألعاب صغار، ألعاب تعليمية، هدايا أطفال، زينة عيد ميلاد"
+  },
+  {
+    "key": "auto_spare_parts_all",
+    "group": "commercial",
+    "tagName": "قطع سيارات وزيوت وفلاتر",
+    "tagKeywords": "قطع غيار، زيوت محركات، فلاتر زيت، إكسسوارات سيارات"
+  },
+  {
+    "key": "car_dealerships_maintenance",
+    "group": "vehicles",
+    "tagName": "مراكز صيانة شركات",
+    "tagKeywords": "كراج وكالة، صيانة سيارات، فحص دوري، خدمات ما بعد البيع"
+  },
+  {
+    "key": "car_showrooms_sales",
+    "group": "commercial",
+    "tagName": "معارض بيع السيارات",
+    "tagKeywords": "سيارات للبيع، سيارات جديدة، سيارات مستعملة، معرض مركبات"
+  },
+  {
+    "key": "car_rental_offices",
+    "group": "vehicles",
+    "tagName": "مكاتب تأجير سيارات",
+    "tagKeywords": "تأجير مركبات، استئجار سيارة، سيارات للإيجار، مكتب سيارات"
+  },
+  {
+    "key": "vet_agricultural_supplies",
+    "group": "health",
+    "tagName": "أدوية حيوانات ومستلزمات زراعية",
+    "tagKeywords": "طبيب بيطري، أدوية بيطرية، بذور، أعلاف، مبيدات زراعية"
+  },
+  {
+    "key": "opticians_eyewear",
+    "group": "health",
+    "tagName": "نظارات وبصريات",
+    "tagKeywords": "نظارات طبية، نظارات شمسية، فحص نظر، عدسات لاصقة"
+  },
+  {
+    "key": "tobacco_hookah_supplies",
+    "group": "commercial",
+    "tagName": "مستلزمات مدخنين",
+    "tagKeywords": "دخان، تبغ، أراجيل، فحم أرجيلة، معسل"
+  },
+  {
+    "key": "food_carts",
+    "group": "commercial",
+    "tagName": "عربايات أكل",
+    "tagKeywords": "عربة طعام، وجبات سريعة، أكل شارع، سناك متنقل"
+  },
+  {
+    "key": "drinks_coffee_carts",
+    "group": "commercial",
+    "tagName": "عربايات مشاريب باردة وسخنة",
+    "tagKeywords": "قهوة متنقلة، مشروبات ساخنة، عصائر، مشروبات باردة"
+  },
+  {
+    "key": "food_drinks_carts",
+    "group": "commercial",
+    "tagName": "عربايات أكل ومشاريب",
+    "tagKeywords": "عربة أكل وشرب، مشروبات، وجبات متنقلة، مأكولات متنقلة"
+  },
+  {
+    "key": "car_radiator_repair",
+    "group": "technicians",
+    "tagName": "صيانة روديتر السيارات",
+    "tagKeywords": "رديتر، ردياتير، تبريد محرك، تسريب ماء، تنظيف رديتر، تصليح روديتر"
+  },
+  {
+    "key": "tile_roofing_installation",
+    "group": "technicians",
+    "tagName": "تركيب قرميد",
+    "tagKeywords": "قرميد أسطح، تركيب أسقف، عزل أسطح، فني أسقف قرميد"
+  },
+  {
+    "key": "health_medical_labs",
+    "group": "health",
+    "tagName": "مختبرات طبية وصحية",
+    "tagKeywords": "مختبر تحاليل، تحاليل دم، فحوصات مخبرية، سحب عينات، مختبر طبي"
   }
 ]

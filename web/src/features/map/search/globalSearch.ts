@@ -124,9 +124,8 @@ export function rankHits(
       words(n).some((word) => word.length > 2 && normalizeArabic(typeTitle(h.result.target)).includes(word)),
     w: wordHits(h.result, term),
   }));
-  // Rating is the platform-wide default ordering. Keep relevance as a tie-breaker only,
-  // so zero-rated map suggestions naturally remain after every positive-rated match.
-  scored.sort((a, b) => byRatingDesc(a.h.result, b.h.result) || Number(b.alias) - Number(a.alias) || b.w - a.w);
+  // Prefer an exact service/property type match, then rows matching more query words; use rating to break ties.
+  scored.sort((a, b) => Number(b.alias) - Number(a.alias) || b.w - a.w || byRatingDesc(a.h.result, b.h.result));
   return scored.map((s) => s.h);
 }
 

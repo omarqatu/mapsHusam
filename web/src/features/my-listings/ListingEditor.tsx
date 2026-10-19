@@ -25,7 +25,9 @@ import {
 } from './model';
 import BeforeAfterManager from './BeforeAfterManager';
 import PhotoManager from './PhotoManager';
+import VideoManager from './VideoManager';
 import { hasRelations } from '@/features/property-relations/model';
+import { useVisibility } from '@/features/visibility/store';
 import RelationsManager from '@/features/property-relations/RelationsManager';
 
 /**
@@ -34,8 +36,9 @@ import RelationsManager from '@/features/property-relations/RelationsManager';
  */
 export default function ListingEditor({ listing, onClose }: { listing: MyListing; onClose: () => void }) {
   const { t } = useTranslation();
+  const visibility = useVisibility();
   const edit = useEditListing();
-  const fields = listingFields(listing);
+  const fields = listingFields(listing, visibility);
   const [v, setV] = useState<ListingFormValues>(() => toFormValues(listing));
   const [point, setPoint] = useState<Coordinate | null>(
     listing.x !== null && listing.y !== null ? [listing.x, listing.y] : null,
@@ -104,6 +107,8 @@ export default function ListingEditor({ listing, onClose }: { listing: MyListing
         <section className={section}>
           <h3 className={heading}>{t('myListings.editor.photos')}</h3>
           <PhotoManager listing={listing} />
+          <VideoManager listing={listing} />
+          {listing.kind === 'property' && <BeforeAfterManager listing={listing} showBeforeAfter={false} />}
         </section>
 
         {listing.kind === 'service' && (
@@ -230,7 +235,10 @@ export default function ListingEditor({ listing, onClose }: { listing: MyListing
           {fields.move ? (
             <LocationPicker value={point} onChange={setPoint} />
           ) : (
-            <AlertMessage type="info" message={t('myListings.editor.propertyLocation')} />
+            <AlertMessage
+              type="info"
+              message={t(fields.fixedLocation ? 'myListings.editor.fixedLocation' : 'myListings.editor.propertyLocation')}
+            />
           )}
         </section>
       </form>

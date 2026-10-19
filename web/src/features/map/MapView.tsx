@@ -119,9 +119,14 @@ export default function MapView({
 
     // Legacy refreshed visible data layers every minute (road barrier / fuel status change live).
     const dataLayers: VectorLayer[] = [...realEstate, services];
-    const refresh = window.setInterval(() => {
+    const refreshData = () => {
+      dataLayers.forEach((l) => l.getSource()?.refresh());
+    };
+    const refreshVisibleData = () => {
       dataLayers.forEach((l) => l.getVisible() && l.getSource()?.refresh());
-    }, REFRESH_INTERVAL_MS);
+    };
+    window.addEventListener('map-data-updated', refreshData);
+    const refresh = window.setInterval(refreshVisibleData, REFRESH_INTERVAL_MS);
 
     // The container changes size (mobile toolbar, panels, rotation) — keep the canvas in sync.
     const resize = new ResizeObserver(() => olMap.updateSize());
@@ -147,6 +152,7 @@ export default function MapView({
       unsubscribeVisibility();
       unsubscribeAuth();
       window.clearInterval(refresh);
+      window.removeEventListener('map-data-updated', refreshData);
       resize.disconnect();
       olMap.setTarget(undefined);
       olMap.dispose();

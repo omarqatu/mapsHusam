@@ -3,7 +3,7 @@ import { SOURCE_URL as FUEL_SOURCE_URL, parseFuelPrices } from '../../lib/thefue
 import { IS_PROD, app } from '../app.js';
 import { realestatePool, servicesPool } from '../database.js';
 import { PLATFORM_PROPERTY_LAYERS, PLATFORM_SERVICE_LAYERS } from '../layers.js';
-import { platformStatsCache } from '../state.js';
+import { categoryCountsCache, platformStatsCache } from '../state.js';
 import { isLayerHidden, publicListingSql } from '../../lib/listing-rules.js';
 import { getHiddenLayers } from '../visibility.js';
 
@@ -121,8 +121,6 @@ app.get('/api/platform-stats', async (req, res) => {
 // عام ومكاشّ 60 ثانية مثل platform-stats. يعدّ نفس ما يعرضه البحث للزائر (lib/listing-rules.js)، بلا الطبقات المخفية.
 // الاستجابة: { success, data: { counts: { ApartRent: n, ..., <discriminator>: n } } }
 // =========================================================================
-let categoryCountsCache = { data: null, expiresAt: 0 };
-
 app.get('/api/category-counts', async (req, res) => {
     try {
         const hidden = await getHiddenLayers();
@@ -152,7 +150,8 @@ app.get('/api/category-counts', async (req, res) => {
         services.rows.forEach(row => { counts[row.discriminator] = parseInt(row.count, 10) || 0; });
 
         const data = { counts };
-        categoryCountsCache = { data, expiresAt: Date.now() + 60000 };
+        categoryCountsCache.data = data;
+        categoryCountsCache.expiresAt = Date.now() + 60000;
         res.json({ success: true, data: withoutHidden(data) });
     } catch (err) {
         console.error('❌ خطأ أثناء عدّ إعلانات الأقسام:', err.message);

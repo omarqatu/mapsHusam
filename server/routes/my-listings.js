@@ -6,21 +6,34 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import express from 'express';
 import rateLimit from 'express-rate-limit';
-import { IS_PROD, ROOT_DIR, app } from '../app.js';
+import { IS_PROD, ROOT_DIR, app, publicIo } from '../app.js';
 import { realestatePool, servicesPool } from '../database.js';
 import { requireAuth } from '../auth.js';
-import { platformStatsCache } from '../state.js';
+import { getVisibilitySettings } from '../visibility.js';
+import { clearPublicListingCaches } from '../state.js';
 import { notifyExpiredListingsForUser } from '../listing-expiry-notifications.js';
 import { isPropertyLayer, normalizeListingLayer, ownedListings, ownsListing } from '../listing-owners.js';
 import {
     BEFORE_AFTER_COLUMNS, MAX_PHOTOS, MAX_PHOTO_BYTES, PHOTO_MIME, joinPic, parseListingEdit, photoIdFromUrl, photoType,
     photoUrl, picList,
 } from '../../lib/listing-edit.js';
+import { MAX_VIDEO_BYTES, MAX_VIDEO_COUNT, VIDEO_MIME, listingVideoCheck, videoIdFromUrl, videoUrl } from '../../lib/listing-video.js';
 
 // The picture files live on disk (UPLOADS_DIR, default `<project>/uploads`, outside git); the database keeps one row
 // per picture: which listing and which account it belongs to.
 const PHOTO_DIR = path.join(process.env.UPLOADS_DIR || path.join(ROOT_DIR, 'uploads'), 'listing-photos');
 const photoFile = (id, type) => path.join(PHOTO_DIR, `${id}.${type}`);
+const VIDEO_DIR = path.join(process.env.UPLOADS_DIR || path.join(ROOT_DIR, 'uploads'), 'listing-videos');
+const videoFile = (id, type) => path.join(VIDEO_DIR, `${id}.${type}`);
+
+function videoList(raw) {
+    if (typeof raw !== 'string' || !raw.trim()) return [];
+    try {
+        const parsed = JSON.parse(raw);
+        if (Array.isArray(parsed)) return parsed.filter((url) => typeof url === 'string' && url.trim());
+    } catch { /* Existing rows may contain one URL instead of a JSON list. */ }
+    return [raw.trim()];
+}
 
 async function ensurePhotosSchema() {
     try {
@@ -42,13 +55,38 @@ async function ensurePhotosSchema() {
 }
 ensurePhotosSchema();
 
+async function ensureVideosSchema() {
+    try {
+        await fs.mkdir(VIDEO_DIR, { recursive: true });
+        await servicesPool.query(`
+            CREATE TABLE IF NOT EXISTS public.listing_videos (
+                id UUID PRIMARY KEY,
+                layer TEXT NOT NULL,
+                feature_id BIGINT NOT NULL,
+                user_id INTEGER NOT NULL,
+                type TEXT NOT NULL,
+                created_at TIMESTAMP NOT NULL DEFAULT NOW()
+            )
+        `);
+        await servicesPool.query('CREATE INDEX IF NOT EXISTS listing_videos_listing_idx ON public.listing_videos (layer, feature_id)');
+        await servicesPool.query('ALTER TABLE public.service_all ADD COLUMN IF NOT EXISTS video TEXT');
+        for (const table of ['ApartRent', 'ApartSale', 'LandSale']) {
+            await realestatePool.query(`ALTER TABLE public."${table}" ADD COLUMN IF NOT EXISTS video TEXT`);
+            await realestatePool.query(`ALTER TABLE public."${table}" ADD COLUMN IF NOT EXISTS media_default TEXT`);
+        }
+    } catch (err) {
+        console.error('⚠️ تعذر تجهيز تخزين فيديوهات الإعلانات:', err.message);
+    }
+}
+ensureVideosSchema();
+
 const SERVICE_COLUMNS = `id, discriminator AS layer, name, des, phone, whatsapp, work_hours, price, currency, area,
-    location_name AS location, status, auto_status, end_date, pic, x_coord, y_coord,
+    location_name AS location, status, auto_status, end_date, pic, video, x_coord, y_coord,
     details_link_1, details_link_2, media_default`;
 const PROPERTY_COLUMNS = (table) => `fid AS id, '${table}' AS layer, name, des, phone, whatsapp, NULL AS work_hours, price,
-    currency, area, location, status, auto_status, end_date, pic,
+    currency, area, location, status, auto_status, end_date, pic, video,
     ST_X(ST_PointOnSurface(geom)) AS x_coord, ST_Y(ST_PointOnSurface(geom)) AS y_coord,
-    NULL AS details_link_1, NULL AS details_link_2, NULL AS media_default`;
+    NULL AS details_link_1, NULL AS details_link_2, media_default`;
 
 /** One listing row as the page reads it. */
 function toListing(row, ratings) {
@@ -70,10 +108,14 @@ function toListing(row, ratings) {
         auto_status: Number(row.auto_status) || 0,
         end_date: row.end_date || null,
         photos: picList(row.pic),
+        video: row.video || null,
+        videos: videoList(row.video),
         // services only: the before / after pair and what the card opens on
         before: row.details_link_1 || null,
         after: row.details_link_2 || null,
-        media_default: row.media_default === 'before_after' ? 'before_after' : 'photos',
+        media_default: row.media_default === 'before_after' || row.media_default === 'video'
+            ? row.media_default
+            : !row.media_default && row.video ? 'video' : 'photos',
         x: row.x_coord === null ? null : Number(row.x_coord),
         y: row.y_coord === null ? null : Number(row.y_coord),
         rating_avg: ratings.get(key)?.avg ?? null,
@@ -157,6 +199,9 @@ app.patch('/api/my-listings/:layer/:id', requireAuth, editLimiter, async (req, r
     try {
         const target = await ownedTarget(req, res);
         if (!target) return;
+        if (!isPropertyLayer(target.layer) && !(await getVisibilitySettings()).providerMovableLayers.has(target.layer) && (req.body?.x_coord !== undefined || req.body?.y_coord !== undefined)) {
+            return res.status(403).json({ success: false, error: 'موقع هذا المعلم ثابت، ويمكن للمشرف فقط تغييره من الخريطة.' });
+        }
         const parsed = parseListingEdit(req.body, target.layer);
         if (parsed.error) return res.status(400).json({ success: false, error: parsed.error });
 
@@ -181,7 +226,8 @@ app.patch('/api/my-listings/:layer/:id', requireAuth, editLimiter, async (req, r
             [...values, ...w.params(target.id)],
         );
         if (result.rowCount === 0) return res.status(404).json({ success: false, error: 'الإعلان غير موجود.' });
-        platformStatsCache.clear();
+        clearPublicListingCaches();
+        publicIo.emit('map_data_updated');
         res.json({ success: true, listing: await readOne(target.layer, target.id) });
     } catch (err) {
         console.error('❌ خطأ أثناء تعديل إعلان:', err.message);
@@ -198,6 +244,65 @@ async function readPic(layer, id) {
 async function writePic(layer, id, list) {
     const w = whereFor(layer, 2);
     await poolFor(layer).query(`UPDATE ${w.table} SET pic = $1 WHERE ${w.where}`, [joinPic(list), ...w.params(id)]);
+}
+
+async function changeVideoList(target, change) {
+    const w = whereFor(target.layer, 1);
+    const client = await poolFor(target.layer).connect();
+    try {
+        await client.query('BEGIN');
+        const current = await client.query(`SELECT video, media_default FROM ${w.table} WHERE ${w.where} FOR UPDATE`, w.params(target.id));
+        if (!current.rowCount) {
+            await client.query('ROLLBACK');
+            return { missing: true };
+        }
+        const previous = videoList(current.rows[0].video);
+        const next = change(previous);
+        if (!next) {
+            await client.query('ROLLBACK');
+            return { full: true };
+        }
+        const set = whereFor(target.layer, 2);
+        let mediaDefault = current.rows[0].media_default;
+        if (!mediaDefault && next.length) mediaDefault = 'video';
+        if (mediaDefault === 'video' && !next.length) mediaDefault = 'photos';
+        await client.query(`UPDATE ${set.table} SET video = $1, media_default = $2 WHERE ${set.where}`,
+            [next.length ? JSON.stringify(next) : null, mediaDefault, ...set.params(target.id)]);
+        await client.query('COMMIT');
+        return { videos: next, previous, media_default: mediaDefault };
+    } catch (err) {
+        await client.query('ROLLBACK').catch(() => {});
+        throw err;
+    } finally {
+        client.release();
+    }
+}
+
+async function storeVideoUpload(target, uid, body, type) {
+    const id = crypto.randomUUID();
+    await fs.writeFile(videoFile(id, type), body, { flag: 'wx' });
+    try {
+        await servicesPool.query(
+            'INSERT INTO public.listing_videos (id, layer, feature_id, user_id, type) VALUES ($1, $2, $3, $4, $5)',
+            [id, target.layer, target.id, uid, type],
+        );
+    } catch (err) {
+        await fs.rm(videoFile(id, type), { force: true });
+        throw err;
+    }
+    return videoUrl(id, type);
+}
+
+async function deleteVideoUpload(target, url) {
+    const id = videoIdFromUrl(url);
+    if (!id) return;
+    const r = await servicesPool.query(
+        'DELETE FROM public.listing_videos WHERE id = $1 AND layer = $2 AND feature_id = $3 RETURNING type',
+        [id, target.layer, target.id],
+    );
+    await Promise.all(r.rows
+        .filter((row) => row.type === 'mp4' || row.type === 'webm')
+        .map((row) => fs.rm(videoFile(id, row.type), { force: true })));
 }
 
 /** Saves an uploaded picture of this listing (file + its `listing_photos` row) → its url, or null if not an image. */
@@ -254,6 +359,7 @@ app.post(
             }
             const url = await storeUpload(target, req.auth.uid, req.body);
             await writePic(target.layer, target.id, [...list, url]);
+            publicIo.emit('map_data_updated');
             res.json({ success: true, url, photos: [...list, url] });
         } catch (err) {
             console.error('❌ خطأ أثناء رفع صورة:', err.message);
@@ -275,10 +381,73 @@ app.put('/api/my-listings/:layer/:id/photos', requireAuth, editLimiter, async (r
         const next = [...new Set(wanted)].filter((p) => list.includes(p));
         await writePic(target.layer, target.id, next);
         await deleteUploads(target, list.filter((p) => !next.includes(p)));
+        publicIo.emit('map_data_updated');
         res.json({ success: true, photos: next });
     } catch (err) {
         console.error('❌ خطأ أثناء ترتيب الصور:', err.message);
         res.status(500).json({ success: false, error: 'فشل حفظ الصور.', details: IS_PROD ? undefined : err.message });
+    }
+});
+
+const videoUploadLimiter = rateLimit({
+    windowMs: 60 * 60 * 1000,
+    max: 10,
+    standardHeaders: true,
+    legacyHeaders: false,
+    message: { success: false, error: 'محاولات رفع فيديو كثيرة خلال وقت قصير، حاول بعد قليل.' },
+});
+
+/** Up to three short videos per owned service/property. Each upload is validated on the server. */
+app.post(
+    '/api/my-listings/:layer/:id/video',
+    requireAuth,
+    videoUploadLimiter,
+    express.raw({ type: () => true, limit: MAX_VIDEO_BYTES }),
+    async (req, res) => {
+        let target;
+        let newUrl;
+        try {
+            target = await ownedTarget(req, res);
+            if (!target) return;
+            const checked = listingVideoCheck(req.body);
+            if (checked.error === 'too_large') return res.status(413).json({ success: false, error: 'حجم الفيديو يتجاوز 25 ميغابايت.' });
+            if (checked.error === 'too_long') return res.status(400).json({ success: false, error: 'مدة الفيديو يجب ألا تتجاوز دقيقة واحدة.' });
+            if (checked.error) return res.status(415).json({ success: false, error: 'ارفع فيديو MP4 أو WebM صالحاً.' });
+
+            newUrl = await storeVideoUpload(target, req.auth.uid, req.body, checked.type);
+            const changed = await changeVideoList(target, (videos) => videos.length >= MAX_VIDEO_COUNT ? null : [...videos, newUrl]);
+            if (changed.missing || changed.full) {
+                await deleteVideoUpload(target, newUrl);
+                if (changed.full) return res.status(409).json({ success: false, error: `يمكن إضافة ${MAX_VIDEO_COUNT} فيديوهات كحد أقصى.` });
+                return res.status(404).json({ success: false, error: 'الإعلان غير موجود.' });
+            }
+            clearPublicListingCaches();
+            publicIo.emit('map_data_updated');
+            res.json({ success: true, videos: changed.videos, media_default: changed.media_default });
+        } catch (err) {
+            if (target && newUrl) await deleteVideoUpload(target, newUrl).catch(() => {});
+            console.error('❌ خطأ أثناء رفع فيديو:', err.message);
+            res.status(500).json({ success: false, error: 'فشل رفع الفيديو.', details: IS_PROD ? undefined : err.message });
+        }
+    },
+);
+
+app.delete('/api/my-listings/:layer/:id/video', requireAuth, editLimiter, async (req, res) => {
+    try {
+        const target = await ownedTarget(req, res);
+        if (!target) return;
+        const url = typeof req.query.url === 'string' ? req.query.url : '';
+        if (!url) return res.status(400).json({ success: false, error: 'اختر الفيديو المراد حذفه.' });
+        const changed = await changeVideoList(target, (videos) => videos.includes(url) ? videos.filter((item) => item !== url) : videos);
+        if (changed.missing) return res.status(404).json({ success: false, error: 'الإعلان غير موجود.' });
+        if (changed.videos.length === changed.previous.length) return res.status(404).json({ success: false, error: 'الفيديو غير موجود.' });
+        await deleteVideoUpload(target, url);
+        clearPublicListingCaches();
+        publicIo.emit('map_data_updated');
+        res.json({ success: true, videos: changed.videos, media_default: changed.media_default });
+    } catch (err) {
+        console.error('❌ خطأ أثناء حذف فيديو:', err.message);
+        res.status(500).json({ success: false, error: 'فشل حذف الفيديو.', details: IS_PROD ? undefined : err.message });
     }
 });
 
@@ -344,6 +513,7 @@ app.post(
                 return res.status(404).json({ success: false, error: 'الإعلان غير موجود.' });
             }
             if (old && old !== url) await deleteUploads(found.target, [old]);
+            publicIo.emit('map_data_updated');
             res.json({ success: true, listing: await readOne(found.target.layer, found.target.id) });
         } catch (err) {
             console.error('❌ خطأ أثناء رفع صورة قبل/بعد:', err.message);
@@ -359,6 +529,7 @@ app.delete('/api/my-listings/:layer/:id/before-after/:side', requireAuth, editLi
         const old = await swapSide(found.target, found.column, null);
         if (old === undefined) return res.status(404).json({ success: false, error: 'الإعلان غير موجود.' });
         if (old) await deleteUploads(found.target, [old]);
+        publicIo.emit('map_data_updated');
         res.json({ success: true, listing: await readOne(found.target.layer, found.target.id) });
     } catch (err) {
         console.error('❌ خطأ أثناء حذف صورة قبل/بعد:', err.message);
@@ -377,6 +548,23 @@ app.get('/api/listing-photos/:file', async (req, res) => {
             'Content-Type': PHOTO_MIME[type],
             'Cache-Control': 'public, max-age=31536000, immutable',
             'Content-Security-Policy': "default-src 'none'; sandbox",
+            'X-Content-Type-Options': 'nosniff',
+        },
+        cacheControl: false,
+        lastModified: false,
+    }, (err) => {
+        if (err && !res.headersSent) res.status(err.statusCode === 404 || err.code === 'ENOENT' ? 404 : 500).end();
+    });
+});
+
+app.get('/api/listing-videos/:file', async (req, res) => {
+    const m = /^([a-f0-9-]{36})\.(mp4|webm)$/.exec(req.params.file);
+    if (!m || !videoIdFromUrl(`/api/listing-videos/${req.params.file}`)) return res.status(404).end();
+    const [, id, type] = m;
+    res.sendFile(videoFile(id, type), {
+        headers: {
+            'Content-Type': VIDEO_MIME[type],
+            'Cache-Control': 'public, max-age=31536000, immutable',
             'X-Content-Type-Options': 'nosniff',
         },
         cacheControl: false,

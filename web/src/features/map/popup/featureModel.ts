@@ -87,6 +87,7 @@ export function safeMediaUrl(raw: unknown): string | null {
   v = v.replace(/^['"]|['"]$/g, '').trim();
   // A picture a provider uploaded: served by this server (same origin).
   if (/^\/api\/listing-photos\/[a-f0-9-]{36}\.(jpg|png|webp)$/.test(v)) return v;
+  if (/^\/api\/listing-videos\/[a-f0-9-]{36}\.(mp4|webm)$/.test(v)) return v;
   if (v.startsWith('//')) v = `https:${v}`;
   else if (v.startsWith('http://')) v = `https://${v.slice(7)}`;
   else if (!/^https:\/\//i.test(v)) v = `https://${v}`;
@@ -158,7 +159,7 @@ export type MediaItem =
   | { type: 'link'; url: string; labelKey: string };
 
 /**
- * Everything to show under the details, in legacy order: pictures, video, details link 1, details link 2. A complete
+ * Everything to show under the details, in the selected order: video or pictures first, then the remaining media and links. A complete
  * before / after pair is not in the list: it is shown as a pair of its own (`beforeAfterPair`).
  */
 export function collectMedia(props: Props): MediaItem[] {
@@ -177,8 +178,10 @@ export function collectMedia(props: Props): MediaItem[] {
     else if (!isImageUrl(url) && isPageUrl(url)) out.push({ type: 'link', url, labelKey: 'popup.openPage' });
     else out.push({ type: 'image', url });
   }
-  const video = safeMediaUrl(firstProp(props, MEDIA.video));
-  if (video) out.push(asVideo(video, 'popup.watchVideo'));
+  for (const raw of parseUrlList(firstProp(props, MEDIA.video))) {
+    const video = safeMediaUrl(raw);
+    if (video) out.push(asVideo(video, 'popup.watchVideo'));
+  }
   const pairShown = beforeAfterPair(props) !== null;
   for (const [keys, labelKey] of [
     [MEDIA.details1, 'popup.moreDetails1'],
@@ -191,12 +194,19 @@ export function collectMedia(props: Props): MediaItem[] {
   }
   // The same picture / video is often filled in two fields; show it once.
   const seen = new Set<string>();
-  return out.filter((m) => {
+  const unique = out.filter((m) => {
     const k = m.type === 'youtube' ? `y:${m.id}` : `${m.type}:${m.url}`;
     if (seen.has(k)) return false;
     seen.add(k);
     return true;
   });
+  const preference = text(firstProp(props, ['media_default']));
+  const preferredType = preference === 'photos' ? 'image' : preference === 'video' ? 'video' :
+    unique.some((m) => m.type === 'video' || m.type === 'youtube') ? 'video' : 'image';
+  const isPreferred = (m: MediaItem) => preferredType === 'video'
+    ? m.type === 'video' || m.type === 'youtube'
+    : m.type === 'image';
+  return [...unique.filter(isPreferred), ...unique.filter((m) => !isPreferred(m))];
 }
 
 /** `collectMedia` output for `<MediaGallery>`: link labels are translated here. */

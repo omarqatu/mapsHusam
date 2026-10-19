@@ -255,6 +255,44 @@ export default function AdminVisibilityPage() {
             {groups.length === 0 && <p className="text-sm text-muted">{t('common.noData')}</p>}
           </div>
         </SectionCard>
+
+        <SectionCard title={t('visibility.locationTitle')} subtitle={t('visibility.locationHint')}>
+          <div className="space-y-2">
+            {GROUPS.map((g) => {
+              const services = g.targets.filter((x) => x.kind === 'service' && matchesQuery(t(targetLabelKey(x)), query));
+              if (!services.length) return null;
+              const keys = services.map(targetKey);
+              const movable = keys.filter((key) => draft.providerMovableLayers.has(key)).length;
+              const Icon = GROUP_ICON[g.group];
+              return (
+                <details key={`location-${g.group}`} open={query.trim() !== '' || undefined} className="rounded-xl border border-line">
+                  <summary className="flex cursor-pointer list-none items-center gap-2.5 px-3 py-2.5 [&::-webkit-details-marker]:hidden">
+                    <ChevronDown className="h-4 w-4 text-muted" aria-hidden />
+                    <Icon className="h-4 w-4 text-muted" aria-hidden />
+                    <span className="flex-1 text-sm font-bold">{t(groupLabelKey(g.group))}</span>
+                    <span className="text-xs text-muted" dir="ltr">{movable}/{keys.length}</span>
+                  </summary>
+                  <ul className="grid gap-1 border-t border-line p-2 sm:grid-cols-2 lg:grid-cols-3">
+                    {services.map((target) => {
+                      const key = targetKey(target);
+                      const allowed = draft.providerMovableLayers.has(key);
+                      return <li key={key}><Checkbox
+                        className="w-full rounded-lg px-2 py-1.5 hover:bg-subtle"
+                        checked={allowed}
+                        onChange={(on) => {
+                          const next = new Set(draft.providerMovableLayers);
+                          if (on) next.add(key); else next.delete(key);
+                          setDraft({ ...draft, providerMovableLayers: next });
+                        }}
+                        label={<span className="flex items-center gap-2"><span aria-hidden className="text-lg"><TargetIcon target={target} /></span>{t(targetLabelKey(target))}</span>}
+                      /></li>;
+                    })}
+                  </ul>
+                </details>
+              );
+            })}
+          </div>
+        </SectionCard>
       </div>
     </>
   );

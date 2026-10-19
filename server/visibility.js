@@ -3,17 +3,29 @@
 import { servicesPool } from './database.js';
 import { bearerToken, sessionFromToken } from './auth.js';
 import { parseVisibilitySettings } from '../lib/listing-rules.js';
+import { FIXED_LOCATION_SERVICE_KEYS, SERVICE_TYPE_KEYS } from './layers.js';
 
 export const VISIBILITY_KEY = 'settings.visibility';
 const CACHE_MS = 30 * 1000;
 let cache = { settings: parseVisibilitySettings(null), expiresAt: 0 };
+
+function withProviderLocationPolicy(settings, raw) {
+    let stored;
+    try { stored = raw && typeof raw === 'string' ? JSON.parse(raw) : raw; } catch { stored = null; }
+    const saved = Array.isArray(stored?.providerMovableLayers) ? stored.providerMovableLayers : null;
+    const providerMovableLayers = new Set((saved ?? SERVICE_TYPE_KEYS.filter((key) => !FIXED_LOCATION_SERVICE_KEYS.has(key)))
+        .filter((key) => typeof key === 'string' && SERVICE_TYPE_KEYS.includes(key)));
+    return { ...settings, providerMovableLayers };
+}
+cache.settings = withProviderLocationPolicy(cache.settings, null);
 
 /** `{ hidden, visitorContact }`. A failed read keeps the last known value. */
 export async function getVisibilitySettings() {
     if (Date.now() < cache.expiresAt) return cache.settings;
     try {
         const r = await servicesPool.query('SELECT content_value FROM public.platform_content WHERE content_key = $1', [VISIBILITY_KEY]);
-        cache = { settings: parseVisibilitySettings(r.rows[0]?.content_value), expiresAt: Date.now() + CACHE_MS };
+        const raw = r.rows[0]?.content_value;
+        cache = { settings: withProviderLocationPolicy(parseVisibilitySettings(raw), raw), expiresAt: Date.now() + CACHE_MS };
     } catch (err) {
         console.warn('⚠️ تعذر قراءة إعداد الإظهار والإخفاء:', err.message);
         cache.expiresAt = Date.now() + 5000;

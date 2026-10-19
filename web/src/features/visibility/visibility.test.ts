@@ -35,10 +35,15 @@ describe('visibility model', () => {
 
   it('round-trips, sorted, so the same choice is stored the same way', () => {
     const v = withSection(withLayers(ALL_VISIBLE, ['plumber', 'carpenter'], false), 'stats', false);
-    expect(serializeVisibility(v)).toBe(
-      '{"hiddenLayers":["carpenter","plumber"],"hiddenSections":["stats"],"ratingVisibility":{"0":0.2,"1":1.3,"2":1.6,"3":1.8,"4":2,"5":2.5,"6":3,"7":3.5,"8":4,"9":4.5,"10":5,"9.9":5.5},"visitorContact":false}',
-    );
-    expect(sameVisibility(parseVisibility(serializeVisibility(v)), v)).toBe(true);
+    const stored = JSON.parse(serializeVisibility(v));
+    expect(stored).toMatchObject({
+      hiddenLayers: ['carpenter', 'plumber'],
+      hiddenSections: ['stats'],
+      ratingVisibility: ALL_VISIBLE.ratingVisibility,
+      visitorContact: false,
+    });
+    expect(stored.providerMovableLayers).toEqual([...v.providerMovableLayers].sort());
+    expect(sameVisibility(parseVisibility(JSON.stringify(stored)), v)).toBe(true);
   });
 
   it('visitors see contact numbers only when the admin switched it on', () => {

@@ -1,15 +1,16 @@
 // Admin: users, online users, forced logout, editing a user.
 import bcrypt from 'bcrypt';
-import { BCRYPT_SALT_ROUNDS, IS_PROD, app } from '../app.js';
+import { BCRYPT_SALT_ROUNDS, IS_PROD, app, publicIo } from '../app.js';
 import { realestatePool, servicesPool } from '../database.js';
 import { authStatusCache, requireAdmin } from '../auth.js';
 import { clearProviderLinkedCache, connectedUsers } from '../state.js';
-import { isPropertyLayer, linkOwner, normalizeListingLayer, ready, unlinkOwner } from '../listing-owners.js';
+import { isPropertyLayer, linkOwner, normalizeListingLayer, pruneStaleListingOwners, ready, unlinkOwner } from '../listing-owners.js';
 import { PLATFORM_PROPERTY_LAYERS, PLATFORM_SERVICE_LAYERS } from '../layers.js';
 
 // 1. جلب جميع المستخدمين مع خيارات البحث والتصفية
 app.get('/api/admin/users', requireAdmin, async (req, res) => {
     try {
+        await pruneStaleListingOwners();
         const { search, status_filter, role_filter } = req.query;
         
         let query = `
@@ -479,6 +480,7 @@ app.post('/api/admin/users/update', requireAdmin, async (req, res) => {
         }
         authStatusCache.delete(Number(user_id)); // 🔒 يسري تغيير الدور/التفعيل فوراً
         clearProviderLinkedCache(); // ربط مزود الخدمة قد تغيّر
+        publicIo.emit('map_data_updated');
 
         console.log(`✅ تم تحديث المستخدم ${user_id} بنجاح`);
 

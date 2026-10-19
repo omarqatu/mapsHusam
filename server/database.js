@@ -137,8 +137,8 @@ async function ensureServicePropertyColumns() {
 ensureServicePropertyColumns();
 
 // A provider's "before / after" pictures (details_link_1 / details_link_2, entered by the admin in legacy) and which
-// media their card opens on: 'photos' (default, also NULL) or 'before_after'. The two links already exist on every
-// installation that ran the legacy editor; IF NOT EXISTS makes a fresh database match.
+// which media appears first on a service card: videos, photos, or 'before_after'. The two links already exist on
+// every installation that ran the legacy editor; IF NOT EXISTS makes a fresh database match.
 async function ensureServiceMediaColumns() {
     try {
         await servicesPool.query(`

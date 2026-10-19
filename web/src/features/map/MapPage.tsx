@@ -84,7 +84,7 @@ export default function MapPage() {
     if (searchOpen) useSearchUi.getState().closePanel();
     else {
       setLayersOpen(false);
-      useSearchUi.getState().openPanel();
+      useSearchUi.getState().openPanel('quick');
     }
   };
 
