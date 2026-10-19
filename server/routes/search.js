@@ -1,13 +1,24 @@
 // Search: unique field values and feature search (single and batch).
 import { IS_PROD, app, debugLog } from '../app.js';
 import { realestatePool, servicesPool } from '../database.js';
-import { REAL_ESTATE_LAYERS, isValidLayer, isValidSqlIdentifier } from '../layers.js';
+import { REAL_ESTATE_LAYERS, SERVICE_TYPE_KEYS, isValidLayer, isValidSqlIdentifier } from '../layers.js';
 import { isPropertyLayer } from '../listing-owners.js';
 import { activeAdminUidFromToken, bearerToken } from '../auth.js';
 import { AVAILABLE_FIRST_SQL, CONTACT_FIELDS, hiddenDiscriminators, isLayerHidden, publicListingSql, withoutContact } from '../../lib/listing-rules.js';
 import { viewerRulesFor } from '../visibility.js';
 
 const EMPTY_COLLECTION = { type: 'FeatureCollection', features: [] };
+/** Keep explicitly zero-rated listings off ordinary public search; only the map's global suggestion box opts in. */
+function zeroRatingSearchFilter(layer, isRealEstate, viewer, includeZeroRating = false) {
+    if (viewer.isAdmin || includeZeroRating) return '';
+    if (isRealEstate) return ' AND (rating IS NULL OR rating > 0)';
+    if (layer === 'service_all') {
+        return ' AND (rating IS NULL OR rating > 0)';
+    }
+    return SERVICE_TYPE_KEYS.includes(layer)
+        ? ' AND (rating IS NULL OR rating > 0)'
+        : '';
+}
 
 // 8. API لجلب القيم الفريدة من PostgreSQL مباشرة (أسرع من GeoServer)
 app.get('/api/get-unique-values', async (req, res) => {
@@ -47,6 +58,7 @@ app.get('/api/get-unique-values', async (req, res) => {
             }
         });
 
+        extraWhere += zeroRatingSearchFilter(layer, isRealEstate, viewer);
         const query = `SELECT DISTINCT "${field}" FROM public.${tableName} WHERE ${publicListingSql(isRealEstate)} AND "${field}" IS NOT NULL AND "${field}"::text != ''${extraWhere} ORDER BY "${field}" ASC LIMIT 10000`;
         const result = await targetPool.query(query, extraParams);
         const values = result.rows.map(row => row[field]).filter(v => v != null && v !== '');
@@ -157,10 +169,19 @@ app.get('/api/search-features', async (req, res) => {
             }
         }
 
+        const includeZeroRating = req.query.include_zero_rating === '1';
+
         // متوفر + غير متوفر مؤقتاً (للخدمات) يظهران، المسحوب والمنتهي لا (lib/listing-rules.js)
         if (!ignoreStatusFilter) {
             query += ` AND ${publicListingSql(isRealEstate)}`;
         }
+
+        query += zeroRatingSearchFilter(
+            layer.trim(),
+            isRealEstate,
+            viewer,
+            includeZeroRating,
+        );
 
         // إضافة فلترة مكانية BBOX إذا تم توفيرها
         if (bbox) {
@@ -226,15 +247,25 @@ app.get('/api/search-features', async (req, res) => {
                     const NORM_FROM = 'أإآةهىيؤئء';
                     const NORM_TO   = 'اااههييءءء';
                     if (fieldName === 'search_tags') {
-                    const searchColumns = isRealEstate ? ['search_tags', 'des'] : ['search_tags', 'des', 'name'];
+                    // Search listing names explicitly for properties and services alike.
+                    const searchColumns = ['search_tags', 'des', 'name'];
                     const words = c.value.split(/\s+/).filter(w => w.length > 0);
+                    // Property type labels are singular in the UI, while people commonly search
+                    // with plural / alternate Arabic forms (شقق، أراضي). Include these fixed
+                    // aliases even when the listing's own search_tags are empty or incomplete.
+                    const propertyTypeAliases = {
+                        ApartRent: ['شقة للإيجار', 'شقق للإيجار', 'شقق للايجار', 'شقة ايجار', 'شقق ايجار'],
+                        ApartSale: ['شقة للبيع', 'شقق للبيع'],
+                        LandSale: ['أرض للبيع', 'اراضي للبيع', 'أراضي للبيع', 'أرض بيع'],
+                    };
+                    const typeNames = [layerNameAr, ...(propertyTypeAliases[layer] || [])].filter(Boolean);
                     const wordGroups = words.map(word => {
                         const colParts = searchColumns.map(col => {
                             params.push(`%${word}%`);
                             return `translate(${col}::text, '${NORM_FROM}', '${NORM_TO}') ILIKE translate($${params.length}, '${NORM_FROM}', '${NORM_TO}')`;
                         });
-                        if (layerNameAr) {
-                            params.push(layerNameAr);
+                        for (const typeName of typeNames) {
+                            params.push(typeName);
                             params.push(`%${word}%`);
                             colParts.push(`translate($${params.length - 1}, '${NORM_FROM}', '${NORM_TO}') ILIKE translate($${params.length}, '${NORM_FROM}', '${NORM_TO}')`);
                         }
@@ -265,10 +296,10 @@ app.get('/api/search-features', async (req, res) => {
         });
 
         if (layer === 'road_barriers' || layer === 'fuel_stations') {
-            query += ` ORDER BY display_order NULLS LAST, id ASC LIMIT 2000`;
+            query += ` ORDER BY rating DESC NULLS LAST, display_order NULLS LAST, id ASC LIMIT 2000`;
         } else {
-            // المتاح الآن أولاً، ثم المغلق / غير المتوفر، وداخل كل منهما الأعلى تقييماً
-            query += ` ORDER BY ${AVAILABLE_FIRST_SQL}, rating DESC NULLS LAST LIMIT 2000`;
+            // أعلى rating أولاً مع إبقاء ترتيب التوفر كفاصل عند تساوي الرتبة.
+            query += ` ORDER BY rating DESC NULLS LAST, ${AVAILABLE_FIRST_SQL} LIMIT 2000`;
         }
 
         debugLog(`Search Query for ${layer}:`, query);

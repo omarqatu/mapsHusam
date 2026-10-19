@@ -66,6 +66,8 @@ export const isPropertyLayer = (layer: string) =>
 /** Properties, hotels and holiday villas are priced (with an area for properties). */
 export const hasPriceField = (layer: string) =>
   isPropertyLayer(layer) || SERVICE_BY_KEY.get(layer)?.editProfile === 'propertyService';
+/** Properties, hotels and villas carry a selectable price currency. */
+export const hasCurrencyField = hasPriceField;
 /** Only a service has work hours. */
 export const hasHoursField = (layer: string) => !isPropertyLayer(layer);
 
@@ -178,8 +180,10 @@ export function toInput(
   else if (hasHoursField(v.layer) && v.workHours.trim()) input.work_hours = v.workHours.trim();
   if (v.whatsappSame) input.whatsapp = toWhatsappNumber('970', phone);
   if (hasPriceField(v.layer) && v.price.trim() !== '') input.price = Number(v.price);
-  if (isPropertyLayer(v.layer)) {
+  if (hasCurrencyField(v.layer)) {
     input.currency = v.currency;
+  }
+  if (isPropertyLayer(v.layer)) {
     if (v.area.trim() !== '') input.area = Number(v.area);
   }
   if (isLandLayer(v.layer) && geometry) input.geometry = geometry;

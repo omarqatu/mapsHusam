@@ -35,9 +35,10 @@ export interface WfsLayerDef {
 // Legacy helper layers (Governorate, City, Location, RoadsTest) are in MAP_CONFIG.globalExclusions and never
 // shown, so they are not ported. Add them here if the exclusion is lifted.
 export const REAL_ESTATE_LAYERS: (WfsLayerDef & { key: RealEstateLayerKey })[] = [
-  { key: 'rent', workspace: 'realestate', typeName: 'ApartRent', maxResolution: 1, zIndex: 20 },
-  { key: 'sale', workspace: 'realestate', typeName: 'ApartSale', maxResolution: 1, zIndex: 20 },
-  { key: 'land', workspace: 'realestate', typeName: 'LandSale', maxResolution: 1, zIndex: 10 },
+  // The style callback applies the admin-configured rating threshold per feature.
+  { key: 'rent', workspace: 'realestate', typeName: 'ApartRent', maxResolution: 20, zIndex: 20 },
+  { key: 'sale', workspace: 'realestate', typeName: 'ApartSale', maxResolution: 20, zIndex: 20 },
+  { key: 'land', workspace: 'realestate', typeName: 'LandSale', maxResolution: 20, zIndex: 10 },
 ];
 
 /** GeoServer feature type of each property layer: the editor and the search read the names from the list above. */

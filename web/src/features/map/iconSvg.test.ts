@@ -38,7 +38,7 @@ describe('icon drawings for the map', () => {
       ['rent', '#ea580c'],
       ['sale', '#16a34a'],
     ] as const) {
-      const image = realEstateStyle(key, t)(new Feature(), 10).getImage();
+      const image = realEstateStyle(key, t)(new Feature(), 10)?.getImage();
       expect(image).toBeInstanceOf(Icon);
       const src = (image as Icon).getSrc()!;
       expect(src.startsWith('data:image/svg+xml')).toBe(true);

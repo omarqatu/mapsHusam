@@ -198,11 +198,23 @@ app.post('/api/admin/listing-submissions/:id/approve', requireAdmin, async (req,
         const workHours = body.work_hours !== undefined ? cleanText(body.work_hours, SUBMISSION_MAX_LEN.work_hours) : sub.work_hours;
         const searchTags = cleanText(body.search_tags, SUBMISSION_MAX_LEN.search_tags)
             || [LAYER_AR_NAMES[sub.layer] || sub.layer, name].join('، ');
+        const rating = body.rating === undefined ? 5 : Number(body.rating);
+        if (!Number.isFinite(rating) || rating < 0 || rating > 10) {
+            await client.query('ROLLBACK');
+            return res.status(400).json({ success: false, error: 'الرتبة يجب أن تكون بين 0 و10.' });
+        }
+        const endDate = body.end_date === undefined || body.end_date === null || body.end_date === '' ? null : body.end_date;
+        const date = typeof endDate === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(endDate) ? new Date(`${endDate}T00:00:00Z`) : null;
+        if (endDate !== null && (!date || Number.isNaN(date.getTime()) || date.toISOString().slice(0, 10) !== endDate)) {
+            await client.query('ROLLBACK');
+            return res.status(400).json({ success: false, error: 'تاريخ انتهاء الاشتراك غير صالح.' });
+        }
 
         const isProperty = SUBMITTABLE_PROPERTY_LAYERS.includes(sub.layer);
         let feature;
         if (sub.layer === 'LandSale') {
             const values = landSaleApprovalParams(sub, { name, des, searchTags });
+            values.push(endDate, rating);
             const created = await realestatePool.query(INSERT_LAND_SALE_SQL, values);
             feature = created.rows[0];
             createdProperty = { layer: sub.layer, id: Number(feature.id), keyColumn: 'fid' };
@@ -211,19 +223,19 @@ app.post('/api/admin/listing-submissions/:id/approve', requireAdmin, async (req,
                 sub.currency || 'USD', sub.area, searchTags, sub.x_coord, sub.y_coord];
             // Property layers live in the real-estate database, outside this transaction, so undo on failure below.
             const created = await realestatePool.query(
-                `INSERT INTO public."${sub.layer}" (name, des, phone, whatsapp, price, currency, area, search_tags, status, geom)
-                 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, 0, ST_SetSRID(ST_MakePoint($9, $10), 28191))
+                `INSERT INTO public."${sub.layer}" (name, des, phone, whatsapp, price, currency, area, search_tags, rating, end_date, status, geom)
+                 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $11, $12, 0, ST_SetSRID(ST_MakePoint($9, $10), 28191))
                  RETURNING fid AS id`,
-                values
+                [...values, rating, endDate]
             );
             feature = { id: Number(created.rows[0].id), x_coord: sub.x_coord, y_coord: sub.y_coord };
             createdProperty = { layer: sub.layer, id: feature.id, keyColumn: 'fid' };
         } else {
             const created = await client.query(
-                `INSERT INTO public.service_all (discriminator, name, des, phone, whatsapp, work_hours, price, search_tags, status, geom)
-                 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, 0, ST_SetSRID(ST_MakePoint($9, $10), 28191))
+                `INSERT INTO public.service_all (discriminator, name, des, phone, whatsapp, work_hours, price, currency, search_tags, rating, end_date, status, geom)
+                 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, 0, ST_SetSRID(ST_MakePoint($12, $13), 28191))
                  RETURNING id, x_coord, y_coord`,
-                [sub.layer, name, des || null, sub.phone, sub.whatsapp, workHours || null, sub.price, searchTags, sub.x_coord, sub.y_coord]
+                [sub.layer, name, des || null, sub.phone, sub.whatsapp, workHours || null, sub.price, sub.currency, searchTags, rating, endDate, sub.x_coord, sub.y_coord]
             );
             feature = created.rows[0];
         }

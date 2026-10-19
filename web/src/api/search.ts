@@ -19,12 +19,18 @@ export interface SearchQuery {
   conditions?: SearchCondition[];
   /** [minX, minY, maxX, maxY] in EPSG:28191 — points by x/y columns, polygons by ST_Intersects. */
   bbox?: readonly number[];
+  /** Include explicitly zero-rated listings; reserved for the map's global suggestion box. */
+  includeZeroRating?: boolean;
+  /** Localized layer name, used by global text search to match listing type names as well as row fields. */
+  layerNameAr?: string;
 }
 
 /** Query-string fields. Same-field conditions are OR-ed by the server, different fields AND-ed; max 2000 rows. */
 export function buildSearchParams(q: SearchQuery): Record<string, string> {
   const params: Record<string, string> = { layer: q.layer, workspace: q.workspace };
   if (q.bbox) params.bbox = q.bbox.join(',');
+  if (q.includeZeroRating) params.include_zero_rating = '1';
+  if (q.layerNameAr) params.layerNameAr = q.layerNameAr;
   const conditions = (q.conditions ?? []).filter((c) => c.field && c.value !== '');
   conditions.forEach((c, i) => {
     params[`field_${i}`] = c.field;

@@ -1,6 +1,6 @@
 // Types of the service registry (see `services.ts`). A leaf module: nothing here imports from the map feature.
 
-/** How far out a service type's points are drawn (`TIER_RULES` in config.ts holds the resolutions). Default: `close`. */
+/** Legacy tier metadata; `always` keeps map-wide layers visible regardless of listing rating. */
 export type ServiceTier = 'always' | 'medium' | 'close';
 
 /** The groups of the type filter / category browser. `realestate` holds the three property layers, not services. */

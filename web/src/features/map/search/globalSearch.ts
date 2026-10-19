@@ -3,8 +3,8 @@ import { toResults, byRatingDesc, type SearchResult } from './results';
 import { REAL_ESTATE_TYPE_NAME, type RealEstateLayerKey } from '../config';
 import { ALL_TARGETS, targetFromKey, type MapTarget } from '../targets';
 
-// Keyword search across everything (legacy global-search.js). Server contract: `search_tags contains <text>` matches
-// search_tags / des (+ name for services) with Arabic letter variants folded together; the words of the text are OR-ed.
+// Keyword search across everything. The server searches search_tags, des, and name with Arabic letter variants folded
+// together; the words of the text are OR-ed.
 
 /** Fold alef/teh-marbuta/yeh/hamza variants so أ/إ/آ/ا (etc.) compare equal — same folding the server applies. */
 export function normalizeArabic(text: unknown): string {
@@ -109,44 +109,91 @@ export function wordHits(result: SearchResult, term: string): number {
 }
 
 /**
- * Rank: rows whose TYPE name contains the text first (typing "كهرباء" puts electricians on top), then rows matching more of
- * the typed words (the server ORs the words), then rating.
+ * Rank by manual rating descending across both keyword boxes; relevance breaks ties.
  */
-export function rankHits(hits: GlobalHit[], term: string, typeTitle: (t: MapTarget) => string): GlobalHit[] {
+export function rankHits(
+  hits: GlobalHit[],
+  term: string,
+  typeTitle: (t: MapTarget) => string,
+  _zeroRatingFirst = false,
+): GlobalHit[] {
   const n = normalizeArabic(term);
   const scored = hits.map((h) => ({
     h,
-    alias: normalizeArabic(typeTitle(h.result.target)).includes(n),
+    alias: normalizeArabic(typeTitle(h.result.target)).includes(n) ||
+      words(n).some((word) => word.length > 2 && normalizeArabic(typeTitle(h.result.target)).includes(word)),
     w: wordHits(h.result, term),
   }));
-  scored.sort(
-    (a, b) => Number(b.alias) - Number(a.alias) || b.w - a.w || byRatingDesc(a.h.result, b.h.result),
-  );
+  // Rating is the platform-wide default ordering. Keep relevance as a tie-breaker only,
+  // so zero-rated map suggestions naturally remain after every positive-rated match.
+  scored.sort((a, b) => byRatingDesc(a.h.result, b.h.result) || Number(b.alias) - Number(a.alias) || b.w - a.w);
   return scored.map((s) => s.h);
 }
 
+const PROPERTY_TYPE_ALIASES: Record<RealEstateLayerKey, string[]> = {
+  rent: ['شقة للإيجار', 'شقق للإيجار', 'شقق للايجار', 'شقة ايجار', 'شقق ايجار'],
+  sale: ['شقة للبيع', 'شقق للبيع'],
+  land: ['أرض للبيع', 'اراضي للبيع', 'أراضي للبيع', 'أرض بيع'],
+};
+
+function isPropertyTypeQuery(target: MapTarget, term: string, title: string): boolean {
+  if (target.kind !== 'realEstate') return false;
+  const queryWords = words(normalizeArabic(term));
+  if (!queryWords.length) return false;
+  const names = [title, ...PROPERTY_TYPE_ALIASES[target.layer]].map(normalizeArabic);
+  return names.some((name) => {
+    const nameWords = words(name);
+    return queryWords.every((word) => nameWords.some((nameWord) => nameWord.includes(word) || word.includes(nameWord)));
+  });
+}
+
 /** Runs every query in parallel (legacy ran the three real-estate layers one after another). */
-export async function fetchGlobalHits(term: string, signal?: AbortSignal): Promise<GlobalHit[]> {
+export async function fetchGlobalHits(
+  term: string,
+  signal?: AbortSignal,
+  includeZeroRating = false,
+  typeTitle?: (target: MapTarget) => string,
+): Promise<GlobalHit[]> {
   const { stops, fuel } = specialIntent(term);
   const text = { field: 'search_tags', operator: 'contains' as const, value: term };
 
   const jobs: Promise<GlobalHit[]>[] = [
     // every service in ONE request; the row's discriminator says which type it is
     searchApi
-      .search({ layer: 'service_all', workspace: 'services', conditions: [text] }, signal)
-      .then((fc) => toResults(fc, null).map((result) => ({ result }))),
-    ...REAL_ESTATE_TARGETS.map((t) =>
-      searchApi
-        .search(
-          {
-            layer: REAL_ESTATE_TYPE_NAME[(t as { layer: RealEstateLayerKey }).layer],
-            workspace: 'realestate',
-            conditions: [text],
-          },
-          signal,
-        )
-        .then((fc) => toResults(fc, t).map((result) => ({ result }))),
-    ),
+      .search({ layer: 'service_all', workspace: 'services', conditions: [text], includeZeroRating }, signal)
+      .then((fc) => toResults(fc, null, includeZeroRating).map((result) => ({ result }))),
+    ...REAL_ESTATE_TARGETS.map(async (t) => {
+      const layer = REAL_ESTATE_TYPE_NAME[(t as { layer: RealEstateLayerKey }).layer];
+      // A type-only search (e.g. شقق للبيع) searches the matching property layer.
+      // Fetch zero-rated listings separately so the server's 2000-row cap cannot push them out
+      // when there are many higher-rated matches. They are sorted after positive ratings below.
+      const typeOnly = isPropertyTypeQuery(t, term, typeTitle?.(t) ?? '');
+      const regular = searchApi.search(
+        {
+          layer,
+          workspace: 'realestate',
+          conditions: typeOnly ? [] : [text],
+          includeZeroRating,
+          layerNameAr: typeTitle?.(t),
+        },
+        signal,
+      );
+      if (!includeZeroRating) {
+        return regular.then((fc) => toResults(fc, t).map((result) => ({ result })));
+      }
+      const zeroRated = searchApi.search(
+        {
+          layer,
+          workspace: 'realestate',
+          conditions: typeOnly ? [{ field: 'rating', operator: '=', value: '0' }] : [text, { field: 'rating', operator: '=', value: '0' }],
+          includeZeroRating: true,
+          layerNameAr: typeTitle?.(t),
+        },
+        signal,
+      );
+      const [regularFc, zeroFc] = await Promise.all([regular, zeroRated]);
+      return [...toResults(regularFc, t, true), ...toResults(zeroFc, t, true)].map((result) => ({ result }));
+    }),
   ];
 
   if (stops) {
@@ -162,11 +209,12 @@ export async function fetchGlobalHits(term: string, signal?: AbortSignal): Promi
               layer: 'road_barriers',
               workspace: 'services',
               conditions: stops.map((value) => ({ field, operator: '=' as const, value })),
+              includeZeroRating,
             },
             signal,
           )
           .then((fc) =>
-            toResults(fc, targetFromKey('road_barriers')).map((result) => ({
+            toResults(fc, targetFromKey('road_barriers'), includeZeroRating).map((result) => ({
               result,
               reason: { kind: 'stop' as const, value: String(result.props[field]), direction },
             })),
@@ -182,11 +230,12 @@ export async function fetchGlobalHits(term: string, signal?: AbortSignal): Promi
             layer: 'fuel_stations',
             workspace: 'services',
             conditions: [{ field: fuel, operator: '=', value: '0' }],
+            includeZeroRating,
           },
           signal,
         )
         .then((fc) =>
-          toResults(fc, targetFromKey('fuel_stations')).map((result) => ({
+          toResults(fc, targetFromKey('fuel_stations'), includeZeroRating).map((result) => ({
             result,
             reason: { kind: 'fuel' as const, fuel },
           })),

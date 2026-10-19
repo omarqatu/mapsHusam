@@ -44,6 +44,15 @@ describe('listing submission form', () => {
     expect(validate({ ...ok, layer: 'plumber', price: '-5' }, point).price).toBeUndefined();
   });
 
+  it('sends the selected currency for hotel and villa prices', () => {
+    expect(
+      toInput({ ...ok, layer: 'hotels', price: '80', currency: 'ILS' }, point),
+    ).toMatchObject({ price: 80, currency: 'ILS' });
+    expect(
+      toInput({ ...ok, layer: 'villas_rent', price: '120', currency: 'JOD' }, point),
+    ).toMatchObject({ price: 120, currency: 'JOD' });
+  });
+
   it('builds a clean body', () => {
     expect(toInput(ok, point)).toEqual({
       layer: 'plumber',

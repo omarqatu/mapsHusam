@@ -54,7 +54,8 @@ export function useKeywordResults(term: string) {
     retry: false,
     queryFn: async ({ signal }): Promise<Outcome<GlobalHit[]>> => {
       if (!(await passesSearchQuota('global_search', term, t, 'quick_search'))) return null;
-      return fetchGlobalHits(term, signal);
+      // Zero-rated listings are reserved for the map's global suggestion box.
+      return fetchGlobalHits(term, signal, false, (target) => t(targetLabelKey(target)));
     },
     select: (hits) =>
       hits && rankHits(hits, term, (target) => t(targetLabelKey(target))),

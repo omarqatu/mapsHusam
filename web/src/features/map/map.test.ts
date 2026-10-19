@@ -14,7 +14,11 @@ const svc = (props: Record<string, unknown>) => new Feature({ geometry: new Poin
 const labelOf = (s: ReturnType<ReturnType<typeof serviceStyle>>) => s?.getText()?.getText();
 
 describe('service style (service_all, by discriminator)', () => {
-  const style = serviceStyle({ t, isHidden: (d) => d === 'plumber' });
+  const style = serviceStyle({
+    t,
+    isHidden: (d) => d === 'plumber',
+    maxResolutionForRating: (rating) => ({ 10: 5, 9.9: 5.5, 0: 0.2 }[Number(rating)] ?? 1),
+  });
 
   it('draws nothing for unknown / missing / hidden types', () => {
     expect(style(svc({ discriminator: 'nope' }), 0.1)).toBeUndefined();
@@ -22,28 +26,27 @@ describe('service style (service_all, by discriminator)', () => {
     expect(style(svc({ discriminator: 'plumber' }), 0.1)).toBeUndefined();
   });
 
-  it('applies the legacy visibility tiers', () => {
-    // ordinary service: only when close (res <= 1)
-    expect(style(svc({ discriminator: 'electrician' }), 1.5)).toBeUndefined();
-    expect(style(svc({ discriminator: 'electrician' }), 1)).toBeDefined();
-    // medium tier: up to res 5
-    expect(style(svc({ discriminator: 'schools_kindergartens' }), 5)).toBeDefined();
-    expect(style(svc({ discriminator: 'schools_kindergartens' }), 6)).toBeUndefined();
-    // always tier: fuel stations visible from far away
-    expect(style(svc({ discriminator: 'fuel_stations' }), 4000)).toBeDefined();
+  it('applies the same rating-based visibility levels to every service type', () => {
+    expect(style(svc({ discriminator: 'electrician', rating: 10 }), 5)).toBeDefined();
+    expect(style(svc({ discriminator: 'schools_kindergartens', rating: 10 }), 5)).toBeDefined();
+    expect(style(svc({ discriminator: 'fuel_stations', rating: 10 }), 4000)).toBeDefined();
+    expect(style(svc({ discriminator: 'road_barriers', rating: 10 }), 4000)).toBeDefined();
+    expect(style(svc({ discriminator: 'electrician', rating: 9.9 }), 5.5)).toBeDefined();
+    expect(style(svc({ discriminator: 'electrician', rating: 0 }), 0.3)).toBeUndefined();
+    expect(style(svc({ discriminator: 'electrician', rating: 0 }), 0.2)).toBeDefined();
   });
 
   it('shows the name label only below the tier threshold', () => {
     expect(labelOf(style(svc({ discriminator: 'electrician', name: 'Ali' }), 0.9))).toBeUndefined();
     expect(labelOf(style(svc({ discriminator: 'electrician', name: 'Ali' }), 0.5))).toBe('Ali');
-    expect(labelOf(style(svc({ discriminator: 'fuel_stations', name: 'Station' }), 7))).toBe('Station');
+    expect(labelOf(style(svc({ discriminator: 'fuel_stations', name: 'Station', rating: 10 }), 0.5))).toBe('Station');
   });
 
   it('road barriers: status in the label, unknown status handled', () => {
-    expect(labelOf(style(svc({ discriminator: 'road_barriers', name: 'Atara', stop: 1 }), 2))).toBe(
+    expect(labelOf(style(svc({ discriminator: 'road_barriers', name: 'Atara', stop: 1, rating: 10 }), 2))).toBe(
       'Atara ([roadStatus.closed])',
     );
-    expect(labelOf(style(svc({ discriminator: 'road_barriers', stop: '0' }), 2))).toBe('[roadStatus.open]');
+    expect(labelOf(style(svc({ discriminator: 'road_barriers', stop: '0', rating: 10 }), 2))).toBe('[roadStatus.open]');
     expect(roadBarrierStatus('x').key).toBe('unknown');
     expect(roadBarrierStatus(4).key).toBe('inspection');
   });
@@ -82,8 +85,8 @@ describe('real-estate style', () => {
       ]),
       area: 550,
     });
-    expect(land(f, 2).getText()).toBeFalsy();
-    expect(land(f, 1).getText()?.getText()).toBe('550 م²');
+    expect(land(f, 2)?.getText()).toBeFalsy();
+    expect(land(f, 1)?.getText()?.getText()).toBe('550 م²');
   });
   it('formatLabel', () => {
     expect(formatLabel('area', 150, t)).toBe('150 م²');

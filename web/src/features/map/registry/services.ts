@@ -10,7 +10,7 @@ import type { ServiceDef, ServiceEntry } from './types';
 // `locales/{ar,en}.json` under `services.<key>`. `registry.test.ts` checks every entry and every consumer. The order
 // there is the order of the layer list and the search.
 //
-// Field guide: `group` = filter group; `tier` = draw distance (omit for `close`, see TIER_RULES in config.ts);
+// Field guide: `group` = filter group; marker distance follows rating except for explicit type-wide `always` layers;
 // `editProfile` = extra editor columns (omit for `standard`); `tagName` / `tagKeywords` = Arabic search terms.
 // JSON has no literal types: the cast is checked value by value in registry.test.ts.
 const DEFS = serviceTypes as readonly ServiceDef[];

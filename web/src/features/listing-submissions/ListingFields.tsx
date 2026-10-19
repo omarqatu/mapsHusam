@@ -9,7 +9,16 @@ import TextareaInput from '@/components/ui/TextareaInput';
 import HourPresets from './HourPresets';
 import LandPolygonPicker from './LandPolygonPicker';
 import LocationPicker from './LocationPicker';
-import { DES_MAX, HOURS_MAX, NAME_MAX, hasHoursField, hasPriceField, isLandLayer, isPropertyLayer } from './model';
+import {
+  DES_MAX,
+  HOURS_MAX,
+  NAME_MAX,
+  hasCurrencyField,
+  hasHoursField,
+  hasPriceField,
+  isLandLayer,
+  isPropertyLayer,
+} from './model';
 import type { ListingForm } from './useListingForm';
 
 /** Type, name, description, hours, price (hotels and villas). `idPrefix` keeps ids unique when two forms share a page. */
@@ -89,6 +98,7 @@ export function PriceFields({ form, idPrefix = '' }: { form: ListingForm; idPref
   const { t } = useTranslation();
   const { values, errors, set, message } = form;
   const flat = isPropertyLayer(values.layer);
+  const currency = hasCurrencyField(values.layer);
   return (
     <div className="grid grid-cols-2 gap-x-4 sm:col-span-2 sm:grid-cols-3">
       <FormField
@@ -105,7 +115,7 @@ export function PriceFields({ form, idPrefix = '' }: { form: ListingForm; idPref
           onChange={(e) => set('price', e.target.value)}
         />
       </FormField>
-      {flat && (
+      {currency && (
         <FormField label={t('myListings.editor.currency')} name={`${idPrefix}currency`}>
           <SelectInput
             id={`${idPrefix}currency`}

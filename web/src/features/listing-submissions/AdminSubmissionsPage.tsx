@@ -84,6 +84,8 @@ function SubmissionCard({ submission: s }: { submission: AdminSubmission }) {
   const [name, setName] = useState(s.name);
   const [des, setDes] = useState(s.des ?? '');
   const [hours, setHours] = useState(s.work_hours ?? '');
+  const [rating, setRating] = useState('5');
+  const [endDate, setEndDate] = useState('');
   const [rejecting, setRejecting] = useState(false);
   const [reason, setReason] = useState('');
   const target = listingTarget(s.layer);
@@ -102,6 +104,8 @@ function SubmissionCard({ submission: s }: { submission: AdminSubmission }) {
           des,
           ...(flat ? {} : { work_hours: hours }),
           search_tags: serviceSearchTags(s.layer, name, des),
+          rating: Number(rating),
+          end_date: endDate || null,
           ...(moved ? { x_coord: Number(point[0].toFixed(3)), y_coord: Number(point[1].toFixed(3)) } : {}),
         },
       },
@@ -144,6 +148,33 @@ function SubmissionCard({ submission: s }: { submission: AdminSubmission }) {
       </p>
 
       <div className="mt-4 grid gap-x-4 sm:grid-cols-2">
+        {pending && (
+          <section className="mb-3 rounded-xl border border-brand/30 bg-brand-light/40 p-3 sm:col-span-2">
+            <h3 className="font-bold text-fg">{t('submit.admin.listingControls')}</h3>
+            <p className="mb-3 mt-1 text-sm text-muted">{t('submit.admin.listingControlsHint')}</p>
+            <div className="grid gap-x-4 sm:grid-cols-2">
+              <FormField label={t('submit.admin.rating')} name={`rating-${s.id}`}>
+                <TextInput
+                  id={`rating-${s.id}`}
+                  type="number"
+                  min="0"
+                  max="10"
+                  step="0.1"
+                  value={rating}
+                  onChange={(e) => setRating(e.target.value)}
+                />
+              </FormField>
+              <FormField label={t('submit.admin.endDate')} name={`end-date-${s.id}`}>
+                <TextInput
+                  id={`end-date-${s.id}`}
+                  type="date"
+                  value={endDate}
+                  onChange={(e) => setEndDate(e.target.value)}
+                />
+              </FormField>
+            </div>
+          </section>
+        )}
         <FormField label={t('submit.fields.name')} name={`name-${s.id}`}>
           <TextInput
             id={`name-${s.id}`}
@@ -184,7 +215,7 @@ function SubmissionCard({ submission: s }: { submission: AdminSubmission }) {
           <div>
             <dt className="text-muted">{t(flat ? 'myListings.editor.price' : 'submit.fields.price')}</dt>
             <dd dir="ltr" className="text-start font-semibold text-fg">
-              {s.price} {flat ? t(`edit.options.currency.${s.currency ?? 'USD'}`) : '$'}
+              {s.price} {t(`edit.options.currency.${s.currency ?? 'USD'}`)}
             </dd>
           </div>
         )}

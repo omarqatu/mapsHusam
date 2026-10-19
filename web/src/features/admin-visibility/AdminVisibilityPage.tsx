@@ -16,6 +16,7 @@ import { GROUP_ICON } from '@/features/map/registry/groupIcons';
 import { targetKey, targetLabelKey } from '@/features/map/targets';
 import {
   ALL_VISIBLE,
+  RATING_BANDS,
   SECTION_IDS,
   isLayerShown,
   isSectionShown,
@@ -120,6 +121,37 @@ export default function AdminVisibilityPage() {
               label={<span className="font-bold">{t('visibility.visitorContact.name')}</span>}
             />
             <p className="ms-7 mt-1 text-sm text-muted">{t('visibility.visitorContact.hint')}</p>
+          </div>
+        </SectionCard>
+
+        <SectionCard title={t('visibility.ratingLevels.title')} subtitle={t('visibility.ratingLevels.hint')}>
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            {RATING_BANDS.map(({ id, label }) => (
+              <label key={id} className="flex items-center justify-between gap-3 rounded-lg border border-line p-3">
+                <span className="font-bold" dir="ltr">{label}</span>
+                <span className="flex items-center gap-2 text-sm text-muted">
+                  <span>{t('visibility.ratingLevels.maxResolution')}</span>
+                  <input
+                    aria-label={t('visibility.ratingLevels.inputLabel', { rating: label })}
+                    type="number"
+                    min="0.1"
+                    max="20"
+                    step="0.1"
+                    value={draft.ratingVisibility[id]}
+                    onChange={(e) => {
+                      const value = Number(e.target.value);
+                      if (Number.isFinite(value) && value >= 0.1 && value <= 20)
+                        setDraft({
+                          ...draft,
+                          ratingVisibility: { ...draft.ratingVisibility, [id]: value },
+                        });
+                    }}
+                    className="w-24 rounded-md border border-line-strong bg-surface px-2 py-1 text-fg"
+                    dir="ltr"
+                  />
+                </span>
+              </label>
+            ))}
           </div>
         </SectionCard>
 

@@ -9,6 +9,7 @@ import { resolveFeatureId, type Props, type SelectedFeature } from '../popup/fea
 import { layerShownToViewer } from '@/features/visibility/store';
 import { targetFromKey, type MapTarget } from '../targets';
 import { geometryMeasure } from '../popup/geometryMeasure';
+import { isZeroRating } from '@/features/visibility/model';
 
 /** One row of a result list: plain data + the OL geometry (needed to fit/draw). Distance is set by nearby search. */
 export interface SearchResult {
@@ -56,9 +57,14 @@ const targetKeyOf = (t: MapTarget) => (t.kind === 'realEstate' ? t.layer : t.dis
  * `discriminator` decides. Dropped: unknown types (the map can't draw or describe them) and types the admin hid from
  * the public — every result list of the app comes through here, so this is where hidden types leave all of them.
  */
-export function toResults(fc: FeatureCollectionResponse, target: MapTarget | null): SearchResult[] {
+export function toResults(
+  fc: FeatureCollectionResponse,
+  target: MapTarget | null,
+  includeZeroRating = false,
+): SearchResult[] {
   const out: SearchResult[] = [];
   fc.features.forEach((f, i) => {
+    if (!includeZeroRating && isZeroRating(f.properties.rating)) return;
     const t =
       target ??
       (typeof f.properties.discriminator === 'string' ? targetFromKey(f.properties.discriminator) : null);

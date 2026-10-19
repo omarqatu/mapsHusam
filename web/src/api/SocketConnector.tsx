@@ -15,7 +15,10 @@ export default function SocketConnector() {
 
   useEffect(() => {
     if (!token) return;
-    const s: AppSocket = io({ auth: { token }, transports: ['websocket', 'polling'] });
+    // Vite's WS proxy can abort an in-flight write while HMR reloads modules. Polling keeps the live socket reliable in
+    // development; production connects over WebSocket and can fall back to polling as usual.
+    const transports = import.meta.env.DEV ? ['polling'] : ['websocket', 'polling'];
+    const s: AppSocket = io({ auth: { token }, transports });
     s.on('connect', () => s.emit('user_connected'));
     // Refused, or dropped by the server: the session may have ended (logout elsewhere, expiry, password change). Ask over
     // HTTP — a 401 there logs out with a message; a network blip changes nothing.

@@ -69,6 +69,9 @@ export interface ApproveInput {
   des?: string;
   work_hours?: string;
   search_tags?: string;
+  /** Admin-only listing controls. */
+  rating?: number;
+  end_date?: string | null;
   /** A corrected point (Palestine Grid metres); omitted = the one the person picked. */
   x_coord?: number;
   y_coord?: number;

@@ -19,6 +19,7 @@ export const SUBMITTABLE_LAYERS = [
     ...SUBMITTABLE_PROPERTY_LAYERS,
 ];
 const CURRENCIES = ['ILS', 'USD', 'JOD'];
+const PRICED_SERVICE_LAYERS = ['hotels', 'villas_rent'];
 // حدود شبكة فلسطين (EPSG:28191) الواسعة: تمنع نقطة خارج البلد أو إحداثيات بنظام آخر
 const GRID_X_RANGE = [100000, 300000];
 const GRID_Y_RANGE = [30000, 300000];
@@ -48,7 +49,8 @@ export function parseListingInput(body, hidden = new Set()) {
     const isLand = layer === 'LandSale';
     const geometry = isLand ? parseLandPolygon(body.geometry) : null;
     const area = !isProperty || body.area === undefined || body.area === null || body.area === '' ? null : Number(body.area);
-    const currency = isProperty ? (CURRENCIES.includes(body.currency) ? body.currency : 'USD') : null;
+    const hasCurrency = isProperty || PRICED_SERVICE_LAYERS.includes(layer);
+    const currency = hasCurrency ? (CURRENCIES.includes(body.currency) ? body.currency : 'USD') : null;
 
     if (!isSubmissionLayerAllowed(layer, SUBMITTABLE_LAYERS, hidden)) return { error: 'نوع النشاط غير مسموح به.' };
     if (isLand && !geometry) return { error: 'حدود قطعة الأرض غير صالحة.' };

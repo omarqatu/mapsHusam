@@ -1384,6 +1384,12 @@
       "title": "Visitor contact",
       "name": "Show contact numbers to visitors without an account",
       "hint": "When off (the default) the server sends no phone or WhatsApp to anyone not signed in; they get a “Log in to contact” button."
+    },
+    "ratingLevels": {
+      "title": "Visibility by rating",
+      "hint": "These levels apply to properties and services according to their rating. A larger number shows a marker farther out; rating 10 starts at the current schools and landmarks level.",
+      "maxResolution": "Visibility limit",
+      "inputLabel": "Visibility limit for rating {{rating}}"
     }
   },
   "texts": {
@@ -1991,6 +1997,10 @@
       "location": "Location",
       "openOnMap": "Open on the map",
       "approve": "Approve and publish",
+      "listingControls": "Rating and subscription",
+      "listingControlsHint": "These values apply to services and properties. The default rating is 5; leave the date blank for no expiry date.",
+      "rating": "Listing rating (0–10)",
+      "endDate": "Subscription end date (optional)",
       "reject": "Reject",
       "approved": "Published and the account is linked.",
       "approveFailed": "Could not approve.",

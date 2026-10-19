@@ -18,21 +18,18 @@
   {
     "key": "job_vacancies",
     "group": "jobs",
-    "tier": "always",
     "tagName": "وظائف شاغرة",
     "tagKeywords": "وظائف شاغرة، فرص عمل، توظيف، إعلانات وظائف، وظائف حكومية، وظائف خاصة"
   },
   {
     "key": "schools_kindergartens",
     "group": "education",
-    "tier": "medium",
     "tagName": "مدارس ورياض أطفال",
     "tagKeywords": "مدارس، روضة أطفال، تعليم ابتدائي، تعليم ثانوي، حضانة، معاهد تعليمية"
   },
   {
     "key": "city_landmarks",
     "group": "landmarks",
-    "tier": "medium",
     "tagName": "معالم المدينة",
     "tagKeywords": "معالم المدينة، أماكن سياحية، مواقع تاريخية، معالم أثرية، مناطق جذب سياحي"
   },

@@ -126,10 +126,15 @@ const reSpecs: Record<RealEstateLayerKey, RealEstateStyleSpec> = {
   },
 };
 
-export function realEstateStyle(key: RealEstateLayerKey, t: Translate) {
+export function realEstateStyle(
+  key: RealEstateLayerKey,
+  t: Translate,
+  maxResolutionForRating: (rating: unknown) => number = () => 5000,
+) {
   const spec = reSpecs[key];
   const bare = new Style({ image: spec.icon ?? spec.point, fill: spec.fill, stroke: spec.stroke });
-  return (feature: FeatureLike, resolution: number): Style => {
+  return (feature: FeatureLike, resolution: number): Style | undefined => {
+    if (resolution > maxResolutionForRating(feature.get('rating'))) return undefined;
     if (resolution >= spec.labelBelow) return bare;
     const text = formatLabel('area', feature.get('area'), t);
     if (!text) return bare;
@@ -146,11 +151,12 @@ export function realEstateStyle(key: RealEstateLayerKey, t: Translate) {
 // --- services (single service_all layer, typed by `discriminator`) ---------------------------
 export interface ServiceStyleOptions {
   t: Translate;
+  maxResolutionForRating: (rating: unknown) => number;
   /** Types the user switched off in the layer panel. Read on every render, so a `layer.changed()` applies it. */
   isHidden: (discriminator: string) => boolean;
 }
 
-export function serviceStyle({ t, isHidden }: ServiceStyleOptions) {
+export function serviceStyle({ t, isHidden, maxResolutionForRating }: ServiceStyleOptions) {
   return (feature: FeatureLike, resolution: number): Style | undefined => {
     const discriminator = feature.get('discriminator');
     if (typeof discriminator !== 'string') return undefined;
@@ -158,7 +164,9 @@ export function serviceStyle({ t, isHidden }: ServiceStyleOptions) {
     if (!type || isHidden(discriminator)) return undefined;
 
     const rule = TIER_RULES[type.tier ?? 'close'];
-    if (resolution > rule.maxResolution) return undefined;
+    // Fuel stations and road barriers can opt into the far-distance tier; all other services follow listing rating.
+    const maxResolution = type.tier === 'always' ? rule.maxResolution : maxResolutionForRating(feature.get('rating'));
+    if (resolution > maxResolution) return undefined;
 
     let barrierColor: string | null = null;
     let text = '';

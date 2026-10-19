@@ -77,7 +77,9 @@ export function useTopRatedFeatures() {
         [...byLayer.entries()].map(async ([layer, { target, ids }]) => {
           try {
             const fc = await searchApi.batch({ layer, workspace: 'services', ids }, signal);
-            for (const r of toResults(fc, target)) if (r.id) found.set(`${layer}:${r.id}`, r);
+            for (const r of toResults(fc, target)) {
+              if (r.id && r.rating > 0) found.set(`${layer}:${r.id}`, r);
+            }
           } catch {
             /* legacy: a layer that fails to load just drops out */
           }

@@ -26,6 +26,7 @@ import { useMapUi } from './store';
 import { hiddenOnMap, useVisibilityStore } from '@/features/visibility/store';
 import { useAuthStore } from '@/store/authStore';
 import { realEstateStyle, serviceStyle, type Translate } from './styles';
+import { ratingMaxResolution } from '@/features/visibility/model';
 
 /**
  * Owns the one OpenLayers map. Children (controls, panels) get it through `useOlMap()` and render only once
@@ -54,12 +55,20 @@ export default function MapView({
     };
 
     const realEstate = REAL_ESTATE_LAYERS.map((def) =>
-      createWfsLayer(def, realEstateStyle(def.key, translate), onLayerError),
+      createWfsLayer(
+        def,
+        realEstateStyle(def.key, translate, (rating) =>
+          ratingMaxResolution(rating, useVisibilityStore.getState().value.ratingVisibility),
+        ),
+        onLayerError,
+      ),
     );
     const services = createWfsLayer(
       SERVICE_ALL_LAYER,
       serviceStyle({
         t: translate,
+        maxResolutionForRating: (rating) =>
+          ratingMaxResolution(rating, useVisibilityStore.getState().value.ratingVisibility),
         isHidden: (d) => useMapUi.getState().hiddenServices.has(d) || hiddenOnMap(d),
       }),
       onLayerError,
@@ -89,6 +98,7 @@ export default function MapView({
       realEstate.forEach((l, i) => {
         const key = REAL_ESTATE_LAYERS[i].key;
         l.setVisible(s.realEstateVisible[key] && !hiddenOnMap(key));
+        l.changed();
       });
       services.changed(); // hidden service types are applied inside the style function
     };
