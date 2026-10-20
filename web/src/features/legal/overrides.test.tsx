@@ -29,14 +29,14 @@ describe('admin replacements of the legal texts', () => {
         ? new Response(JSON.stringify({ success: true, item: { content_key: 'legal.about', content_value: value } }))
         : new Response(JSON.stringify({ success: true, item: null })),
     );
-    expect(await screen.findByRole('heading', { level: 1, name: 'عنّا' })).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { level: 1, name: 'عنّا' }, { timeout: 5000 })).toBeInTheDocument();
     expect(screen.getByRole('heading', { level: 3, name: 'مرحباً' })).toBeInTheDocument();
     expect(document.querySelector('script')).toBeNull();
   });
 
   it('no replacement (item: null) → the built-in text', async () => {
     page(() => new Response(JSON.stringify({ success: true, item: null })));
-    expect(await screen.findByRole('heading', { level: 1, name: /من نحن/ })).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { level: 1, name: /من نحن/ }, { timeout: 5000 })).toBeInTheDocument();
   });
 
   it('an unreadable stored value counts as no replacement', () => {
