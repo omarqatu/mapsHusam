@@ -11,7 +11,14 @@ const modules = new Map();
 
 function load(file) {
   if (!modules.has(file)) {
-    modules.set(file, new vm.SourceTextModule(fs.readFileSync(file, 'utf8'), { identifier: file }));
+    if (path.extname(file) === '.json') {
+      const value = JSON.parse(fs.readFileSync(file, 'utf8'));
+      modules.set(file, new vm.SyntheticModule(['default'], function () {
+        this.setExport('default', value);
+      }, { identifier: file }));
+    } else {
+      modules.set(file, new vm.SourceTextModule(fs.readFileSync(file, 'utf8'), { identifier: file }));
+    }
   }
   return modules.get(file);
 }
