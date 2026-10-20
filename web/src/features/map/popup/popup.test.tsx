@@ -67,7 +67,7 @@ describe('media lists', () => {
     expect(parseUrlList('{"url":"a.com/1.jpg"}')).toEqual(['a.com/1.jpg']);
     expect(parseUrlList('#')).toEqual([]);
   });
-  it('collects pictures, then video, then detail links — youtube/video/link/image typed', () => {
+  it('puts the preferred video first, followed by pictures and detail links', () => {
     const items = collectMedia({
       pic: 'a.com/1.jpg,b.com/2.png',
       video: 'https://youtu.be/dQw4w9WgXcQ',
@@ -75,8 +75,8 @@ describe('media lists', () => {
       details_link_2: 'https://x.com/photo.webp',
     });
     // a page link is not a "before" picture: both details fields stay in the list
-    expect(items.map((i) => i.type)).toEqual(['image', 'image', 'youtube', 'link', 'image']);
-    expect(items[2]).toEqual({ type: 'youtube', id: 'dQw4w9WgXcQ' });
+    expect(items.map((i) => i.type)).toEqual(['youtube', 'image', 'image', 'link', 'image']);
+    expect(items[0]).toEqual({ type: 'youtube', id: 'dQw4w9WgXcQ' });
   });
   it('a YouTube link or a Facebook page in the picture field is a video / link, never an <img>', () => {
     const items = collectMedia({
@@ -100,7 +100,7 @@ describe('media lists', () => {
       details_link_1: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
       details_link_2: 'https://a.com/1.jpg',
     });
-    expect(items.map((i) => i.type)).toEqual(['image', 'youtube']);
+    expect(items.map((i) => i.type)).toEqual(['youtube', 'image']);
   });
   it('drops javascript: links entirely', () => {
     expect(collectMedia({ details_link_1: 'javascript:alert(1)' })).toEqual([]);

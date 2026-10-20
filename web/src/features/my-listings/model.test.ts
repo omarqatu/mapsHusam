@@ -46,8 +46,8 @@ describe('my listings model', () => {
   });
 
   it('a service has hours and moves; a flat has price and area and stays put', () => {
-    expect(listingFields(plumber)).toEqual({ hours: true, price: false, area: false, move: true });
-    expect(listingFields(flat)).toEqual({ hours: false, price: true, area: true, move: false });
+    expect(listingFields(plumber)).toEqual({ hours: true, price: false, area: false, move: true, fixedLocation: false });
+    expect(listingFields(flat)).toEqual({ hours: false, price: true, area: true, move: false, fixedLocation: false });
   });
 
   it('shows the WhatsApp number as a local one', () => {

@@ -146,7 +146,7 @@ describe('media sections', () => {
     expect(mediaForMode(both, 'photo').every((m) => m.type === 'image')).toBe(true);
     expect(mediaForMode(both, 'video').map((m) => m.type)).toEqual(['youtube']);
     // the before / after pair is shown as a pair of its own, not in the list
-    expect(mediaForMode(both, 'all').map((m) => m.type)).toEqual(['image', 'youtube']);
+    expect(mediaForMode(both, 'all').map((m) => m.type)).toEqual(['youtube', 'image']);
   });
   it('a before/after side is an image, a video, or a labelled link', () => {
     expect(sideMedia('https://a.com/b.jpg', 'k')).toEqual([{ type: 'image', url: 'https://a.com/b.jpg' }]);
