@@ -131,23 +131,12 @@ export default function AdminVisibilityPage() {
                 <span className="font-bold" dir="ltr">{label}</span>
                 <span className="flex items-center gap-2 text-sm text-muted">
                   <span>{t('visibility.ratingLevels.maxResolution')}</span>
-                  <input
-                    aria-label={t('visibility.ratingLevels.inputLabel', { rating: label })}
-                    type="number"
-                    min="0.1"
-                    max="20"
-                    step="0.1"
+                  <RatingLevelInput
+                    label={t('visibility.ratingLevels.inputLabel', { rating: label })}
                     value={draft.ratingVisibility[id]}
-                    onChange={(e) => {
-                      const value = Number(e.target.value);
-                      if (Number.isFinite(value) && value >= 0.1 && value <= 20)
-                        setDraft({
-                          ...draft,
-                          ratingVisibility: { ...draft.ratingVisibility, [id]: value },
-                        });
-                    }}
-                    className="w-24 rounded-md border border-line-strong bg-surface px-2 py-1 text-fg"
-                    dir="ltr"
+                    onChange={(value) =>
+                      setDraft({ ...draft, ratingVisibility: { ...draft.ratingVisibility, [id]: value } })
+                    }
                   />
                 </span>
               </label>
@@ -295,5 +284,40 @@ export default function AdminVisibilityPage() {
         </SectionCard>
       </div>
     </>
+  );
+}
+
+/**
+ * A zoom limit typed by hand: the text is kept while it is not a valid value yet ("", "0", "0." on the way to "0.5"),
+ * only a value within 0.1–20 reaches the draft, and leaving the box shows the stored value again.
+ */
+function RatingLevelInput({ label, value, onChange }: { label: string; value: number; onChange: (value: number) => void }) {
+  const [text, setText] = useState(String(value));
+  const [shown, setShown] = useState(value);
+  // The value changed from outside (discard, another band's save): show it.
+  if (shown !== value) {
+    setShown(value);
+    setText(String(value));
+  }
+  return (
+    <input
+      aria-label={label}
+      type="number"
+      min="0.1"
+      max="20"
+      step="0.1"
+      value={text}
+      onChange={(e) => {
+        setText(e.target.value);
+        const next = Number(e.target.value);
+        if (e.target.value.trim() !== '' && Number.isFinite(next) && next >= 0.1 && next <= 20) {
+          setShown(next);
+          onChange(next);
+        }
+      }}
+      onBlur={() => setText(String(value))}
+      className="w-24 rounded-md border border-line-strong bg-surface px-2 py-1 text-fg"
+      dir="ltr"
+    />
   );
 }
