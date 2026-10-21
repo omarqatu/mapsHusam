@@ -26,21 +26,36 @@ export function locateOnce(): Promise<Coordinate> {
   });
 }
 
-/** First GPS fix from a watch, matching the acquisition method used by the map's locate button. */
-export function locateOnceFromWatch(): Promise<Coordinate> {
+/** Upper bound for the whole wait, the permission prompt included (the browser's own timeout starts only after it). */
+const WATCH_DEADLINE_MS = 60_000;
+
+/**
+ * First GPS fix from a watch, matching the acquisition method used by the map's locate button. `signal` stops the
+ * watch (the screen asking for it went away); the promise then never settles, so the caller has nothing to undo.
+ */
+export function locateOnceFromWatch(signal?: AbortSignal): Promise<Coordinate> {
   const secure = window.isSecureContext;
   if (!('geolocation' in navigator) || !secure)
     return Promise.reject(new GeoError(geolocationErrorKey(2, secure)));
   return new Promise((resolve, reject) => {
     let watchId: number | null = null;
-    const finish = (callback: () => void) => {
+    const stop = () => {
       if (watchId !== null) navigator.geolocation.clearWatch(watchId);
+      watchId = null;
+      clearTimeout(deadline);
+      signal?.removeEventListener('abort', stop);
+    };
+    const finish = (callback: () => void) => {
+      stop();
       callback();
     };
+    const deadline = setTimeout(() => finish(() => reject(new GeoError(geolocationErrorKey(3, true)))), WATCH_DEADLINE_MS);
+    signal?.addEventListener('abort', stop);
     watchId = navigator.geolocation.watchPosition(
       (pos) => finish(() => resolve(fromLonLat(pos.coords.longitude, pos.coords.latitude))),
       (err) => finish(() => reject(new GeoError(geolocationErrorKey(err.code, true)))),
       { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 },
     );
+    if (signal?.aborted) stop();
   });
 }
