@@ -38,7 +38,12 @@ export default function SocketConnector() {
       syncVisibility();
       refreshMapData();
     };
-    s.on('connect', syncLatest);
+    // The page has just loaded everything; only a reconnect may have missed events.
+    let connectedBefore = false;
+    s.on('connect', () => {
+      if (connectedBefore) syncLatest();
+      connectedBefore = true;
+    });
     s.on('platform_content_updated', ({ key }: { key: string }) => {
       if (key !== VISIBILITY_KEY) {
         void queryClient.invalidateQueries({ queryKey: platformContentKeys.item(key) });
@@ -47,6 +52,8 @@ export default function SocketConnector() {
       void platformContentApi.get(VISIBILITY_KEY).then((res) => {
         const visibility = parseVisibility(res.item?.content_value);
         setVisibility(visibility);
+        // The admin page edits a draft of this cached item: keep it current so a second admin does not save over it.
+        queryClient.setQueryData(platformContentKeys.item(VISIBILITY_KEY), visibility);
         void queryClient.invalidateQueries({ predicate: (q) => q.queryKey[0] !== 'platform-content' });
       }).catch(() => void queryClient.invalidateQueries({ queryKey: platformContentKeys.item(VISIBILITY_KEY) }));
     });
