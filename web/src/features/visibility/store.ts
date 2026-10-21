@@ -49,7 +49,7 @@ export const useExcludedLayers = () => useVisibilityStore((s) => excludedLayersP
 
 // The rule, in one place: admins see everything (they edit hidden layers; the admin page and the layers panel mark
 // what the public does not see); everyone else sees what the admin left on.
-const viewerIsAdmin = () => useAuthStore.getState().user?.role === 'admin';
+export const viewerIsAdmin = () => useAuthStore.getState().user?.role === 'admin';
 const useViewerIsAdmin = () => useAuthStore((s) => s.user?.role === 'admin');
 
 /** For plain code (the map's style function, list builders outside React). */

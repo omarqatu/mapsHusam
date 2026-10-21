@@ -105,4 +105,23 @@ describe('who sees what', () => {
     expect(hiddenOnMap('plumber')).toBe(false);
     expect(toResults(fc, null)).toHaveLength(2);
   });
+
+  it('zero-rated rows leave the lists of visitors, not of admins (the server sends them to admins on purpose)', () => {
+    const zero = { type: 'FeatureCollection', features: [{ ...feature('plumber', 3), properties: { id: 3, discriminator: 'plumber', name: 'z', rating: 0 } }] } as never;
+    expect(toResults(zero, null)).toHaveLength(0);
+    expect(toResults(zero, null, true)).toHaveLength(1);
+    useAuthStore.setState({ user: { user_id: 1, role: 'admin', token: 't' } as AuthUser });
+    expect(toResults(zero, null)).toHaveLength(1);
+  });
+});
+
+describe('parsing a stored choice', () => {
+  it('reading an old setting (no movable list) leaves the defaults untouched', () => {
+    const first = parseVisibility('{}').providerMovableLayers;
+    const again = parseVisibility('{}').providerMovableLayers;
+    expect([...again]).toEqual([...first]);
+    // the defaults are not a shared array a parse could grow
+    (first as Set<string>).add('x');
+    expect(parseVisibility('{}').providerMovableLayers.has('x')).toBe(false);
+  });
 });

@@ -6,7 +6,7 @@ import type { ApiFeature, FeatureCollectionResponse } from '@/api/search';
 import type { Coordinate } from '../config';
 import { PALESTINE_GRID } from '../projection';
 import { resolveFeatureId, type Props, type SelectedFeature } from '../popup/featureModel';
-import { layerShownToViewer } from '@/features/visibility/store';
+import { layerShownToViewer, viewerIsAdmin } from '@/features/visibility/store';
 import { targetFromKey, type MapTarget } from '../targets';
 import { geometryMeasure } from '../popup/geometryMeasure';
 import { isZeroRating } from '@/features/visibility/model';
@@ -63,8 +63,10 @@ export function toResults(
   includeZeroRating = false,
 ): SearchResult[] {
   const out: SearchResult[] = [];
+  // The server sends zero-rated rows to admins on purpose (they manage them); hide them from everyone else.
+  const keepZero = includeZeroRating || viewerIsAdmin();
   fc.features.forEach((f, i) => {
-    if (!includeZeroRating && isZeroRating(f.properties.rating)) return;
+    if (!keepZero && isZeroRating(f.properties.rating)) return;
     const t =
       target ??
       (typeof f.properties.discriminator === 'string' ? targetFromKey(f.properties.discriminator) : null);
