@@ -1,7 +1,8 @@
+import i18n from 'i18next';
 import { searchApi } from '@/api/search';
 import { toResults, byRatingDesc, type SearchResult } from './results';
 import { REAL_ESTATE_TYPE_NAME, type RealEstateLayerKey } from '../config';
-import { ALL_TARGETS, targetFromKey, type MapTarget } from '../targets';
+import { ALL_TARGETS, targetFromKey, targetLabelKey, type MapTarget } from '../targets';
 
 // Keyword search across everything. The server searches search_tags, des, and name with Arabic letter variants folded
 // together; the words of the text are OR-ed.
@@ -109,14 +110,10 @@ export function wordHits(result: SearchResult, term: string): number {
 }
 
 /**
- * Rank by manual rating descending across both keyword boxes; relevance breaks ties.
+ * Rank across both keyword boxes: an exact type match first, then rows matching more of the typed words; the manual
+ * rating (descending) breaks ties.
  */
-export function rankHits(
-  hits: GlobalHit[],
-  term: string,
-  typeTitle: (t: MapTarget) => string,
-  _zeroRatingFirst = false,
-): GlobalHit[] {
+export function rankHits(hits: GlobalHit[], term: string, typeTitle: (t: MapTarget) => string): GlobalHit[] {
   const n = normalizeArabic(term);
   const scored = hits.map((h) => ({
     h,
@@ -167,13 +164,15 @@ export async function fetchGlobalHits(
       // Fetch zero-rated listings separately so the server's 2000-row cap cannot push them out
       // when there are many higher-rated matches. They are sorted after positive ratings below.
       const typeOnly = isPropertyTypeQuery(t, term, typeTitle?.(t) ?? '');
+      // The server matches this against Arabic data, whatever the UI language is.
+      const layerNameAr = i18n.getFixedT('ar')(targetLabelKey(t));
       const regular = searchApi.search(
         {
           layer,
           workspace: 'realestate',
           conditions: typeOnly ? [] : [text],
           includeZeroRating,
-          layerNameAr: typeTitle?.(t),
+          layerNameAr,
         },
         signal,
       );
@@ -186,7 +185,7 @@ export async function fetchGlobalHits(
           workspace: 'realestate',
           conditions: typeOnly ? [{ field: 'rating', operator: '=', value: '0' }] : [text, { field: 'rating', operator: '=', value: '0' }],
           includeZeroRating: true,
-          layerNameAr: typeTitle?.(t),
+          layerNameAr,
         },
         signal,
       );
