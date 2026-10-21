@@ -2180,7 +2180,41 @@ and give the Node process write access to it on IIS**), table `listing_photos` k
   shape, same range checks and the same "fewer than 4 rows = changed" refusal. **Verify:** `node --test lib/thefuelprice.test.js`
   (new excerpt of the live page in `lib/fixtures`); `curl localhost:3000/api/fuel-prices` → 200 with 7 items.
 
+- **Deleting a service from the map answers again (2026-10-21).** The 19.10 delete-reconciliation in
+  `server/routes/geoserver-proxy.js` called `servicesPool` without importing it, so every admin WFS `Delete` on
+  `service_all` threw a `ReferenceError` inside the async middleware: no answer, nothing reached GeoServer. Now imported;
+  the fallback lookup in `listing_owners` (a service row already gone) only takes service links, since a service id can
+  equal a property `fid` and would otherwise unlink the owner of a live apartment; a database failure answers 502 instead
+  of hanging. **Verify:** an eslint `no-undef` pass over `server/` + `lib/` is clean (it flagged exactly these two lines
+  before); delete a service in the map's edit panel → the request answers and the owner's link is cleared.
+- **The admin user list no longer depends on the stale-link repair (2026-10-21).** `GET /api/admin/users` runs
+  `pruneStaleListingOwners()` (19.10) before the query; it now runs at most every 10 minutes and a failure is logged
+  instead of turning the whole list into a 500. **Verify:** stop the real-estate DB → the user list still loads.
+- **My listings wait for the video columns (2026-10-21).** `ensureVideosSchema()` (19.10) adds `video` /
+  `media_default` / `listing_videos` in the background while `PROPERTY_COLUMNS` selects them unconditionally, so a
+  request right after start-up could fail with "column does not exist". `readListings` now awaits the same promise.
+  **Verify:** restart the server and open "my listings" at once → 200.
+
 ## Backend asks (needs the user's decision — behaviour-changing or larger)
+
+- **Pushed straight to `main` on 19–20.10 without a decision (q1–q3, Husam) — confirm or revert each:** these change what
+  existing endpoints do, so they belong here; they are live in production already.
+  - *Fixed-location services cannot move:* `PUT /api/my-listings/:layer/:id` and the provider location endpoint answer
+    403 for the types in `shared/fixed-location-services.json` (restaurants, hotels, shops, clinics…); the admin page
+    edits the list (`providerMovableLayers` in the visibility setting). The provider endpoint also refuses a lone x or y (400).
+  - *Zero-rated listings leave search:* `/api/search-features` and `/api/get-unique-values` drop `rating = 0` rows for
+    non-admins unless `include_zero_rating=1` (the map's keyword box sends it; the other lists don't). The WFS layers
+    have no such filter, so such a listing still shows on the map. Approving a submission with an empty rating box no
+    longer sends 0 (fixed 2026-10-21: the box left empty = the server's default 5).
+  - *Search order:* rating first instead of available-first.
+  - *Videos:* `POST` / `DELETE /api/my-listings/:layer/:id/video` (25 MB, bytes checked, owner only, 10/hour), the
+    `listing_videos` table and `video` / `media_default` columns created at start-up (no file in `database/`); a
+    listing's video files are not removed when the listing is deleted (same as its photos).
+  - *A public socket namespace `/public`* (no auth, server → client only: `platform_content_updated`,
+    `map_data_updated`) — the "Live push for visitors" ask below, done without the decision. Visitors now refresh
+    instantly; it is an unauthenticated socket surface (connection count not rate-limited).
+  - *Property layers drawn from resolution 20* (was 1): the admin's rating bands may now reach 20, so every bbox load of
+    the three property layers (land polygons included) also happens far zoomed out.
 
 - **Growth round, 15 October 2026 — ideas that need the server or outside accounts (not done):**
   - *Weekly stats to providers on WhatsApp* («انشاف إعلانك 120 مرة هالأسبوع»): needs the WhatsApp Business API (an
