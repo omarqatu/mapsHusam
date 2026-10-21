@@ -10,7 +10,8 @@ import { PLATFORM_PROPERTY_LAYERS, PLATFORM_SERVICE_LAYERS } from '../layers.js'
 // 1. جلب جميع المستخدمين مع خيارات البحث والتصفية
 app.get('/api/admin/users', requireAdmin, async (req, res) => {
     try {
-        await pruneStaleListingOwners();
+        // A repair, not part of the answer: a failure here must not hide the user list.
+        await pruneStaleListingOwners().catch((err) => console.error('تعذر تنظيف روابط الملكية القديمة:', err.message));
         const { search, status_filter, role_filter } = req.query;
         
         let query = `
