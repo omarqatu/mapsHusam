@@ -25,3 +25,22 @@ export function locateOnce(): Promise<Coordinate> {
     );
   });
 }
+
+/** First GPS fix from a watch, matching the acquisition method used by the map's locate button. */
+export function locateOnceFromWatch(): Promise<Coordinate> {
+  const secure = window.isSecureContext;
+  if (!('geolocation' in navigator) || !secure)
+    return Promise.reject(new GeoError(geolocationErrorKey(2, secure)));
+  return new Promise((resolve, reject) => {
+    let watchId: number | null = null;
+    const finish = (callback: () => void) => {
+      if (watchId !== null) navigator.geolocation.clearWatch(watchId);
+      callback();
+    };
+    watchId = navigator.geolocation.watchPosition(
+      (pos) => finish(() => resolve(fromLonLat(pos.coords.longitude, pos.coords.latitude))),
+      (err) => finish(() => reject(new GeoError(geolocationErrorKey(err.code, true)))),
+      { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 },
+    );
+  });
+}

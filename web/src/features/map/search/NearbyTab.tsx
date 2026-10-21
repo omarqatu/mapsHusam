@@ -7,7 +7,7 @@ import SelectInput from '@/components/ui/SelectInput';
 import TextInput from '@/components/ui/TextInput';
 import { toast } from '@/components/ui/toastStore';
 import { useOlMap } from '../MapContext';
-import { GeoError, locateOnce } from '../geolocate';
+import { GeoError, locateOnceFromWatch } from '../geolocate';
 import { FUEL_FIELDS, FUEL_OPTIONS, STOP_OPTIONS } from './model';
 import { type MapTarget } from '../targets';
 import { EMPTY_EXTRA, MAX_RADIUS_M, type NearbyExtra } from './nearby';
@@ -36,7 +36,7 @@ export default function NearbyTab() {
   const useMyLocation = () => {
     setPicking(false);
     setLocating(true);
-    locateOnce()
+    locateOnceFromWatch()
       .then((c) => {
         setNearbyCenter(c);
         map
