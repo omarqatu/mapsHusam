@@ -2,7 +2,7 @@
 import { createProxyMiddleware } from 'http-proxy-middleware';
 import path from 'path';
 import { app, debugLog, publicIo } from '../app.js';
-import { GEOSERVER_TARGET } from '../database.js';
+import { GEOSERVER_TARGET, servicesPool } from '../database.js';
 import { isValidLayer } from '../layers.js';
 import { PROPERTY_TABLES, localIsoDate, publicProxyQuery } from '../../lib/listing-rules.js';
 import { viewerRules } from '../visibility.js';
@@ -145,19 +145,25 @@ app.use('/geoserver-proxy', async (req, res, next) => {
         const targets = requestedListingDeletes(req.body);
         const serviceIds = [...new Set(targets.filter((t) => !t.layer).map((t) => t.id))];
         if (serviceIds.length) {
-            const existingRows = await servicesPool.query(
-                'SELECT id, discriminator FROM public.service_all WHERE id = ANY($1::bigint[])',
-                [serviceIds],
-            );
-            const known = new Map(existingRows.rows.map((row) => [Number(row.id), row.discriminator]));
-            const owners = await servicesPool.query(
-                'SELECT feature_id, layer FROM public.listing_owners WHERE feature_id = ANY($1::bigint[])',
-                [serviceIds],
-            );
-            for (const row of owners.rows) if (!known.has(Number(row.feature_id))) known.set(Number(row.feature_id), row.layer);
-            req.listingDeletionTargets = targets
-                .filter((t) => t.layer || known.has(t.id))
-                .map((t) => ({ ...t, layer: t.layer || known.get(t.id) }));
+            try {
+                const existingRows = await servicesPool.query(
+                    'SELECT id, discriminator FROM public.service_all WHERE id = ANY($1::bigint[])',
+                    [serviceIds],
+                );
+                const known = new Map(existingRows.rows.map((row) => [Number(row.id), row.discriminator]));
+                // A service id can equal a property fid: only service links may stand in for a missing service row.
+                const owners = await servicesPool.query(
+                    'SELECT feature_id, layer FROM public.listing_owners WHERE feature_id = ANY($1::bigint[]) AND layer <> ALL($2::text[])',
+                    [serviceIds, PROPERTY_TABLES],
+                );
+                for (const row of owners.rows) if (!known.has(Number(row.feature_id))) known.set(Number(row.feature_id), row.layer);
+                req.listingDeletionTargets = targets
+                    .filter((t) => t.layer || known.has(t.id))
+                    .map((t) => ({ ...t, layer: t.layer || known.get(t.id) }));
+            } catch (err) {
+                console.error('تعذر تجهيز تنظيف ملكية المعالم المحذوفة:', err.message);
+                return res.status(502).json({ error: 'تعذر الاتصال بقاعدة البيانات.' });
+            }
         } else {
             req.listingDeletionTargets = targets;
         }
