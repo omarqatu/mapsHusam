@@ -1570,9 +1570,9 @@ Web work, plus one new server route (logged under "Server changes"). Showing pho
   الإعلان كاملة». No server change: everything comes from the same public batch / search reads. Verified at 1440 and
   390 against production data (land 9, villa 329), dark scheme, no horizontal overflow. Tested:
   `features/listing/ListingPage.test.tsx`. Next (needs the server, see Backend asks): rooms, floor, furnished… fields.
-  - **Details as icon tiles (second pass, same day, «تفاصيل أكثر مع أيقونات»):** «التفاصيل» is a grid of tiles, each
-    an icon in a tinted circle over its label and value (two columns on phones, three on wide screens, long values
-    wrap to two lines): type, listing number, price, area, price per m² (sales only — flats for sale and land; it
+  - **Details with icons (second pass, same day, «تفاصيل أكثر مع أيقونات»; boxes dropped on request, «ما تكون
+    صناديق، عادي»):** «التفاصيل» is a plain list of rows — a small icon and the label at one end, the value at the
+    other, a thin rule between rows (one column on phones, two on wide screens): type, listing number, price, area, price per m² (sales only — flats for sale and land; it
     means nothing for a rent or a service), status (in its colour), hours (services), address, town, governorate,
     posting date (`start_date`), last update (`updated_at`), number of pictures / videos, rating. A fact the listing
     lacks is left out. Every section heading has its icon and a rule under it. The summary says «نُشر قبل 7 أشهر».

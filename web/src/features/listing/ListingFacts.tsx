@@ -40,32 +40,29 @@ interface Fact {
   tone?: string;
 }
 
-/** One fact: the icon in its tinted circle, the label over the value. */
-function FactTile({ icon, label, value, tone }: Omit<Fact, 'key'>) {
+/** One fact as a plain row: a small icon and the label, the value at the other end; a thin rule under it. */
+function FactRow({ icon, label, value, tone }: Omit<Fact, 'key'>) {
   return (
-    <div className="flex min-w-0 items-center gap-2 rounded-xl border border-line bg-subtle/60 p-2.5 sm:gap-3 sm:p-3">
-      <span
-        className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-brand-light text-brand-fg sm:h-10 sm:w-10 [&>svg]:h-5 [&>svg]:w-5"
-        aria-hidden
+    <div className="flex items-start justify-between gap-4 border-b border-line py-2.5">
+      <dt className="flex shrink-0 items-center gap-2 text-sm text-muted">
+        <span className="text-brand-fg [&>svg]:h-4 [&>svg]:w-4" aria-hidden>
+          {icon}
+        </span>
+        {label}
+      </dt>
+      <dd
+        className="min-w-0 text-end text-sm font-bold break-words text-fg"
+        style={tone ? { color: tone } : undefined}
+        dir="auto"
       >
-        {icon}
-      </span>
-      <div className="min-w-0">
-        <div className="text-xs font-semibold text-muted">{label}</div>
-        <div
-          className="line-clamp-2 text-sm font-bold break-words text-fg sm:text-base"
-          style={tone ? { color: tone } : undefined}
-          dir="auto"
-        >
-          {value}
-        </div>
-      </div>
+        {value}
+      </dd>
     </div>
   );
 }
 
 /**
- * The listing's key facts as a grid of icon tiles (type, number, price, area, price per m², state, hours, place,
+ * The listing's key facts as a plain two-column list of rows (type, number, price, area, price per m², state, hours, place,
  * posting / update dates, media, rating). A fact the listing does not have is left out, never shown as a dash.
  */
 export default function ListingFacts({ r, visual }: { r: SearchResult; visual: VisualItem[] }) {
@@ -167,12 +164,12 @@ export default function ListingFacts({ r, visual }: { r: SearchResult; visual: V
   ];
 
   return (
-    <div className="grid grid-cols-2 gap-2 xl:grid-cols-3">
+    <dl className="grid gap-x-8 sm:grid-cols-2">
       {facts
         .filter((f): f is Fact => !!f)
         .map(({ key, ...f }) => (
-          <FactTile key={key} {...f} />
+          <FactRow key={key} {...f} />
         ))}
-    </div>
+    </dl>
   );
 }
