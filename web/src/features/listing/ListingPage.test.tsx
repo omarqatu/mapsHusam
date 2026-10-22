@@ -6,6 +6,9 @@ import { MemoryRouter, Route, Routes } from 'react-router';
 import i18n from '@/i18n';
 import ListingPage from './ListingPage';
 import { listingPath, whatsappShareLink } from './link';
+import { closestOthers, listingDate, postedAgo, pricePerMeter } from './model';
+import Point from 'ol/geom/Point';
+import type { SearchResult } from '../map/search/results';
 
 let batchBodies: unknown[] = [];
 let features: unknown[] = [];
@@ -62,6 +65,56 @@ describe('a listing page', () => {
     expect(batchBodies[0]).toMatchObject({ workspace: 'realestate', ids: ['42'] });
   });
 
+  it('shows the pictures large with a counter and thumbnails, the key facts and the price per metre', async () => {
+    features = [
+      {
+        type: 'Feature',
+        id: 'LandSale.9',
+        geometry: { type: 'Point', coordinates: [170000, 146000] },
+        properties: {
+          fid: 9,
+          location: 'Al-Masyoun',
+          price: 900000,
+          currency: 'USD',
+          area: 600,
+          des: 'Empty commercial land',
+          pic: 'https://a.ps/1.jpg,https://a.ps/2.jpg',
+        },
+      },
+    ];
+    show('/l/land/9');
+    expect(await screen.findByRole('heading', { level: 1 })).toBeInTheDocument();
+    expect(screen.getByText('1 / 2')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Picture 2' })).toBeInTheDocument();
+    expect(screen.getByText('Price per m²').nextElementSibling).toHaveTextContent('1,500');
+    expect(screen.getByRole('heading', { level: 2, name: 'Description' })).toBeInTheDocument();
+    expect(screen.getByText('Empty commercial land')).toBeInTheDocument();
+  });
+
+  it('a flat for rent shows its facts with no price per metre (it means nothing for a rent)', async () => {
+    features = [
+      {
+        type: 'Feature',
+        id: 'ApartRent.5',
+        geometry: { type: 'Point', coordinates: [170000, 146000] },
+        properties: {
+          fid: 5,
+          location: 'Al-Tireh',
+          price: 500,
+          area: 120,
+          start_date: '2026-09-28T21:00:00.000Z',
+        },
+      },
+    ];
+    show('/l/rent/5');
+    expect(await screen.findByRole('heading', { level: 1 })).toBeInTheDocument();
+    expect(screen.getByText('Area')).toBeInTheDocument();
+    expect(screen.getByText('Posted on')).toBeInTheDocument();
+    expect(screen.queryByText('Price per m²')).toBeNull();
+    // once beside the summary (desktop), once at the end (phones); CSS shows one of them
+    expect(screen.getAllByRole('heading', { level: 2, name: 'Deal safely' })).toHaveLength(2);
+  });
+
   it('says so when the listing is gone, and points to the search', async () => {
     features = [];
     show('/l/plumber/9');
@@ -109,5 +162,34 @@ describe('the share button', () => {
     screen.getByRole('button', { name: 'Share' }).click();
     expect(share).toHaveBeenCalledWith({ title: 'Plumber', url: 'https://x.ps/l/plumber/7' });
     expect(screen.queryByRole('link', { name: 'Share on WhatsApp' })).toBeNull();
+  });
+});
+
+describe('listing page helpers', () => {
+  it('price per metre only when both price and area are known', () => {
+    expect(pricePerMeter({ price: 900000, area: 632 })).toBe(1424);
+    expect(pricePerMeter({ price: 900000, area: 0 })).toBeNull();
+    expect(pricePerMeter({ price: '', area: 100 })).toBeNull();
+  });
+
+  it('similar listings: nearest first, never the listing itself', () => {
+    const at = (key: string, x: number) =>
+      ({ key, center: [x, 0], geometry: new Point([x, 0]) }) as unknown as SearchResult;
+    const self = at('a', 0);
+    const out = closestOthers([at('far', 900), self, at('near', 10), at('mid', 100)], self, 2);
+    expect(out.map((r) => r.key)).toEqual(['near', 'mid']);
+    expect(out[0].distance).toBe(10);
+  });
+
+  it('dates: unreadable or future ones are dropped; "posted … ago" in days, months, years', () => {
+    const now = Date.parse('2026-10-22T12:00:00Z');
+    expect(listingDate('2026-09-28T21:00:00.000Z', now)?.toISOString()).toBe('2026-09-28T21:00:00.000Z');
+    expect(listingDate('nonsense', now)).toBeNull();
+    expect(listingDate('2027-01-01T00:00:00Z', now)).toBeNull();
+    expect(listingDate(null, now)).toBeNull();
+    expect(postedAgo(new Date(now - 3 * 86_400_000), 'en', now)).toBe('3 days ago');
+    expect(postedAgo(new Date(now - 2 * 3_600_000), 'en', now)).toBe('today');
+    expect(postedAgo(new Date(now - 95 * 86_400_000), 'en', now)).toBe('3 months ago');
+    expect(postedAgo(new Date(now - 800 * 86_400_000), 'en', now)).toBe('2 years ago');
   });
 });

@@ -2454,7 +2454,40 @@
     "browse": "Browse listings",
     "save": "Save",
     "saved": "Saved",
-    "savedTitle": "Saved"
+    "savedTitle": "Saved",
+    "page": {
+      "open": "Open the full listing page",
+      "breadcrumb": "Breadcrumb",
+      "pictureN": "Picture {{n}}",
+      "details": "Details",
+      "type": "Type",
+      "area": "Area",
+      "pricePerMeter": "Price per m²",
+      "hours": "Opening hours",
+      "town": "Town",
+      "governorate": "Governorate",
+      "description": "Description",
+      "links": "More links",
+      "ratings": "Ratings",
+      "similar": "Similar listings nearby",
+      "number": "Listing number",
+      "price": "Price",
+      "state": "Status",
+      "place": "Address",
+      "posted": "Posted on",
+      "updated": "Last update",
+      "pictures": "Pictures",
+      "videos": "Videos",
+      "rating": "Rating",
+      "postedAgo": "Posted {{when}}",
+      "safety": {
+        "title": "Deal safely",
+        "see": "See the property or the service yourself before agreeing to anything.",
+        "noAdvance": "Do not transfer any money before seeing it and being sure.",
+        "papers": "Ask for the official papers (land registry, contract) and check them."
+      },
+      "seeAll": "All {{type}}"
+    }
   },
   "myBarriers": {
     "title": "My checkpoints",

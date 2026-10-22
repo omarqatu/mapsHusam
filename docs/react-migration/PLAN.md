@@ -1559,6 +1559,25 @@ Web work, plus one new server route (logged under "Server changes"). Showing pho
   the map", what is linked to it, and share. Gone / hidden / unknown type → "This listing is not available" + a link to
   the search. `<type>` = rent | sale | land | a service type; `<id>` = the property's fid or the service id. Tested:
   `features/listing/ListingPage.test.tsx`.
+- **The listing page as a marketplace page (UX change, 2026-10-22, «زي السوق المفتوح»).** `/l/<type>/<id>` was the
+  preview's narrow card on a page. Now, like OpenSooq / Haraj: a large picture at a time (swipe on phones, arrows on
+  desktop, «3 / 8» counter, thumbnails, the full-screen viewer on a tap; `ListingGallery`), the summary beside it and
+  sticky on desktop (type, title, price large, place, rating / open now, contact, map / directions / save / share),
+  then «التفاصيل» (type, area, price per m² computed from price ÷ area, hours, town, governorate), the full
+  description, before / after, extra links, the customer ratings, what is linked to it, and «إعلانات مشابهة قريبة»
+  (same type, nearest first, 10 cards). On phones the contact button stays at the bottom of the screen while
+  scrolling and stops before the footer. The preview (cards on `/search`, `/home`) is unchanged but gets «افتح صفحة
+  الإعلان كاملة». No server change: everything comes from the same public batch / search reads. Verified at 1440 and
+  390 against production data (land 9, villa 329), dark scheme, no horizontal overflow. Tested:
+  `features/listing/ListingPage.test.tsx`. Next (needs the server, see Backend asks): rooms, floor, furnished… fields.
+  - **Details with icons (second pass, same day, «تفاصيل أكثر مع أيقونات»; boxes dropped on request, «ما تكون
+    صناديق، عادي»):** «التفاصيل» is a plain list of rows — a small icon and the label at one end, the value at the
+    other, a thin rule between rows (one column on phones, two on wide screens): type, listing number, price, area, price per m² (sales only — flats for sale and land; it
+    means nothing for a rent or a service), status (in its colour), hours (services), address, town, governorate,
+    posting date (`start_date`), last update (`updated_at`), number of pictures / videos, rating. A fact the listing
+    lacks is left out. Every section heading has its icon and a rule under it. The summary says «نُشر قبل 7 أشهر».
+    «نصائح للتعامل الآمن» (see it yourself, no money in advance, check the papers) sits under the summary on desktop
+    and at the end on phones. The breadcrumb's type and «كل <النوع>» beside the similar listings open `/search?type=`.
 - **Share a listing (UX change):** the preview and the listing page get «مشاركة» — the phone's share sheet where there
   is one; elsewhere «شارك على واتساب» (a ready message: the title, then the `/l/…` link) and «نسخ الرابط». Tested in
   the same file (both branches, link format).
@@ -2196,6 +2215,12 @@ and give the Node process write access to it on IIS**), table `listing_photos` k
   **Verify:** restart the server and open "my listings" at once → 200.
 
 ## Backend asks (needs the user's decision — behaviour-changing or larger)
+
+- **Property details for the listing page (asked 2026-10-22):** the marketplace sites' listing pages lead with rooms,
+  bathrooms, floor, furnished, parking, building age; the property tables have only price, area, currency, location,
+  pictures, video. Each field = a column on `ApartRent` / `ApartSale` (land: zoning, street frontage), a field in
+  «أضف إعلان» and «إعلاناتي», and a search filter. Also asked: a view counter per listing, the date it was posted,
+  and «بلّغ عن الإعلان». Decide which fields; the listing page shows them as soon as they exist.
 
 - **Pushed straight to `main` on 19–20.10 without a decision (q1–q3, Husam) — confirm or revert each:** these change what
   existing endpoints do, so they belong here; they are live in production already.
