@@ -135,8 +135,16 @@ export async function reconcileDeletedListing(layer, featureId) {
     }
 }
 
-/** Repair dangling legacy and ownership links left by deletions made before automatic reconciliation was deployed. */
+const PRUNE_INTERVAL_MS = 10 * 60 * 1000;
+let lastPruneAt = 0;
+
+/**
+ * Repair dangling legacy and ownership links left by deletions made before automatic reconciliation was deployed.
+ * Runs at most once per PRUNE_INTERVAL_MS; returns the number of links repaired (0 when skipped).
+ */
 export async function pruneStaleListingOwners() {
+    if (Date.now() - lastPruneAt < PRUNE_INTERVAL_MS) return 0;
+    lastPruneAt = Date.now();
     await ready;
     const [owners, legacy] = await Promise.all([
         servicesPool.query('SELECT layer, feature_id FROM public.listing_owners'),

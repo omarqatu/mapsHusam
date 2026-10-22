@@ -78,7 +78,8 @@ async function ensureVideosSchema() {
         console.error('⚠️ تعذر تجهيز تخزين فيديوهات الإعلانات:', err.message);
     }
 }
-ensureVideosSchema();
+// Reads select the new video columns: wait for them instead of racing the first request after start-up.
+const videosSchemaReady = ensureVideosSchema();
 
 const SERVICE_COLUMNS = `id, discriminator AS layer, name, des, phone, whatsapp, work_hours, price, currency, area,
     location_name AS location, status, auto_status, end_date, pic, video, x_coord, y_coord,
@@ -125,6 +126,7 @@ function toListing(row, ratings) {
 
 async function readListings(owned) {
     if (owned.length === 0) return [];
+    await videosSchemaReady;
     const rows = [];
     const services = owned.filter((o) => !isPropertyLayer(o.layer));
     if (services.length) {

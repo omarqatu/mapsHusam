@@ -104,7 +104,8 @@ function SubmissionCard({ submission: s }: { submission: AdminSubmission }) {
           des,
           ...(flat ? {} : { work_hours: hours }),
           search_tags: serviceSearchTags(s.layer, name, des),
-          rating: Number(rating),
+          // An empty box is no choice (the server's default 5), not 0 — a zero rating hides the listing.
+          ...(rating.trim() === '' ? {} : { rating: Number(rating) }),
           end_date: endDate || null,
           ...(moved ? { x_coord: Number(point[0].toFixed(3)), y_coord: Number(point[1].toFixed(3)) } : {}),
         },

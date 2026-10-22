@@ -63,7 +63,7 @@ export default function GlobalSearchBox() {
       if (!(await passesSearchQuota('global_search', term, t))) return [] as GlobalHit[];
       return fetchGlobalHits(term, signal, true, (target) => t(targetLabelKey(target)));
     },
-    select: (hits) => rankHits(hits, term, (target) => t(targetLabelKey(target)), true).slice(0, MAX_SHOWN),
+    select: (hits) => rankHits(hits, term, (target) => t(targetLabelKey(target))).slice(0, MAX_SHOWN),
   });
 
   const closeList = useCallback(() => setOpen(false), []);

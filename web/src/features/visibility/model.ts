@@ -94,7 +94,7 @@ export function parseVisibility(raw: string | null | undefined): Visibility {
   const sections = Array.isArray(hiddenSections) ? hiddenSections.filter(isSection) : [];
   const movableLayers = Array.isArray(providerMovableLayers)
     ? providerMovableLayers.filter((key): key is string => typeof key === 'string' && SERVICE_KEYS.includes(key))
-    : DEFAULT_MOVABLE_SERVICE_KEYS;
+    : [...DEFAULT_MOVABLE_SERVICE_KEYS];
   if (Number(providerMovableLayersVersion || 0) < MOVABLE_LAYER_MIGRATION_VERSION) {
     movableLayers.push(...MOVABLE_LAYER_MIGRATION_KEYS.filter((key) => DEFAULT_MOVABLE_SERVICE_KEYS.includes(key)));
   }

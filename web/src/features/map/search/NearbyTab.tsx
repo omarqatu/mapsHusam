@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Crosshair, LocateFixed, MapPin } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import Button from '@/components/ui/Button';
@@ -33,10 +33,16 @@ export default function NearbyTab() {
   const isBarrier = isRoadBarrier(target);
   const isFuel = isFuelStation(target);
 
+  // Leaving the tab stops a GPS watch still waiting for its first fix.
+  const locateAbort = useRef<AbortController | null>(null);
+  useEffect(() => () => locateAbort.current?.abort(), []);
+
   const useMyLocation = () => {
     setPicking(false);
     setLocating(true);
-    locateOnceFromWatch()
+    locateAbort.current?.abort();
+    locateAbort.current = new AbortController();
+    locateOnceFromWatch(locateAbort.current.signal)
       .then((c) => {
         setNearbyCenter(c);
         map
