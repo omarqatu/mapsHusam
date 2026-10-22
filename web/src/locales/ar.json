@@ -2454,7 +2454,23 @@
     "browse": "تصفّح الإعلانات",
     "save": "احفظ",
     "saved": "محفوظ",
-    "savedTitle": "المحفوظة"
+    "savedTitle": "المحفوظة",
+    "page": {
+      "open": "افتح صفحة الإعلان كاملة",
+      "breadcrumb": "مسار الصفحة",
+      "pictureN": "الصورة {{n}}",
+      "details": "التفاصيل",
+      "type": "النوع",
+      "area": "المساحة",
+      "pricePerMeter": "سعر المتر",
+      "hours": "ساعات العمل",
+      "town": "البلدة",
+      "governorate": "المحافظة",
+      "description": "الوصف",
+      "links": "روابط إضافية",
+      "ratings": "التقييمات",
+      "similar": "إعلانات مشابهة قريبة"
+    }
   },
   "myBarriers": {
     "title": "حواجزي",

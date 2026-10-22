@@ -2454,7 +2454,23 @@
     "browse": "Browse listings",
     "save": "Save",
     "saved": "Saved",
-    "savedTitle": "Saved"
+    "savedTitle": "Saved",
+    "page": {
+      "open": "Open the full listing page",
+      "breadcrumb": "Breadcrumb",
+      "pictureN": "Picture {{n}}",
+      "details": "Details",
+      "type": "Type",
+      "area": "Area",
+      "pricePerMeter": "Price per m²",
+      "hours": "Opening hours",
+      "town": "Town",
+      "governorate": "Governorate",
+      "description": "Description",
+      "links": "More links",
+      "ratings": "Ratings",
+      "similar": "Similar listings nearby"
+    }
   },
   "myBarriers": {
     "title": "My checkpoints",

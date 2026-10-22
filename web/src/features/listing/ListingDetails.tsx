@@ -1,5 +1,6 @@
-import type { ReactNode } from 'react';
+import { ExternalLink } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import ButtonLink from '@/components/ui/ButtonLink';
 import FeaturedCard from '../map/extras/FeaturedCard';
 import PropertyRelations from '../property-relations/PropertyRelations';
 import PropertyServices from '../property-services/PropertyServices';
@@ -9,7 +10,7 @@ import TargetIcon from '@/features/map/TargetIcon';
 import type { MapEventSource } from '@/api/mapEvents';
 import SaveListingButton from './SaveListingButton';
 import ShareListingButton from './ShareListingButton';
-import { listingUrl } from './link';
+import { listingPath, listingUrl } from './link';
 
 interface Props {
   entry: FeaturedEntry;
@@ -17,13 +18,11 @@ interface Props {
   badge?: string;
   note?: string;
   contactSource?: MapEventSource;
-  /** The page's heading (the listing page): under the header picture, above the details. */
-  heading?: ReactNode;
 }
 
 /**
  * Everything about one listing: its pictures / video, the description, ratings, contact, "show on the map", sharing,
- * and what is linked to it. The body of the listing preview and of the listing's own page (`/l/:key/:id`).
+ * and what is linked to it. The body of the listing preview; its own page (`/l/:key/:id`) is one tap away.
  */
 export default function ListingDetails({
   entry,
@@ -31,7 +30,6 @@ export default function ListingDetails({
   badge,
   note,
   contactSource = 'quick_search',
-  heading,
 }: Props) {
   const { t } = useTranslation();
   const { r } = entry;
@@ -48,7 +46,6 @@ export default function ListingDetails({
           </span>
         </div>
       )}
-      {heading}
       <FeaturedCard
         entry={entry}
         mode={mode}
@@ -69,6 +66,16 @@ export default function ListingDetails({
           )
         }
       />
+      {r.id !== null && (
+        <ButtonLink
+          to={listingPath(r.target, r.id)}
+          variant="secondary"
+          className="w-full"
+          startIcon={<ExternalLink className="h-4 w-4" aria-hidden />}
+        >
+          {t('listing.page.open')}
+        </ButtonLink>
+      )}
       <PropertyRelations target={r.target} propertyId={r.id} />
       <PropertyServices
         target={r.target}
