@@ -6,7 +6,7 @@ import { MemoryRouter, Route, Routes } from 'react-router';
 import i18n from '@/i18n';
 import ListingPage from './ListingPage';
 import { listingPath, whatsappShareLink } from './link';
-import { closestOthers, pricePerMeter } from './model';
+import { closestOthers, listingDate, postedAgo, pricePerMeter } from './model';
 import Point from 'ol/geom/Point';
 import type { SearchResult } from '../map/search/results';
 
@@ -91,6 +91,30 @@ describe('a listing page', () => {
     expect(screen.getByText('Empty commercial land')).toBeInTheDocument();
   });
 
+  it('a flat for rent shows its facts with no price per metre (it means nothing for a rent)', async () => {
+    features = [
+      {
+        type: 'Feature',
+        id: 'ApartRent.5',
+        geometry: { type: 'Point', coordinates: [170000, 146000] },
+        properties: {
+          fid: 5,
+          location: 'Al-Tireh',
+          price: 500,
+          area: 120,
+          start_date: '2026-09-28T21:00:00.000Z',
+        },
+      },
+    ];
+    show('/l/rent/5');
+    expect(await screen.findByRole('heading', { level: 1 })).toBeInTheDocument();
+    expect(screen.getByText('Area')).toBeInTheDocument();
+    expect(screen.getByText('Posted on')).toBeInTheDocument();
+    expect(screen.queryByText('Price per m²')).toBeNull();
+    // once beside the summary (desktop), once at the end (phones); CSS shows one of them
+    expect(screen.getAllByRole('heading', { level: 2, name: 'Deal safely' })).toHaveLength(2);
+  });
+
   it('says so when the listing is gone, and points to the search', async () => {
     features = [];
     show('/l/plumber/9');
@@ -155,5 +179,17 @@ describe('listing page helpers', () => {
     const out = closestOthers([at('far', 900), self, at('near', 10), at('mid', 100)], self, 2);
     expect(out.map((r) => r.key)).toEqual(['near', 'mid']);
     expect(out[0].distance).toBe(10);
+  });
+
+  it('dates: unreadable or future ones are dropped; "posted … ago" in days, months, years', () => {
+    const now = Date.parse('2026-10-22T12:00:00Z');
+    expect(listingDate('2026-09-28T21:00:00.000Z', now)?.toISOString()).toBe('2026-09-28T21:00:00.000Z');
+    expect(listingDate('nonsense', now)).toBeNull();
+    expect(listingDate('2027-01-01T00:00:00Z', now)).toBeNull();
+    expect(listingDate(null, now)).toBeNull();
+    expect(postedAgo(new Date(now - 3 * 86_400_000), 'en', now)).toBe('3 days ago');
+    expect(postedAgo(new Date(now - 2 * 3_600_000), 'en', now)).toBe('today');
+    expect(postedAgo(new Date(now - 95 * 86_400_000), 'en', now)).toBe('3 months ago');
+    expect(postedAgo(new Date(now - 800 * 86_400_000), 'en', now)).toBe('2 years ago');
   });
 });

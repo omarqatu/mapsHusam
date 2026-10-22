@@ -1570,6 +1570,14 @@ Web work, plus one new server route (logged under "Server changes"). Showing pho
   الإعلان كاملة». No server change: everything comes from the same public batch / search reads. Verified at 1440 and
   390 against production data (land 9, villa 329), dark scheme, no horizontal overflow. Tested:
   `features/listing/ListingPage.test.tsx`. Next (needs the server, see Backend asks): rooms, floor, furnished… fields.
+  - **Details as icon tiles (second pass, same day, «تفاصيل أكثر مع أيقونات»):** «التفاصيل» is a grid of tiles, each
+    an icon in a tinted circle over its label and value (two columns on phones, three on wide screens, long values
+    wrap to two lines): type, listing number, price, area, price per m² (sales only — flats for sale and land; it
+    means nothing for a rent or a service), status (in its colour), hours (services), address, town, governorate,
+    posting date (`start_date`), last update (`updated_at`), number of pictures / videos, rating. A fact the listing
+    lacks is left out. Every section heading has its icon and a rule under it. The summary says «نُشر قبل 7 أشهر».
+    «نصائح للتعامل الآمن» (see it yourself, no money in advance, check the papers) sits under the summary on desktop
+    and at the end on phones. The breadcrumb's type and «كل <النوع>» beside the similar listings open `/search?type=`.
 - **Share a listing (UX change):** the preview and the listing page get «مشاركة» — the phone's share sheet where there
   is one; elsewhere «شارك على واتساب» (a ready message: the title, then the `/l/…` link) and «نسخ الرابط». Tested in
   the same file (both branches, link format).

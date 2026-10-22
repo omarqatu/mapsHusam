@@ -9,7 +9,15 @@ const keyOf = (m: VisualItem) => (m.type === 'youtube' ? `y:${m.id}` : m.url);
 
 function Still({ m, onBroken, eager }: { m: VisualItem; onBroken?: () => void; eager?: boolean }) {
   if (m.type === 'video')
-    return <video src={`${m.url}#t=0.5`} preload="metadata" muted playsInline className="h-full w-full object-cover" />;
+    return (
+      <video
+        src={`${m.url}#t=0.5`}
+        preload="metadata"
+        muted
+        playsInline
+        className="h-full w-full object-cover"
+      />
+    );
   return (
     <img
       src={m.type === 'image' ? m.url : ytThumb(m.id)}
@@ -93,15 +101,28 @@ export default function ListingGallery({ items, empty }: { items: VisualItem[]; 
         </div>
         {count > 1 && (
           <>
-            <button type="button" onClick={() => go(current - 1)} aria-label={t('media.prev')} className={clsx(arrow, 'start-3')}>
+            <button
+              type="button"
+              onClick={() => go(current - 1)}
+              aria-label={t('media.prev')}
+              className={clsx(arrow, 'start-3')}
+            >
               <ChevronRight className="h-5 w-5 ltr:rotate-180" aria-hidden />
             </button>
-            <button type="button" onClick={() => go(current + 1)} aria-label={t('media.next')} className={clsx(arrow, 'end-3')}>
+            <button
+              type="button"
+              onClick={() => go(current + 1)}
+              aria-label={t('media.next')}
+              className={clsx(arrow, 'end-3')}
+            >
               <ChevronRight className="h-5 w-5 rtl:rotate-180" aria-hidden />
             </button>
           </>
         )}
-        <div className="pointer-events-none absolute bottom-3 end-3 flex items-center gap-1.5 rounded-full bg-black/60 px-2.5 py-1 text-sm font-bold text-white" dir="ltr">
+        <div
+          className="pointer-events-none absolute bottom-3 end-3 flex items-center gap-1.5 rounded-full bg-black/60 px-2.5 py-1 text-sm font-bold text-white"
+          dir="ltr"
+        >
           <Expand className="h-3.5 w-3.5" aria-hidden />
           {current + 1} / {count}
         </div>

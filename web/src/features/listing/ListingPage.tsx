@@ -1,17 +1,27 @@
+import clsx from 'clsx';
 import { useEffect, useId, useState, type ReactNode } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { Link, useParams } from 'react-router';
-import { ChevronLeft, MapPin, SearchX } from 'lucide-react';
+import {
+  ArrowLeftRight,
+  CalendarDays,
+  ChevronLeft,
+  FileText,
+  Info,
+  Link2,
+  MapPin,
+  SearchX,
+  ShieldCheck,
+  Star,
+} from 'lucide-react';
 import { searchApi } from '@/api/search';
 import ActionTile, { ActionTiles } from '@/components/ui/ActionTile';
 import ButtonLink from '@/components/ui/ButtonLink';
-import DataField from '@/components/ui/DataField';
 import EmptyState from '@/components/ui/EmptyState';
 import MediaGallery, { type VisualItem } from '@/components/ui/MediaGallery';
 import RatingSummary from '@/components/ui/RatingSummary';
 import { CenteredSpinner } from '@/components/ui/Spinner';
-import { formatNumber } from '@/lib/format';
 import TargetIcon from '../map/TargetIcon';
 import { customerRatingsKey, manualStars } from '../map/extras/featured';
 import { useShowOnMap } from '../map/extras/useShowOnMap';
@@ -31,11 +41,20 @@ import {
 } from '../map/popup/featureModel';
 import { toResults, type SearchResult } from '../map/search/results';
 import ResultContact from '../map/search/ResultContact';
-import { hasPrice, isRoadBarrier, priceCurrencyDefault, targetFromKey, targetLabelKey, targetToApi } from '../map/targets';
+import {
+  hasPrice,
+  isRoadBarrier,
+  priceCurrencyDefault,
+  targetFromKey,
+  targetKey,
+  targetLabelKey,
+  targetToApi,
+} from '../map/targets';
 import PropertyRelations from '../property-relations/PropertyRelations';
 import PropertyServices from '../property-services/PropertyServices';
+import ListingFacts from './ListingFacts';
 import ListingGallery from './ListingGallery';
-import { pricePerMeter } from './model';
+import { listingDate, postedAgo } from './model';
 import SaveListingButton from './SaveListingButton';
 import ShareListingButton from './ShareListingButton';
 import SimilarListings from './SimilarListings';
@@ -50,7 +69,14 @@ function Description({ value }: { value: string }) {
   const long = value.length > 600;
   return (
     <div>
-      <p className={open || !long ? 'whitespace-pre-line text-base leading-7 text-fg' : 'line-clamp-6 whitespace-pre-line text-base leading-7 text-fg'} dir="auto">
+      <p
+        className={
+          open || !long
+            ? 'whitespace-pre-line text-base leading-7 text-fg'
+            : 'line-clamp-6 whitespace-pre-line text-base leading-7 text-fg'
+        }
+        dir="auto"
+      >
         {value}
       </p>
       {long && (
@@ -67,14 +93,44 @@ function Description({ value }: { value: string }) {
   );
 }
 
-function Section({ title, children }: { title: string; children: ReactNode }) {
+/** A titled card of the page; the icon makes each part easy to find while scrolling. */
+function Section({ title, icon, children }: { title: string; icon: ReactNode; children: ReactNode }) {
   const id = useId();
   return (
-    <section aria-labelledby={id} className="space-y-3 rounded-2xl border border-line bg-surface p-4 shadow-sm sm:p-5">
-      <h2 id={id} className="text-lg font-black text-fg">
+    <section
+      aria-labelledby={id}
+      className="space-y-4 rounded-2xl border border-line bg-surface p-4 shadow-sm sm:p-5"
+    >
+      <h2 id={id} className="flex items-center gap-2 border-b border-line pb-3 text-lg font-black text-fg">
+        <span className="text-brand-fg [&>svg]:h-5 [&>svg]:w-5" aria-hidden>
+          {icon}
+        </span>
         {title}
       </h2>
       {children}
+    </section>
+  );
+}
+
+const SAFETY_TIPS = ['see', 'noAdvance', 'papers'] as const;
+
+/** Before dealing with a stranger: what the marketplace sites remind of next to every listing. */
+function SafetyTips({ className }: { className?: string }) {
+  const { t } = useTranslation();
+  const id = useId();
+  return (
+    <section
+      aria-labelledby={id}
+      className={clsx('space-y-2 rounded-2xl border border-line bg-surface p-4 text-sm', className)}
+    >
+      <h2 id={id} className="flex items-center gap-2 font-bold text-fg">
+        <ShieldCheck className="h-5 w-5 text-ok" aria-hidden /> {t('listing.page.safety.title')}
+      </h2>
+      <ul className="list-disc space-y-1 ps-5 text-muted">
+        {SAFETY_TIPS.map((k) => (
+          <li key={k}>{t(`listing.page.safety.${k}`)}</li>
+        ))}
+      </ul>
     </section>
   );
 }
@@ -90,15 +146,12 @@ function ListingView({ r }: { r: SearchResult }) {
   const visual = media.filter((m): m is VisualItem => m.type !== 'link');
   const links = media.filter((m) => m.type === 'link');
   const pair = beforeAfterPair(p);
-  const place = [text(p.location_name) || text(p.location), text(p.village_a), text(p.gov_a)].filter(Boolean).join(' · ');
+  const place = [text(p.location_name) || text(p.location), text(p.village_a), text(p.gov_a)]
+    .filter(Boolean)
+    .join(' · ');
   const priced = hasPrice(r.target);
   const price = priced ? priceLabel(p, t, i18n.language, priceCurrencyDefault(r.target)) : null;
-  const area = priced && Number(p.area) > 0 ? Number(p.area) : null;
-  const perMeterValue = priced && price ? pricePerMeter(p) : null;
-  const perMeter =
-    perMeterValue !== null
-      ? priceLabel({ ...p, price: perMeterValue }, t, i18n.language, priceCurrencyDefault(r.target))
-      : null;
+  const posted = listingDate(p.start_date);
   const state = isRoadBarrier(r.target) ? null : availability(p);
   const hours = r.target.kind === 'service' ? hoursLabel(p.work_hours, t, i18n.language) : '';
   const ratingsKey = customerRatingsKey(r);
@@ -124,7 +177,12 @@ function ListingView({ r }: { r: SearchResult }) {
           {t('nav.search')}
         </Link>
         <ChevronLeft className="h-4 w-4 ltr:rotate-180" aria-hidden />
-        <span>{typeTitle}</span>
+        <Link
+          to={`/search?type=${encodeURIComponent(targetKey(r.target))}`}
+          className="hover:text-brand-fg hover:underline"
+        >
+          {typeTitle}
+        </Link>
       </nav>
 
       <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_22rem] lg:gap-6">
@@ -141,74 +199,79 @@ function ListingView({ r }: { r: SearchResult }) {
 
         {/* The summary: under the pictures on phones, beside them (and sticky) on desktop. */}
         <aside className="lg:row-span-2">
-          <div className="space-y-3 rounded-2xl border border-line bg-surface p-4 shadow-sm sm:p-5 lg:sticky lg:top-20">
-            <div className="flex items-center gap-2 text-sm font-bold text-warn">
-              <TargetIcon target={r.target} className="h-4 w-4" />
-              <span>{typeTitle}</span>
-              {r.id && <span className="font-normal text-muted">#{r.id}</span>}
+          <div className="space-y-3 lg:sticky lg:top-20">
+            <div className="space-y-3 rounded-2xl border border-line bg-surface p-4 shadow-sm sm:p-5">
+              <div className="flex items-center gap-2 text-sm font-bold text-warn">
+                <TargetIcon target={r.target} className="h-4 w-4" />
+                <span>{typeTitle}</span>
+                {r.id && <span className="font-normal text-muted">#{r.id}</span>}
+              </div>
+              <h1 className="text-2xl font-black leading-snug text-fg" dir="auto">
+                {title}
+              </h1>
+              {price && <p className="text-3xl font-black text-brand-fg">{price}</p>}
+              {place && (
+                <p className="flex items-start gap-1.5 text-sm text-muted" dir="auto">
+                  <MapPin className="mt-0.5 h-4 w-4 shrink-0" aria-hidden /> {place}
+                </p>
+              )}
+              {posted && (
+                <p className="flex items-center gap-1.5 text-sm text-muted">
+                  <CalendarDays className="h-4 w-4 shrink-0" aria-hidden />
+                  {t('listing.page.postedAgo', { when: postedAgo(posted, i18n.language) })}
+                </p>
+              )}
+              <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm">
+                {!ratingsKey && stars > 0 && <RatingSummary value={stars} />}
+                {state && <AvailabilityText value={state} suffix={hours} />}
+              </div>
+              <div className="max-lg:hidden">
+                <ResultContact r={r} showRequest wide className="w-full" source={SOURCE} />
+              </div>
+              {actions}
             </div>
-            <h1 className="text-2xl font-black leading-snug text-fg" dir="auto">
-              {title}
-            </h1>
-            {price && <p className="text-3xl font-black text-brand-fg">{price}</p>}
-            {place && (
-              <p className="flex items-start gap-1.5 text-sm text-muted" dir="auto">
-                <MapPin className="mt-0.5 h-4 w-4 shrink-0" aria-hidden /> {place}
-              </p>
-            )}
-            <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm">
-              {!ratingsKey && stars > 0 && <RatingSummary value={stars} />}
-              {state && <AvailabilityText value={state} suffix={hours} />}
-            </div>
-            <div className="max-lg:hidden">
-              <ResultContact r={r} showRequest wide className="w-full" source={SOURCE} />
-            </div>
-            {actions}
+            <SafetyTips className="max-lg:hidden" />
           </div>
         </aside>
 
         <div className="min-w-0 space-y-4">
-          <Section title={t('listing.page.details')}>
-            <div className="grid grid-cols-2 gap-x-4 gap-y-3 sm:grid-cols-3">
-              <DataField label={t('listing.page.type')} value={typeTitle} />
-              {area !== null && (
-                <DataField label={t('listing.page.area')} value={`${formatNumber(area, i18n.language)} ${t('map.areaUnit')}`} />
-              )}
-              {perMeter !== null && (
-                <DataField label={t('listing.page.pricePerMeter')} value={perMeter} />
-              )}
-              {hours && <DataField label={t('listing.page.hours')} value={hours} />}
-              {text(p.village_a) && <DataField label={t('listing.page.town')} value={text(p.village_a)} />}
-              {text(p.gov_a) && <DataField label={t('listing.page.governorate')} value={text(p.gov_a)} />}
-            </div>
+          <Section title={t('listing.page.details')} icon={<Info />}>
+            <ListingFacts r={r} visual={visual} />
           </Section>
 
           {text(p.des) && (
-            <Section title={t('listing.page.description')}>
+            <Section title={t('listing.page.description')} icon={<FileText />}>
               <Description value={text(p.des)} />
             </Section>
           )}
 
           {pair && (
-            <Section title={t('media.beforeAfter')}>
+            <Section title={t('media.beforeAfter')} icon={<ArrowLeftRight />}>
               <BeforeAfterPair {...pair} />
             </Section>
           )}
 
           {links.length > 0 && (
-            <Section title={t('listing.page.links')}>
+            <Section title={t('listing.page.links')} icon={<Link2 />}>
               <MediaGallery items={links} />
             </Section>
           )}
 
           {ratingsKey && (
-            <Section title={t('listing.page.ratings')}>
+            <Section title={t('listing.page.ratings')} icon={<Star />}>
               <RatingsBlock layer={ratingsKey.layer} featureId={ratingsKey.featureId} />
             </Section>
           )}
 
           <PropertyRelations target={r.target} propertyId={r.id} />
-          <PropertyServices target={r.target} propertyId={r.id} origin={r.center} props={p} contactSource={SOURCE} />
+          <PropertyServices
+            target={r.target}
+            propertyId={r.id}
+            origin={r.center}
+            props={p}
+            contactSource={SOURCE}
+          />
+          <SafetyTips className="lg:hidden" />
         </div>
       </div>
 
