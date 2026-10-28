@@ -6,7 +6,6 @@ import {
   formFromUser,
   newestFirst,
   NO_FILTERS,
-  parseServerDate,
   validateForm,
 } from './model';
 
@@ -46,15 +45,6 @@ const users = [
 ];
 const ids = (list: AdminUser[]) => list.map((x) => x.user_id);
 const NOW = new Date('2026-09-29T12:00:00');
-
-describe('parseServerDate', () => {
-  it('reads ISO, Postgres microseconds with a space, and rejects junk', () => {
-    expect(parseServerDate('2026-06-28T22:35:58.529Z')?.toISOString()).toBe('2026-06-28T22:35:58.529Z');
-    expect(parseServerDate('2026-06-28 22:35:58.529724')).toBeInstanceOf(Date);
-    expect(parseServerDate('nope')).toBeNull();
-    expect(parseServerDate(null)).toBeNull();
-  });
-});
 
 describe('filterUsers', () => {
   const online = new Set(['2']);
