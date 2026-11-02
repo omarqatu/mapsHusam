@@ -93,7 +93,8 @@ if (process.env.ENABLE_HELMET !== 'false') {
             directives: {
                 defaultSrc: ["'self'"],
                 imgSrc: ["'self'", "data:", "blob:", "https:"],
-                mediaSrc: ["'self'", "https:"],
+                // blob: = a clip picked on the device: the upload form reads its length before sending it.
+                mediaSrc: ["'self'", "blob:", "https:"],
                 fontSrc: ["'self'", "data:"],
                 // 🆕 [تشديد أمني تدريجي]: أُزيلت 'unsafe-eval' - أخطر توجيه بالـ CSP لأنه
                 // يسمح بتنفيذ أي نص كـ كود JS (eval/new Function). لم يعد ضرورياً لأي من
