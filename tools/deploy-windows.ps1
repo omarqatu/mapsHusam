@@ -101,7 +101,33 @@ function Invoke-Robocopy {
     $global:LASTEXITCODE = 0
 }
 
+# After the service stops nothing may listen on the app's port. A node left over from a manual start or an earlier
+# service run kept answering IIS for weeks: every deploy "passed" its smoke test against that old process while the
+# new code never ran. Such a node is ended (and logged); anything else on the port stops the deploy.
+$appPort = ([Uri]$SmokeUrl).Port
+function Clear-AppPort {
+    for ($attempt = 1; $attempt -le 10; $attempt++) {
+        $owners = @(Get-NetTCPConnection -LocalPort $appPort -State Listen -ErrorAction SilentlyContinue |
+            Select-Object -ExpandProperty OwningProcess -Unique)
+        if (-not $owners.Count) { return }
+        foreach ($owner in $owners) {
+            $process = Get-CimInstance Win32_Process -Filter "ProcessId = $owner" -ErrorAction SilentlyContinue
+            if (-not $process) { continue }
+            Write-Host ("Port {0} still held after the service stopped: PID {1}, {2}, started {3}, command: {4}" -f
+                $appPort, $owner, $process.ExecutablePath, $process.CreationDate, $process.CommandLine)
+            if ($process.Name -ne 'node.exe') {
+                throw "Port $appPort is held by $($process.Name) (PID $owner), not a leftover node; stop it by hand."
+            }
+            Stop-Process -Id $owner -Force -ErrorAction SilentlyContinue
+        }
+        Start-Sleep -Seconds 1
+    }
+    throw "Port $appPort is still in use after ending the leftover processes."
+}
+
 function Start-And-SmokeTest {
+    Clear-AppPort
+    $started = [Diagnostics.Stopwatch]::StartNew()
     Start-Service -Name $ServiceName
     $lastError = $null
     for ($attempt = 1; $attempt -le 20; $attempt++) {
@@ -109,8 +135,14 @@ function Start-And-SmokeTest {
             $response = Invoke-WebRequest -Uri $SmokeUrl -UseBasicParsing -TimeoutSec 5
             $health = Invoke-WebRequest -Uri $HealthUrl -UseBasicParsing -TimeoutSec 5
             $healthBody = $health.Content | ConvertFrom-Json
+            # /healthz reports the process uptime: it must be younger than this start, or an old process answered.
+            $alive = (Invoke-WebRequest -Uri ([Uri]::new([Uri]$SmokeUrl, '/healthz')) -UseBasicParsing -TimeoutSec 5).Content |
+                ConvertFrom-Json
+            if ($alive.uptime -gt $started.Elapsed.TotalSeconds + 5) {
+                throw "The app answering on port $appPort has run for $($alive.uptime)s: it is not the process just started."
+            }
             if ($response.StatusCode -eq 200 -and $health.StatusCode -eq 200 -and $healthBody.ok -eq $true) {
-                Write-Host 'Smoke test passed: app and both databases are available.'
+                Write-Host "Smoke test passed: the new process (up $($alive.uptime)s) and both databases are available."
                 return
             }
             $lastError = "HTTP $($response.StatusCode)"
