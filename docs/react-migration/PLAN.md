@@ -1674,6 +1674,11 @@ Web work, plus one new server route (logged under "Server changes"). Showing pho
 Rule: URLs, methods, auth rules and response shapes stay identical; legacy pages keep working.
 Log each change here: **what · why · how to verify · commit**.
 
+- **`/api/get-unique-values`: no filtering by phone for a viewer who may not see phones (review 2026-11-02).** What:
+  a `filter_phone` / `filter_whatsapp` is ignored when `viewer.hideContact`, as `field=phone` already was. Why: a
+  visitor could ask `field=name&filter_phone=0599…` and get the owner's name for a number. Verify: as a visitor
+  with visitor contact off, `curl '/api/get-unique-values?workspace=services&layer=plumber&field=name&filter_phone=<a
+  listed phone>'` returns every name of the type, not that phone's owner.
 - **Expiry notices reach every expired listing (security review 2026-11-02).**
   - **What was wrong:** `server/listing-expiry-notifications.js` spread the snake_case SQL row into
     `listingExpiryNotification`, which reads camelCase. Every key came out as
