@@ -1674,6 +1674,14 @@ Web work, plus one new server route (logged under "Server changes"). Showing pho
 Rule: URLs, methods, auth rules and response shapes stay identical; legacy pages keep working.
 Log each change here: **what · why · how to verify · commit**.
 
+- **Live sockets close when a session is ended (review 2026-11-02).** Password change, admin force-logout (one or
+  all), an admin edit that ends the session, and a listing approval that bumps `token_version` now also disconnect
+  that user's open socket.io connections whose token predates the new version (`disconnectOutdatedSockets` in
+  `server/auth.js`, one second after the change so `force_relogin` reaches the client first). Before, an old socket
+  kept receiving chat and notifications until the page reloaded. A failure here is logged, never a failed request.
+  - **Verify (live, dev DB):** a user socket is connected; the admin force-logs-out that user; the socket gets
+    `io server disconnect` about one second later.
+
 - **Service requests: one open request per person and listing; no cancelling a closed one (review 2026-11-02).**
   - **Double requests:** a partial unique index `service_requests_one_open_uq (user_id, service_layer, feature_id)
     WHERE status IN ('pending','accepted') AND contact_type = 'service_request'`. The route's check-then-insert alone

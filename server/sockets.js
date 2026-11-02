@@ -26,6 +26,7 @@ io.use(async (socket, next) => {
         }
         socket.auth = { uid, role: status.role };
         socket.data.tokenKey = tokenKey(token); // لقطع الاتصال عند تسجيل الخروج (revokeToken)
+        socket.data.tokenVersion = status.tokenVersion; // disconnectOutdatedSockets
         next();
     } catch (e) {
         next(new Error('unauthorized'));
