@@ -6,7 +6,6 @@ import { ALL_TARGETS, type MapTarget } from '@/features/map/targets';
 import { useAuthStore } from '@/store/authStore';
 import {
   ALL_VISIBLE,
-  excludedLayersParam,
   VISIBILITY_KEY,
   isLayerShown,
   isSectionShown,
@@ -43,9 +42,6 @@ export function setVisibility(value: Visibility) {
 
 export const getVisibility = () => useVisibilityStore.getState().value;
 export const useVisibility = () => useVisibilityStore((s) => s.value);
-
-/** `excludedLayers` for `/api/platform-stats`: the public figures leave hidden layers out (the same for admins). */
-export const useExcludedLayers = () => useVisibilityStore((s) => excludedLayersParam(s.value));
 
 // The rule, in one place: admins see everything (they edit hidden layers; the admin page and the layers panel mark
 // what the public does not see); everyone else sees what the admin left on.
