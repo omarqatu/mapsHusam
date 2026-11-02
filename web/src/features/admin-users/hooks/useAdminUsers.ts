@@ -68,13 +68,17 @@ export function useForceLogoutAll() {
   });
 }
 
+const VIEW_TOKEN_RENEW_MS = 25 * 60_000;
+
 /** A fresh 30-minute read-only token for one user; also the profile, then the requests with that token. */
 export function useViewSession(userId: number) {
   const session = useQuery({
     queryKey: adminUserKeys.view(userId),
     queryFn: () => adminUsersApi.viewSession(userId),
     enabled: Number.isInteger(userId) && userId > 0,
-    staleTime: Infinity,
+    // The token lives 30 minutes: renew it before then so a page left open keeps working.
+    staleTime: VIEW_TOKEN_RENEW_MS,
+    refetchInterval: VIEW_TOKEN_RENEW_MS,
     gcTime: 60_000,
     retry: false,
   });
