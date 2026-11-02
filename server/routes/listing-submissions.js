@@ -3,7 +3,7 @@ import rateLimit from 'express-rate-limit';
 import { IS_PROD, app, publicIo } from '../app.js';
 import { realestatePool, servicesPool } from '../database.js';
 import { LAYER_AR_NAMES, SERVICE_TYPE_SEARCH_TERMS, isValidLayer } from '../layers.js';
-import { authStatusCache, requireAdmin, requireAuth } from '../auth.js';
+import { authStatusCache, disconnectOutdatedSockets, requireAdmin, requireAuth } from '../auth.js';
 import { clearProviderLinkedCache, clearPublicListingCaches, notifyUser } from '../state.js';
 import { INSERT_SUBMISSION_SQL, SUBMISSION_MAX_LEN, SUBMITTABLE_LAYERS, SUBMITTABLE_PROPERTY_LAYERS, cleanText, parseListingInput, submissionParams, gridPoint } from '../listings.js';
 import { linkOwner } from '../listing-owners.js';
@@ -269,6 +269,7 @@ app.post('/api/admin/listing-submissions/:id/approve', requireAdmin, async (req,
         publicIo.emit('map_data_updated');
 
         authStatusCache.delete(Number(sub.user_id)); // الدور الجديد يسري فوراً وتُبطل الجلسة القديمة
+        await disconnectOutdatedSockets([sub.user_id]);
         clearProviderLinkedCache();
         clearPublicListingCaches();
         await notifyUser(sub.user_id, 'تمت الموافقة على إعلانك',

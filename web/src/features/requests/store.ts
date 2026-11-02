@@ -34,13 +34,17 @@ interface RequestsUi {
   closeReject: () => void;
 }
 
-export const useRequestsUi = create<RequestsUi>((set) => ({
+const CLOSED = {
   listOpen: false,
   chatId: null,
   ratingFor: null,
   commentFor: null,
   requestFor: null,
   rejectRequestId: null,
+} satisfies Partial<RequestsUi>;
+
+export const useRequestsUi = create<RequestsUi>((set) => ({
+  ...CLOSED,
   openList: () => set({ listOpen: true }),
   closeList: () => set({ listOpen: false }),
   openChat: (chatId) => set({ chatId, listOpen: false }),
@@ -54,3 +58,6 @@ export const useRequestsUi = create<RequestsUi>((set) => ({
   openReject: (rejectRequestId) => set({ rejectRequestId }),
   closeReject: () => set({ rejectRequestId: null }),
 }));
+
+/** Closes every request dialog (another viewer must not inherit the previous one's open chat). */
+export const resetRequestsUi = () => useRequestsUi.setState(CLOSED);

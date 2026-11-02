@@ -57,6 +57,8 @@ app.get('/api/get-unique-values', async (req, res) => {
             if (key.startsWith('filter_')) {
                 const filterField = key.substring('filter_'.length);
                 const filterValue = req.query[key];
+                // A visitor without contact rights must not filter by a phone either: "name where phone = …" names its owner.
+                if (viewer.hideContact && CONTACT_FIELDS.includes(filterField.toLowerCase())) return;
                 if (isValidSqlIdentifier(filterField) && filterField !== field && filterValue) {
                     extraParams.push(filterValue);
                     extraWhere += ` AND "${filterField}" = $${extraParams.length}`;

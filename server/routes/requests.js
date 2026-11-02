@@ -389,8 +389,11 @@ app.post('/api/service-requests/:id/appointment', requireAuth, async (req, res) 
         if (request.status === 'pending' && Number(request.provider_user_id) === uid) {
             return res.status(409).json({ success: false, error: 'اقبل الطلب أولاً، ومعه حدّد الموعد.' });
         }
-        await servicesPool.query(
-            'UPDATE public.service_requests SET appointment_at = $1, updated_at = NOW() WHERE id = $2', [appointment.value, id]);
+        // The status is checked again in the write: the other side may have closed the request since the read.
+        const moved = await servicesPool.query(
+            `UPDATE public.service_requests SET appointment_at = $1, updated_at = NOW()
+             WHERE id = $2 AND status IN ('pending', 'accepted')`, [appointment.value, id]);
+        if (moved.rowCount === 0) return res.status(409).json({ success: false, error: 'لا يمكن تغيير موعد طلب مغلق.' });
 
         const other = Number(request.user_id) === uid ? request.provider_user_id : request.user_id;
         const message = appointment.value
@@ -483,9 +486,13 @@ app.post('/api/service-requests/:id/cancel', requireAuth, async (req, res) => {
         const updateRes = await servicesPool.query(
             `UPDATE public.service_requests 
              SET status = 'cancelled', cancellation_reason = $1, updated_at = NOW() 
-             WHERE id = $2 RETURNING *`,
+             WHERE id = $2 AND status IN ('pending', 'accepted') RETURNING *`,
             [reasonText, requestId]
         );
+        // Both confirmed (completed) or the provider rejected between the read and this write: nothing to cancel.
+        if (updateRes.rowCount === 0) {
+            return res.status(409).json({ success: false, error: 'لا يمكن إلغاء هذا الطلب في حالته الحالية.' });
+        }
 
         const targetUserId = isOwner ? sRequest.provider_user_id : sRequest.user_id;
         await servicesPool.query(

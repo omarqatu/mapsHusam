@@ -17,6 +17,7 @@ import LoginPrompt from '@/features/auth/LoginPrompt';
 import RequestsHost from '@/features/requests/RequestsHost';
 import MyBarriersWatcher from '@/features/map/extras/MyBarriersWatcher';
 import { ProtectedRoute, RoleRoute } from '@/routes/guards';
+import { hasDirectAccessParams, isGuestMode } from '@/routes/access';
 import NotFoundPage from '@/routes/NotFoundPage';
 import PlaceholderPage from '@/routes/PlaceholderPage';
 import { appRoutes, type AppRoute } from '@/routes/routes';
@@ -77,16 +78,8 @@ const shelled = appRoutes.filter((r) => !r.own);
 function MapWelcomeRedirect({ children }: { children: React.ReactNode }) {
   const user = useAuthStore((s) => s.user);
   const location = useLocation();
-  const searchParams = new URLSearchParams(location.search);
-
-  // Check if URL has direct access params (shared location/results)
-  const hasDirectAccess = searchParams.has('x') && searchParams.has('y') || searchParams.has('resultsShare');
-
-  // Check if user entered as guest (stored in localStorage)
-  const isGuest = localStorage.getItem('guest_mode') === 'true';
-
-  // If not logged in and no direct access params and not guest mode, redirect to welcome
-  if (!user && !hasDirectAccess && !isGuest) {
+  // A visitor needs the guest choice or a shared location / results link; otherwise the welcome page.
+  if (!user && !isGuestMode() && !hasDirectAccessParams(new URLSearchParams(location.search))) {
     return <Navigate to="/welcome" replace state={{ from: location.pathname + location.search }} />;
   }
 
@@ -127,7 +120,7 @@ const router = createBrowserRouter([
           ...shelled.filter((r) => r.access === 'public').map(page),
           // The landing page sends a visitor to /welcome (log in / register) rather than to a bare form.
           {
-            element: <ProtectedRoute to="/welcome" />,
+            element: <ProtectedRoute to="/welcome" allowGuest />,
             children: shelled.filter((r) => r.path === '/home' || r.path === '/search').map(page),
           },
           {

@@ -3,7 +3,7 @@ import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import { ADMIN_JWT_SECRET, BCRYPT_SALT_ROUNDS, IS_PROD, app, authLimiter, clearLoginFailures, isLoginLocked, recordLoginFailure, verifyPasswordWithMigration } from '../app.js';
 import { normalizeWhatsappNumber, servicesPool } from '../database.js';
-import { authStatusCache, bearerToken, requireAuth, revokeToken, signSessionToken } from '../auth.js';
+import { authStatusCache, bearerToken, disconnectOutdatedSockets, requireAuth, revokeToken, signSessionToken } from '../auth.js';
 import { notifyUser } from '../state.js';
 import { INSERT_SUBMISSION_SQL, parseListingInput, submissionParams } from '../listings.js';
 import { getHiddenLayers } from '../visibility.js';
@@ -200,6 +200,7 @@ app.post('/api/auth/change-password', authLimiter, requireAuth, async (req, res)
         `;
         const pwUpdate = await servicesPool.query(updatePasswordQuery, [hashedNewPassword, userId]);
         authStatusCache.delete(Number(userId));
+        await disconnectOutdatedSockets([userId]);
         // 🔒 الجلسات الأخرى تنتهي، وهذه الجلسة تستلم توكناً جديداً تلقائياً (auth-fetch.js يحفظ X-New-Token)
         if (pwUpdate.rows[0]) {
             const pwRole = pwUpdate.rows[0].role;

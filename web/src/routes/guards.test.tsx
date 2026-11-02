@@ -14,7 +14,7 @@ function renderAt(path: string) {
       <Routes>
         <Route path="/login" element={<div>login page</div>} />
         <Route path="/welcome" element={<div>welcome page</div>} />
-        <Route element={<ProtectedRoute to="/welcome" />}>
+        <Route element={<ProtectedRoute to="/welcome" allowGuest />}>
           <Route path="/map" element={<div>map</div>} />
         </Route>
         <Route element={<ProtectedRoute />}>
@@ -29,7 +29,23 @@ function renderAt(path: string) {
 }
 
 describe('route guards', () => {
-  beforeEach(() => useAuthStore.setState({ user: null }));
+  beforeEach(() => {
+    useAuthStore.setState({ user: null });
+    localStorage.removeItem('guest_mode');
+  });
+
+  it('a guest or a shared link opens the home page, never the account pages', () => {
+    localStorage.setItem('guest_mode', 'true');
+    const { unmount } = renderAt('/map');
+    expect(screen.getByText('map')).toBeInTheDocument();
+    unmount();
+    const second = renderAt('/inbox');
+    expect(screen.getByText('login page')).toBeInTheDocument();
+    second.unmount();
+    localStorage.removeItem('guest_mode');
+    renderAt('/inbox?x=1&y=1');
+    expect(screen.getByText('login page')).toBeInTheDocument();
+  });
 
   it('sends anonymous visitors to /login', () => {
     renderAt('/inbox');

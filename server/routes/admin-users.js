@@ -2,7 +2,7 @@
 import bcrypt from 'bcrypt';
 import { BCRYPT_SALT_ROUNDS, IS_PROD, app, publicIo } from '../app.js';
 import { realestatePool, servicesPool } from '../database.js';
-import { authStatusCache, requireAdmin } from '../auth.js';
+import { authStatusCache, disconnectOutdatedSockets, requireAdmin } from '../auth.js';
 import { clearProviderLinkedCache, connectedUsers } from '../state.js';
 import { isPropertyLayer, linkOwner, normalizeListingLayer, pruneStaleListingOwners, ready, unlinkOwner } from '../listing-owners.js';
 import { PLATFORM_PROPERTY_LAYERS, PLATFORM_SERVICE_LAYERS } from '../layers.js';
@@ -163,6 +163,7 @@ app.post('/api/admin/users/force-logout', requireAdmin, async (req, res) => {
         // حتى لو كان غير متصل الآن، لأن /api/auth/verify-session سيرفض جلسته
         // في المرة القادمة التي يفتح فيها الصفحة.
         await servicesPool.query('UPDATE public.users SET force_logout_flag = true, token_version = token_version + 1 WHERE user_id = $1', [user_id]);
+        await disconnectOutdatedSockets([user_id]);
         authStatusCache.delete(Number(user_id)); // 🔒 يسري إبطال الجلسة فوراً
 
         // حفظ الإشعار بقاعدة البيانات (يظهر له لاحقاً حتى لو كان غير متصل الآن)
@@ -251,6 +252,7 @@ app.post('/api/admin/users/force-logout-all', requireAdmin, async (req, res) => 
         // المستهدفين، بغض النظر عن كونهم متصلين الآن أم لا. هذا يمنعهم من
         // الدخول التلقائي بجلسة محفوظة قديمة عبر /api/auth/verify-session.
         await servicesPool.query('UPDATE public.users SET force_logout_flag = true, token_version = token_version + 1 WHERE user_id = ANY($1)', [targetUsers]);
+        await disconnectOutdatedSockets(targetUsers);
         authStatusCache.clear(); // 🔒 يسري إبطال الجلسات فوراً
 
         let onlineCount = 0;
@@ -480,6 +482,7 @@ app.post('/api/admin/users/update', requireAdmin, async (req, res) => {
             client.release();
         }
         authStatusCache.delete(Number(user_id)); // 🔒 يسري تغيير الدور/التفعيل فوراً
+        if (sessionEnded) await disconnectOutdatedSockets([user_id]);
         clearProviderLinkedCache(); // ربط مزود الخدمة قد تغيّر
         publicIo.emit('map_data_updated');
 

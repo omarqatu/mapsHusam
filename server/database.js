@@ -331,6 +331,16 @@ async function ensureServiceRequestSchema() {
         await servicesPool.query(`CREATE INDEX IF NOT EXISTS service_requests_user_idx ON public.service_requests (user_id, created_at DESC)`);
         await servicesPool.query(`CREATE INDEX IF NOT EXISTS service_requests_provider_idx ON public.service_requests (provider_user_id, status)`);
         await servicesPool.query(`CREATE INDEX IF NOT EXISTS service_requests_feature_idx ON public.service_requests (service_layer, feature_id)`);
+        // One open service request per person and listing: the route's check-then-insert alone let a double click (or two
+        // tabs) create two. Its 23505 answer is the route's existing 409. Older duplicates would block the index, so it
+        // is skipped with a warning then (the route's check still applies).
+        try {
+            await servicesPool.query(`CREATE UNIQUE INDEX IF NOT EXISTS service_requests_one_open_uq
+                ON public.service_requests (user_id, service_layer, feature_id)
+                WHERE status IN ('pending', 'accepted') AND contact_type = 'service_request'`);
+        } catch (err) {
+            console.warn('⚠️ تعذر إنشاء قيد الطلب المفتوح الواحد (طلبات مكررة قديمة؟):', err.message);
+        }
         console.log('✅ تم التأكد من وجود جداول طلبات الخدمة والدردشة والتقييمات (service_requests, service_request_messages, service_ratings)');
     } catch (err) {
         console.error('⚠️ خطأ أثناء إنشاء جداول طلبات الخدمة:', err.message);

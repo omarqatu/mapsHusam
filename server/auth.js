@@ -107,6 +107,26 @@ export async function revokeToken(token, exp) {
     }
 }
 
+/**
+ * After a token_version bump (password change, account disabled, role change, forced logout) the HTTP API refuses the
+ * old tokens at once, but an open socket stays connected and keeps receiving chats and notifications. This ends every
+ * socket of these users opened with an older version. The short delay lets a `force_relogin` sent just before arrive.
+ */
+export async function disconnectOutdatedSockets(userIds) {
+    const ids = [...new Set(userIds.map(Number).filter((id) => Number.isSafeInteger(id) && id > 0))];
+    if (!ids.length) return;
+    // Called after the change is committed: a failure here is logged, never turned into a failed request.
+    try {
+        const r = await servicesPool.query('SELECT user_id, token_version FROM public.users WHERE user_id = ANY($1::int[])', [ids]);
+        const current = new Map(r.rows.map((row) => [Number(row.user_id), Number(row.token_version) || 0]));
+        const stale = [...io.of('/').sockets.values()].filter((socket) => current.has(socket.auth?.uid) &&
+            (socket.data.tokenVersion ?? 0) < current.get(socket.auth.uid));
+        if (stale.length) setTimeout(() => stale.forEach((socket) => socket.disconnect(true)), 1000).unref();
+    } catch (err) {
+        console.warn('⚠️ تعذر قطع اتصالات socket القديمة:', err.message);
+    }
+}
+
 async function ensureRevokedSessions() {
     try {
         await servicesPool.query(`
