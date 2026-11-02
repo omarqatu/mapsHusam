@@ -68,7 +68,7 @@ export const mapEventsApi = {
     feature_id: string;
     provider_name: string;
     contact_type: ContactType;
-  }) => api.post<{ success: boolean; id: number }>('/api/log-contact-click', body),
+  }) => api.post<{ success: boolean; id: number | null }>('/api/log-contact-click', body),
   /** Legacy "stats" row (dashboard counters). Public endpoint; user_id is the account id or a guest id. */
   saveStat: (body: { user_id: string; provider: string; service: string; source?: MapEventSource }) =>
     api.post<unknown>('/save-stat', body),

@@ -82,7 +82,16 @@ async function notifyExpiredListings(userId = null) {
             const typeName = Object.hasOwn(LAYER_AR_NAMES, listing.layer)
                 ? LAYER_AR_NAMES[listing.layer]
                 : 'إعلان';
-            const notification = listingExpiryNotification({ ...listing, typeName });
+            // The rows are snake_case (SQL); the notice reads camelCase. Spreading the row left featureId / userId /
+            // endDate undefined, so every listing of a layer shared one dedupe key and only the first was ever notified.
+            const notification = listingExpiryNotification({
+                layer: listing.layer,
+                featureId: listing.feature_id,
+                userId: listing.user_id,
+                endDate: listing.end_date,
+                name: listing.name,
+                typeName,
+            });
             await notifyUserOnce(
                 listing.user_id,
                 notification.title,

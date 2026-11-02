@@ -5,6 +5,7 @@ import { app, debugLog, publicIo } from '../app.js';
 import { GEOSERVER_TARGET, servicesPool } from '../database.js';
 import { isValidLayer } from '../layers.js';
 import { PROPERTY_TABLES, localIsoDate, publicProxyQuery } from '../../lib/listing-rules.js';
+import { visitorProxyCheck } from '../../lib/proxy-guard.js';
 import { viewerRules } from '../visibility.js';
 import { SERVICE_TYPE_KEYS } from '../layers.js';
 import { clearPublicListingCaches } from '../state.js';
@@ -125,7 +126,8 @@ app.use('/geoserver-proxy', async (req, res, next) => {
     let proxiedPath = req.path;
     try { proxiedPath = decodeURIComponent(req.path); } catch (e) { return res.status(400).end(); }
     proxiedPath = path.posix.normalize(proxiedPath);
-    if (GEOSERVER_BLOCKED_PATHS.test(proxiedPath) || String(req.query.service || '').toLowerCase() === 'wps') {
+    const serviceParams = Object.entries(req.query || {}).filter(([k]) => k.toLowerCase() === 'service').flatMap(([, v]) => v);
+    if (GEOSERVER_BLOCKED_PATHS.test(proxiedPath) || serviceParams.some(v => String(v).toLowerCase() === 'wps')) {
         console.warn(`🚫 [Proxy Guard] رُفض مسار إداري: ${proxiedPath} من IP: ${req.ip}`);
         return res.status(403).json({ error: 'الوصول لهذا المسار غير مسموح به.' });
     }
@@ -139,6 +141,13 @@ app.use('/geoserver-proxy', async (req, res, next) => {
         if (!isValidLayer(layerOnly) && !PROXY_EXTRA_LAYERS.includes(layerOnly)) {
             console.warn(`🚫 [Proxy Guard] رُفض طلب لطبقة غير مصرح بها: ${rawName} من IP: ${req.ip}`);
             return res.status(403).json({ error: 'الوصول لهذه الطبقة غير مسموح به.' });
+        }
+    }
+    if (!isAdmin) {
+        const verdict = visitorProxyCheck(req.query, req.path, requestedLayers);
+        if (!verdict.ok) {
+            console.warn(`🚫 [Proxy Guard] رُفض طلب (${verdict.error}) من IP: ${req.ip}`);
+            return res.status(verdict.status).json({ error: 'هذا الطلب غير مسموح به.' });
         }
     }
     if (req.method === 'POST' && typeof req.body === 'string' && /<(?:\w+:)?Transaction\b/i.test(req.body)) {
@@ -182,6 +191,7 @@ app.use('/geoserver-proxy', async (req, res, next) => {
             }
             if (request !== 'getfeature') {
                 if (!PUBLIC_WFS_REQUESTS.has(request)) return res.status(403).json({ error: 'هذا الطلب غير مسموح به.' });
+                rewriteQueryString(req, query);
             } else {
                 let columns = null;
                 if (viewer.hideContact) {
@@ -198,6 +208,9 @@ app.use('/geoserver-proxy', async (req, res, next) => {
                 }
                 rewriteQueryString(req, r.query);
             }
+        } else {
+            // GeoServer gets exactly the parameters checked above (the parser drops anything past its limit).
+            rewriteQueryString(req, req.query);
         }
     }
     // جواب طبقة إعلانات يختلف حسب من يطلبه (المشرف يرى المسحوب): لا يُخزَّن في المتصفح أو أي وسيط

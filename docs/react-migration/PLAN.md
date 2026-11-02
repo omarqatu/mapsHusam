@@ -1674,6 +1674,51 @@ Web work, plus one new server route (logged under "Server changes"). Showing pho
 Rule: URLs, methods, auth rules and response shapes stay identical; legacy pages keep working.
 Log each change here: **what · why · how to verify · commit**.
 
+- **Expiry notices reach every expired listing (security review 2026-11-02).**
+  - **What was wrong:** `server/listing-expiry-notifications.js` spread the snake_case SQL row into
+    `listingExpiryNotification`, which reads camelCase. Every key came out as
+    `listing-expiry:<layer>:undefined:undefined:undefined`, so after the first expired listing of a layer every
+    other one hit `ON CONFLICT DO NOTHING` and its provider was never told.
+  - **Now:** the caller passes the fields by name. The helper refuses missing ids instead of building a shared key,
+    and keys a pg `DATE` on its local calendar day.
+  - **After the deploy:** each listing already expired and never notified gets its one notice on the next check.
+  - **Verify:** `node --test lib/listing-expiry-notification.test.js`. Live on the dev DB: two expired listings of
+    one owner, then `GET /api/my-listings` gives two notices with their own keys.
+- **Contact clicks: only real, public listings, credited to their owner (security review 2026-11-02, the owner
+  chose to keep rating after a call).** `POST /api/log-contact-click` logs a call or WhatsApp click as a `completed`
+  row, and the caller may then rate the listing. The user kept this and asked for the fixes below.
+  - **Before:** any `feature_id` was accepted, including missing, withdrawn and expired listings and layers such as
+    `Location`. The provider came from the legacy `users.service_layer` / `feature_id` pair, which nearly always
+    missed, so the row was credited to the caller. The ratings therefore never reached `/api/publisher-rating`.
+  - **Now:** the listing must exist and be public (property table or service type, `publicListingSql`), otherwise
+    404. The provider comes from `listingProvider()` (`listing_owners`). An owner clicking their own listing logs
+    nothing (`id: null`), so they cannot rate themselves.
+  - **Numbers:** call and WhatsApp rows carry no account numbers on either side, in `GET /api/service-requests` and
+    in the request messages. The caller sees only the listing's own number, and the provider never gets the
+    caller's, since nobody agreed to anything.
+
+  Response shapes are unchanged (`id` may now be null). Verify (live, dev DB): `/tmp`-style script against
+  `dev.sh server`. A click on an owned plumber is credited to its owner. Expired, missing and `Location` listings
+  get 404. The owner's own click gives `id: null`. The rows show no account numbers to either side. Rating the
+  owned listing after the click succeeds.
+- **GeoServer proxy: a non-admin may only make map reads (security review 2026-11-02).** What: `lib/proxy-guard.js`
+  (`visitorProxyCheck`), called by `/geoserver-proxy` for every non-admin request. It allows only WMS GetMap /
+  GetFeatureInfo / GetLegendGraphic / GetCapabilities and WFS GetFeature / GetCapabilities / DescribeFeatureType,
+  on `/ows`, `/wfs`, `/wms` (optionally after a workspace). A data request must name its layer, and `resourceId`,
+  `STOREDQUERY_ID` and `sld*` are refused. Every parameter must be one string, and names are compared in any case
+  (no repeats, no case variants, no nested keys). Names must be plain ASCII: GeoServer upper-cases names in Java,
+  which folds `ſ` into `S` and `ı` into `I`, so `layerſ` would reach it as `LAYERS` unchecked. The path is matched
+  raw, so an encoded `..` or `/` is refused. The forwarded query string is then rebuilt from exactly the
+  checked values. The WPS block now also reads `SERVICE` in any case for admins. Why: three ways around the old
+  guard, each confirmed to reach GeoServer through the old code:
+  - a WFS 2.0 GetFeature by `resourceId` or a stored query with no layer parameter skipped the layer whitelist and
+    the listing filter, so a visitor could read withdrawn or hidden listings with their phone numbers;
+  - `SERVICE=WPS` in capitals passed the lower-case check;
+  - a layer name placed after Express's 1000-parameter limit was never checked, but the original URL was forwarded.
+
+  Admin requests and everything the app sends are unchanged. Verify: `node --test lib/proxy-guard.test.js`; with
+  the server pointed at a stub GeoServer, the three attacks get 403 (200 before), the aerial tile request gets 200,
+  and a layer appended after 1000 dummy parameters is not forwarded.
 - **CSP `media-src` allows `blob:` (2026-11-02, Husam: "uploading a video does nothing").** What: `server/app.js` adds
   `blob:` to `mediaSrc`. Why: `VideoManager.inspectVideo` reads a picked clip's length from a `blob:` URL before
   uploading. `media-src 'self' https:` blocked that, so every clip was refused as "unsupported" in the browser
