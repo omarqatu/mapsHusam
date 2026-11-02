@@ -1674,6 +1674,16 @@ Web work, plus one new server route (logged under "Server changes"). Showing pho
 Rule: URLs, methods, auth rules and response shapes stay identical; legacy pages keep working.
 Log each change here: **what · why · how to verify · commit**.
 
+- **Expiry notices reach every expired listing (security review 2026-11-02).**
+  - **What was wrong:** `server/listing-expiry-notifications.js` spread the snake_case SQL row into
+    `listingExpiryNotification`, which reads camelCase. Every key came out as
+    `listing-expiry:<layer>:undefined:undefined:undefined`, so after the first expired listing of a layer every
+    other one hit `ON CONFLICT DO NOTHING` and its provider was never told.
+  - **Now:** the caller passes the fields by name. The helper refuses missing ids instead of building a shared key,
+    and keys a pg `DATE` on its local calendar day.
+  - **After the deploy:** each listing already expired and never notified gets its one notice on the next check.
+  - **Verify:** `node --test lib/listing-expiry-notification.test.js`. Live on the dev DB: two expired listings of
+    one owner, then `GET /api/my-listings` gives two notices with their own keys.
 - **Contact clicks: only real, public listings, credited to their owner (security review 2026-11-02, the owner
   chose to keep rating after a call).** `POST /api/log-contact-click` logs a call or WhatsApp click as a `completed`
   row, and the caller may then rate the listing. The user kept this and asked for the fixes below.
