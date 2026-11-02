@@ -1674,6 +1674,11 @@ Web work, plus one new server route (logged under "Server changes"). Showing pho
 Rule: URLs, methods, auth rules and response shapes stay identical; legacy pages keep working.
 Log each change here: **what · why · how to verify · commit**.
 
+- **CORS: localhost by host name, not by substring (review 2026-11-02).** What: `corsOriginCheck` allows a development
+  origin only when its host is exactly `localhost`, `127.0.0.1` or `[::1]`. Why: `origin.includes('localhost')` also
+  let `https://localhost.evil.com` through, with credentials. Sessions use Bearer tokens, so the impact was small.
+  Verify: `curl -sI -H 'Origin: https://localhost.evil.com' <site>/api/platform-stats` has no
+  `access-control-allow-origin`, and `http://localhost:5173` still has it.
 - **`/api/get-unique-values`: no filtering by phone for a viewer who may not see phones (review 2026-11-02).** What:
   a `filter_phone` / `filter_whatsapp` is ignored when `viewer.hideContact`, as `field=phone` already was. Why: a
   visitor could ask `field=name&filter_phone=0599…` and get the owner's name for a number. Verify: as a visitor

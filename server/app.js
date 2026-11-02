@@ -74,11 +74,19 @@ if (!ALLOWED_ORIGINS) {
     console.warn('⚠️ [أمان] متغير البيئة ALLOWED_ORIGINS غير مضبوط - سيتم السماح لأي دومين بالوصول عبر CORS مؤقتاً. اضبطه بالإنتاج لتقييد الوصول.');
 }
 
+function isLocalOrigin(origin) {
+    try {
+        return ['localhost', '127.0.0.1', '[::1]'].includes(new URL(origin).hostname);
+    } catch {
+        return false;
+    }
+}
+
 function corsOriginCheck(origin, callback) {
     // طلبات بدون origin (مثل curl أو تطبيقات موبايل أو نفس السيرفر) نسمح بها دائماً
     if (!origin || !ALLOWED_ORIGINS) return callback(null, true);
-    // السماح بـ localhost أثناء التطوير
-    if (origin.includes('localhost') || origin.includes('127.0.0.1')) return callback(null, true);
+    // السماح بـ localhost أثناء التطوير: الاسم نفسه، لا أي دومين يحتويه (كان localhost.evil.com يمر)
+    if (isLocalOrigin(origin)) return callback(null, true);
     if (ALLOWED_ORIGINS.includes(origin)) return callback(null, true);
     return callback(new Error('غير مسموح بالوصول من هذا الدومين (CORS)'));
 }
