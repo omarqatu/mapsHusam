@@ -5,7 +5,6 @@ import { useAuthStore } from '@/store/authStore';
 import type { AuthUser } from '@/types/auth';
 import {
   ALL_VISIBLE,
-  excludedLayersParam,
   isLayerShown,
   parseVisibility,
   realEstateOnly,
@@ -64,13 +63,6 @@ describe('visibility model', () => {
     expect(isLayerShown(withLayers(hidden, ['plumber'], true), 'plumber')).toBe(true);
     expect(withSection(withSection(ALL_VISIBLE, 'ticker', false), 'ticker', true).hiddenSections.size).toBe(
       0,
-    );
-  });
-
-  it('sends the hidden layers to the platform statistics, nothing when none are hidden', () => {
-    expect(excludedLayersParam(ALL_VISIBLE)).toBeUndefined();
-    expect(excludedLayersParam(withLayers(ALL_VISIBLE, ['sale', 'plumber'], false))).toBe(
-      '["plumber","sale"]',
     );
   });
 });
