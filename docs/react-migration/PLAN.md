@@ -1674,6 +1674,24 @@ Web work, plus one new server route (logged under "Server changes"). Showing pho
 Rule: URLs, methods, auth rules and response shapes stay identical; legacy pages keep working.
 Log each change here: **what · why · how to verify · commit**.
 
+- **GeoServer proxy: a non-admin may only make map reads (security review 2026-11-02).** What: `lib/proxy-guard.js`
+  (`visitorProxyCheck`), called by `/geoserver-proxy` for every non-admin request. It allows only WMS GetMap /
+  GetFeatureInfo / GetLegendGraphic / GetCapabilities and WFS GetFeature / GetCapabilities / DescribeFeatureType,
+  on `/ows`, `/wfs`, `/wms` (optionally after a workspace). A data request must name its layer, and `resourceId`,
+  `STOREDQUERY_ID` and `sld*` are refused. Every parameter must be one string, and names are compared in any case
+  (no repeats, no case variants, no nested keys). Names must be plain ASCII: GeoServer upper-cases names in Java,
+  which folds `ſ` into `S` and `ı` into `I`, so `layerſ` would reach it as `LAYERS` unchecked. The path is matched
+  raw, so an encoded `..` or `/` is refused. The forwarded query string is then rebuilt from exactly the
+  checked values. The WPS block now also reads `SERVICE` in any case for admins. Why: three ways around the old
+  guard, each confirmed to reach GeoServer through the old code:
+  - a WFS 2.0 GetFeature by `resourceId` or a stored query with no layer parameter skipped the layer whitelist and
+    the listing filter, so a visitor could read withdrawn or hidden listings with their phone numbers;
+  - `SERVICE=WPS` in capitals passed the lower-case check;
+  - a layer name placed after Express's 1000-parameter limit was never checked, but the original URL was forwarded.
+
+  Admin requests and everything the app sends are unchanged. Verify: `node --test lib/proxy-guard.test.js`; with
+  the server pointed at a stub GeoServer, the three attacks get 403 (200 before), the aerial tile request gets 200,
+  and a layer appended after 1000 dummy parameters is not forwarded.
 - **Link previews for a listing's page (`GET /l/:key/:id`, new route, growth round 2026-10-15).** What: when the built
   app is served, `server/frontend.js` answers `/l/<type>/<id>` with the same `index.html`, but with the listing's
   `<title>`, description, `og:title` / `og:description` (type · place · price · the start of the description),
