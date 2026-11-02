@@ -100,7 +100,8 @@ foreach ($folder in ($oldFolders | Sort-Object -Unique)) {
 
 # --- 4. Start-at-boot entries that would bring PM2 back --------------------------------------------------------
 $tasks = @(Get-ScheduledTask -ErrorAction SilentlyContinue | Where-Object {
-    ($_.Actions | ForEach-Object { "$($_.Execute) $($_.Arguments)" }) -match 'pm2'
+    # COM-handler actions have no Execute / Arguments.
+    ($_.Actions | ForEach-Object { "$(Get-Prop $_ 'Execute') $(Get-Prop $_ 'Arguments')" }) -match 'pm2'
 })
 $pm2Services = @(Get-CimInstance Win32_Service | Where-Object { $_.Name -ne $ServiceName -and ($_.PathName -match 'pm2' -or $_.Name -match 'pm2') })
 $runKeys = 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Run', 'HKLM:\Software\Microsoft\Windows\CurrentVersion\Run',
