@@ -63,11 +63,16 @@ $pm2Home = if ($env:PM2_HOME) { $env:PM2_HOME } else { Join-Path $env:USERPROFIL
 $dump = Join-Path $pm2Home 'dump.pm2'
 $oldFolders = @()
 if (Test-Path $dump) {
-    # Windows PowerShell 5.1 emits a JSON array as one object; foreach still walks its items.
-    $apps = Get-Content $dump -Raw | ConvertFrom-Json
-    foreach ($a in $apps) {
-        $cwd = Get-Prop $a 'pm_cwd'
-        Say "PM2 saved app '$(Get-Prop $a 'name')': $(Get-Prop $a 'pm_exec_path') (folder $cwd)" 'Yellow'
+    # Read with regexes, not ConvertFrom-Json: PM2 saves the environment, which holds keys differing only in case
+    # (username / USERNAME) that Windows PowerShell 5.1 refuses to parse.
+    $text = Get-Content $dump -Raw
+    $jsonString = '"((?:[^"\\]|\\.)*)"'
+    foreach ($m in [regex]::Matches($text, '"pm_exec_path"\s*:\s*' + $jsonString)) {
+        Say "PM2 saved app script: $([regex]::Unescape($m.Groups[1].Value))" 'Yellow'
+    }
+    foreach ($m in [regex]::Matches($text, '"pm_cwd"\s*:\s*' + $jsonString)) {
+        $cwd = [regex]::Unescape($m.Groups[1].Value)
+        Say "PM2 saved app folder: $cwd" 'Yellow'
         if ($cwd) { $oldFolders += $cwd }
     }
 } else { Say "No PM2 saved list at $dump." }
