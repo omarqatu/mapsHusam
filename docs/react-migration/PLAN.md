@@ -1674,6 +1674,15 @@ Web work, plus one new server route (logged under "Server changes"). Showing pho
 Rule: URLs, methods, auth rules and response shapes stay identical; legacy pages keep working.
 Log each change here: **what · why · how to verify · commit**.
 
+- **Service requests: one open request per person and listing; no cancelling a closed one (review 2026-11-02).**
+  - **Double requests:** a partial unique index `service_requests_one_open_uq (user_id, service_layer, feature_id)
+    WHERE status IN ('pending','accepted') AND contact_type = 'service_request'`. The route's check-then-insert alone
+    let a double click create two; the index's 23505 is the route's existing 409. If old duplicates block it, it is
+    skipped with a warning.
+  - **Cancel and appointment:** the UPDATE repeats the status condition. A cancel that read `accepted` could
+    overwrite a `completed` that both sides confirmed in between; such a write now answers 409.
+  - **Verify (live, dev DB):** two simultaneous requests give 200 and 409. A completed request cannot be cancelled,
+    and an open one can.
 - **CORS: localhost by host name, not by substring (review 2026-11-02).** What: `corsOriginCheck` allows a development
   origin only when its host is exactly `localhost`, `127.0.0.1` or `[::1]`. Why: `origin.includes('localhost')` also
   let `https://localhost.evil.com` through, with credentials. Sessions use Bearer tokens, so the impact was small.
