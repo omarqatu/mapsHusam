@@ -1,10 +1,10 @@
 // Service requests between a user and a provider: request, answer, chat, confirm, rate; contact clicks.
 import { IS_PROD, app } from '../app.js';
 import { servicesPool } from '../database.js';
-import { LAYER_AR_NAMES, REAL_ESTATE_LAYERS, getPoolForLayer, isValidLayer } from '../layers.js';
+import { LAYER_AR_NAMES, REAL_ESTATE_LAYERS, SERVICE_TYPE_KEYS, getPoolForLayer, isValidLayer } from '../layers.js';
 import { requireAdmin, requireAuth } from '../auth.js';
 import { getSocketIdForUser } from '../state.js';
-import { isLayerHidden } from '../../lib/listing-rules.js';
+import { isLayerHidden, publicListingSql } from '../../lib/listing-rules.js';
 import { getHiddenLayers } from '../visibility.js';
 import { isPropertyLayer, listingProvider, ready as ownersReady } from '../listing-owners.js';
 import { appointmentText, parseAppointment } from '../../lib/appointment.js';
@@ -85,6 +85,25 @@ async function getFeatureContactInfo(serviceLayer, featureId) {
         console.error(`⚠️ خطأ أثناء جلب بيانات تواصل مزود الخدمة من طبقة [${serviceLayer}]:`, err.message);
         return { whatsapp: null, phone: null };
     }
+}
+
+// A call / WhatsApp click is logged as a `completed` row so the caller can rate the listing afterwards. Nobody agreed
+// to anything, so no account numbers travel on such a row: the caller already has the listing's own number, and the
+// provider does not get the caller's.
+const isDirectContact = (r) => r.contact_type === 'call' || r.contact_type === 'whatsapp';
+
+/** True when this listing exists and is public (not withdrawn or expired): only those can be contacted and rated. */
+async function isPublicListing(layer, featureId) {
+    if (isPropertyLayer(layer)) {
+        const r = await getPoolForLayer(layer).query(
+            `SELECT 1 FROM public."${layer}" WHERE fid = $1 AND ${publicListingSql(true)}`, [featureId]);
+        return r.rowCount > 0;
+    }
+    if (!SERVICE_TYPE_KEYS.includes(layer)) return false;
+    const r = await servicesPool.query(
+        `SELECT 1 FROM public.service_all WHERE id = $1 AND discriminator = $2 AND ${publicListingSql(false)}`,
+        [featureId, layer]);
+    return r.rowCount > 0;
 }
 
 // 1) إنشاء طلب خدمة جديد (المستخدم يضغط "طلب الخدمة" بالبوب أب)
@@ -228,7 +247,17 @@ app.get('/api/service-requests', requireAuth, async (req, res) => {
         // - رقم واتساب المستخدم الطالب: من عمود whatsapp_number بجدول users.
         // - رقم هاتف وواتساب مزود الخدمة: من جدول طبقة الخدمة نفسها (عمود whatsapp)
         await Promise.all(requests.map(async (r) => {
-            if (r.status === 'completed') {
+            if (isDirectContact(r)) {
+                const fromListing = await getFeatureContactInfo(r.service_layer, r.feature_id);
+                r.requester_phone = null;
+                r.requester_whatsapp = null;
+                r.provider_phone = null;
+                r.provider_whatsapp = null;
+                r.userPhone = null;
+                r.userWhatsapp = null;
+                r.providerPhone = fromListing.phone;
+                r.providerWhatsapp = fromListing.whatsapp;
+            } else if (r.status === 'completed') {
                 const providerContact = await getProviderContactInfo(r.service_layer, r.feature_id, r.provider_user_id);
                 r.userPhone = r.requester_phone || null;
                 r.userWhatsapp = r.requester_whatsapp || null;
@@ -509,7 +538,7 @@ app.get('/api/service-requests/:id/messages', requireAuth, async (req, res) => {
             requestStatus: request.status
         };
 
-        if (request.status === 'completed') {
+        if (request.status === 'completed' && !isDirectContact(request)) {
             // 🆕 استخدام phone و whatsapp_number من جدول users
             const userContactResult = await servicesPool.query(
                 'SELECT phone, whatsapp_number FROM public.users WHERE user_id = $1',
@@ -1034,15 +1063,14 @@ app.post('/api/log-contact-click', requireAuth, async (req, res) => {
         );
         if (recent.rows.length > 0) return res.json({ success: true, id: recent.rows[0].id });
 
-        // محاولة العثور على مزود خدمة مرتبط
-        const providerResult = await servicesPool.query(
-            `SELECT user_id, full_name, phone
-             FROM public.users
-             WHERE role = 'provider' AND service_layer = $1 AND feature_id = $2 LIMIT 1`,
-            [service_layer, feature_id]
-        );
-
-        let provider_user_id = null;
+        if (!(await isPublicListing(service_layer, Number(feature_id)))) {
+            return res.status(404).json({ success: false, error: 'الإعلان غير موجود.' });
+        }
+        // The account that owns this listing (listing_owners), not the legacy users.service_layer/feature_id pair.
+        const provider = await listingProvider(service_layer, Number(feature_id));
+        // An owner calling their own listing is not a contact (and must not open a way to rate it).
+        if (provider && Number(provider.user_id) === Number(user_id)) return res.json({ success: true, id: null });
+        let provider_user_id = provider ? provider.user_id : null;
         // 🆕 [إصلاح]: نُعطي الأولوية دائماً للاسم الفعلي المُرسل من الواجهة
         // (وهو اسم مزود الخدمة الحقيقي كما أُدخل بحقل "name" بالمعلم على
         // الخريطة)، وليس اسم الطبقة. اسم الطبقة يبقى فقط كحل أخير جداً في
@@ -1050,18 +1078,7 @@ app.post('/api/log-contact-click', requireAuth, async (req, res) => {
         // 🔒 تنظيف الاسم القادم من العميل (منع رموز HTML + تحديد الطول)
         const cleanProviderName = (provider_name === undefined || provider_name === null)
             ? '' : String(provider_name).replace(/[<>]/g, '').trim().slice(0, 100);
-        let final_provider_name = cleanProviderName !== '' ? cleanProviderName : null;
-
-        if (providerResult.rows.length > 0) {
-            provider_user_id = providerResult.rows[0].user_id;
-            // إذا لم تُرسل الواجهة اسماً صريحاً، نستخدم اسم صاحب الحساب الإداري كبديل
-            if (!final_provider_name) {
-                final_provider_name = providerResult.rows[0].full_name;
-            }
-        } else if (!final_provider_name) {
-            // لا يوجد مزود مرتبط ولا اسم مُرسل من الواجهة: نستخدم اسم الطبقة كحل أخير فقط
-            final_provider_name = service_layer;
-        }
+        const final_provider_name = cleanProviderName || provider?.full_name || service_layer;
 
         // إذا لم يوجد مزود خدمة مرتبط، نستخدم user_id نفسه كـ provider_user_id مؤقتاً
         if (!provider_user_id) {

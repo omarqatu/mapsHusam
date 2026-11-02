@@ -1674,6 +1674,23 @@ Web work, plus one new server route (logged under "Server changes"). Showing pho
 Rule: URLs, methods, auth rules and response shapes stay identical; legacy pages keep working.
 Log each change here: **what · why · how to verify · commit**.
 
+- **Contact clicks: only real, public listings, credited to their owner (security review 2026-11-02, the owner
+  chose to keep rating after a call).** `POST /api/log-contact-click` logs a call or WhatsApp click as a `completed`
+  row, and the caller may then rate the listing. The user kept this and asked for the fixes below.
+  - **Before:** any `feature_id` was accepted, including missing, withdrawn and expired listings and layers such as
+    `Location`. The provider came from the legacy `users.service_layer` / `feature_id` pair, which nearly always
+    missed, so the row was credited to the caller. The ratings therefore never reached `/api/publisher-rating`.
+  - **Now:** the listing must exist and be public (property table or service type, `publicListingSql`), otherwise
+    404. The provider comes from `listingProvider()` (`listing_owners`). An owner clicking their own listing logs
+    nothing (`id: null`), so they cannot rate themselves.
+  - **Numbers:** call and WhatsApp rows carry no account numbers on either side, in `GET /api/service-requests` and
+    in the request messages. The caller sees only the listing's own number, and the provider never gets the
+    caller's, since nobody agreed to anything.
+
+  Response shapes are unchanged (`id` may now be null). Verify (live, dev DB): `/tmp`-style script against
+  `dev.sh server`. A click on an owned plumber is credited to its owner. Expired, missing and `Location` listings
+  get 404. The owner's own click gives `id: null`. The rows show no account numbers to either side. Rating the
+  owned listing after the click succeeds.
 - **GeoServer proxy: a non-admin may only make map reads (security review 2026-11-02).** What: `lib/proxy-guard.js`
   (`visitorProxyCheck`), called by `/geoserver-proxy` for every non-admin request. It allows only WMS GetMap /
   GetFeatureInfo / GetLegendGraphic / GetCapabilities and WFS GetFeature / GetCapabilities / DescribeFeatureType,
