@@ -2,36 +2,19 @@ import { Navigate, Outlet, useLocation } from 'react-router';
 import { useAuthStore } from '@/store/authStore';
 import type { Role } from '@/types/auth';
 import ForbiddenPage from './ForbiddenPage';
+import { hasDirectAccessParams, isGuestMode } from './access';
 
-/** Check if URL has specific parameters that should bypass the welcome page (shared locations, results, etc.) */
-function hasDirectAccessParams(searchParams: URLSearchParams): boolean {
-  return (
-    searchParams.has('x') && searchParams.has('y') ||
-    searchParams.has('resultsShare')
-  );
-}
-
-/** Any logged-in user; otherwise → `to` (default /login) and back afterwards. The home page sends visitors to /welcome. */
-export function ProtectedRoute({ to = '/login' }: { to?: string }) {
+/**
+ * Any logged-in user; otherwise → `to` (default /login) and back afterwards. `allowGuest` (only the home page and
+ * /search) also lets in a visitor who chose "browse as guest" or opened a shared location / results link: those pages
+ * work without an account. The account pages (profile, my listings, notifications…) never do.
+ */
+export function ProtectedRoute({ to = '/login', allowGuest = false }: { to?: string; allowGuest?: boolean }) {
   const user = useAuthStore((s) => s.user);
   const location = useLocation();
-  const searchParams = new URLSearchParams(location.search);
-
-  // Check if guest mode (user clicked "Enter as guest" button - stored in localStorage)
-  const isGuest = typeof window !== 'undefined' && localStorage.getItem('guest_mode') === 'true';
-
-  // If not logged in and URL has direct access params (shared location/results), allow access
-  if (!user && hasDirectAccessParams(searchParams)) {
-    return <Outlet />;
-  }
-
-  // If not logged in and guest mode, allow access
-  if (!user && isGuest) {
-    return <Outlet />;
-  }
-
-  if (!user) return <Navigate to={to} replace state={{ from: location.pathname + location.search }} />;
-  return <Outlet />;
+  if (user) return <Outlet />;
+  if (allowGuest && (isGuestMode() || hasDirectAccessParams(new URLSearchParams(location.search)))) return <Outlet />;
+  return <Navigate to={to} replace state={{ from: location.pathname + location.search }} />;
 }
 
 /** Logged in AND one of `roles`. UX only — every endpoint re-checks on the server. */

@@ -7,10 +7,22 @@ import { queryClient } from './api/queryClient';
 import { captureInstallPrompt } from './lib/installPrompt';
 import { registerServiceWorker } from './lib/pwa';
 import { useAuthStore } from './store/authStore';
+import { resetRequestsUi } from './features/requests/store';
 
-// Logging out (manual, 401, force_relogin) must not leave the previous user's data in the cache.
+// Every change of viewer (log in, log out — manual, 401, force_relogin — or another account) starts from an empty
+// cache: the server shapes its answers by viewer (phones hidden from visitors, withdrawn listings for admins), and the
+// previous user's open chat must not carry over. Logging in also ends the "browse as guest" choice.
 useAuthStore.subscribe((state, prev) => {
-  if (prev.user && !state.user) queryClient.clear();
+  if (prev.user?.user_id === state.user?.user_id) return;
+  queryClient.clear();
+  resetRequestsUi();
+  if (state.user) {
+    try {
+      localStorage.removeItem('guest_mode');
+    } catch {
+      /* storage blocked: nothing was stored either */
+    }
+  }
 });
 
 registerServiceWorker();
