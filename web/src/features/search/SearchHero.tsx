@@ -1,6 +1,6 @@
 import { useTranslation } from 'react-i18next';
 import { usePlatformStats } from '@/api/platform';
-import { useExcludedLayers, useSectionShown } from '@/features/visibility/store';
+import { useSectionShown } from '@/features/visibility/store';
 import { formatNumber } from '@/lib/format';
 import { targetLabelKey, type MapTarget } from '../map/targets';
 import HeroBackdrop from './HeroBackdrop';
@@ -22,7 +22,7 @@ interface Props {
 export default function SearchHero({ term, onCommit, onPick, searchRef }: Props) {
   const { t, i18n } = useTranslation();
   const statsOn = useSectionShown('stats');
-  const s = usePlatformStats(statsOn, useExcludedLayers()).data;
+  const s = usePlatformStats(statsOn).data;
   const n = (v: number | undefined) => (v === undefined ? '—' : formatNumber(v, i18n.language));
   const figures = [
     { value: s?.featuresCount, label: t('searchPage.statProviders') },

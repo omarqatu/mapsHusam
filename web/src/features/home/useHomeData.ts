@@ -1,7 +1,6 @@
 import { useMemo } from 'react';
 import { useNotifications } from '@/api/notifications';
 import { usePlatformStats } from '@/api/platform';
-import { useExcludedLayers } from '@/features/visibility/store';
 import { useIncomingRequests, useMyRequests, usePendingRatings } from '@/api/requests';
 import { useUnseen } from '@/features/requests/unseen';
 import { useAdminUsers } from '@/features/admin-users/hooks/useAdminUsers';
@@ -48,7 +47,7 @@ export function useHomeData(): HomeData {
   const ratings = usePendingRatings();
   const notifications = useNotifications();
   const users = useAdminUsers(isAdmin);
-  const platform = usePlatformStats(true, useExcludedLayers());
+  const platform = usePlatformStats();
   const unseenIds = useUnseen((s) => s.ids);
 
   const requests = useMemo<RequestSummary>(() => {

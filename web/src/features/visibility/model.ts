@@ -155,10 +155,6 @@ export function isZeroRating(rating: unknown): boolean {
   return Number.isFinite(value) && value === 0;
 }
 
-/** Keys for `/api/platform-stats?excludedLayers=` (the server accepts the same `rent` / `sale` / `land` aliases). */
-export const excludedLayersParam = (v: Visibility) =>
-  v.hiddenLayers.size ? JSON.stringify([...v.hiddenLayers].sort()) : undefined;
-
 /** Shows or hides a set of layers (a whole group, or one type). */
 export function withLayers(v: Visibility, keys: readonly string[], shown: boolean): Visibility {
   const next = new Set(v.hiddenLayers);

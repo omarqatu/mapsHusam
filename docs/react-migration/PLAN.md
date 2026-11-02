@@ -1719,6 +1719,13 @@ Log each change here: **what · why · how to verify · commit**.
   Admin requests and everything the app sends are unchanged. Verify: `node --test lib/proxy-guard.test.js`; with
   the server pointed at a stub GeoServer, the three attacks get 403 (200 before), the aerial tile request gets 200,
   and a layer appended after 1000 dummy parameters is not forwarded.
+- **CSP `media-src` allows `blob:` (2026-11-02, Husam: "uploading a video does nothing").** What: `server/app.js` adds
+  `blob:` to `mediaSrc`. Why: `VideoManager.inspectVideo` reads a picked clip's length from a `blob:` URL before
+  uploading. `media-src 'self' https:` blocked that, so every clip was refused as "unsupported" in the browser
+  and no upload was ever sent. `blob:` only names data the page itself made from a file the user picked, as
+  `img-src` already allows. Verify: in Chrome, a page with the old policy gets a CSP error and `onerror` for a blob
+  video, and with the new policy `loadedmetadata` with its duration. On the site: `curl -sI / | grep
+  content-security` shows `media-src 'self' blob: https:`.
 - **Link previews for a listing's page (`GET /l/:key/:id`, new route, growth round 2026-10-15).** What: when the built
   app is served, `server/frontend.js` answers `/l/<type>/<id>` with the same `index.html`, but with the listing's
   `<title>`, description, `og:title` / `og:description` (type · place · price · the start of the description),
