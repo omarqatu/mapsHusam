@@ -2305,7 +2305,7 @@
     },
     "video": {
       "title": "Listing video (optional)",
-      "hint": "Up to {{max}} MP4 or WebM videos. Each can be up to {{size}} MB and {{seconds}} seconds long.",
+      "hint": "Up to {{max}} videos (MP4, MOV or WebM). Each can be up to {{size}} MB and {{seconds}} seconds long.",
       "add": "Add video",
       "remove": "Remove",
       "uploaded": "Video uploaded.",
@@ -2313,7 +2313,7 @@
       "full": "Limit reached ({{max}} videos).",
       "tooLarge": "The video is larger than {{size}} MB.",
       "tooLong": "The video must be {{seconds}} seconds or shorter.",
-      "unsupported": "Choose a valid MP4 or WebM video.",
+      "unsupported": "Choose a valid MP4, MOV or WebM video.",
       "failed": "Could not upload the video.",
       "removeFailed": "Could not remove the video."
     },
