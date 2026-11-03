@@ -1674,6 +1674,18 @@ Web work, plus one new server route (logged under "Server changes"). Showing pho
 Rule: URLs, methods, auth rules and response shapes stay identical; legacy pages keep working.
 Log each change here: **what · why · how to verify · commit**.
 
+- **Listing videos and before/after pictures could not be saved at all (2026-11-03).** Two UPDATEs in
+  `server/routes/my-listings.js` numbered their WHERE parameters wrongly: the video list (`changeVideoList`, two
+  values before the WHERE) started it at `$2`, the before/after side (`swapSide`, one value) at `$3`. Postgres refused
+  both ("bind message supplies 4 parameters, but prepared statement requires 3"), so every video upload answered
+  «فشل رفع الفيديو» whatever the file. Now `$3` and `$2`.
+  - **Phone clips:** the size limit goes from 25 to 50 MB (`shared/listing-video-limits.json`, the IIS request limit
+    in `web.config`); a 10-second 1080p clip from an Android phone is already near 25 MB. The page also accepts MOV
+    (iPhone), which the server already took as MP4 (same container), and no longer refuses a clip just because this
+    browser cannot decode it (H.265 on a computer): the server reads the duration from the file.
+  - **Verify (live, dev DB):** an iPhone-style H.265 MOV (16 MB) and a 42 MB MP4 upload and play (206 video/mp4); a
+    before picture is set and removed. `node --test lib/listing-video.test.js`.
+
 - **Live sockets close when a session is ended (review 2026-11-02).** Password change, admin force-logout (one or
   all), an admin edit that ends the session, and a listing approval that bumps `token_version` now also disconnect
   that user's open socket.io connections whose token predates the new version (`disconnectOutdatedSockets` in

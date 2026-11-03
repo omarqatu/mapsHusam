@@ -20,27 +20,26 @@ type VideoIssue = 'tooLarge' | 'tooLong' | 'unsupported';
 
 function inspectVideo(file: File): Promise<VideoIssue | null> {
   if (file.size > MAX_VIDEO_BYTES) return Promise.resolve('tooLarge');
-  const supported = file.type === 'video/mp4' || file.type === 'video/webm' || /\.(mp4|webm)$/i.test(file.name);
+  // An iPhone records MOV (video/quicktime): the same container as MP4, which the server accepts.
+  const supported = ['video/mp4', 'video/webm', 'video/quicktime'].includes(file.type) || /\.(mp4|webm|mov)$/i.test(file.name);
   if (!supported) return Promise.resolve('unsupported');
   const src = URL.createObjectURL(file);
   return new Promise((resolve) => {
     const video = document.createElement('video');
     video.preload = 'metadata';
     video.onloadedmetadata = () => {
-      const issue: VideoIssue | null =
-        !Number.isFinite(video.duration) || video.duration <= 0
-          ? 'unsupported'
-          : video.duration > MAX_VIDEO_SECONDS
-            ? 'tooLong'
-            : null;
+      // An unknown duration is left to the server, which reads it from the file itself.
+      const issue: VideoIssue | null = Number.isFinite(video.duration) && video.duration > MAX_VIDEO_SECONDS ? 'tooLong' : null;
       URL.revokeObjectURL(src);
       video.removeAttribute('src');
       video.load();
       resolve(issue);
     };
+    // This browser cannot decode the clip (H.265 from a phone, on a computer without that decoder). That says nothing
+    // about the file: the server checks its bytes and duration, and phones play it.
     video.onerror = () => {
       URL.revokeObjectURL(src);
-      resolve('unsupported');
+      resolve(null);
     };
     video.src = src;
   });
@@ -113,7 +112,7 @@ export default function VideoManager({ listing }: { listing: MyListing }) {
       <input
         ref={input}
         type="file"
-        accept="video/mp4,video/webm,.mp4,.webm"
+        accept="video/mp4,video/webm,video/quicktime,.mp4,.webm,.mov"
         className="hidden"
         onChange={(e) => void add(e.target.files?.[0])}
       />

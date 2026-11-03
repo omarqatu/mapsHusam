@@ -264,7 +264,7 @@ async function changeVideoList(target, change) {
             await client.query('ROLLBACK');
             return { full: true };
         }
-        const set = whereFor(target.layer, 2);
+        const set = whereFor(target.layer, 3);
         let mediaDefault = current.rows[0].media_default;
         if (!mediaDefault && next.length) mediaDefault = 'video';
         if (mediaDefault === 'video' && !next.length) mediaDefault = 'photos';
@@ -412,9 +412,9 @@ app.post(
             target = await ownedTarget(req, res);
             if (!target) return;
             const checked = listingVideoCheck(req.body);
-            if (checked.error === 'too_large') return res.status(413).json({ success: false, error: 'حجم الفيديو يتجاوز 25 ميغابايت.' });
+            if (checked.error === 'too_large') return res.status(413).json({ success: false, error: `حجم الفيديو يتجاوز ${Math.round(MAX_VIDEO_BYTES / 1048576)} ميغابايت.` });
             if (checked.error === 'too_long') return res.status(400).json({ success: false, error: 'مدة الفيديو يجب ألا تتجاوز دقيقة واحدة.' });
-            if (checked.error) return res.status(415).json({ success: false, error: 'ارفع فيديو MP4 أو WebM صالحاً.' });
+            if (checked.error) return res.status(415).json({ success: false, error: 'ارفع فيديو MP4 أو MOV أو WebM صالحاً.' });
 
             newUrl = await storeVideoUpload(target, req.auth.uid, req.body, checked.type);
             const changed = await changeVideoList(target, (videos) => videos.length >= MAX_VIDEO_COUNT ? null : [...videos, newUrl]);
